@@ -100,12 +100,14 @@
         "RESTAURANT": "Restaurante",
         "BAR": "Bar",
         "CAFE": "Café",
-        "PARRILLA": "Churrascaria",
+        "PARRILLA": "Parrilla",
         "CERVECERIA": "Cervejaria",
         "HELADERIA": "Sorveteria",
         "PANADERIA": "Padaria",
-        "ROTISERIA": "Rotisserie",
-        "FOOD_TRUCK": "Food Truck"
+        "ROTISERIA": "Rotisseria",
+        "FOOD_TRUCK": "Food truck",
+        "PUB": "Pub",
+        "BOLICHE": "Balada"
     },
     "typeChips": {
         "ariaLabel": "Filtrar por tipo de estabelecimento"
@@ -294,5 +296,18 @@
                 "hint": "Mostramos um botão de contato na sua ficha para que entrem em contato para esse tipo de consulta."
             }
         }
+    },
+    "typeDescriptions": {
+        "RESTAURANT": "Restaurante com serviço à mesa e cardápio variado.",
+        "BAR": "Bar com balcão e drinques, incluindo coquetéis.",
+        "CAFE": "Cafeteria para café, bebidas e refeições leves.",
+        "PARRILLA": "Parrilla de carnes e pratos preparados na brasa.",
+        "CERVECERIA": "Cervejaria que produz a própria cerveja artesanal.",
+        "HELADERIA": "Sorveteria com sorvetes e sobremesas geladas.",
+        "PANADERIA": "Padaria com pães e produtos de confeitaria.",
+        "ROTISERIA": "Rotisseria de comidas prontas para levar.",
+        "FOOD_TRUCK": "Comida preparada e servida em um veículo.",
+        "PUB": "Formato de bar com chope e clima de pub.",
+        "BOLICHE": "Casa noturna ou clube que funciona exclusivamente à noite."
     }
 }

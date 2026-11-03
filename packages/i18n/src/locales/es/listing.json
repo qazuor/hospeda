@@ -367,7 +367,7 @@
         "restitution": {
             "restored": "Volvieron estas fichas: {{listings}}.",
             "notRestored": "Estas fichas no entraron: {{listings}}.",
-            "criterion": "Vuelve primero la ficha que cayó al final, hasta llenar el cupo. Las fichas del sistema anterior que nunca se publicaron acá van primero, según su antigüedad de carga.",
+            "criterion": "Vuelven primero las fichas que publicaste más recientemente, hasta llenar el cupo.",
             "nothingDeleted": "Las fichas que no entraron siguen ahí: no se borra ninguna."
         },
         "reason": "Motivo: {{reason}}",

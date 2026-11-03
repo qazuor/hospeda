@@ -71,7 +71,9 @@ const VENUE_TYPE_OPTIONS = [
     {
         value: VenueTypeEnum.FOOD_TRUCK,
         labelKey: 'admin-filters.venueType.foodTruck'
-    }
+    },
+    { value: VenueTypeEnum.PUB, labelKey: 'admin-entities.venue.types.PUB' },
+    { value: VenueTypeEnum.BOLICHE, labelKey: 'admin-entities.venue.types.BOLICHE' }
 ] as const;
 
 const PRICE_RANGE_OPTIONS = [

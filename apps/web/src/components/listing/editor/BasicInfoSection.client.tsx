@@ -231,6 +231,14 @@ export function BasicInfoSection({
                         </option>
                     ))}
                 </TextField>
+                {vertical === 'venue' && data.listingType ? (
+                    <p
+                        className={styles.hint}
+                        aria-live="polite"
+                    >
+                        {t(`venue.typeDescriptions.${data.listingType}`, '')}
+                    </p>
+                ) : null}
             </section>
 
             {/* T-020: summary textarea (min 10 / max 300) */}

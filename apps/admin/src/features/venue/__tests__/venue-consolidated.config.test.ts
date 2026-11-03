@@ -111,6 +111,8 @@ describe('createVenueConsolidatedConfig', () => {
         expect(values).toContain('BAR');
         expect(values).toContain('CAFE');
         expect(values).toContain('FOOD_TRUCK');
+        expect(values).toContain('PUB');
+        expect(values).toContain('BOLICHE');
     });
 
     it('priceRange field should have select options for all price ranges', () => {

@@ -18,6 +18,7 @@ import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,7 +56,9 @@ const VENUE_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }>
     { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
     { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
     { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
+    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' },
+    { value: VenueTypeEnum.PUB, label: 'Pub' },
+    { value: VenueTypeEnum.BOLICHE, label: 'Boliche' }
 ];
 
 const PRICE_RANGE_OPTIONS: ReadonlyArray<{ value: PriceRangeEnum; label: string }> = [
@@ -112,6 +115,7 @@ export function VenueForm({
     isPending = false,
     submitLabel = 'Guardar'
 }: VenueFormProps) {
+    const { t } = useTranslations();
     const [globalError, setGlobalError] = React.useState<string | null>(null);
 
     const form = useForm<VenueFormValues>({
@@ -301,6 +305,13 @@ export function VenueForm({
                                             </option>
                                         ))}
                                     </select>
+                                    {field.state.value ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            {t(
+                                                `admin-entities.venue.typeDescriptions.${field.state.value}`
+                                            )}
+                                        </p>
+                                    ) : null}
                                 </FieldWrapper>
                             )}
                         </form.Field>

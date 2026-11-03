@@ -297,6 +297,14 @@ export function ListingCreateForm({
                     id={fieldErrorId('type')}
                     message={fieldErrors.type}
                 />
+                {vertical === 'venue' && listingType ? (
+                    <p
+                        className={styles.hint}
+                        aria-live="polite"
+                    >
+                        {t(`venue.typeDescriptions.${listingType}`, '')}
+                    </p>
+                ) : null}
             </div>
 
             <div className={styles.field}>

@@ -446,6 +446,14 @@
                     "uuid": "El ID del usuario debe ser un UUID válido"
                 }
             },
+            "experienceReview": {
+                "experienceId": {
+                    "uuid": "The experience ID must be a valid UUID"
+                },
+                "userId": {
+                    "uuid": "The user ID must be a valid UUID"
+                }
+            },
             "entityComment": {
                 "authorId": {
                     "uuid": "Author ID must be a valid UUID"
