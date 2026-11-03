@@ -1,7 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { info, warn } = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn() }));
+const { info, warn, createStore, env } = vi.hoisted(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    createStore: vi.fn(),
+    env: { HOSPEDA_REDIS_URL: '', HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE: 'observe' }
+}));
 vi.mock('../../src/utils/logger', () => ({ apiLogger: { info, warn } }));
+vi.mock('../../src/utils/env', () => ({ env }));
+vi.mock('../../src/utils/mp-cooldown-redis-store', () => ({
+    createMercadoPagoRedisCoolDownStore: createStore
+}));
 
 import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
 import {
@@ -75,5 +84,29 @@ describe('Mercado Pago traffic governor composition', () => {
         expect(port?.coolDownRemainingMs()).toBe(0);
         observe?.stop();
         enforce?.stop();
+    });
+
+    it('uses the mocked Redis store in enforce mode and awaits its close on shutdown', async () => {
+        let closed = false;
+        createStore.mockReturnValue({
+            close: async () => {
+                await Promise.resolve();
+                closed = true;
+            },
+            extend: vi.fn(),
+            until: () => 0,
+            refresh: async () => ({ fallback: false })
+        });
+        env.HOSPEDA_REDIS_URL = 'redis://test.invalid';
+        env.HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE = 'enforce';
+        const { getMercadoPagoTrafficGovernor, shutdownMercadoPagoTrafficGovernor } = await import(
+            '../../src/utils/mp-traffic-governor'
+        );
+
+        getMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(createStore).toHaveBeenCalledOnce();
+        expect(createStore).toHaveBeenCalledWith({ redisUrl: 'redis://test.invalid' });
+        await shutdownMercadoPagoTrafficGovernor();
+        expect(closed).toBe(true);
     });
 });

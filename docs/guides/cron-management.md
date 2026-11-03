@@ -65,10 +65,12 @@ hops cron-trigger trial-machine-expiry --dry-run --yes
 > for the real names (e.g. `trial-machine-expiry`, `billing-reconciliation-sweep`,
 > `subscription-window-expiry`).
 
-The triggered run goes through the same `handler(jobContext)` code path
-as the scheduled run, with `jobContext.dryRun` reflecting the flag.
-Server-side timeout is 30s by default per job (`job.timeoutMs` in the
-definition).
+The triggered run uses the same runner as the scheduled tick, with
+`jobContext.dryRun` reflecting the flag. Non-exclusive jobs return when their
+handler finishes. Exclusive jobs return `202` with a `runId` as soon as the
+database lock is acquired; a concurrent trigger returns `409` with the current
+holder's `runId`. The server enforces each job's `timeoutMs` and cooperative
+budget (`budgetMs`).
 
 ### Authentication
 
@@ -112,7 +114,7 @@ crontab -l
 
 | Field | Value |
 |---|---|
-| Schedule | `0 6 * * *` (06:00 UTC = 03:00 ART daily) |
+| Schedule | `10 2 * * *` (02:10 UTC = 03:00 ART daily) |
 | Command | `/opt/hospeda-backup/postgres-to-r2.sh` |
 | Log file | `/var/log/hospeda-backup.log` (rotated weekly, 12 weeks compressed) |
 | Source | [`scripts/backup/postgres-to-r2.sh`](../../scripts/backup/postgres-to-r2.sh) |

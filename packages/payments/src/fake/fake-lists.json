@@ -211,6 +211,12 @@
             "kind": "rule",
             "name": "an order search needs both creation dates, spans at most 30 days and matches the reference exactly",
             "measured": [{ "row": "EX-57", "date": "2026-09-30", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP14",
+            "kind": "rule",
+            "name": "MP:EX-58 order refunds require an idempotency key; identical replays return the first full response, changed amounts return 409, and responses list all order refunds",
+            "measured": [{ "row": "EX-58", "date": "2026-09-30", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

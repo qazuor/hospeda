@@ -19,6 +19,9 @@ describe('refund confirmation schemas', () => {
         'PROVIDER_REJECTED_KEPT_CONFIRMED',
         'PROVIDER_REJECTED_FAILED',
         'AWAITING_PROVIDER_ANSWER',
+        'ORDER_REFUND_HELD',
+        'PROVIDER_KEY_CONFLICT',
+        'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED',
         'CHARGED_BACK'
     ] as const)('accepts the %s service outcome', (outcome) => {
         const status =

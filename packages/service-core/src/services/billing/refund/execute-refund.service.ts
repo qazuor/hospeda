@@ -1,18 +1,12 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import type { DrizzleClient } from '@repo/db';
-import { and, eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
+import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
-import {
-    type ApplyExecutedRefundResult,
-    applyExecutedRefund
-} from '../payment/apply-executed-refund.service';
-import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution';
-import { canRefundTransition } from './refund-machine';
-import { lockRefundSource } from './refund-source';
+import type { ApplyExecutedRefundResult } from '../payment/apply-executed-refund.service';
+import { executeAccreditedRefund, executeOrderRefund } from './execute-refund-order';
 
 const logger = createLogger('execute-refund');
 
@@ -100,7 +94,6 @@ export async function executeRefundFromProviderRead(
         .from(refundCalls)
         .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
         .where(eq(refundCalls.refundId, input.refundId));
-    if (calls.some((call) => call.addonInstanceId !== null)) return result(input, 'NOT_APPLICABLE');
     const acceptedIds = calls.flatMap((call) =>
         call.providerRefundId === null ? [] : [call.providerRefundId]
     );
@@ -113,12 +106,21 @@ export async function executeRefundFromProviderRead(
     const awaitingProviderAnswer =
         calls.some((call) => call.completedAt === null) ||
         acceptedIds.length + rejectedCount !== calls.length;
-    if (!awaitingProviderAnswer && acceptedIds.length === 0)
-        return result(input, 'NOTHING_ACCEPTED');
-
     const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
     if (!payment) throw new Error('Confirmed refund payment is missing');
-    if (payment.addonInstanceId !== null) return result(input, 'NOT_APPLICABLE');
+    if (payment.addonInstanceId !== null)
+        return executeOrderRefund({
+            input,
+            candidate,
+            payment,
+            acceptedIds,
+            awaitingProviderAnswer,
+            ports,
+            result
+        });
+    if (calls.some((call) => call.addonInstanceId !== null)) return result(input, 'NOT_APPLICABLE');
+    if (!awaitingProviderAnswer && acceptedIds.length === 0)
+        return result(input, 'NOTHING_ACCEPTED');
 
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
@@ -139,54 +141,5 @@ export async function executeRefundFromProviderRead(
     )
         return result(input, 'NOT_ACCREDITED_KEPT_CONFIRMED');
 
-    return db.transaction(async (tx: DrizzleClient) => {
-        const locked = await lockRefundSource({
-            tx,
-            source: { kind: 'PAYMENT', id: paymentId }
-        });
-        if (locked.kind !== 'PAYMENT') throw new Error('Expected a payment source');
-        const [refund] = await tx
-            .select()
-            .from(refunds)
-            .where(eq(refunds.id, input.refundId))
-            .limit(1)
-            .for('update');
-        if (
-            !refund ||
-            refund.status !== 'CONFIRMED' ||
-            refund.version !== candidate.version ||
-            refund.paymentId !== paymentId
-        )
-            return result(input, 'REFUND_STATE_CHANGED');
-        if (!canRefundTransition({ transition: 'RF3', from: refund.status }).allowed)
-            return result(input, 'REFUND_STATE_CHANGED');
-        const [updated] = await tx
-            .update(refunds)
-            .set({
-                status: 'EXECUTED',
-                executedVia: 'PROVIDER',
-                settledBy: null,
-                version: refund.version + 1
-            })
-            .where(
-                and(
-                    eq(refunds.id, refund.id),
-                    eq(refunds.status, 'CONFIRMED'),
-                    eq(refunds.version, refund.version)
-                )
-            )
-            .returning({ id: refunds.id });
-        if (!updated) return result(input, 'REFUND_STATE_CHANGED');
-        await resolveHungPaymentsBySettlement({
-            tx,
-            payment: { source: 'PAYMENT', id: locked.payment.id },
-            refundId: refund.id,
-            at: ports.clock.now()
-        });
-        const paymentEffect = await applyExecutedRefund(
-            { refundId: refund.id },
-            { clock: ports.clock, tx }
-        );
-        return result(input, 'EXECUTED', paymentEffect);
-    });
+    return executeAccreditedRefund({ input, candidate, paymentId, clock: ports.clock, result });
 }

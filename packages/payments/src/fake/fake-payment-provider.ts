@@ -37,9 +37,12 @@ import type {
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,
+    Money,
     MutationAcknowledgement,
     NoticeDelivery,
     OrderRef,
+    OrderRefundInput,
+    OrderRefundResult,
     OrderSearchInput,
     OrderSearchResult,
     OrderSnapshot,
@@ -58,6 +61,7 @@ import {
     ChargeRefSchema,
     NoticeDeliverySchema,
     OrderRefSchema,
+    OrderRefundInputSchema,
     OrderSearchInputSchema,
     parseProviderInput,
     RefundInputSchema
@@ -549,6 +553,20 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
+        const { value } = parseProviderInput({
+            schema: OrderRefundInputSchema,
+            input,
+            capability: 'refund'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'refund',
+            run: () => this.orders.refund(value)
+        });
+    }
+
     /** Capability 7 · read an authorization by id. */
     async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         const { value } = parseProviderInput({
@@ -641,8 +659,14 @@ export class FakePaymentProvider implements PaymentProvider {
         readonly reference: string;
         readonly createdAt?: string;
         readonly paid: boolean;
+        readonly amount?: Money;
     }): { readonly orderId: string } {
         return this.orders.place(input);
+    }
+
+    /** Test handle: holds a refund as pending (AC:B6:8, TRANS:B:RF3). */
+    holdOrderRefund(input: { readonly orderId: string; readonly refundId: string }): void {
+        this.orders.hold(input);
     }
 
     /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */

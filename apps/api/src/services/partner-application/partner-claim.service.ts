@@ -27,35 +27,14 @@ export async function claimPartnerOnEmailVerification(input: {
             if (!candidate) return { claimed: false };
             claimedPartnerId = candidate.partnerId;
 
-            const changed = await partnerApplicationModel.setPartnerOwnerIfUnclaimed({
+            const result = await writePartnerClaim({
                 tx,
                 partnerId: candidate.partnerId,
-                userId: input.userId
-            });
-            if (!changed) return { claimed: false };
-
-            const granted = await grantRole({
                 userId: input.userId,
-                role: RoleEnum.PARTNER_OWNER,
-                grantedBy: null,
-                reason: RoleGrantReason.PARTNER_CLAIMED,
-                ctx: { tx }
+                origin: 'email_verification',
+                extraChanges: []
             });
-            if (granted.error) throw granted.error;
-
-            await domainEventModel.insert({
-                tx,
-                eventType: 'partner.claimed',
-                entityType: 'partner',
-                entityId: candidate.partnerId,
-                actorType: 'owner',
-                actorId: input.userId,
-                reason: 'email_verification',
-                correlationId: getRequestCorrelationId() ?? randomUUID(),
-                occurredAt: getClock().clock.now(),
-                changes: [{ field: 'owner_user_id', old: null, new: input.userId }]
-            });
-            return { claimed: true };
+            return { claimed: result.written };
         });
     } catch (error) {
         const postgresError = extractPostgresErrorCause(error);
@@ -71,4 +50,45 @@ export async function claimPartnerOnEmailVerification(input: {
         }
         throw error;
     }
+}
+
+/** Writes the owner, role, and audit event for either Partner claim origin. */
+export async function writePartnerClaim(input: {
+    readonly tx: DrizzleClient;
+    readonly partnerId: string;
+    readonly userId: string;
+    readonly origin: 'email_verification' | 'claim_link';
+    readonly extraChanges: readonly {
+        readonly field: string;
+        readonly old: unknown;
+        readonly new: unknown;
+    }[];
+}): Promise<{ readonly written: boolean }> {
+    const changed = await partnerApplicationModel.setPartnerOwnerIfUnclaimed({
+        tx: input.tx,
+        partnerId: input.partnerId,
+        userId: input.userId
+    });
+    if (!changed) return { written: false };
+    const granted = await grantRole({
+        userId: input.userId,
+        role: RoleEnum.PARTNER_OWNER,
+        grantedBy: null,
+        reason: RoleGrantReason.PARTNER_CLAIMED,
+        ctx: { tx: input.tx }
+    });
+    if (granted.error) throw granted.error;
+    await domainEventModel.insert({
+        tx: input.tx,
+        eventType: 'partner.claimed',
+        entityType: 'partner',
+        entityId: input.partnerId,
+        actorType: 'owner',
+        actorId: input.userId,
+        reason: input.origin,
+        correlationId: getRequestCorrelationId() ?? randomUUID(),
+        occurredAt: getClock().clock.now(),
+        changes: [{ field: 'owner_user_id', old: null, new: input.userId }, ...input.extraChanges]
+    });
+    return { written: true };
 }

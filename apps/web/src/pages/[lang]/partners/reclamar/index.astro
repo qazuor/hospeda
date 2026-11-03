@@ -1,0 +1,36 @@
+---
+/**
+ * @file partners/reclamar/index.astro
+ * @description Noindex entry point for claiming a Partner from an emailed link.
+ * @route /{lang}/partners/reclamar/
+ * @rendering SSR, session-blind; the client island consumes the URL fragment.
+ */
+
+import { PartnerClaim } from '@/components/partner/PartnerClaim.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const title = t('partners.claim.seo.title');
+const description = t('partners.claim.seo.description');
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        locale={locale}
+        canonical={canonical}
+        noindex={true}
+    />
+    <section class="section section--warm">
+        <div class="section__container">
+            <PartnerClaim client:load locale={locale} />
+        </div>
+    </section>
+</BaseLayout>

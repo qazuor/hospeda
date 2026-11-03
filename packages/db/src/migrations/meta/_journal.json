@@ -1300,22 +1300,36 @@
     {
       "idx": 185,
       "version": "7",
-      "when": 1793656796372,
-      "tag": "0185_hos1484_partner_resolve_application",
+      "when": 1793710605498,
+      "tag": "0185_steep_amazoness",
       "breakpoints": true
     },
     {
       "idx": 186,
       "version": "7",
-      "when": 1793670469150,
-      "tag": "0186_hos1551_billing_refund_permission",
+      "when": 1793710665498,
+      "tag": "0186_hos1484_partner_resolve_application",
       "breakpoints": true
     },
     {
       "idx": 187,
       "version": "7",
-      "when": 1793678736020,
-      "tag": "0187_hos1485_partner_application_resolution",
+      "when": 1793710725498,
+      "tag": "0187_hos1551_billing_refund_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793710785498,
+      "tag": "0188_hos1485_partner_application_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1793711974042,
+      "tag": "0189_hos1486_session_auth_method",
       "breakpoints": true
     }
   ]

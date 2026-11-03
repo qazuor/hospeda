@@ -42,6 +42,7 @@ check answers 403 to someone the server never identified.
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
+| Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
 
@@ -102,6 +103,8 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `PARTNER_APPLICATION_UNAVAILABLE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_WAIT_NOT_ACTIVE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_NOT_PENDING` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
 
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
@@ -428,13 +431,14 @@ The permission is the route's scope (`billing.settleExternal`); the subject, the
 | `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 | `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
-| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` (a manual payment, or an add-on payment whose instance has no provider order) | 409 | `ALREADY_EXISTS` |
 | `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
 | `REFUND_PAST_PROVIDER_WINDOW` | 422 | `VALIDATION_ERROR` |
 | `REFUND_PROVIDER_ID_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
 
 Provider results are not rejections: confirmation returns 200 with an `outcome` describing the result. A missing or non-`true` `confirmed` field is a 400 shape error (`VALIDATION_ERROR`).
+`ORDER_REFUND_HELD`, `PROVIDER_KEY_CONFLICT`, and `ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED` return 200 and leave the refund `CONFIRMED`.
 `PROVIDER_REJECTED_FAILED` returns 200 with `status: 'FAILED'`.
 An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider call.
 
