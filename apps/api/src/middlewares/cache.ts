@@ -212,6 +212,28 @@ export function clearCache(): void {
 }
 
 /**
+ * Invalidates cached responses whose request path starts with the supplied prefix.
+ * @param params.pathPrefix - API path prefix to evict, excluding query strings.
+ */
+export function invalidateCacheByPathPrefix({ pathPrefix }: { readonly pathPrefix: string }): void {
+    for (const key of cache.keys()) {
+        const path = getCacheKeyPath({ key });
+        if (path.startsWith(pathPrefix)) cache.delete(key);
+    }
+}
+
+/** Extracts the request path from a key built by {@link generateCacheKey}. */
+function getCacheKeyPath({ key }: { readonly key: string }): string {
+    const namespace = key.startsWith('public:')
+        ? 'public:'
+        : key.startsWith('private:')
+          ? 'private:'
+          : null;
+    if (namespace === null) return '';
+    return key.slice(namespace.length).split('?')[0] ?? '';
+}
+
+/**
  * Returns the current number of entries in the cache.
  * Useful for testing.
  */
@@ -322,7 +344,7 @@ function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }):
  * Determines the cache key for a request based on endpoint classification.
  * Returns null if the request should not be cached.
  */
-function generateCacheKey({
+export function generateCacheKey({
     path,
     queryString,
     publicEndpoints,

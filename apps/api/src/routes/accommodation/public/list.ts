@@ -8,6 +8,8 @@
  * - destinationId: filter by destination (direct column match)
  * - q: full-text search on name and description
  * - minPrice, maxPrice: price range (JSONB field)
+ * - currency: currency of the stored price (legacy currency-less prices are ARS)
+ * - createdAfter, createdBefore: inclusive created_at bounds (>= / <=)
  * - minGuests, maxGuests: guest capacity range (JSONB extraInfo.capacity)
  * - minBedrooms, maxBedrooms: bedroom count range (JSONB extraInfo.bedrooms)
  * - minBathrooms, maxBathrooms: bathroom count range (JSONB extraInfo.bathrooms)
@@ -129,7 +131,8 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // Convert all HTTP query params to domain search input.
         // This maps: type, isFeatured, destinationId, q, minPrice, maxPrice,
         // minGuests, maxGuests, minBedrooms, maxBedrooms, minBathrooms,
-        // maxBathrooms, minRating, maxRating, amenities, sortBy, sortOrder,
+        // maxBathrooms, minRating, maxRating, amenities, createdAfter,
+        // createdBefore, sortBy, sortOrder,
         // currency, latitude, longitude, radius, checkIn, checkOut.
         const httpQuery = (query ?? {}) as AccommodationSearchHttp;
         const domainParams = httpToDomainAccommodationSearch(httpQuery);
