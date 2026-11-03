@@ -50,5 +50,59 @@ export const partnerApplicationModel = {
             UPDATE partner_application
             SET wait_cancelled_at = ${args.at}, wait_cancelled_by = ${args.actorId}
             WHERE id = ${args.applicationId}`);
+    },
+
+    /** Creates an unclaimed draft Partner for an approved application. */
+    async insertUnclaimedPartner(args: {
+        readonly tx: DrizzleClient;
+        readonly name: string;
+        readonly slug: string;
+        readonly type: string;
+        readonly actorId: string;
+    }): Promise<{ readonly id: string }> {
+        const result = await args.tx.execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id)
+            VALUES (${args.slug}, ${args.name}, ${args.type}, 'DRAFT', ${args.actorId}, ${args.actorId})
+            RETURNING id`);
+        const row = result.rows[0];
+        if (!row) throw new Error('Partner insert did not return an id');
+        return { id: String(row.id) };
+    },
+
+    /** Marks a pending application approved and links its unclaimed Partner. */
+    async markApproved(args: {
+        readonly tx: DrizzleClient;
+        readonly applicationId: string;
+        readonly at: Date;
+        readonly partnerId: string;
+    }): Promise<void> {
+        await args.tx.execute(sql`
+            UPDATE partner_application
+            SET status = 'APPROVED', resolved_at = ${args.at}, partner_id = ${args.partnerId}
+            WHERE id = ${args.applicationId}`);
+    },
+
+    /** Marks a pending application rejected and stores the active deadline version. */
+    async markRejected(args: {
+        readonly tx: DrizzleClient;
+        readonly applicationId: string;
+        readonly at: Date;
+    }): Promise<void> {
+        await args.tx.execute(sql`
+            UPDATE partner_application
+            SET status = 'REJECTED', resolved_at = ${args.at},
+                deadlines_version = (SELECT max("version") FROM "vertical_deadline_version")
+            WHERE id = ${args.applicationId}`);
+    },
+
+    /** Finds an account by case-insensitive email, including soft-deleted rows. */
+    async findAccountIdByEmail(args: {
+        readonly tx: DrizzleClient;
+        readonly email: string;
+    }): Promise<{ readonly id: string } | null> {
+        const result = await args.tx.execute(sql`
+            SELECT id FROM users WHERE lower(email) = lower(${args.email}) LIMIT 1`);
+        const row = result.rows[0];
+        return row ? { id: String(row.id) } : null;
     }
 };
