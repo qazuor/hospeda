@@ -98,6 +98,28 @@ describe('runCronJob lifecycle', () => {
         expect(mocks.ping).not.toHaveBeenCalled();
     });
 
+    it('sends the monitored start ping only after the lock decision is acquired', async () => {
+        let grantLock!: () => void;
+        let runHandler!: () => Promise<unknown>;
+        mocks.lock.mockImplementation(
+            ({ handler }: { handler: () => Promise<unknown> }) =>
+                new Promise((resolve) => {
+                    runHandler = handler;
+                    grantLock = () => resolve({ acquired: true, completion: runHandler() });
+                })
+        );
+
+        const pending = runCronJob({ job, executionMode: 'scheduled', dryRun: false });
+        await Promise.resolve();
+        expect(mocks.ping).not.toHaveBeenCalled();
+        grantLock();
+
+        const decision = await pending;
+        expect(mocks.ping).toHaveBeenCalledWith({ job: job.name, signal: 'start' });
+        if (decision.started)
+            await expect(decision.completion).resolves.toMatchObject({ success: true });
+    });
+
     it('does not lock non-exclusive jobs', async () => {
         const regularJob = { ...job, exclusive: false };
         const decision = await runCronJob({
