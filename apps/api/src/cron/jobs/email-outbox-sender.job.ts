@@ -31,6 +31,7 @@ import {
 import {
     BrevoEmailTransport,
     createBillingGraceReminderRenderers,
+    createBillingManualPaymentRenderers,
     createBillingPromoRenderers,
     createBillingReconciliationRenderers,
     createBillingRenewalRenderers,
@@ -104,6 +105,7 @@ export function buildOutboxSenderRender(input: {
                         'Reconciliation summary: subjects could not be resolved; sending the bare lines'
                     )
             }),
+            ...createBillingManualPaymentRenderers(),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
             ...createVerticalListingRenderers({
                 siteUrl: input.siteUrl,
