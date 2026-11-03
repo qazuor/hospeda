@@ -1,8 +1,10 @@
 import {
     GOVERNOR_MAX_WAIT_SAMPLES,
+    type ProviderTrafficGovernor,
     runWithTrafficClass,
     type TrafficCounterSink
 } from '@repo/payments';
+import { getMercadoPagoTrafficGovernor } from '../utils/mp-traffic-governor';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
 
 interface RunCounter {
@@ -17,6 +19,7 @@ interface RunCounter {
     coolDownMs: number;
     unclassified: number;
     memoHits: number;
+    redisFallbacks: number;
 }
 
 function createRunCounter(): RunCounter {
@@ -31,7 +34,8 @@ function createRunCounter(): RunCounter {
         coolDowns: 0,
         coolDownMs: 0,
         unclassified: 0,
-        memoHits: 0
+        memoHits: 0,
+        redisFallbacks: 0
     };
 }
 
@@ -51,12 +55,14 @@ function recordWaitSample(args: {
     }
 }
 
-function createSink(): {
+function createSink(injectedGovernor?: ProviderTrafficGovernor): {
     readonly sink: TrafficCounterSink;
     readonly counters: Map<string, RunCounter>;
+    readonly governor?: ProviderTrafficGovernor;
 } {
     const counters = new Map<string, RunCounter>();
     const waitSampleKeys: string[] = [];
+    const governor = injectedGovernor ?? getMercadoPagoTrafficGovernor();
     const sink: TrafficCounterSink = {
         record: (args) => {
             const key = `${args.trafficClass}:${args.capability}`;
@@ -67,6 +73,12 @@ function createSink(): {
             }
             if (args.request) counter.requests += 1;
             if (args.memoHit) counter.memoHits += 1;
+            if (args.redisFallback) counter.redisFallbacks += 1;
+            if (args.memoHit)
+                governor?.recordMemoHit({
+                    trafficClass: args.trafficClass,
+                    capability: args.capability
+                });
             if (
                 args.status === 200 ||
                 (args.status !== undefined && args.status >= 200 && args.status < 300)
@@ -86,7 +98,7 @@ function createSink(): {
         },
         toProviderTraffic: () => snapshotCounters(counters)
     };
-    return { sink, counters };
+    return { sink, counters, governor };
 }
 
 function snapshotCounters(
@@ -112,8 +124,8 @@ function snapshotCounters(
             coolDownMs: value.coolDownMs,
             unclassified: value.unclassified,
             memoHits: value.memoHits,
-            snapshotHits: 0,
-            redisFallbacks: 0
+            redisFallbacks: value.redisFallbacks,
+            snapshotHits: 0
         };
         totals.requests += value.requests;
         totals.status2xx += value.status2xx;
@@ -126,6 +138,7 @@ function snapshotCounters(
         totals.coolDownMs += value.coolDownMs;
         totals.unclassified += value.unclassified;
         totals.memoHits += value.memoHits;
+        totals.redisFallbacks += value.redisFallbacks;
     }
     const sorted = [...totals.waitMs].sort((left, right) => left - right);
     const p50 = sorted.length === 0 ? 0 : (sorted[Math.ceil(sorted.length * 0.5) - 1] ?? 0);
@@ -134,10 +147,9 @@ function snapshotCounters(
     return {
         ...counts,
         waitMs: { p50, p95, max: sorted[sorted.length - 1] ?? 0 },
-        // The memo layer has no governor reference; the governor's window memoHits stays 0.
         memoHits: totals.memoHits,
         snapshotHits: 0,
-        redisFallbacks: 0,
+        redisFallbacks: totals.redisFallbacks,
         byCapability
     };
 }
@@ -146,8 +158,9 @@ function snapshotCounters(
 export async function runCronHandlerInBackground(args: {
     readonly job: Pick<CronJobDefinition, 'handler'>;
     readonly ctx: CronJobContext;
+    readonly governor?: ProviderTrafficGovernor;
 }): Promise<CronJobResult> {
-    const { sink, counters } = createSink();
+    const { sink, counters } = createSink(args.governor);
     const result = await runWithTrafficClass({
         context: { trafficClass: 'background', counters: sink },
         fn: () => args.job.handler(args.ctx)
