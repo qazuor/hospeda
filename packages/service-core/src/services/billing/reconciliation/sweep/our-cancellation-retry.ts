@@ -63,8 +63,8 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     S20: 'PERMANENT_GRANT_ADDON',
     // S21 never calls: its call is A5's or A6's.
     S21: 'UNDECLARED',
-    // No writer records S22 yet: its leaf declares the kind in the same PR.
-    S22: 'UNDECLARED',
+    // S22 ends paused service today, like S23/S24 (AC:B8b:5).
+    S22: 'DIRECT_CANCELLATION',
     // S23 and S24 are direct cancellations and share one before-cancel kind.
     S23: 'DIRECT_CANCELLATION',
     S24: 'DIRECT_CANCELLATION',
