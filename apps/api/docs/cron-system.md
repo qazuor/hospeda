@@ -902,6 +902,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 |----------|----------|-----------------|------|
 | `archive-expired-promotions` | billing | `0 * * * *` | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` |
 | `billing-creations-sweep` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
+| `billing-deferred-cancellation-retry` | billing | `4-59/5 * * * *` | `apps/api/src/cron/jobs/billing-deferred-cancellation-retry.job.ts` |
 | `billing-promo-ending-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/billing-promo-ending-notice.job.ts` |
 | `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
 | `billing-reconciliation-sweep` | billing | `0 6 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |

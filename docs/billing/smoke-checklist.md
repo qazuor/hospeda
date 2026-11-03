@@ -131,6 +131,24 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Screenshot of the notice, the preapproval, and the email.
 - **Covers:** AC:B9b:12; TEST:B9b:12; CT-3 (`B/14` §2.4).
 
+### S8 — A deferred cancellation leaves within minutes (HOS-1955)
+
+- **Preconditions:** A pending card signup on `staging` (MP sandbox); the
+  `billing-deferred-cancellation-retry` cron is enabled.
+- **Steps:**
+  1. Press “Cancelar ese intento” in checkout (S40).
+  2. Note the time and the row id (`ABANDONED`).
+  3. Wait for `billing.attempt-cancelled-cancel` to become `sent` in `email_outbox`.
+  4. Wait for the next `billing-deferred-cancellation-retry` run (minute 4 + 5n).
+- **Expected:** The preapproval reads `cancelled` in MP within 10 minutes after the notice was
+  `sent`, without running the daily sweep by hand; the cron run has
+  `details.retried.confirmed` = 1; exactly one `billing.attempt-cancelled-cancel` row exists for
+  that subscription.
+- **Evidence:** Read-only `GET /preapproval/{id}`; the job's `cron_runs` row; a query on
+  `email_outbox` filtered by `recipient_user_id` and template.
+- **Covers:** AC:1955:1, AC:1955:6; the HOS-1955 measurement (29 October: about one hour with
+  a manual sweep).
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |

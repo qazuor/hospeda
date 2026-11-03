@@ -32,6 +32,11 @@ import {
 import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+const partnerApplicationResolutionBinding = (decision: 'approve' | 'reject') => ({
+    kind: 'required' as const,
+    file: `apps/api/src/routes/partner-application/admin/${decision}.ts`,
+    route: `admin${decision === 'approve' ? 'Approve' : 'Reject'}PartnerApplicationRoute`
+});
 
 /**
  * Strips block and line comments before matching, so a route's own docblock
@@ -187,7 +192,9 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/partner-application/admin/cancel-wait.ts',
                 route: 'adminCancelPartnerApplicationWaitRoute'
-            }
+            },
+            partnerApplicationResolutionBinding('approve'),
+            partnerApplicationResolutionBinding('reject')
         ]
     },
     ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
@@ -466,10 +473,11 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-    it('b. checks exactly 39 bindings across 16 bound rows', () => {
+
+    it('b. checks exactly 41 bindings across 16 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(16);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(39);
+        expect(total).toBe(41);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))

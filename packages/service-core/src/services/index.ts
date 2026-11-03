@@ -141,6 +141,11 @@ export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/reconciliation/revocation-refund-failed-notice.js';
 export * from './billing/reconciliation/summary/index.js';
 export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
+export type {
+    BeforeCancelNoticeState,
+    BeforeCancelNoticeStatus as DeferredBeforeCancelNoticeStatus,
+    BeforeCancelNoticeStatusReader
+} from './billing/reconciliation/sweep/before-cancel-notice-status.port.js';
 export * from './billing/reconciliation/sweep/cancellation-observation.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
@@ -158,6 +163,7 @@ export * from './billing/reconciliation/sweep/last-cycle-record.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
+export * from './billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
@@ -211,6 +217,7 @@ export * from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/grace-reminder-notice.js';
 export * from './billing/subscription/grace-started-notice.js';
 export * from './billing/subscription/late-payment-conditions.js';
+export * from './billing/subscription/manual-installment-opening.js';
 export * from './billing/subscription/paid-after-cancellation-notice.js';
 export * from './billing/subscription/paying-predecessor-successor.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
@@ -228,6 +235,7 @@ export * from './billing/subscription/send-renewal-notices.service.js';
 export * from './billing/subscription/service-end-s12.js';
 export * from './billing/subscription/signup-confirmed-notice.js';
 export * from './billing/subscription/signup-declined-notice.js';
+export * from './billing/subscription/start-manual-subscription.service.js';
 export * from './billing/subscription/start-subscription.service.js';
 export * from './billing/subscription/start-succession.service.js';
 export * from './billing/subscription/subscription-billing-ports.js';

@@ -35,6 +35,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
 import { admin } from 'better-auth/plugins';
+import { claimPartnerOnEmailVerification } from '../services/partner-application/partner-claim.service';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
 import { adminPluginRoles } from './auth-admin-access';
@@ -408,6 +409,12 @@ function buildAuth() {
                 })();
             },
             sendOnSignUp: true,
+            // Claim before Better Auth writes emailVerified, so a failure keeps the same link retryable.
+            // An after hook would leave the address verified while the claim transaction rolled back.
+            // The non-production no-key shortcut auto-verifies directly and intentionally bypasses hooks.
+            beforeEmailVerification: async (user) => {
+                await claimPartnerOnEmailVerification({ userId: user.id, email: user.email });
+            },
             autoSignInAfterVerification: true
         },
 

@@ -157,6 +157,8 @@ export async function resolveLiveCommitmentReuse(input: {
     const { subscription } = input.commitment;
     if (subscription.status !== 'PENDING_AUTHORIZATION') throw commitmentTaken();
     if (subscription.billingOptionId !== input.billingOptionId) throw commitmentTaken();
+    // A live manual commitment occupies the slot; it is not a card creation in progress.
+    if (subscription.paymentMethod === 'MANUAL') throw commitmentTaken();
     const key = input.commitment.idempotencyKey;
     if (!key || key.completedAt === null) throw previousAttemptInProgress();
     const windowEndsAt = subscription.authorizationWindowEndsAt;

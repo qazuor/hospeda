@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { domainEvent } from '../../schemas/domain-event/domain_event.dbschema.ts';
 import {
@@ -50,6 +50,8 @@ export interface ListCancellationRetryPageInput {
     readonly afterSubscriptionId?: string;
     readonly limit: number;
     readonly unconfirmedOnly?: boolean;
+    /** Only rows whose most recent decision was recorded at or after this instant (HOS-1955). */
+    readonly decidedSince?: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -133,6 +135,7 @@ export class ReconciliationInventoryModel {
      * and at least one `subscription.provider_cancellation_decided` event, each with its most
      * recent decision. Keyset by `subscription.id` ascending, like `listSweepInventoryPage`; the
      * decision lookup rides `domain_event_entity_idx` (entity_type, entity_id, occurred_at).
+     * `decidedSince` limits the most recent decision by its recorded instant.
      */
     async listCancellationRetryPage(
         input: ListCancellationRetryPageInput
@@ -168,6 +171,9 @@ export class ReconciliationInventoryModel {
             .where(
                 and(
                     inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
+                    input.decidedSince === undefined
+                        ? undefined
+                        : gte(decision.decidedAt, input.decidedSince),
                     input.afterSubscriptionId === undefined
                         ? undefined
                         : gt(subscriptions.id, input.afterSubscriptionId),
