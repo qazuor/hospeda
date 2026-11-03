@@ -294,15 +294,24 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitMessage: 'accommodations.aiChat.consumerLimitReached'
         });
 
-        const listingSections =
-            entityType === 'venue' || entityType === 'experience'
-                ? resolveListingSections({
-                      vertical: entityType,
-                      businessLines: ownerRow.businessLines ?? [],
-                      effective: ownerEffectiveSet,
-                      userId: ownerId
-                  }).sections
-                : new Map();
+        const listingSections = (() => {
+            switch (entityType) {
+                case 'venue':
+                case 'experience':
+                    return resolveListingSections({
+                        vertical: entityType,
+                        businessLines: ownerRow.businessLines ?? [],
+                        effective: ownerEffectiveSet,
+                        userId: ownerId
+                    }).sections;
+                case 'accommodation':
+                    return new Map();
+                default: {
+                    const exhaustive: never = entityType;
+                    throw new Error(`Unsupported chat entity type: ${exhaustive}`);
+                }
+            }
+        })();
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
