@@ -124,6 +124,37 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:V7:4 claim on email verification', () => {
+    it('does not overwrite an owner set before verification', async () => {
+        const email = createApplicationEmail();
+        emails.push(email);
+        const applicationId = await insertPending({ email });
+        const adminId = await createUser(`admin-${crypto.randomUUID()}@example.test`);
+        const response = await approve(applicationId, adminId);
+        const payload = (await response.json()) as { data: { partnerId: string } };
+        const partnerId = payload.data.partnerId;
+        partners.push(partnerId);
+        const applicant = await getDb().execute(
+            sql`SELECT id FROM users WHERE lower(email) = lower(${email})`
+        );
+        const applicantId = String(applicant.rows[0]?.id);
+        users.push(applicantId);
+        const existingOwnerId = await createUser(`owner-${crypto.randomUUID()}@example.test`);
+        await getDb().execute(
+            sql`UPDATE partners SET owner_user_id = ${existingOwnerId}::uuid WHERE id = ${partnerId}::uuid`
+        );
+        const seededOwner = await getDb().execute(
+            sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+        );
+        expect(seededOwner.rows).toEqual([{ owner_user_id: existingOwnerId }]);
+
+        const token = await verificationToken();
+        await expectVerified(await verify(token));
+        const owner = await getDb().execute(
+            sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+        );
+        expect(owner.rows).toEqual([{ owner_user_id: existingOwnerId }]);
+    });
+
     it('(a,c) creates an unverified account on approval and claims once when the same link verifies it', async () => {
         const email = createApplicationEmail();
         emails.push(email);
