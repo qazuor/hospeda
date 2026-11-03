@@ -142,6 +142,27 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('TEST:HOS-1551:5 assigns ACC_13 only its own refund confirmation permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_13).toEqual({
+            permissions: [PermissionEnum.BILLING_REFUND],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_REFUND)).toBe(true);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_REFUND)).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_13',
+                actorPermissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_13',
+                actorPermissions: [PermissionEnum.BILLING_REFUND]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:1697:4 AC:1697:1 assigns ACC_7 only its own lift-reconciliation-mark permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_7).toEqual({
             permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],

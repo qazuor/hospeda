@@ -77,7 +77,7 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         pendingOwnPermission: null
     },
     ACC_12: { permissions: [PermissionEnum.LISTING_MODERATE], pendingOwnPermission: null },
-    ACC_13: { permissions: [], pendingOwnPermission: 'B6' },
+    ACC_13: { permissions: [PermissionEnum.BILLING_REFUND], pendingOwnPermission: null },
     ACC_14: { permissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL], pendingOwnPermission: null },
     ACC_15: {
         permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],

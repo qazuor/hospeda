@@ -88,8 +88,15 @@ function statusFor(error: PaymentProviderError): number {
     }
 }
 
-function errorBody(error: PaymentProviderError): Readonly<Record<string, string>> {
-    return { message: error.message, status: error.code, error: error.code };
+function errorBody(error: PaymentProviderError): Readonly<Record<string, unknown>> {
+    return {
+        message: error.message,
+        status: error.code,
+        error: error.code,
+        ...(error.refundRefusal === 'AMOUNT_NOT_ACCEPTED'
+            ? { cause: [{ code: 2084, description: error.message }] }
+            : {})
+    };
 }
 
 async function writeClockFile(args: { readonly path: string; readonly now: Date }): Promise<void> {

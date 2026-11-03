@@ -83,6 +83,7 @@ import {
     FAKE_CAPABILITY_SUPPORT,
     FAKE_HONEST_LINK_LIFETIME_MS,
     NOT_REFUNDABLE_MESSAGE,
+    notRefundable,
     rejected,
     throughNetwork
 } from './fake-support';
@@ -517,7 +518,7 @@ export class FakePaymentProvider implements PaymentProvider {
                 stored.refundAttempts += 1;
                 const partial = refunded < snapshot.amount.amountMinor;
                 if (stored.refundAttempts === 1 && partial && this.lying({ lie: 'M13' })) {
-                    throw rejected({ capability: 'refund', reason: NOT_REFUNDABLE_MESSAGE });
+                    throw notRefundable({ capability: 'refund' });
                 }
                 stored.snapshot = {
                     ...snapshot,

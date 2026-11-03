@@ -254,7 +254,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             }
         ]
     },
-    ACC_13: { unbound: 'B6 builds it' },
+    ACC_13: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-refund/admin/confirm.ts',
+                route: 'adminConfirmRefundRoute'
+            }
+        ]
+    },
     ACC_14: {
         bindings: [
             {
@@ -454,10 +462,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 37 bindings across 15 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(15);
+    it('b. checks exactly 38 bindings across 16 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(16);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(37);
+        expect(total).toBe(38);
     });
 
     it.each(

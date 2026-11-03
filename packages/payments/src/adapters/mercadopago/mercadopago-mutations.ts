@@ -69,6 +69,19 @@ export async function refundMercadoPagoPayment(
     }
     if (!response.ok) {
         const cause = await refundErrorCause(response);
+        const refusalCode =
+            typeof cause === 'object' &&
+            cause !== null &&
+            !Array.isArray(cause) &&
+            'cause' in cause &&
+            Array.isArray(cause.cause) &&
+            typeof cause.cause[0] === 'object' &&
+            cause.cause[0] !== null &&
+            'code' in cause.cause[0]
+                ? cause.cause[0].code
+                : undefined;
+        const refundRefusal =
+            refusalCode === 2084 || refusalCode === '2084' ? 'AMOUNT_NOT_ACCEPTED' : undefined;
         const code =
             response.status === 404
                 ? 'NOT_FOUND'
@@ -79,7 +92,8 @@ export async function refundMercadoPagoPayment(
             code,
             'refund',
             `Mercado Pago request failed (${response.status})`,
-            cause
+            cause,
+            refundRefusal
         );
     }
     if (response.status !== 201)
