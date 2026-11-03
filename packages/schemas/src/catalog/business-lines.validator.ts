@@ -1,6 +1,7 @@
 import { BUSINESS_LINE_RULES, BUSINESS_LINES } from './business-lines.js';
 import type { BusinessLineValue, ListingVertical } from './listing-catalog.types.js';
 
+/** Stable reason codes returned when a listing's selected business lines fail validation. */
 export const BUSINESS_LINE_VALIDATION_REASONS = {
     EMPTY: 'EMPTY',
     DUPLICATE: 'DUPLICATE',
@@ -9,25 +10,34 @@ export const BUSINESS_LINE_VALIDATION_REASONS = {
     MAX_EXCEEDED: 'MAX_EXCEEDED',
     EXCLUDED_PAIR: 'EXCLUDED_PAIR'
 } as const;
+/** A reason code from {@link BUSINESS_LINE_VALIDATION_REASONS}. */
 export type BusinessLineValidationReason =
     (typeof BUSINESS_LINE_VALIDATION_REASONS)[keyof typeof BUSINESS_LINE_VALIDATION_REASONS];
+/** Result of validating a business line selection. */
 export type BusinessLineValidationResult =
     | { readonly ok: true }
     | { readonly ok: false; readonly reason: BusinessLineValidationReason };
 
-type AnyRules = {
+/** Rule shape used to validate or resolve options for one listing vertical. */
+export type AnyRules = {
     readonly vertical: ListingVertical;
     readonly maxPerListing?: number;
     readonly excludes?: readonly (readonly [string, string])[];
     readonly typeRules: Readonly<Record<string, { readonly allowed: readonly string[] }>>;
 };
-type Args<V extends ListingVertical> = {
+/** Input accepted by {@link validateBusinessLines}. */
+export type ValidateBusinessLinesInput<V extends ListingVertical> = {
     readonly vertical: V;
     readonly type: string;
     readonly businessLines: readonly string[];
     readonly rules?: AnyRules;
 };
 
+/**
+ * Sorts a listing's selected business lines into their canonical catalog order.
+ * @param input - Listing vertical and selected business line values.
+ * @returns A new array containing the values in catalog order.
+ */
 export function normalizeBusinessLines<V extends ListingVertical>({
     vertical,
     businessLines
@@ -39,12 +49,17 @@ export function normalizeBusinessLines<V extends ListingVertical>({
     return [...businessLines].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
+/**
+ * Validates a business line selection against vertical and type-specific rules.
+ * @param input - Vertical, listing type, selected values, and optional rule override.
+ * @returns Whether the selection is valid, with a reason when it is not.
+ */
 export function validateBusinessLines<V extends ListingVertical>({
     vertical,
     type,
     businessLines,
     rules = BUSINESS_LINE_RULES[vertical] as unknown as AnyRules
-}: Args<V>): BusinessLineValidationResult {
+}: ValidateBusinessLinesInput<V>): BusinessLineValidationResult {
     if (businessLines.length === 0) return { ok: false, reason: 'EMPTY' };
     if (new Set(businessLines).size !== businessLines.length)
         return { ok: false, reason: 'DUPLICATE' };
@@ -67,6 +82,11 @@ export function validateBusinessLines<V extends ListingVertical>({
     return { ok: true };
 }
 
+/**
+ * Resolves every catalog option with its current selectable state and reason.
+ * @param input - Vertical, listing type, current selection, and optional rule override.
+ * @returns Catalog options marked selectable or paired with a blocking reason.
+ */
 export function resolveBusinessLineOptions<V extends ListingVertical>({
     vertical,
     type,
