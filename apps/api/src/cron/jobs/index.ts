@@ -17,6 +17,7 @@ export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
 export { billingCreationsSweepJob } from './billing-creations-sweep.job.js';
+export { billingDeferredCancellationRetryJob } from './billing-deferred-cancellation-retry.job.js';
 export { billingPromoEndingNoticeJob } from './billing-promo-ending-notice.job.js';
 export { billingReconciliationSummaryJob } from './billing-reconciliation-summary.job.js';
 // Import job definitions
@@ -52,6 +53,7 @@ export { refreshExternalReputationJob } from './refresh-external-reputation.job.
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
 export { subscriptionGraceReminderJob } from './subscription-grace-reminder.job.js';
+export { subscriptionPauseEndJob } from './subscription-pause-end.job.js';
 export { subscriptionRenewalNoticeJob } from './subscription-renewal-notice.job.js';
 export { subscriptionServiceEndJob } from './subscription-service-end.job.js';
 export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';

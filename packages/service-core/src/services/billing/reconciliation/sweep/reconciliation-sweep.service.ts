@@ -7,7 +7,7 @@ import {
     reconciliationSweepRunModel
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, type PaymentProvider } from '@repo/payments';
+import { actStartInstant, type PaymentProvider, runWithProviderReadScope } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -196,43 +196,48 @@ export async function runReconciliationSweep(
         });
         for (const { subscription, providerLink } of page) {
             try {
-                const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-                actStartInstant({ act });
-                const read = await ports.provider.readAuthorization({
-                    authorizationId: providerLink.providerId
-                });
-                await observeAuthorizationRead({
-                    read,
-                    act,
-                    subscriptionId: subscription.id,
-                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
-                    previouslySeenAt: providerLink.cancelledSeenAt
-                });
-                rowsRead++;
-                await compareRow({ subscription, providerLink, read, act });
-                await runReconciliationRowChecks(
-                    { subscription, providerLink, read, act },
-                    ports.rowChecks ?? []
-                );
-                // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
-                if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
-                    const decision = await reconciliationInventoryModel.findCancellationDecision({
-                        subscriptionId: subscription.id
-                    });
-                    if (decision) {
-                        const retried = await retryOurCancellation(
-                            {
-                                subscription,
-                                providerLink,
-                                decision,
-                                correlationId,
-                                prior: { read, act }
-                            },
-                            retryPorts
+                await runWithProviderReadScope({
+                    fn: async () => {
+                        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+                        actStartInstant({ act });
+                        const read = await ports.provider.readAuthorization({
+                            authorizationId: providerLink.providerId
+                        });
+                        await observeAuthorizationRead({
+                            read,
+                            act,
+                            subscriptionId: subscription.id,
+                            annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                            previouslySeenAt: providerLink.cancelledSeenAt
+                        });
+                        rowsRead++;
+                        await compareRow({ subscription, providerLink, read, act });
+                        await runReconciliationRowChecks(
+                            { subscription, providerLink, read, act },
+                            ports.rowChecks ?? []
                         );
-                        retryTally.add(retried.outcome);
+                        // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
+                        if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
+                            const decision =
+                                await reconciliationInventoryModel.findCancellationDecision({
+                                    subscriptionId: subscription.id
+                                });
+                            if (decision) {
+                                const retried = await retryOurCancellation(
+                                    {
+                                        subscription,
+                                        providerLink,
+                                        decision,
+                                        correlationId,
+                                        prior: { read, act }
+                                    },
+                                    retryPorts
+                                );
+                                retryTally.add(retried.outcome);
+                            }
+                        }
                     }
-                }
+                });
             } catch (error) {
                 rowsFailed++;
                 const message = errorMessage(error);

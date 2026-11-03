@@ -6,6 +6,7 @@ import type {
     ProviderRead
 } from '@repo/payments';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
+import { readChargeForAct } from './read-charge-for-act';
 
 /** The most recent listed charge record (by `createdAt`), read by id. */
 export interface PeriodChargesLatestCharge {
@@ -69,7 +70,11 @@ export async function readPeriodCharges(
         });
         const charges = await Promise.all(
             chargeIds.map(async (chargeId) => {
-                const read = await ports.provider.readCharge({ chargeId });
+                const read = await readChargeForAct({
+                    provider: ports.provider,
+                    chargeId,
+                    act: input.act
+                });
                 return assertFreshForAct({ read, act: input.act }).snapshot;
             })
         );

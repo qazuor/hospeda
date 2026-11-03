@@ -257,25 +257,44 @@ memo stores the promise and **evicts it when it rejects**, so one failed fetch
 the scope; only a resolved value stays memoized.
 
 **B2. Row-scoped memo in the sweep.** `runReconciliationSweep` opens one read
-scope per row, reset when the row ends. B2 memoizes **only the raw inputs B1
-already shares** — the `listCharges` result and the per-authorization charge
-records — never a stamped `ProviderRead`. Every `readCharge` / `readAuthorization`
-still builds and stamps a fresh `ProviderRead` at call time from those inputs
-(costing 1 request for the charge itself, 0 for the records).
+scope per row, reset when the row ends. B2 memoizes the raw inputs B1 already
+shares — the `listCharges` result and the per-authorization charge records — and
+shares a stamped `ProviderRead` **only within the same act object, never across
+acts**. Every `readAuthorization`, and every `readCharge` outside
+`readChargeForAct`, still builds and stamps a fresh `ProviderRead` at call time
+from those inputs (costing 1 request for the charge itself, 0 for the records).
 
-Memoizing a `ProviderRead` would break INV:D17 under **nested acts**: inside a
-row, the grace check reads the period at `grace-expiry-check.ts:193` and, on
-`CHARGED`, calls `settleChargedPeriod` (`:218`), which calls `recordChargeFact`
-(`:166`); that service opens its **own** act at its own `clock.now()` and runs
-`assertFreshForAct` on a `readCharge` made inside it
-(`record-charge-fact.service.ts:131-134`). A read memoized earlier in the row is
-stamped before that inner act started, so `assertFreshForAct` would throw and a
-GRACE row past its deadline with an approved charge would never leave grace.
-AC-26 pins this. The second inventory reader on the same row (comparison then
-lost-rejection) still reuses the listing and the records, which is where the
-cost was.
+Raw inputs alone do not reach the PR-2 target. The common row has **two**
+inventory readers that each read every listed charge by id: the period-charges
+comparison (`period-charges-comparison.ts:137`, through `readListedCharges`) and
+the lost-rejection check (`lost-rejection-check.ts:38`, through
+`readPeriodCharges`). Both receive the **same** `act` object for the row. With
+only raw inputs memoized the row costs `1 + P + 2N` (12 months: 27). So both
+readers read charges through `readChargeForAct` (service-core), which shares one
+stamped `ProviderRead` per `(act object, chargeId)` inside the row's scope, keyed
+by the identity of the act object, never by its instant.
 
-After B1 + B2 the common row costs `1 + P + N` (12 months: 15, down from 77). Still
+Sharing a `ProviderRead` **across** acts would break INV:D17 under **nested
+acts**: inside a row, the grace check reads the period at
+`grace-expiry-check.ts:193` and, on `CHARGED`, calls `settleChargedPeriod`
+(`:218`), which calls `recordChargeFact` (`:166`); that service opens its **own**
+act at its own `clock.now()` and runs `assertFreshForAct` on a `readCharge` made
+inside it (`record-charge-fact.service.ts:131-134`). A read stamped earlier in the
+row predates that inner act, so `assertFreshForAct` would throw and a GRACE row
+past its deadline with an approved charge would never leave grace. The act-keyed
+share cannot reach it: the nested act is a different object, and
+`recordChargeFact` calls `provider.readCharge` directly, so it always reads live.
+AC-26 pins this, and AC-39 pins that the nested read reaches the provider.
+
+**Decision (orchestrator, 2026-11-03, PR #4042 review):** share stamped reads
+within one act object through `readChargeForAct` only. The reviewer found no
+money path that decides on data staler than INV:D17 already tolerates (every
+reader of a shared read belongs to the act it was read in, after that act
+started). The owner can revert it: removing the share costs `N` more requests per
+common row (`1 + P + 2N`) and changes no decision.
+
+After B1 + B2 (with the act-keyed share) the common row costs `1 + P + N` (12
+months: 15, down from 77; `1 + P + 2N` = 27 without the share). Still
 linear in N, so:
 
 **B3. Persisted charge snapshots.** New table `provider_charge_snapshot`
@@ -653,7 +672,8 @@ under their topic, so numbers are not consecutive within a section.
 Request-count targets per PR, for an ACTIVE credited row with 12 monthly
 records and no new charge since the previous run, counted in the fake server's
 request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
-**≤ 15** after PR-2 (B1 + B2: `1 + P + N`); **≤ 4** after PR-6 (B3: `2 + P`).
+**≤ 15** after PR-2 (B1 + B2 with the act-keyed share of §6.2: `1 + P + N`;
+`1 + P + 2N` = 27 without it); **≤ 4** after PR-6 (B3: `2 + P`).
 
 - **AC-9** (PR-6) Given deadline 18 shorter than the charge cadence (so only the
   latest charge is younger than the horizon) and the row above, when the sweep
@@ -687,6 +707,12 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
 - **AC-35** Given a fetch in one read scope that rejects, then the callers
   already awaiting it receive the rejection, the promise is evicted, and the next
   caller in the scope issues a new request.
+- **AC-39** (PR-2, added 2026-11-03) Given a sweep-row read scope and one act
+  object, when `readListedCharges` and `readPeriodCharges` read the same charge,
+  then the provider sees one `/v1/payments/{id}` request for that act; when a
+  nested `recordChargeFact` then reads the same charge, the provider sees one more
+  request (the nested act reads live), and a different act object with the same
+  instant never receives the shared read.
 - **AC-14** Given two due pending creations sharing a payer email, then one run
   issues one search; given a pending row created at T, then it is searched no
   earlier than T+5 min, then T+20 min, then at most every 60 min (each slot
@@ -767,7 +793,7 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
 
 Mutation-sensitive by design: every test names the mutation it must kill, and
 the implementer records the mutation run on the PR (a survivor blocks merge).
-Full matrix (48 tests, 15 of them for the resumable cycle) in
+Full matrix (49 tests, 15 of them for the resumable cycle) in
 [`docs/data-model-and-tests.md`](docs/data-model-and-tests.md). The cycle tests
 drive slices with an injected clock and signal against a real DB, and assert on
 `reconciliation_sweep_run` rows plus the fake server's request log. The
@@ -783,8 +809,11 @@ load-bearing ones for A and B:
   baseline (77) to ≤ 15 after PR-2 and ≤ 4 after PR-6 in steady state; kills
   "B1 scope or B2 memo bypassed" and "snapshots not consulted".
 - **The memo does not break nested acts** (AC-26) — GRACE row past its deadline
-  with an approved charge, B2 on: the row leaves grace; kills "B2 memoizes a
-  stamped `ProviderRead`".
+  with an approved charge, B2 on, with a clock that advances between reads: the
+  row leaves grace; kills "B2 shares a stamped `ProviderRead` across acts".
+- **The nested act reads live** (AC-39) — inside one row scope the outer act's
+  two readers cost one charge request, and a nested `recordChargeFact` costs one
+  more; kills "the nested read served from the row's cache".
 
 The fake server gains a throttle mode (§7) so 429 paths run over real HTTP.
 Assertions count **HTTP requests seen by the fake server**, never provider method
@@ -802,8 +831,10 @@ it against the fake server's log.
    fake-server throttle, plus the class-propagation guard (AC-33). Ship, collect
    a week of `mp_traffic_window` baseline (this is the "before" for G-4 and the
    evidence to retune OQ-3's constants). Target: **77, unchanged**.
-2. **PR-2 B1 + B2** (no schema), including the nested-act test (AC-26) and the
-   rejected-promise eviction (AC-35). Target: **≤ 15**.
+2. **PR-2 B1 + B2** (no schema), including the nested-act test (AC-26), the
+   rejected-promise eviction (AC-35) and the act-keyed charge-read share with its
+   live nested read (AC-39, §6.2 decision of 2026-11-03). Target: **≤ 15**
+   (`1 + P + N`; `1 + P + 2N` = 27 without the act-keyed share).
 3. **PR-3 Governor `enforce` + retry rework** (L1/L2/L3 changes, gated by mode,
    with the legacy parity test, AC-28), the dedicated Redis client for the
    shared cool-down (OQ-1) and the webhook `DEFERRED` mapping (AC-29). Staging
