@@ -689,6 +689,7 @@
         "total_other": "Total: {{count}} avaliações",
         "typeAccommodation": "Acomodação",
         "typeDestination": "Destino",
+        "listingGone": "Este anúncio não existe mais",
         "status": {
             "approved": "Publicada",
             "pending": "Pendente de aprovação",
