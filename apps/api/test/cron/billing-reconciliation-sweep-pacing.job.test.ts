@@ -1,26 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockProvider, pacedProvider, mockPaced, mockSweep, factories } = vi.hoisted(() => {
-    const provider = { sentinel: 'original' };
-    const paced = { sentinel: 'paced' };
-    return {
-        mockProvider: provider,
-        pacedProvider: paced,
-        mockPaced: vi.fn(() => paced),
-        mockSweep: vi.fn(),
-        factories: {
-            period: vi.fn((ports: unknown) => ({ kind: 'period', ports })),
-            amount: vi.fn((ports: unknown) => ({ kind: 'amount', ports })),
-            pause: vi.fn((_ports: unknown) => async () => undefined),
-            lost: vi.fn((_ports: unknown) => async () => undefined),
-            pending: vi.fn((_ports: unknown) => async () => undefined),
-            successor: vi.fn((_ports: unknown) => async () => undefined),
-            grace: vi.fn((_ports: unknown) => async () => undefined),
-            promo: vi.fn((ports: unknown) => ({ kind: 'promo', ports }))
-        }
-    };
-});
+const { mockProvider, pacedProvider, mockPaced, mockSweep, factories, enforcing } = vi.hoisted(
+    () => {
+        const provider = { sentinel: 'original' };
+        const paced = { sentinel: 'paced' };
+        return {
+            mockProvider: provider,
+            pacedProvider: paced,
+            mockPaced: vi.fn(() => paced),
+            mockSweep: vi.fn(),
+            enforcing: vi.fn(() => false),
+            factories: {
+                period: vi.fn((ports: unknown) => ({ kind: 'period', ports })),
+                amount: vi.fn((ports: unknown) => ({ kind: 'amount', ports })),
+                pause: vi.fn((_ports: unknown) => async () => undefined),
+                lost: vi.fn((_ports: unknown) => async () => undefined),
+                pending: vi.fn((_ports: unknown) => async () => undefined),
+                successor: vi.fn((_ports: unknown) => async () => undefined),
+                grace: vi.fn((_ports: unknown) => async () => undefined),
+                promo: vi.fn((ports: unknown) => ({ kind: 'promo', ports }))
+            }
+        };
+    }
+);
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
@@ -37,6 +40,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: { now: vi.fn() } }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
+vi.mock('../../src/utils/mp-traffic-governor.js', () => ({
+    isMercadoPagoGovernorEnforcing: enforcing
+}));
 vi.mock('../../src/utils/billing-complement-ports.js', () => ({
     buildComplementPolicyPorts: () => ({ addonPolicy: {}, listing: {}, liveAnchors: {} })
 }));
@@ -90,7 +96,8 @@ describe('TEST:1737 reconciliation sweep job pacing', () => {
         expect(mockPaced).toHaveBeenCalledTimes(1);
         expect(mockPaced).toHaveBeenCalledWith({
             provider: mockProvider,
-            pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+            pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+            retryOwnership: 'legacy'
         });
         const ports = mockSweep.mock.calls[0]?.[1] as { provider: unknown };
         expect(ports.provider).toBe(pacedProvider);
@@ -102,6 +109,18 @@ describe('TEST:1737 reconciliation sweep job pacing', () => {
             expect(providerPorts.some((value) => value.provider === pacedProvider)).toBe(true);
             expect(providerPorts.some((value) => value.provider === mockProvider)).toBe(false);
         }
+    });
+
+    it('hands retry ownership to the governor only under enforce (HOS-1999 AC-28, kills ungated L2 rework)', async () => {
+        enforcing.mockReturnValueOnce(true);
+        await billingReconciliationSweepJob.handler(context());
+        expect(mockPaced).toHaveBeenLastCalledWith(
+            expect.objectContaining({ retryOwnership: 'governor' })
+        );
+        await billingReconciliationSweepJob.handler(context());
+        expect(mockPaced).toHaveBeenLastCalledWith(
+            expect.objectContaining({ retryOwnership: 'legacy' })
+        );
     });
 
     it('TEST:1737:19 creates one budget per run and skips it in dry-run mode', async () => {

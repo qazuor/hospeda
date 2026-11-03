@@ -399,6 +399,34 @@ describe('creation sweep persistence (supports TEST:B11:23)', () => {
         });
     });
 
+    it('reads and upserts creation sweep search cadence rows', async () => {
+        await withTestTransaction(async (tx) => {
+            const anchors = await seedAnchors(tx);
+            const row = await addRow({ tx, anchors });
+            const nextSearchAt = new Date('2026-11-03T10:15:00.000Z');
+            expect(
+                await model.listAttempts({ subscriptionIds: [row.subscription.id], tx })
+            ).toEqual([]);
+            await model.upsertAttempt({
+                subscriptionId: row.subscription.id,
+                attempts: 1,
+                nextSearchAt,
+                resetMarker: 'create-key-1',
+                tx
+            });
+            await model.upsertAttempt({
+                subscriptionId: row.subscription.id,
+                attempts: 2,
+                nextSearchAt: new Date(nextSearchAt.getTime() + 60_000),
+                resetMarker: 'create-key-2',
+                tx
+            });
+            await expect(
+                model.listAttempts({ subscriptionIds: [row.subscription.id], tx })
+            ).resolves.toMatchObject([{ attempts: 2, resetMarker: 'create-key-2' }]);
+        });
+    });
+
     it('HOS-1725 completeNewestCreateKey completes nothing for a row without a creation key', async () => {
         await withTestTransaction(async (tx) => {
             const anchors = await seedAnchors(tx);
