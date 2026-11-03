@@ -64,7 +64,7 @@ export const REGISTER_MANUAL_PAYMENT_REJECTIONS = [
 /** One rejected MP1 condition. */
 export type RegisterManualPaymentRejection = (typeof REGISTER_MANUAL_PAYMENT_REJECTIONS)[number];
 /** The transition caused by a successful MP1. */
-export type ManualPaymentRegistrationEffect = 'S29' | 'S5' | 'S19';
+export type ManualPaymentRegistrationEffect = 'S29' | 'S5' | 'S19' | 'NONE';
 /** Dependencies of MP1's post-commit work. */
 export interface RegisterManualPaymentPorts {
     readonly clock: Clock;
@@ -150,7 +150,7 @@ async function check(input: Input, tx: DrizzleClient, lock: boolean): Promise<Ch
         else if (subscription.succeededById || (await hasOtherLivePrincipal({ subscription, tx })))
             reject(ServiceErrorCode.ALREADY_EXISTS, 'MANUAL_PAYMENT_CONDITION_FAILED');
     }
-    if (subscription.status === 'ACTIVE') effect = 'S5'; // Registration has no state transition.
+    if (subscription.status === 'ACTIVE') effect = 'NONE';
     const [option] = subscription.billingOptionId
         ? await tx
               .select({ cycle: billingOptions.cycle })

@@ -239,9 +239,12 @@ describe('TEST:B5:7 MP1 / S29 / S5', () => {
 
     it('registers on an active row without changing its status', async () => {
         const fixture = await seed({ status: 'ACTIVE', prior: true });
+        const preview = await previewManualPaymentRegistration(fixture.request);
+        expect(preview.effect).toBe('NONE');
         const result = await registerManualPayment(fixture.request, { clock });
         const rows = await state(fixture);
         expect(result.outcome).toBe('REGISTERED');
+        expect(result.effect).toBe('NONE');
         expect(rows.subscription).toMatchObject({
             status: 'ACTIVE',
             nextChargeAt: new Date('2026-10-03T12:00:00.000Z')
