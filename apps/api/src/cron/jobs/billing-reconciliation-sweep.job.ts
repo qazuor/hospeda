@@ -33,6 +33,7 @@ import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-co
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { createApiListingInverse } from '../../utils/listing-publication/listing-inverse.js';
+import { isMercadoPagoGovernorEnforcing } from '../../utils/mp-traffic-governor.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -62,7 +63,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             // HOS-1737 gives this sweep run its own paced provider instance.
             const provider = createSweepPacedProvider({
                 provider: getPaymentProvider(),
-                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+                retryOwnership: isMercadoPagoGovernorEnforcing() ? 'governor' : 'legacy'
             });
             const clock = getClock().clock;
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });

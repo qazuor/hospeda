@@ -77,6 +77,7 @@ export type {
     ChargeInput,
     ChargePurpose,
     ChargeRef,
+    ChargeRefund,
     ChargeResult,
     ChargeSnapshot,
     ChargeStatus,

@@ -62,6 +62,10 @@ import {
     type ReadState
 } from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
+import {
+    type ConfirmedRefundsForNotice,
+    executeConfirmedRefundsOnNotice
+} from './refund-execution-on-notice.js';
 import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
 
 const logger = createLogger('process-provider-notice');
@@ -98,6 +102,7 @@ type Outcome =
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
+    readonly rateLimitDeferral?: { readonly coolDownRemainingMs: () => number };
     readonly clock: Clock;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
@@ -123,6 +128,7 @@ export interface ProcessProviderNoticePorts {
     readonly markPayments?: ReconciliationMarkPayments;
     /** The internal chargeback interface (AC:B11:27), handed to `recordChargeFact`. */
     readonly chargebacks?: ChargebackDetection;
+    readonly confirmedRefunds?: ConfirmedRefundsForNotice;
     readonly complements?: ComplementPolicyPorts;
 }
 
@@ -207,7 +213,11 @@ async function resolveUnknownAuthorization(
 export async function processProviderNotice(
     input: { readonly channel: 'WEBHOOKS' | 'IPN'; readonly delivery: NoticeDelivery },
     ports: ProcessProviderNoticePorts
-): Promise<{ readonly ack: 'OK' | 'ERROR'; readonly outcome: Outcome }> {
+): Promise<{
+    readonly ack: 'OK' | 'ERROR';
+    readonly outcome: Outcome;
+    readonly retryAfterSeconds?: number;
+}> {
     try {
         const value = inputSchema.parse(input);
         if (value.channel === 'IPN') return { ack: 'OK', outcome: 'IPN_NOT_PROCESSED' };
@@ -238,6 +248,14 @@ export async function processProviderNotice(
                 return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
             if (result.outcome === 'NO_SUBSCRIPTION')
                 return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+            await executeConfirmedRefundsOnNotice(
+                {
+                    paymentId: result.paymentId,
+                    providerFactId: notice.resourceId,
+                    correlationId: crypto.randomUUID()
+                },
+                ports
+            );
             if (result.outcome === 'RECORDED_PENDING')
                 return { ack: 'OK', outcome: 'PAYMENT_RECORDED' };
             if (result.outcome === 'CREDITED')
@@ -482,6 +500,18 @@ export async function processProviderNotice(
         // deliberate retryable status instead of a generic failure.
         if (error instanceof PaymentProviderError && error.incompleteRead)
             return { ack: 'ERROR', outcome: 'DEFERRED' };
+        if (
+            ports.rateLimitDeferral &&
+            error instanceof PaymentProviderError &&
+            error.transient?.kind === 'RATE_LIMITED'
+        ) {
+            const remaining = ports.rateLimitDeferral.coolDownRemainingMs();
+            return {
+                ack: 'ERROR',
+                outcome: 'DEFERRED',
+                retryAfterSeconds: Math.min(120, Math.max(1, Math.ceil(remaining / 1000)))
+            };
+        }
         return { ack: 'ERROR', outcome: 'FAILED' };
     }
 }

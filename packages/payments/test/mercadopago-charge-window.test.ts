@@ -66,7 +66,8 @@ const rejectedExpected = {
     declineReason: 'cc_rejected_high_risk',
     amount: { amountMinor: 1500, currency: 'ARS' },
     refundedAmount: { amountMinor: 0, currency: 'ARS' },
-    chargedBack: false
+    chargedBack: false,
+    refunds: []
 };
 
 describe('TEST:1710:6 AC:1710:5-6 measured charge window reads', () => {
@@ -95,7 +96,8 @@ describe('TEST:1710:6 AC:1710:5-6 measured charge window reads', () => {
             declineReason: null,
             amount: { amountMinor: 1500, currency: 'ARS' },
             refundedAmount: { amountMinor: 0, currency: 'ARS' },
-            chargedBack: false
+            chargedBack: false,
+            refunds: []
         });
     });
     it('TEST:1710:6 AC:1710:5 keeps selection stable with ascending record order', async () => {
@@ -125,7 +127,14 @@ describe('TEST:1710:6 AC:1710:5-6 measured charge window reads', () => {
             declineReason: null,
             amount: { amountMinor: 1500, currency: 'ARS' },
             refundedAmount: { amountMinor: 1500, currency: 'ARS' },
-            chargedBack: false
+            chargedBack: false,
+            refunds: [
+                {
+                    refundId: '3269585727',
+                    amount: { amountMinor: 1500, currency: 'ARS' },
+                    accredited: true
+                }
+            ]
         });
     });
 });

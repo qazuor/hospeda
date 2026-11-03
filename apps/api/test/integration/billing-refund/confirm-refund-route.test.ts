@@ -1,4 +1,5 @@
 import { eq, getDb, payments, refunds } from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -6,6 +7,7 @@ import { AuditEventType } from '../../../src/utils/audit-logger';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
+import { NOW } from '../billing-subscription/revocation-route-fixtures';
 import {
     baselineFake,
     cleanupConfirmRefundRows,
@@ -33,6 +35,7 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         app = initApp({ clock: confirmClock, paymentProvider: confirmFake });
     });
     afterEach(() => {
+        confirmClock.set(NOW);
         injectPaymentProvider({ provider: baselineFake });
         vi.restoreAllMocks();
     });
@@ -196,5 +199,65 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         });
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('REQUESTED');
         expect(refundSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('TEST:B6:5 AC:B6:7 answers 422 past the provider window without reading or refunding', async () => {
+        // Arrange
+        const seeded = await seedConfirmRefund();
+        const [payment] = await getDb()
+            .select({ factAt: payments.factAt })
+            .from(payments)
+            .where(eq(payments.id, seeded.paymentId));
+        if (!payment) throw new Error('seeded payment missing');
+        confirmClock.set(new Date(payment.factAt.getTime() + 180 * 86400000));
+        const readSpy = vi.spyOn(confirmFake, 'readCharge');
+        const refundSpy = vi.spyOn(confirmFake, 'refund');
+
+        // Act
+        const response = await confirmRequest(app, seeded.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+
+        // Assert
+        expect(response.status).toBe(422);
+        expect((await response.json()).error).toMatchObject({
+            code: 'VALIDATION_ERROR',
+            reason: 'REFUND_PAST_PROVIDER_WINDOW'
+        });
+        const rows = await confirmRows(seeded.refundId);
+        expect(rows.refund?.status).toBe('REQUESTED');
+        expect(rows.calls).toHaveLength(0);
+        expect(rows.keys).toHaveLength(0);
+        expect(readSpy).toHaveBeenCalledTimes(0);
+        expect(refundSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('TEST:B6:5 AC:B6:7 returns a validated 200 for a definitive provider rejection', async () => {
+        // Arrange
+        const seeded = await seedConfirmRefund();
+        vi.spyOn(confirmFake, 'refund').mockRejectedValueOnce(
+            new PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'refund',
+                message: 'refund rejected'
+            })
+        );
+
+        // Act
+        const response = await confirmRequest(app, seeded.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({
+            status: 'FAILED',
+            outcome: 'PROVIDER_REJECTED_FAILED'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('FAILED');
     });
 });

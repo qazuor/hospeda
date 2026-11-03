@@ -89,7 +89,8 @@
     "platform": {
         "title": "Platform",
         "hostTrades": "Trades Directory",
-        "featureFlags": "Feature Flags"
+        "featureFlags": "Feature Flags",
+        "partnerApplications": "Partner applications"
     },
     "sponsors": "Sponsors",
     "analytics": {

@@ -29,7 +29,16 @@ const ReadChargeResponseSchema = z.object({
     transaction_amount: z.number().nonnegative(),
     currency_id: z.string().min(1),
     // null is read as absent, so an approved payment without it still fails closed below.
-    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() })
+    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() }),
+    refunds: nullAsAbsent({
+        schema: z.array(
+            z.object({
+                id: z.union([z.string(), z.number()]).transform(String),
+                amount: z.number().nonnegative(),
+                status: z.string().min(1)
+            })
+        )
+    })
 });
 
 /**
@@ -104,6 +113,11 @@ export async function readMercadoPagoCharge(args: {
             amountMinor: Math.round((refundedAmount ?? 0) * 100),
             currency: parsed.currency_id
         },
+        refunds: (parsed.refunds ?? []).map((r) => ({
+            refundId: r.id,
+            amount: { amountMinor: Math.round(r.amount * 100), currency: parsed.currency_id },
+            accredited: r.status === 'approved'
+        })),
         chargedBack: parsed.status === 'charged_back'
     };
 }

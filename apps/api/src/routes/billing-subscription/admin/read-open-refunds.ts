@@ -1,5 +1,7 @@
 import { and, asc, eq, getDb, manualPayments, or, payments, refunds } from '@repo/db';
 import type { SubscriptionOpenRefund } from '@repo/schemas';
+import { providerRefundWindow } from '@repo/service-core';
+import { getClock } from '../../../utils/clock';
 
 /** Read the REQUESTED RF1 rows attached to payment ledgers of this subscription only (I-7). */
 export async function readOpenRefunds({
@@ -14,6 +16,7 @@ export async function readOpenRefunds({
             reason: refunds.reason,
             requestedAt: refunds.createdAt,
             paymentId: refunds.paymentId,
+            paymentFactAt: payments.factAt,
             manualPaymentId: refunds.manualPaymentId
         })
         .from(refunds)
@@ -33,12 +36,22 @@ export async function readOpenRefunds({
     return {
         items: rows.map((row) => {
             if (row.paymentId) {
+                if (!row.paymentFactAt)
+                    throw new Error(`Payment ${row.paymentId} has no fact date`);
+                const window = providerRefundWindow({
+                    factAt: row.paymentFactAt,
+                    now: getClock().clock.now()
+                });
                 return {
                     refundId: row.refundId,
                     refundAmount: row.refundAmount,
                     reason: row.reason,
                     requestedAt: row.requestedAt.toISOString(),
-                    payment: { source: 'PAYMENT', id: row.paymentId }
+                    payment: { source: 'PAYMENT', id: row.paymentId },
+                    providerRefundWindow: {
+                        open: window.open,
+                        closesAt: window.closesAt.toISOString()
+                    }
                 };
             }
             if (row.manualPaymentId) {
@@ -47,7 +60,8 @@ export async function readOpenRefunds({
                     refundAmount: row.refundAmount,
                     reason: row.reason,
                     requestedAt: row.requestedAt.toISOString(),
-                    payment: { source: 'MANUAL_PAYMENT', id: row.manualPaymentId }
+                    payment: { source: 'MANUAL_PAYMENT', id: row.manualPaymentId },
+                    providerRefundWindow: null
                 };
             }
             throw new Error(`Refund ${row.refundId} has no payment ledger`);

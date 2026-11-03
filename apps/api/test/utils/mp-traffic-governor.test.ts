@@ -4,18 +4,21 @@ const { info, warn } = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn() }));
 vi.mock('../../src/utils/logger', () => ({ apiLogger: { info, warn } }));
 
 import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
-import { createMercadoPagoTrafficGovernor } from '../../src/utils/mp-traffic-governor';
+import {
+    createMercadoPagoTrafficGovernor,
+    mercadoPagoRateLimitDeferral
+} from '../../src/utils/mp-traffic-governor';
 
 afterEach(() => vi.clearAllMocks());
 
 describe('Mercado Pago traffic governor composition', () => {
-    it('supports off, observe, and enforce degradation with one warning (kills enforce activation before PR-3)', () => {
+    it('supports off, observe, and enforce without constructing Redis outside enforce (kills mode degradation)', () => {
         expect(createMercadoPagoTrafficGovernor({ mode: 'off' })).toBeUndefined();
         const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
         expect(observe).toMatchObject({ mode: 'observe' });
         const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
-        expect(enforce).toMatchObject({ mode: 'observe' });
-        expect(warn).toHaveBeenCalledTimes(1);
+        expect(enforce).toMatchObject({ mode: 'enforce' });
+        expect(warn).not.toHaveBeenCalled();
         observe?.stop();
         enforce?.stop();
     });
@@ -61,5 +64,16 @@ describe('Mercado Pago traffic governor composition', () => {
             })
         );
         governor?.stop();
+    });
+
+    it('offers the webhook deferral port only under enforce (kills deferring in observe)', () => {
+        const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
+        const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(mercadoPagoRateLimitDeferral({ governor: undefined })).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor: observe })).toBeUndefined();
+        const port = mercadoPagoRateLimitDeferral({ governor: enforce });
+        expect(port?.coolDownRemainingMs()).toBe(0);
+        observe?.stop();
+        enforce?.stop();
     });
 });

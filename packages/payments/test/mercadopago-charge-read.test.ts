@@ -78,7 +78,8 @@ describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
             declineReason: null,
             amount: { amountMinor: 200000, currency: 'ARS' },
             refundedAmount: { amountMinor: 0, currency: 'ARS' },
-            chargedBack: false
+            chargedBack: false,
+            refunds: []
         });
     });
 });
