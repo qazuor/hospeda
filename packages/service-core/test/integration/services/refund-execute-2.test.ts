@@ -10,59 +10,56 @@ afterAll(closeServiceTestPool);
 const skip = !isServiceTestDbAvailable();
 
 describe('TEST:B6:4 AC:B6:5 delayed and repeated provider reads', () => {
-    it.skipIf(skip)(
-        '(g) awaits an unanswered provider call without reading the charge',
-        async () => {
-            // Arrange
-            const seeded = await refundConfirmFixture();
-            let readCount = 0;
-            const provider = new Proxy(seeded.fixture.provider, {
-                get(target, property, receiver) {
-                    if (property === 'refund') return async () => ({ refundId: '' });
-                    if (property === 'readCharge')
-                        return async (input: Parameters<typeof target.readCharge>[0]) => {
-                            readCount++;
-                            return target.readCharge(input);
-                        };
-                    return Reflect.get(target, property, receiver);
-                }
-            });
-            await confirmRefund(
-                { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider }
-            );
-            readCount = 0;
-            const before = await executeRows(seeded.refundId, seeded.payment.id);
+    it.skipIf(skip)('(g) rereads an unanswered provider call without executing it', async () => {
+        // Arrange
+        const seeded = await refundConfirmFixture();
+        let readCount = 0;
+        const provider = new Proxy(seeded.fixture.provider, {
+            get(target, property, receiver) {
+                if (property === 'refund') return async () => ({ refundId: '' });
+                if (property === 'readCharge')
+                    return async (input: Parameters<typeof target.readCharge>[0]) => {
+                        readCount++;
+                        return target.readCharge(input);
+                    };
+                return Reflect.get(target, property, receiver);
+            }
+        });
+        await confirmRefund(
+            { actor: seeded.actor, refundId: seeded.refundId },
+            { clock: seeded.fixture.clock, provider }
+        );
+        readCount = 0;
+        const before = await executeRows(seeded.refundId, seeded.payment.id);
 
-            // Act
-            const result = await executeRefundFromProviderRead(
-                { refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider }
-            );
+        // Act
+        const result = await executeRefundFromProviderRead(
+            { refundId: seeded.refundId },
+            { clock: seeded.fixture.clock, provider }
+        );
 
-            // Assert
-            const after = await executeRows(seeded.refundId, seeded.payment.id);
-            expect(result).toEqual({
-                refundId: seeded.refundId,
-                outcome: 'AWAITING_PROVIDER_ANSWER',
-                paymentEffect: null
-            });
-            expect(readCount).toBe(0);
-            expect(after.refund).toMatchObject({
-                status: 'CONFIRMED',
-                version: before.refund!.version
-            });
-            expect({
-                status: after.payment?.status,
-                refundedAmount: after.payment?.refundedAmount,
-                version: after.payment?.version
-            }).toEqual({
-                status: before.payment?.status,
-                refundedAmount: before.payment?.refundedAmount,
-                version: before.payment?.version
-            });
-        }
-    );
+        // Assert
+        const after = await executeRows(seeded.refundId, seeded.payment.id);
+        expect(result).toEqual({
+            refundId: seeded.refundId,
+            outcome: 'AWAITING_PROVIDER_ANSWER',
+            paymentEffect: null
+        });
+        expect(readCount).toBe(1);
+        expect(after.refund).toMatchObject({
+            status: 'CONFIRMED',
+            version: before.refund!.version
+        });
+        expect({
+            status: after.payment?.status,
+            refundedAmount: after.payment?.refundedAmount,
+            version: after.payment?.version
+        }).toEqual({
+            status: before.payment?.status,
+            refundedAmount: before.payment?.refundedAmount,
+            version: before.payment?.version
+        });
+    });
 
     it.skipIf(skip)('(h) leaves a requested refund untouched', async () => {
         // Arrange
