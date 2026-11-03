@@ -403,6 +403,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/confirm"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {

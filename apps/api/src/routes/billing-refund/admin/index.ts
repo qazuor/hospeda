@@ -1,8 +1,10 @@
 import { createRouter } from '../../../utils/create-app';
+import { adminConfirmRefundRoute } from './confirm';
 import { adminSettleExternalRefundRoute } from './settle-external';
 import { adminSettleExternalChargeRoute } from './settle-external-charge';
 
 const router = createRouter();
+router.route('/', adminConfirmRefundRoute);
 router.route('/', adminSettleExternalRefundRoute);
 router.route('/', adminSettleExternalChargeRoute);
 

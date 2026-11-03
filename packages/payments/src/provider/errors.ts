@@ -3,6 +3,9 @@
  */
 import type { PaymentCapability } from './capabilities';
 
+/** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
+export type RefundRefusal = 'AMOUNT_NOT_ACCEPTED';
+
 /**
  * Why a provider refused.
  *
@@ -48,6 +51,8 @@ export interface PaymentProviderErrorInput {
     readonly providerStatus?: string;
     readonly providerCadence?: string;
     readonly transient?: TransientProviderFailure;
+    /** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
+    readonly refundRefusal?: RefundRefusal;
 }
 
 /** A typed refusal from a payment provider. */
@@ -62,6 +67,8 @@ export class PaymentProviderError extends Error {
     readonly providerCadence?: string;
     /** Set when the failure is transient and worth retrying later (HOS-1968). */
     readonly transient?: TransientProviderFailure;
+    /** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
+    readonly refundRefusal?: RefundRefusal;
 
     /**
      * @param input.code - Why the provider refused
@@ -82,5 +89,6 @@ export class PaymentProviderError extends Error {
         this.providerStatus = input.providerStatus;
         this.providerCadence = input.providerCadence;
         this.transient = input.transient;
+        this.refundRefusal = input.refundRefusal;
     }
 }

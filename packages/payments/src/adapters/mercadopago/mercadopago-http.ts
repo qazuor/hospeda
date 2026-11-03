@@ -151,12 +151,14 @@ export function providerError(
     code: 'UNAVAILABLE' | 'NOT_FOUND' | 'REJECTED',
     capability: PaymentCapability,
     message: string,
-    cause?: unknown
+    cause?: unknown,
+    refundRefusal?: 'AMOUNT_NOT_ACCEPTED'
 ): PaymentProviderError {
     return new PaymentProviderError({
         code,
         capability,
         message,
-        ...(cause === undefined ? {} : { cause })
+        ...(cause === undefined ? {} : { cause }),
+        ...(refundRefusal === undefined ? {} : { refundRefusal })
     });
 }
