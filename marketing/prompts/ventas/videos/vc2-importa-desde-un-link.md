@@ -15,6 +15,11 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 
 ## Prompt para Claude Code
 
+**Adjuntar y reemplazar:**
+
+- `Nada al empezar: Claude graba las pantallas reales en staging.` → undefined
+- `Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida (antes del cierre y antes de cada render o corrección)` → undefined
+
 ````
 Hacé en Remotion el video de venta VC2 · «Ya lo tenés publicado: importalo» (20 a 25 s).
 
