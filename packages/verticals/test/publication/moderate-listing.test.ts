@@ -176,6 +176,31 @@ describe('listing moderation gestures', () => {
             });
         });
 
+        it.each([
+            ['an uncovered owner', { covered: false }],
+            ['no declared limit', { declaredLimit: null }],
+            ['a quota of zero', { limit: 0 }]
+        ] as const)('TEST:V6:11 carries no quotaFull flag for %s (HOS-1997)', async (_label, options) => {
+            const harness = makeHarness({
+                status: Status.MODERATED,
+                covered: true,
+                limit: 1,
+                moderationOrigin: { from: Status.PUBLISHED, archiveOrigin: null },
+                ...options
+            });
+            const result = await liftModeration({
+                ...base(harness),
+                billing: harness.billing,
+                keepFixRequest: false
+            });
+            expect(result).toMatchObject({
+                ok: true,
+                publicationStatus: Status.UNPUBLISHED_BY_BILLING,
+                lowered: []
+            });
+            expect(harness.listingNotices[0]?.payload).not.toHaveProperty('quotaFull');
+        });
+
         it('TEST:V6:11 publishes the lifted listing with the normal notice when a slot is free', async () => {
             const harness = lifting(2);
             const result = await liftModeration({

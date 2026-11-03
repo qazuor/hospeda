@@ -25,12 +25,13 @@ import {
 } from '@repo/db';
 import {
     type ListingNoticesResponse,
+    PublicationStatusEnum,
     type ReportFixedResponse,
     ServiceErrorCode,
     type TrialSummaryResponse
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { type ListingVertical, trialMachineLockKey } from '@repo/verticals';
+import { type ListingVertical, PUBLICATION_LIMIT_KEYS, trialMachineLockKey } from '@repo/verticals';
 import { and, eq } from 'drizzle-orm';
 import { getClock } from '../../utils/clock';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
@@ -60,6 +61,24 @@ async function readTrialRow(input: {
     return row ?? null;
 }
 
+/** The owner's declared publication quota in the vertical (`null` = none). */
+async function readPublishLimit(input: {
+    readonly userId: string;
+    readonly vertical: ListingVertical;
+}): Promise<number | null> {
+    const effective = await getListingAccessPorts().effectiveSet({
+        userId: input.userId,
+        vertical: input.vertical
+    });
+    return (
+        effective.limits.get({
+            key: PUBLICATION_LIMIT_KEYS[input.vertical],
+            userId: input.userId,
+            vertical: input.vertical
+        }) ?? null
+    );
+}
+
 /**
  * H2: the notices of every listing of the actor in the vertical.
  *
@@ -84,9 +103,25 @@ export async function listListingNotices(input: {
         }),
         readTrialRow(input)
     ]);
+    // The quota is only needed to say WHY a lifted listing is still unpublished.
+    const needsLimit =
+        coverage.covered &&
+        rows.some(
+            (row) =>
+                row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING &&
+                row.lastLift?.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+        );
+    const publishLimit = needsLimit ? await readPublishLimit(input) : undefined;
     return {
         trialRunning: isTrialRunning({ trial, now }).running,
-        items: [...buildListingNoticeItems({ rows, coverage, now })]
+        items: [
+            ...buildListingNoticeItems({
+                rows,
+                coverage,
+                now,
+                ...(publishLimit === undefined ? {} : { publishLimit })
+            })
+        ]
     };
 }
 

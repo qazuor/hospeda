@@ -415,8 +415,14 @@
             "returnedTo": {
                 "PUBLISHED": "Volvió a estar publicada.",
                 "DRAFT": "Volvió a borrador.",
-                "UNPUBLISHED_BY_BILLING": "Quedó aprobada, pero sin publicar: tu cupo está lleno o tu suscripción hoy no la cubre. Para publicarla, despublicá otra ficha. No se borró nada.",
+                "UNPUBLISHED_BY_BILLING": "Quedó sin publicar, porque hoy tu suscripción no tiene lugar para ella. No se borró nada.",
                 "ARCHIVED": "Sigue archivada, como estaba."
+            },
+            "unpublished": {
+                "quotaFull": "Quedó aprobada, pero tu cupo está lleno: para publicarla, despublicá otra ficha y publicá esta.",
+                "quotaFullFixRequest": "Sigue sin publicar porque tu cupo está lleno: para publicarla, despublicá otra ficha y publicá esta.",
+                "notCovered": "Quedó sin publicar, porque hoy tu suscripción no la cubre. No se borró nada.",
+                "freeSlot": "Tenés lugar en tu cupo: podés publicarla cuando quieras."
             },
             "draftIsYours": "Publicarla es decisión tuya.",
             "fixRequestOpen": "El pedido de arreglo sigue abierto."

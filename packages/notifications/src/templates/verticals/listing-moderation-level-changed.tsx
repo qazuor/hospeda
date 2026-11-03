@@ -51,7 +51,7 @@ export function ListingModerationLevelChanged({
                         Tu ficha {listingName} ya no está moderada: volvió a quedar sólo con un
                         pedido de arreglo.
                     </Text>
-                    <Text>{listingReturnedToCopy({ returnedTo, quotaFull })}</Text>
+                    <Text>{listingReturnedToCopy({ returnedTo, quotaFull, approved: false })}</Text>
                 </>
             )}
             {fixRequestOpen ? (

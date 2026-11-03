@@ -39,8 +39,9 @@ export type LiftModerationResult =
  * lock (HOS-1997). The lift never chooses between listings: with a free slot in
  * the quota the listing comes back PUBLISHED, with the quota full it comes back
  * approved but unpublished (`UNPUBLISHED_BY_BILLING`), no other listing is
- * touched and the owner's notice says the quota is full. Which listings are
- * published therefore depends only on the quota, not on the path taken.
+ * touched and the owner's notice says the quota is full. The COUNT of published
+ * listings therefore depends only on the quota, not on the path taken; which
+ * listings fill it can still change through moderation (F-8V3A2-003).
  */
 export async function liftModeration(args: {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -141,7 +142,9 @@ export async function liftModeration(args: {
                         });
                         publicationStatus = Status.PUBLISHED;
                         revalidateIds.push(listing.id);
-                    } else {
+                    } else if (limit > 0) {
+                        // Only a quota that exists and is full earns the «unpublish another»
+                        // advice; a plan with room for none gets the generic «no room» text.
                         quotaFull = true;
                     }
                 }
