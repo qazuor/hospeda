@@ -302,6 +302,17 @@ describe('TEST:B5:7 MP1 / S29 / S5', () => {
         expect(rows.subscription?.nextChargeAt).toBeNull();
     });
 
+    it('rejects undeclared service input fields before writing', async () => {
+        const fixture = await seed();
+        const withExtra = { ...fixture.request, unexpected: true };
+        await expect(previewManualPaymentRegistration(withExtra)).rejects.toThrow();
+        await expect(registerManualPayment(withExtra, { clock })).rejects.toThrow();
+        const rows = await state(fixture);
+        expect(rows.installment?.status).toBe('AWAITING');
+        expect(rows.coverage).toHaveLength(0);
+        expect(rows.receipt).toHaveLength(0);
+    });
+
     it('hides an installment owned by another subscription and rejects missing permission', async () => {
         const fixture = await seed();
         const other = await seed();

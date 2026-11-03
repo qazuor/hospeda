@@ -37,7 +37,7 @@ import { retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('register-manual-payment');
 const inputSchema = z.strictObject({
-    actor: z.strictObject({
+    actor: z.object({
         id: z.uuid(),
         roles: z.array(z.enum(RoleEnum)),
         permissions: z.array(z.enum(PermissionEnum))
@@ -190,16 +190,7 @@ export async function previewManualPaymentRegistration(input: Input): Promise<{
     readonly effect: ManualPaymentRegistrationEffect;
     readonly nextChargeAt: Date;
 }> {
-    const parsed = inputSchema.parse({
-        subscriptionId: input.subscriptionId,
-        manualPaymentId: input.manualPaymentId,
-        proofRef: input.proofRef,
-        actor: {
-            id: input.actor.id,
-            roles: input.actor.roles,
-            permissions: input.actor.permissions
-        }
-    });
+    const parsed = inputSchema.parse(input);
     const checked = await getDb().transaction((tx) =>
         check({ ...parsed, actor: input.actor }, tx, false)
     );
@@ -223,16 +214,7 @@ export async function registerManualPayment(
     readonly receiptNumber: number;
     readonly nextChargeAt: Date;
 }> {
-    const parsed = inputSchema.parse({
-        subscriptionId: input.subscriptionId,
-        manualPaymentId: input.manualPaymentId,
-        proofRef: input.proofRef,
-        actor: {
-            id: input.actor.id,
-            roles: input.actor.roles,
-            permissions: input.actor.permissions
-        }
-    });
+    const parsed = inputSchema.parse(input);
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
         const checked = await check({ ...parsed, actor: input.actor }, tx, true);
