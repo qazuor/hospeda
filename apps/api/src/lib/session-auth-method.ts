@@ -1,7 +1,10 @@
 /** Provider ids whose account credentials may be retained after email verification. */
 export const SOCIAL_SESSION_PROVIDERS = ['google', 'facebook'] as const;
 
-/** Resolves the credential responsible for a newly created Better Auth session. */
+/**
+ * Resolves the credential responsible for a newly created Better Auth session.
+ * A null result makes the Partner claim delete every credential (D-1 fail-closed behavior).
+ */
 export function resolveSessionAuthMethod(input: {
     readonly path: string | undefined;
     readonly providerId: string | undefined;
