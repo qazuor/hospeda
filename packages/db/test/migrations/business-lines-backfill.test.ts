@@ -30,5 +30,6 @@ describe('TEST:2.3:1 AC:2:6 venue business-lines backfill', () => {
         for (const type of fixedTypes) expect(backfill).toContain(`WHEN '${type}'`);
         expect(backfill).toContain("ELSE ARRAY['food']::text[]");
         expect(backfill).toContain('type"::text');
+        expect(backfill).not.toMatch(/\bWHERE\b|deleted_at/);
     });
 });
