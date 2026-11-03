@@ -1067,6 +1067,23 @@ describe('httpToDomainAccommodationSearch — poiId/poiSlug (HOS-113)', () => {
     });
 });
 
+describe('accommodation search creation date filters (HOS-1987)', () => {
+    it('parses and maps inclusive creation bounds from HTTP query params', () => {
+        // Arrange
+        const params = AccommodationSearchHttpSchema.parse({
+            createdAfter: '2026-01-01T00:00:00.000Z',
+            createdBefore: '2026-02-01T00:00:00.000Z'
+        });
+
+        // Act
+        const domain = httpToDomainAccommodationSearch(params);
+
+        // Assert
+        expect(domain.createdAfter).toEqual(new Date('2026-01-01T00:00:00.000Z'));
+        expect(domain.createdBefore).toEqual(new Date('2026-02-01T00:00:00.000Z'));
+    });
+});
+
 // ---------------------------------------------------------------------------
 // G7 smoke (H-112 / H-117 / H-121): minNights, exact address, SEO override.
 //

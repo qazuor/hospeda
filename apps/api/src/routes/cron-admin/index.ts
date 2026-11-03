@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
 import { CRON_SCHEDULES } from '../../cron/schedules.manifest';
+import { runCronHandlerInBackground } from '../../cron/traffic';
 import type { CronJobContext, CronJobResult } from '../../cron/types';
 import type { AppBindings } from '../../types';
 import { getActorFromContext } from '../../utils/actor';
@@ -222,7 +223,10 @@ export const triggerCronJobHandler = async (
 
     let result: CronJobResult;
     try {
-        result = await Promise.race([job.handler(jobContext), timeoutPromise]);
+        result = await Promise.race([
+            runCronHandlerInBackground({ job, ctx: jobContext }),
+            timeoutPromise
+        ]);
     } catch (error) {
         // Fire-and-forget: record the failure/timeout, then preserve the HTTP error.
         await recordCronRun({

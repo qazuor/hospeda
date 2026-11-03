@@ -195,6 +195,19 @@ export function markThemeSynced({ userId }: { readonly userId: string }): void {
 }
 
 /**
+ * Clears the per-user theme marker when the current session signs out.
+ *
+ * @returns Nothing; storage errors are ignored because logout must continue.
+ */
+export function clearThemeSyncMarker(): void {
+    try {
+        sessionStorage.removeItem(THEME_SYNC_MARKER_KEY);
+    } catch {
+        // Storage may be blocked; logout must still proceed.
+    }
+}
+
+/**
  * Applies the signed-in user's saved theme once per session.
  *
  * No saved value (never chose, or invalid) leaves the local choice untouched.
