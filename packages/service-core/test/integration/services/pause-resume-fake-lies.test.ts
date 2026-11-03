@@ -106,7 +106,11 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B8b:28 and TEST:B8b:27 M12/RP10
         ).toBe('active');
         const result = await end(input);
         expect(result.resumed).toBe(1);
-        expect(input.harness.calls).toEqual([`pause:${input.principal.authorizationId}`]);
+        expect(input.harness.calls).toEqual([
+            `pause:${input.principal.authorizationId}`,
+            `read:${input.principal.authorizationId}`,
+            `read:${input.principal.authorizationId}`
+        ]);
         expect((await status(input.principal.subscriptionId)).row?.status).toBe('ACTIVE');
     });
 

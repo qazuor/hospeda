@@ -62,6 +62,11 @@ export function adjustablePauseHarness(
                     calls.push(`pause:${input.authorizationId}`);
                     return fake.pause(input);
                 };
+            if (property === 'readAuthorization')
+                return async (input: { readonly authorizationId: string }) => {
+                    calls.push(`read:${input.authorizationId}`);
+                    return fake.readAuthorization(input);
+                };
             const method = Reflect.get(target, property, receiver);
             return typeof method === 'function' ? method.bind(target) : method;
         }

@@ -54,6 +54,19 @@ describe('AC:B8b:28 M12 and RP10 fake pause cycle', () => {
         expect(after.snapshot.status).toBe('active');
         expect(after.snapshot.lastModifiedAt).toBe('2026-11-01T03:00:00.000Z');
         expect(before.snapshot.lastModifiedAt).toBe('2026-10-01T03:00:00.000Z');
+        honest.clock.set({ at: new Date('2026-12-10T03:00:00.000Z') });
+        const notices = await Promise.all(
+            honest.fake
+                .takeDeliveries()
+                .deliveries.map((delivery) => honest.fake.decodeNotice(delivery))
+        );
+        const versions = notices
+            .filter(
+                (notice) =>
+                    notice.resourceKind === 'authorization' && notice.resourceId === honestId
+            )
+            .map((notice) => Number(notice.version));
+        expect(versions).toContain(5);
     });
 
     it('does not automatically return a pause caused by a failed charge cycle', async () => {
