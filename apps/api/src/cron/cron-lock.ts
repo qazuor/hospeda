@@ -1,5 +1,6 @@
 import { getDb } from '@repo/db';
 import type { Pool, PoolClient } from 'pg';
+import { apiLogger } from '../utils/logger';
 
 /** A lock decision, with completion released only after the handler settles. */
 export type CronLockDecision<T> =
@@ -14,9 +15,22 @@ export async function withCronLock<T>(args: {
 }): Promise<CronLockDecision<T>> {
     const pool = (getDb() as ReturnType<typeof getDb> & { readonly $client: Pool }).$client;
     const client = await pool.connect();
+    let destroyClient = false;
+    let warned = false;
+    const onClientError = (error: Error): void => {
+        destroyClient = true;
+        if (warned) return;
+        warned = true;
+        apiLogger.warn({
+            message: '[cron] advisory lock connection failed while handler was running',
+            jobName: args.name,
+            runId: args.runId,
+            error
+        });
+    };
+    client.on('error', onClientError);
     let lockAcquired = false;
     let clientReleased = false;
-    let destroyClient = false;
     try {
         await client.query("SELECT set_config('application_name', $1, false)", [
             `hospeda-cron:${args.runId}`
@@ -48,6 +62,7 @@ export async function withCronLock<T>(args: {
                  LIMIT 1`,
                 [high, low]
             );
+            client.removeListener('error', onClientError);
             client.release();
             clientReleased = true;
             const match = holder.rows[0]?.application_name.match(/^hospeda-cron:(.+)$/);
@@ -67,6 +82,7 @@ export async function withCronLock<T>(args: {
                 } catch {
                     destroyClient = true;
                 } finally {
+                    client.removeListener('error', onClientError);
                     client.release(destroyClient);
                     clientReleased = true;
                 }
@@ -74,7 +90,10 @@ export async function withCronLock<T>(args: {
         return { acquired: true, completion };
     } catch (error) {
         if (lockAcquired) destroyClient = true;
-        if (!clientReleased) client.release(destroyClient);
+        if (!clientReleased) {
+            client.removeListener('error', onClientError);
+            client.release(destroyClient);
+        }
         throw error;
     }
 }
