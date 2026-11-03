@@ -1,0 +1,15 @@
+{
+    "validateBusinessLines": [
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "count": 2,
+            "spec": ".hoja/contexto.md:1"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "count": 2,
+            "spec": ".hoja/contexto.md:1"
+        }
+    ],
+    "resolveBusinessLineOptions": []
+}

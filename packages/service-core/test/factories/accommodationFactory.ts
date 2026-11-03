@@ -11,6 +11,7 @@ import type {
     AccommodationIdType,
     AccommodationPrice,
     AccommodationUpdateInput,
+    BusinessLineValue,
     UserIdType
 } from '@repo/schemas';
 import {
@@ -54,6 +55,8 @@ export type MockAccommodation = Accommodation & {
     publicationStatus: PublicationStatusEnum;
     inactiveSince: Date;
     deadlinesVersion: number;
+    /** HOS-1787 2.3: `business_lines` column, `NOT NULL` with the `{standard}` default. */
+    businessLines: BusinessLineValue<'accommodation'>[];
 };
 
 /**
@@ -69,6 +72,7 @@ export const createMockAccommodation = (
     description:
         'A detailed description of this wonderful place to stay, long enough for validation.',
     type: AccommodationTypeEnum.HOTEL,
+    businessLines: ['standard'],
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
     // HOS-929: billing-derived featuring (SPEC-292, renamed SPEC-309 OQ-3) —
