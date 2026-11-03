@@ -413,6 +413,25 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 13 rejections (B6.1)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/confirm` (ACC:13, RF2) maps every typed rejection from `confirmRefund` in `src/routes/billing-refund/admin/confirm.ts`. The declared `billing.refund` permission is checked before request shape; the service checks the action, subject and source in its transaction.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_PROVIDER_ID_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
+
+Provider results are not rejections: confirmation returns 200 with an `outcome` describing the result. A missing or non-`true` `confirmed` field is a 400 shape error (`VALIDATION_ERROR`).
+
 ## Action 14 charge settlement rejections (B5.9)
 
 `POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
