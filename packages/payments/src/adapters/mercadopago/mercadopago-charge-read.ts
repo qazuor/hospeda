@@ -83,6 +83,16 @@ export async function readMercadoPagoCharge(args: {
         ['approved', 'refunded', 'charged_back'].includes(parsed.status)
     )
         throw providerError('UNAVAILABLE', 'read', 'Mercado Pago payment has no refunded amount');
+    const toMinor = (amount: number): number => {
+        const minor = Math.round(amount * 100);
+        if (!Number.isSafeInteger(minor))
+            throw providerError(
+                'UNAVAILABLE',
+                'read',
+                'Mercado Pago payment amount exceeds safe minor units'
+            );
+        return minor;
+    };
     return {
         chargeId: parsed.id,
         createdAt: parsed.date_created,
@@ -106,16 +116,16 @@ export async function readMercadoPagoCharge(args: {
         status,
         declineReason: status === 'rejected' ? (parsed.status_detail ?? null) : null,
         amount: {
-            amountMinor: Math.round(parsed.transaction_amount * 100),
+            amountMinor: toMinor(parsed.transaction_amount),
             currency: parsed.currency_id
         },
         refundedAmount: {
-            amountMinor: Math.round((refundedAmount ?? 0) * 100),
+            amountMinor: toMinor(refundedAmount ?? 0),
             currency: parsed.currency_id
         },
         refunds: (parsed.refunds ?? []).map((r) => ({
             refundId: r.id,
-            amount: { amountMinor: Math.round(r.amount * 100), currency: parsed.currency_id },
+            amount: { amountMinor: toMinor(r.amount), currency: parsed.currency_id },
             accredited: r.status === 'approved'
         })),
         chargedBack: parsed.status === 'charged_back'

@@ -1,13 +1,22 @@
-import { eq, getDb, payments, refunds } from '@repo/db';
+import {
+    addonInstances,
+    eq,
+    getDb,
+    idempotencyKeys,
+    payments,
+    refundCalls,
+    refunds
+} from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
+import { requestRefund } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { AuditEventType } from '../../../src/utils/audit-logger';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
-import { NOW } from '../billing-subscription/revocation-route-fixtures';
+import { NOW, seedOneTimeOrphan } from '../billing-subscription/revocation-route-fixtures';
 import {
     baselineFake,
     cleanupConfirmRefundRows,
@@ -26,6 +35,7 @@ vi.mock('../../../src/utils/audit-logger', async (importOriginal) => ({
 
 const permissions = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.BILLING_REFUND];
 let app: ReturnType<typeof initApp>;
+const orderRefundIds: string[] = [];
 
 describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
     beforeAll(async () => {
@@ -40,8 +50,47 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         vi.restoreAllMocks();
     });
     afterAll(async () => {
+        for (const refundId of orderRefundIds) {
+            await getDb().delete(refundCalls).where(eq(refundCalls.refundId, refundId));
+            await getDb().delete(idempotencyKeys).where(eq(idempotencyKeys.subjectId, refundId));
+            await getDb().delete(refunds).where(eq(refunds.id, refundId));
+        }
         await cleanupConfirmRefundRows();
         await testDb.teardown();
+    });
+
+    it('HOS-1553 TEST:B6:6 confirms a one-time order refund through the real route', async () => {
+        const seeded = await seedConfirmRefund();
+        const { instanceId, paymentId } = await seedOneTimeOrphan({
+            ownerId: seeded.ownerId,
+            principalId: seeded.subscriptionId
+        });
+        const { orderId } = confirmFake.placeOrder({
+            reference: `route-order-${crypto.randomUUID()}`,
+            paid: true,
+            amount: { amountMinor: 5000, currency: 'ARS' }
+        });
+        await getDb()
+            .update(addonInstances)
+            .set({ providerOrderId: orderId })
+            .where(eq(addonInstances.id, instanceId));
+        const request = await requestRefund(
+            { source: { kind: 'PAYMENT', id: paymentId }, amount: 5000, reason: 'REVOCATION' },
+            { clock: confirmClock }
+        );
+        orderRefundIds.push(request.refundId);
+        const response = await confirmRequest(app, request.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({
+            refundId: request.refundId,
+            status: 'CONFIRMED',
+            outcome: 'SENT'
+        });
+        expect((await confirmRows(request.refundId)).calls).toHaveLength(1);
     });
 
     it('AC:B6:1 records the confirmed provider call and its persisted key', async () => {

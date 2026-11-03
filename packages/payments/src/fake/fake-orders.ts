@@ -1,10 +1,18 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type {
+    Money,
+    OrderRefundInput,
+    OrderRefundResult,
     OrderSearchInput,
     OrderSearchResult,
     OrderSnapshot
 } from '../provider/payment-provider';
 import type { FakeLedger } from './fake-ledger';
+import {
+    applyFakeOrderRefund,
+    type FakeRefundableOrder,
+    holdFakeOrderRefund
+} from './fake-order-refund';
 import { notFound, rejected } from './fake-support';
 
 /** RP13 (EX-57): an order search spans at most 30 days of creation. */
@@ -17,7 +25,7 @@ export const FAKE_ORDER_SEARCH_MAX_MS = 30 * 24 * 60 * 60_000;
  * bounded creation range (RP13, a rule: it never switches off).
  */
 export class FakeOrders {
-    private readonly orders = new Map<string, OrderSnapshot>();
+    private readonly orders = new Map<string, FakeRefundableOrder>();
 
     constructor(private readonly args: { readonly ledger: FakeLedger; readonly clock: Clock }) {}
 
@@ -26,13 +34,23 @@ export class FakeOrders {
         readonly reference: string;
         readonly createdAt?: string;
         readonly paid: boolean;
+        readonly amount?: Money;
     }): { readonly orderId: string } {
         const orderId = this.args.ledger.nextId({ prefix: 'order' });
         this.orders.set(orderId, {
-            orderId,
-            reference: input.reference,
-            createdAt: input.createdAt ?? this.args.clock.now().toISOString(),
-            hasApprovedPayment: input.paid
+            amountMinor: input.amount?.amountMinor ?? 10_000,
+            currency: input.amount?.currency ?? 'ARS',
+            byKey: new Map(),
+            snapshot: {
+                orderId,
+                reference: input.reference,
+                createdAt: input.createdAt ?? this.args.clock.now().toISOString(),
+                hasApprovedPayment: input.paid,
+                paymentTransactionId: input.paid
+                    ? this.args.ledger.nextId({ prefix: 'order-payment' })
+                    : null,
+                refunds: []
+            }
         });
         return { orderId };
     }
@@ -41,7 +59,21 @@ export class FakeOrders {
     read(input: { readonly orderId: string }): OrderSnapshot {
         const order = this.orders.get(input.orderId);
         if (!order) throw notFound({ capability: 'read', id: input.orderId });
-        return structuredClone(order);
+        return structuredClone(order.snapshot);
+    }
+
+    /** Refunds an order with EX-58 idempotency (AC:B6:8, TRANS:B:RF2). */
+    refund(input: OrderRefundInput): OrderRefundResult {
+        const order = this.orders.get(input.orderId);
+        if (!order) throw notFound({ capability: 'refund', id: input.orderId });
+        return applyFakeOrderRefund({ order, input, ledger: this.args.ledger });
+    }
+
+    /** Test handle: keeps one refund pending (AC:B6:8, TRANS:B:RF3). */
+    hold(input: { readonly orderId: string; readonly refundId: string }): void {
+        const order = this.orders.get(input.orderId);
+        if (!order) throw notFound({ capability: 'refund', id: input.orderId });
+        holdFakeOrderRefund({ order, refundId: input.refundId });
     }
 
     /**
@@ -59,6 +91,7 @@ export class FakeOrders {
         if (to - from > FAKE_ORDER_SEARCH_MAX_MS)
             throw rejected({ capability: 'read', reason: 'the search range exceeds 30 days' });
         const orders = [...this.orders.values()]
+            .map((order) => order.snapshot)
             .filter((order) => {
                 const created = Date.parse(order.createdAt);
                 return order.reference === input.reference && created >= from && created <= to;

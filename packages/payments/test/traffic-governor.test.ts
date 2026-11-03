@@ -7,6 +7,16 @@ import { ProviderTrafficGovernor } from '../src/provider/traffic-governor';
 afterEach(() => vi.useRealTimers());
 
 describe('ProviderTrafficGovernor', () => {
+    it('closes its cool-down store when stopped and awaits shutdown cleanup', async () => {
+        const close = vi.fn(async () => undefined);
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            coolDownStore: { extend: () => {}, until: () => 0, close }
+        });
+        governor.stop();
+        await governor.shutdown();
+        expect(close).toHaveBeenCalledTimes(1);
+    });
     it('refreshes only in enforce, counts Redis fallback and memo hits (kills missing shared-state accounting)', async () => {
         const refresh = vi.fn(async () => ({ fallback: true }));
         const store = { extend: vi.fn(), until: () => 0, refresh };

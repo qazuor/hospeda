@@ -10,6 +10,7 @@ export const subscriptionPauseEndJob: CronJobDefinition = {
     name: 'subscription-pause-end',
     description: 'End due principal pauses with S10 (HOS-1573, AC:B8b:3)',
     schedule: '47 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 120_000,
     handler: async (ctx) => {
