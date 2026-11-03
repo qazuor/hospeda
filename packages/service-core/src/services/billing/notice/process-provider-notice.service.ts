@@ -98,6 +98,7 @@ type Outcome =
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
+    readonly rateLimitDeferral?: { readonly coolDownRemainingMs: () => number };
     readonly clock: Clock;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
@@ -207,7 +208,11 @@ async function resolveUnknownAuthorization(
 export async function processProviderNotice(
     input: { readonly channel: 'WEBHOOKS' | 'IPN'; readonly delivery: NoticeDelivery },
     ports: ProcessProviderNoticePorts
-): Promise<{ readonly ack: 'OK' | 'ERROR'; readonly outcome: Outcome }> {
+): Promise<{
+    readonly ack: 'OK' | 'ERROR';
+    readonly outcome: Outcome;
+    readonly retryAfterSeconds?: number;
+}> {
     try {
         const value = inputSchema.parse(input);
         if (value.channel === 'IPN') return { ack: 'OK', outcome: 'IPN_NOT_PROCESSED' };
@@ -482,6 +487,18 @@ export async function processProviderNotice(
         // deliberate retryable status instead of a generic failure.
         if (error instanceof PaymentProviderError && error.incompleteRead)
             return { ack: 'ERROR', outcome: 'DEFERRED' };
+        if (
+            ports.rateLimitDeferral &&
+            error instanceof PaymentProviderError &&
+            error.transient?.kind === 'RATE_LIMITED'
+        ) {
+            const remaining = ports.rateLimitDeferral.coolDownRemainingMs();
+            return {
+                ack: 'ERROR',
+                outcome: 'DEFERRED',
+                retryAfterSeconds: Math.min(120, Math.max(1, Math.ceil(remaining / 1000)))
+            };
+        }
         return { ack: 'ERROR', outcome: 'FAILED' };
     }
 }

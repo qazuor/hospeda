@@ -26,19 +26,10 @@ import { createListingIdentitySection, createListingOperationalSection } from '@
 // ---------------------------------------------------------------------------
 
 /** SELECT options for the venue type field. */
-const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: VenueTypeEnum.BAR, label: 'Bar' },
-    { value: VenueTypeEnum.CAFE, label: 'Café' },
-    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' },
-    { value: VenueTypeEnum.PUB, label: 'Pub' },
-    { value: VenueTypeEnum.BOLICHE, label: 'Boliche' }
-] as const;
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 /** SELECT options for the price-range tier field. */
 const PRICE_RANGE_OPTIONS = [
@@ -95,10 +86,10 @@ function createVenueSpecificSection(
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
-                    options: VENUE_TYPE_OPTIONS as unknown as {
-                        value: string;
-                        label: string;
-                    }[]
+                    options: VENUE_TYPE_OPTIONS.map(({ value, labelKey }) => ({
+                        value,
+                        label: t(labelKey as `admin-entities.venue.types.${VenueTypeEnum}`)
+                    }))
                 }
             },
             {

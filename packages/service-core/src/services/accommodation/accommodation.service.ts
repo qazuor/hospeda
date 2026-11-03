@@ -101,6 +101,7 @@ import {
     IdOrSlugParamsSchema,
     ModerationStatusEnum,
     type NearbyPoi,
+    normalizeBusinessLines,
     PermissionEnum,
     PublicationStatusEnum,
     RoleEnum,
@@ -108,6 +109,7 @@ import {
     resolveMissingPublishRequirements,
     ServiceErrorCode,
     type Success,
+    validateBusinessLines,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
@@ -819,12 +821,33 @@ export class AccommodationService extends BaseCrudService<
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
         await this._assertDestinationIsCity(data.destinationId);
-        const businessLines = resolveBusinessLinesOnCreate({
+        let businessLines = resolveBusinessLinesOnCreate({
             vertical: 'accommodation',
             type: String(data.type),
             businessLines: (data as AccommodationCreateInput & { businessLines?: string[] })
                 .businessLines
         });
+        if (businessLines) {
+            const validation = validateBusinessLines({
+                vertical: 'accommodation',
+                type: String(data.type),
+                businessLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            businessLines = normalizeBusinessLines({
+                vertical: 'accommodation',
+                businessLines: businessLines as never
+            });
+        }
 
         // SPEC-172: capture junction sync inputs in hookState.
         // amenityIds / featureIds are write-only — they do not map to any column in
@@ -1084,9 +1107,11 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        const payload = data as Record<string, unknown>;
         // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
         assertSupportEditContentOnly({ data: data as Record<string, unknown> });
         const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
+        let current: Accommodation | null = null;
 
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
         if (data.destinationId) {
@@ -1099,7 +1124,7 @@ export class AccommodationService extends BaseCrudService<
         if (ctx.hookState) {
             const entityId = ctx.hookState.updateId;
             if (entityId) {
-                const current = await this.model.findById(entityId, ctx.tx);
+                current = await this.model.findById(entityId, ctx.tx);
                 // HOS-1499: the row before the edit, for the owner-act event's old values.
                 ctx.hookState.ownerActBefore = (current ?? null) as Record<string, unknown> | null;
 
@@ -1142,6 +1167,33 @@ export class AccommodationService extends BaseCrudService<
                     ? this._isPubliclyVisible(current)
                     : undefined;
             }
+        }
+
+        if (Object.hasOwn(payload, 'businessLines') || Object.hasOwn(payload, 'type')) {
+            const resultingType = String(payload.type ?? current?.type ?? '');
+            // TYPE-WORKAROUND: the model hook exposes a generic entity without the catalog-owned businessLines field.
+            const storedLines = (current as unknown as Record<string, unknown> | null)
+                ?.businessLines;
+            const resultingLines = (payload.businessLines ?? storedLines ?? []) as string[];
+            const validation = validateBusinessLines({
+                vertical: 'accommodation',
+                type: resultingType,
+                businessLines: resultingLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            payload.businessLines = normalizeBusinessLines({
+                vertical: 'accommodation',
+                businessLines: resultingLines as never
+            });
         }
 
         // SPEC-172: capture junction sync inputs in hookState.

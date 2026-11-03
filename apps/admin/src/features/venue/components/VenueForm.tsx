@@ -47,19 +47,10 @@ export interface VenueFormProps {
 // Option lists
 // ---------------------------------------------------------------------------
 
-const VENUE_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }> = [
-    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: VenueTypeEnum.BAR, label: 'Bar' },
-    { value: VenueTypeEnum.CAFE, label: 'Café' },
-    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' },
-    { value: VenueTypeEnum.PUB, label: 'Pub' },
-    { value: VenueTypeEnum.BOLICHE, label: 'Boliche' }
-];
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 const PRICE_RANGE_OPTIONS: ReadonlyArray<{ value: PriceRangeEnum; label: string }> = [
     { value: PriceRangeEnum.BUDGET, label: 'Económico ($)' },
@@ -301,7 +292,9 @@ export function VenueForm({
                                                 key={opt.value}
                                                 value={opt.value}
                                             >
-                                                {opt.label}
+                                                {t(
+                                                    opt.labelKey as `admin-entities.venue.types.${VenueTypeEnum}`
+                                                )}
                                             </option>
                                         ))}
                                     </select>

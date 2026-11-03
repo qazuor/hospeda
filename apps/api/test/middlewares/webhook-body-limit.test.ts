@@ -26,12 +26,21 @@ describe('Mercado Pago webhook body limit', () => {
                 body: JSON.stringify('x'.repeat(64 * 1024 - 1))
             }
         );
-        const atLimitBody = (await atLimit.json()) as { readonly success?: boolean };
+        const atLimitBody = (await atLimit.json()) as {
+            readonly error?: { readonly code?: string };
+        };
 
+        // What the handler answers past the limit depends on how much of the app the
+        // route-test DB mock can build (an internal error before HOS-1831, the
+        // handler's own `received: false` after it). The contract under test is only
+        // that the body-limit guard lets a 64 KiB body through and stops one byte more.
         expect(atLimit.status).not.toBe(413);
-        expect(atLimitBody).toMatchObject({ success: false });
+        expect(atLimitBody.error?.code).not.toBe('REQUEST_TOO_LARGE');
         expect(overLimit.status).toBe(413);
-        expect(await overLimit.json()).toMatchObject({ success: false });
+        expect(await overLimit.json()).toMatchObject({
+            success: false,
+            error: { code: 'REQUEST_TOO_LARGE' }
+        });
     });
 
     it('keeps the global body limit for other routes', async () => {

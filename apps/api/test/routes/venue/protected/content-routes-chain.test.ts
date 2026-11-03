@@ -151,6 +151,18 @@ describe('TEST:3.4:1 AC:3:2 section chain through HTTP routes', () => {
         ).toBe(200);
     });
     it.each([
+        ['daily-specials', { specials: [] }],
+        ['events', { events: [] }]
+    ])('allows empty %s delete without its section key', async (path, body) => {
+        entitlementKeys = ['edit_venue_info'];
+        const response = await app().request(`/${VENUE}/${path}`, {
+            method: 'PUT',
+            ...json,
+            body: JSON.stringify(body)
+        });
+        expect(response.status).toBe(200);
+    });
+    it.each([
         ['daily-specials', payloads.daily],
         ['events', payloads.events]
     ])('hides a foreign write target at %s', async (path, body) => {

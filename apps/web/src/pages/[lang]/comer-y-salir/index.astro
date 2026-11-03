@@ -39,6 +39,7 @@ import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
+import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -178,17 +179,8 @@ const hasActiveFilters = hasActiveVenueListingFilters({
 });
 
 // --- Venue types for filter (from the confirmed enum) ---
-const VENUE_TYPES = [
-    'RESTAURANT',
-    'BAR',
-    'CAFE',
-    'PARRILLA',
-    'CERVECERIA',
-    'HELADERIA',
-    'PANADERIA',
-    'ROTISERIA',
-    'FOOD_TRUCK'
-] as const;
+// Keep enum order so every venue type, including nightlife venues, is filterable.
+const VENUE_TYPES = VENUE_TYPE_OPTIONS;
 
 const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
 

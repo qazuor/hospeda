@@ -53,6 +53,7 @@ export async function handleGetVenueMenu(_ctx: Context, params: Record<string, u
 
 export const protectedGetVenueMenuRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/menu',
     listingAccess: {
         vertical: VerticalEnum.VENUE,

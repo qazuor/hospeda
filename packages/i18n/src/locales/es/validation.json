@@ -3263,6 +3263,16 @@
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
     "venue": {
+        "businessLines": {
+            "EMPTY": "Seleccioná al menos un rubro",
+            "DUPLICATE": "No repitas rubros",
+            "NOT_IN_VERTICAL": "El rubro no corresponde a esta vertical",
+            "NOT_ALLOWED_FOR_TYPE": "Este tipo de comercio no admite ese rubro",
+            "MAX_EXCEEDED": "Seleccioná menos rubros",
+            "EXCLUDED_PAIR": "Estos rubros no se pueden combinar",
+            "invalid": "El rubro no es válido",
+            "invalidType": "Los rubros deben ser una lista"
+        },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },

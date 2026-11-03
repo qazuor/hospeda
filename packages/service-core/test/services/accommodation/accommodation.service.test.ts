@@ -1,7 +1,8 @@
-import { RoleEnum } from '@repo/schemas';
+import { AccommodationTypeEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
+import { createActor } from '../../factories/actorFactory';
 
 // Mock AccommodationModel
 class MockAccommodationModel {
@@ -143,4 +144,72 @@ describe('AccommodationService - Relations Support', () => {
      * which requires a real destination row. Mock-based unit tests cannot satisfy
      * that without an unwieldy stub tree.
      */
+});
+
+describe('AccommodationService business-line validation hooks', () => {
+    class TestAccommodationService extends AccommodationService {
+        public runBeforeCreate(
+            data: Parameters<AccommodationService['_beforeCreate']>[0],
+            actor: Actor
+        ) {
+            return this._beforeCreate(data, actor, { hookState: {} });
+        }
+
+        public runBeforeUpdate(
+            data: Parameters<AccommodationService['_beforeUpdate']>[0],
+            actor: Actor
+        ) {
+            return this._beforeUpdate(data, actor, { hookState: { updateId: 'accommodation-id' } });
+        }
+    }
+
+    it('rejects empty business lines on create with field and reason details', async () => {
+        const service = new TestAccommodationService(
+            {} as ServiceConfig,
+            new MockAccommodationModel() as never
+        );
+        await expect(
+            service.runBeforeCreate(
+                {
+                    type: AccommodationTypeEnum.HOTEL,
+                    name: 'Hotel Test',
+                    slug: 'hotel-test',
+                    description: 'Descripción del hotel de prueba.',
+                    summary: 'Hotel de prueba.',
+                    ownerId: 'owner',
+                    destinationId: undefined as never,
+                    averageRating: 0,
+                    businessLines: []
+                },
+                createActor({ id: 'owner' })
+            )
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            details: { field: 'businessLines', reason: 'EMPTY' }
+        });
+    });
+
+    it('validates changed type against stored lines and ignores untouched legacy lines', async () => {
+        const model = new MockAccommodationModel();
+        model.findById.mockResolvedValue({
+            id: 'accommodation-id',
+            type: AccommodationTypeEnum.HOTEL,
+            businessLines: ['standard']
+        });
+        const service = new TestAccommodationService({} as ServiceConfig, model as never);
+        await expect(
+            service.runBeforeUpdate(
+                { type: AccommodationTypeEnum.APARTMENT },
+                createActor({ id: 'owner' })
+            )
+        ).resolves.toBeDefined();
+
+        model.findById.mockResolvedValue({
+            id: 'accommodation-id',
+            type: AccommodationTypeEnum.HOTEL
+        });
+        await expect(
+            service.runBeforeUpdate({ name: 'Updated hotel' }, createActor({ id: 'owner' }))
+        ).resolves.toMatchObject({ name: 'Updated hotel' });
+    });
 });

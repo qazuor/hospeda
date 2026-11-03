@@ -1,3 +1,4 @@
+import { acceptedRunId, waitForAcceptedCronRun } from './cron-run-wait.ts';
 import { execSQL } from './db-helpers.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -18,6 +19,14 @@ export async function triggerCron(options: {
         readonly success?: boolean;
         readonly data?: { readonly success?: boolean };
     };
+    const runId = acceptedRunId(body);
+    if (runId) {
+        const run = await waitForAcceptedCronRun({ runId, jobName: options.jobName });
+        if (!run.success) {
+            throw new Error(`Cron ${options.jobName} run ${runId} recorded success:false`);
+        }
+        return;
+    }
     if (body.data?.success === false || body.success === false) {
         throw new Error(`Cron ${options.jobName} returned success:false: ${bodyText}`);
     }
