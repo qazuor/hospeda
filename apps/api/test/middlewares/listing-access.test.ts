@@ -354,7 +354,11 @@ describe('HOS-1721 pre-trial host adds photos to their own DRAFT', () => {
         const result = await probe(appFor({ limit: 1 }));
         // Assert
         expect(result.status).toBe(200);
-        expect(result.body).toEqual({ subjectId: OWNER, evaluatedSteps: [4, 5, 7] });
+        expect(result.body).toEqual({
+            subjectId: OWNER,
+            evaluatedSteps: [4, 5, 7],
+            businessLines: []
+        });
         expect(mocks.preTrialDraftLimits).toHaveBeenCalledWith({ userId: OWNER, vertical });
     });
 

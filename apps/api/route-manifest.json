@@ -2783,6 +2783,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/sections"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/experiences/:id/support-edits"
         },
         {
@@ -3392,6 +3396,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/reactivate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/sections"
         },
         {
             "method": "GET",

@@ -244,7 +244,8 @@ export async function enforceListingAccess(args: {
         }
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
-            evaluatedSteps: result.evaluatedSteps
+            evaluatedSteps: result.evaluatedSteps,
+            businessLines: facts?.businessLines ?? []
         });
         return;
     }
