@@ -14,6 +14,7 @@ import {
     markAdminToursSeen,
     markProfileCompleted
 } from './api-helpers.ts';
+import { acceptedRunId, waitForAcceptedCronRun } from './cron-run-wait.ts';
 import { execSQL, getDbPool } from './db-helpers.ts';
 import {
     E2E_RECEIVER_PATH,
@@ -194,7 +195,7 @@ export async function recordCreditedCycle(args: {
     throw new Error(`Expected a SUCCEEDED payment row for subscription ${args.subscriptionId}`);
 }
 
-/** Trigger an admin cron and return its data, rejecting only non-201 HTTP responses. */
+/** Trigger an admin cron and return its data; a 202 (exclusive job) waits for its recorded run. */
 export async function runCron(args: {
     readonly jobName: string;
     readonly adminCookie: string;
@@ -204,6 +205,11 @@ export async function runCron(args: {
         headers: { cookie: args.adminCookie }
     });
     const text = await response.text();
+    if (response.status === 202) {
+        const runId = acceptedRunId(JSON.parse(text));
+        if (!runId) throw new Error(`Cron ${args.jobName} answered 202 without a run id: ${text}`);
+        return CronDataSchema.parse(await waitForAcceptedCronRun({ runId, jobName: args.jobName }));
+    }
     if (response.status !== 201)
         throw new Error(`Expected cron ${args.jobName} HTTP 201; got ${response.status}: ${text}`);
     const body = CronResponseSchema.parse(JSON.parse(text));

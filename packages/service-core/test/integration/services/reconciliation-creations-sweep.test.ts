@@ -1,4 +1,5 @@
 import {
+    creationSweepModel,
     emailOutbox,
     eq,
     idempotencyKeys,
@@ -28,6 +29,145 @@ afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
 describe('TEST:B11:23 creations sweep over the fake', () => {
+    it('retries searches on cadence, resets for a new create key, and retries a failed search immediately', async () => {
+        const createdAt = new Date('2026-10-20T12:00:00.000Z');
+        const time = createAdjustableClock({ start: new Date(createdAt.getTime() + 4 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation({ declaredPayerEmail: 'cadence@example.test' });
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({ createdAt })
+            .where(eq(idempotencyKeys.key, row.key!));
+        const search = vi.spyOn(fake, 'searchAuthorizations').mockResolvedValue({
+            authorizations: [
+                {
+                    authorizationId: 'cancelled-cadence-result',
+                    createdAt: createdAt.toISOString(),
+                    reference: row.subscription.id,
+                    status: 'cancelled'
+                }
+            ]
+        });
+        const run = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: fake,
+                        clock: time,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+
+        await run();
+        expect(search).toHaveBeenCalledTimes(0);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(1);
+        time.advance({ ms: 14 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(1);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+        time.advance({ ms: 59 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(3);
+
+        time.advance({ ms: 60_000 });
+        const newKey = await creationSweepModel.mintCreateKeyIfUnlinked({
+            subscriptionId: row.subscription.id,
+            createdAt: time.now()
+        });
+        expect(newKey).not.toBeNull();
+        await run();
+        expect(search).toHaveBeenCalledTimes(3);
+        time.advance({ ms: 5 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(4);
+        time.advance({ ms: 14 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(4);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(5);
+
+        const failingTime = createAdjustableClock({
+            start: new Date(createdAt.getTime() + 5 * 60_000)
+        });
+        const failingProvider = createReconciliationFake(failingTime).fake;
+        const failingRow = await seedPendingCreation({
+            declaredPayerEmail: 'failure@example.test'
+        });
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({ createdAt })
+            .where(eq(idempotencyKeys.key, failingRow.key!));
+        const failingSearch = vi
+            .spyOn(failingProvider, 'searchAuthorizations')
+            .mockRejectedValueOnce(new Error('temporary provider failure'))
+            .mockResolvedValue({ authorizations: [] });
+        const retry = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: failingProvider,
+                        clock: failingTime,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+        await retry();
+        await retry();
+        expect(failingSearch).toHaveBeenCalledTimes(2);
+    });
+
+    it('shares one provider search across due rows with the same payer email', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 10 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        await seedPendingCreation({ declaredPayerEmail: 'shared@example.test' });
+        await seedPendingCreation({ declaredPayerEmail: 'shared@example.test' });
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                {},
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
+            )
+        );
+        expect(search).toHaveBeenCalledExactlyOnceWith({ payerEmail: 'shared@example.test' });
+    });
+
+    it('stops before searching the next creation row when its budget signal aborts', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 6 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        await seedPendingCreation({ declaredPayerEmail: 'first@example.test' });
+        await seedPendingCreation({ declaredPayerEmail: 'second@example.test' });
+        const controller = new AbortController();
+        const search = fake.searchAuthorizations.bind(fake);
+        const searchSpy = vi
+            .spyOn(fake, 'searchAuthorizations')
+            .mockImplementation(async (input) => {
+                const result = await search(input);
+                controller.abort();
+                return result;
+            });
+        const summary = await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                { signal: controller.signal },
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
+            )
+        );
+        expect(summary).toMatchObject({ rowsExamined: 1, stoppedOnBudget: true });
+        expect(searchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('TEST:1730:4 finds a loose preapproval only under the declared email', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);
@@ -44,7 +184,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         const summary = await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
@@ -73,7 +213,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
@@ -142,6 +282,60 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         ).toHaveLength(0);
     });
 
+    it('HOS-1999: a failed action leaves the row due on the next tick; a clean one backs off', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation();
+        const input = {
+            reference: row.subscription.id,
+            amount: { amountMinor: 250000, currency: 'ARS' as const },
+            cadence: { everyMonths: 1 },
+            reason: 'test',
+            returnUrl: 'https://example.test',
+            payerEmail: row.userEmail!
+        };
+        await fake.authorize(input);
+        time.advance({ ms: 1_000 });
+        await fake.authorize({ ...input, reason: 'second' });
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        const cancel = vi
+            .spyOn(fake, 'cancel')
+            .mockRejectedValueOnce(new Error('temporary cancel failure'));
+        const run = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: fake,
+                        clock: time,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+
+        const failed = await run();
+        expect(failed.rowsFailed).toBe(1);
+        expect(search).toHaveBeenCalledTimes(1);
+        expect(
+            await creationSweepModel.listAttempts({ subscriptionIds: [row.subscription.id] })
+        ).toEqual([]);
+
+        // No time passes: the failed cancel did not advance the backoff.
+        const retried = await run();
+        expect(retried.rowsFailed).toBe(0);
+        expect(search).toHaveBeenCalledTimes(2);
+        expect(cancel).toHaveBeenCalledTimes(2);
+        const [attempt] = await creationSweepModel.listAttempts({
+            subscriptionIds: [row.subscription.id]
+        });
+        expect(attempt?.attempts).toBe(1);
+
+        // The clean run recorded its attempt, so the next tick is not due.
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+    });
+
     it('uses only payerEmail and cancels a late pending on later runs once', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);
@@ -158,16 +352,17 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         const late = await fake.authorize({ ...input, reason: 'late' });
+        time.advance({ ms: 15 * 60_000 + 1 });
         const cancel = vi.spyOn(fake, 'cancel');
         const search = vi.spyOn(fake, 'searchAuthorizations');
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(cancel).toHaveBeenCalledExactlyOnceWith({ authorizationId: late.authorizationId });
@@ -181,10 +376,11 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
                 }
             ]
         });
+        time.advance({ ms: 60 * 60_000 + 1 });
         const repeated = await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(repeated.alreadyCancelled).toBe(1);

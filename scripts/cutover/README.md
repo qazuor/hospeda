@@ -598,8 +598,8 @@ nothing here needs a redeploy.
 
 1. **Plan.** Confirm the Sentry plan includes Crons (not verified).
 2. **Sweep monitor, `billing-reconciliation-sweep`.** From `apps/api/src/utils/cron-monitor-ping.ts`:
-   `interval 1 day`, check-in margin 120 minutes (26 h in total). The job runs daily at 06:00
-   (`0 6 * * *`, zone `America/Argentina/Buenos_Aires`). The monitor does not exist until the first
+   `crontab 10 2 * * *`, check-in margin 170 minutes. The job runs daily at 02:10
+   (`10 2 * * *`, zone `America/Argentina/Buenos_Aires`). The monitor does not exist until the first
    check-in of a COMPLETE sweep in that environment creates it (Sentry upserts the monitor from the
    check-in config), and the sweep pings only after a complete run.
    - **Staging, during the rehearsal**, after the first complete sweep: the monitor exists with that
@@ -632,10 +632,10 @@ exist. Sentry check-ins (`cron-monitor-ping.ts`, `cron-heartbeat.ts`) stay exact
    three monitored jobs. Use the schedule from `apps/api/src/cron/schedules.manifest.ts`:
    - `listing-coverage-reconciler` → `0 5 * * *`
    - `listing-remote-deletion-retry` → `45 5 * * *`
-   - `billing-reconciliation-sweep` → `0 6 * * *`
+   - `billing-reconciliation-sweep` → `10 2 * * *`
 
    Time zone for all six: `America/Argentina/Buenos_Aires`. Pick a grace period you are
-   comfortable with; suggested: **2 h** for `billing-reconciliation-sweep` (Sentry used a 120 min
+   comfortable with; suggested: **3 h** for `billing-reconciliation-sweep` (Sentry uses a 170 min
    margin) and **1 h** for the other two.
 3. **Notification.** Add your email as the project's integration so a late ping, a `/fail`, or a
    missed check-in reaches you.

@@ -450,6 +450,11 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_E2E_CLOCK_FILE: z.string().min(1).optional(),
     HOSPEDA_E2E_MAIL_CAPTURE_URL: z.string().url().optional(),
     HOSPEDA_MERCADO_PAGO_TIMEOUT: z.coerce.number().positive().optional().default(5000),
+    /** Mercado Pago traffic governor kill switch and rollout mode (HOS-1999). */
+    HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE: z
+        .enum(['off', 'observe', 'enforce'])
+        .optional()
+        .default('observe'),
     /** MercadoPago access token for payment processing */
     HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string().optional(),
     /** MercadoPago webhook signature secret for verifying incoming IPN notifications */
