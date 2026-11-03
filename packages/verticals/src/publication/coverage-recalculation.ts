@@ -2,7 +2,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import { buildRestitutionPayload } from './publication-notices';
-import { orderReturningCandidates, selectSurplusToLower } from './publication-order';
+import { orderRestorationCandidates, selectSurplusToLower } from './publication-order';
 import type {
     PostCommitWarning,
     PublicationAfterCommit,
@@ -193,7 +193,9 @@ export async function recalculateCoverage(args: {
                 const eligibleReturning = returning.filter(
                     (candidate) => !incomplete.has(candidate.id)
                 );
-                const ordered = orderReturningCandidates({ entries: eligibleReturning.map(entry) });
+                const ordered = orderRestorationCandidates({
+                    entries: eligibleReturning.map(entry)
+                });
                 for (const candidate of ordered) {
                     if (available === 0) break;
                     const listing = returning.find((row) => row.id === candidate.id);

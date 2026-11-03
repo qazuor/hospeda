@@ -387,7 +387,7 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
                 notRestoredListingIds: [],
                 criterion: 'LAST_FELL_FIRST_BACK'
             },
-            expected: ['Volvieron estas fichas: Cabañas del Río.', 'cayó al final']
+            expected: ['Volvieron estas fichas: Cabañas del Río.', 'publicaste más recientemente']
         }
     ])('renders $template through the production sender', async ({
         template,

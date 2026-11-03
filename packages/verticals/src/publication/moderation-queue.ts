@@ -8,6 +8,9 @@ export function selectPublishedWithinQuota(args: {
     readonly limit: number;
 }): { readonly publishReturning: boolean; readonly lower: readonly PublicationQueueEntry[] } {
     if (args.limit <= 0) return { publishReturning: false, lower: [] };
+    // HOS-1984: the coverage restore path now uses `orderRestorationCandidates` (newest manual
+    // publish first). This moderation lift still runs the opposite policy (oldest first);
+    // aligning it is pending an owner decision, so it is intentionally unchanged.
     const candidates = orderReturningCandidates({ entries: [...args.published, args.returning] });
     const selected = candidates.slice(0, args.limit);
     const selectedIds = new Set(selected.map(({ id }) => id));
