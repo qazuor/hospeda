@@ -240,6 +240,19 @@ export function buildAccommodationSearchConditions({
         clauses.push(eq(accommodations.type, params.type));
     }
     clauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
+    if (params.currency) {
+        // H-167: stored accommodation prices default to ARS. Treat legacy JSONB
+        // prices without an explicit currency as ARS, matching the write contract.
+        clauses.push(
+            sql`COALESCE(${accommodations.price}->>'currency', 'ARS') = ${params.currency}`
+        );
+    }
+    if (params.createdAfter) {
+        clauses.push(gte(accommodations.createdAt, params.createdAfter));
+    }
+    if (params.createdBefore) {
+        clauses.push(lte(accommodations.createdAt, params.createdBefore));
+    }
     if (params.destinationIds && params.destinationIds.length > 0) {
         clauses.push(inArray(accommodations.destinationId, params.destinationIds));
     } else if (params.destinationId) {
@@ -387,21 +400,9 @@ export const ACCOMMODATION_SEARCH_FILTER_HANDLING: Readonly<
     isFeatured: { kind: 'builder', sample: { isFeatured: true } },
     minPrice: { kind: 'builder', sample: { minPrice: 10 } },
     maxPrice: { kind: 'builder', sample: { maxPrice: 10 } },
-    currency: {
-        kind: 'known-gap',
-        sample: { currency: PriceCurrencyEnum.ARS },
-        reason: 'accepted by the schema, never read by the model (price is not currency-scoped)'
-    },
-    createdAfter: {
-        kind: 'known-gap',
-        sample: { createdAfter: new Date('2026-01-01') },
-        reason: 'domain-schema only; no HTTP param feeds it and the model never reads it'
-    },
-    createdBefore: {
-        kind: 'known-gap',
-        sample: { createdBefore: new Date('2026-01-01') },
-        reason: 'domain-schema only; no HTTP param feeds it and the model never reads it'
-    },
+    currency: { kind: 'builder', sample: { currency: PriceCurrencyEnum.ARS } },
+    createdAfter: { kind: 'builder', sample: { createdAfter: new Date('2026-01-01') } },
+    createdBefore: { kind: 'builder', sample: { createdBefore: new Date('2026-01-01') } },
     destinationId: {
         kind: 'builder',
         sample: { destinationId: '11111111-1111-4111-8111-111111111111' }
