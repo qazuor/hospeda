@@ -424,6 +424,7 @@ export const VIDEOS_CLAUDE = [
         ],
         cta: 'Sumá tu local',
         extraRules: [
+            'El mapa de locales todavía no existe: la toma del mapa se presta del editor de alojamientos, tapando todo lo que diga alojamiento (decisión del dueño), y se regraba cuando entre. El video no se manda hasta entonces.',
             'En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.',
             'La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.'
         ]
@@ -462,14 +463,13 @@ export const VIDEOS_CLAUDE = [
         para: 'Cualquier prospecto que pregunta «¿y cómo se ve?»',
         mode: 'claude',
         badge: false,
-        length: '25 a 30 s',
-        idea: 'Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.',
+        length: '20 a 25 s',
+        idea: 'Recorrido por una ficha pública: traducción automática, mapa y qué hay cerca. El clima no va: vive en la página del destino, no en la ficha.',
         account: 'ninguna: es la ficha pública, sin login',
         recording: 'P5 · Ficha de alojamiento completa, sección por sección.',
         recordSteps: [
-            'Fotos y descripción; cambiar el idioma a inglés.',
-            'Mapa y «Qué hay cerca», con distancias.',
-            'Pronóstico del clima del destino.'
+            'Fotos y descripción; cambiar el idioma a inglés y a portugués.',
+            'Mapa y «Qué hay cerca», con distancias.'
         ],
         intro: '¿Cómo te ve el turista?',
         stages: [
@@ -478,8 +478,7 @@ export const VIDEOS_CLAUDE = [
                 chip: 'Qué hay cerca',
                 says: 'Mapa y qué hay cerca.',
                 show: 'Mapa y lugares con distancia.'
-            },
-            { chip: 'El clima', says: 'Y hasta el pronóstico.', show: 'El bloque del clima.' }
+            }
         ],
         cta: 'Sumate a Hospeda',
         extraRules: [

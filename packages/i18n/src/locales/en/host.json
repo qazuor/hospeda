@@ -231,6 +231,9 @@
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
                 "publishConfirmTrialNote_one": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
                 "publishConfirmTrialNote_other": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
+                "republish": "Publish again",
+                "republishConfirmTitle": "Publish this accommodation again?",
+                "republishConfirmNote": "It will appear on the site again, visible to travellers.",
                 "publishYes": "Yes, publish",
                 "choosePlan": "Choose a host plan"
             },

@@ -99,6 +99,13 @@
             "reason": "Route description of review moderation."
         },
         {
+            "file": "apps/api/src/routes/experience/reviews/admin/list.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "experience_reviews",
+            "reason": "The admin review list filters reviews by their own moderationState."
+        },
+        {
             "file": "apps/api/src/routes/venue/reviews/admin/list.ts",
             "name": "moderationState",
             "count": 2,

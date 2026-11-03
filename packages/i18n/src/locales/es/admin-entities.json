@@ -1108,5 +1108,44 @@
                 "closeFixRequest": "La ficha no tiene un pedido de arreglo abierto."
             }
         }
+    },
+    "fixRequestList": {
+        "title": "Arreglos pendientes",
+        "intro": "Pedidos de arreglo abiertos. La ficha sigue a la vista hasta que la bajes. Los más viejos primero.",
+        "filters": {
+            "vertical": "Vertical",
+            "verticalAll": "Todas",
+            "ownerReported": "Aviso del dueño",
+            "ownerReportedAll": "Todos",
+            "ownerReportedYes": "Avisó que lo corrigió",
+            "ownerReportedNo": "Sin aviso",
+            "overdue": "Sólo con la fecha sugerida vencida"
+        },
+        "columns": {
+            "listing": "Ficha",
+            "vertical": "Vertical",
+            "status": "Estado",
+            "reason": "Motivo",
+            "openedAt": "Abierto",
+            "suggestedDate": "Fecha sugerida",
+            "ownerReported": "Aviso del dueño",
+            "actions": "Acciones"
+        },
+        "openedToday": "hoy",
+        "age_one": "hace {{count}} día",
+        "age_other": "hace {{count}} días",
+        "noSuggestedDate": "Sin fecha",
+        "overdue": "Vencida",
+        "ownerReportedAt": "Avisó el {date}",
+        "ownerNotReported": "Sin aviso",
+        "viewListing": "Ver ficha",
+        "moderate": "Moderar",
+        "hideModerate": "Cerrar",
+        "empty": "No hay pedidos de arreglo abiertos con estos filtros.",
+        "loading": "Leyendo los pedidos…",
+        "error": "No se pudieron leer los pedidos de arreglo. Recargá la página.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {page} de {totalPages}"
     }
 }

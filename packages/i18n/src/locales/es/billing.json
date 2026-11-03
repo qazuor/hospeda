@@ -280,6 +280,36 @@
                 "unknown": "Hospeda",
                 "venue": "Comer y salir"
             }
+        },
+        "return": {
+            "confirmed": {
+                "title": "Tu suscripción está activa",
+                "body": "Mercado Pago confirmó el pago. Ya podés usar tu plan."
+            },
+            "processing": {
+                "title": "Estamos confirmando tu pago",
+                "body": "Mercado Pago todavía no nos avisó el resultado. Esto suele tardar unos segundos."
+            },
+            "stillProcessing": {
+                "title": "Todavía no tenemos la confirmación",
+                "body": "Todavía no vemos el pago. Si ya lo completaste, puede tardar unos minutos en reflejarse. Si no lo completaste, podés retomarlo desde el checkout.",
+                "refresh": "Volver a revisar"
+            },
+            "rejected": {
+                "title": "Mercado Pago no aprobó el pago",
+                "body": "No se cobró nada y el intento anterior quedó cerrado. Podés armar uno nuevo con el mismo plan.",
+                "retry": "Intentar de nuevo",
+                "retrying": "Preparando el pago…"
+            },
+            "unknown": {
+                "title": "No pudimos leer el estado del pago",
+                "body": "Revisá tu suscripción para ver cómo quedó.",
+                "refresh": "Volver a revisar"
+            },
+            "closed": {
+                "title": "Este intento ya no está vigente",
+                "body": "El intento de pago venció o se canceló. Podés ver el estado de tu suscripción desde tu cuenta."
+            }
         }
     },
     "limit": {

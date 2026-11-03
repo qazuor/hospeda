@@ -1,6 +1,6 @@
 /** TEST:B3:35 (soporte) and TEST:B3:36 (soporte): real adapter cancellation and webhook decoding. */
 import { createAdjustableClock } from '@repo/test-clock';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MercadoPagoPaymentProvider } from '../src/adapters/mercadopago/mercadopago-payment-provider';
 import { FakePaymentProvider } from '../src/fake/fake-payment-provider';
 import { startFakeProviderServer } from '../src/fake-server/fake-provider-server';
@@ -99,5 +99,27 @@ describe('Mercado Pago cancel and notice decoder', () => {
                 capability: 'notify'
             });
         }
+    });
+});
+
+describe('HOS-1995 cancel failure carries the HTTP status and a sanitized body', () => {
+    it('attaches status and body to the error of a throttled cancel', async () => {
+        const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+            new Response(JSON.stringify({ message: 'rate limit', status: 429 }), {
+                status: 429,
+                headers: { 'Retry-After': '3' }
+            })
+        );
+        const adapter = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'unit-test-token',
+            fetch
+        });
+        const error = await adapter.cancel({ authorizationId: 'pre-1' }).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(PaymentProviderError);
+        const failure = error as PaymentProviderError;
+        expect(failure.transient).toEqual({ kind: 'RATE_LIMITED', retryAfterSeconds: 3 });
+        expect(failure.cause).toMatchObject({ status: 429 });
+        expect(JSON.stringify(failure.cause)).not.toContain('unit-test-token');
     });
 });

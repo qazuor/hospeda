@@ -184,6 +184,13 @@ NO echo. The voice is recorded close and dry, as if in a quiet room.
 
 ## Montaje · prompt para Claude Code
 
+**Adjuntar y reemplazar:**
+
+- `El clip descargado de Hailuo de la tirada T1` → undefined
+- `El clip descargado de Hailuo de la tirada T3` → undefined
+- `El clip descargado de la tirada de voz (sólo se usa su audio)` → undefined
+- `Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida` → undefined
+
 ````
 Armá en Remotion el video de venta VH3 · «Basta de bloquear fechas a mano» (14,5 s).
 
