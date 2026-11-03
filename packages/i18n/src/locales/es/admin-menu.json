@@ -54,6 +54,7 @@
         "userTagModeration": "Moderación de etiquetas"
     },
     "billing": {
+        "planCatalog": "Planes y claves",
         "title": "Facturación",
         "plans": "Planes",
         "subscriptions": "Suscripciones",

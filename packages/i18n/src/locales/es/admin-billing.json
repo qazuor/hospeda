@@ -1,4 +1,91 @@
 {
+    "planCatalogEditor": {
+        "title": "Planes y claves",
+        "intro": "Cada cambio publica una versión nueva e inmutable del plan. Sólo SUPER_ADMIN.",
+        "vertical": "Vertical",
+        "loading": "Leyendo el catálogo…",
+        "empty": "Esta vertical no tiene planes.",
+        "noCurrentVersion": "Sin versión vigente",
+        "yes": "Sí",
+        "no": "No",
+        "columns": {
+            "plan": "Plan",
+            "role": "Rol",
+            "rank": "Rank",
+            "sellable": "Vendible",
+            "trialDays": "Días de prueba",
+            "graceDays": "Días de gracia",
+            "allowsPause": "Admite pausa",
+            "inheritsTouristVip": "Hereda Turista VIP",
+            "entitlements": "Entitlements",
+            "limits": "Limits",
+            "cycles": "Ciclos",
+            "actions": "Acciones"
+        },
+        "roles": {
+            "none": "Vendible (sin rol)",
+            "trial": "Prueba",
+            "pre_trial": "Antes de la prueba",
+            "floor": "Piso"
+        },
+        "cycles": {
+            "monthly": "Mensual",
+            "quarterly": "Trimestral",
+            "semiannual": "Semestral",
+            "annual": "Anual"
+        },
+        "actions": { "publish": "Publicar versión nueva", "createPlan": "Crear plan" },
+        "form": {
+            "title": "Versión nueva de «{name}»",
+            "current": "Versión vigente",
+            "entitlementsLegend": "Entitlements",
+            "limitsLegend": "Limits",
+            "cyclesLegend": "Ciclos que ofrece",
+            "addEntitlement": "Agregar entitlement",
+            "addLimit": "Agregar limit",
+            "key": "Clave",
+            "planQuota": "Cuota del plan",
+            "trialQuota": "Cuota de la prueba",
+            "quotasHelp": "Un entitlement medido lleva sus dos cuotas o ninguna.",
+            "value": "Valor",
+            "remove": "Quitar",
+            "trialNote": "El plan de prueba no guarda entitlements: se derivan.",
+            "review": "Revisar",
+            "cancel": "Cancelar"
+        },
+        "review": {
+            "title": "Qué cambia contra la versión vigente",
+            "key": "Clave",
+            "kind": "Tipo",
+            "from": "Vigente",
+            "to": "Nueva",
+            "absent": "(no está)",
+            "kinds": { "entitlement": "Entitlement", "limit": "Limit", "setting": "Ajuste" },
+            "reach_one": "Alcanza a {{count}} cliente anclado.",
+            "reach_other": "Alcanza a {{count}} clientes anclados.",
+            "noChanges": "No cambia ninguna clave.",
+            "confirm": "Publicar la versión",
+            "back": "Volver al formulario"
+        },
+        "createPlan": {
+            "title": "Crear plan",
+            "slug": "Identificador (slug)",
+            "name": "Nombre",
+            "description": "Descripción",
+            "pricingOrder": "Orden en la pricing",
+            "role": "Rol",
+            "submit": "Crear el plan",
+            "created": "Plan creado."
+        },
+        "published": "Publicada la versión {id}.",
+        "errors": {
+            "load": "No se pudo leer el catálogo. Recargá la página.",
+            "invalid": "Revisá el formulario: {message}",
+            "rejected": "La API rechazó la publicación: {message}",
+            "forbidden": "Sólo SUPER_ADMIN puede publicar versiones de plan.",
+            "generic": "No se pudo completar la acción. Probá de nuevo."
+        }
+    },
     "deadlinesEditor": {
         "title": "Plazos",
         "intro": "Todo plazo que decide cuándo pasa algo. Sólo SUPER_ADMIN.",

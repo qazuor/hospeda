@@ -54,6 +54,7 @@
         "userTagModeration": "User Tag Moderation"
     },
     "billing": {
+        "planCatalog": "Plans and keys",
         "title": "Billing",
         "plans": "Plans",
         "subscriptions": "Subscriptions",
