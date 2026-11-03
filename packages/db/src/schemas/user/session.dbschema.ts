@@ -21,7 +21,9 @@ export const sessions = pgTable('session', {
     /** Admin plugin: tracks if this session is an admin impersonating another user */
     impersonatedBy: text('impersonated_by'),
     /** Two-factor plugin: whether session has completed 2FA verification */
-    twoFactorVerified: boolean('two_factor_verified')
+    twoFactorVerified: boolean('two_factor_verified'),
+    /** Which credential opened this session (`credential`, a social provider id, or `email-verification`); written once by the `session.create.before` hook. NULL for sessions minted before HOS-1486 and for paths the hook does not recognise. Read by the Partner claim (V7 §2.4 rule 2) to keep only that credential. */
+    authMethod: text('auth_method')
 });
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({

@@ -131,7 +131,10 @@ import {
     publicOwnerPromotionRoutes
 } from './owner-promotion';
 import { adminPartnerApplicationRoutes } from './partner-application';
-import { publicPartnerApplicationRoutes } from './partner-application/index.js';
+import {
+    protectedPartnerClaimRoutes,
+    publicPartnerApplicationRoutes
+} from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
@@ -483,6 +486,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
+        app.route('/api/v1/protected/partner-claims', protectedPartnerClaimRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         // HOS-1156: the vertical-parameterised publish precheck, which
         // generalises /host-onboarding/precheck to venue and experiences.
