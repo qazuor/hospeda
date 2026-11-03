@@ -22,9 +22,10 @@ describe('listing catalog helpers', () => {
         ).toEqual([]);
     });
     it('maps business line URL slugs in both directions', () => {
-        expect(businessLineToUrlSlug('food')).toBe('gastronomia');
-        expect(businessLineToUrlSlug('nightlife')).toBe('noche');
-        expect(urlSlugToBusinessLine('gastronomia')).toBe('food');
-        expect(urlSlugToBusinessLine('noche')).toBe('nightlife');
+        expect(businessLineToUrlSlug({ value: 'food' })).toEqual({ urlSlug: 'gastronomia' });
+        expect(businessLineToUrlSlug({ value: 'nightlife' })).toEqual({ urlSlug: 'noche' });
+        expect(urlSlugToBusinessLine({ urlSlug: 'gastronomia' })).toEqual({ value: 'food' });
+        expect(urlSlugToBusinessLine({ urlSlug: 'noche' })).toEqual({ value: 'nightlife' });
+        expect(urlSlugToBusinessLine({ urlSlug: 'food' })).toEqual({ value: undefined });
     });
 });

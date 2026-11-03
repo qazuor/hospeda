@@ -1,3 +1,4 @@
+import type { BUSINESS_LINES } from './business-lines.js';
 import type { EntitlementKeyEnum } from './key-enums.js';
 import type {
     ListingSectionDefinitionBase,
@@ -30,28 +31,32 @@ export interface ListingSectionDefinition<V extends ListingVertical = ListingVer
     /** Optional nested features with ids derived from this vertical's sections. */
     readonly traits?: readonly SectionTraitDefinition<V>[];
 }
-/** Literal business line values declared per vertical. */
-export const BUSINESS_LINE_VALUES = {
-    venue: ['food', 'nightlife'],
-    accommodation: ['standard'],
-    experience: ['standard']
-} as const satisfies Readonly<Record<ListingVertical, readonly string[]>>;
-/** Business line values for one vertical. */
-export type BusinessLineValue<V extends ListingVertical> = (typeof BUSINESS_LINE_VALUES)[V][number];
-/** Any listing business line value. */
-export type BusinessLine = BusinessLineValue<ListingVertical>;
-/** A business line catalog entry. */
-export interface BusinessLineDefinition<V extends ListingVertical = ListingVertical> {
+/**
+ * Construction shape used to type-check the business line content before its
+ * values are derived (see {@link BusinessLineValue}).
+ */
+export interface BusinessLineDefinitionBase<V extends ListingVertical = ListingVertical> {
     /** Owning vertical. */
     readonly vertical: V;
-    /** Internal business line value. */
-    readonly value: BusinessLineValue<V>;
+    /** Internal business line value, narrowed by {@link BusinessLineDefinition}. */
+    readonly value: string;
     /** Public URL slug, when applicable. */
     readonly urlSlug?: string;
     /** Whether this line has a public collection. */
     readonly public: boolean;
     /** Non-common sections associated with this business line. */
     readonly sections: readonly ListingSectionId<V>[];
+}
+/** Business line values for one vertical, derived from `BUSINESS_LINES`. */
+export type BusinessLineValue<V extends ListingVertical> =
+    (typeof BUSINESS_LINES)[V][number]['value'];
+/** Any listing business line value. */
+export type BusinessLine = BusinessLineValue<ListingVertical>;
+/** A business line catalog entry with its value narrowed to the catalog union. */
+export interface BusinessLineDefinition<V extends ListingVertical = ListingVertical>
+    extends Omit<BusinessLineDefinitionBase<V>, 'value'> {
+    /** Internal business line value. */
+    readonly value: BusinessLineValue<V>;
 }
 /** Allowed and preselected business lines for one listing type. */
 export interface BusinessLineTypeRule<V extends ListingVertical> {
