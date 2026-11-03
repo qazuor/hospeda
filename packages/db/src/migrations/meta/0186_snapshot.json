@@ -1,5 +1,5 @@
 {
-  "id": "a551dc0e-d6d2-469f-81a4-824f8cf556b7",
+  "id": "b69931b6-34c0-4ae9-9df7-29a62bb17ac3",
   "prevId": "50c899d2-4c95-474d-88a1-59f455fca432",
   "version": "7",
   "dialect": "postgresql",
@@ -26857,63 +26857,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.creation_sweep_attempt": {
-      "name": "creation_sweep_attempt",
-      "schema": "",
-      "columns": {
-        "subscription_id": {
-          "name": "subscription_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "next_search_at": {
-          "name": "next_search_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reset_marker": {
-          "name": "reset_marker",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
-          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
-          "tableFrom": "creation_sweep_attempt",
-          "tableTo": "subscription",
-          "columnsFrom": [
-            "subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_creation_sweep_attempts_nonnegative": {
-          "name": "ck_creation_sweep_attempts_nonnegative",
-          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.addon_version_entitlement": {
       "name": "addon_version_entitlement",
       "schema": "",
@@ -28153,6 +28096,63 @@
         "ck_covered_period_one_payment": {
           "name": "ck_covered_period_one_payment",
           "value": "(\"covered_period\".\"payment_id\" IS NOT NULL) <> (\"covered_period\".\"manual_payment_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.creation_sweep_attempt": {
+      "name": "creation_sweep_attempt",
+      "schema": "",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_search_at": {
+          "name": "next_search_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reset_marker": {
+          "name": "reset_marker",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
+          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
+          "tableFrom": "creation_sweep_attempt",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_creation_sweep_attempts_nonnegative": {
+          "name": "ck_creation_sweep_attempts_nonnegative",
+          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
         }
       },
       "isRLSEnabled": false
@@ -30790,6 +30790,66 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "cycle_id": {
+          "name": "cycle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cycle_date": {
+          "name": "cycle_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cycle_started_at": {
+          "name": "cycle_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slice_index": {
+          "name": "slice_index",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phase": {
+          "name": "phase",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_complete": {
+          "name": "rows_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "passes_completed": {
+          "name": "passes_completed",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_subscription_ids": {
+          "name": "failed_subscription_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -30804,6 +30864,44 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_reconciliation_sweep_run_cycle_slice": {
+          "name": "uq_reconciliation_sweep_run_cycle_slice",
+          "columns": [
+            {
+              "expression": "cycle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slice_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reconciliation_sweep_run\".\"cycle_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_reconciliation_sweep_run_open": {
+          "name": "idx_reconciliation_sweep_run_open",
+          "columns": [
+            {
+              "expression": "lease_until",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"reconciliation_sweep_run\".\"outcome\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -31436,9 +31534,36 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "last_swept_at": {
+          "name": "last_swept_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
+        "idx_subscription_last_swept_at": {
+          "name": "idx_subscription_last_swept_at",
+          "columns": [
+            {
+              "expression": "last_swept_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "first"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "uq_subscription_commitment_origin": {
           "name": "uq_subscription_commitment_origin",
           "columns": [
@@ -33602,9 +33727,7 @@
         "HELADERIA",
         "PANADERIA",
         "ROTISERIA",
-        "FOOD_TRUCK",
-        "PUB",
-        "BOLICHE"
+        "FOOD_TRUCK"
       ]
     },
     "public.visibility_enum": {

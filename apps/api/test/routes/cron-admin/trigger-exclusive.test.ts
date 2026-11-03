@@ -101,6 +101,38 @@ describe('exclusive manual cron trigger', () => {
         });
     });
 
+    it('rejects newCycle for a job that does not opt in', async () => {
+        await expect(
+            triggerCronJobHandler(
+                {} as never,
+                { jobName: 'exclusive-demo' },
+                {},
+                { newCycle: true }
+            )
+        ).rejects.toMatchObject({ statusCode: 400, code: 'VALIDATION_ERROR' });
+        expect(runCronJob).not.toHaveBeenCalled();
+    });
+
+    it('forwards newCycle to a supporting sweep job and keeps exclusive 202 behavior', async () => {
+        registeredJob.acceptsNewCycle = true;
+        runCronJob.mockResolvedValue({
+            started: true,
+            runId: 'new-cycle-run',
+            completion: new Promise(() => undefined)
+        });
+        await expect(
+            triggerCronJobHandler(
+                {} as never,
+                { jobName: 'exclusive-demo' },
+                {},
+                { newCycle: true }
+            )
+        ).resolves.toMatchObject({ accepted: true, runId: 'new-cycle-run' });
+        expect(runCronJob).toHaveBeenCalledWith(
+            expect.objectContaining({ executionMode: 'manual', newCycle: true })
+        );
+    });
+
     it('answers the real admin route with 202 while the handler is pending', async () => {
         const completion = deferred<{
             readonly success: boolean;

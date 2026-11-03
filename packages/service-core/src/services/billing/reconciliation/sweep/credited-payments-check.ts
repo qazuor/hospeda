@@ -23,6 +23,8 @@ const MARK_PAYMENT_ALREADY_HUNG = 'MARK_PAYMENT_ALREADY_HUNG';
 
 /** Ports of the credited-payments check (AC:B11:12, AC:B11:27). */
 export interface CreditedPaymentsCheckPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     /** The internal chargeback interface; defaults to the cut's implementation. */
     readonly chargebacks?: ChargebackDetection;
     /** The billing deadlines (PLAZO:18); defaults to the version in force. */
@@ -107,6 +109,8 @@ export async function runCreditedPaymentsCheck(
             limit: input.pageSize
         });
         for (const payment of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             const subscriptionId = payment.subscriptionId;
             try {
                 if (subscriptionId === null) continue;
@@ -161,6 +165,7 @@ export async function runCreditedPaymentsCheck(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterPaymentId = page.at(-1)?.id;
     }
