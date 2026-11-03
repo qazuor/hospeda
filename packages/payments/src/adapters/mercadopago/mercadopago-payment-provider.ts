@@ -181,7 +181,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                             unclassified: trafficContext === undefined
                         });
                     } catch (error) {
-                        if (this.governorModeIsEnforce(error)) throw error;
+                        if (this.isGovernorRejection(error)) throw error;
                     }
                 }
                 const controller = new AbortController();
@@ -235,7 +235,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
-    private governorModeIsEnforce(error: unknown): boolean {
+    /** Identify a rejection raised by governor admission, independent of mode naming. */
+    private isGovernorRejection(error: unknown): boolean {
         return error instanceof PaymentProviderError && error.governorRejected === true;
     }
 
