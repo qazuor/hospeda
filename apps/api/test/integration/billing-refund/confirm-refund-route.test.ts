@@ -169,6 +169,13 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
             {}
         );
         expect(response.status).toBe(400);
+        const falseConfirmation = await confirmRequest(
+            app,
+            seeded.refundId,
+            { id: seeded.adminId, role: 'SUPER_ADMIN', permissions },
+            { confirmed: false }
+        );
+        expect(falseConfirmation.status).toBe(400);
         expect(refundSpy).toHaveBeenCalledTimes(0);
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('REQUESTED');
     });
