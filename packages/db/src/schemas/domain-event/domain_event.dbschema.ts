@@ -34,6 +34,7 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
  * - `partner_application.wait_cancelled`: administrative action 5 (ACC:5)
  *   cancelled a rejected Partner application's wait (HOS-1484).
+ * - `partner_application.approved` / `partner_application.rejected` (PP2/PP3, ACC:5) and `partner.claimed` record the HOS-1485 resolution and claim.
  * - `subscription.provider_cancellation_decided`: one of our transitions
  *   decided to cancel the preapproval of this subscription (`entity_type =
  *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
@@ -68,6 +69,9 @@ export const DOMAIN_EVENT_TYPES = [
     'account.closed_on_request',
     'partner_application.email_replaced',
     'partner_application.wait_cancelled',
+    'partner_application.approved',
+    'partner_application.rejected',
+    'partner.claimed',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
