@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ListingSectionId } from '../../src/catalog/listing-catalog.ids.js';
-import {
-    reviewRatingSchemaFor,
-    validateReviewDimensions
-} from '../../src/catalog/review-dimensions.js';
+import { validateReviewDimensions } from '../../src/catalog/review-dimensions.js';
 
 describe('review dimensions', () => {
     const absentMenu = new Map<
@@ -35,16 +32,28 @@ describe('review dimensions', () => {
         ).toEqual({ ok: true });
     });
 
-    it('rejects dimensions outside the vertical schema', () => {
+    it('rejects dimensions outside the vertical by shape, through the validator', () => {
         expect(
-            reviewRatingSchemaFor({ vertical: 'venue' }).safeParse({ workQuality: 4 }).success
-        ).toBe(false);
+            validateReviewDimensions({
+                vertical: 'venue',
+                sectionStates: lockedMenu,
+                rating: { workQuality: 4 }
+            })
+        ).toEqual({ ok: false, reason: 'INVALID_RATING', field: 'rating' });
     });
 
-    it.each([0, null, 2.5])('rejects malformed venue votes (%s)', (food) => {
-        expect(reviewRatingSchemaFor({ vertical: 'venue' }).safeParse({ food }).success).toBe(
-            false
-        );
+    it.each([
+        0,
+        null,
+        4.5
+    ])('rejects a malformed venue vote (%s) by shape, through the validator', (food) => {
+        expect(
+            validateReviewDimensions({
+                vertical: 'venue',
+                sectionStates: lockedMenu,
+                rating: { food }
+            })
+        ).toEqual({ ok: false, reason: 'INVALID_RATING', field: 'rating' });
     });
 
     it('accepts the unchanged experience rating shape including zero', () => {

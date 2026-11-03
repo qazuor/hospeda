@@ -154,8 +154,16 @@ function violations(
     const reviewErrors: string[] = [];
     for (const vertical of verticals) {
         const declared = reviewRules[vertical];
-        if ((vertical === 'venue' || vertical === 'experience') && !declared) {
+        // Only the verticals whose reviews the shared listing base recalculates
+        // declare ReviewRules (DEC-FAC-073); accommodation has its own review
+        // pipeline, so a declaration there would be read by nothing.
+        const recalculatedByListingBase = vertical === 'venue' || vertical === 'experience';
+        if (recalculatedByListingBase && !declared) {
             reviewErrors.push(`r12:declaration:${vertical}`);
+            continue;
+        }
+        if (!recalculatedByListingBase && declared) {
+            reviewErrors.push(`r12:undeclared-vertical:${vertical}`);
             continue;
         }
         if (!declared) continue;
@@ -258,9 +266,24 @@ describe('G-FAC-02 rule 12 review dimensions', () => {
     type MutableReviewRules = {
         venue: { dimensions: Array<{ id: string; labelKey: string; boundSection?: string }> };
         experience?: { dimensions: Array<{ id: string; labelKey: string; boundSection?: string }> };
+        accommodation?: {
+            vertical: string;
+            dimensions: Array<{ id: string; labelKey: string; boundSection?: string }>;
+            dimensionAveraging: string;
+        };
     };
 
     it.each([
+        [
+            'rules declared for accommodation',
+            (rules: MutableReviewRules) => {
+                rules.accommodation = {
+                    vertical: 'accommodation',
+                    dimensions: [],
+                    dimensionAveraging: 'votedOnly'
+                };
+            }
+        ],
         [
             'missing experience rules',
             (rules: MutableReviewRules) => {
