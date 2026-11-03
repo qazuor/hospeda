@@ -33,7 +33,11 @@ import btn from '@/components/account/AccountButton.module.css';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { buildUnpublishConfirmNotes } from '@/lib/listing/listing-notices';
-import { hasAnyPropertyCardAction, resolvePropertyCardActions } from '@/lib/host/property-card-actions';
+import {
+    hasAnyPropertyCardAction,
+    resolvePropertyCardActions,
+    resolveRepublishOffer
+} from '@/lib/host/property-card-actions';
 import { DeleteButton } from './DeleteButton.client';
 import { PublishButton } from './PublishButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
@@ -206,6 +210,26 @@ const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` }
  */
 const actions = resolvePropertyCardActions({ publicationStatus });
 const hasAnyAction = hasAnyPropertyCardAction({ actions });
+
+/**
+ * HOS-1977: "Publicar de nuevo" for a listing the system took down for billing.
+ * It goes through the same `PublishButton` and the same PB1 endpoint as a
+ * draft: PB1 starts the trial when it is unspent, and the button's own
+ * `checkout` branch leads to the plans page when it is not.
+ */
+const showRepublish = resolveRepublishOffer({ actions, affordance: publishAffordance });
+const showPublish = actions.publish || showRepublish;
+const publishCopy = actions.republish
+    ? {
+          label: t('host.properties.card.actions.republish', 'Publicar de nuevo'),
+          confirmTitle: t('host.properties.card.actions.republishConfirmTitle', '¿Publicar de nuevo este alojamiento?'),
+          confirmNote: t('host.properties.card.actions.republishConfirmNote', 'Vuelve a aparecer en el sitio, visible para los turistas.')
+      }
+    : {
+          label: t('host.properties.card.actions.publish', 'Publicar'),
+          confirmTitle: t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?'),
+          confirmNote: t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')
+      };
 ---
 
 <article class="prop-card">
@@ -300,17 +324,17 @@ const hasAnyAction = hasAnyPropertyCardAction({ actions });
                 />
             )}
 
-            <!-- Publish: only when DRAFT (guided web-native action with trial
+            <!-- Publish: DRAFT, or "Publicar de nuevo" for UNPUBLISHED_BY_BILLING (HOS-1977); (guided web-native action with trial
                  messaging, React island with inline confirmation — HOS-110) -->
-            {actions.publish && (
+            {showPublish && (
                 <PublishButton
                     client:load
                     listingId={property.id}
                     vertical="accommodation"
                     locale={locale}
-                    label={t('host.properties.card.actions.publish', 'Publicar')}
-                    confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}
-                    confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')}
+                    label={publishCopy.label}
+                    confirmTitle={publishCopy.confirmTitle}
+                    confirmNote={publishCopy.confirmNote}
                     confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', publishAffordance.trialDays ?? 0, { trialDays: publishAffordance.trialDays ?? 0 })}
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}

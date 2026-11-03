@@ -280,6 +280,36 @@
                 "unknown": "Hospeda",
                 "venue": "Comer e sair"
             }
+        },
+        "return": {
+            "confirmed": {
+                "title": "Sua assinatura está ativa",
+                "body": "O Mercado Pago confirmou o pagamento. Você já pode usar seu plano."
+            },
+            "processing": {
+                "title": "Estamos confirmando seu pagamento",
+                "body": "O Mercado Pago ainda não nos informou o resultado. Isso costuma levar alguns segundos."
+            },
+            "stillProcessing": {
+                "title": "Ainda não temos a confirmação",
+                "body": "Ainda não vemos o pagamento. Se você já o concluiu, pode levar alguns minutos para aparecer. Se não o concluiu, pode retomá-lo pelo checkout.",
+                "refresh": "Verificar de novo"
+            },
+            "rejected": {
+                "title": "O Mercado Pago não aprovou o pagamento",
+                "body": "Nada foi cobrado e a tentativa anterior foi encerrada. Você pode iniciar uma nova com o mesmo plano.",
+                "retry": "Tentar de novo",
+                "retrying": "Preparando o pagamento…"
+            },
+            "unknown": {
+                "title": "Não conseguimos ler o status do pagamento",
+                "body": "Confira sua assinatura para ver como ficou.",
+                "refresh": "Verificar de novo"
+            },
+            "closed": {
+                "title": "Esta tentativa não é mais válida",
+                "body": "A tentativa de pagamento expirou ou foi cancelada. Você pode ver o status da sua assinatura na sua conta."
+            }
         }
     },
     "limit": {

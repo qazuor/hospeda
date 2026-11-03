@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     comparePublicationOrder,
-    orderReturningCandidates,
+    orderRestorationCandidates,
     type PublicationQueueEntry,
     selectSurplusToLower
 } from '../../src/publication/publication-order';
@@ -20,7 +20,7 @@ describe('publication order', () => {
             { id: 'old-null', createdAt: date('2024-01-01T00:00:00Z'), publishedAt: null },
             { id: 'ancient', createdAt: sameCreated, publishedAt: date('1900-01-01T00:00:00Z') }
         ];
-        expect(orderReturningCandidates({ entries }).map(({ id }) => id)).toEqual([
+        expect([...entries].sort(comparePublicationOrder).map(({ id }) => id)).toEqual([
             'old-null',
             'recent-null',
             'ancient',
@@ -50,6 +50,59 @@ describe('publication order', () => {
         ).toEqual(['c']);
     });
 
+    it('HOS-1984 restores the newest manual publish first, listings without an instant last', () => {
+        const created = date('2025-01-01T00:00:00Z');
+        const entries: PublicationQueueEntry[] = [
+            { id: 'none', createdAt: created, publishedAt: null },
+            { id: 'old', createdAt: created, publishedAt: date('2026-01-01T00:00:00Z') },
+            { id: 'new', createdAt: created, publishedAt: date('2026-06-01T00:00:00Z') }
+        ];
+        expect(orderRestorationCandidates({ entries }).map(({ id }) => id)).toEqual([
+            'new',
+            'old',
+            'none'
+        ]);
+    });
+
+    it('HOS-1984 breaks equal instants by newest createdAt', () => {
+        const publishedAt = date('2026-06-01T00:00:00Z');
+        const entries: PublicationQueueEntry[] = [
+            { id: 'a', createdAt: date('2025-01-01T00:00:00Z'), publishedAt },
+            { id: 'b', createdAt: date('2025-03-01T00:00:00Z'), publishedAt }
+        ];
+        expect(orderRestorationCandidates({ entries }).map(({ id }) => id)).toEqual(['b', 'a']);
+    });
+
+    it('HOS-1984 breaks equal createdAt by id, whatever the input order', () => {
+        const createdAt = date('2025-01-01T00:00:00Z');
+        const publishedAt = date('2026-06-01T00:00:00Z');
+        const entries: PublicationQueueEntry[] = [
+            { id: 'c', createdAt, publishedAt },
+            { id: 'a', createdAt, publishedAt },
+            { id: 'b', createdAt, publishedAt }
+        ];
+        for (const input of [entries, [...entries].reverse()]) {
+            expect(orderRestorationCandidates({ entries: input }).map(({ id }) => id)).toEqual([
+                'a',
+                'b',
+                'c'
+            ]);
+        }
+    });
+
+    it('HOS-1984 orders an all-null group by newest createdAt, then id', () => {
+        const entries: PublicationQueueEntry[] = [
+            { id: 'z', createdAt: date('2024-01-01T00:00:00Z'), publishedAt: null },
+            { id: 'b', createdAt: date('2025-01-01T00:00:00Z'), publishedAt: null },
+            { id: 'a', createdAt: date('2025-01-01T00:00:00Z'), publishedAt: null }
+        ];
+        expect(orderRestorationCandidates({ entries }).map(({ id }) => id)).toEqual([
+            'a',
+            'b',
+            'z'
+        ]);
+    });
+
     it('TEST:V6:5 keeps the published prefix independent of input permutation', () => {
         const entries = ['a', 'b', 'c', 'd'].map((id, index) => ({
             id,
@@ -64,11 +117,6 @@ describe('publication order', () => {
             expect(
                 selectSurplusToLower({ published: input, limit: 2 }).map(({ id }) => id)
             ).toEqual(['d', 'c']);
-            expect(
-                orderReturningCandidates({ entries: input })
-                    .slice(0, 2)
-                    .map(({ id }) => id)
-            ).toEqual(['a', 'b']);
         }
     });
 });

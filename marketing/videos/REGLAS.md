@@ -22,7 +22,7 @@ nombra como `<public>/…`.
 
 - Vertical 9:16, 1080×1920, 30 fps, H.264 + AAC 192k. Destino principal: WhatsApp.
 - Audio normalizado a **-14 LUFS**, true peak -1,5 dB (`ffmpeg loudnorm` sobre el render).
-- A1 v3: 28,7 s, ~10 MB. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
+- A1 v5 (staging, hasta publicar): 45,4 s. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
 
 ## Dispositivo de referencia: Samsung Galaxy S24 Ultra
 
@@ -67,26 +67,38 @@ el teléfono real el 31/10/2026 (whatismyviewport.com):
 - **Guard**: `scripts/check-marketing-device.ts` (`pnpm check:marketing-device`, corre en CI)
   falla si `marketing/` nombra otro teléfono o medidas de otro teléfono.
 
-> ⚠️ **Pendiente: regrabar A1.** La toma actual (`<public>/a1/screen.mp4` + `events.json`) usa
-> el viewport anterior (el de la fila del 31/10/2026 en el historial), previo a este dispositivo. El grabador y la composición ya usan el S24 Ultra; la
-> toma vieja entra con bandas a los costados hasta que se regrabe con `pnpm record:a1`.
+A1 se regrabó en staging con este dispositivo (02/11/2026): la toma llena el área de página, sin
+bandas.
 
 ## Grabación (record/record-a1.mts)
 
 - Pantallas **reales** de Hospeda, vista **mobile** con el viewport del dispositivo de referencia (arriba).
 - Chromium headless nuevo (`channel: 'chromium'`) + `--force-device-scale-factor=3`. El headless shell por
   defecto ignora el DPR y graba a escala 1.
-- Usuario `host-basico@local.test`. Antes de cada toma: se borra el borrador de la toma anterior (si no,
-  `/publicar/` muestra «Ya tenés un borrador en curso») y su alojamiento publicado se llama
-  **«Casa Quinta Las Palmeras»** (el seed lo trae como «Alojamiento Completo — Host Basico»).
+- Se graba **en staging**, logueado como `host-venue@local.test`, que todavía no usó la prueba de
+  alojamiento (`host-basico` y `host-premium` están en el límite de fichas de su plan y `/publicar/` les
+  muestra «Llegaste al límite de tu plan»; `host-pro` ya gastó su prueba en una toma anterior). Una toma que
+  publica consume la prueba de la cuenta: para volver a grabar hace falta otra cuenta con la prueba sin usar.
+  Contraseña por `VIDEO_LOGIN_PASSWORD`. La toma llega hasta **publicar** «Casa de Campo El Ceibo» (el
+  nombre y los textos describen lo que muestran las fotos: una casa con pileta y parque; capacidad y pin del
+  mapa se cargan fuera de cámara; sin precio, la ficha queda «a consultar»), con las fotos del dueño de
+  `fotos/vc1/upload`. Publicar arranca la prueba de 30 días sin tarjeta; si el aviso no ofrece «Publicar
+  ahora» o algo cae en el proveedor de pagos, la toma se corta sin pagar nada. Antes de cada toma se borra
+  por la interfaz la ficha de la toma anterior (si no, `/publicar/` ofrece retomarla).
+- En la página de fotos se oculta el bloque «Videos», que nombra tres plataformas de video.
+- La lista «Mis propiedades» se muestra **sin tarjetas**: la ficha de la cuenta en staging es una tarjeta
+  de prueba del seed (nombre de prueba, precio, cartel de plan, foto genérica), así que se oculta junto con
+  el footer del sitio, que la página corta dejaría a la vista.
 - **Puesta en escena de demo**: se ocultan con CSS los avisos de plan/upsell que en un tutorial se leen
-  como publicidad o error: banner «anfitrión en preparación», QR imprimible de la tarjeta, «Probá Hospeda
-  gratis», «Función premium», «Texto con formato… Mejorar plan». Lista exacta en `DEMO_HIDE_CSS`; no se
-  toca nada más de la interfaz. Los «Falta para publicar» del panel se dejan: cuentan la historia del
+  como publicidad o error: banner «anfitrión en preparación», «Probá Hospeda gratis», «Función premium»,
+  «Texto con formato… Mejorar plan», más las tarjetas de prueba y el footer de arriba. Lista exacta en
+  `DEMO_HIDE_CSS`; no se toca nada más de la interfaz. Los «Falta para publicar» del panel se dejan: cuentan la historia del
   paso 3.
 - Los scripts que se inyectan en la página van como **texto**, no como función: `tsx` les agrega un
   helper `__name` que no existe en la página y el script falla en silencio.
 - Cookie de consentimiento precargada; corrector ortográfico apagado; campos vaciados antes de tipear.
+- La búsqueda de ciudades de staging puede tardar varios segundos: el montaje corta esa espera con un
+  corte en salto (`WAITS` en `src/a1/timeline.ts`).
 - Scroll **suave** y sólo si el elemento está fuera de la franja cómoda de la pantalla.
 - Botón al final de un formulario: se alinea al borde inferior antes de tocarlo (si no, aparece el footer).
 - **Grabar con la máquina libre**: con la CPU saturada la página captura a 8-11 cuadros/s en vez de 20-25.
@@ -145,3 +157,4 @@ el teléfono real el 31/10/2026 (whatismyviewport.com):
   publicación.
 - Animación «de verdad» de Hospedín (saludo con brazo articulado, etc.): requiere un clip generado
   (Hailuo, método de `marketing/`) o separar el personaje en piezas.
+- VC3: map shot borrowed from accommodations until the venue map ships — re-record stage 2 then.

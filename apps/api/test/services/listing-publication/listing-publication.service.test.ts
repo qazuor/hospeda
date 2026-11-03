@@ -15,11 +15,9 @@ describe('listing publication HTTP mapping', () => {
         expect(error.details).toMatchObject({ limitKey: expect.any(String) });
     });
 
-    it('maps changed source state and the PB3-only covered case to conflicts', () => {
+    it('maps changed source state to a conflict', () => {
         expect(mapListingPublishDenial('STATE_CHANGED').code).toBe(ServiceErrorCode.ALREADY_EXISTS);
-        expect(mapListingPublishDenial('COVERED_USE_PB3').code).toBe(
-            ServiceErrorCode.ALREADY_EXISTS
-        );
+        expect(mapListingPublishDenial('INVALID_FROM').code).toBe(ServiceErrorCode.ALREADY_EXISTS);
     });
 
     it('maps missing listings and non-owner decisions to the indistinguishable 404 code', () => {

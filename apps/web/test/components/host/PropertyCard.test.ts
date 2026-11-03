@@ -183,7 +183,8 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         ['publish', '<PublishButton'],
         ['delete', '<DeleteButton']
     ])('gates the %s action on its own flag, inside the action row', (flag, element) => {
-        const gate = `{actions.${flag} && (`;
+        // HOS-1977: Publish and Republish share one island, gated by `showPublish`.
+        const gate = flag === 'publish' ? '{showPublish && (' : `{actions.${flag} && (`;
         const gateAt = actionsBlock.indexOf(gate);
         const elementAt = actionsBlock.indexOf(element);
 
@@ -191,6 +192,20 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         expect(elementAt, `${flag}: element not found inside the action row`).toBeGreaterThan(-1);
         // The element sits right after its own gate, with nothing but whitespace between.
         expect(actionsBlock.slice(gateAt + gate.length, elementAt).trim()).toBe('');
+    });
+
+    it('HOS-1977: the single PublishButton is gated by showPublish, which is draft publish OR the republish offer', () => {
+        expect(propertyCardSource).toContain(
+            'const showRepublish = resolveRepublishOffer({ actions, affordance: publishAffordance });'
+        );
+        expect(propertyCardSource).toContain(
+            'const showPublish = actions.publish || showRepublish;'
+        );
+        // The copy switches on the republish flag and uses its own keys.
+        expect(propertyCardSource).toContain('const publishCopy = actions.republish');
+        expect(propertyCardSource).toContain('host.properties.card.actions.republish');
+        // No other gate may lead to the island.
+        expect(propertyCardSource).not.toContain('{actions.publish && (');
     });
 
     it('renders each action element exactly once in the whole card', () => {

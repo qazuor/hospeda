@@ -193,22 +193,25 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             // HOS-1885 (F1): the alert the retired `dunning` job carried. Billing rows
             // that fail the daily read, or a zero-call check that fails, page Sentry
             // at error level; the bootstrap soft-failure only covers `rowsFailed`.
-            if (summary.rowsFailed > 0 || zeroCallFailures.length > 0) {
+            // HOS-1995: a provider cancel that failed is an error too, not a silent outcome.
+            const cancelCallFailed = summary.cancellationRetry?.callFailed ?? 0;
+            if (summary.rowsFailed > 0 || zeroCallFailures.length > 0 || cancelCallFailed > 0) {
                 logger.error(
                     'Billing reconciliation sweep had failures',
                     {
                         rowsFailed: summary.rowsFailed,
+                        cancelCallFailed,
                         failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
                         failedChecks: zeroCallFailures.map(({ check }) => check)
                     },
-                    { capture: true }
+                    { capture: summary.rowsFailed > 0 || zeroCallFailures.length > 0 }
                 );
             }
             return {
-                success: summary.rowsFailed === 0,
+                success: summary.rowsFailed === 0 && cancelCallFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
-                errors: summary.rowsFailed + zeroCallFailures.length,
+                errors: summary.rowsFailed + zeroCallFailures.length + cancelCallFailed,
                 durationMs: Date.now() - startedAt.getTime(),
                 details: {
                     ...details,

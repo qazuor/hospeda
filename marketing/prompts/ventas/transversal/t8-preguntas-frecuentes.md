@@ -13,8 +13,10 @@ Prompt para **ChatGPT** (el generador de imágenes del custom GPT de Hospeda).
 
 **Qué adjuntar:**
 
-- Logo de Hospeda (isotipo: forma azul de río, franja verde y turquesa, círculo naranja de sol, y la palabra "hospeda"). Usalo tal cual: no lo redibujes ni le cambies los colores.
-- Hospedín, la mascota (imagen y guías del personaje). Respetalo exactamente y no lo rediseñes: cabeza azul #3AA7D9 orgánica y asimétrica, franja turquesa #1EA7A1 y verde #8CC63F en la parte baja del rostro, círculo naranja #F5A623 flotando separado arriba a la derecha de la cabeza (nunca lo omitas), buzo canguro blanco con el logo y la palabra "hospeda", zapatillas blancas.
+- Logo: apps/web/src/assets/images/logo.webp (otra vez antes de cada imagen nueva)
+- Hospedín: marketing/Hospedin.png
+- Hospedín: marketing/Guía de personaje de Hospedín.png
+- Hospedín: marketing/Guía de personaje de Hospedín2.png
 
 **Cómo se genera:** una página por vez, en el mismo chat. Después de la primera, escribí «siguiente»; antes de cada imagen nueva te va a pedir el logo otra vez.
 

@@ -261,6 +261,35 @@ export const attachmentsOf = (p) => {
     return out;
 };
 
+/** Repo paths of the brand files every image prompt relies on. */
+const LOGO_FILE = 'apps/web/src/assets/images/logo.webp';
+const HOSPEDIN_FILES = [
+    'marketing/Hospedin.png',
+    'marketing/Guía de personaje de Hospedín.png',
+    'marketing/Guía de personaje de Hospedín2.png'
+];
+
+/**
+ * Lists, for the kit page, the files to attach next to a piece's prompt: real paths for the
+ * brand files and a description for each capture or photo the seller has to take.
+ * @param {object} p piece
+ * @returns {string[]}
+ */
+export const filesToAttachOf = (p) => {
+    const out = [`Logo: ${LOGO_FILE} (otra vez antes de cada imagen nueva)`];
+    const units = p.pages || p.slides || [p];
+    if (p.hospedin || units.some((u) => u.hospedin)) {
+        out.push(...HOSPEDIN_FILES.map((f) => `Hospedín: ${f}`));
+    }
+    units.forEach((u, i) => {
+        const where = units.length > 1 ? ` (${p.pages ? 'página' : 'placa'} ${i + 1})` : '';
+        if (u.capture) out.push(`Captura${where}: ${u.capture}`);
+        if (u.photo) out.push(`Foto real${where}: ${u.photo}`);
+    });
+    if (p.attach) out.push(...p.attach);
+    return out;
+};
+
 /**
  * Builds the prompt of a single-image piece (placa, listado or tarjeta).
  * @param {object} p piece

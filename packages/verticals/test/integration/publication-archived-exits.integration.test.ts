@@ -251,7 +251,7 @@ describe('TEST:V6:10 PB8 and PB7 integration', () => {
             actorType: 'owner',
             actorId: userId,
             correlationId: randomUUID(),
-            occurredAt: new Date('2026-01-01T00:00:00Z')
+            occurredAt: new Date('2026-02-01T00:00:00Z')
         });
         await listingPublicationModel.insertStatusChangedEvent({
             tx: db,
@@ -262,7 +262,7 @@ describe('TEST:V6:10 PB8 and PB7 integration', () => {
             actorType: 'owner',
             actorId: userId,
             correlationId: randomUUID(),
-            occurredAt: new Date('2026-02-01T00:00:00Z')
+            occurredAt: new Date('2026-01-01T00:00:00Z')
         });
         expect(
             (

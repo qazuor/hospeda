@@ -6,8 +6,14 @@
         "checkoutMonthly": "Subscribe with monthly billing",
         "checkoutAnnual": "Subscribe with annual billing",
         "continuePayment": "Continue payment",
+        "republishFromProperties": "Publish again from My account",
+        "republishFromPropertiesHint": "Your listing is unpublished. Publish it again and start your free trial.",
         "currentPlan": "Your current plan in {{vertical}}",
         "touristVipInherited": "Your plan already includes Tourist VIP: you do not need to buy it."
+    },
+    "limitReached": {
+        "body": "You have reached your plan's publishing limit. Unpublish another listing or upgrade your plan.",
+        "cta": "Upgrade my plan"
     },
     "noPlans": {
         "title": "This vertical has no available plans",

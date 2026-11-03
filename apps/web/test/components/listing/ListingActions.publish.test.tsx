@@ -144,3 +144,127 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
         }
     });
 });
+
+describe('ListingActions republish — HOS-1998', () => {
+    const BILLING = { publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING } as const;
+    const COVERED = {
+        kind: 'covered',
+        canPublish: true,
+        startsTrial: false,
+        trialDays: null
+    } as const;
+    const CHECKOUT = {
+        kind: 'checkout',
+        canPublish: false,
+        startsTrial: false,
+        trialDays: null
+    } as const;
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('FIRST_USE: republishes a billing-unpublished %s through its vertical endpoint and announces the trial', (vertical) => {
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={PUBLISH}
+            />
+        );
+        expect(screen.queryByRole('button', { name: 'Publicar' })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Publicar de nuevo' }));
+        expect(
+            screen.getByText('Al publicar arranca tu prueba gratis de 30 días. Sin tarjeta.')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(`listing.owner.publish.republishConfirmTitle.${vertical}`)
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+        expect(publishMock).toHaveBeenCalledWith({ vertical, id: `listing-${vertical}` });
+    });
+
+    it.each([
+        ['incomplete', { completeness: { complete: false, missing: ['name'] } }],
+        ['unknown completeness', { completeness: null }]
+    ] as const)('still offers republish when the card would read as a %s draft', (_label, override) => {
+        render(
+            <ListingActions
+                listing={listing('venue', { ...BILLING, ...override })}
+                locale="es"
+                publishAffordance={PUBLISH}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Publicar de nuevo' })).toBeInTheDocument();
+    });
+
+    it.each([
+        ['venue', '/es/planes/comer-y-salir/precios/'],
+        ['experience', '/es/planes/experiencias/precios/']
+    ] as const)('trial spent: a billing-unpublished %s leads to its paid plans page', (vertical, href) => {
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={CHECKOUT}
+            />
+        );
+        expect(screen.queryByRole('button', { name: 'Publicar de nuevo' })).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: `listing.owner.publish.choosePlan.${vertical}` })
+        ).toHaveAttribute('href', href);
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('already covered: %s offers "Publicar de nuevo" (manual publish, HOS-1997)', (vertical) => {
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={COVERED}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Publicar de nuevo' })).toBeInTheDocument();
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('already covered with a full quota: %s shows the cap notice on republish (HOS-1997)', async (vertical) => {
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'LIMIT_REACHED', message: 'Listing limit reached' }
+        });
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={COVERED}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Publicar de nuevo' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+        expect(await screen.findByTestId('publish-limit-reached')).toBeInTheDocument();
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('a full plan cap on republish shows the cap notice for %s', async (vertical) => {
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'LIMIT_REACHED', message: 'Listing limit reached' }
+        });
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={PUBLISH}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Publicar de nuevo' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+        expect(await screen.findByTestId('publish-limit-reached')).toBeInTheDocument();
+    });
+});

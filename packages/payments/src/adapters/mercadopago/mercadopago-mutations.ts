@@ -25,7 +25,7 @@ export async function changeMercadoPagoAmount(
             }
         }
     });
-    assertResponseOk(response, 'changeAmount');
+    await assertResponseOk(response, 'changeAmount');
     return { accepted: true, resourceId: input.authorizationId };
 }
 
@@ -41,7 +41,7 @@ export async function setMercadoPagoStatus(input: {
         method: 'PUT',
         body: { status: input.status }
     });
-    assertResponseOk(response, 'pauseAndResume');
+    await assertResponseOk(response, 'pauseAndResume');
     return { accepted: true, resourceId: input.authorizationId };
 }
 
