@@ -123,6 +123,56 @@ describe('TEST:B6:2 AC:B6:6 declining an open refund applies RF5', () => {
         }
     );
 
+    it.skipIf(skip)('rejects a confirmed refund with an unanswered provider call', async () => {
+        // Arrange
+        const seeded = await refundFailFixture();
+        const { PaymentProviderError } = await import('@repo/payments');
+        const provider = new Proxy(seeded.fixture.provider, {
+            get(target, property, receiver) {
+                if (property === 'refund')
+                    return async () => {
+                        throw new PaymentProviderError({
+                            code: 'UNAVAILABLE',
+                            capability: 'refund',
+                            message: 'provider unavailable'
+                        });
+                    };
+                return Reflect.get(target, property, receiver);
+            }
+        });
+        await confirmRefund(
+            { actor: seeded.actor, refundId: seeded.refundId },
+            { clock: seeded.fixture.clock, provider }
+        );
+        const before = await refundFailRows({
+            refundId: seeded.refundId,
+            paymentId: seeded.payment.id,
+            recipientId: seeded.actor.id
+        });
+        expect(before.calls).toHaveLength(1);
+        expect(before.calls[0]?.providerRefundId).toBeNull();
+        expect(before.keys).toHaveLength(1);
+        expect(before.keys[0]?.result).toBeNull();
+
+        // Act
+        await expect(
+            declineRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock }
+            )
+        ).rejects.toMatchObject({ reason: 'REFUND_HAS_PROVIDER_CALLS' });
+
+        // Assert
+        const after = await refundFailRows({
+            refundId: seeded.refundId,
+            paymentId: seeded.payment.id,
+            recipientId: seeded.actor.id
+        });
+        expect(after.refund?.status).toBe('CONFIRMED');
+        expect(after.notices).toHaveLength(0);
+        expect(after.payment).toEqual(before.payment);
+    });
+
     it.skipIf(skip)(
         'rejects actors without permission, system actors, and terminal rows',
         async () => {
