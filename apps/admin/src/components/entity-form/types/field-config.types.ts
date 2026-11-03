@@ -459,6 +459,11 @@ export type FieldConfig = {
     // Direct translations (explicit control)
     label?: string;
     description?: string;
+    /**
+     * Builds a description from the field's current value. Use this for
+     * guidance that changes when a select option is chosen.
+     */
+    descriptionForValue?: (value: unknown) => string | undefined;
     placeholder?: string;
     help?: string;
     title?: string;

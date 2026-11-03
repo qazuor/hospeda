@@ -16,11 +16,16 @@
  *  - Submit is disabled while isPending
  */
 
+import { VenueTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { VenueForm } from '../components/VenueForm';
+
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({ t: (key: string) => key })
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,6 +71,15 @@ describe('VenueForm — rendering', () => {
         expect(screen.getByText('Café')).toBeInTheDocument();
         expect(screen.getByText('Parrilla')).toBeInTheDocument();
         expect(screen.getByText('Cervecería')).toBeInTheDocument();
+        expect(screen.getByText('Pub')).toBeInTheDocument();
+        expect(screen.getByText('Boliche')).toBeInTheDocument();
+    });
+
+    it('shows the selected venue type description below the type selector', () => {
+        renderForm({ defaultValues: { type: VenueTypeEnum.BOLICHE } });
+        expect(
+            screen.getByText('admin-entities.venue.typeDescriptions.BOLICHE')
+        ).toBeInTheDocument();
     });
 
     it('should render the price range select with all options', () => {

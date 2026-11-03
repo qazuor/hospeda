@@ -16,7 +16,12 @@ import type { ListingDetail } from '../../../src/lib/listing/owner-listings';
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (key: string, fallback?: string) =>
+            key === 'venue.typeDescriptions.BOLICHE'
+                ? 'Nightclub description'
+                : key === 'venue.typeDescriptions.PUB'
+                  ? 'Pub description'
+                  : (fallback ?? key)
     })
 }));
 
@@ -62,6 +67,21 @@ beforeEach(() => {
 });
 
 describe('ListingCreateForm', () => {
+    it('shows the selected venue type description and updates it when the type changes', () => {
+        render(
+            <ListingCreateForm
+                vertical="venue"
+                locale="en"
+                destinations={[]}
+            />
+        );
+        const typeSelect = screen.getByLabelText('Categoría');
+        fireEvent.change(typeSelect, { target: { value: 'BOLICHE' } });
+        expect(screen.getByText('Nightclub description')).toBeInTheDocument();
+        fireEvent.change(typeSelect, { target: { value: 'PUB' } });
+        expect(screen.getByText('Pub description')).toBeInTheDocument();
+        expect(screen.queryByText('Nightclub description')).not.toBeInTheDocument();
+    });
     describe('always renders empty (HOS-693 §6.2 removed the HOS-257 prefill prop)', () => {
         it('renders a fully empty, usable form', () => {
             render(

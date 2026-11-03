@@ -259,6 +259,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'venue.editOwn',
     // HOS-822 — venue half of the shared listing-type source above.
     'venue.types',
+    // HOS-1828 — the create form and the owner's editor show the selected
+    // type's description under the type selector, in the browser.
+    'venue.typeDescriptions',
     'home.featuredDestinations',
     'home.searchBar',
     'host-trades.card',

@@ -177,7 +177,9 @@
             "HELADERIA": "Heladería",
             "PANADERIA": "Panadería",
             "ROTISERIA": "Rotisería",
-            "FOOD_TRUCK": "Food Truck"
+            "FOOD_TRUCK": "Food Truck",
+            "PUB": "Pub",
+            "BOLICHE": "Boliche"
         },
         "priceRanges": {
             "BUDGET": "Económico ($)",
@@ -201,6 +203,19 @@
             "successMessage": "La ficha de Comer y salir se creó exitosamente",
             "errorTitle": "Error al crear",
             "errorMessage": "No pudimos crear la ficha de Comer y salir. Probá de nuevo."
+        },
+        "typeDescriptions": {
+            "RESTAURANT": "Restaurante con servicio en mesa y carta variada.",
+            "BAR": "Bar con barra y tragos, incluida la coctelería.",
+            "CAFE": "Cafetería para café, bebidas y comidas ligeras.",
+            "PARRILLA": "Parrilla de carnes y platos a las brasas.",
+            "CERVECERIA": "Cervecería que produce su propia cerveza artesanal.",
+            "HELADERIA": "Heladería con helados y postres fríos.",
+            "PANADERIA": "Panadería de panes y productos de pastelería.",
+            "ROTISERIA": "Rotisería de comidas preparadas para llevar.",
+            "FOOD_TRUCK": "Comida preparada y servida desde un vehículo.",
+            "PUB": "Formato de bar con cerveza tirada y ambiente de pub.",
+            "BOLICHE": "Discoteca o club nocturno que funciona sólo de noche."
         }
     },
     "columns": {

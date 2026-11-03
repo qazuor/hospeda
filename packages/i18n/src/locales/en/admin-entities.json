@@ -177,7 +177,9 @@
             "HELADERIA": "Ice Cream Shop",
             "PANADERIA": "Bakery",
             "ROTISERIA": "Deli / Rotisserie",
-            "FOOD_TRUCK": "Food Truck"
+            "FOOD_TRUCK": "Food Truck",
+            "PUB": "Pub",
+            "BOLICHE": "Nightclub"
         },
         "priceRanges": {
             "BUDGET": "Budget ($)",
@@ -201,6 +203,19 @@
             "successMessage": "The Food & nightlife listing was created successfully",
             "errorTitle": "Error creating",
             "errorMessage": "We could not create the Food & nightlife listing. Please try again."
+        },
+        "typeDescriptions": {
+            "RESTAURANT": "Full-service restaurant with table service and a varied menu.",
+            "BAR": "Bar focused on drinks served from the bar, including cocktails.",
+            "CAFE": "Cafe for coffee, drinks, and light meals.",
+            "PARRILLA": "Grill serving meats and dishes cooked over coals.",
+            "CERVECERIA": "Brewery that produces its own craft beer.",
+            "HELADERIA": "Ice cream shop serving frozen desserts.",
+            "PANADERIA": "Bakery offering bread and baked goods.",
+            "ROTISERIA": "Rotisserie serving prepared food to take away.",
+            "FOOD_TRUCK": "Food prepared and served from a vehicle.",
+            "PUB": "Bar format centered on draft beer and a pub atmosphere.",
+            "BOLICHE": "Nightclub focused exclusively on nighttime entertainment."
         }
     },
     "columns": {
