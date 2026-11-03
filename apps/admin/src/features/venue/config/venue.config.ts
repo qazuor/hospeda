@@ -47,34 +47,10 @@ export type VenueListItem = Pick<
 // Filter options
 // ---------------------------------------------------------------------------
 
-const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.venueType.restaurant' },
-    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.venueType.bar' },
-    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.venueType.cafe' },
-    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.venueType.parrilla' },
-    {
-        value: VenueTypeEnum.CERVECERIA,
-        labelKey: 'admin-filters.venueType.cerveceria'
-    },
-    {
-        value: VenueTypeEnum.HELADERIA,
-        labelKey: 'admin-filters.venueType.heladeria'
-    },
-    {
-        value: VenueTypeEnum.PANADERIA,
-        labelKey: 'admin-filters.venueType.panaderia'
-    },
-    {
-        value: VenueTypeEnum.ROTISERIA,
-        labelKey: 'admin-filters.venueType.rotiseria'
-    },
-    {
-        value: VenueTypeEnum.FOOD_TRUCK,
-        labelKey: 'admin-filters.venueType.foodTruck'
-    },
-    { value: VenueTypeEnum.PUB, labelKey: 'admin-entities.venue.types.PUB' },
-    { value: VenueTypeEnum.BOLICHE, labelKey: 'admin-entities.venue.types.BOLICHE' }
-] as const;
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 const PRICE_RANGE_OPTIONS = [
     { value: PriceRangeEnum.BUDGET, labelKey: 'admin-filters.priceRange.budget' },

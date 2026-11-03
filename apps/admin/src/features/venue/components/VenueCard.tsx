@@ -7,30 +7,17 @@
  * replaced by a card grid.
  */
 
-import { PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
+import { PriceRangeEnum, type VenueTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { useTranslations } from '@/hooks/use-translations';
 import type { VenueListItem } from '../config/venue.config';
 
 // ---------------------------------------------------------------------------
 // Label helpers
 // ---------------------------------------------------------------------------
-
-const TYPE_LABELS: Record<VenueTypeEnum, string> = {
-    [VenueTypeEnum.RESTAURANT]: 'Restaurante',
-    [VenueTypeEnum.BAR]: 'Bar',
-    [VenueTypeEnum.CAFE]: 'Café',
-    [VenueTypeEnum.PARRILLA]: 'Parrilla',
-    [VenueTypeEnum.CERVECERIA]: 'Cervecería',
-    [VenueTypeEnum.HELADERIA]: 'Heladería',
-    [VenueTypeEnum.PANADERIA]: 'Panadería',
-    [VenueTypeEnum.ROTISERIA]: 'Rotisería',
-    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck',
-    [VenueTypeEnum.PUB]: 'Pub',
-    [VenueTypeEnum.BOLICHE]: 'Boliche'
-};
 
 const PRICE_LABELS: Record<PriceRangeEnum, string> = {
     [PriceRangeEnum.BUDGET]: '$',
@@ -61,7 +48,10 @@ export const VenueCard = React.memo(function VenueCardComponent({
     venue,
     onSelect
 }: VenueCardProps) {
-    const typeLabel = venue.type ? (TYPE_LABELS[venue.type as VenueTypeEnum] ?? venue.type) : null;
+    const { t } = useTranslations();
+    const typeLabel = venue.type
+        ? t(`admin-entities.venue.types.${venue.type as VenueTypeEnum}`)
+        : null;
 
     const priceLabel = venue.priceRange
         ? (PRICE_LABELS[venue.priceRange as PriceRangeEnum] ?? venue.priceRange)
