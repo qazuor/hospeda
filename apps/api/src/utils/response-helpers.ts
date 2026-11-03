@@ -283,7 +283,7 @@ export const createResponse = <T = unknown>(
         }
     };
 
-    return c.json(response, statusCode as 200 | 201);
+    return c.json(response, statusCode as 200 | 201 | 202);
 };
 
 /**

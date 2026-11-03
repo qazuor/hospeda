@@ -14,7 +14,7 @@
  * also block for up to that long.
  */
 
-import { createHospedaApiClient } from '../lib/api-client.ts';
+import { createHospedaApiClient, HospedaApiError } from '../lib/api-client.ts';
 import { getActiveTarget } from '../lib/container-lookup.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm, pickOne } from '../lib/prompt.ts';
@@ -22,7 +22,7 @@ import { type CronJobInfo, fetchCronJobs } from './cron-list.ts';
 
 /** Shape of the trigger response. */
 interface CronTriggerResult {
-    readonly success: boolean;
+    readonly success?: boolean;
     readonly message: string;
     readonly processed: number;
     readonly errors: number;
@@ -31,6 +31,8 @@ interface CronTriggerResult {
     readonly jobName: string;
     readonly dryRun: boolean;
     readonly executedAt: string;
+    readonly accepted?: true;
+    readonly runId?: string;
 }
 
 const HELP = `
@@ -57,8 +59,8 @@ Examples:
 
 Notes:
   - Disabled jobs cannot be triggered (the API returns 400).
-  - The server enforces a per-job timeout (default 30s); this command
-    blocks for up to that long.
+  - Exclusive jobs return immediately with a run ID; follow the run in cron history.
+  - Other jobs wait for their handler to finish (default timeout 30s).
 `.trim();
 
 interface ParsedArgs {
@@ -157,12 +159,32 @@ export async function cronTrigger(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     log.info('Sending trigger request...');
-    const result = await client.post<CronTriggerResult>(
-        `/api/v1/admin/cron/${encodeURIComponent(chosen.name)}`,
-        undefined,
-        { dryRun: String(parsed.dryRun) }
-    );
+    let result: CronTriggerResult;
+    try {
+        result = await client.post<CronTriggerResult>(
+            `/api/v1/admin/cron/${encodeURIComponent(chosen.name)}`,
+            undefined,
+            { dryRun: String(parsed.dryRun) }
+        );
+    } catch (error) {
+        if (error instanceof HospedaApiError && error.status === 409) {
+            const body = error.body as {
+                readonly error?: { readonly details?: { readonly holderRunId?: unknown } };
+            };
+            const holderRunId = body.error?.details?.holderRunId;
+            log.warn(
+                `${chosen.name} is already running; holder run ID: ${typeof holderRunId === 'string' ? holderRunId : 'unknown'}`
+            );
+            return;
+        }
+        throw error;
+    }
 
+    if (result.accepted === true) {
+        log.ok(`${chosen.name} accepted for asynchronous execution`);
+        log.info(`run ID : ${result.runId ?? 'unknown'}`);
+        return;
+    }
     const status = result.success ? log.ok.bind(log) : log.warn.bind(log);
     status(
         `${chosen.name} ${result.success ? 'completed' : 'finished with errors'} in ${result.durationMs} ms`
