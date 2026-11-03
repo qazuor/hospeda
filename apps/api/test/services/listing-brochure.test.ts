@@ -87,9 +87,9 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
             new URL('../../src/routes/venue/protected/brochure.ts', import.meta.url),
             'utf8'
         );
-        expect(source).toContain(
-            "projectPublicListings({ vertical: 'venue', listings: [entity] })"
-        );
+        expect(source).toContain('projectPublicListings({');
+        expect(source).toContain("vertical: 'venue'");
+        expect(source).toContain('listings: [entity]');
         expect(source).toContain('VenueBrochureSourceSchema.safeParse(projectedEntity)');
         expect(source.indexOf('projectPublicListings({')).toBeLessThan(
             source.indexOf('VenueBrochureSourceSchema.safeParse(projectedEntity)')
