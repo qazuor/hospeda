@@ -435,6 +435,20 @@ The permission is the route's scope (`billing.settleExternal`); the subject, the
 
 Provider results are not rejections: confirmation returns 200 with an `outcome` describing the result. A missing or non-`true` `confirmed` field is a 400 shape error (`VALIDATION_ERROR`).
 `PROVIDER_REJECTED_FAILED` returns 200 with `status: 'FAILED'`.
+An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider call.
+
+## Action 13 decline (B6.2)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/decline` (ACC:13, RF5) requires `{ "declined": true }`. Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 request shape → 404 missing refund or source → 409 state or provider-call conflict. A successful refusal returns 200 with `{ refundId, status: "FAILED" }` and leaves the payment unchanged.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
 
 ## Action 14 charge settlement rejections (B5.9)
 
