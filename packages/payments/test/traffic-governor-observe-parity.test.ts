@@ -31,7 +31,7 @@ async function scenario(args: {
     const fetchCalls: Array<{
         readonly url: string;
         readonly method: string;
-        readonly headers: Headers;
+        readonly headers: Readonly<Record<string, string>>;
         readonly body?: string;
     }> = [];
     const sleepCalls: number[] = [];
@@ -46,7 +46,8 @@ async function scenario(args: {
             fetchCalls.push({
                 url: String(input),
                 method: init?.method ?? 'GET',
-                headers: new Headers(init?.headers),
+                // A plain object, not a Headers instance: toEqual sees no own keys on Headers.
+                headers: Object.fromEntries(new Headers(init?.headers).entries()),
                 ...(init?.body === undefined ? {} : { body: String(init.body) })
             });
             const next = args.responses[Math.min(attempt, args.responses.length - 1)];

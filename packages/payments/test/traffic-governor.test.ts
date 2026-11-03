@@ -30,6 +30,62 @@ describe('ProviderTrafficGovernor', () => {
         governor.stop();
     });
 
+    it('blocks each acquire until the bucket refills (kills acquire returning without awaiting the refill)', async () => {
+        // Arrange
+        vi.useFakeTimers();
+        vi.setSystemTime(0);
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            ratePerSecond: 1,
+            burst: 1,
+            interactiveReserve: 0
+        });
+        const resolved: number[] = [];
+        // Act
+        await governor.acquire({ trafficClass: 'background', capability: 'read' });
+        const second = governor
+            .acquire({ trafficClass: 'background', capability: 'read' })
+            .then(() => resolved.push(2));
+        const third = governor
+            .acquire({ trafficClass: 'background', capability: 'read' })
+            .then(() => resolved.push(3));
+        await vi.advanceTimersByTimeAsync(999);
+        const beforeRefill = [...resolved];
+        await vi.advanceTimersByTimeAsync(1);
+        const afterFirstRefill = [...resolved];
+        await vi.advanceTimersByTimeAsync(1000);
+        await Promise.all([second, third]);
+        // Assert
+        expect(beforeRefill).toEqual([]);
+        expect(afterFirstRefill).toEqual([2]);
+        expect(resolved).toEqual([2, 3]);
+        governor.stop();
+    });
+
+    it('keeps the later cool-down when a shorter 429 arrives (kills keep-max replaced by overwrite)', () => {
+        // Arrange
+        const governor = new ProviderTrafficGovernor({
+            mode: 'observe',
+            now: () => 0,
+            random: () => 0
+        });
+        // Act
+        governor.observe({
+            trafficClass: 'background',
+            capability: 'read',
+            status: 429,
+            retryAfterMs: 30_000
+        });
+        governor.observe({
+            trafficClass: 'interactive',
+            capability: 'read',
+            status: 429,
+            retryAfterMs: 5000
+        });
+        // Assert
+        expect(governor.coolDownRemainingMs()).toBe(30_000);
+    });
+
     it('resolves observe acquires immediately while recording virtual waits and failures (kills blocking observe)', async () => {
         const governor = new ProviderTrafficGovernor({
             mode: 'observe',
