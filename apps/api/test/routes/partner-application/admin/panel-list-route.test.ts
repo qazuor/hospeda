@@ -19,21 +19,6 @@ vi.mock('../../../../src/utils/create-app', async () => {
     const { OpenAPIHono } = await import('@hono/zod-openapi');
     return { createRouter: () => new OpenAPIHono() };
 });
-vi.mock('../../../../src/middlewares/authorization', () => ({
-    adminAuthMiddleware:
-        (requiredPermissions: readonly PermissionEnum[] = []) =>
-        async (
-            ctx: { get: (key: 'actor') => Actor; json: (body: unknown, status: 403) => Response },
-            next: () => Promise<void>
-        ) => {
-            const actor = ctx.get('actor');
-            if (requiredPermissions.every((permission) => actor.permissions.includes(permission))) {
-                await next();
-                return;
-            }
-            return ctx.json({ success: false, error: { code: 'FORBIDDEN' } }, 403);
-        }
-}));
 vi.mock('../../../../src/utils/audit-logger', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../../src/utils/audit-logger')>();
     return { ...actual, auditLog: mocks.auditLog };
@@ -78,7 +63,10 @@ function buildApp(actor: Actor) {
 
 async function get(actor: Actor, query = '') {
     const response = await buildApp(actor).request(`/${query}`, { method: 'GET' });
-    return { status: response.status, body: await response.json() };
+    const body = response.headers.get('content-type')?.includes('application/json')
+        ? await response.json()
+        : await response.text();
+    return { status: response.status, body };
 }
 
 function admin(permissions: PermissionEnum[]): Actor {
