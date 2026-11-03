@@ -1,6 +1,6 @@
 import { eq, getDb, payments, subscriptions } from '@repo/db';
 import { FAKE_NOTICE_DELAY_MS } from '@repo/payments/fake';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     createSubjects,
     postDelivery,
@@ -125,7 +125,20 @@ describe('HOS-1999 provider read scope', () => {
                 graceEndsAt: new Date(fixture.clock.now().getTime() - 1)
             })
             .where(eq(subscriptions.id, created.subscriptionId));
-        const result = await fixture.runSweep();
+        // A frozen clock stamps every read at the act's own instant, so a read memoized before
+        // the nested act would still look fresh. Ticking 1 ms per `now()` makes the nested act
+        // (recordChargeFact) start strictly after any earlier read, which is what AC-26 guards.
+        const frozenNow = fixture.clock.now.bind(fixture.clock);
+        let tick = 0;
+        const ticking = vi
+            .spyOn(fixture.clock, 'now')
+            .mockImplementation(() => new Date(frozenNow().getTime() + ++tick));
+        let result: Awaited<ReturnType<typeof fixture.runSweep>>;
+        try {
+            result = await fixture.runSweep();
+        } finally {
+            ticking.mockRestore();
+        }
         expect(result.details?.failedSubscriptionIds).not.toContain(created.subscriptionId);
         const [row] = await getDb()
             .select({ status: subscriptions.status })
