@@ -1,4 +1,4 @@
-import { eq, refunds } from '@repo/db';
+import { and, emailOutbox, eq, refunds, sql } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
@@ -232,6 +232,16 @@ describe('TEST:B6:2 AC:B6:6 declining an open refund applies RF5', () => {
                         at: seeded.fixture.clock.now(),
                         correlationId: crypto.randomUUID()
                     });
+                    const inside = await tx
+                        .select({ id: emailOutbox.id })
+                        .from(emailOutbox)
+                        .where(
+                            and(
+                                sql`${emailOutbox.payload}->>'refundId' = ${seeded.refundId}`,
+                                eq(emailOutbox.recipientUserId, seeded.actor.id)
+                            )
+                        );
+                    expect(inside).toHaveLength(1);
                     throw new Error('rollback marker');
                 })
             ).rejects.toThrow('rollback marker');
