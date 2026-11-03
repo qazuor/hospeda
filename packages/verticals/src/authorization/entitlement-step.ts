@@ -16,6 +16,21 @@ export class UnknownStepKeyError extends Error {
     }
 }
 
+/** Whether an entitlement has a positive effective value for this identity. */
+export function isGranted(args: {
+    readonly effective: RehydratedEffectiveSet;
+    readonly key: string;
+    readonly userId: string;
+    readonly vertical: VerticalEnum;
+}): boolean {
+    const value = args.effective.entitlements.get({
+        key: args.key,
+        userId: args.userId,
+        vertical: args.vertical
+    });
+    return value !== undefined && value > 0;
+}
+
 /** Step 6 allows any requested entitlement with a positive effective value. */
 export async function resolveEntitlementStep(args: {
     readonly userId: string;
@@ -28,12 +43,8 @@ export async function resolveEntitlementStep(args: {
     }
     const effective = await args.effectiveSet({ userId: args.userId, vertical: args.vertical });
     for (const key of args.keys) {
-        const value = effective.entitlements.get({
-            key,
-            userId: args.userId,
-            vertical: args.vertical
-        });
-        if (value !== undefined && value > 0) return { allowed: true };
+        if (isGranted({ effective, key, userId: args.userId, vertical: args.vertical }))
+            return { allowed: true };
     }
     return { allowed: false, reason: 'NO_CAPABILITY', key: args.keys[0] };
 }
