@@ -11,42 +11,56 @@
  * - Operational fields accepted without error
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
+
+delete process.env.CI;
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+process.env.HOSPEDA_DISABLE_AUTH = 'true';
+process.env.HOSPEDA_API_DEBUG_ERRORS = 'true';
+
+vi.mock('../../../../src/middlewares/listing-access', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../../../src/middlewares/listing-access')>();
+    return { ...actual, enforceListingAccess: vi.fn(async () => undefined) };
+});
 
 const BASE = '/api/v1/protected/venues';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
-// ---------------------------------------------------------------------------
-// Mock VenueService to capture updateOwn input without real DB calls.
-// ---------------------------------------------------------------------------
+const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+const { fakeModel } = vi.hoisted(() => ({
+    fakeModel: { findById: vi.fn(), update: vi.fn(), create: vi.fn(), findOne: vi.fn() }
+}));
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        withTransaction: async (
+            callback: (tx: { execute: () => Promise<void> }) => Promise<unknown>
+        ) => callback({ execute: async () => undefined })
+    };
+});
+
+vi.mock(
+    '../../../../../../packages/service-core/src/services/listing/listing-owner-act.js',
+    async (importOriginal) => {
+        const actual =
+            await importOriginal<
+                typeof import('../../../../../../packages/service-core/src/services/listing/listing-owner-act.js')
+            >();
+        return { ...actual, recordListingOwnerAct: vi.fn(async () => undefined) };
+    }
+);
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        VenueService: class MockVenueService extends orig.VenueService {
-            // biome-ignore lint/complexity/noUselessConstructor: need to call super
+        VenueService: class InMemoryVenueService extends orig.VenueService {
             constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
-            }
-
-            override async updateOwn(
-                venueId: string,
-                data: Record<string, unknown>,
-                _actor: Parameters<typeof orig.VenueService.prototype.updateOwn>[2]
-            ): ReturnType<typeof orig.VenueService.prototype.updateOwn> {
-                // Capture for assertions
-                (globalThis as Record<string, unknown>).__lastUpdateOwnInput = {
-                    venueId,
-                    data
-                };
-                return {
-                    data: { id: venueId, name: 'mock' } as unknown as Awaited<
-                        ReturnType<typeof orig.VenueService.prototype.updateOwn>
-                    >['data'] & {},
-                    error: undefined
-                } as Awaited<ReturnType<typeof orig.VenueService.prototype.updateOwn>>;
+                Object.defineProperty(this, 'model', { value: fakeModel });
             }
         }
     };
@@ -55,12 +69,58 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 describe('PATCH /api/v1/protected/venues/:id', () => {
     let app: AppOpenAPI;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        const { initApp } = await import('../../../../src/app.js');
         app = initApp();
     });
 
     beforeEach(() => {
-        (globalThis as Record<string, unknown>).__lastUpdateOwnInput = undefined;
+        vi.clearAllMocks();
+        fakeModel.findById.mockResolvedValue({
+            id: VALID_UUID,
+            ownerId: OWNER_ID,
+            type: 'HELADERIA',
+            businessLines: ['food', 'nightlife'],
+            publicationStatus: 'DRAFT',
+            name: 'Saved venue'
+        });
+        fakeModel.update.mockImplementation(
+            async (_where: unknown, data: Record<string, unknown>) => ({
+                id: VALID_UUID,
+                ownerId: OWNER_ID,
+                type: 'HELADERIA',
+                businessLines: ['food', 'nightlife'],
+                publicationStatus: 'DRAFT',
+                name: 'Saved venue',
+                slug: 'saved-venue',
+                summary: 'Una ficha de prueba.',
+                description: 'Descripción detallada para la ficha de prueba.',
+                destinationId: VALID_UUID,
+                nameI18n: null,
+                summaryI18n: null,
+                descriptionI18n: null,
+                richDescriptionI18n: null,
+                featuredByEntitlement: false,
+                media: null,
+                videos: [],
+                averageRating: 0,
+                reviewsCount: 0,
+                rating: null,
+                seo: null,
+                tags: [],
+                priceRange: null,
+                menuUrl: null,
+                menuFileUrl: null,
+                menuFileKind: null,
+                openingHours: null,
+                contactInfo: null,
+                socialNetworks: null,
+                faqs: [],
+                createdAt: new Date('2026-01-01T00:00:00Z'),
+                updatedAt: new Date('2026-01-01T00:00:00Z'),
+                ...data
+            })
+        );
     });
 
     // -------------------------------------------------------------------------
@@ -101,43 +161,124 @@ describe('PATCH /api/v1/protected/venues/:id', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Identity field handling — updateOwn contract (HOS-166 D-1)
+    // Real VenueService validation through the protected HTTP route.
     // -------------------------------------------------------------------------
 
-    describe('Identity Field Handling (HOS-166 D-1)', () => {
-        it('persists name/type/destinationId for owners; still strips slug (OQ-3)', async () => {
-            await app.request(`${BASE}/${VALID_UUID}`, {
+    describe('Business line validation', () => {
+        it('allows an operational update without validating untouched legacy business lines', async () => {
+            const res = await app.request(`${BASE}/${VALID_UUID}`, {
                 method: 'PATCH',
                 headers: {
                     'content-type': 'application/json',
                     'user-agent': 'vitest',
-                    'x-mock-actor-role': 'OWNER_BASICO',
-                    'x-mock-actor-id': 'user-owner-1'
+                    'x-mock-actor-role': 'VENUE_OWNER',
+                    'x-mock-actor-id': OWNER_ID,
+                    'x-mock-actor-permissions': '["venue.editOwn"]',
+                    authorization: 'Bearer valid-test-token'
                 },
                 body: JSON.stringify({
-                    name: 'Updated Name',
-                    slug: 'forged-slug',
-                    type: 'PARRILLA',
-                    destinationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                     priceRange: 'MID'
                 })
             });
+            expect(res.status, await res.clone().text()).toBe(200);
+        });
+    });
 
-            const captured = (globalThis as Record<string, unknown>).__lastUpdateOwnInput as
-                | { venueId: string; data: Record<string, unknown> }
-                | undefined;
+    it('returns 400 when the real service receives invalid business lines', async () => {
+        const res = await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'VENUE_OWNER',
+                'x-mock-actor-id': OWNER_ID,
+                'x-mock-actor-permissions': '["venue.editOwn"]',
+                authorization: 'Bearer valid-test-token'
+            },
+            body: JSON.stringify({ businessLines: ['food', 'nightlife'] })
+        });
+        expect(res.status, await res.clone().text()).toBe(400);
+        const body = await res.json();
+        expect(body.error).toMatchObject({
+            code: 'VALIDATION_ERROR',
+            details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+        });
+    });
 
-            // Skip assertion if mock auth isn't wired (CI without actor middleware)
-            if (!captured) return;
+    it('POST returns 400 for business lines invalid for the venue type', async () => {
+        const res = await app.request(BASE, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'VENUE_OWNER',
+                'x-mock-actor-id': OWNER_ID,
+                'x-mock-actor-permissions': '["venue.create"]',
+                authorization: 'Bearer valid-test-token'
+            },
+            body: JSON.stringify({
+                name: 'Venue with invalid business lines',
+                summary: 'A valid summary for this venue',
+                description: 'A sufficiently detailed description for the venue listing.',
+                type: 'HELADERIA',
+                destinationId: VALID_UUID,
+                businessLines: ['nightlife']
+            })
+        });
+        expect(res.status).toBe(400);
+        const resultBody = await res.json();
+        expect(resultBody).toMatchObject({
+            error: {
+                code: 'VALIDATION_ERROR',
+                details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+            }
+        });
+    });
 
-            // HOS-166 D-1: owner now controls identity fields.
-            expect(captured.data.name).toBe('Updated Name');
-            expect(captured.data.type).toBe('PARRILLA');
-            expect(captured.data.destinationId).toBe('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
-            // `slug` stays admin-only post-create (OQ-3) — still stripped.
-            expect(captured.data.slug).toBeUndefined();
-            // Operational field must be present
-            expect(captured.data.priceRange).toBe('MID');
+    it('rejects a business line from another vertical by request shape', async () => {
+        const res = await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'VENUE_OWNER',
+                'x-mock-actor-id': OWNER_ID,
+                'x-mock-actor-permissions': '["venue.editOwn"]',
+                authorization: 'Bearer valid-test-token'
+            },
+            body: JSON.stringify({ businessLines: ['standard'] })
+        });
+        expect(res.status).toBe(400);
+    });
+
+    it('rejects a type change whose stored business lines are no longer allowed', async () => {
+        fakeModel.findById.mockResolvedValue({
+            id: VALID_UUID,
+            ownerId: OWNER_ID,
+            type: 'BAR',
+            businessLines: ['food', 'nightlife'],
+            publicationStatus: 'DRAFT',
+            name: 'Saved venue'
+        });
+        const res = await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'VENUE_OWNER',
+                'x-mock-actor-id': OWNER_ID,
+                'x-mock-actor-permissions': '["venue.editOwn"]',
+                authorization: 'Bearer valid-test-token'
+            },
+            body: JSON.stringify({ type: 'BOLICHE' })
+        });
+        expect(res.status).toBe(400);
+        const resultBody = await res.json();
+        expect(resultBody).toMatchObject({
+            error: {
+                code: 'VALIDATION_ERROR',
+                details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+            }
         });
     });
 
@@ -152,9 +293,10 @@ describe('PATCH /api/v1/protected/venues/:id', () => {
                 headers: {
                     'content-type': 'application/json',
                     'user-agent': 'vitest',
-                    'x-mock-actor-role': 'OWNER_BASICO',
+                    'x-mock-actor-role': 'VENUE_OWNER',
                     'x-mock-actor-id': 'user-owner-1',
-                    'x-mock-actor-permissions': '[]'
+                    'x-mock-actor-permissions': '[]',
+                    authorization: 'Bearer valid-test-token'
                 },
                 body: JSON.stringify({ priceRange: 'MID' })
             });

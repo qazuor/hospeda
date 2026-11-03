@@ -10,7 +10,7 @@ import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 afterAll(async () => closeTestPool());
 
 const migrationSql = readFileSync(
-    fileURLToPath(new URL('../../src/migrations/0186_confused_violations.sql', import.meta.url)),
+    fileURLToPath(new URL('../../src/migrations/0187_confused_violations.sql', import.meta.url)),
     'utf8'
 );
 const migrationStatements = migrationSql

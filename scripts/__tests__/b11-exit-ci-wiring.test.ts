@@ -127,7 +127,7 @@ describe('TEST:1611:1 AC:B11:20 la evidencia de la salida de B11 está en el ár
             'utf8'
         );
         expect(job).toContain("name: 'billing-reconciliation-sweep'");
-        expect(job).toContain("schedule: '0 6 * * *'");
+        expect(job).toContain("schedule: '10 2 * * *'");
         expect(job).toContain('enabled: true');
         expect(
             readFileSync(path.join(repoRoot, 'apps/api/src/cron/registry.ts'), 'utf8')

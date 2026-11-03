@@ -56,7 +56,7 @@ export const adminPatchAccommodationRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return result.data;

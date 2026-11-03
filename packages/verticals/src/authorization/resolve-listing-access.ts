@@ -1,10 +1,5 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import {
-    type BusinessLine,
-    LISTING_SECTIONS,
-    PublicationStatusEnum,
-    VerticalEnumSchema
-} from '@repo/schemas';
+import { LISTING_SECTIONS, PublicationStatusEnum, VerticalEnumSchema } from '@repo/schemas';
 import { resolveListingSectionPresence } from '../listing-sections/resolve-listing-sections';
 import { resolveAdministrativeActionStep } from './administrative-action-step';
 import {
@@ -99,7 +94,12 @@ export async function resolveListingAccess(args: {
             readonly intent: 'read' | 'write' | 'delete';
             readonly traits?: readonly string[];
         }[];
-        readonly resultingBusinessLines: readonly BusinessLine[];
+        /**
+         * The listing's business lines after this request, unvalidated: they come from
+         * the stored row or the request body, and step 4b throws on a value that is not
+         * a business line of the vertical.
+         */
+        readonly resultingBusinessLines: readonly string[];
     };
     readonly limit?: { readonly key: string; readonly requested: number };
     readonly billing: Pick<BillingForVerticals, 'coverage'>;

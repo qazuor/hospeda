@@ -25,14 +25,14 @@ const listing = /listingAccess:\s*\{[^}]*operation:\s*'(REACTIVATE|DELETE|READ_O
 describe('TEST:1692:4 every protected route of the closed list declares its step-2 operation', () => {
     const protectedFiles = files({ dir: ROOT }).filter((file) => file.includes('/protected/'));
     const rows = protectedFiles.map((file) => ({ file, text: source({ path: file }) }));
-    it('instruments the current three REACTIVATE, three DELETE and six GET READ_OWN declarations', () => {
+    it('instruments the current three REACTIVATE, three DELETE and eleven GET READ_OWN declarations', () => {
         expect(rows.filter(({ text }) => listing.exec(text)?.[1] === 'REACTIVATE')).toHaveLength(3);
         expect(rows.filter(({ text }) => listing.exec(text)?.[1] === 'DELETE')).toHaveLength(3);
         expect(
             rows.filter(
                 ({ text }) => /method:\s*'get'/.test(text) && listing.exec(text)?.[1] === 'READ_OWN'
             )
-        ).toHaveLength(6);
+        ).toHaveLength(11);
     });
     it.each([
         ['REACTIVATE', 'REACTIVATE_LISTING'],

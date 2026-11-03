@@ -44,6 +44,35 @@ describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
         ).toEqual(['food']);
     });
 
+    it('preselects venue business lines before validating and persisting the create', async () => {
+        const service = new VenueService({}) as unknown as CreateHarness;
+        const model = { create: vi.fn(async (data: unknown) => data) };
+        service.model = model;
+        service._canCreate = async () => {};
+        service._afterCreate = async (entity: unknown) => entity;
+        service._refetchWithWriteRelations = async (entity: unknown) => entity;
+        service._assertDestinationIsCity = async () => {};
+        const input = {
+            type: 'BOLICHE',
+            name: 'Test venue',
+            slug: 'test-venue',
+            ownerId: '00000000-0000-4000-a000-000000000001',
+            destinationId: '00000000-0000-4000-a000-000000000002',
+            summary: 'A sufficiently long summary for this service create test.',
+            description: 'A sufficiently long description for this service create test.'
+        };
+
+        await service.create(createActor({ id: input.ownerId }), input, {
+            tx: {},
+            hookState: {}
+        });
+
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ businessLines: ['nightlife'] }),
+            expect.anything()
+        );
+    });
+
     it.each([
         ['venue', VenueService, 'BOLICHE', ['nightlife']],
         ['experience', ExperienceService, 'EXCURSION', ['standard']],
@@ -87,9 +116,10 @@ describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
             ctx.tx
         );
 
-        await service.create(actor, { ...input, businessLines: ['food'] }, ctx);
+        const explicitLines = vertical === 'venue' ? ['nightlife'] : ['standard'];
+        await service.create(actor, { ...input, businessLines: explicitLines }, ctx);
         expect(model.create).toHaveBeenLastCalledWith(
-            expect.objectContaining({ businessLines: ['food'] }),
+            expect.objectContaining({ businessLines: explicitLines }),
             ctx.tx
         );
     });

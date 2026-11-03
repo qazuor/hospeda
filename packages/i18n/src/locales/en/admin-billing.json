@@ -94,7 +94,12 @@
             "lastRunSuccess": "OK",
             "lastRunPartial": "Partial",
             "lastRunFailed": "Failed",
-            "lastRunTimeout": "Timeout"
+            "lastRunTimeout": "Timeout",
+            "acceptedTitle": "Run accepted, running",
+            "acceptedHint": "Run {{runId}} is running in the background. Its result will show here when it finishes.",
+            "busyTitle": "Already running",
+            "busyHint": "Another run holds this job: {{holderRunId}}",
+            "busyHintUnknown": "Another run of this job is in progress."
         },
         "schedules": {
             "daily": "Daily at midnight",
