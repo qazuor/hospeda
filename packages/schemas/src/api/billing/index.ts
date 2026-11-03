@@ -30,6 +30,7 @@ export * from './promo-redemption.schema.js';
 export * from './protected-effective-set.schema.js';
 export * from './public-plan-catalog.schema.js';
 export * from './reconciliation-marks.schema.js';
+export * from './refund-confirmation.schema.js';
 export * from './replace-payment-method.schema.js';
 export * from './signup-notice.schema.js';
 export * from './subscribe-destination.schema.js';
