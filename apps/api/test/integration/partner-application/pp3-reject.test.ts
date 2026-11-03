@@ -22,6 +22,8 @@ const emails: string[] = [];
 const applicationIds: string[] = [];
 const partnerIds: string[] = [];
 const userIds: string[] = [];
+const deadlineVersions: number[] = [];
+let deadlineBaseline: number | undefined;
 
 function email(): string {
     const value = createApplicationEmail();
@@ -99,6 +101,28 @@ beforeAll(async () => {
 afterEach(async () => {
     for (const value of emails.splice(0)) await deleteApplications({ email: value });
     await deletePartners({ ids: partnerIds.splice(0) });
+    const versionsToDelete = deadlineVersions.splice(0);
+    if (versionsToDelete.length > 0) {
+        await getDb().transaction(async (tx) => {
+            await tx.execute(
+                sql`ALTER TABLE vertical_deadline_version DISABLE TRIGGER vertical_deadline_version_immutable`
+            );
+            for (const version of versionsToDelete) {
+                await tx.execute(
+                    sql`DELETE FROM vertical_deadline_version WHERE "version" = ${version}`
+                );
+            }
+            await tx.execute(
+                sql`ALTER TABLE vertical_deadline_version ENABLE TRIGGER vertical_deadline_version_immutable`
+            );
+        });
+    }
+    if (deadlineBaseline !== undefined) {
+        const current = await getDb().execute(sql`
+            SELECT max("version") AS version FROM vertical_deadline_version`);
+        expect(current.rows[0]?.version).toBe(deadlineBaseline);
+        deadlineBaseline = undefined;
+    }
     for (const id of userIds.splice(0)) {
         const db = getDb();
         await db.execute(sql`DELETE FROM account WHERE user_id = ${id}::uuid`);
@@ -111,6 +135,21 @@ afterAll(async () => testDb.teardown());
 
 describe('TEST:V7:5 PP3 rejection', () => {
     it('(a) rejects, saves the current deadline version, and records one event', async () => {
+        const initial = await getDb().execute(sql`
+            SELECT max("version") AS version FROM vertical_deadline_version`);
+        deadlineBaseline = Number(initial.rows[0]?.version);
+        const newerVersions = await getDb().execute(sql`
+            INSERT INTO vertical_deadline_version ("version", "values")
+            SELECT ${deadlineBaseline + 1}, "values"
+            FROM vertical_deadline_version WHERE "version" = ${deadlineBaseline}
+            RETURNING "version"`);
+        deadlineVersions.push(Number(newerVersions.rows[0]?.version));
+        const newestVersion = deadlineBaseline + 2;
+        await getDb().execute(sql`
+            INSERT INTO vertical_deadline_version ("version", "values")
+            SELECT ${newestVersion}, "values"
+            FROM vertical_deadline_version WHERE "version" = ${deadlineBaseline + 1}`);
+        deadlineVersions.push(newestVersion);
         const value = email();
         const id = await pending(value);
         const actorId = await admin();
@@ -126,15 +165,12 @@ describe('TEST:V7:5 PP3 rejection', () => {
             data: { rejected: true },
             metadata: { requestId: expect.any(String), timestamp: expect.any(String) }
         });
-        const current = await getDb().execute(
-            sql`SELECT max("version") AS version FROM vertical_deadline_version`
-        );
         expect(await application(id)).toMatchObject({
             id,
             status: 'REJECTED',
             resolved_at: expect.anything(),
             partner_id: null,
-            deadlines_version: current.rows[0]?.version,
+            deadlines_version: newestVersion,
             wait_cancelled_at: null
         });
         expect(await events(id)).toEqual([

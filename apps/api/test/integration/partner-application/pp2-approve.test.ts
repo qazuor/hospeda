@@ -175,6 +175,12 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         expect(response.status).toBe(200);
         const partnerId = (response.body as { data: { partnerId: string } }).data.partnerId;
         partnerIds.push(partnerId);
+        expect(await readPartner({ id: partnerId })).toMatchObject({
+            id: partnerId,
+            lifecycle_state: 'DRAFT',
+            owner_user_id: null,
+            claim_secret_hash: null
+        });
         const role = await getDb().execute(sql`
             SELECT user_id FROM user_role WHERE user_id = ${user.id}::uuid AND role = 'PARTNER_OWNER'`);
         expect(role.rows).toEqual([]);
