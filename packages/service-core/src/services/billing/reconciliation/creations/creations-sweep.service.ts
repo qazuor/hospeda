@@ -16,6 +16,9 @@ import {
 } from '../../subscription/resolve-live-commitment.js';
 import { authorizePendingSubscription } from '../../subscription/start-subscription.service.js';
 
+/** One row's backoff write, recorded only once its action succeeded (HOS-1999). */
+type CreationSweepAttemptWrite = Parameters<typeof creationSweepModel.upsertAttempt>[0];
+
 export const CREATION_GRACE_MS = 5 * 60_000;
 export const CREATION_RECREATE_AFTER_MS = 15 * 60_000;
 const CREATION_FIRST_SEARCH_MS = 15 * 60_000;
@@ -87,8 +90,12 @@ export async function runCreationsSweep(
             rowsExamined++;
             const { subscription, providerLink, newestCreateKey, payerEmail, planName, planSlug } =
                 row;
+            // HOS-1999: the backoff advances only once the row's action succeeded.
+            // A failed link, cancel or recreate leaves the row due on the next tick.
+            let attemptToRecord: CreationSweepAttemptWrite | undefined;
+            let rowActionFailed = false;
+            let cancellationFailure: unknown;
             try {
-                let cancellationFailure: unknown;
                 const cancelAndCount = async (authorizationId: string) => {
                     try {
                         const result = await cancelDuplicate(
@@ -145,12 +152,12 @@ export async function runCreationsSweep(
                 const step = count === 0 ? CREATION_FIRST_SEARCH_MS : CREATION_REPEAT_SEARCH_MS;
                 const jitter =
                     Math.max(0, Math.min(1, (ports.random ?? Math.random)())) * step * 0.1;
-                await creationSweepModel.upsertAttempt({
+                attemptToRecord = {
                     subscriptionId: subscription.id,
                     attempts: count + 1,
                     nextSearchAt: new Date(ports.clock.now().getTime() + step + jitter),
                     resetMarker
-                });
+                };
                 const named = found.authorizations.filter(
                     (candidate) => candidate.reference === subscription.id
                 );
@@ -244,6 +251,7 @@ export async function runCreationsSweep(
                     recreated++;
                 }
             } catch (error) {
+                rowActionFailed = true;
                 rowsFailed++;
                 const message = error instanceof Error ? error.message : String(error);
                 failures.push({ subscriptionId: subscription.id, message });
@@ -251,6 +259,22 @@ export async function runCreationsSweep(
                     { subscriptionId: subscription.id, error: message },
                     'Creation sweep row failed'
                 );
+            } finally {
+                // `finally` also runs on every `continue` above, so each successful
+                // exit after the search records its attempt here.
+                if (attemptToRecord && !rowActionFailed && cancellationFailure === undefined) {
+                    try {
+                        await creationSweepModel.upsertAttempt(attemptToRecord);
+                    } catch (error) {
+                        rowsFailed++;
+                        const message = error instanceof Error ? error.message : String(error);
+                        failures.push({ subscriptionId: subscription.id, message });
+                        logger.error(
+                            { subscriptionId: subscription.id, error: message },
+                            'Creation sweep attempt could not be recorded'
+                        );
+                    }
+                }
             }
         }
         if (stoppedOnBudget || input.signal?.aborted) {

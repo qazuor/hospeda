@@ -282,6 +282,60 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         ).toHaveLength(0);
     });
 
+    it('HOS-1999: a failed action leaves the row due on the next tick; a clean one backs off', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation();
+        const input = {
+            reference: row.subscription.id,
+            amount: { amountMinor: 250000, currency: 'ARS' as const },
+            cadence: { everyMonths: 1 },
+            reason: 'test',
+            returnUrl: 'https://example.test',
+            payerEmail: row.userEmail!
+        };
+        await fake.authorize(input);
+        time.advance({ ms: 1_000 });
+        await fake.authorize({ ...input, reason: 'second' });
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        const cancel = vi
+            .spyOn(fake, 'cancel')
+            .mockRejectedValueOnce(new Error('temporary cancel failure'));
+        const run = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: fake,
+                        clock: time,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+
+        const failed = await run();
+        expect(failed.rowsFailed).toBe(1);
+        expect(search).toHaveBeenCalledTimes(1);
+        expect(
+            await creationSweepModel.listAttempts({ subscriptionIds: [row.subscription.id] })
+        ).toEqual([]);
+
+        // No time passes: the failed cancel did not advance the backoff.
+        const retried = await run();
+        expect(retried.rowsFailed).toBe(0);
+        expect(search).toHaveBeenCalledTimes(2);
+        expect(cancel).toHaveBeenCalledTimes(2);
+        const [attempt] = await creationSweepModel.listAttempts({
+            subscriptionIds: [row.subscription.id]
+        });
+        expect(attempt?.attempts).toBe(1);
+
+        // The clean run recorded its attempt, so the next tick is not due.
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+    });
+
     it('uses only payerEmail and cancels a late pending on later runs once', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);
