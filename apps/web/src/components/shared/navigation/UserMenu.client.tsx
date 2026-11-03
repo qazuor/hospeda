@@ -45,6 +45,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
+import { clearThemeSyncMarker } from '@/lib/theme';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
 
@@ -287,6 +288,7 @@ export function UserMenu({
             // which the bare `removeItem` let skip `signOut()` entirely.
             clearCachedAuthMe();
             resetUser();
+            clearThemeSyncMarker();
             await signOut();
         } finally {
             window.location.href = buildUrl({ locale, path: '/' });
