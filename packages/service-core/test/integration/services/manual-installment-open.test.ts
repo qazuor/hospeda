@@ -285,6 +285,10 @@ describe('TEST:B5:7 MP5 clock', () => {
         const { subscription, version } = await seed();
         const staff = await admins();
         const realPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
+        const publishedPolicy = await realPolicy({
+            planVersionId: 'a94ec189-3f19-5fb7-8f09-20042bf733d7'
+        });
+        expect(publishedPolicy.graceDays).toBe(10);
         const policy = await realPolicy({ planVersionId: version.id });
         const result = await openDueManualInstallments(
             { pageSize: 1000 },
