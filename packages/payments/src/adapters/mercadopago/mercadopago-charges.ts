@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PaymentProviderError } from '../../provider/errors';
 import type { ChargeListResult } from '../../provider/payment-provider';
+import { memoizeInProviderReadScope } from '../../provider/provider-read-scope';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
 import { nullAsAbsent } from './mercadopago-null-as-absent';
 import { resolveUnnamedChargeRecords } from './mercadopago-unnamed-charges';
@@ -34,22 +35,27 @@ export async function readMercadoPagoChargeRecords(input: {
     readonly send: MercadoPagoSend;
     readonly sleep?: (ms: number) => Promise<void>;
 }): Promise<readonly MercadoPagoChargeRecord[]> {
-    for (let attempt = 0; ; attempt += 1) {
-        const records = await readAllChargeRecords(input);
-        const incompleteIndex = records.findIndex((record) => record.id == null);
-        if (incompleteIndex === -1) return records;
-        const delay = MERCADOPAGO_INCOMPLETE_RECORD_REREAD_DELAYS_MS[attempt];
-        if (input.sleep && delay !== undefined) {
-            await input.sleep(delay);
-            continue;
+    return await memoizeInProviderReadScope({
+        key: `mp:charge-records:${input.authorizationId}`,
+        load: async () => {
+            for (let attempt = 0; ; attempt += 1) {
+                const records = await readAllChargeRecords(input);
+                const incompleteIndex = records.findIndex((record) => record.id == null);
+                if (incompleteIndex === -1) return records;
+                const delay = MERCADOPAGO_INCOMPLETE_RECORD_REREAD_DELAYS_MS[attempt];
+                if (input.sleep && delay !== undefined) {
+                    await input.sleep(delay);
+                    continue;
+                }
+                throw new PaymentProviderError({
+                    code: 'UNAVAILABLE',
+                    capability: 'read',
+                    message: `Mercado Pago returned a charge record still being written at results.${incompleteIndex}.id`,
+                    incompleteRead: true
+                });
+            }
         }
-        throw new PaymentProviderError({
-            code: 'UNAVAILABLE',
-            capability: 'read',
-            message: `Mercado Pago returned a charge record still being written at results.${incompleteIndex}.id`,
-            incompleteRead: true
-        });
-    }
+    });
 }
 
 async function readAllChargeRecords(input: {
@@ -87,6 +93,17 @@ async function readAllChargeRecords(input: {
 
 /** Lists payment identifiers from every measured charge record for an authorization. */
 export async function listMercadoPagoCharges(input: {
+    readonly authorizationId: string;
+    readonly send: MercadoPagoSend;
+    readonly sleep?: (ms: number) => Promise<void>;
+}): Promise<ChargeListResult> {
+    return await memoizeInProviderReadScope({
+        key: `mp:charge-list:${input.authorizationId}`,
+        load: async () => await listMercadoPagoChargesLive(input)
+    });
+}
+
+async function listMercadoPagoChargesLive(input: {
     readonly authorizationId: string;
     readonly send: MercadoPagoSend;
     readonly sleep?: (ms: number) => Promise<void>;
