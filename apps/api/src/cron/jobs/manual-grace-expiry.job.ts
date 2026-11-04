@@ -1,6 +1,7 @@
 import { expireManualGraces } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { getClock } from '../../utils/clock.js';
+import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import type { CronJobDefinition } from '../types.js';
 
 /** HOS-1542 / AC:B5:17: expire unpaid manual grace periods through MP3 and S6. */
@@ -25,7 +26,11 @@ export const manualGraceExpiryJob: CronJobDefinition = {
         try {
             const summary = await expireManualGraces(
                 { pageSize: 100 },
-                { clock: getClock().clock, beforeCancelNotice }
+                {
+                    clock: getClock().clock,
+                    beforeCancelNotice,
+                    coverageNotices: getCoverageNotices()
+                }
             );
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Manual grace expiry completed', { ...summary, durationMs });

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockExpire, mockClock, mockBeforeCancel } = vi.hoisted(() => ({
+const { mockExpire, mockClock, mockBeforeCancel, mockCoverage } = vi.hoisted(() => ({
     mockExpire: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-14T20:00:00.000Z')) },
-    mockBeforeCancel: vi.fn()
+    mockBeforeCancel: vi.fn(),
+    mockCoverage: { emitCoverageChanged: vi.fn() }
 }));
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
@@ -13,6 +14,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/routes/billing-subscription/before-cancel-notice.js', () => ({
     beforeCancelNotice: { beforeCancel: mockBeforeCancel }
+}));
+vi.mock('../../src/utils/listing-access/coverage-notices.js', () => ({
+    getCoverageNotices: () => mockCoverage
 }));
 
 import { manualGraceExpiryJob } from '../../src/cron/jobs/manual-grace-expiry.job';
@@ -51,14 +55,19 @@ describe('HOS-1542 manual grace expiry clock (AC:B5:17)', () => {
         });
     });
 
-    it('calls MP3 with the clock and notice port', async () => {
+    it('calls MP3 with the clock, notice and coverage ports', async () => {
         await manualGraceExpiryJob.handler(context());
         expect(mockExpire).toHaveBeenCalledTimes(1);
         const [input, ports] = mockExpire.mock.calls[0] ?? [];
         expect(input).toStrictEqual({ pageSize: 100 });
         expect(ports.clock).toBe(mockClock);
         expect(ports.beforeCancelNotice.beforeCancel).toBe(mockBeforeCancel);
-        expect(Object.keys(ports).sort()).toEqual(['beforeCancelNotice', 'clock']);
+        expect(ports.coverageNotices).toBe(mockCoverage);
+        expect(Object.keys(ports).sort()).toEqual([
+            'beforeCancelNotice',
+            'clock',
+            'coverageNotices'
+        ]);
     });
 
     it('returns the exact service summary', async () => {
