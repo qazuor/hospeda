@@ -262,6 +262,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         const registrationLock = vi
             .spyOn(manualPaymentModel, 'lockInstallment')
             .mockImplementation(async (input) => {
+                if (pid !== undefined) return originalLock.call(manualPaymentModel, input);
                 const result = await input.tx.execute(sql`SELECT pg_backend_pid() AS pid`);
                 pid = Number(result.rows[0]?.pid);
                 reachedLock();
@@ -308,6 +309,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
                     [pid]
                 );
                 parked = (result.rows[0]?.parked ?? 0) > 0;
+                if (!parked && !declared)
+                    await new Promise<void>((resolve) => setTimeout(resolve, 10));
             }
             expect(parked || declared).toBe(true);
 
