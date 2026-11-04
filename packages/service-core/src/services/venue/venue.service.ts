@@ -45,6 +45,7 @@ import {
     PublicationStatusEnum,
     ServiceErrorCode,
     type Venue,
+    type VenueAdminCreateInput,
     VenueAdminCreateInputSchema,
     VenueAdminSearchSchema,
     type VenueOwnerUpdateInput,
@@ -71,6 +72,7 @@ import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-
 import { BaseListingService } from '../listing/base-listing.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
+import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
     checkVenueCanAdminList,
     checkVenueCanCreate,
@@ -554,6 +556,75 @@ export class VenueService extends BaseListingService<
         params: AdminSearchExecuteParams<Record<string, unknown>>
     ): Promise<PaginatedListOutput<Venue>> {
         return super._executeAdminSearch(params);
+    }
+
+    // -----------------------------------------------------------------------
+    // nightInfo section hooks (HOS-1846 / DEC-FAC-058)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Pre-create hook for the `nightInfo` section.
+     *
+     * Delegates to {@link BaseListingService._beforeCreate} (destination
+     * validation, slug generation, junction capture) and then applies the
+     * section's server-side rules: a create carries no stored row, so a
+     * non-null price stamps `entryPriceUpdatedAt` now, and a price with a
+     * non-`paid` kind is a 400 instead of a database CHECK 500.
+     *
+     * @param data - Validated create input.
+     * @param actor - The actor performing the create.
+     * @param ctx - Service execution context.
+     * @returns The base patch merged with the resolved `nightInfo` patch.
+     * @throws {ServiceError} `VALIDATION_ERROR` for an invalid price/kind pair.
+     */
+    protected override async _beforeCreate(
+        data: VenueAdminCreateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Venue>> {
+        const base = await super._beforeCreate(data, actor, ctx);
+        const nightInfo = resolveVenueNightInfoPatch({
+            body: data as Record<string, unknown>,
+            now: new Date()
+        });
+        return { ...base, ...nightInfo };
+    }
+
+    /**
+     * Pre-update hook for the `nightInfo` section.
+     *
+     * Delegates to {@link BaseListingService._beforeUpdate} (business-line and
+     * destination re-validation, junction capture) and then applies the
+     * section's rules against the STORED row: the price date moves only when
+     * the price changes, leaving `paid` erases price and date, and an explicit
+     * price with a non-`paid` kind is a 400.
+     *
+     * The row id comes from `ctx.hookState.updateId`, set by the listing base
+     * `update()` before the hook pipeline — the same snapshot precedent as
+     * `DestinationService._beforeUpdate`.
+     *
+     * @param data - Validated update input.
+     * @param actor - The actor performing the update.
+     * @param ctx - Service execution context (carries `tx` and `hookState`).
+     * @returns The base patch merged with the resolved `nightInfo` patch.
+     * @throws {ServiceError} `VALIDATION_ERROR` for an invalid price/kind pair.
+     */
+    protected override async _beforeUpdate(
+        data: VenueUpdateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Venue>> {
+        const base = await super._beforeUpdate(data, actor, ctx);
+        const updateId = (ctx.hookState as { updateId?: string } | undefined)?.updateId;
+        const current = updateId
+            ? ((await this.model.findById(updateId, ctx.tx)) as VenueNightInfoCurrent | null)
+            : null;
+        const nightInfo = resolveVenueNightInfoPatch({
+            body: data as Record<string, unknown>,
+            current,
+            now: new Date()
+        });
+        return { ...base, ...nightInfo };
     }
 
     // -----------------------------------------------------------------------
