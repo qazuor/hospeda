@@ -294,6 +294,12 @@
     color: var(--core-foreground);
 }
 
+.popupPriceConsult {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+}
+
 /* CTA matches `AccommodationCard.astro` (.acc-card__cta-btn) so the popup
  * footer link reads exactly like the "Ver más →" pill used elsewhere in the
  * listing. We pin color via :link/:visited because Leaflet portals the popup
@@ -324,8 +330,7 @@
 }
 
 .popupCtaCompact {
-    padding-right: 10px;
-    padding-left: 10px;
+    padding-inline: var(--space-3, 0.75rem);
 }
 
 /* ----- Selected item pulse (cards sidebar click on desktop) -----

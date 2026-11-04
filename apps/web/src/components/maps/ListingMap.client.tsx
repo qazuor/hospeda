@@ -90,9 +90,6 @@ interface ListingMapStrings {
     readonly attribution: string;
     readonly approximateDisclaimer: string;
     readonly viewDetails?: string;
-    readonly priceConsult?: string;
-    readonly consultAvailability?: string;
-    readonly consultCta?: string;
 }
 
 interface BaseProps {
@@ -127,6 +124,14 @@ interface BaseProps {
 interface AccommodationProps extends BaseProps {
     readonly mode: 'accommodation-list';
     readonly items: ReadonlyArray<AccommodationListingItem>;
+    readonly i18nStrings: BaseProps['i18nStrings'] & {
+        /** Localized details action used by priced accommodation popups. */
+        readonly viewDetails: string;
+        /** Localized explanation shown in an accommodation popup without a price. */
+        readonly priceConsult: string;
+        /** Localized CTA explaining that the visitor can ask about availability. */
+        readonly consultAvailability: string;
+    };
 }
 
 interface DestinationProps extends BaseProps {

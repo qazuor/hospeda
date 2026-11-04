@@ -49,8 +49,7 @@
             "from": "From",
             "perNight": "/night",
             "consult": "Price on request",
-            "consultAvailability": "Check availability",
-            "consultCta": "Inquire"
+            "consultAvailability": "Check availability"
         },
         "amenities": {
             "label": "Amenities"

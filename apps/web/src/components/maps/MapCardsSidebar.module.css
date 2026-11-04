@@ -455,6 +455,12 @@
     color: var(--brand-accent);
 }
 
+.cardPriceValueConsult {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+}
+
 .cardCta {
     display: inline-flex;
     align-items: center;
@@ -477,8 +483,7 @@
 }
 
 .cardCtaCompact {
-    padding-right: 10px;
-    padding-left: 10px;
+    padding-inline: var(--space-3, 0.75rem);
 }
 
 /* ----- Mobile bottom sheet ----- */

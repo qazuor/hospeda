@@ -25,6 +25,7 @@ import { MapCardsSheetTrigger } from '@/components/maps/MapCardsSheetTrigger';
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import sidebarStyles from './MapCardsSidebar.module.css';
 
@@ -488,7 +489,12 @@ export function MapCardsSidebar({
                                                     ) : null}
                                                 </>
                                             ) : (
-                                                <span className={sidebarStyles.cardPriceValue}>
+                                                <span
+                                                    className={cn(
+                                                        sidebarStyles.cardPriceValue,
+                                                        sidebarStyles.cardPriceValueConsult
+                                                    )}
+                                                >
                                                     {item.priceConsultLabel ?? '—'}
                                                 </span>
                                             )}
@@ -496,7 +502,10 @@ export function MapCardsSidebar({
                                         {item.ctaLabel && item.detailHref ? (
                                             <a
                                                 href={item.detailHref}
-                                                className={`${sidebarStyles.cardCta}${item.priceLabel ? '' : ` ${sidebarStyles.cardCtaCompact}`}`}
+                                                className={cn(
+                                                    sidebarStyles.cardCta,
+                                                    !item.priceLabel && sidebarStyles.cardCtaCompact
+                                                )}
                                                 onClick={(e) => e.stopPropagation()}
                                                 onMouseDown={(e) => e.stopPropagation()}
                                                 aria-label={`${item.priceLabel ? item.ctaLabel : (item.noPriceCtaLabel ?? item.ctaLabel)} — ${item.name}`}
@@ -504,9 +513,9 @@ export function MapCardsSidebar({
                                                 {item.priceLabel
                                                     ? item.ctaLabel
                                                     : (item.noPriceCtaLabel ?? item.ctaLabel)}
-                                                {item.priceLabel ? null : (
+                                                {!item.priceLabel && item.noPriceCtaLabel ? (
                                                     <span aria-hidden="true"> →</span>
-                                                )}
+                                                ) : null}
                                             </a>
                                         ) : null}
                                     </div>

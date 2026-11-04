@@ -38,6 +38,11 @@ import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-su
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
+const priceConsultLabel = t('home.accommodations.price.consult', 'Precio a consultar');
+const consultAvailabilityLabel = t(
+	'home.accommodations.price.consultAvailability',
+	'Consultar disponibilidad'
+);
 const { t: tEs } = createTranslations('es');
 const { t: tEn } = createTranslations('en');
 const { t: tPt } = createTranslations('pt');
@@ -525,8 +530,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				newText={newColors.text}
 				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
 				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
-				priceConsultLabel={t('home.accommodations.price.consult', 'Precio a consultar')}
-				noPriceCtaLabel={t('home.accommodations.price.consultCta', 'Consultar')}
+				priceConsultLabel={priceConsultLabel}
+				noPriceCtaLabel={consultAvailabilityLabel}
 				ctaLabel={`${t('common.readMore', 'Ver más')} →`}
 				amenitiesLabel={t('home.accommodations.amenities.label', 'Amenidades')}
 				showSidebar={true}
@@ -548,9 +553,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					attribution: t('maps.attribution'),
 					approximateDisclaimer: t('maps.approximateDisclaimer'),
 					viewDetails: t('maps.viewDetails', 'Ver más'),
-					priceConsult: t('home.accommodations.price.consult', 'Precio a consultar'),
-					consultAvailability: t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad'),
-					consultCta: t('home.accommodations.price.consultCta', 'Consultar'),
+					priceConsult: priceConsultLabel,
+					consultAvailability: consultAvailabilityLabel,
 				}}
 			>
 				<MapPlaceholder

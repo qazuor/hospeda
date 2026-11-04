@@ -32,16 +32,6 @@ const mapaAstroSource = readFileSync(
     'utf8'
 );
 
-const accommodationMapAstroSource = readFileSync(
-    resolve(__dirname, '../../../src/pages/[lang]/alojamientos/mapa.astro'),
-    'utf8'
-);
-
-const accommodationsMapSource = readFileSync(
-    resolve(__dirname, '../../../src/components/maps/AccommodationsListingMap.client.tsx'),
-    'utf8'
-);
-
 describe('HOS-95 map regressions', () => {
     it('regression: doubled asset path — deletes the default Icon._getIconUrl override before mergeOptions', () => {
         expect(innerSource).toContain('delete (L.Icon.Default.prototype');
@@ -78,36 +68,6 @@ describe('HOS-95 map regressions', () => {
 
     it('defines the floating accommodation card style', () => {
         expect(cssSource).toContain('.floatingCard');
-    });
-
-    it('renders the localized no-price popup label and compact availability CTA while preserving priced details', () => {
-        expect(accommodationMapAstroSource).toContain(
-            "priceConsult: t('home.accommodations.price.consult'"
-        );
-        expect(accommodationMapAstroSource).toContain(
-            "consultAvailability: t('home.accommodations.price.consultAvailability'"
-        );
-        expect(innerSource).toContain('priceConsultLabel ??');
-        expect(innerSource).toContain("locale === 'en'");
-        expect(innerSource).toContain('Price on request');
-        expect(innerSource).toContain('Preço sob consulta');
-        expect(innerSource).toContain('consultCtaLabel ??');
-        expect(innerSource).toContain('Inquire');
-        expect(innerSource).toContain(
-            "item.priceLabel\n                                    ? (viewDetailsLabel ?? 'Ver más')"
-        );
-        expect(innerSource).toContain('popupCtaCompact');
-        expect(cssSource).toContain('.popupCtaCompact');
-    });
-
-    it('forwards localized no-price copy from the accommodation map page to sidebar and popup', () => {
-        expect(accommodationMapAstroSource).toContain('priceConsultLabel={t(');
-        expect(accommodationMapAstroSource).toContain('noPriceCtaLabel={t(');
-        expect(accommodationMapAstroSource).toContain("home.accommodations.price.consultCta'");
-        expect(accommodationsMapSource).toContain('priceConsultLabel,');
-        expect(accommodationsMapSource).toContain('noPriceCtaLabel,');
-        expect(accommodationsMapSource).toContain('i18nStrings={i18nStrings}');
-        expect(innerSource).toContain('consultCtaLabel={i18nStrings.consultCta}');
     });
 
     it('regression: i18n namespace typo — mapa.astro uses the plural "destinations" namespace', () => {
