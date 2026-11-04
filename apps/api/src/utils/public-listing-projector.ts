@@ -187,7 +187,7 @@ export function projectVenueDimensionRatings<T extends Record<string, unknown>>(
     if (!rating || typeof rating !== 'object' || Array.isArray(rating)) return listing;
     const next = { ...(rating as Record<string, unknown>) };
     for (const dimension of REVIEW_RULES.venue.dimensions) {
-        if (dimension.boundSection && states.get(dimension.boundSection)?.state === 'absent') {
+        if ('boundSection' in dimension && states.get(dimension.boundSection)?.state === 'absent') {
             delete next[dimension.id];
         }
     }
