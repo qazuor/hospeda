@@ -69,6 +69,51 @@ describe('projectPublicListing', () => {
         expect(mocks.effectiveSet).toHaveBeenCalledTimes(2);
     });
 
+    it('hides food aggregates only while the menu section is absent, including through page reads', async () => {
+        const [restaurant, boliche, returned] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [
+                {
+                    id: 'r',
+                    ownerId: 'owner',
+                    businessLines: ['food'],
+                    rating: { food: { average: 4, count: 2 }, service: { average: 5, count: 1 } }
+                },
+                {
+                    id: 'b',
+                    ownerId: 'owner',
+                    businessLines: ['nightlife'],
+                    rating: { food: { average: 4, count: 2 }, service: { average: 5, count: 1 } }
+                },
+                {
+                    id: 'r2',
+                    ownerId: 'owner',
+                    businessLines: ['food'],
+                    rating: { food: { average: 4, count: 2 }, service: { average: 5, count: 1 } }
+                }
+            ]
+        });
+        expect(restaurant!.rating).toHaveProperty('food');
+        expect(boliche!.rating).not.toHaveProperty('food');
+        expect(boliche!.rating).toHaveProperty('service');
+        expect(returned!.rating).toHaveProperty('food');
+    });
+
+    it('keeps food aggregates when the menu is locked', async () => {
+        const [listing] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [
+                {
+                    id: 'r',
+                    ownerId: 'owner',
+                    businessLines: ['food'],
+                    rating: { food: { average: 4, count: 2 } }
+                }
+            ]
+        });
+        expect(listing!.rating).toHaveProperty('food');
+    });
+
     it('fails closed and signals the route to disable caching when a set read fails', async () => {
         mocks.effectiveSet.mockRejectedValueOnce(new Error('billing unavailable'));
         const noStore = vi.fn();

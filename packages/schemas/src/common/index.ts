@@ -81,7 +81,6 @@ export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';
 // Per-vertical rating breakdowns (the dimensions only make sense per vertical)
-export * from './venue-rating.schema.js';
 export * from './visibility.schema.js';
 
 // Migration completed ✅

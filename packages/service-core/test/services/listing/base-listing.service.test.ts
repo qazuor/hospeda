@@ -718,6 +718,66 @@ describe('BaseListingService — junction ID capture (_beforeCreate)', () => {
 // ---------------------------------------------------------------------------
 
 describe('BaseListingService — recomputeRating', () => {
+    it('goldens the legacy experience rating outputs before the averaging refactor', async () => {
+        const cases = [
+            {
+                name: 'complete breakdown',
+                rows: [{ food: 4, service: 3, ambiance: 5, value: 2 }],
+                expected: {
+                    reviewsCount: 1,
+                    averageRating: 3.5,
+                    rating: { food: 4, service: 3, ambiance: 5, value: 2 }
+                }
+            },
+            {
+                name: 'partial breakdown with null',
+                rows: [{ food: 4, service: null, ambiance: 2, value: null }],
+                expected: {
+                    reviewsCount: 1,
+                    averageRating: 1.5,
+                    rating: { food: 4, service: 0, ambiance: 2, value: 0 }
+                }
+            },
+            {
+                name: 'no breakdown',
+                rows: [{ food: null, service: null, ambiance: null, value: null }],
+                expected: {
+                    reviewsCount: 1,
+                    averageRating: 0,
+                    rating: { food: 0, service: 0, ambiance: 0, value: 0 }
+                }
+            },
+            {
+                name: 'mixed reviews',
+                rows: [
+                    { food: 5, service: 2, ambiance: null, value: 4 },
+                    { food: null, service: 4, ambiance: 3, value: null },
+                    { food: 2, service: null, ambiance: 4, value: 2 }
+                ],
+                expected: {
+                    reviewsCount: 3,
+                    averageRating: 2.17,
+                    rating: { food: 2.33, service: 2, ambiance: 2.33, value: 2 }
+                }
+            },
+            {
+                name: 'zero reviews',
+                rows: [],
+                expected: { reviewsCount: 0, averageRating: 0, rating: null }
+            }
+        ];
+
+        for (const testCase of cases) {
+            const { svc, model } = makeService();
+            Object.defineProperty(svc, '_revalidationEntityType', { value: 'experience' });
+            model.update.mockImplementation(async (_where, data) => ({ id: ENTITY_ID, ...data }));
+            const result = await svc.recomputeRating(ENTITY_ID, testCase.rows);
+            expect(result.error, testCase.name).toBeUndefined();
+            const [, patch] = (model.update as Mock).mock.calls[0] ?? [];
+            expect(patch, testCase.name).toMatchObject(testCase.expected);
+        }
+    });
+
     it('should set reviewsCount=0 and averageRating=0 when ratingRows is empty', async () => {
         const { svc, model } = makeService();
 
@@ -740,6 +800,7 @@ describe('BaseListingService — recomputeRating', () => {
 
     it('should compute averageRating from four sub-dimensions', async () => {
         const { svc, model } = makeService();
+        Object.defineProperty(svc, '_revalidationEntityType', { value: 'experience' });
 
         model.update.mockImplementation(async (_where, data) => ({ id: ENTITY_ID, ...data }));
 

@@ -95,6 +95,7 @@ function makeVenue(ownerId: string, businessLines: string[] = ['food']): Record<
         menuUrl: 'https://menu.example',
         menuFileUrl: FILE_URL,
         menuFileKind: 'PDF',
+        rating: { food: { average: 4, count: 2 }, service: { average: 5, count: 1 } },
         featuredByEntitlement: false,
         isFeatured: false
     };
@@ -247,6 +248,37 @@ describe('HOS-1792 public venue menu file gate', () => {
         expect(data).not.toHaveProperty('menuUrl');
         expect(data).not.toHaveProperty('menuFileUrl');
         expect(data).not.toHaveProperty('menuSections');
+    });
+
+    it.each([
+        ['getBySlug', BY_SLUG, '/slug/test-venue'],
+        ['list', LIST, '/']
+    ] as const)('publishes food dimension only while food business line exists through %s', async (_name, target, url) => {
+        let businessLines = ['food'];
+        mockGetBySlug.mockImplementation(async () => ({
+            data: makeVenue(OWNER_FREE, businessLines),
+            error: null
+        }));
+        mockSearch.mockImplementation(async () => ({
+            data: { items: [makeVenue(OWNER_FREE, businessLines)], total: 1 },
+            error: null
+        }));
+
+        const read = async () => {
+            const data = await get(target, url);
+            return ('items' in data ? data.items[0] : data) as Record<string, unknown>;
+        };
+
+        const restaurant = await read();
+        expect(restaurant.rating).toHaveProperty('food');
+        expect(restaurant.rating).toHaveProperty('service');
+        businessLines = ['nightlife'];
+        const boliche = await read();
+        expect(boliche.rating).not.toHaveProperty('food');
+        expect(boliche.rating).toHaveProperty('service');
+        businessLines = ['food'];
+        const returnedRestaurant = await read();
+        expect(returnedRestaurant.rating).toHaveProperty('food');
     });
 
     it.each([

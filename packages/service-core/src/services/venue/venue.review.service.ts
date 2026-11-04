@@ -721,19 +721,12 @@ export class VenueReviewService extends BaseCrudService<
                 ctx?.tx
             );
 
-            // Extract the rating breakdown from each APPROVED review row. When a
-            // review has no per-dimension breakdown, fall back to its scalar
-            // `overallRating` for every dimension so it still contributes its
-            // true score to the listing aggregate instead of dragging it to 0.
             const ratingRows = approvedReviews.map((r) => {
                 const raw = r as Record<string, unknown>;
                 const rating = raw.rating as Record<string, number | null> | null | undefined;
-                const fallback = (raw.overallRating as number | undefined) ?? null;
                 return {
-                    food: rating?.food ?? fallback,
-                    service: rating?.service ?? fallback,
-                    ambiance: rating?.ambiance ?? fallback,
-                    value: rating?.value ?? fallback
+                    ...(rating ?? {}),
+                    overallRating: raw.overallRating as number | null | undefined
                 };
             });
 
