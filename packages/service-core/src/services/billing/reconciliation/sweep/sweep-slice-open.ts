@@ -133,3 +133,41 @@ export async function openCycleSlice(args: {
         ...(orphanedCycle ? { orphanedCycle } : {})
     };
 }
+
+/**
+ * Opens the unsliced `single` run. It carries no cycle id, so the partial unique index of
+ * migration 0187 (`cycle_id IS NOT NULL`) does not cover it; the only protection against
+ * overlapping a live cycle slice is this check, which refuses while any slice holds a live lease.
+ */
+export async function openSingleRun(args: {
+    readonly correlationId: string;
+    readonly startedAt: Date;
+    readonly ports: ReconciliationSweepPorts;
+}): Promise<
+    | {
+          readonly run: SelectReconciliationSweepRun;
+          readonly summary: undefined;
+          readonly orphanedCycle?: undefined;
+      }
+    | {
+          readonly run: SelectReconciliationSweepRun;
+          readonly summary: ReconciliationSweepSummary;
+          readonly orphanedCycle?: undefined;
+      }
+> {
+    const openRuns = await reconciliationSweepRunModel.findOpenRunsWithLease();
+    if (openRuns.some((openRun) => openRun.leaseLive))
+        return {
+            run: undefined as never,
+            summary: skippedSummary({
+                skipped: 'lease_held',
+                startedAt: args.startedAt,
+                finishedAt: args.ports.clock.now()
+            })
+        };
+    const run = await reconciliationSweepRunModel.open({
+        correlationId: args.correlationId,
+        startedAt: args.startedAt
+    });
+    return { run, summary: undefined };
+}

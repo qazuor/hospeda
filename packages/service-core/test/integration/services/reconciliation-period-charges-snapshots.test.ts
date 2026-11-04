@@ -100,7 +100,7 @@ async function sweepWith(input: {
     };
     const summary = await withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            {},
+            { mode: 'single' },
             {
                 provider: counting,
                 clock: input.clock,
