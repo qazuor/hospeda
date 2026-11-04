@@ -3,7 +3,8 @@
  * Guard `check-migration-when-order`: pure-function cases for both rules, plus
  * the real journal of this tree (rule 1) and the CLI over temp journal files.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,8 @@ import {
     ALLOWED_INVERSIONS,
     checkJournals,
     type Journal,
+    normalizeTarget,
+    parseJournal,
     run
 } from '../check-migration-when-order.js';
 
@@ -170,5 +173,105 @@ describe('real tree and CLI', () => {
     it('baseRef (GITHUB_BASE_REF) is used when --base is absent', () => {
         const r = run({ args: [], baseRef: 'epic/x', root: REPO_ROOT });
         expect(r.output).toContain('RULE 2 skipped');
+    });
+});
+
+describe('review fixes', () => {
+    const writeJson = (dir: string, name: string, value: unknown): void =>
+        writeFileSync(path.join(dir, name), JSON.stringify(value));
+    const good = { entries: [{ idx: 0, tag: 'a', when: 100 }] };
+
+    it('parseJournal rejects an empty journal', () => {
+        expect(() => parseJournal({ text: '{"entries":[]}', label: 'x' })).toThrow(/empty/);
+    });
+
+    it('CLI exits 1 on an empty base journal and never claims a comparison', () => {
+        const dir = tempDir();
+        writeJson(dir, 'cur.json', good);
+        writeJson(dir, 'base.json', { entries: [] });
+        const r = run({
+            args: ['--base=staging', '--journal-file=cur.json', '--base-journal-file=base.json'],
+            root: dir
+        });
+        expect(r.exitCode).toBe(1);
+        expect(r.output).not.toContain('sit above');
+    });
+
+    it('CLI exits 1 on an empty current journal', () => {
+        const dir = tempDir();
+        writeJson(dir, 'cur.json', { entries: [] });
+        const r = run({ args: ['--journal-file=cur.json'], root: dir });
+        expect(r.exitCode).toBe(1);
+    });
+
+    it('does not print the rule 2 OK message when rule 2 did not run', () => {
+        const r = run({ args: ['--base=epic/x'], root: REPO_ROOT });
+        expect(r.exitCode).toBe(0);
+        expect(r.output).not.toContain('sit above');
+    });
+
+    it('CLI exits 1 on invalid JSON in the base journal', () => {
+        const dir = tempDir();
+        writeJson(dir, 'cur.json', good);
+        writeFileSync(path.join(dir, 'base.json'), '{not json');
+        const r = run({
+            args: ['--base=staging', '--journal-file=cur.json', '--base-journal-file=base.json'],
+            root: dir
+        });
+        expect(r.exitCode).toBe(1);
+        expect(r.output).toContain('Failing closed');
+    });
+
+    it('normalizes origin/ and refs/heads/ prefixes and whitespace', () => {
+        expect(normalizeTarget(' origin/staging ')).toBe('staging');
+        expect(normalizeTarget('refs/heads/main')).toBe('main');
+        const base = journal(['a', 10], ['b', 20]);
+        const current = journal(['a', 10], ['c_new', 15]);
+        expect(checkJournals({ current, base, target: 'origin/staging' }).exitCode).toBe(1);
+        expect(checkJournals({ current, base, target: 'refs/heads/staging' }).exitCode).toBe(1);
+    });
+
+    it('an empty --base= does not override GITHUB_BASE_REF', () => {
+        const r = run({ args: ['--base='], baseRef: 'epic/x', root: REPO_ROOT });
+        expect(r.output).toContain('target "epic/x"');
+    });
+
+    it('rule 2 message says regenerate or raise when, and that idx alone is not enough', () => {
+        const base = journal(['a', 10], ['b', 20]);
+        const current = journal(['a', 10], ['c_new', 15]);
+        const msg = checkJournals({ current, base, target: 'staging' }).violations.join('\n');
+        expect(msg).toContain('Regenerate');
+        expect(msg).toContain('idx alone is not enough');
+    });
+
+    it('a renamed tag counts as new and must be above the base maximum', () => {
+        const base = journal(['a', 10], ['b_old_name', 20]);
+        const current = journal(['a', 10], ['b_renamed', 20]);
+        const r = checkJournals({ current, base, target: 'staging' });
+        expect(r.exitCode).toBe(1);
+        expect(r.violations.join('\n')).toContain('b_renamed');
+    });
+
+    it('the CLI really runs when invoked through a symlink', () => {
+        const dir = tempDir();
+        const link = path.join(dir, 'linked-guard.ts');
+        symlinkSync(path.join(REPO_ROOT, 'scripts/check-migration-when-order.ts'), link);
+        writeJson(dir, 'bad.json', {
+            entries: [
+                { idx: 0, tag: 'a', when: 100 },
+                { idx: 1, tag: 'b', when: 50 }
+            ]
+        });
+        let status = 0;
+        try {
+            execFileSync(
+                process.execPath,
+                ['--import', 'tsx', link, `--journal-file=${path.join(dir, 'bad.json')}`],
+                { cwd: REPO_ROOT, stdio: 'pipe' }
+            );
+        } catch (error) {
+            status = (error as { status?: number }).status ?? -1;
+        }
+        expect(status).toBe(1);
     });
 });
