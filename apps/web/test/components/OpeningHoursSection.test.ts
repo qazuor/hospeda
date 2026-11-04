@@ -327,6 +327,11 @@ describe('computeOpenNowStatus', () => {
             const hours = { sunday: day([{ open: '22:00', close: '02:00' }]) };
             expect(computeOpenNowStatus(hours, new Date('2024-01-15T01:00:00'))).toBe(true);
         });
+
+        it('is open Sunday 01:00 via a Saturday 22:00 → 02:00 shift', () => {
+            const hours = { saturday: day([{ open: '22:00', close: '02:00' }]) };
+            expect(computeOpenNowStatus(hours, new Date('2024-01-14T01:00:00'))).toBe(true);
+        });
     });
 
     describe('day key resolution', () => {
