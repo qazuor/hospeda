@@ -1,11 +1,13 @@
 import {
     eq,
     isNull,
+    reconciliationMarkModel,
     reconciliationSweepRunModel,
     reconciliationSweepRuns,
     subscriptions
 } from '@repo/db';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReconciliationComparison } from '../../../src/services/billing/reconciliation/sweep/reconciliation-divergence.js';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import {
@@ -146,6 +148,38 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
             .where(eq(subscriptions.id, seeded.subscription.id));
         expect(row?.lastSweptAt).toBeInstanceOf(Date);
         expect(read).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-reads a row whose dead slice already opened its mark without opening a second one (AC-21)', async () => {
+        const { fake } = createReconciliationFake();
+        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        const comparison: ReconciliationComparison = () => [{ reason: 'DIVERGENCIA_DE_MONTO' }];
+        const ports = { provider: fake, clock: reconciliationClock, comparisons: [comparison] };
+        // The slice that died read row K and opened its mark, but never stamped the row.
+        const dead = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep({ mode: 'single' }, ports)
+        );
+        expect(dead).toMatchObject({ marksOpened: 1 });
+        const open = await reconciliationSweepRunModel.openSlice({
+            correlationId: crypto.randomUUID()
+        });
+        await getServiceTestPool().query(
+            "UPDATE reconciliation_sweep_run SET lease_until = now() - interval '1 minute' WHERE id = $1",
+            [open.id]
+        );
+        const retried = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep({ mode: 'cycle' }, ports)
+        );
+        expect(retried).toMatchObject({
+            outcome: 'CYCLE_DONE',
+            divergences: 1,
+            marksOpened: 0,
+            marksAccumulated: 1
+        });
+        const marks = await reconciliationMarkModel.listOpen({
+            subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
+        });
+        expect(marks.filter((item) => item.reason === 'DIVERGENCIA_DE_MONTO')).toHaveLength(1);
     });
 
     it('includes failed row ids across slices in the completed cycle summary and never pings', async () => {
