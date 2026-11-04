@@ -37,6 +37,7 @@ describe('cron session advisory lock', () => {
             name: 'cron-lock-integration',
             runId: 'holder-run-id',
             startedAt: new Date('2026-11-03T04:10:00.000Z'),
+            executionMode: 'scheduled',
             handler: () => handler.promise
         });
         expect(first.acquired).toBe(true);
@@ -58,7 +59,8 @@ describe('cron session advisory lock', () => {
         expect(second).toEqual({
             acquired: false,
             holderRunId: 'holder-run-id',
-            holderStartedAt: new Date('2026-11-03T04:10:00.000Z')
+            holderStartedAt: new Date('2026-11-03T04:10:00.000Z'),
+            holderExecutionMode: 'scheduled'
         });
 
         handler.resolve('settled');

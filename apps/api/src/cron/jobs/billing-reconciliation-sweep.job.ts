@@ -51,13 +51,25 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
     schedule: '10 2,3,4 * * *',
     exclusive: true,
     acceptsNewCycle: true,
-    onOverlapSkipped: ({ logger, startedAt, holderRunId, holderStartedAt }) => {
+    onOverlapSkipped: ({
+        logger,
+        startedAt,
+        holderRunId,
+        holderStartedAt,
+        holderExecutionMode
+    }) => {
         if (!isLastSlot({ schedule: billingReconciliationSweepJob.schedule, now: startedAt }))
             return;
         const holderAgeMs = holderStartedAt
             ? startedAt.getTime() - holderStartedAt.getTime()
             : null;
-        const sameSlot = holderAgeMs !== null && Math.abs(holderAgeMs) <= SAME_SLOT_WINDOW_MS;
+        // Only a SCHEDULED holder is the competing tick of this slot (a Coolify rollout). A manual
+        // run starting minutes earlier may stop on budget without finishing the cycle, so its
+        // overlap with the last slot must still alert.
+        const sameSlot =
+            holderExecutionMode === 'scheduled' &&
+            holderAgeMs !== null &&
+            Math.abs(holderAgeMs) <= SAME_SLOT_WINDOW_MS;
         if (sameSlot) {
             logger.info('reconciliation last slot overlaps a run for the same slot', {
                 holderRunId,
@@ -66,7 +78,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
         } else {
             logger.error(
                 'reconciliation last slot skipped: another run still holds the lock',
-                { holderRunId, holderStartedAt, holderAgeMs },
+                { holderRunId, holderStartedAt, holderExecutionMode, holderAgeMs },
                 { capture: true }
             );
         }

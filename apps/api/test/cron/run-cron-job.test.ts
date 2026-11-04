@@ -103,14 +103,16 @@ describe('runCronJob lifecycle', () => {
         mocks.lock.mockResolvedValue({
             acquired: false,
             holderRunId: 'holder-1',
-            holderStartedAt: null
+            holderStartedAt: null,
+            holderExecutionMode: null
         });
         const decision = await runCronJob({ job, executionMode: 'scheduled', dryRun: false });
 
         expect(decision).toEqual({
             started: false,
             holderRunId: 'holder-1',
-            holderStartedAt: null
+            holderStartedAt: null,
+            holderExecutionMode: null
         });
         expect(job.handler).not.toHaveBeenCalled();
         expect(mocks.record).toHaveBeenCalledWith(
@@ -131,7 +133,8 @@ describe('runCronJob lifecycle', () => {
         mocks.lock.mockResolvedValue({
             acquired: false,
             holderRunId: 'holder-1',
-            holderStartedAt: null
+            holderStartedAt: null,
+            holderExecutionMode: null
         });
         const onOverlapSkipped = vi.fn();
         const hooked = { ...job, onOverlapSkipped };
@@ -143,7 +146,8 @@ describe('runCronJob lifecycle', () => {
             expect.objectContaining({
                 startedAt: expect.any(Date),
                 holderRunId: 'holder-1',
-                holderStartedAt: null
+                holderStartedAt: null,
+                holderExecutionMode: null
             })
         );
     });

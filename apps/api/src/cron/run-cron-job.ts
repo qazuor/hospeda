@@ -22,6 +22,7 @@ export type RunCronJobDecision =
           readonly started: false;
           readonly holderRunId: string | null;
           readonly holderStartedAt: Date | null;
+          readonly holderExecutionMode: 'scheduled' | 'manual' | null;
       };
 
 /** Build the run context with mode-specific log names and cooperative budget fields. */
@@ -110,7 +111,13 @@ export async function runCronJob(args: {
     if (job.exclusive) {
         let lock: CronLockDecision<CronJobResult>;
         try {
-            lock = await withCronLock({ name: job.name, runId, startedAt, handler: startHandler });
+            lock = await withCronLock({
+                name: job.name,
+                runId,
+                startedAt,
+                executionMode,
+                handler: startHandler
+            });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             await recordCronRun({
@@ -169,7 +176,8 @@ export async function runCronJob(args: {
                     logger: ctx.logger,
                     startedAt,
                     holderRunId: lock.holderRunId,
-                    holderStartedAt: lock.holderStartedAt
+                    holderStartedAt: lock.holderStartedAt,
+                    holderExecutionMode: lock.holderExecutionMode
                 });
             await recordCronRun({
                 jobName: job.name,
@@ -182,7 +190,8 @@ export async function runCronJob(args: {
             return {
                 started: false,
                 holderRunId: lock.holderRunId,
-                holderStartedAt: lock.holderStartedAt
+                holderStartedAt: lock.holderStartedAt,
+                holderExecutionMode: lock.holderExecutionMode
             };
         }
         handlerPromise = lock.completion;
