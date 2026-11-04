@@ -174,9 +174,11 @@ describe('MapCardsSidebar — accommodation price slot', () => {
         expect(noPriceFooter?.children).toHaveLength(2);
         expect(pricedFooter?.children).toHaveLength(2);
         expect(noPriceFooter?.firstElementChild).toHaveTextContent('Precio a consultar');
-        expect(
-            screen.getByRole('link', { name: 'Consultar disponibilidad — Casa del Río' })
-        ).toHaveAttribute('href', '/es/alojamientos/casa-rio/');
+        const availabilityLink = screen.getByRole('link', {
+            name: 'Consultar disponibilidad — Casa del Río'
+        });
+        expect(availabilityLink).toHaveTextContent('Consultar disponibilidad');
+        expect(availabilityLink).toHaveAttribute('href', '/es/alojamientos/casa-rio/');
     });
 });
 
