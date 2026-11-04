@@ -491,6 +491,7 @@ const INVENTORY = [
 
 const MECHANISM_ALIASES: Readonly<Record<string, readonly string[]>> = {
     aiQuotaGate: ['aiQuotaGate', 'evaluateAiQuota', 'enforceAiQuota'],
+    readEffectiveKeys: ['readEffectiveKeys', 'projectPublicListings'],
     paidFieldsFilter: [
         'paidFieldsFilter',
         'filterPublicPaidFields',

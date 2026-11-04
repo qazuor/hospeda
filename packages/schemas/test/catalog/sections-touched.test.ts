@@ -29,4 +29,9 @@ describe('sections touched by update body', () => {
             })
         ).toEqual([]);
     });
+    it('does not mark the menu section when a read-only response field is supplied', () => {
+        expect(sectionsTouchedByBody({ vertical: 'venue', body: { menuSections: [] } })).toEqual(
+            []
+        );
+    });
 });

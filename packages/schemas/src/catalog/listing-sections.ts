@@ -71,6 +71,7 @@ export const LISTING_SECTIONS = {
             common: false,
             entitlementKey: K.MANAGE_VENUE_MENU,
             fields: ['menuUrl'],
+            readOnlyFields: ['menuFileUrl', 'menuFileKind', 'menuSections'],
             traits: [
                 { id: 'itemPhotos', entitlementKey: K.MENU_ITEM_PHOTOS },
                 { id: 'translations', entitlementKey: K.MULTILINGUAL_VENUE_MENU },
@@ -86,6 +87,7 @@ export const LISTING_SECTIONS = {
             common: false,
             entitlementKey: K.MANAGE_VENUE_DAILY_SPECIAL,
             fields: [],
+            readOnlyFields: ['dailySpecials'],
             order: 8,
             group: 'content'
         },
@@ -95,6 +97,7 @@ export const LISTING_SECTIONS = {
             common: true,
             entitlementKey: K.MANAGE_VENUE_EVENTS,
             fields: [],
+            readOnlyFields: ['venueEvents'],
             order: 9,
             group: 'content'
         },
