@@ -71,7 +71,7 @@ describe('TEST:B11:7 divergence opens a mark without applying provider values', 
         const correlationId = crypto.randomUUID();
         const run = () =>
             withSeededReconciliationInventory(() =>
-                runReconciliationSweep({ correlationId }, ports)
+                runReconciliationSweep({ mode: 'single', correlationId }, ports)
             );
         const first = await run();
         const second = await run();
@@ -122,7 +122,7 @@ describe('TEST:B11:7 divergence opens a mark without applying provider values', 
         ];
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake,
                     clock: reconciliationClock,

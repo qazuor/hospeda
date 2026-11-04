@@ -379,3 +379,69 @@ describe('reconciliation sweep run registry (supports TEST:B11:24)', () => {
         });
     });
 });
+
+describe('passes_completed is stored only with complete rows (HOS-1999 PR5 follow-up)', () => {
+    const close = (
+        tx: import('../../src/types.ts').DrizzleClient,
+        id: string,
+        rowsComplete: boolean,
+        outcome: 'TIMED_OUT' | 'FAILED' | 'ABANDONED' = 'TIMED_OUT'
+    ) =>
+        model.closeSlice({
+            id,
+            outcome,
+            phase: 'PASSES',
+            rowsComplete,
+            passesCompleted: ['credited-payments'],
+            failedSubscriptionIds: [],
+            rowsRead: 0,
+            rowsFailed: 0,
+            tx
+        });
+
+    it('closeSlice drops completed passes when the rows are incomplete, whatever the outcome', async () => {
+        await withTestTransaction(async (tx) => {
+            for (const outcome of ['TIMED_OUT', 'FAILED', 'ABANDONED'] as const) {
+                const slice = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+                const closed = await close(tx, slice.id, false, outcome);
+                expect(closed?.passesCompleted).toEqual([]);
+            }
+        });
+    });
+
+    it('closeSlice keeps completed passes when the rows are complete (AC-22 unchanged)', async () => {
+        await withTestTransaction(async (tx) => {
+            const slice = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            const closed = await close(tx, slice.id, true);
+            expect(closed?.passesCompleted).toEqual(['credited-payments']);
+        });
+    });
+
+    it('openSlice copies the prior passes only from a slice whose rows were complete', async () => {
+        await withTestTransaction(async (tx) => {
+            const complete = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            await close(tx, complete.id, true);
+            const afterComplete = await model.openSlice({
+                correlationId: crypto.randomUUID(),
+                cycleId: complete.cycleId!,
+                tx
+            });
+            expect(afterComplete.passesCompleted).toEqual(['credited-payments']);
+            // An abandoned slice that persisted passes while its rows were still incomplete.
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ passesCompleted: ['credited-payments'], rowsComplete: false })
+                .where(eq(reconciliationSweepRuns.id, afterComplete.id));
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ outcome: 'ABANDONED' })
+                .where(eq(reconciliationSweepRuns.id, afterComplete.id));
+            const next = await model.openSlice({
+                correlationId: crypto.randomUUID(),
+                cycleId: complete.cycleId!,
+                tx
+            });
+            expect(next.passesCompleted).toEqual([]);
+        });
+    });
+});

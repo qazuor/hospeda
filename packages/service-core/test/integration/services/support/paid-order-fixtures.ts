@@ -113,7 +113,7 @@ export async function sweepPaidOrders(input: {
     try {
         return await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 {
                     provider: input.provider as PaymentProvider,
                     clock: paidOrderClock,

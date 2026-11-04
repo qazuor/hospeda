@@ -67,7 +67,10 @@ describe('TEST:B11:20 el juego de salida contra el falso', () => {
         });
         const search = vi.spyOn(fake, 'searchAuthorizations');
         const summary = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'single' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(summary.rowsRead).toBe(2);
         expect(search).not.toHaveBeenCalled();

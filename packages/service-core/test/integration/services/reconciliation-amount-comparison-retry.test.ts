@@ -84,7 +84,7 @@ async function run(input: {
 }) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            {},
+            { mode: 'single' },
             {
                 provider: input.provider,
                 clock: input.clock,

@@ -362,7 +362,7 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
         const sweep = () =>
             withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider,
                         clock: adjustable.clock,
