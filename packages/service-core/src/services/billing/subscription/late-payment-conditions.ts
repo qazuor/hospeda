@@ -230,22 +230,83 @@ export async function paymentCoversUnpaidPeriod(input: {
  * @param input.tx - Optional transaction
  * @returns The verdict of the four conditions
  */
-export async function checkLatePaymentConditions(input: {
+type LatePaymentCheckCommon = {
     readonly subscription: Pick<
         SelectSubscription,
         'id' | 'userId' | 'vertical' | 'status' | 'succeededById'
     >;
+    readonly admittedStatuses: readonly string[];
+    readonly tx?: DrizzleClient;
+};
+
+type ProviderLatePaymentCheck = LatePaymentCheckCommon & {
+    readonly source: 'provider';
+    readonly paymentId: string;
+    readonly paymentAmount: LatePaymentAmount;
+    readonly authorizationRead: ProviderRead<AuthorizationSnapshot>;
+    readonly act: ActStart;
+    readonly unpaidSince: Date | null;
+};
+
+type ManualLatePaymentCheck = LatePaymentCheckCommon & {
+    readonly source: 'manual';
+    readonly manualPaymentId: string;
+    readonly paymentAmount: LatePaymentAmount;
+    readonly expectedAmount: LatePaymentAmount;
+};
+
+type LegacyProviderLatePaymentCheck = LatePaymentCheckCommon & {
     readonly payment: { readonly id: string; readonly amount: LatePaymentAmount };
     readonly authorizationRead: ProviderRead<AuthorizationSnapshot>;
     readonly act: ActStart;
-    readonly admittedStatuses: readonly string[];
     readonly unpaidSince: Date | null;
+};
+
+/** The manual installment has no coverage until MP4 claims it; an existing open row is a replay. */
+async function manualPaymentAwaitsCoverage(input: {
+    readonly manualPaymentId: string;
     readonly tx?: DrizzleClient;
-}): Promise<LatePaymentConditionsVerdict> {
-    const { snapshot: authorization } = assertFreshForAct({
-        read: input.authorizationRead,
-        act: input.act
-    });
+}): Promise<boolean> {
+    const [covered] = await (input.tx ?? getDb())
+        .select({ id: coveredPeriods.id })
+        .from(coveredPeriods)
+        .where(
+            and(
+                eq(coveredPeriods.manualPaymentId, input.manualPaymentId),
+                isNull(coveredPeriods.releasedAt)
+            )
+        )
+        .limit(1);
+    return !covered;
+}
+
+export async function checkLatePaymentConditions(
+    input: ProviderLatePaymentCheck | ManualLatePaymentCheck | LegacyProviderLatePaymentCheck
+): Promise<LatePaymentConditionsVerdict> {
+    let authorizationAmount: LatePaymentAmount;
+    let paymentAmount: LatePaymentAmount;
+    let paymentCovers: boolean;
+    if ('authorizationRead' in input) {
+        const { snapshot } = assertFreshForAct({ read: input.authorizationRead, act: input.act });
+        authorizationAmount = {
+            amountMinor: snapshot.amount.amountMinor,
+            currency: snapshot.amount.currency
+        };
+        paymentAmount = 'payment' in input ? input.payment.amount : input.paymentAmount;
+        paymentCovers = await paymentCoversUnpaidPeriod({
+            subscriptionId: input.subscription.id,
+            paymentId: 'payment' in input ? input.payment.id : input.paymentId,
+            unpaidSince: input.unpaidSince,
+            tx: input.tx
+        });
+    } else {
+        authorizationAmount = input.expectedAmount;
+        paymentAmount = input.paymentAmount;
+        paymentCovers = await manualPaymentAwaitsCoverage({
+            manualPaymentId: input.manualPaymentId,
+            tx: input.tx
+        });
+    }
     return evaluateLatePaymentConditions({
         facts: {
             status: input.subscription.status,
@@ -259,17 +320,9 @@ export async function checkLatePaymentConditions(input: {
                 subscription: input.subscription,
                 tx: input.tx
             }),
-            paymentAmount: input.payment.amount,
-            authorizationAmount: {
-                amountMinor: authorization.amount.amountMinor,
-                currency: authorization.amount.currency
-            },
-            paymentCoversUnpaidPeriod: await paymentCoversUnpaidPeriod({
-                subscriptionId: input.subscription.id,
-                paymentId: input.payment.id,
-                unpaidSince: input.unpaidSince,
-                tx: input.tx
-            })
+            paymentAmount,
+            authorizationAmount,
+            paymentCoversUnpaidPeriod: paymentCovers
         }
     });
 }

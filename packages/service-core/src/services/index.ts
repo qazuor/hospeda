@@ -252,6 +252,7 @@ export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
 export * from './billing/subscription/reevaluate-succession-predecessors.service.js';
 export * from './billing/subscription/refuse-undeclared-transition.js';
+export * from './billing/subscription/register-late-manual-payment.service.js';
 export * from './billing/subscription/register-manual-payment.service.js';
 export * from './billing/subscription/renewal-notice.js';
 export * from './billing/subscription/request-plan-change.service.js';
