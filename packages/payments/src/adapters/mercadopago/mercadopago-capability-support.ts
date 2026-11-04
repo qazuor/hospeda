@@ -42,7 +42,7 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
     },
     refund: {
         level: 'full',
-        note: 'Total and partial, cumulative against the balance, idempotent (RF-1, RF-2, RF-6).'
+        note: 'Payment and order refunds, total and partial, cumulative and idempotent (RF-1, RF-2, RF-6, EX-58).'
     },
     read: {
         level: 'partial',

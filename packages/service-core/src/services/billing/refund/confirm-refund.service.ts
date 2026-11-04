@@ -1,26 +1,27 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import type { DrizzleClient, SelectPayment, SelectRefund } from '@repo/db';
-import { addonInstances, and, eq, getDb, refunds, subscriptions } from '@repo/db';
+import type { SelectPayment, SelectRefund } from '@repo/db';
+import { addonInstances, and, eq, getDb, refunds } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
-import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { type Actor, ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
-import { isSystemActor } from '../../../utils/system-actor';
 import type { ChargebackDetection } from '../reconciliation/chargeback/chargeback-detection';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
 import { detectRefundChargeback } from './refund-chargeback';
 import { canRefundTransition } from './refund-machine';
+import { confirmOrderRefund } from './refund-order-call';
 import { sendRefundCalls } from './refund-provider-call';
+import { failProviderRejectedRefund } from './refund-provider-rejection';
 import {
     assertRefundable,
     assertRetainedPaymentRefundable,
     assertWithinBalance,
     lockRefundSource
 } from './refund-source';
+import { providerRefundWindow } from './refund-window';
 
-const ACTION = 'ACC_13' as const;
 const PROVIDER_ID_CONSTRAINT = 'uq_refund_call_provider_refund_id';
 
 /** Closed set of typed RF2 rejection reasons. */
@@ -34,6 +35,7 @@ export const CONFIRM_REFUND_REJECTIONS = [
     'REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE',
     'RETAINED_PAYMENT_SUCCESSION_OPEN',
     'REFUND_EXCEEDS_BALANCE',
+    'REFUND_PAST_PROVIDER_WINDOW',
     'REFUND_PROVIDER_ID_ALREADY_RECORDED'
 ] as const;
 /** A rejection reason returned by `confirmRefund`. */
@@ -50,7 +52,11 @@ export type ConfirmRefundOutcome =
     | 'SENT'
     | 'NOT_ACCEPTED_KEPT_CONFIRMED'
     | 'PROVIDER_REJECTED_KEPT_CONFIRMED'
+    | 'PROVIDER_REJECTED_FAILED'
     | 'AWAITING_PROVIDER_ANSWER'
+    | 'ORDER_REFUND_HELD'
+    | 'PROVIDER_KEY_CONFLICT'
+    | 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
     | 'CHARGED_BACK';
 /** RF2 result consumed by the administrative route. */
 export type ConfirmRefundResult = {
@@ -73,49 +79,15 @@ function reject(
     return new ServiceError(code, message, undefined, reason);
 }
 
-async function readSubject(
-    tx: DrizzleClient,
-    subscriptionId: string | null,
-    addonInstanceId: string | null
-): Promise<string | null> {
-    if (subscriptionId) {
-        const [row] = await tx
-            .select({ userId: subscriptions.userId })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, subscriptionId))
-            .limit(1)
-            .for('share');
-        return row?.userId ?? null;
-    }
-    if (!addonInstanceId) return null;
-    const [row] = await tx
-        .select({ ownerId: addonInstances.ownerId })
-        .from(addonInstances)
-        .where(eq(addonInstances.id, addonInstanceId))
-        .limit(1)
-        .for('share');
-    return row?.ownerId ?? null;
-}
-
-function authorize(actor: Actor, subjectId: string | null): void {
-    const permitted = isAdministrativeActionPermitted({
-        action: ACTION,
-        actorPermissions: actor.permissions
-    });
-    const step = resolveAdministrativeActionStep({
-        action: ACTION,
-        actorId: actor.id,
-        subjectId,
-        permitted,
-        isSystemActor: isSystemActor(actor)
-    });
-    if (!step.allowed)
-        throw reject(ServiceErrorCode.FORBIDDEN, 'Forbidden', 'ADMINISTRATIVE_ACTION_FORBIDDEN');
-}
-
 async function confirmInTransaction(
-    input: ConfirmRefundInput
-): Promise<{ refund: SelectRefund; payment: SelectPayment; subjectId: string | null }> {
+    input: ConfirmRefundInput,
+    clock: Clock
+): Promise<{
+    refund: SelectRefund;
+    payment: SelectPayment;
+    subjectId: string | null;
+    providerOrderId: string | null;
+}> {
     return getDb().transaction(async (tx) => {
         const [candidate] = await tx
             .select()
@@ -166,18 +138,34 @@ async function confirmInTransaction(
                 'Refund is no longer open',
                 'REFUND_NOT_OPEN'
             );
-        if (locked.payment.addonInstanceId !== null)
+        /** AC:B6:8 allows an add-on payment only when its instance has a provider order. */
+        const [instance] =
+            locked.payment.addonInstanceId === null
+                ? []
+                : await tx
+                      .select({ providerOrderId: addonInstances.providerOrderId })
+                      .from(addonInstances)
+                      .where(eq(addonInstances.id, locked.payment.addonInstanceId))
+                      .limit(1)
+                      .for('share');
+        if (locked.payment.addonInstanceId !== null && !instance?.providerOrderId)
             throw reject(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'Refund source is not provider refundable',
                 'REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE'
             );
-        const subjectId = await readSubject(
+        const subjectId = await readRefundSubject({
             tx,
-            locked.payment.subscriptionId,
-            locked.payment.addonInstanceId
-        );
-        authorize(input.actor, subjectId);
+            subscriptionId: locked.payment.subscriptionId,
+            addonInstanceId: locked.payment.addonInstanceId
+        });
+        authorizeRefundAction({ actor: input.actor, subjectId });
+        if (!providerRefundWindow({ factAt: locked.payment.factAt, now: clock.now() }).open)
+            throw reject(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'The provider only accepts refunds within 180 days of the charge; settle it outside our flow (action 14, RF4)',
+                'REFUND_PAST_PROVIDER_WINDOW'
+            );
         assertRefundable({ locked });
         await assertRetainedPaymentRefundable({ tx, locked });
         await assertWithinBalance({
@@ -203,7 +191,12 @@ async function confirmInTransaction(
                 'Refund changed while confirming',
                 'REFUND_STATE_CHANGED'
             );
-        return { refund: updated, payment: locked.payment, subjectId };
+        return {
+            refund: updated,
+            payment: locked.payment,
+            subjectId,
+            providerOrderId: instance?.providerOrderId ?? null
+        };
     });
 }
 
@@ -219,7 +212,7 @@ export async function confirmRefund(
 ): Promise<ConfirmRefundResult> {
     let confirmed: Awaited<ReturnType<typeof confirmInTransaction>>;
     try {
-        confirmed = await confirmInTransaction(input);
+        confirmed = await confirmInTransaction(input, ports.clock);
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
         if (cause?.code === '23505' && cause.constraint === PROVIDER_ID_CONSTRAINT)
@@ -230,7 +223,16 @@ export async function confirmRefund(
             );
         throw error;
     }
-    const { refund, payment, subjectId } = confirmed;
+    const { refund, payment, subjectId, providerOrderId } = confirmed;
+    if (providerOrderId !== null)
+        return confirmOrderRefund({
+            refund,
+            payment,
+            subjectId,
+            orderId: providerOrderId,
+            ports,
+            correlationId: input.correlationId
+        });
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
     let chargedBack: boolean;
@@ -264,5 +266,14 @@ export async function confirmRefund(
         provider: ports.provider,
         clock: ports.clock
     });
+    if (sent.outcome === 'PROVIDER_REJECTED_FAILED') {
+        await failProviderRejectedRefund({
+            refund,
+            payment,
+            clock: ports.clock,
+            correlationId: input.correlationId ?? crypto.randomUUID()
+        });
+        return { refundId: refund.id, status: 'FAILED', ...sent, subjectId };
+    }
     return { refundId: refund.id, status: 'CONFIRMED', ...sent, subjectId };
 }

@@ -16,6 +16,11 @@ import { cronJobs } from '../../src/cron/registry';
 import { CRON_SCHEDULES } from '../../src/cron/schedules.manifest';
 
 describe('cron schedule manifest', () => {
+    it('schedules the reconciliation sweep in three hourly slots', () => {
+        expect(
+            CRON_SCHEDULES.find((entry) => entry.name === 'billing-reconciliation-sweep')?.schedule
+        ).toBe('10 2,3,4 * * *');
+    });
     it('has unique job names', () => {
         const names = CRON_SCHEDULES.map((entry) => entry.name);
         const unique = new Set(names);

@@ -4,6 +4,7 @@ import { createLogger } from '@repo/logger';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { runAddonWithoutShutdownCheck } from './addon-without-shutdown-check.js';
 import { recordDivergence } from './reconciliation-divergence.js';
+import { SweepLeaseLostError, SweepTimedOutError } from './sweep-control.js';
 import {
     type AddonWithoutShutdownPorts,
     type RetainedPaymentBranchResolver,
@@ -26,6 +27,8 @@ const CHECKS = {
 
 /** Ports for all read-only zero-call checks; no provider is accepted by design. */
 export interface ZeroCallChecksPorts {
+    /** Called after each processed page or batch so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     /** Persistence boundary for hanging unresolved payments. */
     readonly markPayments?: ReconciliationMarkPayments;
     /** Source for S19-retained payments. */
@@ -112,10 +115,13 @@ export async function runZeroCallChecks(
                     });
                 }
             }
+            await ports.heartbeat?.();
             if (page.length < pageSize) break;
             cursor = page.at(-1)?.successor.id;
         }
     } catch (error) {
+        if (error instanceof SweepLeaseLostError || error instanceof SweepTimedOutError)
+            throw error;
         failures.push({ check: CHECKS.succession, subjectId: null, message: messageOf(error) });
     }
     results.push(succession);
@@ -141,6 +147,7 @@ export async function runZeroCallChecks(
             )) {
                 withoutLiveSuccessor.add(id);
             }
+            await ports.heartbeat?.();
         }
         for (const retainedPayment of retained) {
             if (!withoutLiveSuccessor.has(retainedPayment.subscriptionId)) continue;
@@ -176,6 +183,8 @@ export async function runZeroCallChecks(
             }
         }
     } catch (error) {
+        if (error instanceof SweepLeaseLostError || error instanceof SweepTimedOutError)
+            throw error;
         failures.push({ check: CHECKS.payment, subjectId: null, message: messageOf(error) });
     }
     results.push(payment);
@@ -216,10 +225,13 @@ export async function runZeroCallChecks(
                     });
                 }
             }
+            await ports.heartbeat?.();
             if (page.length < pageSize) break;
             cursor = page.at(-1)?.courtesyGrant.id;
         }
     } catch (error) {
+        if (error instanceof SweepLeaseLostError || error instanceof SweepTimedOutError)
+            throw error;
         failures.push({ check: CHECKS.courtesy, subjectId: null, message: messageOf(error) });
     }
     results.push(courtesy);

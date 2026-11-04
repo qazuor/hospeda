@@ -90,7 +90,7 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
         const settled = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
         const absent = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
         const tombstone = await seedDeferredRetryTombstone();
-        const undeclared = await seedDeferredRetryRow({ fake: h.fake, transition: 'S22' });
+        const undeclared = await seedDeferredRetryRow({ fake: h.fake, transition: 'S31' });
         h.notices.set(old.subscription.id, fresh);
         h.notices.set(settled.subscription.id, { state: 'SENT', settledAgeMs: 2 * 60 * minute });
         const eligible = [];

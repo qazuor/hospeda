@@ -138,7 +138,7 @@ describe('TEST:B7:21 measured provider charge rules determine the current period
             expect(result).toEqual({ verdict: 'NOT_CHARGED', chargeId });
             await withOnlySubject(fixture.started.subscriptionId, async () => {
                 await runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fixture.provider,
                         clock: fixture.clock,
@@ -202,7 +202,7 @@ describe('TEST:B7:21 measured provider charge rules determine the current period
             ).toEqual({ verdict: 'NO_CURRENT_PERIOD' });
             await withOnlySubject(fixture.started.subscriptionId, async () => {
                 await runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fixture.provider,
                         clock: fixture.clock,
@@ -295,7 +295,7 @@ describe('TEST:B7:21 measured provider charge rules determine the current period
             ).toEqual({ verdict: 'NO_CURRENT_PERIOD' });
             await withOnlySubject(fixture.started.subscriptionId, async () => {
                 await runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fixture.provider,
                         clock: fixture.clock,

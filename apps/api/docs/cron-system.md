@@ -265,9 +265,9 @@ NODE_ENV=production
 ```
 [CRON] Initializing cron scheduler (adapter: node-cron)
 [CRON] Scheduled job: trial-machine-expiry (schedule: */15 * * * *)
-[CRON] Scheduled job: billing-reconciliation-sweep (schedule: 0 6 * * *)
+[CRON] Scheduled job: billing-reconciliation-sweep (schedule: 10 2,3,4 * * *)
 [CRON] Scheduled job: notification-schedule (schedule: 0 8 * * *)
-[CRON] Scheduled job: subscription-window-expiry (schedule: */15 * * * *)
+[CRON] Scheduled job: subscription-window-expiry (schedule: 7-59/15 * * * *)
 [CRON] Scheduler started with 4 jobs
 ```
 
@@ -901,17 +901,19 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | Job name | Category | Schedule (cron) | File |
 |----------|----------|-----------------|------|
 | `archive-expired-promotions` | billing | `0 * * * *` | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` |
-| `billing-creations-sweep` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
+| `billing-creations-sweep` | billing | `1-59/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
 | `billing-deferred-cancellation-retry` | billing | `4-59/5 * * * *` | `apps/api/src/cron/jobs/billing-deferred-cancellation-retry.job.ts` |
 | `billing-promo-ending-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/billing-promo-ending-notice.job.ts` |
 | `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
-| `billing-reconciliation-sweep` | billing | `0 6 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
-| `payment-window-expiry` | billing | `20 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
+| `billing-reconciliation-sweep` | billing | `10 2,3,4 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
+| `payment-window-expiry` | billing | `23 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
+| `manual-installment-open` | billing | `13 * * * *` | `apps/api/src/cron/jobs/manual-installment-open.job.ts` (HOS-1541, AC:B5:13, MP5) |
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
 | `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
-| `subscription-service-end` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
-| `subscription-window-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
+| `subscription-pause-end` | billing | `47 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |
+| `subscription-service-end` | billing | `12-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
+| `subscription-window-expiry` | billing | `7-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
 | `trial-machine-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/trial-machine-expiry.job.ts` |
 | `calendar-sync-google` | content | `0 */6 * * *` | `apps/api/src/cron/jobs/calendar-sync-google.job.ts` |
 | `calendar-sync-ical` | content | `0 */6 * * *` | `apps/api/src/cron/jobs/calendar-sync-ical.job.ts` |
@@ -942,7 +944,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-coverage-reconciler` | system | `0 5 * * *` | `apps/api/src/cron/jobs/listing-coverage-reconciler.job.ts` |
 | `listing-inactivity-archive` | system | `30 5 * * *` | `apps/api/src/cron/jobs/listing-inactivity-archive.job.ts` |
 | `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
-| `listing-retention-pass` | system | `0 6 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
+| `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
 
 ---
@@ -1349,8 +1351,9 @@ curl http://localhost:3001/api/v1/admin/cron \
 | `/api/v1/admin/cron/:jobName` | POST | Trigger specific job |
 | `/api/v1/admin/cron/:jobName?dryRun=true` | POST | Trigger in dry-run mode |
 | `/api/v1/admin/cron/:jobName?dryRun=false` | POST | Trigger a real run (`dryRun` accepts only `true` or `false`; omitting it is also a real run) |
+| `/api/v1/admin/cron/billing-reconciliation-sweep?newCycle=true` | POST | Start a fresh sweep cycle; accepted exclusive runs answer `202 { runId }`, overlapping runs answer `409 { holderRunId }` |
 
-The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (send the session cookie). The old `X-Cron-Secret` endpoint at `/api/v1/cron/*` no longer exists.
+`newCycle` accepts only `true` or `false` and is rejected with `400 VALIDATION_ERROR` for jobs that do not support it. Exclusive manual triggers return `202` with a `runId`; a conflicting run returns `409` with the holder's `runId`. Read completion from `cron_runs`. The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (send the session cookie). The old `X-Cron-Secret` endpoint at `/api/v1/cron/*` no longer exists.
 
 ### Common Commands
 

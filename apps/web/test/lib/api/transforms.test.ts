@@ -579,7 +579,8 @@ describe('toPartnerData', () => {
         const item = {
             name: 'Autoservicio Litoral',
             logoUrl: 'https://cdn.hospeda.com.ar/partners/autoservicio-litoral.png',
-            websiteUrl: 'https://autoservicio-litoral.example.com'
+            websiteUrl: 'https://autoservicio-litoral.example.com',
+            hasPublicPage: true
         };
 
         const result = toPartnerData({ item });
@@ -588,6 +589,7 @@ describe('toPartnerData', () => {
             name: 'Autoservicio Litoral',
             logoPath: 'https://cdn.hospeda.com.ar/partners/autoservicio-litoral.png',
             url: 'https://autoservicio-litoral.example.com',
+            hasPublicPage: true,
             aspectRatio: 3.5
         });
     });
@@ -633,6 +635,7 @@ describe('toPartnerData', () => {
         expect(result.name).toBe('');
         expect(result.logoPath).toBe('');
         expect(result.url).toBeUndefined();
+        expect(result.hasPublicPage).toBe(false);
     });
 });
 

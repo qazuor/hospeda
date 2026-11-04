@@ -309,6 +309,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
+    // Partner claim copy is read in the browser after consuming the link fragment.
+    'partners.claim',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',

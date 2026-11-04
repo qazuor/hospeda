@@ -20,100 +20,14 @@
  * @module cron/bootstrap
  */
 
-import { randomUUID } from 'node:crypto';
 import { MARKET_TIMEZONE } from '@repo/utils';
-import * as Sentry from '@sentry/node';
 import { env } from '../utils/env.js';
-import {
-    HEALTHCHECKS_MONITORED_JOBS,
-    type HealthchecksSignal,
-    pingHealthchecks
-} from '../utils/healthchecks-ping';
 import { apiLogger } from '../utils/logger';
-import { recordCronRun } from './record-run';
 import { getEnabledCronJobs } from './registry';
-import { runCronHandlerInBackground } from './traffic';
-import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
-
-/** Default per-job execution timeout (matches the value used by admin manual triggers). */
-const DEFAULT_JOB_TIMEOUT_MS = 30_000;
+import { runCronJob } from './run-cron-job';
 
 /** node-cron options shared by every registered schedule. */
-export const CRON_SCHEDULE_OPTIONS = { timezone: MARKET_TIMEZONE } as const;
-
-/** O(1) lookup for the jobs that report to Healthchecks.io (HOS-1742). */
-const HEALTHCHECKS_MONITORED_JOB_SET: ReadonlySet<string> = new Set(HEALTHCHECKS_MONITORED_JOBS);
-
-/**
- * Fires one Healthchecks ping without waiting on it (HOS-1742).
- *
- * Fire-and-forget keeps a slow or unreachable monitor from delaying the tick or
- * altering the job outcome. The helper swallows its own failures; the trailing
- * catch is defense in depth so a future regression can never surface as an
- * unhandled rejection or reach the tick's error path.
- *
- * @param job - Cron job name.
- * @param signal - Lifecycle signal (`start`, `success`, or `fail`).
- */
-function pingHealthchecksBestEffort(job: string, signal: HealthchecksSignal): void {
-    void pingHealthchecks({ job, signal }).catch(() => {
-        // Monitoring never alters the cron outcome.
-    });
-}
-
-/**
- * Builds the per-tick context handed to a job handler.
- *
- * Each tick mints a fresh run id and run correlation (HOS-1424). Each log
- * call is namespaced with the job name so log scraping by `[CRON:<name>]`
- * works the same as on the admin manual trigger path, and carries both ids
- * so one run can be read whole.
- *
- * @param jobName - Name of the job being run.
- * @returns The context for one run.
- */
-export function buildContext(jobName: string): CronJobContext {
-    const runId = randomUUID();
-    const correlationId = randomUUID();
-    const ids = { runId, correlationId };
-    return {
-        logger: {
-            info: (message, data) =>
-                apiLogger.info({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data }),
-            warn: (message, data) =>
-                apiLogger.warn({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data }),
-            // SPEC-180: propagate `capture` option so job handlers can opt in to
-            // Sentry forwarding via `ctx.logger.error(msg, data, { capture: true })`.
-            error: (message, data, options) =>
-                apiLogger.error(
-                    { message: `[CRON:${jobName}] ${message}`, ...ids, ...data },
-                    undefined,
-                    options?.capture ? { capture: true } : undefined
-                ),
-            debug: (message, data) =>
-                apiLogger.debug({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data })
-        },
-        startedAt: new Date(),
-        runId,
-        correlationId,
-        dryRun: false
-    };
-}
-
-/** Runs a single job handler with a wall-clock timeout. */
-export async function runJobWithTimeout(
-    job: CronJobDefinition,
-    timeoutMs: number
-): Promise<CronJobResult> {
-    const ctx = buildContext(job.name);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(
-            () => reject(new Error(`Job execution timeout after ${timeoutMs}ms`)),
-            timeoutMs
-        );
-    });
-    return Promise.race([runCronHandlerInBackground({ job, ctx }), timeoutPromise]);
-}
+export const CRON_SCHEDULE_OPTIONS = { timezone: MARKET_TIMEZONE, noOverlap: true } as const;
 
 /**
  * Start the cron scheduler.
@@ -176,117 +90,22 @@ export const startCronScheduler = async (): Promise<void> => {
             nodeCron.schedule(
                 scheduleExpression,
                 async () => {
-                    const startTime = Date.now();
-                    const healthchecksMonitored = HEALTHCHECKS_MONITORED_JOB_SET.has(job.name);
                     apiLogger.info({ message: `[cron] tick: ${job.name}` });
-                    if (healthchecksMonitored) pingHealthchecksBestEffort(job.name, 'start');
                     try {
-                        const result = await runJobWithTimeout(
+                        const decision = await runCronJob({
                             job,
-                            job.timeoutMs ?? DEFAULT_JOB_TIMEOUT_MS
-                        );
-                        apiLogger.info({
-                            message: `[cron] completed: ${job.name}`,
-                            success: result.success,
-                            processed: result.processed,
-                            errors: result.errors,
-                            durationMs: Date.now() - startTime
-                        });
-                        // Fire-and-forget: never alters the job outcome.
-                        await recordCronRun({
-                            jobName: job.name,
                             executionMode: 'scheduled',
                             dryRun: false,
-                            startedAt: new Date(startTime),
-                            finishedAt: new Date(),
-                            result
+                            scheduleExpression
                         });
-
-                        // HOS-1742: the Healthchecks mirror follows result.success; the
-                        // Sentry captures below are unchanged.
-                        if (healthchecksMonitored) {
-                            pingHealthchecksBestEffort(
-                                job.name,
-                                result.success === true ? 'success' : 'fail'
-                            );
-                        }
-
-                        // Soft-failure: job completed but reported errors — capture once
-                        // per run so silent partial failures are visible in Sentry.
-                        // Use level=warning (not error) to distinguish from thrown
-                        // exceptions. No PII in details; errors count is safe.
-                        if (!result.success) {
-                            Sentry.captureException(
-                                new Error(
-                                    `[cron] soft-failure: ${job.name} — ${result.errors} error(s)`
-                                ),
-                                {
-                                    level: 'warning',
-                                    tags: {
-                                        module: 'cron',
-                                        job_name: job.name,
-                                        event_type: 'cron_soft_failure'
-                                    },
-                                    contexts: {
-                                        cron: {
-                                            jobName: job.name,
-                                            schedule: scheduleExpression,
-                                            durationMs: Date.now() - startTime,
-                                            errors: result.errors,
-                                            processed: result.processed,
-                                            // HOS-154: attach the job's own details (e.g. per-destination
-                                            // errorDetails) so a soft-failure names WHAT failed, not just
-                                            // a count. Job details never carry PII.
-                                            ...(result.details ? { details: result.details } : {})
-                                        }
-                                    }
-                                }
-                            );
-                        }
+                        if (decision.started) await decision.completion;
                     } catch (error) {
                         const errorMessage =
                             error instanceof Error ? error.message : 'Unknown error';
                         apiLogger.error({
-                            message: `[cron] failed: ${job.name}`,
-                            error: errorMessage,
-                            durationMs: Date.now() - startTime
+                            message: `[cron] tick failed before completion: ${job.name}`,
+                            error: errorMessage
                         });
-
-                        // Capture to Sentry with consistent tags so the Sentry alert
-                        // rules can match.
-                        // Tags pinned by the alert configuration: module=cron,
-                        // job_name=<name>.
-                        Sentry.captureException(
-                            error instanceof Error ? error : new Error(errorMessage),
-                            {
-                                level: 'error',
-                                tags: {
-                                    module: 'cron',
-                                    job_name: job.name,
-                                    event_type: 'cron_failure'
-                                },
-                                contexts: {
-                                    cron: {
-                                        jobName: job.name,
-                                        schedule: scheduleExpression,
-                                        durationMs: Date.now() - startTime
-                                    }
-                                }
-                            }
-                        );
-
-                        // Fire-and-forget: record the failure/timeout outcome.
-                        await recordCronRun({
-                            jobName: job.name,
-                            executionMode: 'scheduled',
-                            dryRun: false,
-                            startedAt: new Date(startTime),
-                            finishedAt: new Date(),
-                            error
-                        });
-
-                        // HOS-1742: a thrown tick is a failed check-in; Sentry unchanged.
-                        if (healthchecksMonitored) pingHealthchecksBestEffort(job.name, 'fail');
                     }
                 },
                 CRON_SCHEDULE_OPTIONS

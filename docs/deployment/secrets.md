@@ -91,7 +91,7 @@ Set these in the Vercel project dashboard for the API under **Settings → Envir
 | `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` | MercadoPago webhook signature secret for verifying incoming notifications | Prod | **Required for webhooks** | `whsec_xxxx` |
 | `HOSPEDA_MERCADO_PAGO_SANDBOX` | Enable sandbox mode. Set `false` in production | Prod | Optional | `false` |
 | `HOSPEDA_MERCADO_PAGO_TIMEOUT` | MercadoPago request timeout in ms | Prod | Optional | `5000` |
-| `HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE` | MP traffic governor: `off` disables it, `observe` logs traffic, `enforce` is enabled in HOS-1999 PR-3 | Prod | Optional | `observe` |
+| `HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE` | MP traffic governor: `off` disables it, `observe` logs without changing requests, `enforce` applies admission control, shared cool-down and governor-owned read retries | Prod | Optional | `observe` |
 | `HOSPEDA_MERCADO_PAGO_PLATFORM_ID` | MercadoPago platform ID for marketplace tracking | Prod | Optional | `MP-PLATFORM-ID` |
 | `HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID` | MercadoPago integrator ID | Prod | Optional | `MP-INTEGRATOR-ID` |
 

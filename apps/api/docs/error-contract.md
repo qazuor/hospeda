@@ -42,6 +42,7 @@ check answers 403 to someone the server never identified.
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
+| Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
 
@@ -102,6 +103,8 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `PARTNER_APPLICATION_UNAVAILABLE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_WAIT_NOT_ACTIVE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_NOT_PENDING` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
 
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
@@ -428,12 +431,29 @@ The permission is the route's scope (`billing.settleExternal`); the subject, the
 | `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 | `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
-| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` (a manual payment, or an add-on payment whose instance has no provider order) | 409 | `ALREADY_EXISTS` |
 | `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_PAST_PROVIDER_WINDOW` | 422 | `VALIDATION_ERROR` |
 | `REFUND_PROVIDER_ID_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
 
 Provider results are not rejections: confirmation returns 200 with an `outcome` describing the result. A missing or non-`true` `confirmed` field is a 400 shape error (`VALIDATION_ERROR`).
+`ORDER_REFUND_HELD`, `PROVIDER_KEY_CONFLICT`, and `ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED` return 200 and leave the refund `CONFIRMED`.
+`PROVIDER_REJECTED_FAILED` returns 200 with `status: 'FAILED'`.
+An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider call.
+
+## Action 13 decline (B6.2)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/decline` (ACC:13, RF5) requires `{ "declined": true }`. Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 request shape → 404 missing refund or source → 409 state or provider-call conflict. A successful refusal returns 200 with `{ refundId, status: "FAILED" }` and leaves the payment unchanged.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
 
 ## Action 14 charge settlement rejections (B5.9)
 
@@ -476,6 +496,27 @@ The permission is the route scope (`billing.grantComplimentary`); the service
 decides the action permission, subject, system actor and `actor = subject`, so a
 403 can come from the route or the service. Revocation does not have a route yet
 (B9a.6, Fase 2).
+
+## Actions 3 and 4 manual payment rejections
+
+`GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register` (ACC:3, MP1) and `/declare-unpaid` (ACC:4, MP2) require their own action permissions. A caller without that permission receives 403 from the route factory. Invalid UUIDs and a `proofRef` outside 1–500 characters receive 400. An installment belonging to another subscription is 404. The service rechecks the administrative action inside its transaction.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `MANUAL_PAYMENT_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MANUAL_PAYMENT_NOT_AWAITING` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_IN_GRACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_COVERAGE_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `SUCCESSION_IN_PROGRESS` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT` | 409 | `ALREADY_EXISTS` |
+| `LOST_RACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_MANUAL` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_CONDITION_FAILED` | 422 | `VALIDATION_ERROR` |
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/manual-payments` requires `BILLING_SUBSCRIPTION_INSPECT`, lists that subscription's installments, and returns 404 for an unknown subscription. Both previews write no billing state.
 
 ## Action 8 revocation rejections (B5, S36)
 

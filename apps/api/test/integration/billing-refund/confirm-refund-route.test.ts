@@ -1,11 +1,22 @@
-import { eq, getDb, payments, refunds } from '@repo/db';
+import {
+    addonInstances,
+    eq,
+    getDb,
+    idempotencyKeys,
+    payments,
+    refundCalls,
+    refunds
+} from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
+import { requestRefund } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { AuditEventType } from '../../../src/utils/audit-logger';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
+import { NOW, seedOneTimeOrphan } from '../billing-subscription/revocation-route-fixtures';
 import {
     baselineFake,
     cleanupConfirmRefundRows,
@@ -24,6 +35,7 @@ vi.mock('../../../src/utils/audit-logger', async (importOriginal) => ({
 
 const permissions = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.BILLING_REFUND];
 let app: ReturnType<typeof initApp>;
+const orderRefundIds: string[] = [];
 
 describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
     beforeAll(async () => {
@@ -33,12 +45,52 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         app = initApp({ clock: confirmClock, paymentProvider: confirmFake });
     });
     afterEach(() => {
+        confirmClock.set(NOW);
         injectPaymentProvider({ provider: baselineFake });
         vi.restoreAllMocks();
     });
     afterAll(async () => {
+        for (const refundId of orderRefundIds) {
+            await getDb().delete(refundCalls).where(eq(refundCalls.refundId, refundId));
+            await getDb().delete(idempotencyKeys).where(eq(idempotencyKeys.subjectId, refundId));
+            await getDb().delete(refunds).where(eq(refunds.id, refundId));
+        }
         await cleanupConfirmRefundRows();
         await testDb.teardown();
+    });
+
+    it('HOS-1553 TEST:B6:6 confirms a one-time order refund through the real route', async () => {
+        const seeded = await seedConfirmRefund();
+        const { instanceId, paymentId } = await seedOneTimeOrphan({
+            ownerId: seeded.ownerId,
+            principalId: seeded.subscriptionId
+        });
+        const { orderId } = confirmFake.placeOrder({
+            reference: `route-order-${crypto.randomUUID()}`,
+            paid: true,
+            amount: { amountMinor: 5000, currency: 'ARS' }
+        });
+        await getDb()
+            .update(addonInstances)
+            .set({ providerOrderId: orderId })
+            .where(eq(addonInstances.id, instanceId));
+        const request = await requestRefund(
+            { source: { kind: 'PAYMENT', id: paymentId }, amount: 5000, reason: 'REVOCATION' },
+            { clock: confirmClock }
+        );
+        orderRefundIds.push(request.refundId);
+        const response = await confirmRequest(app, request.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({
+            refundId: request.refundId,
+            status: 'CONFIRMED',
+            outcome: 'SENT'
+        });
+        expect((await confirmRows(request.refundId)).calls).toHaveLength(1);
     });
 
     it('AC:B6:1 records the confirmed provider call and its persisted key', async () => {
@@ -196,5 +248,65 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         });
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('REQUESTED');
         expect(refundSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('TEST:B6:5 AC:B6:7 answers 422 past the provider window without reading or refunding', async () => {
+        // Arrange
+        const seeded = await seedConfirmRefund();
+        const [payment] = await getDb()
+            .select({ factAt: payments.factAt })
+            .from(payments)
+            .where(eq(payments.id, seeded.paymentId));
+        if (!payment) throw new Error('seeded payment missing');
+        confirmClock.set(new Date(payment.factAt.getTime() + 180 * 86400000));
+        const readSpy = vi.spyOn(confirmFake, 'readCharge');
+        const refundSpy = vi.spyOn(confirmFake, 'refund');
+
+        // Act
+        const response = await confirmRequest(app, seeded.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+
+        // Assert
+        expect(response.status).toBe(422);
+        expect((await response.json()).error).toMatchObject({
+            code: 'VALIDATION_ERROR',
+            reason: 'REFUND_PAST_PROVIDER_WINDOW'
+        });
+        const rows = await confirmRows(seeded.refundId);
+        expect(rows.refund?.status).toBe('REQUESTED');
+        expect(rows.calls).toHaveLength(0);
+        expect(rows.keys).toHaveLength(0);
+        expect(readSpy).toHaveBeenCalledTimes(0);
+        expect(refundSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it('TEST:B6:5 AC:B6:7 returns a validated 200 for a definitive provider rejection', async () => {
+        // Arrange
+        const seeded = await seedConfirmRefund();
+        vi.spyOn(confirmFake, 'refund').mockRejectedValueOnce(
+            new PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'refund',
+                message: 'refund rejected'
+            })
+        );
+
+        // Act
+        const response = await confirmRequest(app, seeded.refundId, {
+            id: seeded.adminId,
+            role: 'SUPER_ADMIN',
+            permissions
+        });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({
+            status: 'FAILED',
+            outcome: 'PROVIDER_REJECTED_FAILED'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('FAILED');
     });
 });

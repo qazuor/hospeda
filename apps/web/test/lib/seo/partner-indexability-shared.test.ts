@@ -30,7 +30,7 @@ const CONSUMERS = [
  * Conditions the predicate owns. If one of these strings shows up in a consumer,
  * that consumer is deciding indexability for itself.
  */
-const PREDICATE_INTERNALS = ["lifecycleState !== 'ACTIVE'"] as const;
+const PREDICATE_INTERNALS = ['hasPublicPage !== true'] as const;
 
 describe('one predicate, two consumers', () => {
     it.each(CONSUMERS)('$label imports evaluatePartnerIndexability', ({ path }) => {
@@ -53,12 +53,13 @@ describe('one predicate, two consumers', () => {
         }
     });
 
-    it('keeps partner pages unavailable until V7 restores the public key', () => {
+    it('requires both the page entitlement and a description', () => {
         const predicateSrc = readFileSync(
             resolve(root, 'src/lib/seo/partner-indexable.ts'),
             'utf8'
         );
 
-        expect(predicateSrc).toContain("return { isIndexable: false, reason: 'not-visible' }");
+        expect(predicateSrc).toContain('input.hasPublicPage !== true');
+        expect(predicateSrc).toContain("reason: 'missing-description'");
     });
 });

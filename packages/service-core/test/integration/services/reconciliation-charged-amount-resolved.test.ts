@@ -70,7 +70,7 @@ async function setup() {
 async function sweep(input: Awaited<ReturnType<typeof setup>>) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            { correlationId: crypto.randomUUID() },
+            { mode: 'single', correlationId: crypto.randomUUID() },
             {
                 provider: input.provider as unknown as PaymentProvider,
                 clock: reconciliationClock,

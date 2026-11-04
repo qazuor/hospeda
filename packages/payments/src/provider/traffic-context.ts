@@ -18,6 +18,7 @@ export interface TrafficCounterSink {
         readonly unclassified?: boolean;
         /** A provider read was served from the current row's read scope. */
         readonly memoHit?: boolean;
+        readonly redisFallback?: boolean;
     }): void;
     /** Return a JSON-safe snapshot of this run's traffic counters. */
     toProviderTraffic(): Readonly<Record<string, unknown>>;

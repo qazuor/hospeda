@@ -14,6 +14,7 @@ export * from './feedback/index.js';
 export * from './host-trade/index.js';
 export * from './listing/index.js';
 export * from './newsletter/index.js';
+export * from './partner/index.js';
 export * from './subscription/index.js';
 export * from './trial/index.js';
 export * from './verticals/index.js';

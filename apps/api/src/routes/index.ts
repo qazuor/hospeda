@@ -131,7 +131,10 @@ import {
     publicOwnerPromotionRoutes
 } from './owner-promotion';
 import { adminPartnerApplicationRoutes } from './partner-application';
-import { publicPartnerApplicationRoutes } from './partner-application/index.js';
+import {
+    protectedPartnerClaimRoutes,
+    publicPartnerApplicationRoutes
+} from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
@@ -143,12 +146,12 @@ import {
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
-    adminRevokePartnerRoute,
     adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
     protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
+import { adminModeratePartnerPresenceRoute } from './partners/admin/presence-moderation';
 import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
@@ -483,6 +486,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
+        app.route('/api/v1/protected/partner-claims', protectedPartnerClaimRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         // HOS-1156: the vertical-parameterised publish precheck, which
         // generalises /host-onboarding/precheck to venue and experiences.
@@ -565,7 +569,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
-        app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
+        app.route('/api/v1/admin/partners', adminModeratePartnerPresenceRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
         // on the same prefix and takes the partner from its own path segment.
         app.route('/api/v1/admin/partners', adminListPartnerMentionsRoute);

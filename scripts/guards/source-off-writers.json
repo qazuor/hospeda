@@ -82,6 +82,22 @@
         "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/manual-grace-entry.ts",
+        "symbol": "enterManualGraceInTx",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Manual S4 keeps the same subscription coverage source in GRACE_PERIOD as ACTIVE (AC:B5:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/register-manual-payment.service.ts",
+        "symbol": "registerManualPayment",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "MP1 writes next_charge_at only; S29 activation is inventoried through activatePendingAuthorization, while S5 keeps the same source in GRACE_PERIOD and ACTIVE (AC:B5:14-15)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
         "symbol": "reactivateFromGrace",
         "table": "subscriptions",
@@ -90,12 +106,12 @@
         "reason": "S5 moves GRACE_PERIOD to ACTIVE; both emit the same SUSCRIPCIÓN source (03-contrato-de-cobertura.md:468-469)."
     },
     {
-        "file": "packages/service-core/src/services/billing/subscription/suspend-for-arrears.service.ts",
-        "symbol": "writeArrearsSuspension",
+        "file": "packages/service-core/src/services/billing/subscription/arrears-suspension-write.ts",
+        "symbol": "writeArrearsSuspensionInTx",
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
+        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); both the wrapper and MP2 call emitArrearsSuspensionCoverageChanged after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",
@@ -104,6 +120,32 @@
         "effect": "turns-off",
         "via": "notice",
         "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor-support.ts",
+        "symbol": "writeSuccessionPredecessorCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor.service.ts",
+        "reason": "S17 cancels the predecessor after its successor authorized; the coverage notice is emitted after commit (AC:B8b:9)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription.service.ts",
+        "reason": "S22 ends a PAUSED principal today; a COURTESY pause emits coverage until cancellation, and the REMOVED notice follows the commit (AC:B8b:5)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedScheduledCancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S22 retains unconsumed successor credit through S11, scheduling the service end; the row emits coverage until S12 (AC:B8b:5)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
@@ -168,6 +210,22 @@
         "effect": "neutral",
         "via": null,
         "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/pause-subscription.service.ts",
+        "symbol": "pauseSubscription",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S8 moves an ACTIVE PRINCIPAL to PAUSED, which emits no source in subscription-sources.ts; the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+        "symbol": "resumeSubscription",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S10 returns a PAUSED PRINCIPAL to ACTIVE, which emits a subscription coverage source after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
@@ -288,5 +346,53 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1732: after the provider rejected the creation, the retry updates the declared payer email on the same PENDING_AUTHORIZATION row (no provider link yet); the row stays uncovered, so coverage does not change."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "linkClosedPredecessor",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "clearSuccessorLink",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "repointComplements",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 reanchors a complement on the live successor without turning off its coverage source (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "deferOrCloseCourtesy",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 records the balance of a courtesy on a dead predecessor; its pause was already closed, so no live coverage source turns off here (AC:B8b:10)."
+    },
+    {
+        "file": "packages/db/src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts",
+        "symbol": "stampSweptRow",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
+        "symbol": "sendOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
     }
 ]

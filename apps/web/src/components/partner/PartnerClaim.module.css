@@ -1,0 +1,61 @@
+/**
+ * @file PartnerClaim.module.css
+ * @description Responsive styles for the Partner claim island.
+ */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-5, 1.25rem);
+    width: min(100%, 42rem);
+    margin: 0 auto;
+    padding: clamp(var(--space-6, 1.5rem), 5vw, var(--space-10, 2.5rem));
+    color: var(--core-foreground);
+    background: var(--core-card);
+    border: 1px solid var(--core-foreground-a15);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.heading {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-h2);
+    line-height: 1.2;
+}
+
+.message {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.6;
+}
+
+.button,
+.link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    color: var(--accent-foreground, #fff);
+    font: 700 var(--text-button) / 1.2 var(--font-sans);
+    text-align: center;
+    text-decoration: none;
+    background: var(--brand-accent);
+    border: 0;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+}
+
+.button:focus-visible,
+.link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}
+
+.button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}

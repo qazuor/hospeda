@@ -187,8 +187,10 @@ consecutive 429 (max 60 s); random is injectable. While cooling down:
 
 **Webhook under a cool-down.** Today only an incomplete read becomes `DEFERRED`
 (`process-provider-notice.service.ts:483-485`); every other error, including a
-`RATE_LIMITED` one, becomes `FAILED`, and the route answers a fixed
-`Retry-After: 60` (`routes/webhooks/mercadopago.ts:58-63`). Under `enforce`, this spec maps a
+`RATE_LIMITED` one, becomes `FAILED`, and the route answers `500` with no
+`Retry-After` header (`routes/webhooks/mercadopago.ts:65`); only a `DEFERRED`
+outcome answers `503` with the fixed `Retry-After: 60`
+(`routes/webhooks/mercadopago.ts:58-63`). Under `enforce`, this spec maps a
 `RATE_LIMITED` error (governor-rejected or a real 429) to `DEFERRED` as well, and
 carries `retryAfterSeconds` = the remaining shared cool-down (rounded up, min 1,
 max 120) into the outcome, so the route answers `503` with that `Retry-After`
@@ -412,7 +414,13 @@ recorded in `cron_runs` with the existing `success` status and
 derives the status from five fixed cases (`record-run.ts:28-33`) and the cron
 models filter on the existing values (`cronRun.model.ts:41,127,155-159`), so a
 sixth value would trip frozen guards and silently drop out of those queries.
-This also removes duplicate runs across two containers during a rollout.
+During a rollout the lock also keeps two containers from running the same job
+**at the same time**; it does not make a run happen once. A short job can still
+run once in each replica when their ticks do not overlap. The lock is valid
+because prod connects to Postgres directly, with no pooler in between: a session
+lock needs the same server session for lock and unlock, which a
+transaction-mode pooler would not guarantee. Adding a pooler requires revisiting
+this lock.
 `noOverlap: true` is added to the node-cron options as the in-process first line.
 The lock is a cost control, not a correctness boundary (R-6); the sweep adds its
 own lease (§6.5).
@@ -660,7 +668,7 @@ under their topic, so numbers are not consecutive within a section.
   with `Retry-After: 37`. An incomplete read keeps today's `DEFERRED`. The
   `RATE_LIMITED` → `DEFERRED` mapping is part of PR-3's behaviour and applies
   **only under `enforce`**: under `off` and `observe` a `RATE_LIMITED` read
-  stays `FAILED` with today's fixed `Retry-After: 60`, so the kill switch
+  stays `FAILED` and the route keeps today's `500` with no `Retry-After`, so the kill switch
   reverts it too (AC-28).
 - **AC-33** Given the production source, then every caller of
   `defaultPaymentProvider` / `new MercadoPagoPaymentProvider` is on the guard's

@@ -23,6 +23,7 @@ export const billingDeferredCancellationRetryJob: CronJobDefinition = {
     description:
         'Retry deferred provider cancellations after the before-cancel notice settles (HOS-1955, AC:B11:6)',
     schedule: '4-59/5 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 240_000,
     handler: async (ctx) => {

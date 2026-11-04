@@ -1,21 +1,34 @@
+import { ProviderTrafficGovernor } from '@repo/payments';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { info, warn } = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn() }));
+const { info, warn, createStore, env } = vi.hoisted(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    createStore: vi.fn(),
+    env: { HOSPEDA_REDIS_URL: '', HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE: 'observe' }
+}));
 vi.mock('../../src/utils/logger', () => ({ apiLogger: { info, warn } }));
+vi.mock('../../src/utils/env', () => ({ env }));
+vi.mock('../../src/utils/mp-cooldown-redis-store', () => ({
+    createMercadoPagoRedisCoolDownStore: createStore
+}));
 
 import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
-import { createMercadoPagoTrafficGovernor } from '../../src/utils/mp-traffic-governor';
+import {
+    createMercadoPagoTrafficGovernor,
+    mercadoPagoRateLimitDeferral
+} from '../../src/utils/mp-traffic-governor';
 
 afterEach(() => vi.clearAllMocks());
 
 describe('Mercado Pago traffic governor composition', () => {
-    it('supports off, observe, and enforce degradation with one warning (kills enforce activation before PR-3)', () => {
+    it('supports off, observe, and enforce without constructing Redis outside enforce (kills mode degradation)', () => {
         expect(createMercadoPagoTrafficGovernor({ mode: 'off' })).toBeUndefined();
         const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
         expect(observe).toMatchObject({ mode: 'observe' });
         const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
-        expect(enforce).toMatchObject({ mode: 'observe' });
-        expect(warn).toHaveBeenCalledTimes(1);
+        expect(enforce).toMatchObject({ mode: 'enforce' });
+        expect(warn).not.toHaveBeenCalled();
         observe?.stop();
         enforce?.stop();
     });
@@ -61,5 +74,82 @@ describe('Mercado Pago traffic governor composition', () => {
             })
         );
         governor?.stop();
+    });
+
+    it('offers the webhook deferral port only under enforce (kills deferring in observe)', () => {
+        const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
+        const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(mercadoPagoRateLimitDeferral({ governor: undefined })).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor: observe })).toBeUndefined();
+        const port = mercadoPagoRateLimitDeferral({ governor: enforce });
+        expect(port?.coolDownRemainingMs()).toBe(0);
+        observe?.stop();
+        enforce?.stop();
+    });
+
+    it('uses the mocked Redis store in enforce mode and awaits its close on shutdown', async () => {
+        let closed = false;
+        createStore.mockReturnValue({
+            close: async () => {
+                await Promise.resolve();
+                closed = true;
+            },
+            extend: vi.fn(),
+            until: () => 0,
+            refresh: async () => ({ fallback: false })
+        });
+        env.HOSPEDA_REDIS_URL = 'redis://test.invalid';
+        env.HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE = 'enforce';
+        const { getMercadoPagoTrafficGovernor, shutdownMercadoPagoTrafficGovernor } = await import(
+            '../../src/utils/mp-traffic-governor'
+        );
+
+        getMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(createStore).toHaveBeenCalledOnce();
+        expect(createStore).toHaveBeenCalledWith({ redisUrl: 'redis://test.invalid' });
+        await shutdownMercadoPagoTrafficGovernor();
+        expect(closed).toBe(true);
+    });
+
+    it('never consults a governor under off: no instance, so no acquire and no window log (AC-7)', async () => {
+        const acquire = vi.spyOn(ProviderTrafficGovernor.prototype, 'acquire');
+        const governor = createMercadoPagoTrafficGovernor({ mode: 'off' });
+        expect(governor).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor })).toBeUndefined();
+        expect(acquire).not.toHaveBeenCalled();
+        expect(info).not.toHaveBeenCalled();
+        acquire.mockRestore();
+    });
+
+    it('logs one mp_traffic_window per class every 60 s with traffic (AC-18)', async () => {
+        vi.useFakeTimers();
+        try {
+            let clock = 1_000_000;
+            const governor = createMercadoPagoTrafficGovernor({
+                mode: 'observe',
+                now: () => clock
+            });
+            await governor?.acquire({ trafficClass: 'interactive', capability: 'read' });
+            await governor?.acquire({ trafficClass: 'background', capability: 'read' });
+            clock += 60_000;
+            vi.advanceTimersByTime(60_000);
+            const windows = info.mock.calls
+                .map(
+                    ([entry]) =>
+                        entry as { message?: string; trafficClass?: string; requests?: number }
+                )
+                .filter((entry) => entry.message === 'mp_traffic_window');
+            expect(windows.map(({ trafficClass }) => trafficClass).sort()).toEqual([
+                'background',
+                'interactive'
+            ]);
+            info.mockClear();
+            clock += 60_000;
+            vi.advanceTimersByTime(60_000);
+            expect(info).not.toHaveBeenCalled();
+            governor?.stop();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

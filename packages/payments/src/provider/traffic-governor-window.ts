@@ -12,9 +12,9 @@ export interface TrafficCounter {
     readonly coolDowns: number;
     readonly coolDownMs: number;
     readonly unclassified: number;
-    readonly memoHits: 0;
+    readonly memoHits: number;
     readonly snapshotHits: 0;
-    readonly redisFallbacks: 0;
+    readonly redisFallbacks: number;
 }
 
 /** A completed observation window for one traffic class. */
@@ -38,6 +38,8 @@ export interface MutableCounter {
     coolDowns: number;
     coolDownMs: number;
     unclassified: number;
+    memoHits: number;
+    redisFallbacks: number;
 }
 
 /** Internal mutable window state grouped by traffic class and capability. */
@@ -58,7 +60,9 @@ export function emptyCounter(): MutableCounter {
         fastFailures: 0,
         coolDowns: 0,
         coolDownMs: 0,
-        unclassified: 0
+        unclassified: 0,
+        memoHits: 0,
+        redisFallbacks: 0
     };
 }
 
@@ -85,8 +89,8 @@ export function snapshotCounter(counter: MutableCounter): TrafficCounter {
         coolDowns: counter.coolDowns,
         coolDownMs: counter.coolDownMs,
         unclassified: counter.unclassified,
-        memoHits: 0,
+        memoHits: counter.memoHits,
         snapshotHits: 0,
-        redisFallbacks: 0
+        redisFallbacks: counter.redisFallbacks
     };
 }

@@ -1300,22 +1300,78 @@
     {
       "idx": 185,
       "version": "7",
-      "when": 1793656796372,
-      "tag": "0185_hos1484_partner_resolve_application",
+      "when": 1793710605498,
+      "tag": "0185_steep_amazoness",
       "breakpoints": true
     },
     {
       "idx": 186,
       "version": "7",
-      "when": 1793670469150,
-      "tag": "0186_hos1551_billing_refund_permission",
+      "when": 1793731804751,
+      "tag": "0186_slow_bug",
       "breakpoints": true
     },
     {
       "idx": 187,
       "version": "7",
-      "when": 1793678736020,
-      "tag": "0187_hos1485_partner_application_resolution",
+      "when": 1793734622730,
+      "tag": "0187_public_klaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793748335941,
+      "tag": "0188_unique_silver_fox",
+      "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1793748395941,
+      "tag": "0189_hos1484_partner_resolve_application",
+      "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "7",
+      "when": 1793748455941,
+      "tag": "0190_hos1551_billing_refund_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1793748515941,
+      "tag": "0191_hos1485_partner_application_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1793748575941,
+      "tag": "0192_hos1486_session_auth_method",
+      "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1793748635941,
+      "tag": "0193_hos1541_manual_payment_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1793748695941,
+      "tag": "0194_hos1487_partner_edit_own",
+      "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1793779569400,
+      "tag": "0195_hos1488_partner_presence_moderation",
       "breakpoints": true
     }
   ]

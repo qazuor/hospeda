@@ -50,6 +50,7 @@ import type {
 import {
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnSubscriptionsResponseSchema,
+    type PartnerClaimResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
     type SubscriptionCancellationResponseSchema
 } from '@repo/schemas';
@@ -2084,6 +2085,27 @@ export interface MyPartnerUpdate {
  * caller owns none, mirroring {@link hostTradesApi.mine}.
  */
 export const partnersApi = {
+    /**
+     * Claim an approved Partner using the one-time secret from its email link.
+     *
+     * @param params - Partner UUID and the secret from the URL fragment.
+     * @returns The claim on success; errors distinguish an invalid link (404),
+     * an already claimed Partner (409), an account that owns another Partner
+     * (409), an unverified account (403), or an unauthenticated request (401).
+     */
+    claim({
+        partnerId,
+        secret
+    }: {
+        readonly partnerId: string;
+        readonly secret: string;
+    }): Promise<ApiResult<z.infer<typeof PartnerClaimResponseSchema>>> {
+        return apiClient.postProtected({
+            path: '/api/v1/protected/partner-claims',
+            body: { partnerId, secret }
+        });
+    },
+
     /**
      * Fetches the caller's own partner listing, or `null`.
      *

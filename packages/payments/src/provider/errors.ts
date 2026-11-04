@@ -4,7 +4,8 @@
 import type { PaymentCapability } from './capabilities';
 
 /** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
-export type RefundRefusal = 'AMOUNT_NOT_ACCEPTED';
+/** KEY_REUSED marks an order refund or one-time charge key reused with another body (MP:EX-58/EX-41, AC:B6:8/12). */
+export type RefundRefusal = 'AMOUNT_NOT_ACCEPTED' | 'KEY_REUSED';
 
 /**
  * Why a provider refused.
@@ -51,7 +52,7 @@ export interface PaymentProviderErrorInput {
     readonly providerStatus?: string;
     readonly providerCadence?: string;
     readonly transient?: TransientProviderFailure;
-    /** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
+    /** An amount refusal (M13) or order refund/one-time charge key reuse with another body (MP:EX-58/EX-41, AC:B6:8/12). */
     readonly refundRefusal?: RefundRefusal;
     readonly governorRejected?: true;
 }
@@ -68,7 +69,7 @@ export class PaymentProviderError extends Error {
     readonly providerCadence?: string;
     /** Set when the failure is transient and worth retrying later (HOS-1968). */
     readonly transient?: TransientProviderFailure;
-    /** The provider refused this refund amount; another amount may be accepted (M13, `cause[0].code` 2084). */
+    /** An amount refusal (M13) or order refund/one-time charge key reuse with another body (MP:EX-58/EX-41, AC:B6:8/12). */
     readonly refundRefusal?: RefundRefusal;
     /** The governor refused before any HTTP request was sent; HOS-1999. */
     declare readonly governorRejected?: true;

@@ -407,6 +407,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/decline"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {
@@ -424,6 +428,26 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/cancellation"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
         },
         {
             "method": "GET",
@@ -1307,11 +1331,11 @@
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/review-content"
+            "path": "/api/v1/admin/partners/:id/presence-moderation"
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/revoke"
+            "path": "/api/v1/admin/partners/:id/review-content"
         },
         {
             "method": "GET",
@@ -3016,6 +3040,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/owner-promotions/exclusive-deals"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/partner-claims"
         },
         {
             "method": "GET",

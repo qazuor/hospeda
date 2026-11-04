@@ -80,6 +80,23 @@ export interface ChargeResult {
     readonly chargeId: string;
 }
 
+/** Capability 2 one-time order request (AC:B6:11/12, MP:EX-41, MP:EX-30). */
+export interface OneTimeChargeInput {
+    readonly reference: string;
+    readonly idempotencyKey: string;
+    readonly amount: Money;
+    readonly payerEmail: string;
+    readonly paymentToken: string;
+    readonly paymentBrand: string;
+    readonly paymentKind: 'credit' | 'debit';
+}
+
+/** One-time order creation result; a declined payment still has an order id (AC:B6:12, MP:EX-30). */
+export interface OneTimeChargeResult {
+    readonly orderId: string;
+    readonly declined: boolean;
+}
+
 /** Identifies one authorization. */
 export interface AuthorizationRef {
     readonly authorizationId: string;
@@ -107,6 +124,30 @@ export interface RefundInput {
 /** Capability 6 output. */
 export interface RefundResult {
     readonly refundId: string;
+}
+
+/** One order refund returned by Mercado Pago (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
+export interface OrderRefund {
+    readonly refundId: string;
+    readonly amountMinor: number;
+    readonly accredited: boolean;
+}
+
+/** The exact order refund request shape (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export type OrderRefundScope =
+    | { readonly kind: 'total' }
+    | { readonly kind: 'partial'; readonly transactionId: string; readonly amount: Money };
+
+/** Capability 6 order refund input; reference is the stable key (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export interface OrderRefundInput {
+    readonly orderId: string;
+    readonly reference: string;
+    readonly scope: OrderRefundScope;
+}
+
+/** All refunds in the order response, including older ones (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export interface OrderRefundResult {
+    readonly refunds: readonly OrderRefund[];
 }
 
 /**
@@ -173,6 +214,14 @@ export interface ChargeListResult {
     readonly chargeIds: readonly string[];
 }
 
+/** One refund of a charge as read by id: its provider id, amount, and whether the provider accredited it. */
+export interface ChargeRefund {
+    readonly refundId: string;
+    readonly amount: Money;
+    /** True only for a refund the provider reads `approved` (the only measured status, D-1); anything else fails closed. */
+    readonly accredited: boolean;
+}
+
 /** Capability 7 output: a charge as read by id. */
 export interface ChargeSnapshot {
     readonly chargeId: string;
@@ -192,6 +241,8 @@ export interface ChargeSnapshot {
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
+    /** The provider refunds by id that tie one refund row to its own returned amounts (02 §2.3). */
+    readonly refunds: readonly ChargeRefund[];
     /**
      * The payer disputed this charge with their bank and the money went back.
      * `status` stays `approved` because the charge did collect. Documented, not
@@ -218,6 +269,10 @@ export interface OrderSnapshot {
     /** The ISO 8601 instant the order was created. */
     readonly createdAt: string;
     readonly hasApprovedPayment: boolean;
+    /** Payment transaction id for a partial refund (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    readonly paymentTransactionId: string | null;
+    /** Refunds read by order id (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
+    readonly refunds: readonly OrderRefund[];
 }
 
 /**
@@ -274,6 +329,8 @@ export interface PaymentProvider {
     authorize(input: AuthorizeInput): Promise<AuthorizeResult>;
     /** Capability 2 · charge. */
     charge(input: ChargeInput): Promise<ChargeResult>;
+    /** Capability 2 · create one order with the request's stable key (AC:B6:11/12, MP:EX-41). */
+    chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult>;
     /** Capability 3 · change the amount. Accepted is not applied: re-read. */
     changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement>;
     /** Capability 4 · pause. Accepted is not applied: re-read. */
@@ -284,6 +341,8 @@ export interface PaymentProvider {
     cancel(input: AuthorizationRef): Promise<MutationAcknowledgement>;
     /** Capability 6 · refund. */
     refund(input: RefundInput): Promise<RefundResult>;
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    refundOrder(input: OrderRefundInput): Promise<OrderRefundResult>;
     /**
      * Capability 7 · read an authorization by id. The read carries its instant
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.

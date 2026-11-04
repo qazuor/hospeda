@@ -81,9 +81,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Preconditions:** An active card subscription exists on `staging` whose Mercado Pago
   preapproval is `authorized`.
 - **Steps:**
-  1. Run the `billing-reconciliation-sweep` cron on `staging` and confirm that
-     `subscription.next_charge_at` equals the preapproval's `next_payment_date` (read-only
-     `GET /preapproval/{id}`).
+  1. Trigger `billing-reconciliation-sweep?newCycle=true` on `staging`. The exclusive
+     manual trigger answers `202` with a `runId`; read the result from `cron_runs`.
+     Confirm that `subscription.next_charge_at` equals the preapproval's
+     `next_payment_date` (read-only `GET /preapproval/{id}`).
   2. On a staging test subscription created for this smoke (never a real customer's row), write
      `next_charge_at` 5 days ahead of the AR day, after the sweep and before the next one.
   3. Run the `subscription-renewal-notice` cron on `staging`.
@@ -95,6 +96,16 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
 - **Covers:** HOS-1685 (provider next charge date copy); AC:B13a:13 (renewal notices at 5 and 1 day);
   TEST:B13a:13 (integration).
+
+### S4a — Resumable sweep slicing
+
+- **Preconditions:** Staging test subscriptions are available and no reconciliation sweep is running.
+- **Steps:**
+  1. Configure a small slice budget in the test harness so one cycle spans 02:10, 03:10 and 04:10.
+  2. Kill one slice mid-run, then allow the next scheduled slice to resume.
+  3. Read the completed cycle summary from `cron_runs` and confirm the interrupted row was safely retried.
+- **Expected:** The cycle reaches `CYCLE_DONE`, preserves completed row/pass progress, and reports its aggregate summary.
+- **Evidence:** The three slice records and the final cycle summary in `cron_runs`.
 
 ### S5 — Cloudflare edge cache and revalidation
 
@@ -148,6 +159,61 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   `email_outbox` filtered by `recipient_user_id` and template.
 - **Covers:** AC:1955:1, AC:1955:6; the HOS-1955 measurement (29 October: about one hour with
   a manual sweep).
+
+### S9 — Partner applications: claim notice, claim on verification, rejection
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; two mailboxes controlled by the executor, A (with a Hospeda account) and B (without an account); an admin with `PARTNER_RESOLVE_APPLICATION`; and a third mailbox C for rejection.
+- **Steps:** Submit applications for A, B, and C through the public form; approve A and B and reject C through the admin API; open all three emails; open the verification link in B's email.
+- **Expected:** A receives “Reclamá tu Partner en Hospeda” with a `/partners/reclamar/#partner=…&secret=…` link; B receives Better Auth verification and, after opening it, B's account owns the Partner with `PARTNER_OWNER`; C receives the rejection communication with the date from which they can apply again and without the reason; no email arrives twice.
+- **Evidence:** `hops psql --target=staging`, read-only: A's Partner has a non-null `claim_secret_hash` different from the link secret; the payloads of both `email_outbox` rows contain neither the secret nor the reason; B's Partner `owner_user_id` equals B's account and has a `partner.claimed` event. V7.2 (HOS-1486) covers A's claim-link screen; do not open it in this step.
+- **Covers:** AC:V7:4, AC:V7:5; TEST:V7:4, TEST:V7:5.
+
+### S10 — Partner claim by link
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; mailbox A with a verified Hospeda account and a distinct mailbox B, both controlled by the executor; mailbox C owned by an unverified account, with another approved application, a second session open in another browser, and Google linked; an admin with `PARTNER_RESOLVE_APPLICATION`.
+- **Steps:** Submit an application with A and approve it through the admin API; open its notice link in a signed-out browser, sign in as B, and claim; open the same link with another account; open it again after changing one character of the secret; with C, claim its Partner from the password-authenticated session, then try the other session and sign in with Google.
+- **Expected:** B owns the Partner with `PARTNER_OWNER` and A is unchanged; the second claim shows «Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; the altered secret shows the nonexistent-Partner state; C becomes verified, its other session stops working within 5 minutes (session-cache window, R-1) and Google can no longer sign in; the sign-in URL never contains the secret.
+- **Evidence:** `hops psql --target=staging`, read-only queries: `owner_user_id` and `claim_secret_hash` for the Partner before and after (the hash is unchanged); the `partner.claimed` event with `reason = 'claim_link'` and, for C, `changes` containing `email_verified`, `revoked_session_count`, and `removed_credential_providers`; C's `session` and `account` rows.
+- **Covers:** AC:V7:7, AC:V7:8, AC:V7:9; TEST:V7:7, TEST:V7:8, TEST:V7:9, TEST:V7:22.
+
+### V7.3 · Alta directa de Partner (HOS-1487)
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; two mailboxes controlled by the executor; an admin with `PARTNER_MANAGE`.
+- **Steps:**
+  1. Create a Partner in the admin and enter a claim notice address controlled by the executor.
+  2. Verify the claim notice arrives at that address.
+  3. Claim the Partner with a different account.
+  4. Verify the Partner is owned by the claiming account and the mailbox account received no other email.
+- **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
+- **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
+
+### S11 — Manual payment installments (HOS-1541)
+
+- **Preconditions:** HOS-1629 manual signup is deployed on staging; use only a test account and a SUPER_ADMIN. The manual payment path does not call Mercado Pago, except that activation can cancel an inherited Tourist VIP.
+- **Steps:**
+  1. Start a manual plan. Confirm `PENDING_AUTHORIZATION`, one `AWAITING` installment and one unpaid installment notice per SUPER_ADMIN.
+  2. As SUPER_ADMIN, call `GET …/manual-payments`, preview `GET …/{id}/register`, then `POST …/{id}/register` with `proofRef`. Confirm preview effect `S29` and the new date, then `REGISTERED` with actor, time and proof, `ACTIVE`, one `receipt`, one cycle of `next_charge_at`, signup confirmation and publishable coverage.
+  3. Set `next_charge_at` in the past on that test row with `hops psql --target=staging` and wait for `manual-installment-open` at minute 13. Confirm a second `AWAITING` installment, `GRACE_PERIOD`, `grace_ends_at` after the plan's grace days and one admin notice. Rerun the job and confirm exact counts remain one installment and one notice for that period.
+  4. Register the second installment. Confirm `ACTIVE`, cleared grace and one cycle of date advancement.
+  5. Repeat step 3 and declare the new installment unpaid. Confirm `DECLARED_UNPAID`, `SUSPENDED`, the manual payer suspension notice and removal from public coverage.
+  6. Confirm an ADMIN without the action permissions receives 403 on both POST routes, a foreign installment receives 404, and declaring unpaid on an `ACTIVE` row receives 409.
+- **Expected:** Steps 1–6 reach exactly the states, dates, notices, receipt and HTTP responses stated above, without creating duplicate installments or notices on retry.
+- **Evidence:** The API responses, the test subscription and installment rows, its receipts and coverage, the per-admin outbox rows and the `manual-installment-open` cron run.
+- **Covers:** AC:B5:13–16; TEST:B5:7 and the MP2 half of TEST:B5:8.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+
+### S12 — Partner presence and moderation (HOS-1488)
+
+- **Preconditions:** A claimed Partner whose owner has a live Gold plan; an admin with `LISTING_MODERATE` and an admin without it.
+- **Steps:**
+  1. Open `/es/partners/<slug>/` and the home carousel; confirm the page responds 200 and the logo appears.
+  2. In the admin, open the Partner detail and moderate its presence with a reason. Confirm the page responds 404 (not 410), the logo leaves the carousel after purge, and the owner's subscription is unchanged in billing admin.
+  3. Lift moderation with a reason and confirm the page returns 200 on the next read.
+  4. Confirm an admin without `listing.moderate` does not see the moderation button and receives 403 from `POST …/presence-moderation`.
+- **Expected:** The presence is hidden and restored without changing the partner's billing; only an admin with `LISTING_MODERATE` can use the control.
+- **Evidence:** Read-only query on `domain_event` for `partner.presence_moderation_changed` and on the Partner moderation bit; the public page's HTTP response code before, during, and after moderation.
+- **Covers:** AC:V7:14; TEST:V7:14.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### Sign-off
 

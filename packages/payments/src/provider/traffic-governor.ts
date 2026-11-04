@@ -1,11 +1,11 @@
 import type { PaymentCapability } from './capabilities';
 import { currentTrafficContext, type TrafficClass } from './traffic-context';
+import { flushTrafficWindow } from './traffic-governor-flush';
 import { type GovernorWaiter, paymentProviderRejection } from './traffic-governor-queue';
 import {
     emptyCounter,
     type MutableCounter,
     type MutableWindow,
-    snapshotCounter,
     type TrafficWindow
 } from './traffic-governor-window';
 
@@ -48,6 +48,10 @@ export interface CoolDownStore {
     extend(args: { readonly until: number }): void;
     /** Return the cool-down deadline in epoch milliseconds. */
     until(): number;
+    /** Refresh the shared deadline within the store's bounded latency. */
+    refresh?(): Promise<{ readonly fallback: boolean }>;
+    /** Close resources owned by this store. */
+    close?(): Promise<void>;
 }
 
 class MemoryCoolDownStore implements CoolDownStore {
@@ -66,7 +70,7 @@ class MemoryCoolDownStore implements CoolDownStore {
  * while `acquire` resolves immediately and never changes adapter behavior.
  */
 export class ProviderTrafficGovernor {
-    private readonly mode: GovernorMode;
+    private readonly modeValue: GovernorMode;
     private readonly rate: number;
     private readonly burst: number;
     private readonly reserve: number;
@@ -82,6 +86,7 @@ export class ProviderTrafficGovernor {
     private retrySequence = 0;
     private window: MutableWindow;
     private windowTimer: ReturnType<typeof setInterval> | undefined;
+    private storeClosePromise: Promise<void> | undefined;
     private readonly interactiveQueue: GovernorWaiter[] = [];
     private readonly backgroundQueue: GovernorWaiter[] = [];
     private pumping = false;
@@ -100,7 +105,7 @@ export class ProviderTrafficGovernor {
         readonly onError?: (error: unknown) => void;
         readonly coolDownStore?: CoolDownStore;
     }) {
-        this.mode = options.mode;
+        this.modeValue = options.mode;
         this.rate = options.ratePerSecond ?? GOVERNOR_RATE_PER_SECOND;
         this.burst = options.burst ?? GOVERNOR_BURST;
         this.reserve = options.interactiveReserve ?? GOVERNOR_INTERACTIVE_RESERVE;
@@ -119,6 +124,11 @@ export class ProviderTrafficGovernor {
         this.tokens = this.burst;
         this.lastRefill = this.now();
         this.window = { startedAt: this.now(), classes: new Map() };
+    }
+
+    /** Current governor mode. */
+    get mode(): GovernorMode {
+        return this.modeValue;
     }
 
     /**
@@ -167,26 +177,60 @@ export class ProviderTrafficGovernor {
                     message: 'Mercado Pago traffic governor: request aborted'
                 })
             );
-        return new Promise<void>((resolve, reject) => {
-            const waiter: GovernorWaiter = {
-                trafficClass: args.trafficClass,
-                capability: args.capability,
-                maxWaitMs,
-                startedAt: this.now(),
-                resolve,
-                reject,
-                ...(signal ? { signal } : {})
-            };
-            const queue =
-                args.trafficClass === 'interactive' ? this.interactiveQueue : this.backgroundQueue;
-            queue.push(waiter);
-            if (signal) {
-                waiter.abort = () =>
-                    this.rejectWaiter(waiter, 0, 'Mercado Pago traffic governor: request aborted');
-                signal.addEventListener('abort', waiter.abort, { once: true });
+        const enqueue = (): Promise<void> => {
+            if (signal?.aborted)
+                return Promise.reject(
+                    paymentProviderRejection({
+                        capability: args.capability,
+                        remainingMs: 0,
+                        message: 'Mercado Pago traffic governor: request aborted'
+                    })
+                );
+            return new Promise<void>((resolve, reject) => {
+                const waiter: GovernorWaiter = {
+                    trafficClass: args.trafficClass,
+                    capability: args.capability,
+                    maxWaitMs,
+                    startedAt: this.now(),
+                    resolve,
+                    reject,
+                    ...(signal ? { signal } : {})
+                };
+                const queue =
+                    args.trafficClass === 'interactive'
+                        ? this.interactiveQueue
+                        : this.backgroundQueue;
+                queue.push(waiter);
+                if (signal) {
+                    waiter.abort = () =>
+                        this.rejectWaiter(
+                            waiter,
+                            0,
+                            'Mercado Pago traffic governor: request aborted'
+                        );
+                    signal.addEventListener('abort', waiter.abort, { once: true });
+                }
+                this.pump();
+            });
+        };
+        if (!this.coolDownStore.refresh) return enqueue();
+        return (async () => {
+            try {
+                const refreshed = await this.coolDownStore.refresh?.();
+                if (refreshed?.fallback) {
+                    const fallbackCounter = this.counter(args.trafficClass, args.capability);
+                    fallbackCounter.redisFallbacks += 1;
+                    context?.counters?.record({
+                        trafficClass: args.trafficClass,
+                        capability: args.capability,
+                        redisFallback: true
+                    });
+                }
+            } catch (error) {
+                this.reportError(error);
             }
-            this.pump();
-        });
+            return enqueue();
+        })();
     }
 
     /** Observe a completed provider attempt and update counters/cool-down state. */
@@ -250,58 +294,15 @@ export class ProviderTrafficGovernor {
 
     /** Flush and reset the current window, returning undefined when it is empty. */
     flushWindow(): TrafficWindow | undefined {
-        const traffic = [...this.window.classes.entries()].filter(([, capabilities]) =>
-            [...capabilities.values()].some(
-                (counter) =>
-                    counter.requests > 0 ||
-                    counter.status2xx > 0 ||
-                    counter.status429 > 0 ||
-                    counter.status5xx > 0 ||
-                    counter.networkErrors > 0 ||
-                    counter.fastFailures > 0
-            )
-        );
-        if (traffic.length === 0) {
-            this.window = { startedAt: this.now(), classes: new Map() };
-            return undefined;
-        }
-        const end = this.now();
-        const windows = traffic.map(([trafficClass, capabilities]) => {
-            const entries = [...capabilities.entries()];
-            const totals = emptyCounter();
-            for (const [, value] of entries) {
-                totals.requests += value.requests;
-                totals.status2xx += value.status2xx;
-                totals.status429 += value.status429;
-                totals.status5xx += value.status5xx;
-                totals.networkErrors += value.networkErrors;
-                totals.waitSamples.push(...value.waitSamples);
-                totals.fastFailures += value.fastFailures;
-                totals.coolDowns += value.coolDowns;
-                totals.coolDownMs += value.coolDownMs;
-                totals.unclassified += value.unclassified;
-            }
-            const window: TrafficWindow = {
-                ...snapshotCounter(totals),
-                mode: this.mode,
-                trafficClass,
-                windowStartedAt: new Date(this.window.startedAt).toISOString(),
-                windowEndedAt: new Date(end).toISOString(),
-                byCapability: Object.fromEntries(
-                    entries.map(([key, value]) => [key, snapshotCounter(value)])
-                )
-            };
-            return window;
+        const flushed = flushTrafficWindow({
+            current: this.window,
+            mode: this.mode,
+            now: this.now(),
+            onWindow: this.onWindow,
+            onError: (error) => this.reportError(error)
         });
-        this.window = { startedAt: end, classes: new Map() };
-        for (const window of windows) {
-            try {
-                this.onWindow?.(window);
-            } catch (error) {
-                this.reportError(error);
-            }
-        }
-        return windows[0];
+        this.window = flushed.current;
+        return flushed.first;
     }
 
     /** Start the unref'd periodic window flush. */
@@ -318,11 +319,48 @@ export class ProviderTrafficGovernor {
     stop(): void {
         if (this.windowTimer) clearInterval(this.windowTimer);
         this.windowTimer = undefined;
+        void this.closeCoolDownStore().catch((error: unknown) => this.reportError(error));
+    }
+
+    /** Stop the governor and wait briefly for its owned store to close. */
+    async shutdown(): Promise<void> {
+        this.stop();
+        if (!this.coolDownStore.close) return;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+            await Promise.race([
+                this.closeCoolDownStore(),
+                new Promise<void>((resolve) => {
+                    timeout = setTimeout(resolve, 250);
+                })
+            ]);
+        } catch (error) {
+            this.reportError(error);
+        } finally {
+            if (timeout) clearTimeout(timeout);
+        }
     }
 
     /** Return the remaining in-process cool-down duration in milliseconds. */
     coolDownRemainingMs(): number {
         return Math.max(0, this.coolDownStore.until() - this.now());
+    }
+
+    /** Record a provider read served from a memoized scope. */
+    recordMemoHit(args: {
+        readonly trafficClass: TrafficClass;
+        readonly capability: string;
+    }): void {
+        try {
+            this.counter(args.trafficClass, args.capability).memoHits += 1;
+        } catch (error) {
+            this.reportError(error);
+        }
+    }
+
+    private closeCoolDownStore(): Promise<void> {
+        this.storeClosePromise ??= Promise.resolve(this.coolDownStore.close?.());
+        return this.storeClosePromise;
     }
 
     private counter(trafficClass: TrafficClass, capability: string): MutableCounter {

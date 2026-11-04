@@ -98,7 +98,7 @@ describe('TEST:B7:1 sweep branch enters grace after a lost first rejection notic
             const check = createLostFirstRejectionCheck(checkPorts(fixture));
             await withOnlySubject(fixture.started.subscriptionId, async () => {
                 await runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     { provider: fixture.provider, clock: fixture.clock, rowChecks: [check] }
                 );
             });
@@ -117,7 +117,7 @@ describe('TEST:B7:1 sweep branch enters grace after a lost first rejection notic
             fixture.clock.advance({ ms: DAY_MS });
             await withOnlySubject(fixture.started.subscriptionId, async () => {
                 await runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     { provider: fixture.provider, clock: fixture.clock, rowChecks: [check] }
                 );
             });
@@ -271,7 +271,7 @@ describe('TEST:B7:1 sweep branch enters grace after a lost first rejection notic
             });
             const summary = await withOnlySubject(fixture.started.subscriptionId, () =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     { provider: fixture.provider, clock: fixture.clock, rowChecks: [check] }
                 )
             );

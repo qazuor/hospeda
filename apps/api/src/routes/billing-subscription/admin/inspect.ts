@@ -10,6 +10,13 @@ import {
     adminCancelSubscriptionRoute,
     adminSubscriptionCancellationPreviewRoute
 } from './cancellation';
+import {
+    adminDeclareManualUnpaidRoute,
+    adminListManualPaymentsRoute,
+    adminManualPaymentRegistrationPreviewRoute,
+    adminManualUnpaidPreviewRoute,
+    adminRegisterManualPaymentRoute
+} from './manual-payment';
 import { adminSubscriptionOpenRefundsRoute } from './open-refunds';
 import {
     adminRevokeSubscriptionRoute,
@@ -50,5 +57,10 @@ router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
+router.route('/', adminListManualPaymentsRoute);
+router.route('/', adminManualPaymentRegistrationPreviewRoute);
+router.route('/', adminRegisterManualPaymentRoute);
+router.route('/', adminManualUnpaidPreviewRoute);
+router.route('/', adminDeclareManualUnpaidRoute);
 
 export { router as adminBillingSubscriptionRoutes };

@@ -41,6 +41,7 @@ export { listingCoverageReconcilerJob } from './listing-coverage-reconciler.job.
 export { listingInactivityArchiveJob } from './listing-inactivity-archive.job.js';
 export { listingRemoteDeletionRetryJob } from './listing-remote-deletion-retry.job.js';
 export { listingRetentionPassJob } from './listing-retention-pass.job.js';
+export { manualInstallmentOpenJob } from './manual-installment-open.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';
@@ -53,6 +54,7 @@ export { refreshExternalReputationJob } from './refresh-external-reputation.job.
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
 export { subscriptionGraceReminderJob } from './subscription-grace-reminder.job.js';
+export { subscriptionPauseEndJob } from './subscription-pause-end.job.js';
 export { subscriptionRenewalNoticeJob } from './subscription-renewal-notice.job.js';
 export { subscriptionServiceEndJob } from './subscription-service-end.job.js';
 export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';

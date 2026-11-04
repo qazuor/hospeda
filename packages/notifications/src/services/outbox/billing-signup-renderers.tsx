@@ -33,6 +33,8 @@ import {
     SignupConfirmed,
     SignupDeclined,
     SignupIncomplete,
+    SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
+    SuccessionPredecessorCancel,
     TOURIST_VIP_INHERITED_CANCEL_SUBJECT,
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
@@ -170,6 +172,16 @@ function directCancellation(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de baja directa');
     return { subject: DIRECT_CANCELLATION_SUBJECT, react: <DirectCancellation /> };
+}
+
+function successionPredecessorCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cambio de plan');
+    return {
+        subject: SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
+        react: <SuccessionPredecessorCancel />
+    };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -441,6 +453,7 @@ export function createBillingSignupRenderers(input: {
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row),
-        'billing.direct-cancellation': ({ row }) => directCancellation(row)
+        'billing.direct-cancellation': ({ row }) => directCancellation(row),
+        'billing.succession-predecessor-cancel': ({ row }) => successionPredecessorCancel(row)
     };
 }

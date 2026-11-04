@@ -361,6 +361,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTLE_EXTERNAL,
         // HOS-1551: action 13 (confirm a refund, RF2) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_REFUND,
+        // HOS-1541: actions 3 and 4 (register a manual payment / confirm it was not paid) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT,
+        PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID,
         // HOS-1543: action 8 (cancel a subscription; with the revocation motive it runs S36) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
         // HOS-1697: action 7 (lift a reconciliation mark, S15) — SUPER_ADMIN-only.
@@ -1252,8 +1255,43 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF
     ],
 
-    /** sin permisos hasta V7 */
-    [RoleEnum.PARTNER_OWNER]: [],
+    /**
+     * DEC-ENT-006📌1: the claim grants this role to the account that owns the partner listing.
+     * Losing listing access never revokes the role; step 3 checks this owner family on writes.
+     */
+    [RoleEnum.PARTNER_OWNER]: [
+        // PARTNER: One owner write permission for the partner's own listing (V7 step 3).
+        PermissionEnum.PARTNER_EDIT_OWN,
+
+        // USER: Basic profile permissions
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
+        // ACCESS: Basic dashboard access
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // Mi cuenta self-edit
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
+    ],
 
     [RoleEnum.USER]: [
         // SPEC-165: registered users (tourist role) may comment on posts and events.

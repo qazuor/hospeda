@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
-import { PartnerPublicSchema } from '../partner.access.schema.js';
+import { PartnerCarouselItemSchema, PartnerPublicSchema } from '../partner.access.schema.js';
 
 /**
  * A complete, valid public partner payload as the public endpoints return it.
@@ -94,5 +94,18 @@ describe('PartnerPublicSchema — the detail page payload (HOS-294 D-5)', () => 
 
         // Assert
         expect(shape[field], `"${field}" is no longer declared`).toBeDefined();
+    });
+});
+
+describe('PartnerCarouselItemSchema — carousel presence by key (AC:V7:13)', () => {
+    it('requires and carries hasPublicPage without changing the detail schema', () => {
+        const payload = { ...basePayload, hasPublicPage: true };
+
+        expect(PartnerCarouselItemSchema.parse(payload)).toEqual({
+            ...PartnerPublicSchema.parse(basePayload),
+            hasPublicPage: true
+        });
+        expect(PartnerCarouselItemSchema.safeParse(basePayload).success).toBe(false);
+        expect(PartnerPublicSchema.safeParse(basePayload).success).toBe(true);
     });
 });

@@ -1,4 +1,12 @@
-import { eq, getDb, payments, subscriptions } from '@repo/db';
+import {
+    billingDeadlineVersions,
+    desc,
+    eq,
+    getDb,
+    payments,
+    providerChargeSnapshots,
+    subscriptions
+} from '@repo/db';
 import { FAKE_NOTICE_DELAY_MS } from '@repo/payments/fake';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
@@ -47,10 +55,11 @@ async function activate() {
 }
 
 describe('HOS-1999 provider read scope', () => {
-    it('keeps the active credited 12-record row at 15 HTTP requests (kills a bypassed B1/B2 scope)', async () => {
+    /** Activates a credited subscription with `count` monthly charge records, the first one read by webhook. */
+    async function seedMonthlyRecords(count: number, spacingDays = 31) {
         const created = await activate();
         const chargeIds: string[] = [];
-        for (let index = 0; index < 12; index += 1) {
+        for (let index = 0; index < count; index += 1) {
             const charge = await fixture.fake.charge({
                 authorizationId: created.authorizationId,
                 amount: { amountMinor: 100000, currency: 'ARS' },
@@ -68,29 +77,114 @@ describe('HOS-1999 provider read scope', () => {
                     })
                 );
             }
-            fixture.clock.advance({ ms: 31 * DAY });
+            fixture.clock.advance({ ms: spacingDays * DAY });
         }
+        return { created, chargeIds };
+    }
+
+    /** Inventory requests of one sweep: the authorization, its listing pages and charge reads. */
+    async function sweepInventoryPaths(input: {
+        readonly authorizationId: string;
+        readonly chargeIds: readonly string[];
+    }) {
         const before = fixture.server.requests().length;
         await fixture.runSweep();
-        const paths = fixture.server
+        return fixture.server
             .requests()
             .slice(before)
-            .map(({ path }) => path);
-        const inventoryRequests = paths.filter(
-            (path) =>
-                path.includes(`preapproval_id=${created.authorizationId}`) ||
-                path === `/preapproval/${created.authorizationId}` ||
-                chargeIds.some((chargeId) => path === `/v1/payments/${chargeId}`)
-        );
-        // Expected wire count: 15 = 1 authorization + 2 listing pages + 12 charge reads; spec baseline without memoization: 77.
-        expect(inventoryRequests).toHaveLength(15);
-        expect(inventoryRequests.length).toBeLessThanOrEqual(15);
+            .map(({ path }) => path)
+            .filter(
+                (path) =>
+                    path.includes(`preapproval_id=${input.authorizationId}`) ||
+                    path === `/preapproval/${input.authorizationId}` ||
+                    input.chargeIds.some((chargeId) => path === `/v1/payments/${chargeId}`)
+            );
+    }
+
+    /** Publishes a newer deadline version so deadline 18 (the snapshot horizon) is shorter than the cadence. */
+    async function publishDeadline18Days(days = 20) {
+        const [latest] = await getDb()
+            .select({
+                version: billingDeadlineVersions.version,
+                values: billingDeadlineVersions.values
+            })
+            .from(billingDeadlineVersions)
+            .orderBy(desc(billingDeadlineVersions.version))
+            .limit(1);
+        if (!latest) throw new Error('fixture published no deadline version');
+        await getDb()
+            .insert(billingDeadlineVersions)
+            .values({
+                version: latest.version + 1,
+                values: { ...latest.values, '18': { days } }
+            });
+        return latest.version + 1;
+    }
+
+    it('reads the first sweep at 14 requests: only the webhook-read charge has a closed snapshot (B3 write-through)', async () => {
+        const { created, chargeIds } = await seedMonthlyRecords(12);
+        const paths = await sweepInventoryPaths({
+            authorizationId: created.authorizationId,
+            chargeIds
+        });
+        // 14 = 1 authorization + 2 listing pages + 11 charge reads. Charge 0 is older than deadline 18
+        // (180 days) and was recorded by the webhook, so it is served from its snapshot; the other
+        // 11 have no snapshot yet. Without B3 this was 15; the baseline without memoization was 77.
+        expect(paths).toHaveLength(14);
+        expect(paths).not.toContain(`/v1/payments/${chargeIds[0]}`);
         expect(
             await getDb()
                 .select({ id: payments.id })
                 .from(payments)
                 .where(eq(payments.subscriptionId, created.subscriptionId))
         ).toHaveLength(1);
+    });
+
+    it('upserts the snapshot on a webhook read and rewrites a closed approved one on a refund notice (AC-11, AC-12)', async () => {
+        const created = await activate();
+        const charge = await fixture.fake.charge({
+            authorizationId: created.authorizationId,
+            amount: { amountMinor: 100000, currency: 'ARS' },
+            reference: 'snapshot-refund'
+        });
+        fixture.clock.advance({ ms: 60 * 60 * 1000 });
+        await deliver(
+            signedNotice({
+                clock: fixture.clock,
+                type: 'payment',
+                id: charge.chargeId,
+                version: '1'
+            })
+        );
+        const [recorded] = await getDb()
+            .select()
+            .from(providerChargeSnapshots)
+            .where(eq(providerChargeSnapshots.chargeId, charge.chargeId));
+        expect(recorded).toMatchObject({ status: 'approved', refundedAmountMinor: 0 });
+        // Deadline 18 passes: the snapshot is now closed, yet the next live read must rewrite it.
+        fixture.clock.advance({ ms: 200 * DAY });
+        await fixture.fake.refund({
+            chargeId: charge.chargeId,
+            amount: { amountMinor: 100000, currency: 'ARS' },
+            reference: `refund-${crypto.randomUUID()}`
+        });
+        fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        await deliver(
+            signedNotice({
+                clock: fixture.clock,
+                type: 'payment',
+                id: charge.chargeId,
+                version: '2'
+            })
+        );
+        const [rewritten] = await getDb()
+            .select()
+            .from(providerChargeSnapshots)
+            .where(eq(providerChargeSnapshots.chargeId, charge.chargeId));
+        expect(rewritten?.refundedAmountMinor).toBe(100000);
+        expect(rewritten?.observedAt.getTime()).toBeGreaterThan(
+            recorded?.observedAt.getTime() ?? 0
+        );
     });
 
     it('settles a grace row through a fresh nested act without a freshness error (AC-26)', async () => {
@@ -176,5 +270,67 @@ describe('HOS-1999 provider read scope', () => {
             .slice(before)
             .filter(({ path }) => path === `/v1/payments/${charge.chargeId}`);
         expect(liveReads).toHaveLength(2);
+    });
+
+    // Deadline versions are append-only, so the tests that publish a short deadline 18 run last.
+    it('reads a steady-state 12-record row in at most 4 requests (AC-9, kills snapshots not consulted)', async () => {
+        // Records are 200 days apart: deadline 18 (20 days) is shorter than the cadence and even
+        // the 180-day safety floor is, so only the latest charge is younger than the horizon.
+        await publishDeadline18Days();
+        const { created, chargeIds } = await seedMonthlyRecords(12, 200);
+        const warm = await sweepInventoryPaths({
+            authorizationId: created.authorizationId,
+            chargeIds
+        });
+        expect(warm.length).toBeGreaterThan(4);
+        const steady = await sweepInventoryPaths({
+            authorizationId: created.authorizationId,
+            chargeIds
+        });
+        // 4 = 1 authorization + 2 listing pages + 1 live read of the latest charge.
+        expect(steady).toHaveLength(4);
+        expect(steady.filter((path) => path.startsWith('/v1/payments/'))).toEqual([
+            `/v1/payments/${chargeIds[chargeIds.length - 1]}`
+        ]);
+    });
+
+    it('adds only the extra listing pages for 36 records (AC-10, kills snapshots not consulted for history)', async () => {
+        await publishDeadline18Days();
+        const { created, chargeIds } = await seedMonthlyRecords(36, 200);
+        await sweepInventoryPaths({ authorizationId: created.authorizationId, chargeIds });
+        const steady = await sweepInventoryPaths({
+            authorizationId: created.authorizationId,
+            chargeIds
+        });
+        const listingPages = steady.filter((path) => path.includes('preapproval_id='));
+        expect(steady.filter((path) => path.startsWith('/v1/payments/'))).toHaveLength(1);
+        expect(steady).toHaveLength(2 + listingPages.length);
+        expect(listingPages.length).toBeGreaterThan(2);
+    });
+
+    it('adds exactly one request per extra open approved charge when deadline 18 outlasts the cadence (AC-9)', async () => {
+        // Charges are 100 days apart and the last one is 100 days old. The horizon is
+        // max(deadline 18, 180-day floor): 250 days leaves the last two open, 350 the last three.
+        // Each open charge beyond the latest (always read live) costs exactly one more request.
+        for (const { days, open } of [
+            { days: 250, open: 2 },
+            { days: 350, open: 3 }
+        ]) {
+            await publishDeadline18Days(days);
+            const { created, chargeIds } = await seedMonthlyRecords(12, 100);
+            await sweepInventoryPaths({ authorizationId: created.authorizationId, chargeIds });
+            const steady = await sweepInventoryPaths({
+                authorizationId: created.authorizationId,
+                chargeIds
+            });
+            const charges = steady.filter((path) => path.startsWith('/v1/payments/'));
+            expect(charges.sort()).toEqual(
+                chargeIds
+                    .slice(-open)
+                    .map((chargeId) => `/v1/payments/${chargeId}`)
+                    .sort()
+            );
+            expect(steady).toHaveLength(3 + open);
+        }
     });
 });

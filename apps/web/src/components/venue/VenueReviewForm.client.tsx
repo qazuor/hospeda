@@ -107,11 +107,27 @@ export function VenueReviewForm({
         setOpen(true);
     }, []);
 
+    // Pending "reset after close" timer. Kept in a ref so unmount can cancel it:
+    // a timer that outlives the component sets state on a gone tree (and, in
+    // jsdom, after the environment was torn down).
+    const resetTimerRef = useRef<number | null>(null);
+    // In-flight submit; aborted on unmount so a late response cannot set state.
+    const submitAbortRef = useRef<AbortController | null>(null);
+    useEffect(
+        () => () => {
+            submitAbortRef.current?.abort();
+            if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+        },
+        []
+    );
+
     const handleClose = useCallback(() => {
         setOpen(false);
         // Reset shortly after close so the closing animation doesn't flash the
         // empty form.
-        window.setTimeout(() => {
+        if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = window.setTimeout(() => {
+            resetTimerRef.current = null;
             setOverall(0);
             setTitle('');
             setContent('');
@@ -131,6 +147,8 @@ export function VenueReviewForm({
             if (!rated || submitting || !titleValid || !contentValid) return;
             setSubmitting(true);
             setError(null);
+            const controller = new AbortController();
+            submitAbortRef.current = controller;
 
             try {
                 const response = await fetch(
@@ -138,6 +156,7 @@ export function VenueReviewForm({
                     {
                         method: 'POST',
                         credentials: 'include',
+                        signal: controller.signal,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             overallRating: overall,
@@ -158,6 +177,7 @@ export function VenueReviewForm({
                     } catch {
                         // body wasn't JSON
                     }
+                    if (controller.signal.aborted) return;
                     setError(
                         translateApiError({
                             error: apiError,
@@ -174,6 +194,7 @@ export function VenueReviewForm({
                 setSuccess(true);
                 setSubmitted(true);
             } catch {
+                if (controller.signal.aborted) return;
                 setError(
                     t(
                         'common.apiError.NETWORK_ERROR',
@@ -181,7 +202,7 @@ export function VenueReviewForm({
                     )
                 );
             } finally {
-                setSubmitting(false);
+                if (!controller.signal.aborted) setSubmitting(false);
             }
         },
         [
