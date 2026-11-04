@@ -2437,6 +2437,12 @@
         "venueType": {
             "invalid": "El tipo de local no es válido"
         },
+        "venueEntryKind": {
+            "invalid": "El tipo de entrada no es válido"
+        },
+        "venueDressCode": {
+            "invalid": "El código de vestimenta no es válido"
+        },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"
         },
@@ -3411,6 +3417,24 @@
         "menuUrl": {
             "httpsRequired": "La URL del menú debe usar HTTPS",
             "invalid": "La URL del menú no es válida"
+        },
+        "minAge": {
+            "int": "La edad mínima debe ser un número entero",
+            "min": "La edad mínima debe ser al menos 13",
+            "max": "La edad mínima no puede superar 30"
+        },
+        "entryPriceFrom": {
+            "int": "El precio de entrada debe ser un número entero de centavos",
+            "nonnegative": "El precio de entrada no puede ser negativo"
+        },
+        "entryPriceUpdatedAt": {
+            "invalid": "La fecha de actualización del precio no es válida"
+        },
+        "entryNote": {
+            "tooLong": "La nota de entrada no puede superar los 200 caracteres"
+        },
+        "dressCodeNote": {
+            "tooLong": "La nota del código de vestimenta no puede superar los 200 caracteres"
         },
         "review": {
             "content": {

@@ -60,7 +60,10 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     // would then destroy. Same rule, same reason as `media` below.
     menuFileUrl: true,
     menuFilePublicId: true,
-    menuFileKind: true
+    menuFileKind: true,
+    // HOS-1846: server-managed price freshness. Written only by
+    // `venue.night-info.ts` when the price changes — never from a body.
+    entryPriceUpdatedAt: true
 }).extend({
     /** Optional create-time business line selection; the service preselects by type when omitted. */
     businessLines: z
@@ -202,7 +205,17 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     nameI18n: true,
     summaryI18n: true,
     descriptionI18n: true,
-    richDescriptionI18n: true
+    richDescriptionI18n: true,
+    // HOS-1846 nightInfo (DEC-FAC-040): the owner PATCH owns the section's six
+    // writable fields. `entryPriceUpdatedAt` is intentionally absent: it is
+    // server-managed (see the `.omit` schemas). A field missing from this
+    // `.pick` is silently dropped by Zod, so the section would never persist.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    minAge: true,
+    dressCode: true,
+    dressCodeNoteI18n: true
 })
     .partial()
     .extend({
@@ -285,6 +298,8 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     menuFileUrl: true,
     menuFilePublicId: true,
     menuFileKind: true,
+    // HOS-1846: server-managed price freshness, never accepted from a body.
+    entryPriceUpdatedAt: true,
     // HOS-1113: three more that the owner PATCH already refuses and this
     // create silently accepted, because a `.omit()` schema takes every base
     // field it does not name. The owner-create body is spread verbatim into
@@ -390,6 +405,8 @@ export const VenueUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // HOS-1846: server-managed price freshness (see the venue schema).
+                entryPriceUpdatedAt: true,
                 // Server-managed (HOS-1286): written ONLY by the
                 // featured-by-entitlement sync primitives, the addon checkout
                 // confirmation and the reconcile cron — never through the generic

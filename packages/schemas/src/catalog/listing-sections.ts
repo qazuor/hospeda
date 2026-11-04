@@ -113,7 +113,19 @@ export const LISTING_SECTIONS = {
             id: 'nightInfo',
             vertical: 'venue',
             common: false,
-            fields: [],
+            // HOS-1846 (DEC-FAC-040): the six writable fields of the section.
+            // Its detection (`sectionsTouchedByBody`) and the public projector's
+            // removal of the section both read from here.
+            fields: [
+                'entryKind',
+                'entryNoteI18n',
+                'entryPriceFrom',
+                'minAge',
+                'dressCode',
+                'dressCodeNoteI18n'
+            ],
+            // Server-managed: never writable and never counted by sections-touched.
+            readOnlyFields: ['entryPriceUpdatedAt'],
             headingWhenMultiLineKey: 'De noche',
             order: 11,
             group: 'property'

@@ -549,3 +549,63 @@ describe('VenueRestoreInputSchema', () => {
         expect(result.success).toBe(false);
     });
 });
+
+// ============================================================================
+// nightInfo section (HOS-1846 / TEST:4.2:3, TEST:4.2:5)
+// ============================================================================
+
+describe('nightInfo section inputs', () => {
+    it('owner update accepts the six writable nightInfo fields', () => {
+        const result = VenueOwnerUpdateInputSchema.safeParse({
+            entryKind: 'paid',
+            entryNoteI18n: { es: 'Gratis hasta la 1', en: 'Free until 1am', pt: 'Grátis até 1h' },
+            entryPriceFrom: 5000,
+            minAge: 18,
+            dressCode: 'smart_casual',
+            dressCodeNoteI18n: { es: 'No', en: 'No', pt: 'Não' }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('entryPriceUpdatedAt is server-managed and never accepted by any input', () => {
+        for (const schema of [
+            VenueAdminCreateInputSchema,
+            VenueOwnerCreateInputSchema,
+            VenueOwnerUpdateInputSchema,
+            VenueUpdateInputSchema
+        ]) {
+            expect('entryPriceUpdatedAt' in schema.shape).toBe(false);
+        }
+        const parsed = VenueOwnerUpdateInputSchema.parse({
+            entryPriceUpdatedAt: '2026-11-04T12:00:00.000Z'
+        });
+        expect(parsed).not.toHaveProperty('entryPriceUpdatedAt');
+    });
+
+    it('minAge must be an integer between 13 and 30', () => {
+        const parse = (minAge: number) => VenueOwnerUpdateInputSchema.safeParse({ minAge }).success;
+        expect(parse(12)).toBe(false);
+        expect(parse(31)).toBe(false);
+        expect(parse(13)).toBe(true);
+        expect(parse(30)).toBe(true);
+    });
+
+    it('entryPriceFrom rejects negative cents', () => {
+        expect(VenueOwnerUpdateInputSchema.safeParse({ entryPriceFrom: -1 }).success).toBe(false);
+        expect(VenueOwnerUpdateInputSchema.safeParse({ entryPriceFrom: 0 }).success).toBe(true);
+    });
+
+    it('caps a nightInfo note at 200 characters per locale', () => {
+        const tooLong = 'x'.repeat(201);
+        expect(
+            VenueOwnerUpdateInputSchema.safeParse({
+                entryNoteI18n: { es: tooLong, en: 'ok', pt: 'ok' }
+            }).success
+        ).toBe(false);
+        expect(
+            VenueOwnerUpdateInputSchema.safeParse({
+                entryNoteI18n: { es: 'x'.repeat(200), en: 'ok', pt: 'ok' }
+            }).success
+        ).toBe(true);
+    });
+});
