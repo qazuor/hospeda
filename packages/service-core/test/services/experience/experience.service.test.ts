@@ -63,6 +63,7 @@ function makeExperienceEntity(overrides: Partial<Experience> = {}): Experience {
         name: 'City Kayak Tour',
         slug: 'city-kayak-tour',
         type: ExperienceTypeEnum.EXCURSION,
+        businessLines: ['standard'],
         priceFrom: 150000,
         priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
         isPriceOnRequest: false,

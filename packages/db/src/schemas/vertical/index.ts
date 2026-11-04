@@ -6,6 +6,7 @@ export * from './catalog-key.dbschema.ts';
 export * from './courtesy-grant.dbschema.ts';
 export * from './coverage-loss.dbschema.ts';
 export * from './covered-period.dbschema.ts';
+export * from './creation-sweep-attempt.dbschema.ts';
 export * from './idempotency-key.dbschema.ts';
 export * from './manual-payment.dbschema.ts';
 export * from './payment.dbschema.ts';

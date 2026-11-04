@@ -70,7 +70,7 @@ describe('TEST:3.2:1 listing section step 4b', () => {
                 operation: 'READ_OWN',
                 sections: sectionArgs('read')
             })
-        ).toMatchObject({ allowed: true, evaluatedSteps: [4, '4b'] });
+        ).toEqual({ allowed: true, subjectId: 'owner', evaluatedSteps: [4, '4b'] });
         expect(
             await resolveListingAccess({
                 ...base,
@@ -176,6 +176,15 @@ describe('TEST:3.2:1 listing section step 4b', () => {
         const expiredBilling: Pick<BillingForVerticals, 'coverage'> = {
             coverage: vi.fn(async () => ({ covered: false, sources: [] }))
         };
+        // 4b must reject absent sections before step 5 can return NO_COVERAGE.
+        expect(
+            await resolveListingAccess({
+                ...base,
+                billing: expiredBilling,
+                actorId: 'owner',
+                sections: sectionArgs('write')
+            })
+        ).toEqual({ allowed: false, reason: 'SECTION_ABSENT', section: 'menu' });
         expect(
             await resolveListingAccess({
                 ...base,
@@ -185,5 +194,20 @@ describe('TEST:3.2:1 listing section step 4b', () => {
                 facts: { ...facts, businessLines: ['food'] }
             })
         ).toEqual({ allowed: false, reason: 'NO_COVERAGE' });
+    });
+
+    it('records 4b between step 4 and coverage when a section is available', async () => {
+        expect(
+            await resolveListingAccess({
+                ...base,
+                actorId: 'owner',
+                sections: sectionArgs('write', 'food'),
+                facts: { ...facts, businessLines: ['food'] }
+            })
+        ).toEqual({
+            allowed: false,
+            reason: 'NO_CAPABILITY',
+            key: 'manage_venue_menu'
+        });
     });
 });

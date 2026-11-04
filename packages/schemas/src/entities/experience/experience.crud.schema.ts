@@ -154,7 +154,11 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     publicationStatus: true
 }).extend({
     /** Optional create-time business line selection; omitted values use the catalog preselection. */
-    businessLines: z.array(z.string()).optional(),
+    businessLines: z
+        .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
@@ -345,6 +349,11 @@ export const ExperienceOwnerUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+                error: 'zodError.venue.businessLines.invalidType'
+            })
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -437,6 +446,11 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     media: true,
     meetingPointDirections: true
 }).extend({
+    businessLines: z
+        .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
     /**
@@ -538,6 +552,11 @@ export const ExperienceUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+                error: 'zodError.venue.businessLines.invalidType'
+            })
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.

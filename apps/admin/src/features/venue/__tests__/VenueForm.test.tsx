@@ -24,7 +24,25 @@ import { describe, expect, it, vi } from 'vitest';
 import { VenueForm } from '../components/VenueForm';
 
 vi.mock('@/hooks/use-translations', () => ({
-    useTranslations: () => ({ t: (key: string) => key })
+    useTranslations: () => ({
+        t: (key: string) => {
+            if (!key.startsWith('admin-entities.venue.types.')) return key;
+            const labels: Record<string, string> = {
+                RESTAURANT: 'Restaurante',
+                BAR: 'Bar',
+                CAFE: 'Café',
+                PARRILLA: 'Parrilla',
+                CERVECERIA: 'Cervecería',
+                HELADERIA: 'Heladería',
+                PANADERIA: 'Panadería',
+                ROTISERIA: 'Rotisería',
+                FOOD_TRUCK: 'Food Truck',
+                PUB: 'Pub',
+                BOLICHE: 'Boliche'
+            };
+            return labels[key.split('.').at(-1) ?? ''] ?? key;
+        }
+    })
 }));
 
 // ---------------------------------------------------------------------------
@@ -66,13 +84,18 @@ describe('VenueForm — rendering', () => {
         renderForm();
         const select = screen.getByRole('combobox', { name: /tipo de establecimiento/i });
         expect(select).toBeInTheDocument();
-        expect(screen.getByText('Restaurante')).toBeInTheDocument();
+        expect(screen.getAllByText('Restaurante').length).toBeGreaterThan(0);
         expect(screen.getByText('Bar')).toBeInTheDocument();
         expect(screen.getByText('Café')).toBeInTheDocument();
         expect(screen.getByText('Parrilla')).toBeInTheDocument();
         expect(screen.getByText('Cervecería')).toBeInTheDocument();
         expect(screen.getByText('Pub')).toBeInTheDocument();
         expect(screen.getByText('Boliche')).toBeInTheDocument();
+        const values = Array.from(select.querySelectorAll('option'))
+            .map((option) => option.value)
+            .filter(Boolean);
+        expect(values).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect(values.sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('shows the selected venue type description below the type selector', () => {

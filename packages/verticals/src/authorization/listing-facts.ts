@@ -10,8 +10,9 @@ import type { ListingAccessFacts } from './resource-step';
  * transitory Coord-43 bridge that derived a status from the old columns.
  *
  * @param args - `entity`: the raw listing row, of any shape.
- * @returns The owner id and publication status, or `null` when the row is not
- *   an object or carries no `ownerId`.
+ * @returns The owner id, publication status and business lines (string values of
+ *   the row's `businessLines`, `[]` when absent), or `null` when the row is not an
+ *   object or carries no `ownerId`.
  */
 export function readListingAccessFacts(args: {
     readonly entity: unknown;

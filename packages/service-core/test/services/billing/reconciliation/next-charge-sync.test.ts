@@ -58,6 +58,7 @@ function subscription(overrides: Partial<SelectSubscription> = {}): SelectSubscr
         succeededById: null,
         createdAt: now,
         updatedAt: now,
+        lastSweptAt: null,
         ...overrides
     };
 }

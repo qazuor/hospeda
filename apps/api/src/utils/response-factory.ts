@@ -32,6 +32,14 @@ export const ResponseFactory = {
                 },
                 description: 'Created successfully'
             },
+            202: {
+                content: {
+                    'application/json': {
+                        schema: successResponseSchema(entitySchema)
+                    }
+                },
+                description: 'Accepted for asynchronous execution'
+            },
             204: {
                 description: 'Deleted successfully'
             },

@@ -89,7 +89,9 @@ describe('HOS-1562 AC:B7:22 los puertos de producción pausan los complementos p
             startedAt: at,
             runId: crypto.randomUUID(),
             correlationId: crypto.randomUUID(),
-            dryRun: false
+            dryRun: false,
+            // The shared test DB may already hold a finished cycle for today.
+            newCycle: true
         });
 
         const [principal] = await db

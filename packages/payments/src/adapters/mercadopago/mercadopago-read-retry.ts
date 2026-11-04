@@ -1,4 +1,6 @@
 import { PaymentProviderError } from '../../provider/errors';
+import type { TrafficClass } from '../../provider/traffic-context';
+import { GOVERNOR_INTERACTIVE_MAX_WAIT_MS } from '../../provider/traffic-governor';
 
 /** Retry policy for read-only Mercado Pago requests. */
 export interface MercadoPagoReadRetryPolicy {
@@ -54,7 +56,10 @@ async function discardBody(response: Response): Promise<void> {
 /** Executes one attempt for writes and bounded, deterministic retries for transient GET failures. */
 export async function sendWithReadRetry(args: {
     readonly method: 'GET' | 'POST' | 'PUT';
-    readonly attempt: () => Promise<Response>;
+    readonly attempt: (args: { readonly maxWaitMs?: number }) => Promise<Response>;
+    readonly retryOwnership?: 'legacy' | 'governor';
+    readonly trafficClass?: TrafficClass;
+    readonly random?: () => number;
     readonly policy?: MercadoPagoReadRetryPolicy;
     readonly sleep?: (ms: number) => Promise<void>;
     readonly now?: () => Date;
@@ -63,15 +68,33 @@ export async function sendWithReadRetry(args: {
     const sleep =
         args.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
     const now = args.now ?? (() => new Date());
-    if (args.method !== 'GET') return args.attempt();
+    if (args.method !== 'GET') return args.attempt({});
 
     let totalDelayMs = 0;
+    const startedAt = args.retryOwnership === 'governor' ? now().getTime() : 0;
     for (let attemptNumber = 1; ; attemptNumber++) {
         let response: Response | undefined;
         let failure: unknown;
         try {
-            response = await args.attempt();
+            const remaining = Math.max(0, policy.maxTotalDelayMs - (now().getTime() - startedAt));
+            response = await args.attempt(
+                args.retryOwnership === 'governor' && args.trafficClass !== 'background'
+                    ? { maxWaitMs: Math.min(GOVERNOR_INTERACTIVE_MAX_WAIT_MS, remaining) }
+                    : {}
+            );
         } catch (error) {
+            if (
+                args.retryOwnership === 'governor' &&
+                error instanceof PaymentProviderError &&
+                error.governorRejected
+            )
+                throw error;
+            if (
+                args.retryOwnership === 'governor' &&
+                args.trafficClass !== 'background' &&
+                now().getTime() - startedAt >= policy.maxTotalDelayMs
+            )
+                throw error;
             if (!(error instanceof PaymentProviderError) || error.code !== 'UNAVAILABLE')
                 throw error;
             failure = error;
@@ -84,6 +107,36 @@ export async function sendWithReadRetry(args: {
             if (failure !== undefined) throw failure;
             if (response === undefined) throw new Error('Expected a Mercado Pago response');
             return response;
+        }
+
+        if (args.retryOwnership === 'governor') {
+            const elapsed = now().getTime() - startedAt;
+            if (args.trafficClass !== 'background' && elapsed >= policy.maxTotalDelayMs) {
+                if (failure !== undefined) throw failure;
+                if (!response) throw new Error('Expected a Mercado Pago response');
+                return response;
+            }
+            const rateLimited = response?.status === 429;
+            const requested = response
+                ? (retryAfterMs(response, now) ?? policy.baseDelayMs * 2 ** (attemptNumber - 1))
+                : policy.baseDelayMs * 2 ** (attemptNumber - 1);
+            const jitter = args.random ?? Math.random;
+            const delayMs = rateLimited
+                ? 0
+                : Math.min(
+                      policy.maxDelayMs,
+                      response?.headers.has('Retry-After')
+                          ? Math.max(0, requested)
+                          : requested * (0.5 + 0.5 * jitter())
+                  );
+            if (args.trafficClass !== 'background' && elapsed + delayMs > policy.maxTotalDelayMs) {
+                if (failure !== undefined) throw failure;
+                if (!response) throw new Error('Expected a Mercado Pago response');
+                return response;
+            }
+            if (response) await discardBody(response);
+            if (delayMs > 0) await sleep(delayMs);
+            continue;
         }
 
         const requestedDelay = response

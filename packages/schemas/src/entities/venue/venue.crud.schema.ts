@@ -63,7 +63,11 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     menuFileKind: true
 }).extend({
     /** Optional create-time business line selection; the service preselects by type when omitted. */
-    businessLines: z.array(z.string()).optional(),
+    businessLines: z
+        .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
@@ -203,7 +207,14 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     .partial()
     .extend({
         /** Optional business-line replacement; section checks use this resulting state. */
-        businessLines: z.array(z.string()).optional(),
+        businessLines: z
+            .array(
+                z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }),
+                {
+                    error: 'zodError.venue.businessLines.invalidType'
+                }
+            )
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -310,6 +321,11 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     averageRating: true,
     rating: true
 }).extend({
+    businessLines: z
+        .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
     /**
@@ -416,6 +432,14 @@ export const VenueUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(
+                z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }),
+                {
+                    error: 'zodError.venue.businessLines.invalidType'
+                }
+            )
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.

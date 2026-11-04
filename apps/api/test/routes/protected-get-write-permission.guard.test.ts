@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
-const EXPECTED_GET_PROTECTED_COUNT = 97;
+const EXPECTED_GET_PROTECTED_COUNT = 99;
 const PENDING_OWNER_DECISION = [
     // HOS-1693 D-1: pending owner decision; remove when it moves to the inspection permission
     'accommodation-external-reputation/protected/listListings.ts'

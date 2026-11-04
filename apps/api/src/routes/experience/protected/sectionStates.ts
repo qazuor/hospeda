@@ -13,6 +13,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 export const protectedGetExperienceSectionStatesRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/sections',
     listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'READ_OWN', idParam: 'id' },
     summary: 'Read experience listing section states',

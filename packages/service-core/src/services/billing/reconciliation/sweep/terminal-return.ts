@@ -29,6 +29,8 @@ function errorMessage(error: unknown): string {
 }
 
 export interface TerminalReturnPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly deadlines?: CanChargeDeadlines;
 }
@@ -115,6 +117,8 @@ export async function runTerminalReturn(
             holdCutoffs
         });
         for (const row of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
                 actStartInstant({ act });
@@ -183,6 +187,7 @@ export async function runTerminalReturn(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }

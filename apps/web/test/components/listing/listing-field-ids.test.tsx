@@ -163,6 +163,10 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // Checkbox GROUPS — many controls, one key, no single focus target.
     amenityIds: 'checkbox group in AmenitiesSection',
     featureIds: 'checkbox group in AmenitiesSection',
+    // Business lines are a checkbox group too (one key, many controls). The owner
+    // editor gains it in HOS-1787 leaf 5.6; it stays exempt afterwards for the same
+    // reason as amenityIds.
+    businessLines: 'checkbox group of business lines',
     // A bare toggle with no id: it gates priceFrom/priceUnit rather than
     // carrying its own validation message.
     isPriceOnRequest: 'unlabelled toggle, carries no error of its own',

@@ -200,13 +200,14 @@ describe('Create App Utility', () => {
             module.createApp();
 
             // Verify middleware registration order
-            // 20 middlewares: requestId, requestContext, visitorId, favicon, sentry, logger,
-            // cors, originVerification, securityHeaders, rateLimit, bodyLimit, compression,
-            // validation, cache, metrics, responseFormatting, responseValidator,
-            // mockAuth (test env), authMiddleware, actor.
+            // 21 middlewares: requestId, requestContext, trafficClass (HOS-1999),
+            // visitorId, favicon, sentry, logger, cors, originVerification,
+            // securityHeaders, rateLimit, bodyLimit, compression, validation, cache,
+            // metrics, responseFormatting, responseValidator, mockAuth (test env),
+            // authMiddleware, actor.
             // (billing, billingCustomer, entitlement and trial were removed with
             // the legacy billing system, HOS-1416.)
-            expect(mockApp.use).toHaveBeenCalledTimes(20);
+            expect(mockApp.use).toHaveBeenCalledTimes(21);
         });
 
         it('should register notFound handler', async () => {

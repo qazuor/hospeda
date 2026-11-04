@@ -29,6 +29,44 @@ function providerDouble() {
 }
 
 describe('TEST:1737 sweep provider pacing', () => {
+    it('governor ownership kills L2 RATE_LIMITED retries and min spacing while honoring 5xx retry delay', async () => {
+        const provider = providerDouble();
+        const limited = new PaymentProviderError({
+            code: 'UNAVAILABLE',
+            capability: 'read',
+            message: 'throttled',
+            transient: { kind: 'RATE_LIMITED', retryAfterSeconds: 30 }
+        });
+        (provider.readCharge as ReturnType<typeof vi.fn>).mockRejectedValue(limited);
+        const sleep = vi.fn(async (_ms: number) => {});
+        const paced = createSweepPacedProvider({
+            provider,
+            pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+            sleep,
+            retryOwnership: 'governor'
+        });
+        await expect(paced.readCharge(input as never)).rejects.toBe(limited);
+        expect(provider.readCharge).toHaveBeenCalledTimes(1);
+        expect(sleep).not.toHaveBeenCalled();
+
+        const unavailable = new PaymentProviderError({
+            code: 'UNAVAILABLE',
+            capability: 'read',
+            message: 'down',
+            transient: { kind: 'UNAVAILABLE', retryAfterSeconds: 3 }
+        });
+        (provider.readCharge as ReturnType<typeof vi.fn>).mockClear();
+        (provider.readCharge as ReturnType<typeof vi.fn>).mockRejectedValue(unavailable);
+        const retry = createSweepPacedProvider({
+            provider,
+            pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+            sleep,
+            retryOwnership: 'governor'
+        });
+        await expect(retry.readCharge(input as never)).rejects.toBe(unavailable);
+        expect(provider.readCharge).toHaveBeenCalledTimes(2);
+        expect(sleep.mock.calls.map(([delay]) => delay)).toEqual([3000]);
+    });
     it('TEST:1737:12 delegates every interface method faithfully and preserves this', async () => {
         const provider = providerDouble();
         const paced = createSweepPacedProvider({

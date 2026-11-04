@@ -94,7 +94,12 @@
             "lastRunSuccess": "OK",
             "lastRunPartial": "Parcial",
             "lastRunFailed": "Falhou",
-            "lastRunTimeout": "Timeout"
+            "lastRunTimeout": "Timeout",
+            "acceptedTitle": "Execução aceita, em andamento",
+            "acceptedHint": "A execução {{runId}} roda em segundo plano. O resultado aparece aqui quando terminar.",
+            "busyTitle": "Já está em execução",
+            "busyHint": "Outra execução está com este job: {{holderRunId}}",
+            "busyHintUnknown": "Há outra execução deste job em andamento."
         },
         "schedules": {
             "daily": "Diariamente à meia-noite",
