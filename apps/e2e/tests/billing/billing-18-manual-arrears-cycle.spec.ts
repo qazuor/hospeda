@@ -35,7 +35,13 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
         userIds = [subscriber.user.id, subscriber.admin.id];
         const optionId = await monthlyOptionForSlug('partner-silver');
         const start = world.clock.now();
-        nextChargeAt = new Date(start.getTime() + 30 * DAY_MS);
+        const periodEnds = await execSQL<{ next_charge_at: Date }>(
+            "SELECT $1::timestamptz + interval '1 month' AS next_charge_at",
+            [start]
+        );
+        nextChargeAt = periodEnds[0]?.next_charge_at ?? new Date(0);
+        if (nextChargeAt.getTime() === 0)
+            throw new Error('Could not calculate monthly period end.');
         const rows = await execSQL<{ id: string; installment_id: string }>(
             `WITH created AS (
                 INSERT INTO subscription (user_id, vertical, plan_version_id, billing_option_id, payment_method, status, class, next_charge_at)
@@ -104,6 +110,7 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
             );
             expect(rows[0]?.status).toBe('GRACE_PERIOD');
             expect(rows[0]?.count).toBe(1);
+            expect(new Date(rows[0]?.grace_started_at ?? 0)).toEqual(nextChargeAt);
             graceEndsAt = new Date(rows[0]?.grace_ends_at ?? 0);
             expect(graceEndsAt.getTime() - new Date(rows[0]?.grace_started_at ?? 0).getTime()).toBe(
                 10 * DAY_MS
@@ -144,6 +151,8 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
 
         await test.step('MP4 registers the late installment through S7 and returns to active', async () => {
             if (!suspensionMailReceivedAt) throw new Error('Expected suspension mail before MP4.');
+            const mp4StartedAt = Date.now();
+            expect(suspensionMailReceivedAt.getTime()).toBeLessThanOrEqual(mp4StartedAt);
             const response = await fetch(
                 `${API_URL}/api/v1/admin/billing-subscription/${subscriptionId}/manual-payments/${overdueInstallmentId}/register-late`,
                 {
@@ -185,7 +194,6 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
             });
             await showStatus('Activa');
             expect(fakeServer.requests()).toHaveLength(0);
-            expect(suspensionMailReceivedAt.getTime()).toBeLessThan(Date.now());
         });
     });
 });
