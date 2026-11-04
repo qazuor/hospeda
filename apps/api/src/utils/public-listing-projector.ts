@@ -186,7 +186,13 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
                     meetingPoint?.traits.get('directions') === 'available'
             } as T;
         }
-        return projectVenueDimensionRatings(projected, resolved.sections);
+        // HOS-1849 / 4.5: `multiLine` is the same resolved fact the owner's
+        // `sectionStates` route already exposes. It travels with the public
+        // listing so the web never re-derives it from business lines.
+        return projectVenueDimensionRatings(
+            { ...projected, multiLine: resolved.multiLine },
+            resolved.sections
+        ) as T;
     });
 }
 
