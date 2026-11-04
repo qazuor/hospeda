@@ -18,7 +18,12 @@ function fixture(source: string): string {
     writeFileSync(
         path.join(root, 'apps/web/tsconfig.json'),
         JSON.stringify({
-            compilerOptions: { strict: true, target: 'ES2022' },
+            compilerOptions: {
+                strict: true,
+                target: 'ES2022',
+                baseUrl: '.',
+                paths: { '@repo/schemas': ['src/business-line.ts'] }
+            },
             include: ['src/**/*.ts', 'src/**/*.tsx']
         })
     );
@@ -33,7 +38,7 @@ function fixture(source: string): string {
 describe('TEST:3.12:5 GUARD:G-FAC-03', () => {
     it('rejects a literal comparison through a BusinessLine[] receiver', () => {
         const root = fixture(
-            "import type { BusinessLine } from './business-line'; const listing: { businessLines: BusinessLine[] } = { businessLines: ['food'] }; listing.businessLines.includes('nightlife');"
+            "import type { BusinessLine } from '@repo/schemas'; const listing: { businessLines: BusinessLine[] } = { businessLines: ['food'] }; listing.businessLines.includes('nightlife');"
         );
         const result = scanBusinessLineDecisions(root);
         expect(result.decisions).toHaveLength(1);
@@ -42,7 +47,7 @@ describe('TEST:3.12:5 GUARD:G-FAC-03', () => {
 
     it('rejects callback comparisons where the callback parameter is BusinessLine', () => {
         const root = fixture(
-            "import type { BusinessLine } from './business-line'; declare const nightlifeValue: BusinessLine; declare const lines: BusinessLine[]; lines.some((l) => l === nightlifeValue);"
+            "import type { BusinessLine } from '@repo/schemas'; declare const nightlifeValue: BusinessLine; declare const lines: BusinessLine[]; lines.some((l) => l === nightlifeValue);"
         );
         expect(scanBusinessLineDecisions(root).decisions).toHaveLength(2);
     });
@@ -56,7 +61,7 @@ describe('TEST:3.12:5 GUARD:G-FAC-03', () => {
 
     it('fails closed when the inventory row count is stale and when the scan floor is missed', () => {
         const root = fixture(
-            "import type { BusinessLine } from './business-line'; const listing: { businessLines: BusinessLine[] } = { businessLines: ['food'] }; listing.businessLines.includes('nightlife');"
+            "import type { BusinessLine } from '@repo/schemas'; const listing: { businessLines: BusinessLine[] } = { businessLines: ['food'] }; listing.businessLines.includes('nightlife');"
         );
         const inventoryPath = path.join(root, 'inventory.json');
         const hit = scanBusinessLineDecisions(root).readers[0]!;

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
 
@@ -10,6 +10,17 @@ export type ScanResult = {
     readers: ReaderHit[];
     imports: string[];
 };
+
+function importsSchemas(dir: string): boolean {
+    if (!existsSync(dir)) return false;
+    return readdirSync(dir, { withFileTypes: true }).some((entry) => {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) return importsSchemas(path);
+        if (!/\.tsx?$/.test(entry.name) || /\.d\.ts$/.test(entry.name)) return false;
+        const source = readFileSync(path, 'utf8');
+        return source.includes("'@repo/schemas'") || source.includes('"@repo/schemas"');
+    });
+}
 
 const DECLARATIONS = /(?:\.d\.ts|\.test\.[jt]sx?$)/;
 function lineOf(node: ts.Node, sf: ts.SourceFile): number {
@@ -67,25 +78,14 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
     const decisions: DecisionHit[] = [];
     const readers: ReaderHit[] = [];
     const imports: string[] = [];
-    const relevant = new Set([
-        'apps/admin',
-        'apps/api',
-        'apps/web',
-        'apps/mobile',
-        'packages/ai-core',
-        'packages/billing-verticals-contract',
-        'packages/db',
-        'packages/feedback',
-        'packages/schemas',
-        'packages/seed',
-        'packages/service-core',
-        'packages/verticals'
-    ]);
     const tsconfigs = ['apps', 'packages']
         .filter((group) => existsSync(join(root, group)))
         .flatMap((group) =>
             readdirSync(join(root, group), { withFileTypes: true })
-                .filter((entry) => entry.isDirectory() && relevant.has(`${group}/${entry.name}`))
+                .filter(
+                    (entry) =>
+                        entry.isDirectory() && importsSchemas(join(root, group, entry.name, 'src'))
+                )
                 .map((entry) => join(root, group, entry.name, 'tsconfig.json'))
         );
     const visited = new Set<string>();
