@@ -51,6 +51,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import { vi } from 'vitest';
+import { getClock } from '../../../src/utils/clock';
 
 type PortsModule = typeof import('../../../src/utils/listing-publication/ports');
 type PublicationPorts = ReturnType<PortsModule['getListingPublicationPorts']>;
@@ -517,9 +518,27 @@ export async function readVerticalStatus(
     return row?.status;
 }
 
-/** Inserts the trial row T1 would write, with the catalog's floor references. */
+/**
+ * The instant a fixture trial is anchored on: the clock the app under test
+ * reads (injected by `initApp`), so a trial is "running" for the same clock
+ * that later judges it. Never a fixed calendar date: a hard-coded instant
+ * turns every "active" trial into an expired one once the real clock passes it.
+ */
+function fixtureNow(): Date {
+    try {
+        return getClock().clock.now();
+    } catch {
+        return new Date();
+    }
+}
+
+/**
+ * Inserts the trial row T1 would write, with the catalog's floor references.
+ * Dates are relative to `args.now` (default: the app's injected clock).
+ */
 export async function createTrial(args: {
     readonly userId: string;
+    readonly now?: Date;
     readonly vertical?:
         | typeof VerticalEnum.ACCOMMODATION
         | typeof VerticalEnum.VENUE
@@ -571,6 +590,7 @@ export async function createTrial(args: {
         .limit(1);
     if (!trialVersion || !highest || !lowest) throw new Error('Trial catalog is missing');
     const active = args.status === 'TRIAL_ACTIVE';
+    const now = args.now ?? fixtureNow();
     await db.insert(trials).values({
         userId: args.userId,
         vertical,
@@ -579,8 +599,8 @@ export async function createTrial(args: {
         floorEntitlementsVersionId: highest.id,
         floorLimitsVersionId: lowest.id,
         floorTrialPlanVersionId: trialVersion.id,
-        startedAt: new Date(MATRIX_NOW.getTime() - (active ? 5 : 40) * DAY),
-        endsAt: new Date(MATRIX_NOW.getTime() + (active ? 25 : -10) * DAY),
+        startedAt: new Date(now.getTime() - (active ? 5 : 40) * DAY),
+        endsAt: new Date(now.getTime() + (active ? 25 : -10) * DAY),
         emailPseudonym:
             args.emailPseudonym ??
             randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', ''),
