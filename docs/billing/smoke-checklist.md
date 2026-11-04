@@ -202,6 +202,18 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:B5:13–16; TEST:B5:7 and the MP2 half of TEST:B5:8.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
+### S12 — Partner presence and moderation (HOS-1488)
+
+- **Preconditions:** A claimed Partner whose owner has a live Gold plan; an admin with `LISTING_MODERATE` and an admin without it.
+- **Steps:**
+  1. Open `/es/partners/<slug>/` and the home carousel; confirm the page responds 200 and the logo appears.
+  2. In the admin, open the Partner detail and moderate its presence with a reason. Confirm the page responds 404 (not 410), the logo leaves the carousel after purge, and the owner's subscription is unchanged in billing admin.
+  3. Lift moderation with a reason and confirm the page returns 200 on the next read.
+  4. Confirm an admin without `listing.moderate` does not see the moderation button and receives 403 from `POST …/presence-moderation`.
+- **Expected:** The presence is hidden and restored without changing the partner's billing; only an admin with `LISTING_MODERATE` can use the control.
+- **Covers:** AC:V7:14; TEST:V7:14.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
