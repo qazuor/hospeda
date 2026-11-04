@@ -1307,43 +1307,57 @@
     {
       "idx": 186,
       "version": "7",
-      "when": 1793710665498,
-      "tag": "0186_hos1484_partner_resolve_application",
+      "when": 1793731804751,
+      "tag": "0186_slow_bug",
       "breakpoints": true
     },
     {
       "idx": 187,
       "version": "7",
-      "when": 1793710725498,
-      "tag": "0187_hos1551_billing_refund_permission",
+      "when": 1793734622730,
+      "tag": "0187_public_klaw",
       "breakpoints": true
     },
     {
       "idx": 188,
       "version": "7",
-      "when": 1793710785498,
-      "tag": "0188_hos1485_partner_application_resolution",
+      "when": 1793734682730,
+      "tag": "0188_hos1484_partner_resolve_application",
       "breakpoints": true
     },
     {
       "idx": 189,
       "version": "7",
-      "when": 1793711974042,
-      "tag": "0189_hos1486_session_auth_method",
+      "when": 1793734742730,
+      "tag": "0189_hos1551_billing_refund_permission",
       "breakpoints": true
     },
     {
       "idx": 190,
       "version": "7",
-      "when": 1793734368116,
-      "tag": "0190_hos1541_manual_payment_permissions",
+      "when": 1793734802730,
+      "tag": "0190_hos1485_partner_application_resolution",
       "breakpoints": true
     },
     {
       "idx": 191,
       "version": "7",
+      "when": 1793734862730,
+      "tag": "0191_hos1486_session_auth_method",
+      "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1793734922730,
+      "tag": "0192_hos1541_manual_payment_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
       "when": 1793741426042,
-      "tag": "0191_hos1487_partner_edit_own",
+      "tag": "0193_hos1487_partner_edit_own",
       "breakpoints": true
     }
   ]

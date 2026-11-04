@@ -380,6 +380,14 @@
         "reason": "S18 records the balance of a courtesy on a dead predecessor; its pause was already closed, so no live coverage source turns off here (AC:B8b:10)."
     },
     {
+        "file": "packages/db/src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts",
+        "symbol": "stampSweptRow",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
+    },
+    {
         "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
         "symbol": "sendOneTimeOrder",
         "table": "addonInstances",

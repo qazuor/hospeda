@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "uq_reconciliation_sweep_run_one_open" ON "reconciliation_sweep_run" USING btree ((true)) WHERE "reconciliation_sweep_run"."outcome" IS NULL AND "reconciliation_sweep_run"."cycle_id" IS NOT NULL;
