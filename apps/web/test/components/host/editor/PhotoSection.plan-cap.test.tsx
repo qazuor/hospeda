@@ -178,13 +178,16 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
     });
 
     it('does not count the featured cover toward the 15-photo gallery cap', async () => {
-        mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(14)));
-        mockFeaturedOverride.current = {
+        const cover = {
             id: 'featured-cover',
             url: 'https://cdn.example.com/cover.jpg',
             publicId: 'hospeda/accommodations/abc/featured/cover',
-            isFeatured: true
+            isFeatured: true,
+            sortOrder: 0,
+            state: 'visible' as const,
+            moderationState: 'APPROVED'
         };
+        mockListMedia.mockReturnValue(makeListOk([...buildGalleryRows(14), cover]));
 
         render(<PhotoSection {...defaultProps} />);
 
@@ -192,6 +195,24 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
         expect(
             screen.queryByText('Límite de galería alcanzado (máx 15 fotos)')
         ).not.toBeInTheDocument();
+    });
+
+    it('disables gallery uploads with 15 gallery rows plus the featured cover', async () => {
+        const cover = {
+            id: 'featured-cover',
+            url: 'https://cdn.example.com/cover.jpg',
+            publicId: 'hospeda/accommodations/abc/featured/cover',
+            isFeatured: true,
+            sortOrder: 0,
+            state: 'visible' as const,
+            moderationState: 'APPROVED'
+        };
+        mockListMedia.mockReturnValue(makeListOk([...buildGalleryRows(15), cover]));
+
+        render(<PhotoSection {...defaultProps} />);
+
+        await waitFor(() => expect(document.querySelector('#gallery-image-input')).toBeDisabled());
+        expect(screen.getByText('Límite de galería alcanzado (máx 15 fotos)')).toBeInTheDocument();
     });
 
     it('states the plan cap (15) in the section description, never the entity ceiling (50)', async () => {

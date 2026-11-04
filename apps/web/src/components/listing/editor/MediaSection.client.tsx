@@ -20,7 +20,8 @@
  * upload: instead of calling `onChange` with the full next
  * `{ featuredImage, gallery }` state for the orchestrator to buffer, this
  * section now calls `listingMediaApi.addMedia` (and, for the featured slot,
- * `listingMediaApi.setFeaturedMedia`) so the row is persisted immediately.
+ * the atomic `listingMediaApi.addFeaturedMedia`) so the row is persisted
+ * immediately without a gallery-cap check on a not-yet-created row.
  *
  * Cloudinary cleanup is now SERVER-SIDE and this component does not participate
  * in it. `listingMediaApi.removeMedia` deletes the binary before dropping the

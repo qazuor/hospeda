@@ -14,8 +14,8 @@
  *   inside `removeMedia`, before dropping the row. The client-side call this
  *   replaced was unreachable anyway — `media/protected/delete-entity` rejects
  *   the venue and experience kinds with HTTP 400.
- * - Setting a new featured image calls upload → addMedia → setFeaturedMedia
- *   immediately, and the previous featured moves to the gallery.
+ * - Setting a new featured image calls the atomic upload → addFeaturedMedia
+ *   endpoint immediately; the replaced cover follows HOS-803 replacement semantics.
  * - A failed operation surfaces an inline error + toast and does NOT mutate
  *   state (the UI never claims success on failure).
  * - Gallery cap enforcement (HOS-322 size-limit coverage retained).
@@ -467,6 +467,11 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
                     newFeaturedRow.url
                 );
             });
+            expect(
+                screen
+                    .getAllByRole('img')
+                    .some((image) => image.getAttribute('src') === FEATURED_ROW.url)
+            ).toBe(false);
 
             expect(mockAddMedia).not.toHaveBeenCalled();
             expect(mockSetFeaturedMedia).not.toHaveBeenCalled();
@@ -537,6 +542,9 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(screen.queryByText('+')).not.toBeInTheDocument();
+                expect(
+                    screen.getByText(`Galería de fotos (${GALLERY_CAP}/${GALLERY_CAP})`)
+                ).toBeInTheDocument();
             });
         });
 

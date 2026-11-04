@@ -261,16 +261,29 @@ describe('TEST:M1682:2 coverage and the plan photo limit gate the upload', () =>
 
     it('accepts a 15th gallery photo with a cover present and rejects the 16th', async () => {
         configure({ maxPhotos: 15 });
-        vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
-            items: [],
-            total: 14
-        } as never);
+        const cover = { id: 'cover', isFeatured: true };
+        let rows = [
+            cover,
+            ...Array.from({ length: 14 }, (_, index) => ({
+                id: `gallery-${index}`,
+                isFeatured: false
+            }))
+        ];
+        vi.mocked(accommodationMediaModel.findByAccommodation).mockImplementation(
+            async ({ isFeatured }) => {
+                const items = rows.filter((row) => row.isFeatured === isFeatured);
+                return { items, total: items.length } as never;
+            }
+        );
 
         const fifteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
-        vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
-            items: [],
-            total: 15
-        } as never);
+        rows = [
+            cover,
+            ...Array.from({ length: 15 }, (_, index) => ({
+                id: `gallery-${index}`,
+                isFeatured: false
+            }))
+        ];
         const sixteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
 
         expect(fifteenth.status).toBe(200);
