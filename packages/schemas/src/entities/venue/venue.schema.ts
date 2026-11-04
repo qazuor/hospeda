@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ReviewDimensionId } from '../../catalog/review-dimensions.js';
 import { REVIEW_RULES } from '../../catalog/review-dimensions.js';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
@@ -15,6 +16,23 @@ import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js'
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
 import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
+
+const VenueRatingDimensionSchema = z.object({
+    average: z.number(),
+    count: z.number().int().nonnegative()
+});
+const VenueRatingSchema = z
+    .object(
+        Object.fromEntries(
+            REVIEW_RULES.venue.dimensions.map(({ id }: { readonly id: string }) => [
+                id,
+                VenueRatingDimensionSchema
+            ])
+        )
+    )
+    .partial() as z.ZodType<
+    Partial<Record<ReviewDimensionId<'venue'>, { average: number; count: number }>>
+>;
 
 /**
  * venue Entity Schema — listing for food and beverage venues.
@@ -153,18 +171,7 @@ export const VenueSchema = z.object({
      * Aggregate of individual `venueReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: z
-        .object(
-            Object.fromEntries(
-                REVIEW_RULES.venue.dimensions.map(({ id }: { readonly id: string }) => [
-                    id,
-                    z.object({ average: z.number(), count: z.number().int().nonnegative() })
-                ])
-            )
-        )
-        .partial()
-        .nullable()
-        .optional()
+    rating: VenueRatingSchema.nullish()
 });
 
 /** TypeScript type inferred from {@link VenueSchema}. */
