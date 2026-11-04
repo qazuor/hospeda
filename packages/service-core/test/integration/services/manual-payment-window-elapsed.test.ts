@@ -219,8 +219,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         expect(written.installment?.status).toBe('AWAITING');
     });
 
-    it('processes a due grace beyond more than one cron page of open S19 retentions', async () => {
-        const pageSize = 3;
+    it('processes a due grace beyond more than one cron page of open S19 retentions', {
+        timeout: 30_000
+    }, async () => {
+        const pageSize = 100;
         const held = await Promise.all(
             Array.from({ length: pageSize + 1 }, (_, index) =>
                 seed({ graceEndsAt: new Date(now.getTime() - (index + 2) * 60_000) })
