@@ -138,20 +138,9 @@ describe('createVenueColumns — column details', () => {
         const columns = createVenueColumns(t);
         const type = columns.find((c) => c.id === 'type');
         const values = (type?.badgeOptions ?? []).map((o) => o.value);
-        const EXPECTED = [
-            'RESTAURANT',
-            'BAR',
-            'CAFE',
-            'PARRILLA',
-            'CERVECERIA',
-            'HELADERIA',
-            'PANADERIA',
-            'ROTISERIA',
-            'FOOD_TRUCK'
-        ];
-        for (const v of EXPECTED) {
-            expect(values).toContain(v);
-        }
+        const expected = Object.values(VenueTypeEnum);
+        expect(values).toHaveLength(expected.length);
+        expect(new Set(values)).toEqual(new Set(expected));
     });
 
     it('priceRange column badge options should include all PriceRangeEnum values', () => {

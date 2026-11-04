@@ -8,7 +8,8 @@ export const paymentWindowExpiryJob: CronJobDefinition = {
     name: 'payment-window-expiry',
     description:
         'Run P2 on pending payments whose provider collection window closed without collection (HOS-1709, AC:B5:5)',
-    schedule: '20 * * * *',
+    schedule: '23 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 300_000,
 

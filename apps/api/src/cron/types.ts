@@ -51,8 +51,16 @@ export interface CronJobContext {
      * first of the two; per-item correlations are the job's business.
      */
     correlationId: string;
+    /** Cooperative cancellation signal for this run, when supplied by the runner. */
+    signal?: AbortSignal;
+    /** Absolute deadline for this run's cooperative budget, when supplied by the runner. */
+    deadlineAt?: Date;
     /** If true, job should run in dry-run mode (no actual changes) */
     dryRun: boolean;
+    /** Whether this invocation was scheduled or manually triggered. */
+    executionMode?: 'scheduled' | 'manual';
+    /** Force a fresh sweep cycle when supported by the job. */
+    newCycle?: boolean;
 }
 
 /**
@@ -102,6 +110,12 @@ export interface CronJobDefinition {
     enabled: boolean;
     /** Maximum execution time in milliseconds (default: 30000ms) */
     timeoutMs?: number;
+    /** Prevent overlapping executions and let manual triggers return asynchronously. */
+    exclusive?: boolean;
+    /** Whether manual triggers may request a new cycle. */
+    acceptsNewCycle?: boolean;
+    /** Cooperative execution budget; defaults to 90% of timeout for exclusive jobs. */
+    budgetMs?: number;
     /**
      * Optional async resolver for a settings-driven cron cadence. When
      * present, `startCronScheduler` awaits this once per job at scheduler
@@ -113,4 +127,12 @@ export interface CronJobDefinition {
      * live. If the resolver throws, registration falls back to `schedule`.
      */
     resolveSchedule?: () => Promise<string>;
+    /**
+     * Called when a SCHEDULED tick is skipped because the exclusive lock is held, so a job whose
+     * last tick matters (the sweep) can say so. Manual triggers never call it.
+     */
+    onOverlapSkipped?: (args: {
+        readonly logger: CronJobContext['logger'];
+        readonly startedAt: Date;
+    }) => void;
 }

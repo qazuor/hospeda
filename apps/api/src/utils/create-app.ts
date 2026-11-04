@@ -15,6 +15,7 @@ import { createErrorHandler, responseFormattingMiddleware } from '../middlewares
 import { responseValidatorMiddleware } from '../middlewares/response-validator';
 import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
 import { sentryMiddleware } from '../middlewares/sentry';
+import { trafficClassMiddleware } from '../middlewares/traffic-class';
 import { validationMiddleware } from '../middlewares/validation';
 import { visitorIdMiddleware } from '../middlewares/visitor-id';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
@@ -128,6 +129,7 @@ export function createApp() {
         // so every downstream handler (including shared packages) can call
         // getRequestContext() without access to Hono's Context.
         .use(wrapMiddleware(requestContextMiddleware()))
+        .use(wrapMiddleware(trafficClassMiddleware()))
         // Must run inside the ALS scope (right after requestContextMiddleware)
         // and before auth: visitor grouping applies to anonymous requests too,
         // and is independent of whether auth later resolves a real user.

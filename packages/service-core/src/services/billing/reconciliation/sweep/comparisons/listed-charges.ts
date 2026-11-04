@@ -6,6 +6,7 @@ import type {
     ProviderRead
 } from '@repo/payments';
 import { assertFreshForAct, CAPABILITY_METHODS } from '@repo/payments';
+import { readChargeForAct } from '../../period-charges/read-charge-for-act';
 
 /** Lists every charge and re-reads each listed id within the same act. */
 export async function readListedCharges(
@@ -28,7 +29,11 @@ export async function readListedCharges(
     });
     const charges = await Promise.all(
         chargeIds.map(async (chargeId) => {
-            const read = await ports.provider.readCharge({ chargeId });
+            const read = await readChargeForAct({
+                provider: ports.provider,
+                chargeId,
+                act: input.act
+            });
             assertFreshForAct({ read, act: input.act });
             return read;
         })

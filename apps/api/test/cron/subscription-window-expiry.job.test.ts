@@ -76,7 +76,7 @@ describe('subscription-window-expiry cron', () => {
     it('registers the expected cadence and ports, and counts terminal transitions', async () => {
         expect(subscriptionWindowExpiryJob).toMatchObject({
             name: 'subscription-window-expiry',
-            schedule: '*/15 * * * *',
+            schedule: '7-59/15 * * * *',
             enabled: true,
             timeoutMs: 120_000
         });

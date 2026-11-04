@@ -71,7 +71,9 @@ export async function startPeriodChargesFixture() {
                 startedAt: clock.now(),
                 runId: randomUUID(),
                 correlationId: randomUUID(),
-                dryRun: false
+                dryRun: false,
+                // Each call sweeps once per scenario step, so it opens its own cycle.
+                newCycle: true
             };
             return billingReconciliationSweepJob.handler(ctx);
         },

@@ -6,7 +6,9 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
 
 const src = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/index.astro'),
@@ -14,6 +16,11 @@ const src = readFileSync(
 );
 
 describe('comer-y-salir/index.astro', () => {
+    it('derives listing filters and chips from every venue enum value', () => {
+        expect(VENUE_TYPE_OPTIONS).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...VENUE_TYPE_OPTIONS].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
+        expect(src).toContain('const VENUE_TYPES = VENUE_TYPE_OPTIONS');
+    });
     describe('locale', () => {
         it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
             expect(src).toContain('Astro.locals.locale');

@@ -51,11 +51,15 @@ export function createSweepPacedProvider(input: {
     readonly pacing: SweepProviderPacing;
     readonly sleep?: (ms: number) => Promise<void>;
     readonly now?: () => number;
+    readonly retryOwnership?: 'legacy' | 'governor';
+    readonly random?: () => number;
 }): PaymentProvider {
     const pacing = PacingSchema.parse(input.pacing);
     const sleep =
         input.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
     const now = input.now ?? Date.now;
+    const enforce = input.retryOwnership === 'governor';
+    const random = input.random ?? Math.random;
     const reads = new Set<string>(CAPABILITY_METHODS.read);
     const unpaced = new Set<string>(CAPABILITY_METHODS.notify);
     let nextSlotAt = 0;
@@ -71,7 +75,7 @@ export function createSweepPacedProvider(input: {
             const call = async () =>
                 Reflect.apply(input.provider[method], input.provider, [methodInput]);
             const spacedCall = async () => {
-                if (!unpaced.has(method)) {
+                if (!enforce && !unpaced.has(method)) {
                     const start = Math.max(now(), nextSlotAt);
                     nextSlotAt = start + pacing.minIntervalMs;
                     const waitMs = start - now();
@@ -89,14 +93,23 @@ export function createSweepPacedProvider(input: {
                         !(error instanceof PaymentProviderError) ||
                         error.code !== 'UNAVAILABLE' ||
                         budgetExhausted ||
-                        attempt >= pacing.maxAttempts
+                        (enforce
+                            ? error.transient?.kind === 'RATE_LIMITED' || attempt >= 2
+                            : attempt >= pacing.maxAttempts)
                     ) {
                         throw error;
                     }
-                    const delayMs = Math.min(
-                        pacing.maxDelayMs,
-                        pacing.baseDelayMs * 2 ** (attempt - 1)
-                    );
+                    const baseDelayMs =
+                        enforce && error.transient?.retryAfterSeconds !== undefined
+                            ? error.transient.retryAfterSeconds * 1000
+                            : pacing.baseDelayMs * 2 ** (attempt - 1);
+                    const delayMs =
+                        enforce && error.transient?.retryAfterSeconds !== undefined
+                            ? baseDelayMs
+                            : Math.min(
+                                  pacing.maxDelayMs,
+                                  enforce ? baseDelayMs * (0.5 + 0.5 * random()) : baseDelayMs
+                              );
                     if (totalRetryDelayMs + delayMs > pacing.maxRunDelayMs) {
                         budgetExhausted = true;
                         if (!budgetWarningLogged) {

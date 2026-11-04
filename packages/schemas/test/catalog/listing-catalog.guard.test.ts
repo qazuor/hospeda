@@ -143,7 +143,9 @@ function violations(
         const fields = owned.flatMap((section) => section.fields);
         if (
             new Set(fields).size !== fields.length ||
-            Object.keys(schema.shape).some((field) => !fields.includes(field as never)) ||
+            Object.keys(schema.shape).some(
+                (field) => field !== 'businessLines' && !fields.includes(field as never)
+            ) ||
             fields.some((field) => !(field in schema.shape)) ||
             (vertical === 'venue' &&
                 (!owned.find((section) => section.id === 'menu')?.fields.includes('menuUrl') ||

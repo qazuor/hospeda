@@ -55,6 +55,7 @@ export async function handleGetVenueEvents(_ctx: Context, params: Record<string,
 
 export const protectedGetVenueEventsRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/events',
     listingAccess: {
         vertical: VerticalEnum.VENUE,

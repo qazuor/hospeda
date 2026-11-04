@@ -21,6 +21,11 @@ import { z } from 'zod';
 /** Module-private brand: its value is the read's instant, in epoch milliseconds. */
 const PROVIDER_READ = Symbol('ProviderRead');
 
+/** Check the module-private brand without exposing it through the package entry. */
+export function isProviderRead(value: unknown): boolean {
+    return typeof value === 'object' && value !== null && PROVIDER_READ in value;
+}
+
 /** What the provider said about one resource, read by id, and when. */
 export interface ProviderRead<T> {
     /** The resource as the provider answered it. */
