@@ -26,7 +26,8 @@ import {
     createTrial,
     createVerticalDestination,
     createVerticalListing,
-    ensurePublicationCatalog
+    ensurePublicationCatalog,
+    MATRIX_NOW
 } from './publication-routes.helpers';
 
 const { coverageOverrides } = vi.hoisted(() => ({
@@ -52,7 +53,10 @@ vi.mock('../../../src/utils/listing-access/ports', async (importOriginal) => {
     };
 });
 
-const app = initApp();
+// The app reads the matrix clock, not the system one: `createTrial` anchors the
+// trial window on MATRIX_NOW (an active trial ends 25 days after it), so on the
+// system clock row 2 turned red for good once that instant passed (2026-11-04).
+const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [
     VerticalEnum.ACCOMMODATION,
     VerticalEnum.VENUE,
