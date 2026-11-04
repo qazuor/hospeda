@@ -2,8 +2,10 @@ import { LISTING_SECTIONS, REVIEW_RULES, VerticalEnum } from '@repo/schemas';
 import {
     type RehydratedEffectiveSet,
     rehydrateEffectiveSet,
-    resolveListingSections
+    resolveListingSections,
+    resolvePublicBusinessLines
 } from '@repo/verticals';
+import { incrementDomainCounter } from '../middlewares/metrics';
 import { getListingAccessPorts } from './listing-access/ports';
 import { apiLogger } from './logger';
 
@@ -11,6 +13,7 @@ type ListingRecord = Record<string, unknown> & {
     readonly id: string;
     readonly ownerId: string;
     readonly businessLines?: readonly string[] | null;
+    readonly type?: string;
 };
 
 const VERTICALS = { venue: VerticalEnum.VENUE, experience: VerticalEnum.EXPERIENCE } as const;
@@ -151,9 +154,21 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
         })
     );
     return args.listings.map((listing) => {
+        const businessLines = resolvePublicBusinessLines({
+            vertical: args.vertical,
+            type: listing.type ?? '',
+            businessLines: listing.businessLines
+        });
+        if (!listing.businessLines?.length) {
+            apiLogger.error(
+                { vertical: args.vertical, id: listing.id, type: listing.type ?? null },
+                'Listing has no business lines; applying type preselection for public projection'
+            );
+            incrementDomainCounter('listing_empty_business_lines_total', 'failure');
+        }
         const resolved = resolveListingSections({
             vertical: args.vertical,
-            businessLines: listing.businessLines ?? [],
+            businessLines,
             effective:
                 effectiveByOwner.get(listing.ownerId) ?? deniedSet(listing.ownerId, args.vertical),
             userId: listing.ownerId

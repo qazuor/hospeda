@@ -131,6 +131,7 @@ export {
     type ResolveListingSectionsResult,
     resolveListingSectionPresence,
     resolveListingSections,
+    resolvePublicBusinessLines,
     UnknownBusinessLineError,
     UnknownListingSectionIdError,
     UnknownListingSectionKeyError

@@ -9,7 +9,8 @@ import {
 import {
     isAdministrativeActionPermitted,
     OPERATION_STEP6_KEY,
-    resolveListingAccess
+    resolveListingAccess,
+    resolveListingSectionPresence
 } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -19,6 +20,7 @@ import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
 import { apiLogger } from '../utils/logger';
+import { incrementDomainCounter } from './metrics';
 
 /** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
 function isPublishCapabilityKey({
@@ -214,6 +216,27 @@ export async function enforceListingAccess(args: {
         config.operation === 'CREATE'
             ? (bodyLines ?? [])
             : (bodyLines ?? facts?.businessLines ?? []);
+    if (
+        config.operation !== 'CREATE' &&
+        bodyLines === undefined &&
+        (facts?.businessLines?.length ?? 0) === 0
+    ) {
+        apiLogger.error(
+            { vertical: config.vertical, id: listingId, type: body?.type ?? null },
+            'Listing has no business lines during section write authorization'
+        );
+        incrementDomainCounter('listing_empty_business_lines_total', 'failure');
+        const absent = resolveListingSectionPresence({
+            vertical: config.vertical,
+            businessLines: [],
+            requested: requestedSections.map(({ id }) => id)
+        });
+        if (requestedSections.some(({ id }) => absent.get(id)))
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Listing has no business lines for requested section'
+            );
+    }
     const sections = requestedSections.length
         ? {
               requested: requestedSections.map((section) => ({ ...section, traits })),
@@ -233,7 +256,15 @@ export async function enforceListingAccess(args: {
         sections,
         limit,
         billing: ports.billing,
-        effectiveSet: ports.effectiveSet,
+        effectiveSet: async (args) => {
+            try {
+                return await ports.effectiveSet(args);
+            } catch {
+                throw new HTTPException(503, {
+                    message: 'Unable to read listing entitlements'
+                });
+            }
+        },
         preTrialDraftLimits: ports.preTrialDraftLimits
     });
     if (result.allowed) {

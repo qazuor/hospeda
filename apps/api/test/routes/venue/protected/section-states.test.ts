@@ -65,6 +65,13 @@ beforeEach(() => {
 });
 
 describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () => {
+    it('TEST:3.12:4 returns 503 when the effective set cannot be read', async () => {
+        effectiveRead.mockRejectedValueOnce(new Error('unavailable'));
+        const response = await app().request(`/${VENUE}/sections`);
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe('SERVICE_UNAVAILABLE');
+    });
+
     it('resolves the owner plan and all menu traits, including for action 15 support', async () => {
         const own = await app().request(`/${VENUE}/sections`);
         const ownBody = await own.json();

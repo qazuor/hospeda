@@ -3,6 +3,7 @@ import { ServiceErrorCode, VenueListingSectionStatesSchema, VerticalEnum } from 
 import { ServiceError } from '@repo/service-core';
 import { resolveListingSections } from '@repo/verticals';
 import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -24,10 +25,15 @@ export const protectedGetVenueSectionStatesRoute = createProtectedRoute({
             throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
         const { subjectId, businessLines } = listingAccess;
         const ports = getListingAccessPorts();
-        const effective = await ports.effectiveSet({
-            userId: subjectId,
-            vertical: VerticalEnum.VENUE
-        });
+        let effective: Awaited<ReturnType<typeof ports.effectiveSet>>;
+        try {
+            effective = await ports.effectiveSet({
+                userId: subjectId,
+                vertical: VerticalEnum.VENUE
+            });
+        } catch {
+            throw new HTTPException(503, { message: 'Unable to read listing entitlements' });
+        }
         const resolved = resolveListingSections({
             vertical: 'venue',
             businessLines,

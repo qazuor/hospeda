@@ -53,6 +53,13 @@ beforeEach(() => {
     );
 });
 describe('TEST:3.5:2 experience section states', () => {
+    it('TEST:3.12:4 returns 503 when the effective set cannot be read', async () => {
+        effectiveRead.mockRejectedValueOnce(new Error('unavailable'));
+        const response = await app().request(`/${EXPERIENCE}/sections`);
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe('SERVICE_UNAVAILABLE');
+    });
+
     it('reflects the owner key in meetingPoint.directions', async () => {
         const denied = await (await app().request(`/${EXPERIENCE}/sections`)).json();
         expect(loadFacts).toHaveBeenCalledTimes(1);
