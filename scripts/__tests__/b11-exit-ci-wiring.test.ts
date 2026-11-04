@@ -121,13 +121,13 @@ describe('TEST:1611:1 AC:B11:20 la evidencia de la salida de B11 está en el ár
             expect(game.source).toContain("describe('TEST:B11:20");
         }
     });
-    it('registers the enabled daily reconciliation sweep in registry and manifest', () => {
+    it('registers the enabled three-slice reconciliation sweep in registry and manifest', () => {
         const job = readFileSync(
             path.join(repoRoot, 'apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts'),
             'utf8'
         );
         expect(job).toContain("name: 'billing-reconciliation-sweep'");
-        expect(job).toContain("schedule: '10 2 * * *'");
+        expect(job).toContain("schedule: '10 2,3,4 * * *'");
         expect(job).toContain('enabled: true');
         expect(
             readFileSync(path.join(repoRoot, 'apps/api/src/cron/registry.ts'), 'utf8')
