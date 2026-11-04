@@ -331,6 +331,19 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
         expect(store.row.entryPriceUpdatedAt).toBeNull();
     });
 
+    it('clears price and date when entryKind is nulled explicitly', async () => {
+        resetStore({
+            entryKind: 'paid',
+            entryPriceFrom: 5000,
+            entryPriceUpdatedAt: new Date('2026-01-01T00:00:00.000Z')
+        });
+        const response = await patch({ entryKind: null });
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(store.row.entryKind).toBeNull();
+        expect(store.row.entryPriceFrom).toBeNull();
+        expect(store.row.entryPriceUpdatedAt).toBeNull();
+    });
+
     it('rejects a price with entryKind varies with 400 VALIDATION_ERROR', async () => {
         resetStore({ entryKind: 'paid', entryPriceFrom: 5000 });
         const response = await patch({ entryKind: 'varies', entryPriceFrom: 1000 });
