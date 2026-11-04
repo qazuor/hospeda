@@ -267,7 +267,7 @@ describe('computeOpenNowStatus', () => {
         });
     });
 
-    describe('overnight span (defensive — the schema normally forbids it)', () => {
+    describe('overnight span (schema-accepted since HOS-813)', () => {
         const overnight = mondayHours(day([{ open: '22:00', close: '02:00' }]));
 
         it('is open before midnight', () => {
@@ -275,14 +275,57 @@ describe('computeOpenNowStatus', () => {
             expect(computeOpenNowStatus(overnight, MON_22_30)).toBe(true);
         });
 
-        it('is open after midnight but before close', () => {
+        it('is CLOSED after midnight when only today declares the overnight shift', () => {
+            // DEC-FAC-052: a shift belongs to the day it starts on. At Monday
+            // 01:00 the shift that would cover the moment is Sunday's; with
+            // only Monday in the map there is no lookback, so this is closed.
             const afterMidnight = new Date('2024-01-15T01:00:00');
-            expect(computeOpenNowStatus(overnight, afterMidnight)).toBe(true);
+            expect(computeOpenNowStatus(overnight, afterMidnight)).toBe(false);
         });
 
         it('is closed after close but before open', () => {
             // 10:00 is between close (02:00) and open (22:00) → closed
             expect(computeOpenNowStatus(overnight, MON_10_00)).toBe(false);
+        });
+    });
+
+    describe('overnight shifts belong to their start day (AC:4:8, DEC-FAC-052)', () => {
+        // Friday and Saturday only, 23:30 → 06:00. January 2024: Friday 12,
+        // Saturday 13, Sunday 14, Monday 15.
+        const weekendNights: Record<string, VenueOpeningHoursEntry> = {
+            friday: day([{ open: '23:30', close: '06:00' }]),
+            saturday: day([{ open: '23:30', close: '06:00' }])
+        };
+
+        it('is open Saturday 03:00 via Friday night', () => {
+            expect(computeOpenNowStatus(weekendNights, new Date('2024-01-13T03:00:00'))).toBe(true);
+        });
+
+        it('is open Sunday 03:00 via Saturday night even without a Sunday entry', () => {
+            expect(computeOpenNowStatus(weekendNights, new Date('2024-01-14T03:00:00'))).toBe(true);
+        });
+
+        it('is closed Friday 03:00 because Thursday has no wrapping shift', () => {
+            expect(computeOpenNowStatus(weekendNights, new Date('2024-01-12T03:00:00'))).toBe(
+                false
+            );
+        });
+
+        it('is open Friday 23:45 once the shift has started', () => {
+            expect(computeOpenNowStatus(weekendNights, new Date('2024-01-12T23:45:00'))).toBe(true);
+        });
+
+        it('is closed Saturday 06:00 because close is exclusive', () => {
+            expect(computeOpenNowStatus(weekendNights, new Date('2024-01-13T06:00:00'))).toBe(
+                false
+            );
+        });
+    });
+
+    describe('week boundary lookback (DEC-FAC-052)', () => {
+        it('is open Monday 01:00 via a Sunday 22:00 → 02:00 shift', () => {
+            const hours = { sunday: day([{ open: '22:00', close: '02:00' }]) };
+            expect(computeOpenNowStatus(hours, new Date('2024-01-15T01:00:00'))).toBe(true);
         });
     });
 
