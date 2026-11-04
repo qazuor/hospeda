@@ -547,7 +547,7 @@ Fuente: [TRANS:B:S17](../04-catalogos.md#trans-b-s17) · [TPZ:S17](#tpz-s17) · 
   la sucesora los complementos; **no** re-apunta la redención de promo, que se pierde con el cambio de
   plan; la cortesía vigente de la predecesora **se cierra** sobre ella con su `saldo_meses` (la
   fracción redondeada para arriba), o con `motivo_cierre = DESTINO_DE_PLAN_NO_MENSUAL` si la sucesora
-  no es mensual; y si la predecesora retiene un pago por `S19`, le abre a ella la marca
+  no es mensual —con el saldo perdido igual en `saldo_meses`, como registro: `ck_courtesy_grant_balance_close` lo exige con el cierre (owner 2026-11-03, HOS-1575 Q8)—; y si la predecesora retiene un pago por `S19`, le abre a ella la marca
   `REEMBOLSO_POR_CONFIRMAR` con el pago colgado —salvo si murió por `S36`, cuyo `RF1` ya lo devuelve, y
   salvo el pagador manual cuyo pago retenido ya entró al crédito de la sucesora: ahí no abre la marca y
   el pago queda como crédito ([DEC-SUB-017#📌1](../01-decisiones-vigentes.md#dec-sub-017-p1); `B/12`

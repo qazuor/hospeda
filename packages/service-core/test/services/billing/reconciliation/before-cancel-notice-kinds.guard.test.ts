@@ -102,6 +102,7 @@ function declaredKind(transition: string) {
         : 'UNDECLARED';
 }
 
+/** AC:B8b:9 adds S17's own template without adding it to the sweep retry map. */
 const EXPECTED_KINDS = [
     'AUTHORIZATION_EXPIRED',
     'FIRST_CHARGE_DECLINED',
@@ -115,7 +116,8 @@ const EXPECTED_KINDS = [
     'PERMANENT_GRANT_ADDON',
     'DIRECT_CANCELLATION',
     'ATTEMPT_REPLACED',
-    'ATTEMPT_CANCELLED'
+    'ATTEMPT_CANCELLED',
+    'SUCCESSION_PREDECESSOR'
 ];
 
 describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice kind', () => {
@@ -156,7 +158,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) the thirteen kinds have thirteen distinct templates and only S3 says the window expired', () => {
+    it('(d) AC:B8b:9 the fourteen kinds have fourteen distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);
