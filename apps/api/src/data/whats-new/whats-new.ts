@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4009, #4097
+    {
+        id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Volvé a publicar las fichas que tu plan dejó sin publicar',
+            en: 'Republish the listings your plan unpublished',
+            pt: 'Publique de novo os anúncios que seu plano despublicou'
+        },
+        body: {
+            es: 'En **Mi comercio**, las fichas de comer y salir y de experiencias que quedaron «Sin publicar por tu plan» ahora muestran el botón **Publicar de nuevo**.',
+            en: 'In **My business**, food and experience listings marked "Unpublished by your plan" now show a **Publish again** button.',
+            pt: 'Em **Meu negócio**, os anúncios de gastronomia e de experiências marcados como «Não publicado pelo seu plano» agora mostram o botão **Publicar de novo**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4001, #4098
+    {
+        id: '2026-11-02-out-of-range-listing-pages-show-not-found',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las páginas de un listado que no existen ahora avisan que no hay nada',
+            en: 'Listing pages that do not exist now say so',
+            pt: 'Páginas de listagem que não existem agora avisam isso'
+        },
+        body: {
+            es: 'Si entrás a una página de un listado que ya no existe, por ejemplo la 99 de alojamientos, ves la página de «Página no encontrada» en vez de un error o una lista vacía.',
+            en: 'If you open a listing page that no longer exists, such as page 99 of stays, you now see the "Page not found" page instead of an error or an empty list.',
+            pt: 'Se você abrir uma página de listagem que não existe mais, como a 99 de hospedagens, agora vê a página «Página não encontrada» em vez de um erro ou de uma lista vazia.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4020
     {
         id: '2026-11-02-lifting-a-moderation-keeps-published-listings',
