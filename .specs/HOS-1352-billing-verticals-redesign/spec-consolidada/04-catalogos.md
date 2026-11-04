@@ -333,7 +333,7 @@ máquina sigue hablando sólo el vocabulario del contrato (arriba). **Y el cobro
 del trial** para no tener que esperar: una fecha futura se convierte sola en un *free trial* del
 proveedor (`EX-38`), que es lo que `HOS-1012` eliminó (`DEC-TRIAL-010`).
 
-**Texto de la fuente — «Los 26–44 minutos: dos títulos a la vez, y el pliegue los suma»** (`V/03-maquinas-de-estado.md:164–204`, sin lo tachado):
+**Texto de la fuente — «Los 26–44 minutos: dos títulos a la vez, y el pliegue los ~~suma~~ sumaba (reemplazado el 2026-11-04, HOS-2027: el trial no suma)»** (`V/03-maquinas-de-estado.md:164–204`, sin lo tachado):
 
 Mientras el primer cobro no llega, la persona tiene **dos fuentes de clase `TÍTULO`**: la del
 trial, que apunta al plan de trial —derivado del plan vendible de `rank` más alto (cap. 02 §2.1)—,
@@ -344,7 +344,7 @@ cupos y las de «no acumula» toman el más favorable. Es exactamente el caso qu
 abierto ahora por la ventana del primer cobro. El pliegue **no duplica** nada que no sumara ya con
 dos títulos cualesquiera; lo que cambia es que ahora la ventana existe.
 
-> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba ya no rige.
+> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba y el punto 1 del ⚠️ siguiente ya no rigen.
 > En el pliegue (`selectPlegableSources`), una fuente `TRIAL` deja de aportar **apenas hay una fuente
 > `SUSCRIPCIÓN` de clase `TÍTULO` en la misma vertical**: las claves `SUMA` toman el cupo de la
 > suscripción, no trial + suscripción. Los `ADDON` siguen sumando sobre ella. Si la suscripción
@@ -357,10 +357,12 @@ dos títulos cualesquiera; lo que cambia es que ahora la ventana existe.
 > ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`** (cap. 15 §2.6 lo repite donde se
 > pliega):
 >
-> 1. **Durante la ventana la persona tiene el cupo de los dos títulos sumado.** Si publica por
+> 1. ~~**Durante la ventana la persona tiene el cupo de los dos títulos sumado.** Si publica por
 >    encima del cupo que le va a quedar, al convertir (`T2`) o al rechazarse el cobro (`S16`) el
 >    conjunto efectivo baja y **el reconciliador de excedentes** despublica lo que sobra (cap. 15
->    §4.3). Dura lo que tarde el primer cobro: los minutos de `PA-3` en un alta.
+>    §4.3). Dura lo que tarde el primer cobro: los minutos de `PA-3` en un alta.~~ **Reemplazado el
+>    2026-11-04 (HOS-2027): durante la ventana rige el cupo de la suscripción solo; el trial no
+>    suma** (nota de arriba), así que no hay excedente que despublicar al convertir.
 > 2. **La ventana es más larga sobre una sucesora con tarjeta**: su primer cobro nace después del
 >    vencimiento de su ventana de autorización (`D8`, `B/12` §4.3), hasta 72 h, y mientras tanto
 >    trae `cobrada: no`. Alcanza a quien, estando en `TRIAL_ACTIVE`, cambia de plan antes de que un
