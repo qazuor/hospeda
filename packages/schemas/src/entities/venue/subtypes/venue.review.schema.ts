@@ -11,7 +11,7 @@ const VenueReviewRatingSchema = reviewRatingSchemaFor({ vertical: 'venue' });
  * venue Review Schema — User review for a venue listing.
  *
  * Mirrors the accommodation review subtype pattern but uses
- * {@link VenueRatingSchema} for the rating breakdown (food / service /
+ * {@link VenueReviewRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) instead of accommodation-specific dimensions.
  *
  * Columns match the `venue_reviews` DB table exactly:
