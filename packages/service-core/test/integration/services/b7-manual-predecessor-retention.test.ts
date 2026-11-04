@@ -30,6 +30,8 @@ async function seed(
     args: {
         status?: 'GRACE_PERIOD' | 'SUSPENDED';
         installment?: 'AWAITING' | 'DECLARED_UNPAID';
+        installmentPeriodStart?: Date;
+        subscriptionNextChargeAt?: Date;
     } = {}
 ) {
     const db = getServiceTestDb();
@@ -90,7 +92,7 @@ async function seed(
             paymentMethod: 'MANUAL',
             planVersionId: version.id,
             billingOptionId: option.id,
-            nextChargeAt: new Date('2026-11-18T12:00:00.000Z'),
+            nextChargeAt: args.subscriptionNextChargeAt ?? new Date('2026-11-18T12:00:00.000Z'),
             graceStartedAt: periodStart,
             graceEndsAt: new Date(now.getTime() - 1000)
         })
@@ -110,7 +112,7 @@ async function seed(
         .insert(manualPayments)
         .values({
             subscriptionId: subscription.id,
-            periodStart,
+            periodStart: args.installmentPeriodStart ?? periodStart,
             status: args.installment ?? 'AWAITING',
             ...(args.installment === 'DECLARED_UNPAID' ? {} : {})
         })
@@ -204,8 +206,12 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B7:10 (manual) AC:B7:16', () 
                 coverageNotices: { emitCoverageChanged: async () => {} }
             }
         );
-        expect((await read(f)).subscription?.status).toBe('GRACE_PERIOD');
-        expect(notice).not.toHaveBeenCalled();
+        const after = await read(f);
+        expect(notice).not.toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId: f.subscription.id })
+        );
+        expect(after.subscription?.status).toBe('GRACE_PERIOD');
+        expect(after.installment?.status).not.toBe('DECLARED_UNPAID');
     });
 
     it('M10: an open S19 retention on an AWAITING installment excludes the expired grace from SQL candidates', async () => {
@@ -230,7 +236,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B7:10 (manual) AC:B7:16', () 
         );
         expect((await read(f)).subscription?.status).toBe('GRACE_PERIOD');
         expect((await read(f)).installment?.status).toBe('AWAITING');
-        expect(notice).not.toHaveBeenCalled();
+        expect(notice).not.toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId: f.subscription.id })
+        );
     });
 
     it('MP4 keeps a suspended live predecessor in S19 without a reconciliation mark', async () => {
@@ -244,6 +252,45 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B7:10 (manual) AC:B7:16', () 
         expect(after.retentions).toHaveLength(1);
         expect(after.retentions[0]?.releasedAt).toBeNull();
         expect(after.marks).toHaveLength(0);
+    });
+
+    it('mirrors the E2E MP4 seed: initial coverage plus a suspended unpaid next period', async () => {
+        const e2eStart = new Date('2026-10-18T12:00:00.000Z');
+        const e2eNextChargeAt = new Date('2026-11-18T12:00:00.000Z');
+        const f = await seed({
+            status: 'SUSPENDED',
+            installment: 'DECLARED_UNPAID',
+            installmentPeriodStart: e2eNextChargeAt,
+            subscriptionNextChargeAt: e2eNextChargeAt
+        });
+        const db = getServiceTestDb();
+        const [firstPayment] = await db
+            .insert(manualPayments)
+            .values({
+                subscriptionId: f.subscription.id,
+                periodStart: e2eStart,
+                status: 'REGISTERED',
+                registeredBy: f.admin.id,
+                registeredAt: e2eStart
+            })
+            .returning();
+        if (!firstPayment) throw new Error('E2E mirror initial payment fixture failed');
+        await db.insert(coveredPeriods).values({
+            subscriptionId: f.subscription.id,
+            manualPaymentId: firstPayment.id,
+            periodStart: firstPayment.periodStart,
+            creditedAt: firstPayment.registeredAt ?? e2eStart
+        });
+
+        const e2eClock = { now: () => new Date('2026-11-28T12:00:00.000Z') };
+        await expect(
+            registerLateManualPayment(
+                { ...f.request, manualPaymentId: firstPayment.id },
+                { clock: e2eClock }
+            )
+        ).rejects.toMatchObject({ reason: 'MANUAL_PAYMENT_NOT_DECLARED_UNPAID' });
+        const result = await registerLateManualPayment(f.request, { clock: e2eClock });
+        expect(result.effect).toBe('S7');
     });
 
     it('RF4 rejects refund while retained and settles TOTAL after the predecessor is cancelled', async () => {

@@ -61,8 +61,7 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
             [subscriber.user.id, optionId, nextChargeAt, start, start]
         );
         subscriptionId = rows[0]?.id ?? '';
-        overdueInstallmentId = rows[0]?.installment_id ?? '';
-        if (!subscriptionId || !overdueInstallmentId)
+        if (!subscriptionId || !rows[0]?.installment_id)
             throw new Error('Manual subscription fixture failed');
     });
 
@@ -102,14 +101,18 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
                 grace_started_at: Date;
                 grace_ends_at: Date;
                 count: number;
+                installment_id: string | null;
             }>(
                 `SELECT s.status, s.grace_started_at, s.grace_ends_at,
-                        (SELECT count(*)::int FROM manual_payment mp WHERE mp.subscription_id = s.id AND mp.period_start = $2) AS count
-                   FROM subscription s WHERE s.id = $1`,
+                        (SELECT count(*)::int FROM manual_payment mp WHERE mp.subscription_id = s.id AND mp.period_start = $2) AS count,
+                        (SELECT mp.id FROM manual_payment mp WHERE mp.subscription_id = s.id AND mp.period_start = $2 LIMIT 1) AS installment_id
+                 FROM subscription s WHERE s.id = $1`,
                 [subscriptionId, nextChargeAt]
             );
             expect(rows[0]?.status).toBe('GRACE_PERIOD');
             expect(rows[0]?.count).toBe(1);
+            overdueInstallmentId = rows[0]?.installment_id ?? '';
+            expect(overdueInstallmentId).not.toBe('');
             expect(new Date(rows[0]?.grace_started_at ?? 0)).toEqual(nextChargeAt);
             graceEndsAt = new Date(rows[0]?.grace_ends_at ?? 0);
             expect(graceEndsAt.getTime() - new Date(rows[0]?.grace_started_at ?? 0).getTime()).toBe(
@@ -164,11 +167,11 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
                     body: JSON.stringify({ proofRef: `e2e-${randomUUID()}` })
                 }
             );
-            expect(response.status).toBe(200);
             const body = (await response.json()) as {
                 effect?: string;
                 reimputedFrom?: string | null;
             };
+            expect(response.status, JSON.stringify(body)).toBe(200);
             expect(body).toMatchObject({ effect: 'S7', reimputedFrom: null });
             const rows = await execSQL<{
                 status: string;
