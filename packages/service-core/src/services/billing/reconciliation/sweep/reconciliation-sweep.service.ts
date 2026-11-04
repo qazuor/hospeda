@@ -77,7 +77,11 @@ export async function runReconciliationSweep(
               run: await reconciliationSweepRunModel.open({ correlationId, startedAt }),
               summary: undefined
           };
-    if (opened.summary) return opened.summary;
+    if (opened.summary)
+        return {
+            ...opened.summary,
+            ...(opened.orphanedCycle ? { orphanedCycle: opened.orphanedCycle } : {})
+        };
     const run = opened.run;
     const cycleId = cycleMode ? (run.cycleId ?? run.id) : '';
     const sliceIndex = run.sliceIndex ?? 0;
@@ -133,7 +137,11 @@ export async function runReconciliationSweep(
         if (passesCompleted.includes(pass)) return;
         if (cycleMode) {
             const next = [...passesCompleted, pass];
-            const ok = await extendRunLease({ lease, id: run.id, set: { passesCompleted: next } });
+            const ok = await extendRunLease({
+                lease,
+                id: run.id,
+                set: { rowsComplete, passesCompleted: rowsComplete ? next : [] }
+            });
             if (!ok) throw new SweepLeaseLostError();
         }
         passesCompleted.push(pass);
@@ -340,7 +348,7 @@ export async function runReconciliationSweep(
                 outcome: 'FAILED',
                 phase,
                 rowsComplete,
-                passesCompleted,
+                passesCompleted: rowsComplete ? passesCompleted : [],
                 failedSubscriptionIds,
                 rowsRead,
                 rowsFailed
@@ -440,6 +448,7 @@ export async function runReconciliationSweep(
         sliceIndex,
         cycleId,
         ...(cycle ? { cycle } : {}),
+        ...(opened.orphanedCycle ? { orphanedCycle: opened.orphanedCycle } : {}),
         incomplete: input.lastSlot === true && (outcome !== 'CYCLE_DONE' || !rowsComplete)
     };
 }

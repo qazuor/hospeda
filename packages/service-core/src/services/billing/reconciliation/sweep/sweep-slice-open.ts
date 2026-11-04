@@ -52,8 +52,16 @@ export async function openCycleSlice(args: {
     readonly startedAt: Date;
     readonly ports: ReconciliationSweepPorts;
 }): Promise<
-    | { readonly run: SelectReconciliationSweepRun; readonly summary: undefined }
-    | { readonly run: SelectReconciliationSweepRun; readonly summary: ReconciliationSweepSummary }
+    | {
+          readonly run: SelectReconciliationSweepRun;
+          readonly summary: undefined;
+          readonly orphanedCycle?: ReconciliationSweepSummary['orphanedCycle'];
+      }
+    | {
+          readonly run: SelectReconciliationSweepRun;
+          readonly summary: ReconciliationSweepSummary;
+          readonly orphanedCycle?: ReconciliationSweepSummary['orphanedCycle'];
+      }
 > {
     const { correlationId, startedAt, ports } = args;
     const held = (): ReconciliationSweepSummary =>
@@ -68,17 +76,30 @@ export async function openCycleSlice(args: {
         // Renewed between our read and the close: the holder is alive, so we did not take it over.
         if (!closed) return { run: none, summary: held() };
     }
-    const todayCycle = args.newCycle
-        ? null
-        : await reconciliationSweepRunModel.findLatestCycleOfToday();
+    const todayCycle = await reconciliationSweepRunModel.findLatestCycleOfToday();
     const cycleDone = (todayCycle?.slices ?? []).some(
         (slice) => slice.outcome === 'CYCLE_DONE' && slice.rowsComplete === true
     );
+    const orphanedCycleSummary =
+        args.newCycle && todayCycle && !cycleDone
+            ? await reconciliationSweepRunModel.sumCycle({ cycleId: todayCycle.cycleId })
+            : undefined;
+    const orphanedCycle =
+        orphanedCycleSummary && todayCycle
+            ? {
+                  cycleId: todayCycle.cycleId,
+                  cycleDate: todayCycle.slices[0]?.cycleDate ?? '',
+                  slices: orphanedCycleSummary.slices,
+                  rowsRead: Number(orphanedCycleSummary.rowsRead ?? 0),
+                  rowsFailed: Number(orphanedCycleSummary.rowsFailed ?? 0),
+                  failedSubscriptionIds: orphanedCycleSummary.failedSubscriptionIds
+              }
+            : undefined;
     let run: SelectReconciliationSweepRun;
     try {
         run = await reconciliationSweepRunModel.openSlice({
             correlationId,
-            ...(todayCycle ? { cycleId: todayCycle.cycleId } : {})
+            ...(todayCycle && !args.newCycle ? { cycleId: todayCycle.cycleId } : {})
         });
     } catch (error) {
         // The unique index allows one open slice: losing the race means a live holder, before any work.
@@ -86,7 +107,8 @@ export async function openCycleSlice(args: {
             return { run: none, summary: held() };
         throw error;
     }
-    if (!cycleDone) return { run, summary: undefined };
+    if (args.newCycle || !cycleDone)
+        return { run, summary: undefined, ...(orphanedCycle ? { orphanedCycle } : {}) };
     await reconciliationSweepRunModel.closeSlice({
         id: run.id,
         outcome: 'SKIPPED_CYCLE_DONE',
@@ -107,6 +129,7 @@ export async function openCycleSlice(args: {
             startedAt,
             finishedAt: ports.clock.now(),
             outcome: 'SKIPPED_CYCLE_DONE'
-        })
+        }),
+        ...(orphanedCycle ? { orphanedCycle } : {})
     };
 }

@@ -134,5 +134,7 @@ export interface CronJobDefinition {
     onOverlapSkipped?: (args: {
         readonly logger: CronJobContext['logger'];
         readonly startedAt: Date;
+        readonly holderRunId: string | null;
+        readonly holderStartedAt: Date | null;
     }) => void;
 }

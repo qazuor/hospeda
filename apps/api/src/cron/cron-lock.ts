@@ -5,12 +5,17 @@ import { apiLogger } from '../utils/logger';
 /** A lock decision, with completion released only after the handler settles. */
 export type CronLockDecision<T> =
     | { readonly acquired: true; readonly completion: Promise<T> }
-    | { readonly acquired: false; readonly holderRunId: string | null };
+    | {
+          readonly acquired: false;
+          readonly holderRunId: string | null;
+          readonly holderStartedAt: Date | null;
+      };
 
 /** Run a handler under a fleet-wide, non-blocking session advisory lock. */
 export async function withCronLock<T>(args: {
     readonly name: string;
     readonly runId: string;
+    readonly startedAt?: Date;
     readonly handler: () => Promise<T>;
 }): Promise<CronLockDecision<T>> {
     const pool = (getDb() as ReturnType<typeof getDb> & { readonly $client: Pool }).$client;
@@ -33,7 +38,7 @@ export async function withCronLock<T>(args: {
     let clientReleased = false;
     try {
         await client.query("SELECT set_config('application_name', $1, false)", [
-            `hospeda-cron:${args.runId}`
+            `hospeda-cron:${args.runId}${args.startedAt ? `@${Math.floor(args.startedAt.getTime() / 1000)}` : ''}`
         ]);
         const lock = await client.query<{ readonly acquired: boolean }>(
             "SELECT pg_try_advisory_lock(hashtext('cron:' || $1)::bigint) AS acquired",
@@ -65,8 +70,14 @@ export async function withCronLock<T>(args: {
             client.removeListener('error', onClientError);
             client.release();
             clientReleased = true;
-            const match = holder.rows[0]?.application_name.match(/^hospeda-cron:(.+)$/);
-            return { acquired: false, holderRunId: match?.[1] ?? null };
+            const match = holder.rows[0]?.application_name.match(
+                /^hospeda-cron:([^@]+)(?:@(\d+))?$/
+            );
+            return {
+                acquired: false,
+                holderRunId: match?.[1] ?? null,
+                holderStartedAt: match?.[2] ? new Date(Number(match[2]) * 1000) : null
+            };
         }
 
         const completion = Promise.resolve()

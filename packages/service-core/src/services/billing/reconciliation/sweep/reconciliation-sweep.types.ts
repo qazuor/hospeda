@@ -136,5 +136,14 @@ export interface ReconciliationSweepSummary {
         readonly rowsFailed: number;
         readonly failedSubscriptionIds: readonly string[];
     };
+    /** A prior unfinished cycle explicitly abandoned by a forced new-cycle request. */
+    readonly orphanedCycle?: {
+        readonly cycleId: string;
+        readonly cycleDate: string;
+        readonly slices: number;
+        readonly rowsRead: number;
+        readonly rowsFailed: number;
+        readonly failedSubscriptionIds: readonly string[];
+    };
     readonly incomplete: boolean;
 }

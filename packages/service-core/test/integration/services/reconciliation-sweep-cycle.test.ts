@@ -232,6 +232,31 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
             )
         );
         expect(next.cycleId).not.toBe(first.cycleId);
+        expect(next.orphanedCycle).toMatchObject({ cycleId: first.cycleId, rowsFailed: 0 });
         expect(seeded).toHaveLength(3);
+    });
+
+    it('does not report an orphan when resuming an incomplete cycle normally', async () => {
+        const { fake } = createReconciliationFake();
+        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        const first = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                {
+                    mode: 'cycle',
+                    lastSlot: true,
+                    deadlineAt: new Date(reconciliationClock.now().getTime() - 1)
+                },
+                { provider: fake, clock: reconciliationClock }
+            )
+        );
+        const resumed = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                { mode: 'cycle' },
+                { provider: fake, clock: reconciliationClock }
+            )
+        );
+        expect(resumed.cycleId).toBe(first.cycleId);
+        expect(resumed.orphanedCycle).toBeUndefined();
+        expect(seeded.subscription.id).toBeTruthy();
     });
 });

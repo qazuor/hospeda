@@ -229,13 +229,15 @@ describe('billing reconciliation sweep cron', () => {
         expect(rowChecks?.[4]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
         // HOS-1685: the next charge date copy runs last.
         expect(rowChecks?.[5]).toBe(mockNextChargeSync.mock.results[0]?.value);
-        expect(mockLostFirstRejectionCheck).toHaveBeenCalledWith({
-            provider: mockProvider,
-            clock: mockClock,
-            payments: creditedPaymentsFromLedger,
-            planPolicy: mockPlanPolicy,
-            billingFacts: getAnalyticsFactSink()
-        });
+        expect(mockLostFirstRejectionCheck).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: mockProvider,
+                clock: mockClock,
+                payments: creditedPaymentsFromLedger,
+                planPolicy: mockPlanPolicy,
+                billingFacts: getAnalyticsFactSink()
+            })
+        );
         expect(mockPendingFirstChargeDeclineCheck).toHaveBeenCalledWith({
             provider: mockProvider,
             clock: mockClock,
@@ -359,10 +361,12 @@ describe('billing reconciliation sweep cron', () => {
         expect(comparisons?.[0]).toBe(mockStateComparison.mock.results[0]?.value);
         expect(comparisons?.[1]).toBe(mockPeriodChargesComparison.mock.results[0]?.value);
         expect(comparisons?.[2]).toBe(mockAmountComparison.mock.results[0]?.value);
-        expect(mockPeriodChargesComparison).toHaveBeenCalledWith({
-            provider: mockProvider,
-            dailySummary: expect.objectContaining({ addUndercharge: expect.any(Function) })
-        });
+        expect(mockPeriodChargesComparison).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: mockProvider,
+                dailySummary: expect.objectContaining({ addUndercharge: expect.any(Function) })
+            })
+        );
         expect(mockAmountComparison).toHaveBeenCalledWith(
             expect.objectContaining({
                 provider: mockProvider,
@@ -880,21 +884,98 @@ describe('billing reconciliation sweep cron', () => {
             expect(result.details).toMatchObject({ skipped: 'lease_held', outcome: null });
         });
 
+        it('HOS-1999: captures an orphaned cycle with failed rows and warns when it has no failures', async () => {
+            mockSweep.mockResolvedValue({
+                ...base,
+                rowsFailed: 0,
+                failures: [],
+                orphanedCycle: {
+                    cycleId: 'orphan-with-failures',
+                    cycleDate: '2026-11-04',
+                    slices: 1,
+                    rowsRead: 3,
+                    rowsFailed: 1,
+                    failedSubscriptionIds: ['sub-failed']
+                }
+            });
+            const failedContext = context();
+            const failedResult = await billingReconciliationSweepJob.handler(failedContext);
+            expect(failedContext.logger.error).toHaveBeenCalledWith(
+                'forced newCycle abandoned unfinished cycle orphan-with-failures',
+                expect.objectContaining({
+                    failedSubscriptionIds: ['sub-failed'],
+                    forcedNewCycle: true
+                }),
+                { capture: true }
+            );
+            expect(failedResult.success).toBe(true);
+
+            mockSweep.mockResolvedValue({
+                ...base,
+                rowsFailed: 0,
+                failures: [],
+                orphanedCycle: {
+                    cycleId: 'orphan-clean',
+                    cycleDate: '2026-11-04',
+                    slices: 1,
+                    rowsRead: 3,
+                    rowsFailed: 0,
+                    failedSubscriptionIds: []
+                }
+            });
+            const cleanContext = context();
+            const cleanResult = await billingReconciliationSweepJob.handler(cleanContext);
+            expect(cleanContext.logger.warn).toHaveBeenCalledWith(
+                'forced newCycle abandoned unfinished cycle orphan-clean',
+                expect.objectContaining({ rowsFailed: 0, forcedNewCycle: true })
+            );
+            expect(cleanContext.logger.error).not.toHaveBeenCalledWith(
+                expect.stringContaining('orphan-clean'),
+                expect.anything(),
+                { capture: true }
+            );
+            expect(cleanResult.success).toBe(true);
+        });
+
         it('HOS-1999: the overlap hook alerts only at the last slot', () => {
             const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
             billingReconciliationSweepJob.onOverlapSkipped?.({
                 logger,
-                startedAt: new Date('2026-11-04T07:10:00.000Z')
+                startedAt: new Date('2026-11-04T07:10:00.000Z'),
+                holderRunId: 'holder',
+                holderStartedAt: null
             });
             expect(logger.error).toHaveBeenCalledWith(
-                'reconciliation last slot skipped: the previous run still holds the lock',
-                {},
+                'reconciliation last slot skipped: another run still holds the lock',
+                expect.objectContaining({ holderRunId: 'holder', holderAgeMs: null }),
                 { capture: true }
             );
             logger.error.mockClear();
             billingReconciliationSweepJob.onOverlapSkipped?.({
                 logger,
-                startedAt: new Date('2026-11-04T05:10:00.000Z')
+                startedAt: new Date('2026-11-04T07:10:00.000Z'),
+                holderRunId: 'stale-holder',
+                holderStartedAt: new Date('2026-11-04T06:00:00.000Z')
+            });
+            expect(logger.error).toHaveBeenCalledWith(
+                'reconciliation last slot skipped: another run still holds the lock',
+                expect.objectContaining({ holderRunId: 'stale-holder', holderAgeMs: 70 * 60_000 }),
+                { capture: true }
+            );
+            logger.error.mockClear();
+            billingReconciliationSweepJob.onOverlapSkipped?.({
+                logger,
+                startedAt: new Date('2026-11-04T07:10:00.000Z'),
+                holderRunId: 'same-slot',
+                holderStartedAt: new Date('2026-11-04T07:09:30.000Z')
+            });
+            expect(logger.error).not.toHaveBeenCalled();
+            expect(logger.info).toHaveBeenCalled();
+            billingReconciliationSweepJob.onOverlapSkipped?.({
+                logger,
+                startedAt: new Date('2026-11-04T05:10:00.000Z'),
+                holderRunId: null,
+                holderStartedAt: null
             });
             expect(logger.error).not.toHaveBeenCalled();
         });

@@ -36,6 +36,7 @@ describe('cron session advisory lock', () => {
         const first = await withCronLock({
             name: 'cron-lock-integration',
             runId: 'holder-run-id',
+            startedAt: new Date('2026-11-03T04:10:00.000Z'),
             handler: () => handler.promise
         });
         expect(first.acquired).toBe(true);
@@ -52,7 +53,13 @@ describe('cron session advisory lock', () => {
             runId: 'contender-run-id',
             handler: async () => 'should not run'
         });
-        expect(second).toEqual({ acquired: false, holderRunId: 'holder-run-id' });
+        // The holder advertises its start through application_name, so a loser can tell a run of
+        // the same slot from an overrunning earlier one (HOS-1999 PR5 follow-up).
+        expect(second).toEqual({
+            acquired: false,
+            holderRunId: 'holder-run-id',
+            holderStartedAt: new Date('2026-11-03T04:10:00.000Z')
+        });
 
         handler.resolve('settled');
         await expect(first.completion).resolves.toBe('settled');
