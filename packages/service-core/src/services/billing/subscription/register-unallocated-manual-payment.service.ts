@@ -9,6 +9,7 @@ import {
     isNull,
     manualPaymentModel,
     manualPayments,
+    type ReconciliationMarkReason,
     subscriptions
 } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
@@ -214,10 +215,11 @@ export async function registerUnallocatedManualPayment(
                 if (cause?.code !== '23505' || cause.constraint !== coverageIndex) throw error;
             }
         }
+        const reason: ReconciliationMarkReason = checked.mark;
         const result = await openReconciliationMark(
             {
                 subject: { kind: 'SUBSCRIPTION', subscriptionId: parsed.subscriptionId },
-                reason: checked.mark,
+                reason,
                 payment: { source: 'MANUAL_PAYMENT', id: row.id },
                 actor: { type: 'admin', id: input.actor.id },
                 correlationId: row.id,
