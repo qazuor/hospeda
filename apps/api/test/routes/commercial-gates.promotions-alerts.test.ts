@@ -175,6 +175,7 @@ const VENUE = {
     slug: 'la-parrilla',
     name: 'La Parrilla',
     type: 'PARRILLA',
+    businessLines: ['food'],
     summary: 'A test venue',
     description: 'A test venue description',
     destinationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
