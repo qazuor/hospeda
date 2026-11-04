@@ -1,4 +1,5 @@
 import type { AdminInfoType } from '@repo/schemas';
+import { normalizeArgentinePhone, parsePhoneNumber } from '@repo/schemas';
 
 /**
  * Utility functions for normalizing data across services.
@@ -14,12 +15,15 @@ import type { AdminInfoType } from '@repo/schemas';
  *
  * @example
  * ```typescript
- * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+541155550002'
- * normalizePhoneNumber('11 5555-0002') // Returns: '+541155550002'
+ * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+5491155550002'
+ * normalizePhoneNumber('11 5555-0002') // Returns: '+5491155550002'
  * normalizePhoneNumber('155550002') // Returns: '+54155550002'
  * ```
  */
-export const normalizePhoneNumber = (phone: string): string => {
+export const normalizePhoneNumber = (phone: string, mobileByMeaning = true): string => {
+    if (parsePhoneNumber(phone, mobileByMeaning)) {
+        return normalizeArgentinePhone(phone, mobileByMeaning);
+    }
     let cleaned = phone.replace(/[^\d+]/g, '');
 
     // Argentine landline/mobile formats normalize to the existing +54 format.
@@ -27,6 +31,9 @@ export const normalizePhoneNumber = (phone: string): string => {
     // international mobile marker (9) before prefixing +54.
     const hadInternationalPrefix = cleaned.startsWith('+');
     let digits = cleaned.replace(/\D/g, '');
+    // Preserve the already-deployed HOS-1027 WhatsApp canonical, including
+    // older nine-digit local payloads that the current write schema rejects.
+    if (hadInternationalPrefix && digits.startsWith('549')) return `+${digits}`;
     if (digits.startsWith('549') && (hadInternationalPrefix || digits.length === 13)) {
         digits = digits.slice(3);
         return `+54${digits}`;
@@ -86,16 +93,16 @@ export const normalizeContactInfo = (contactInfo: unknown): unknown => {
 
     // Normalize phone numbers
     if (typeof normalized.mobilePhone === 'string') {
-        normalized.mobilePhone = normalizePhoneNumber(normalized.mobilePhone);
+        normalized.mobilePhone = normalizePhoneNumber(normalized.mobilePhone, true);
     }
     if (typeof normalized.homePhone === 'string') {
-        normalized.homePhone = normalizePhoneNumber(normalized.homePhone);
+        normalized.homePhone = normalizePhoneNumber(normalized.homePhone, false);
     }
     if (typeof normalized.workPhone === 'string') {
-        normalized.workPhone = normalizePhoneNumber(normalized.workPhone);
+        normalized.workPhone = normalizePhoneNumber(normalized.workPhone, false);
     }
     if (typeof normalized.whatsapp === 'string') {
-        normalized.whatsapp = normalizePhoneNumber(normalized.whatsapp);
+        normalized.whatsapp = normalizePhoneNumber(normalized.whatsapp, true);
     }
 
     // Normalize emails

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PreferredContactEnumSchema } from '../enums/index.js';
-import { argentinePhoneSchema } from '../utils/utils.js';
+import { phoneNumberSchema } from '../utils/utils.js';
 import { safeExternalUrl } from './safe-external-url.schema.js';
 
 /**
@@ -19,9 +19,8 @@ import { safeExternalUrl } from './safe-external-url.schema.js';
  * Widening `string | undefined` to `string | null | undefined` is ADDITIVE, so
  * it is allowed under the package's compatibility policy
  * (`docs/guides/schema-compat-policy.md`): no payload that validated before
- * stops validating. The bounds themselves are untouched — a non-null
- * `mobilePhone` still has to satisfy {@link InternationalPhoneRegex}, and a
- * non-null `website` still has to be a URL.
+ * stops validating. Non-null phone fields use the shared human-format phone
+ * validator, and a non-null `website` still has to be a URL.
  *
  * `preferredEmail` / `preferredPhone` are enums, not free strings, and they are
  * widened by exactly one value for the same reason: they are keys of the SAME
@@ -37,10 +36,10 @@ export const ContactInfoSchema = z.object({
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
         .nullish(),
     workEmail: z.string().email({ message: 'zodError.common.contact.workEmail.invalid' }).nullish(),
-    homePhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
-    workPhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
-    mobilePhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
-    whatsapp: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
+    homePhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    workPhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    mobilePhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    whatsapp: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
     website: safeExternalUrl('zodError.common.contact.website.invalid').nullish(),
     preferredEmail: PreferredContactEnumSchema.nullish(),
     preferredPhone: PreferredContactEnumSchema.nullish()

@@ -16,7 +16,7 @@ import {
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { argentinePhoneSchema, stripShapeDefaults } from '../../utils/utils.js';
+import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
@@ -361,8 +361,12 @@ export const AccommodationCreateHttpSchema = z.object({
     media: HttpMediaSchema.optional(),
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
-    phone: argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina').optional(),
-    whatsapp: argentinePhoneSchema('zodError.common.contact.phone.argentina').optional(),
+    phone: phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
+    whatsapp: phoneNumberSchema('zodError.common.contact.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -481,7 +485,9 @@ export const AccommodationCreateDraftHttpSchema = z.object({
 
     // --- Optional contact (→ contactInfo) ---
     /** Mobile phone. Maps to `contactInfo.mobilePhone`. */
-    phone: argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina').optional(),
+    phone: phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     /** Website URL. Maps to `contactInfo.website`. */
     website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
@@ -892,7 +898,7 @@ export const httpToDomainAccommodationCreate = (
     // and update converters below) — `mobilePhone: httpData.phone || ''` used
     // to inject an empty string whenever phone was absent but a sibling field
     // (whatsapp/email/website) was present, which then fails
-    // `ContactInfoSchema.mobilePhone`'s `InternationalPhoneRegex` validation
+    // `ContactInfoSchema.mobilePhone`'s shared phone validation
     // even though the host never touched the phone field at all (HOS-190).
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
@@ -900,8 +906,10 @@ export const httpToDomainAccommodationCreate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
-                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
+                  ...(httpData.whatsapp === undefined
+                      ? {}
+                      : { whatsapp: httpData.whatsapp || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
@@ -1052,7 +1060,7 @@ export const httpToDomainAccommodationCreateDraft = (
     ...(httpData.phone !== undefined || httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               } as AccommodationCreateInput['contactInfo']
           }
@@ -1165,8 +1173,10 @@ export const httpToDomainAccommodationUpdate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
-                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
+                  ...(httpData.whatsapp === undefined
+                      ? {}
+                      : { whatsapp: httpData.whatsapp || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }

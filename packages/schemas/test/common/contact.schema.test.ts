@@ -12,9 +12,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ContactInfoSchema } from '../../src/common/contact.schema.js';
-import { AccommodationUpdateHttpSchema } from '../../src/entities/accommodation/accommodation.http.schema.js';
-import { ExperienceUpdateHttpSchema } from '../../src/entities/experience/experience.http.schema.js';
-import { VenueUpdateHttpSchema } from '../../src/entities/venue/venue.http.schema.js';
+import {
+    AccommodationUpdateHttpSchema,
+    httpToDomainAccommodationUpdate
+} from '../../src/entities/accommodation/accommodation.http.schema.js';
+import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
+import { VenueOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
 
 describe('ContactInfoSchema', () => {
     it.each([
@@ -34,6 +37,13 @@ describe('ContactInfoSchema', () => {
             whatsapp: phone
         });
         expect(result.success).toBe(true);
+    });
+
+    it('allows a cleared accommodation phone in the HTTP update contract', () => {
+        expect(AccommodationUpdateHttpSchema.safeParse({ phone: '' }).success).toBe(true);
+        expect(httpToDomainAccommodationUpdate({ phone: '' }).contactInfo).toEqual({
+            mobilePhone: null
+        });
     });
 
     it.each([
@@ -60,11 +70,15 @@ describe('ContactInfoSchema', () => {
     });
 
     it.each([
-        ['venue', VenueUpdateHttpSchema],
-        ['experience', ExperienceUpdateHttpSchema]
+        ['venue', VenueOwnerUpdateInputSchema],
+        ['experience', ExperienceOwnerUpdateInputSchema]
     ] as const)('uses the shared phone validator for the %s editor API', (_entity, schema) => {
-        expect(schema.safeParse({ phone: '3442 45-2345' }).success).toBe(true);
-        expect(schema.safeParse({ phone: '3442 invalid' }).success).toBe(false);
+        expect(schema.safeParse({ contactInfo: { mobilePhone: '3442 45-2345' } }).success).toBe(
+            true
+        );
+        expect(schema.safeParse({ contactInfo: { mobilePhone: '3442 invalid' } }).success).toBe(
+            false
+        );
     });
 
     it('accepts a payload with no mobilePhone (HOS-190 regression)', () => {

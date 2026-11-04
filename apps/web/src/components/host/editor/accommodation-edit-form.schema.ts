@@ -18,8 +18,8 @@
 
 import {
     AccommodationUpdateHttpSchema,
-    argentinePhoneSchema,
-    PriceCurrencyEnumSchema
+    PriceCurrencyEnumSchema,
+    phoneNumberSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 
@@ -36,15 +36,12 @@ import { z } from 'zod';
  *  - `description`: HTTP allows up to 5000 with no minimum; the domain requires
  *    30–2000.
  *  - `basePrice`: HTTP accepts `0`; the domain requires a strictly positive value.
- *  - `phone`/`whatsapp`: HTTP types these as a bare `z.string().optional()` with
- *    NO format check (unlike `email`/`website`/every social URL in the same
- *    schema), so `"asdasd"` passed both the client gate and the server. They are
- *    re-tightened to the shared Argentine phone validator used by the HTTP
- *    schema. `''` stays valid so a host can
+ *  - `phone`/`whatsapp`: use the shared Argentine phone validator, so malformed
+ *    text receives a localized hint. `''` stays valid so a host can
  *    clear the field (HOS-190).
  *  - `phone`/`email`: also get accommodation-scoped messages
  *    (`zodError.accommodation.contactInfo.*`) instead of the shared
- *    `zodError.common.contact.mobilePhone.international` /
+ *    `zodError.common.contact.phone.argentina` /
  *    `.personalEmail.invalid` (H-118). This form's on-screen labels are the
  *    generic "Numero" / "Email" (`ContactInfoSection.client.tsx`) for a
  *    PROPERTY's contact section, not a person's profile, so the shared
@@ -135,10 +132,7 @@ const basePriceField = z
 const currencyField = PriceCurrencyEnumSchema.nullable().optional();
 
 const phoneField = z
-    .union([
-        z.literal(''),
-        argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina')
-    ])
+    .union([z.literal(''), phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')])
     .optional();
 
 /**
@@ -152,7 +146,7 @@ const emailField = z
     .optional();
 
 const whatsappField = z
-    .union([z.literal(''), argentinePhoneSchema('zodError.common.contact.phone.argentina')])
+    .union([z.literal(''), phoneNumberSchema('zodError.common.contact.phone.argentina')])
     .optional();
 
 /**

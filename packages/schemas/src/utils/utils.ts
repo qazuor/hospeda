@@ -16,24 +16,62 @@ export const InternationalPhoneRegex = /^\+[1-9](?:\s?\d){6,14}$/;
 /** Shared write validator for Argentine phones in common human-entered formats. */
 export const ArgentinePhoneRegex = /^\+?[0-9().\s-]+$/;
 
-/** Returns whether a phone contains a supported Argentine number of digits. */
-export const isValidArgentinePhone = (phone: string): boolean => {
-    if (InternationalPhoneRegex.test(phone.trim())) return true;
-    if (!ArgentinePhoneRegex.test(phone.trim())) return false;
-    let digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('549')) digits = digits.slice(3);
-    else if (digits.startsWith('54')) digits = digits.slice(2);
-    else if (digits.startsWith('0')) digits = digits.slice(1);
-    const mobilePrefixIndex = [2, 3, 4].find((index) => digits.slice(index, index + 2) === '15');
-    if (mobilePrefixIndex !== undefined) {
-        digits = digits.slice(0, mobilePrefixIndex) + digits.slice(mobilePrefixIndex + 2);
+type ParsedPhone =
+    | { kind: 'argentina'; digits: string; mobile: boolean }
+    | { kind: 'international'; value: string };
+
+/** Shared parser for validation and storage normalization of phone input. */
+export const parsePhoneNumber = (
+    phone: string,
+    mobileByMeaning = false
+): ParsedPhone | undefined => {
+    const trimmed = phone.trim();
+    if (!ArgentinePhoneRegex.test(trimmed)) return undefined;
+    const digits = trimmed.replace(/\D/g, '');
+    if (trimmed.startsWith('+') && !trimmed.startsWith('+54')) {
+        return InternationalPhoneRegex.test(trimmed)
+            ? { kind: 'international', value: `+${digits}` }
+            : undefined;
     }
-    return digits.length === 10;
+
+    let national = digits;
+    const explicitInternationalMobile = national.startsWith('549');
+    if (national.startsWith('549')) national = national.slice(3);
+    else if (national.startsWith('54')) national = national.slice(2);
+    if (national.startsWith('0')) national = national.slice(1);
+    const mobileMarkerIndex = [2, 3, 4].find((index) => national.slice(index, index + 2) === '15');
+    if (mobileMarkerIndex !== undefined) {
+        national = national.slice(0, mobileMarkerIndex) + national.slice(mobileMarkerIndex + 2);
+    }
+    if (national.length !== 10) return undefined;
+    return {
+        kind: 'argentina',
+        digits: national,
+        mobile: mobileByMeaning || explicitInternationalMobile || mobileMarkerIndex !== undefined
+    };
+};
+
+/** Accepts valid Argentine input and well-formed international E.164 numbers. */
+export const isValidPhoneNumber = (phone: string): boolean => parsePhoneNumber(phone) !== undefined;
+
+/** @deprecated Use isValidPhoneNumber; this validator also accepts international E.164 numbers. */
+export const isValidArgentinePhone = isValidPhoneNumber;
+
+/** Normalizes an accepted phone to its canonical international representation. */
+export const normalizeArgentinePhone = (phone: string, mobileByMeaning = false): string => {
+    const parsed = parsePhoneNumber(phone, mobileByMeaning);
+    if (!parsed) return phone;
+    return parsed.kind === 'international'
+        ? parsed.value
+        : `+${parsed.mobile ? '549' : '54'}${parsed.digits}`;
 };
 
 /** Builds the shared Zod phone validator with a caller-specific translation key. */
-export const argentinePhoneSchema = (message: string) =>
-    z.string().refine(isValidArgentinePhone, { message });
+export const phoneNumberSchema = (message: string) =>
+    z.string().refine(isValidPhoneNumber, { message });
+
+/** @deprecated Use phoneNumberSchema; this schema also accepts international E.164 numbers. */
+export const argentinePhoneSchema = phoneNumberSchema;
 
 // Regex for social network URLs
 export const FacebookUrlRegex = /^https?:\/\/(www\.)?facebook\.com\//;
