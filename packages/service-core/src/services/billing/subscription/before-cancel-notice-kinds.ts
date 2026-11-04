@@ -32,7 +32,9 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     /** S39: the person started the signup again (another payer email, or a creation that did not apply). */
     ATTEMPT_REPLACED: 'billing.attempt-replaced-cancel',
     /** S40: the person cancelled their pending signup attempt. */
-    ATTEMPT_CANCELLED: 'billing.attempt-cancelled-cancel'
+    ATTEMPT_CANCELLED: 'billing.attempt-cancelled-cancel',
+    /** S17: the successor authorized; the predecessor's authorization is cancelled (AC:B8b:9, DEC-SUB-006 implication 4). */
+    SUCCESSION_PREDECESSOR: 'billing.succession-predecessor-cancel'
 } as const;
 
 /** A kind of before-cancel notice; each one has its own template and no kind is a default. */

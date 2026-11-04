@@ -27,8 +27,16 @@ import {
 
 const logger = createLogger('subscription-succession');
 
-/** Ports shared with S1 plus the optional provider notice transition delegate. */
-export type StartSuccessionPorts = StartSubscriptionPorts & { readonly mirror?: MirrorDelegates };
+/** Ports shared with S1 plus optional notice and AC:B8b:7, Q2 first-charge scheduling. */
+export type StartSuccessionPorts = StartSubscriptionPorts & {
+    readonly mirror?: MirrorDelegates;
+    /** AC:B8b:7, Q2: value-credit schedule for a non-exceptional successor. */
+    readonly firstChargeSchedule?: (input: {
+        readonly authorizationWindowEndsAt: Date;
+        readonly bornAt: Date;
+        readonly predecessorId: string;
+    }) => Promise<{ readonly firstChargeAt: Date }>;
+};
 
 /** S1 succession input. */
 export interface StartSuccessionInput extends StartSubscriptionInput {
@@ -102,7 +110,13 @@ export async function startSuccession(
             firstChargeAt: bornAt
         };
     } else {
-        const schedule = scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
+        const schedule = ports.firstChargeSchedule
+            ? await ports.firstChargeSchedule({
+                  authorizationWindowEndsAt,
+                  bornAt,
+                  predecessorId: admitted.predecessorId
+              })
+            : scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
         if (!(schedule.firstChargeAt > authorizationWindowEndsAt)) {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
