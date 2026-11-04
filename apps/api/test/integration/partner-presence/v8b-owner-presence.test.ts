@@ -2,6 +2,7 @@ import { eq, getDb, partners, sql, subscriptions } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { readOwnerPartnerPresence } from '../../../src/services/partner-presence/partner-presence-read.service';
 import { invalidateEffectiveSetsForUser } from '../../../src/utils/effective-set-cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
@@ -52,6 +53,23 @@ const moderate = (id: string, adminId: string, action: 'MODERATE' | 'LIFT', reas
     });
 
 describe('AC:V8b:1 TEST:V8b:1 (API half) — the owner reads presence with the public reader', () => {
+    it('fails closed on both surfaces when the partner has no owner', async () => {
+        await expect(
+            readOwnerPartnerPresence({
+                partner: {
+                    id: 'partner-without-owner',
+                    ownerUserId: null,
+                    presenceModerated: false
+                }
+            })
+        ).resolves.toEqual({
+            publicPage: 'hidden',
+            carousel: 'hidden',
+            moderated: false,
+            moderationReason: null
+        });
+    });
+
     it('reports owner keys, suspended plans, moderation history, and null ownership', async () => {
         const gold = await seedPlan('GOLD');
         const silver = await seedPlan('SILVER');
