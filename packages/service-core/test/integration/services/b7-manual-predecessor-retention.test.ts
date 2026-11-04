@@ -3,6 +3,7 @@ import {
     coveredPeriods,
     eq,
     getDb,
+    manualPaymentModel,
     manualPayments,
     plans,
     planVersions,
@@ -216,6 +217,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B7:10 (manual) AC:B7:16', () 
             manualPaymentId: f.installment.id,
             unpaidSince: periodStart
         });
+        const candidates = await manualPaymentModel.findManualGracesDue({ now, limit: 100 });
+        expect(candidates.map((candidate) => candidate.id)).not.toContain(f.subscription.id);
         const notice = vi.fn(async () => 'SENT' as const);
         await expireManualGraces(
             { pageSize: 100 },
