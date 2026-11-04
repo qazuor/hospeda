@@ -35,6 +35,7 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  * - `partner_application.wait_cancelled`: administrative action 5 (ACC:5)
  *   cancelled a rejected Partner application's wait (HOS-1484).
  * - `partner_application.approved` / `partner_application.rejected` (PP2/PP3, ACC:5) and `partner.claimed` record the HOS-1485 resolution and claim.
+ * - `partner.presence_moderation_changed`: ACC:12 (sources: action 13) moderated or lifted moderation of a Partner presence (`entity_type = 'partner'`, `entity_id` = its id, mandatory `reason`, `changes = [{ field: 'presence_moderated', old, new }]`; HOS-1488, AC:V7:14; V7 §1.6).
  * - `subscription.provider_cancellation_decided`: one of our transitions
  *   decided to cancel the preapproval of this subscription (`entity_type =
  *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
@@ -74,6 +75,7 @@ export const DOMAIN_EVENT_TYPES = [
     'partner_application.approved',
     'partner_application.rejected',
     'partner.claimed',
+    'partner.presence_moderation_changed',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',

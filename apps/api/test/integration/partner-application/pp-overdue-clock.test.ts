@@ -11,6 +11,12 @@ import { injectClock, systemClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
+import {
+    createdPartnerIds,
+    createdUserIds,
+    seedPartner,
+    seedPlan
+} from '../partner-presence/partner-presence.helpers';
 import { createApplicationEmail, insertPending } from './partner-application.helpers';
 
 const app = initApp();
@@ -72,6 +78,16 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+    for (const id of createdPartnerIds.splice(0)) {
+        await getDb().execute(sql`DELETE FROM partners WHERE id = ${id}::uuid`);
+    }
+    for (const userId of createdUserIds.splice(0)) {
+        await getDb().execute(
+            sql`DELETE FROM payment WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ${userId}::uuid)`
+        );
+        await getDb().execute(sql`DELETE FROM subscription WHERE user_id = ${userId}::uuid`);
+        await getDb().execute(sql`DELETE FROM users WHERE id = ${userId}::uuid`);
+    }
     injectClock({ clock: systemClock });
     const db = getDb();
     for (const id of applicationIds.splice(0)) {
@@ -186,16 +202,14 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
     });
 
     it('(c) an approved unclaimed application remains a private draft after 400 days', async () => {
-        const owner = await createOwner();
-        userIds.push(owner.id);
         const prefix = `pp1485-${randomUUID().slice(0, 8)}`;
-        const activeId = randomUUID();
-        const activeName = `${prefix} active directory control`;
+        const gold = await seedPlan('GOLD');
+        const silver = await seedPlan('SILVER');
+        const active = await seedPartner({ gold, silver });
+        const activeId = active.partner.id;
+        const owner = active.owner;
+        if (!owner) throw new Error('Expected the active Partner fixture to have an owner');
         const draftName = `${prefix} approved private draft`;
-        await getDb().execute(sql`
-            INSERT INTO partners (id, slug, name, type, lifecycle_state)
-            VALUES (${activeId}::uuid, ${`${prefix}-active`}, ${activeName}, 'business', 'ACTIVE')`);
-        partnerIds.push(activeId);
 
         const applicantEmail = email();
         const applicationId = await insertPending({

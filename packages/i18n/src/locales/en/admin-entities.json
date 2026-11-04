@@ -1040,6 +1040,24 @@
         "errorTitle": "The account could not be closed",
         "stateChanged": "The account changed since you opened this confirmation and was not closed. We checked again what it still has."
     },
+    "partnerPresenceModeration": {
+        "title": "Public presence",
+        "state": {
+            "visible": "Visible if the partner's plan includes it",
+            "moderated": "Moderated: the page and carousel do not show it"
+        },
+        "actions": { "moderate": "Moderate presence", "lift": "Lift moderation" },
+        "dialog": {
+            "reasonLabel": "Reason",
+            "reasonHelp": "Recorded under your user. It does not affect the partner's billing.",
+            "confirm": "Confirm",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "title": "Could not apply moderation",
+            "alreadyApplied": "The presence was already in that state. Reload the page."
+        }
+    },
     "listingModeration": {
         "title": "Listing moderation",
         "statusLabel": "Status",

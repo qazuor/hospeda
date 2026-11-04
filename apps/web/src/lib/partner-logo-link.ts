@@ -1,12 +1,12 @@
 /**
  * @file partner-logo-link.ts
- * @description Resolves the external link for a partner logo. V7 restores the
- * internal page destination on the public key.
+ * @description Resolves a partner logo destination from its public-page entitlement.
  */
 
 import type { PartnerData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { buildUrl } from '@/lib/urls';
 
 const EXTERNAL_REL = 'sponsored nofollow noopener';
 
@@ -18,7 +18,7 @@ export interface PartnerLogoLink {
     readonly rel?: string;
     /** `target` attribute — set only for outbound links. */
     readonly target?: string;
-    /** Outbound destination; the internal destination returns with V7. */
+    /** Destination recorded by the logo-click endpoint. */
     readonly destination?: PartnerLogoDestination;
 }
 
@@ -26,21 +26,27 @@ export interface PartnerLogoLink {
 export type PartnerLogoDestination = 'OWN_PAGE' | 'EXTERNAL';
 
 /**
- * Resolves the external partner site link, if it has a safe HTTP(S) URL.
- * V7 restores the internal page destination on the partner's public key.
+ * Resolve a partner logo link, failing closed when an internal slug or safe external URL is absent.
+ * A page link is same-site and therefore has no `rel` or `target` attributes.
  *
  * @param partner - The carousel item.
- * @param locale - Active locale, reserved for the V7 internal destination.
- * @returns The outbound href and attributes, or an empty object.
+ * @param locale - Active locale, used for an internal page URL.
+ * @returns The href and attributes to render, if any.
  */
 export function resolvePartnerLogoLink({
     partner,
-    locale: _locale
+    locale
 }: {
     readonly partner: PartnerData;
     readonly locale: SupportedLocale;
 }): PartnerLogoLink {
-    void _locale;
+    if (partner.hasPublicPage === true && partner.slug) {
+        return {
+            href: buildUrl({ locale, path: `partners/${partner.slug}` }),
+            destination: 'OWN_PAGE'
+        };
+    }
+
     const websiteHref = resolveSafeExternalUrl(partner.url);
     if (!websiteHref) return {};
 

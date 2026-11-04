@@ -1,5 +1,5 @@
 {
-  "id": "ad3fc666-edd2-42fa-bd92-853c4e902d2b",
+  "id": "5d130fd2-e415-4183-8f9b-c02be81d555f",
   "prevId": "3123a95a-8790-4be9-ab2c-52c4964e05d1",
   "version": "7",
   "dialect": "postgresql",
@@ -8044,7 +8044,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -28251,13 +28251,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entry": {
-          "name": "entry",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'INSTALLMENT'"
-        },
         "registered_by": {
           "name": "registered_by",
           "type": "uuid",
@@ -28327,10 +28320,6 @@
         "ck_manual_payment_status": {
           "name": "ck_manual_payment_status",
           "value": "\"manual_payment\".\"status\" IN ('AWAITING', 'REGISTERED', 'DECLARED_UNPAID')"
-        },
-        "ck_manual_payment_entry": {
-          "name": "ck_manual_payment_entry",
-          "value": "\"manual_payment\".\"entry\" IN ('INSTALLMENT', 'UNALLOCATED')"
         },
         "ck_manual_payment_registration": {
           "name": "ck_manual_payment_registration",

@@ -1347,11 +1347,11 @@
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/review-content"
+            "path": "/api/v1/admin/partners/:id/presence-moderation"
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/revoke"
+            "path": "/api/v1/admin/partners/:id/review-content"
         },
         {
             "method": "GET",

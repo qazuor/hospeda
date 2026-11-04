@@ -45,6 +45,8 @@ interface EntityItem {
     readonly slug: string;
     readonly updatedAt?: string;
     readonly updated_at?: string;
+    readonly hasPublicPage?: boolean;
+    readonly description?: string | null;
 }
 
 interface PaginatedResponse {
@@ -475,26 +477,15 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    // Partners: /partners/{slug}/ — ONLY the gold ones that pass the shared
+    // Partners: /partners/{slug}/ — ONLY items with a page entitlement that pass the shared
     // indexability predicate (HOS-294 D-3). `evaluatePartnerIndexability` is the
     // SAME function the page uses to decide its own `noindex`, which is the
     // whole point: deciding it a second time here is how a sitemap ends up
     // advertising a URL the page then serves `noindex`.
     //
-    // Note this filter is NOT redundant with the API's own. The public LIST
-    // returns every visible partner regardless of tier, because the home
-    // carousel needs the silver ones too — and a silver partner has no page.
     entries.push(
         ...buildEntriesForEntity({
-            items: resolvedPartners.filter(
-                (item) =>
-                    evaluatePartnerIndexability(
-                        // TYPE-WORKAROUND: `EntityItem` models only what every
-                        // entity shares (slug + updatedAt); these four fields are
-                        // specific to the partner payload.
-                        item as unknown as Parameters<typeof evaluatePartnerIndexability>[0]
-                    ).isIndexable
-            ),
+            items: resolvedPartners.filter((item) => evaluatePartnerIndexability(item).isIndexable),
             siteUrl,
             pathFn: (slug) => `/partners/${slug}/`,
             changefreq: 'monthly',

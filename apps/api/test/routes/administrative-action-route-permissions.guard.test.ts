@@ -248,6 +248,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/experience/admin/moderate.ts',
                 route: 'adminModerateExperienceRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partners/admin/presence-moderation.ts',
+                route: 'adminModeratePartnerPresenceRoute'
             }
         ]
     },
@@ -459,10 +464,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 49 bindings across 17 bound rows', () => {
+    it('b. checks exactly 50 bindings across 17 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(17);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(49);
+        expect(total).toBe(50);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))

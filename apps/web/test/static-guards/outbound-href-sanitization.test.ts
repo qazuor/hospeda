@@ -130,6 +130,12 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'getBrandPhoneWhatsAppUrl() (@/lib/brand-phone, HOS-364) — composed from our own configured number'
 });
 
+/** Same-site partner page assembled by buildUrl, recognized from its shape. */
+const isInternalPartnerPageLink = (site: ReturnType<typeof findLinkSites>[number]): boolean =>
+    /\bhref\s*:\s*\{?\s*buildUrl\s*\(/.test(site.owner) &&
+    /\bdestination\s*:\s*['"]OWN_PAGE['"]/.test(site.owner) &&
+    /path\s*:\s*`?partners\//.test(site.owner);
+
 /**
  * Field names that carry a URL somebody outside Hospeda authored.
  *
@@ -181,7 +187,7 @@ const SCHEME_PREDICATE_EXEMPTIONS: Readonly<Record<string, string>> = Object.fre
 describe('outbound hrefs — every link off this site goes through the allow-list', () => {
     it('has no outbound href that neither calls the sanitizer nor carries a written exemption', () => {
         const unproven = findUnprovenOutboundSites(SRC_ROOT).filter(
-            (site) => !(siteKey(site) in SAFE_OUTBOUND_HREFS)
+            (site) => !(siteKey(site) in SAFE_OUTBOUND_HREFS) && !isInternalPartnerPageLink(site)
         );
 
         expect(
@@ -199,7 +205,11 @@ describe('outbound hrefs — every link off this site goes through the allow-lis
         // An exemption for a site that has been deleted or renamed silently
         // widens the allow-list: it stops describing anything, and the next
         // reader has no way to tell a live claim from a dead one.
-        const live = new Set(findUnprovenOutboundSites(SRC_ROOT).map(siteKey));
+        const live = new Set(
+            findUnprovenOutboundSites(SRC_ROOT)
+                .filter((site) => !isInternalPartnerPageLink(site))
+                .map(siteKey)
+        );
         const stale = Object.keys(SAFE_OUTBOUND_HREFS).filter((key) => !live.has(key));
 
         expect(
@@ -347,6 +357,20 @@ describe('outbound hrefs — the scanner itself', () => {
         const site = findLinkSites(source, 'probe.tsx').at(-1);
         expect(site).toBeDefined();
         expect(isSanitized(site as never, source)).toBe(false);
+    });
+
+    it('accepts the internal buildUrl shape but still rejects an unsanitized external link in that module', () => {
+        const internal = `href: buildUrl({ locale, path: \`partners/${'${partner.slug}'}\` }), destination: 'OWN_PAGE'`;
+        const external = `href: partner.websiteUrl, rel: 'sponsored nofollow noopener', target: '_blank', destination: 'EXTERNAL'`;
+        const internalSite = findLinkSites(internal, 'same-module.ts')[0];
+        const externalSite = findLinkSites(external, 'same-module.ts')[0];
+
+        expect(internalSite).toBeDefined();
+        expect(isInternalPartnerPageLink(internalSite!)).toBe(true);
+        expect(externalSite).toBeDefined();
+        expect(isInternalPartnerPageLink(externalSite!)).toBe(false);
+        expect(isSanitized(externalSite!, external)).toBe(false);
+        expect(isOutbound(externalSite!)).toBe(true);
     });
 
     it('does not call an internal link outbound', () => {
