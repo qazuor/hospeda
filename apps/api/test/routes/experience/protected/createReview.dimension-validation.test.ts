@@ -115,6 +115,22 @@ describe('AC:3:13 — experience review with the four dimensions over HTTP', () 
         expect(body.error.details).toBeUndefined();
     });
 
+    it('exposes details.field for DIMENSION_NOT_APPLICABLE', async () => {
+        fixtures.rejectionReason = 'DIMENSION_NOT_APPLICABLE';
+        const res = await app.request(`${BASE}/${EXPERIENCE_ID}/reviews`, {
+            method: 'POST',
+            headers: actorHeaders,
+            body: JSON.stringify({
+                overallRating: 5,
+                rating: { food: 4, service: 4, ambiance: 4, value: 4 }
+            })
+        });
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.details).toEqual(expect.objectContaining({ field: expect.any(String) }));
+    });
+
     it('accepts a review that votes food, service, ambiance and value', async () => {
         const res = await app.request(`${BASE}/${EXPERIENCE_ID}/reviews`, {
             method: 'POST',
