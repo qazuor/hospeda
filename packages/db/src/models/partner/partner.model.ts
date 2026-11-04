@@ -1,9 +1,10 @@
 import type { LifecycleStatusEnum, Partner } from '@repo/schemas';
-import { and, asc, count, desc, eq, isNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import type { LifecycleStatusPgEnum } from '../../schemas/enums.dbschema.ts';
 import { partners } from '../../schemas/partner/partner.dbschema.js';
+import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
 export interface SearchPartnerFilters {
@@ -18,6 +19,17 @@ export interface SearchPartnerFilters {
 
 export interface AdminSearchPartnerFilters extends SearchPartnerFilters {
     includeDeleted?: boolean;
+}
+
+function partnerFilterConditions(filters: SearchPartnerFilters): SQL[] {
+    const conditions: SQL[] = [];
+    if (filters.q) {
+        conditions.push(
+            or(safeIlike(partners.name, filters.q), safeIlike(partners.description, filters.q))!
+        );
+    }
+    if (filters.type) conditions.push(eq(partners.type, filters.type));
+    return conditions;
 }
 
 /**
@@ -70,17 +82,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             conditions.push(eq(partners.lifecycleState, 'ACTIVE'));
         }
 
-        // Text search on name and description.
-        if (filters.q) {
-            conditions.push(
-                or(safeIlike(partners.name, filters.q), safeIlike(partners.description, filters.q))
-            );
-        }
-
-        // Type filter
-        if (filters.type) {
-            conditions.push(eq(partners.type, filters.type));
-        }
+        conditions.push(...partnerFilterConditions(filters));
 
         // Soft delete filter
         conditions.push(isNull(partners.deletedAt));
@@ -150,6 +152,63 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      */
     async findBySlug(slug: string): Promise<Partner | null> {
         return this.findOne({ slug });
+    }
+
+    /**
+     * Find one live, owned and unmoderated public presence candidate by slug.
+     * AC:V7:13; V7 §1.6 (V/18 §1.6).
+     */
+    async findPresenceCandidateBySlug(args: {
+        readonly slug: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<Partner | null> {
+        const db = args.tx ?? getDb();
+        const rows = (await db
+            .select()
+            .from(partners)
+            .where(
+                and(
+                    eq(partners.slug, args.slug),
+                    isNull(partners.deletedAt),
+                    isNotNull(partners.ownerUserId),
+                    eq(partners.presenceModerated, false)
+                )
+            )
+            .limit(1)
+            .execute()) as Partner[];
+        return rows[0] ?? null;
+    }
+
+    /**
+     * Find live, owned and unmoderated carousel candidates matching search filters.
+     * AC:V7:13; V7 §1.6 (V/18 §1.6).
+     */
+    async findPresenceCandidates(args: {
+        readonly filters?: SearchPartnerFilters;
+        readonly tx?: DrizzleClient;
+    }): Promise<Partner[]> {
+        const db = args.tx ?? getDb();
+        const filters = args.filters ?? {};
+        const conditions: SQL[] = [
+            isNull(partners.deletedAt),
+            isNotNull(partners.ownerUserId),
+            eq(partners.presenceModerated, false)
+        ];
+        conditions.push(...partnerFilterConditions(filters));
+        const query = db
+            .select()
+            .from(partners)
+            .where(and(...conditions));
+        const sortOrder = filters.sortOrder ?? 'desc';
+        query.orderBy(
+            filters.sort === 'name'
+                ? sortOrder === 'asc'
+                    ? asc(partners.name)
+                    : desc(partners.name)
+                : desc(partners.createdAt),
+            asc(partners.id)
+        );
+        return query.execute() as Promise<Partner[]>;
     }
 
     /**
