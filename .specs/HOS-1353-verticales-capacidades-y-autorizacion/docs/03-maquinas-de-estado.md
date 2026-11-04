@@ -172,6 +172,16 @@ cupos y las de «no acumula» toman el más favorable. Es exactamente el caso qu
 abierto ahora por la ventana del primer cobro. El pliegue **no duplica** nada que no sumara ya con
 dos títulos cualesquiera; lo que cambia es que ahora la ventana existe.
 
+> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba ya no rige.
+> En el pliegue (`selectPlegableSources`), una fuente `TRIAL` deja de aportar **apenas hay una fuente
+> `SUSCRIPCIÓN` de clase `TÍTULO` en la misma vertical**: las claves `SUMA` toman el cupo de la
+> suscripción, no trial + suscripción. Los `ADDON` siguen sumando sobre ella. Si la suscripción
+> deja de dar título, el trial vuelve a aportar. Motivo: la suma produjo el canje
+> restaurar-y-recortar medido en staging (con `max_accommodations` 1 + 1 = 2, el recálculo
+> republicó la ficha más vieja despublicada por billing y, al convertirse el trial, el tope 1
+> recortó la ficha nueva publicada a mano). `cobertura` **sigue listando el trial** (contrato
+> `12-contrato…` §2.1): la regla vive en el pliegue, no en el contrato.
+
 > ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`** (cap. 15 §2.6 lo repite donde se
 > pliega):
 >
