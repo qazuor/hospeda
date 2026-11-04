@@ -357,6 +357,13 @@ const breadcrumbItems = [
             />
         )}
 
+        <!-- Night info (HOS-1849 / 4.5): entry, dress code and age badge. The
+             component self-hides when the API removed the section's fields, and
+             never inspects business lines — see its frontmatter. Placed after
+             the hours block because this page does not follow the catalog's
+             section order yet; the catalog-wide ordering is sub-spec 6. -->
+        <VenueNightInfo nightInfo={venue.nightInfo} locale={locale} />
+
         <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
              deal. NOT the same as the "accepts events" CTA below — see
              VenueEvents.astro's frontmatter. Pre-filtered by the API
@@ -445,11 +452,6 @@ const breadcrumbItems = [
         {faqs.length > 0 && (
             <FaqAccordion faqs={faqs} lang={locale} />
         )}
-
-        <!-- Night info (HOS-1849 / 4.5): entry, dress code and age badge. The
-             component self-hides when the API removed the section's fields, and
-             never inspects business lines — see its frontmatter. -->
-        <VenueNightInfo nightInfo={venue.nightInfo} locale={locale} />
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->
