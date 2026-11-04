@@ -451,6 +451,22 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register-late"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register-late"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/unallocated"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/unallocated"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/open-refunds"
         },
         {
