@@ -205,6 +205,7 @@ Run this item after HOS-1489 ships the manual S1 route (PM-153).
 - **Expected:** Steps 1–9 reach the stated states, dates, notices, receipts, marks and HTTP responses; MP4 and MP6 previews preserve subscription, installments and marks; retries do not duplicate installments or notices.
 - **Evidence:** The API responses, the test subscription and installment rows, receipts, coverage, reconciliation marks, per-admin outbox rows and the `manual-installment-open` and `manual-grace-expiry` cron runs.
 - **Covers:** AC:B5:13–19, AC:B5:35; TEST:B5:7, TEST:B5:8 (MP2 and MP3), TEST:B5:9, TEST:B5:10 and the MP5 half of TEST:B5:18; AC:B7:32 (manual path); TEST:B7:20.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### S12 — Partner presence and moderation (HOS-1488)
 
