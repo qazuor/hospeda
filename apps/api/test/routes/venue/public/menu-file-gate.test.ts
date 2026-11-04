@@ -121,14 +121,19 @@ function grantToPaidOwnerOnly(): void {
 }
 
 async function get(target: readonly [string, string], url: string) {
+    const res = await getResponse(target, url);
+    expect(res.status).toBe(200);
+    return (await res.json()).data;
+}
+
+async function getResponse(target: readonly [string, string], url: string) {
     const [modulePath, exportName] = target;
     vi.resetModules();
     const mod = (await import(modulePath)) as Record<string, Hono<AppBindings>>;
     const app = new Hono<AppBindings>();
     app.route('/', mod[exportName] as Hono<AppBindings>);
     const res = await app.request(url);
-    expect(res.status).toBe(200);
-    return (await res.json()).data;
+    return res;
 }
 
 const BY_ID = ['../../../../src/routes/venue/public/getById', 'publicGetVenueByIdRoute'] as const;
@@ -309,6 +314,27 @@ describe('HOS-1792 public venue menu file gate', () => {
         mockGetById.mockResolvedValue({ data: makeVenue(OWNER_PAID), error: null });
         const data = await get(BY_ID, `/${VENUE_ID}`);
         expect(data).not.toHaveProperty('menuFileUrl');
+    });
+
+    it.each([
+        ['getById', BY_ID, `/${VENUE_ID}`],
+        ['getBySlug', BY_SLUG, '/slug/venue'],
+        ['list', LIST, '/'],
+        ['getByDestination', BY_DEST, `/destination/${DEST_ID}`]
+    ] as const)('TEST:3.12:3 %s returns no-store after effective-set failure', async (_name, target, url) => {
+        mockReadEffectiveSet.mockRejectedValue(new Error('billing unavailable'));
+        mockGetById.mockResolvedValue({ data: makeVenue(OWNER_PAID), error: null });
+        mockGetBySlug.mockResolvedValue({ data: makeVenue(OWNER_PAID), error: null });
+        mockSearch.mockResolvedValue({
+            data: { items: [makeVenue(OWNER_PAID)], total: 1 },
+            error: null
+        });
+        const response = await getResponse(target, url);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+        const payload = (await response.json()).data;
+        const venue = Array.isArray(payload.items) ? payload.items[0] : payload;
+        expect(venue).not.toHaveProperty('menuUrl');
     });
 
     it.each([

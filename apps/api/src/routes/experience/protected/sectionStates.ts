@@ -4,7 +4,11 @@ import {
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+// Same module instance `utils/response-helpers` compares against: importing
+// `ServiceError` from the package ROOT yields a DIFFERENT class under the test
+// resolver (the global stand-in only replaces the root specifier), and
+// `instanceof` then fails — a SERVICE_UNAVAILABLE answered as a 500.
+import { ServiceError } from '@repo/service-core/types';
 import { resolveListingSections } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -28,10 +32,18 @@ export const protectedGetExperienceSectionStatesRoute = createProtectedRoute({
             throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
         const { subjectId, businessLines } = listingAccess;
         const ports = getListingAccessPorts();
-        const effective = await ports.effectiveSet({
-            userId: subjectId,
-            vertical: VerticalEnum.EXPERIENCE
-        });
+        let effective: Awaited<ReturnType<typeof ports.effectiveSet>>;
+        try {
+            effective = await ports.effectiveSet({
+                userId: subjectId,
+                vertical: VerticalEnum.EXPERIENCE
+            });
+        } catch {
+            throw new ServiceError(
+                ServiceErrorCode.SERVICE_UNAVAILABLE,
+                'Unable to read listing entitlements'
+            );
+        }
         const resolved = resolveListingSections({
             vertical: 'experience',
             businessLines,
