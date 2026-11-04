@@ -15,7 +15,10 @@ import {
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { registerLateManualPayment } from '../../../src/services/billing/subscription/register-late-manual-payment.service';
+import {
+    previewLateManualPaymentRegistration,
+    registerLateManualPayment
+} from '../../../src/services/billing/subscription/register-late-manual-payment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
 
 const now = new Date('2026-09-04T12:00:00.000Z');
@@ -152,6 +155,101 @@ async function rejected(request: Awaited<ReturnType<typeof seed>>['request'], re
         reason
     });
 }
+
+async function seedLiveSuccessor(fixture: Awaited<ReturnType<typeof seed>>) {
+    await getServiceTestDb()
+        .insert(subscriptions)
+        .values({
+            userId: fixture.payer.id,
+            vertical: 'partner',
+            class: 'PRINCIPAL',
+            status: 'ACTIVE',
+            paymentMethod: 'MANUAL',
+            planVersionId: fixture.version.id,
+            billingOptionId: fixture.option.id,
+            succeedsId: fixture.subscription.id,
+            nextChargeAt: new Date('2026-10-03T12:00:00.000Z')
+        });
+}
+
+describe('MP4 preview', () => {
+    it('rejects an S19 C5 conflict just as registration does, without writing', async () => {
+        const fixture = await seed();
+        await seedLiveSuccessor(fixture);
+        const db = getServiceTestDb();
+        const [payment] = await db
+            .insert(payments)
+            .values({
+                subscriptionId: fixture.subscription.id,
+                amount: 3000000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'test',
+                providerFactId: crypto.randomUUID(),
+                factAt: now
+            })
+            .returning();
+        if (!payment) throw new Error('Payment fixture failed');
+        await db.insert(coveredPeriods).values({
+            subscriptionId: fixture.subscription.id,
+            paymentId: payment.id,
+            periodStart: runningPeriod,
+            creditedAt: now
+        });
+
+        await expect(previewLateManualPaymentRegistration(fixture.request)).rejects.toMatchObject({
+            reason: 'MANUAL_PAYMENT_COVERAGE_CONFLICT'
+        });
+        await rejected(fixture.request, 'MANUAL_PAYMENT_COVERAGE_CONFLICT');
+        const rows = await state(fixture);
+        expect(rows.installment?.status).toBe('DECLARED_UNPAID');
+        expect(rows.coverage).toHaveLength(0);
+        expect(rows.receipt).toHaveLength(0);
+    });
+
+    it('returns the original period and exact next charge for S19 without writing', async () => {
+        const expiredPeriod = new Date('2026-07-03T12:00:00.000Z');
+        const fixture = await seed({ periodStart: expiredPeriod });
+        await seedLiveSuccessor(fixture);
+
+        const preview = await previewLateManualPaymentRegistration(fixture.request);
+        expect(preview).toEqual({
+            subscriptionId: fixture.subscription.id,
+            manualPaymentId: fixture.installment.id,
+            periodStart: expiredPeriod,
+            reimputedPeriodStart: null,
+            nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
+            effect: 'S19'
+        });
+        const rows = await state(fixture);
+        expect(rows.installment?.status).toBe('DECLARED_UNPAID');
+        expect(rows.coverage).toHaveLength(0);
+        expect(rows.receipt).toHaveLength(0);
+    });
+
+    it('returns the reimputed period and exact next charge for S7 without writing', async () => {
+        const fixture = await seed({ periodStart: new Date('2026-07-03T12:00:00.000Z') });
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(now);
+        try {
+            const preview = await previewLateManualPaymentRegistration(fixture.request);
+            expect(preview).toEqual({
+                subscriptionId: fixture.subscription.id,
+                manualPaymentId: fixture.installment.id,
+                periodStart: fixture.installment.periodStart,
+                reimputedPeriodStart: now,
+                nextChargeAt: new Date('2026-10-04T12:00:00.000Z'),
+                effect: 'S7'
+            });
+            const rows = await state(fixture);
+            expect(rows.installment?.status).toBe('DECLARED_UNPAID');
+            expect(rows.coverage).toHaveLength(0);
+            expect(rows.receipt).toHaveLength(0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
 
 describe('TEST:B5:10 MP4 registration', () => {
     it('registers a running period, claims C5, issues a receipt and returns by S7', async () => {

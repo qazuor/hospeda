@@ -2,12 +2,10 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import {
     and,
     billingOptions,
-    coveredPeriods,
     type DrizzleClient,
     domainEventModel,
     eq,
     getDb,
-    isNull,
     manualPaymentModel,
     manualPayments,
     type SelectSubscription,
@@ -26,9 +24,8 @@ import { unwiredCoverageNotices } from '../payment/payment-ports';
 import { resumeComplementsS33 } from './complement-resume-s33';
 import { checkLatePaymentConditions } from './late-payment-conditions';
 import {
-    candidateManualPaymentPeriod,
     claimManualPaymentPeriod,
-    type ManualPaymentPeriod
+    previewManualPaymentPeriod
 } from './manual-payment-reimputation';
 import type { ReactivateSuspendedPorts } from './reactivate-suspended.service';
 import {
@@ -171,41 +168,6 @@ async function check(input: Input, tx: DrizzleClient, lock: boolean): Promise<Ch
     };
 }
 
-async function previewPeriod(input: {
-    readonly tx: DrizzleClient;
-    readonly subscriptionId: string;
-    readonly originalPeriodStart: Date;
-    readonly everyMonths: number;
-    readonly now: Date;
-}): Promise<ManualPaymentPeriod> {
-    const candidate = candidateManualPaymentPeriod(input);
-    const conflict = async (periodStart: Date) => {
-        const [covered] = await input.tx
-            .select({ id: coveredPeriods.id })
-            .from(coveredPeriods)
-            .where(
-                and(
-                    eq(coveredPeriods.subscriptionId, input.subscriptionId),
-                    eq(coveredPeriods.periodStart, periodStart),
-                    isNull(coveredPeriods.releasedAt)
-                )
-            )
-            .limit(1);
-        return Boolean(covered);
-    };
-    if (!(await conflict(candidate.periodStart))) return candidate;
-    if (candidate.reimputedFrom && !(await conflict(input.originalPeriodStart)))
-        return {
-            periodStart: input.originalPeriodStart,
-            reimputedFrom: null,
-            nextChargeAt: candidateManualPaymentPeriod({
-                ...input,
-                now: input.originalPeriodStart
-            }).nextChargeAt
-        };
-    reject(ServiceErrorCode.ALREADY_EXISTS, 'MANUAL_PAYMENT_COVERAGE_CONFLICT');
-}
-
 /** Read-only MP4 preview with the registration's business rejections. */
 export async function previewLateManualPaymentRegistration(input: Input): Promise<{
     readonly subscriptionId: string;
@@ -223,20 +185,14 @@ export async function previewLateManualPaymentRegistration(input: Input): Promis
         if (!('retainedForS19' in conditions) && !conditions.ok)
             reject(ServiceErrorCode.ALREADY_EXISTS, 'MANUAL_PAYMENT_CONDITION_FAILED');
         const effect = 'retainedForS19' in conditions ? 'S19' : 'S7';
-        const period =
-            effect === 'S19'
-                ? candidateManualPaymentPeriod({
-                      originalPeriodStart: checked.installment.periodStart,
-                      everyMonths: checked.everyMonths,
-                      now: checked.installment.periodStart
-                  })
-                : await previewPeriod({
-                      tx,
-                      subscriptionId: checked.subscription.id,
-                      originalPeriodStart: checked.installment.periodStart,
-                      everyMonths: checked.everyMonths,
-                      now
-                  });
+        const period = await previewManualPaymentPeriod({
+            tx,
+            subscriptionId: checked.subscription.id,
+            originalPeriodStart: checked.installment.periodStart,
+            everyMonths: checked.everyMonths,
+            now,
+            ...(effect === 'S19' ? { periodAt: checked.installment.periodStart } : {})
+        });
         return {
             subscriptionId: checked.subscription.id,
             manualPaymentId: checked.installment.id,

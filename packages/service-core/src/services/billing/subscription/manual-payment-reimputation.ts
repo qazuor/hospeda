@@ -1,4 +1,4 @@
-import { coveredPeriods, type DrizzleClient } from '@repo/db';
+import { and, coveredPeriods, type DrizzleClient, eq, isNull } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
@@ -56,6 +56,62 @@ async function insertCoverage(input: {
     }
 }
 
+async function evaluateManualPaymentPeriod(input: {
+    readonly originalPeriodStart: Date;
+    readonly everyMonths: number;
+    readonly now: Date;
+    readonly periodAt?: Date;
+    readonly acceptPeriod: (periodStart: Date) => Promise<boolean>;
+}): Promise<ManualPaymentPeriod> {
+    const candidate = candidateManualPaymentPeriod({
+        ...input,
+        now: input.periodAt ?? input.now
+    });
+    if (await input.acceptPeriod(candidate.periodStart)) return candidate;
+    if (candidate.reimputedFrom) {
+        const original = candidateManualPaymentPeriod({
+            ...input,
+            now: input.originalPeriodStart
+        });
+        if (await input.acceptPeriod(input.originalPeriodStart))
+            return { ...original, reimputedFrom: null };
+    }
+    throw new ServiceError(
+        ServiceErrorCode.ALREADY_EXISTS,
+        'MANUAL_PAYMENT_COVERAGE_CONFLICT',
+        undefined,
+        'MANUAL_PAYMENT_COVERAGE_CONFLICT'
+    );
+}
+
+/** Evaluates MP4's C5 choice without claiming coverage. */
+export async function previewManualPaymentPeriod(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+    readonly originalPeriodStart: Date;
+    readonly everyMonths: number;
+    readonly now: Date;
+    readonly periodAt?: Date;
+}): Promise<ManualPaymentPeriod> {
+    return evaluateManualPaymentPeriod({
+        ...input,
+        acceptPeriod: async (periodStart) => {
+            const [covered] = await input.tx
+                .select({ id: coveredPeriods.id })
+                .from(coveredPeriods)
+                .where(
+                    and(
+                        eq(coveredPeriods.subscriptionId, input.subscriptionId),
+                        eq(coveredPeriods.periodStart, periodStart),
+                        isNull(coveredPeriods.releasedAt)
+                    )
+                )
+                .limit(1);
+            return !covered;
+        }
+    });
+}
+
 /** Claims C5 in a savepoint; a reimputation collision retries the original period. */
 export async function claimManualPaymentPeriod(input: {
     readonly tx: DrizzleClient;
@@ -66,23 +122,8 @@ export async function claimManualPaymentPeriod(input: {
     readonly now: Date;
     readonly periodAt?: Date;
 }): Promise<ManualPaymentPeriod> {
-    const candidate = candidateManualPaymentPeriod({
+    return evaluateManualPaymentPeriod({
         ...input,
-        now: input.periodAt ?? input.now
+        acceptPeriod: async (periodStart) => insertCoverage({ ...input, periodStart })
     });
-    if (await insertCoverage({ ...input, periodStart: candidate.periodStart })) return candidate;
-    if (candidate.reimputedFrom) {
-        const original = candidateManualPaymentPeriod({
-            ...input,
-            now: input.originalPeriodStart
-        });
-        if (await insertCoverage({ ...input, periodStart: input.originalPeriodStart }))
-            return { ...original, reimputedFrom: null };
-    }
-    throw new ServiceError(
-        ServiceErrorCode.ALREADY_EXISTS,
-        'MANUAL_PAYMENT_COVERAGE_CONFLICT',
-        undefined,
-        'MANUAL_PAYMENT_COVERAGE_CONFLICT'
-    );
 }
