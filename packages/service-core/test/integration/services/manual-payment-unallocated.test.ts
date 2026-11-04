@@ -4,7 +4,9 @@ import {
     coveredPeriods,
     eq,
     isNull,
+    manualPaymentModel,
     manualPayments,
+    payments,
     plans,
     planVersions,
     receipts,
@@ -116,13 +118,31 @@ async function seed(
               })
               .returning()
         : [];
-    if (input.coverage && installment)
+    if (input.coverage) {
+        let paymentId: string | undefined;
+        if (!installment) {
+            const [payment] = await db
+                .insert(payments)
+                .values({
+                    subscriptionId: subscription.id,
+                    amount: 3000000,
+                    currency: 'ARS',
+                    status: 'SUCCEEDED',
+                    provider: 'test',
+                    providerFactId: crypto.randomUUID(),
+                    factAt: now
+                })
+                .returning();
+            if (!payment) throw new Error('Provider payment fixture failed');
+            paymentId = payment.id;
+        }
         await db.insert(coveredPeriods).values({
             subscriptionId: subscription.id,
             periodStart,
-            manualPaymentId: installment.id,
+            ...(installment ? { manualPaymentId: installment.id } : { paymentId }),
             creditedAt: now
         });
+    }
     const actor = {
         id: admin.id,
         roles: [RoleEnum.ADMIN],
@@ -265,6 +285,23 @@ describe('TEST:B5:10 MP6 unallocated transfers', () => {
         expect(after.rows).toHaveLength(before.rows.length);
     });
 
+    it('uses the last accredited period when the subscription never had an installment', async () => {
+        const fixture = await seed({ installmentStatus: null, coverage: true });
+        expect(await previewUnallocatedManualPayment(fixture.request)).toMatchObject({
+            periodStart,
+            mark: 'COBRO_DUPLICADO'
+        });
+        const result = await registerUnallocatedManualPayment(fixture.request, { clock });
+        const after = await snapshot(fixture.subscription.id);
+        expect(result).toMatchObject({ periodStart, mark: 'COBRO_DUPLICADO', outcome: 'OPENED' });
+        expect(after.rows).toHaveLength(1);
+        expect(after.coverage).toHaveLength(1);
+        expect(after.marks).toMatchObject([{ reason: 'COBRO_DUPLICADO' }]);
+        expect(await hung(result.markId)).toMatchObject([
+            { manualPaymentId: result.manualPaymentId }
+        ]);
+    });
+
     it('rejects an open awaiting installment', async () => {
         const fixture = await seed({ installmentStatus: 'AWAITING' });
         await rejected(fixture.request, 'MANUAL_PAYMENT_OPEN_INSTALLMENT');
@@ -301,5 +338,55 @@ describe('TEST:B5:10 MP6 unallocated transfers', () => {
         expect((await hung(first.markId)).map((row) => row.manualPaymentId).sort()).toEqual(
             [first.manualPaymentId, second.manualPaymentId].sort()
         );
+    });
+
+    it.each([
+        'CANCELLED',
+        'ABANDONED'
+    ] as const)('accumulates two post-cancellation transfers for %s without changing installment selection', async (status) => {
+        const fixture = await seed({ status, installmentStatus: 'DECLARED_UNPAID' });
+        const first = await registerUnallocatedManualPayment(fixture.request, { clock });
+        expect(await previewUnallocatedManualPayment(fixture.request)).toMatchObject({
+            periodStart,
+            mark: 'COBRO_POSTERIOR_A_LA_BAJA'
+        });
+        const second = await registerUnallocatedManualPayment(fixture.request, { clock });
+        expect(first).toMatchObject({ mark: 'COBRO_POSTERIOR_A_LA_BAJA', outcome: 'OPENED' });
+        expect(second).toMatchObject({
+            mark: 'COBRO_POSTERIOR_A_LA_BAJA',
+            outcome: 'ACCUMULATED',
+            markId: first.markId
+        });
+        const after = await snapshot(fixture.subscription.id);
+        expect(after.rows).toHaveLength(3);
+        expect(after.marks).toHaveLength(1);
+        expect(after.coverage).toHaveLength(0);
+        expect((await hung(first.markId)).map((row) => row.manualPaymentId).sort()).toEqual(
+            [first.manualPaymentId, second.manualPaymentId].sort()
+        );
+        const db = getServiceTestDb();
+        expect(
+            (
+                await manualPaymentModel.findLatestInstallment({
+                    subscriptionId: fixture.subscription.id,
+                    tx: db
+                })
+            )?.id
+        ).toBe(fixture.installment?.id);
+        expect(
+            (
+                await manualPaymentModel.findFirstInstallment({
+                    subscriptionId: fixture.subscription.id,
+                    tx: db
+                })
+            )?.id
+        ).toBe(fixture.installment?.id);
+        expect(
+            await manualPaymentModel.isFirstInstallment({
+                subscriptionId: fixture.subscription.id,
+                manualPaymentId: first.manualPaymentId,
+                tx: db
+            })
+        ).toBe(false);
     });
 });

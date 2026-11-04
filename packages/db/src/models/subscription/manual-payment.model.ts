@@ -4,12 +4,36 @@ import {
     manualPayments,
     type SelectManualPayment
 } from '../../schemas/vertical/manual-payment.dbschema.ts';
+import { receipts } from '../../schemas/vertical/receipt.dbschema.ts';
+import { reconciliationMarkPayments } from '../../schemas/vertical/reconciliation-mark-payment.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
 import { successionRetainedPayments } from '../../schemas/vertical/succession-retained-payment.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
 /** Persistence for manual subscription installments. */
 export class ManualPaymentModel {
+    /** MP6 transfers are marked without a receipt; registered installments receive one. */
+    private installmentCondition(subscriptionId: string) {
+        return and(
+            eq(manualPayments.subscriptionId, subscriptionId),
+            notExists(
+                getDb()
+                    .select({ id: reconciliationMarkPayments.id })
+                    .from(reconciliationMarkPayments)
+                    .where(
+                        and(
+                            eq(reconciliationMarkPayments.manualPaymentId, manualPayments.id),
+                            notExists(
+                                getDb()
+                                    .select({ id: receipts.id })
+                                    .from(receipts)
+                                    .where(eq(receipts.manualPaymentId, manualPayments.id))
+                            )
+                        )
+                    )
+            )
+        );
+    }
     /** Finds expired manual principal graces with an awaiting installment. */
     async findManualGracesDue(input: { readonly now: Date; readonly limit: number }) {
         return getDb()
@@ -163,18 +187,19 @@ export class ManualPaymentModel {
     async findLatestInstallment(input: {
         readonly subscriptionId: string;
         readonly tx: DrizzleClient;
+        readonly lock?: boolean;
     }): Promise<SelectManualPayment | null> {
-        const [row] = await input.tx
+        const query = input.tx
             .select()
             .from(manualPayments)
-            .where(eq(manualPayments.subscriptionId, input.subscriptionId))
+            .where(this.installmentCondition(input.subscriptionId))
             .orderBy(
                 desc(manualPayments.periodStart),
                 desc(manualPayments.createdAt),
                 desc(manualPayments.id)
             )
-            .limit(1)
-            .for('update');
+            .limit(1);
+        const [row] = input.lock === false ? await query : await query.for('update');
         return row ?? null;
     }
 
@@ -186,7 +211,7 @@ export class ManualPaymentModel {
         const [row] = await input.tx
             .select()
             .from(manualPayments)
-            .where(eq(manualPayments.subscriptionId, input.subscriptionId))
+            .where(this.installmentCondition(input.subscriptionId))
             .orderBy(
                 asc(manualPayments.periodStart),
                 asc(manualPayments.createdAt),
@@ -244,7 +269,7 @@ export class ManualPaymentModel {
         const [first] = await input.tx
             .select({ id: manualPayments.id })
             .from(manualPayments)
-            .where(eq(manualPayments.subscriptionId, input.subscriptionId))
+            .where(this.installmentCondition(input.subscriptionId))
             .orderBy(
                 asc(manualPayments.periodStart),
                 asc(manualPayments.createdAt),

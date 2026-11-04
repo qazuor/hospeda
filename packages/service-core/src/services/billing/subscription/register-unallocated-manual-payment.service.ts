@@ -8,7 +8,6 @@ import {
     getDb,
     isNull,
     manualPaymentModel,
-    manualPayments,
     type ReconciliationMarkReason,
     subscriptions
 } from '@repo/db';
@@ -98,19 +97,11 @@ async function check(
     if (!step.allowed) reject('ADMINISTRATIVE_ACTION_FORBIDDEN');
     if (subscription.paymentMethod !== 'MANUAL') reject('MANUAL_PAYMENT_NOT_MANUAL');
 
-    const latest = lock
-        ? await manualPaymentModel.findLatestInstallment({ subscriptionId: subscription.id, tx })
-        : await tx
-              .select()
-              .from(manualPayments)
-              .where(eq(manualPayments.subscriptionId, subscription.id))
-              .orderBy(
-                  desc(manualPayments.periodStart),
-                  desc(manualPayments.createdAt),
-                  desc(manualPayments.id)
-              )
-              .limit(1)
-              .then((rows) => rows[0] ?? null);
+    const latest = await manualPaymentModel.findLatestInstallment({
+        subscriptionId: subscription.id,
+        tx,
+        lock
+    });
     const periodStart =
         latest?.periodStart ??
         (
@@ -144,7 +135,7 @@ async function check(
         if (first?.status === 'DECLARED_UNPAID')
             return { periodStart, mark: 'COBRO_POSTERIOR_A_LA_BAJA' };
     }
-    if (latest?.status !== 'REGISTERED') reject('MANUAL_PAYMENT_NOT_ALLOCATABLE');
+    if (latest && latest.status !== 'REGISTERED') reject('MANUAL_PAYMENT_NOT_ALLOCATABLE');
     if (!lock) {
         const [coverage] = await tx
             .select({ id: coveredPeriods.id })
