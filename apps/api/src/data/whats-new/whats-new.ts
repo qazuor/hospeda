@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4000
+    {
+        id: '2026-11-02-accommodation-save-rejects-unknown-fields',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al guardar un alojamiento, los campos mal enviados ahora avisan',
+            en: 'Saving an accommodation now warns about fields sent the wrong way',
+            pt: 'Ao salvar uma acomodação, os campos enviados de forma errada agora avisam'
+        },
+        body: {
+            es: 'Si al guardar tu alojamiento se manda un dato que no se puede guardar de esa forma, ahora recibís un error que nombra el campo, en lugar de ver "guardado" sin que se haya guardado nada. Los datos de capacidad, ubicación y precio se guardan como siempre.',
+            en: 'If saving your accommodation sends a value that cannot be saved that way, you now get an error naming the field, instead of seeing "saved" when nothing was saved. Capacity, location and price data are saved as usual.',
+            pt: 'Se ao salvar sua acomodação for enviado um dado que não pode ser salvo dessa forma, agora você recebe um erro que nomeia o campo, em vez de ver "salvo" sem que nada tenha sido salvo. Os dados de capacidade, localização e preço são salvos como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
