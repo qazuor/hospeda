@@ -1317,6 +1317,13 @@
       "when": 1793734622730,
       "tag": "0187_public_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793748335941,
+      "tag": "0188_unique_silver_fox",
+      "breakpoints": true
     }
   ]
 }

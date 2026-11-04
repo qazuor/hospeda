@@ -2,8 +2,10 @@
  * A read by id carries its instant, and a decision refuses an old one
  * (AC:B1:4, INV:D17, DEC-TEST-003#📌1).
  *
- * `ProviderRead<T>` is the ONLY way a decision receives the provider's state:
- * `readAuthorization` and `readCharge` return it, and only an implementation of
+ * `ProviderRead<T>` is the way a decision receives provider state. `ClosedChargeSnapshot`
+ * is the sole non-decision exception: the period-charges comparison consumes it,
+ * while `readPeriodCharges` uses it only to select the latest charge and re-reads that charge live.
+ * `readAuthorization` and `readCharge` return ProviderRead, and only an implementation of
  * the interface (the adapter, the fake) builds it, through `stampProviderRead`,
  * which this package does not export. The brand is a module-private symbol, so
  * an object literal shaped like a read is not one, and neither is a clone of

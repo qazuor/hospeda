@@ -1,6 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { ClosedChargeSnapshots } from '../../../../src/services/billing/reconciliation/charge-snapshots/closed-charge-snapshot.js';
 import { readPeriodCharges } from '../../../../src/services/billing/reconciliation/period-charges/read-period-charges.js';
 
 function fixture() {
@@ -61,6 +62,50 @@ describe('readPeriodCharges', () => {
             verdict: 'CHARGED',
             chargeId
         });
+    });
+
+    it('decides from the live read when the latest listed charge has a closed snapshot', async () => {
+        const { clock, provider, advance } = fixture();
+        const authorizationId = await authorization(provider);
+        const oldCharge = await provider.charge({
+            authorizationId,
+            amount: { amountMinor: 25_000, currency: 'ARS' },
+            reference: 'old'
+        });
+        advance({ ms: 60_000 });
+        const latestCharge = await provider.charge({
+            authorizationId,
+            amount: { amountMinor: 25_000, currency: 'ARS' },
+            reference: 'latest'
+        });
+        advance({ ms: 60 * 60 * 1000 });
+        const liveRead = await provider.readCharge({ chargeId: latestCharge.chargeId });
+        const readSpy = vi.spyOn(provider, 'readCharge');
+        const closedChargeSnapshots: ClosedChargeSnapshots = {
+            find: async () => [
+                {
+                    chargeId: latestCharge.chargeId,
+                    providerCreatedAt: liveRead.snapshot.createdAt,
+                    status: 'approved',
+                    purpose: 'charge',
+                    authorizationId,
+                    reference: 'latest',
+                    amountMinor: 25_000,
+                    currency: 'ARS',
+                    refundedAmountMinor: 0,
+                    chargedBack: false
+                }
+            ]
+        };
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const authorizationRead = await provider.readAuthorization({ authorizationId });
+        await expect(
+            readPeriodCharges({ authorizationRead, act }, { provider, closedChargeSnapshots })
+        ).resolves.toEqual({ verdict: 'CHARGED', chargeId: latestCharge.chargeId });
+        expect(readSpy.mock.calls.map(([input]) => input.chargeId)).toEqual([
+            oldCharge.chargeId,
+            latestCharge.chargeId
+        ]);
     });
 
     it('returns UNKNOWN with the latest record when the counter is ahead of the list (M7 honest)', async () => {

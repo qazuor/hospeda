@@ -100,10 +100,20 @@ describe('runCronJob lifecycle', () => {
     });
 
     it('records an overlap as success with the holder run ID and does not ping', async () => {
-        mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
+        mocks.lock.mockResolvedValue({
+            acquired: false,
+            holderRunId: 'holder-1',
+            holderStartedAt: null,
+            holderExecutionMode: null
+        });
         const decision = await runCronJob({ job, executionMode: 'scheduled', dryRun: false });
 
-        expect(decision).toEqual({ started: false, holderRunId: 'holder-1' });
+        expect(decision).toEqual({
+            started: false,
+            holderRunId: 'holder-1',
+            holderStartedAt: null,
+            holderExecutionMode: null
+        });
         expect(job.handler).not.toHaveBeenCalled();
         expect(mocks.record).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -120,7 +130,12 @@ describe('runCronJob lifecycle', () => {
     });
 
     it('tells the job about a scheduled overlap, never about a manual one', async () => {
-        mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
+        mocks.lock.mockResolvedValue({
+            acquired: false,
+            holderRunId: 'holder-1',
+            holderStartedAt: null,
+            holderExecutionMode: null
+        });
         const onOverlapSkipped = vi.fn();
         const hooked = { ...job, onOverlapSkipped };
         await runCronJob({ job: hooked, executionMode: 'manual', dryRun: false });
@@ -128,7 +143,12 @@ describe('runCronJob lifecycle', () => {
         await runCronJob({ job: hooked, executionMode: 'scheduled', dryRun: false });
         expect(onOverlapSkipped).toHaveBeenCalledTimes(1);
         expect(onOverlapSkipped).toHaveBeenCalledWith(
-            expect.objectContaining({ startedAt: expect.any(Date) })
+            expect.objectContaining({
+                startedAt: expect.any(Date),
+                holderRunId: 'holder-1',
+                holderStartedAt: null,
+                holderExecutionMode: null
+            })
         );
     });
 

@@ -169,7 +169,7 @@ describe('TEST:B9b:2 AC:B9b:2 redeeming a discount code respects the provider fl
         ).toBe(764_923);
         const sweep = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 {
                     provider: subject.provider,
                     clock: reconciliationClock,

@@ -99,4 +99,57 @@ describe('Redis shared provider cool-down', () => {
         await store.refresh?.();
         expect(info).toHaveBeenCalledTimes(1);
     });
+
+    it('makes a 429 seen by another container no later than 250 ms after it, and never waits over 50 ms on Redis (AC-6)', async () => {
+        let stored = 0;
+        let clockNow = 0;
+        const shared = {
+            status: 'ready',
+            get: vi.fn(async () => (stored ? String(stored) : null)),
+            eval: vi.fn(async (_script: string, _keys: number, _key: string, until: string) => {
+                stored = Math.max(stored, Number(until));
+                return 1;
+            }),
+            on: vi.fn(),
+            connect: vi.fn(async () => undefined)
+        } as unknown as Redis;
+        const a = createMercadoPagoRedisCoolDownStore({
+            redisUrl: 'redis://unused',
+            client: shared,
+            now: () => clockNow
+        });
+        const b = createMercadoPagoRedisCoolDownStore({
+            redisUrl: 'redis://unused',
+            client: shared,
+            now: () => clockNow
+        });
+        await b.refresh?.();
+        expect(b.until()).toBe(0);
+        // Container A takes a 429 at t=10 ms with a 30 s cool-down.
+        clockNow = 10;
+        a.extend({ until: 30_010 });
+        // Inside B's read cache it is still unaware: that is the tolerated window.
+        clockNow = 100;
+        await b.refresh?.();
+        expect(b.until()).toBe(0);
+        // 250 ms after the 429 at the latest, its next refresh reads Redis and sees it.
+        clockNow = 10 + 250;
+        await b.refresh?.();
+        expect(b.until()).toBe(30_010);
+
+        const slow = {
+            status: 'ready',
+            get: vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('1'), 400))),
+            eval: vi.fn(),
+            on: vi.fn(),
+            connect: vi.fn(async () => undefined)
+        } as unknown as Redis;
+        const bounded = createMercadoPagoRedisCoolDownStore({
+            redisUrl: 'redis://unused',
+            client: slow
+        });
+        const start = Date.now();
+        expect(await bounded.refresh?.()).toEqual({ fallback: true });
+        expect(Date.now() - start).toBeLessThan(150);
+    });
 });
