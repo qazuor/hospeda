@@ -43,7 +43,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -142,17 +142,26 @@ export function findBaseViolations(params: {
         out.push(
             `RULE 2: ${entry.tag} (idx ${entry.idx}, when ${entry.when}) is new relative to ` +
                 `origin/${target} but its \`when\` is not above that journal's maximum (${baseMax}). ` +
-                `Drizzle would never apply it on an environment already at ${target}. Renumber it ` +
-                `behind the last migration of ${target} and raise its \`when\` above ${baseMax}.`
+                `Drizzle would never apply it on an environment already at ${target}. Regenerate the ` +
+                `migration behind the last one of ${target}, or raise its \`when\` above ${baseMax}; ` +
+                `renumbering the idx alone is not enough.`
         );
     }
     return out;
 }
 
+/** Normalizes a PR target: trims and strips `refs/heads/` and `origin/` prefixes. */
+export function normalizeTarget(raw: string | undefined): string {
+    return (raw ?? '')
+        .trim()
+        .replace(/^refs\/heads\//, '')
+        .replace(/^origin\//, '');
+}
+
 /** Pure check: both rules over already-parsed journals. */
 export function checkJournals(input: CheckInput): CheckResult {
     const { current, base } = input;
-    const target = (input.target ?? '').trim();
+    const target = normalizeTarget(input.target);
     const violations: string[] = [...findOrderViolations({ journal: current })];
     const notes: string[] = [];
     if (target === '') {
@@ -186,6 +195,9 @@ export function parseJournal(params: { readonly text: string; readonly label: st
             throw new Error(`${params.label}: malformed entry ${JSON.stringify(e)}`);
         }
     }
+    if (entries.length === 0) {
+        throw new Error(`${params.label}: "entries" is empty, treated as a broken read`);
+    }
     return { entries: entries as readonly JournalEntry[] };
 }
 
@@ -211,7 +223,7 @@ export function run(params: {
     readonly root: string;
 }): { readonly exitCode: 0 | 1; readonly output: string } {
     const { args, root } = params;
-    const target = (flag(args, 'base') ?? params.baseRef ?? '').trim();
+    const target = normalizeTarget(flag(args, 'base') || params.baseRef);
     const journalFile = flag(args, 'journal-file');
     const journalRef = flag(args, 'journal-ref');
     const baseFile = flag(args, 'base-journal-file');
@@ -248,7 +260,9 @@ export function run(params: {
     if (result.exitCode === 0) {
         lines.push(
             `OK: ${current.entries.length} journal entries are in order` +
-                (base ? `; entries new vs origin/${target} sit above its max when.` : '.')
+                (base && GUARDED_TARGETS.includes(target)
+                    ? `; entries new vs origin/${target} sit above its max when.`
+                    : '.')
         );
     } else {
         lines.push(
@@ -259,7 +273,17 @@ export function run(params: {
     return { exitCode: result.exitCode, output: lines.join('\n') };
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+function isMainScript(): boolean {
+    const entry = process.argv[1];
+    if (!entry) return false;
+    try {
+        return fileURLToPath(import.meta.url) === realpathSync(entry);
+    } catch {
+        return false;
+    }
+}
+
+if (isMainScript()) {
     const root = resolve(fileURLToPath(import.meta.url), '../..');
     const { exitCode, output } = run({
         args: process.argv.slice(2),
