@@ -38,7 +38,11 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
             const ownerId = result.data?.ownerId ?? null;
             return {
                 facts: ownerId
-                    ? { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED }
+                    ? {
+                          ownerId,
+                          publicationStatus: PublicationStatusEnum.PUBLISHED,
+                          businessLines: result.data?.businessLines ?? ['food']
+                      }
                     : null,
                 ownerId
             };
@@ -92,7 +96,8 @@ beforeEach(() => {
             id: VENUE_ID,
             ownerId: OWNER_ID,
             slug: 'la-parrilla-del-sur',
-            name: 'La Parrilla del Sur'
+            name: 'La Parrilla del Sur',
+            businessLines: ['food']
         }
     });
     mockFindLiveCodeForEntity.mockResolvedValue({ data: null });

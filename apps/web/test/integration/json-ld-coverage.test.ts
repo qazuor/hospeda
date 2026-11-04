@@ -147,6 +147,12 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
                         expect(src).toMatch(/faqSections\.length\s*>\s*0[\s\S]*?<FAQPageJsonLd/);
                     });
                 }
+                if (page.name === 'venue detail') {
+                    it('passes projected menu presence through hasMenu', () => {
+                        expect(src).toContain('buildRestaurantHasMenu({');
+                        expect(src).toContain('hasMenu={jsonLdHasMenu}');
+                    });
+                }
             });
         }
     });

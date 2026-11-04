@@ -27,6 +27,7 @@ interface Props {
 	readonly priceRange?: string;
 	readonly servesCuisine?: string;
 	readonly telephone?: string;
+	readonly hasMenu?: string;
 	readonly aggregateRating?: AggregateRating;
 }
 
@@ -38,6 +39,7 @@ const {
 	priceRange,
 	servesCuisine,
 	telephone,
+	hasMenu,
 	aggregateRating,
 } = Astro.props;
 
@@ -63,6 +65,10 @@ if (servesCuisine) {
 
 if (telephone) {
 	structuredData.telephone = telephone;
+}
+
+if (hasMenu) {
+	structuredData.hasMenu = hasMenu;
 }
 
 if (aggregateRating) {

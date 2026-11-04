@@ -87,6 +87,7 @@ interface MenuQrScanStats {
 /** Per-listing widget state. */
 type ListingQrState =
     | { readonly status: 'loading' }
+    | { readonly status: 'absent' }
     | { readonly status: 'locked' }
     | { readonly status: 'error' }
     | { readonly status: 'ready'; readonly qr: MenuQrData; readonly stats: MenuQrScanStats };
@@ -100,12 +101,24 @@ async function fetchListingState(
     listingId: string,
     windowParam: '7d' | '30d'
 ): Promise<ListingQrState> {
+    const sectionsResult = await listingAnalyticsApi.getVenueSectionStates({ venueId: listingId });
+    if (!sectionsResult.ok) return { status: 'error' };
+    const menu = sectionsResult.data.sections.menu;
+    if (menu.state === 'absent') return { status: 'absent' };
+    if (menu.state === 'locked' || menu.traits.qr !== 'available') {
+        return { status: 'locked' };
+    }
+
     const [qrResult, scansResult] = await Promise.all([
         listingAnalyticsApi.getMenuQr({ venueId: listingId }),
         listingAnalyticsApi.getMenuQrScans({ venueId: listingId, window: windowParam })
     ]);
 
     if (!qrResult.ok || !scansResult.ok) {
+        const isAbsent =
+            (!qrResult.ok && qrResult.error.status === 409) ||
+            (!scansResult.ok && scansResult.error.status === 409);
+        if (isAbsent) return { status: 'absent' };
         const isLocked =
             (!qrResult.ok && qrResult.error.status === 403) ||
             (!scansResult.ok && scansResult.error.status === 403);
@@ -320,7 +333,10 @@ export function VenueMenuQrWidget({
         };
     }, [listings, windowParam]);
 
-    if (listings.length === 0) {
+    if (
+        listings.length === 0 ||
+        listings.every((listing) => states.get(listing.id)?.status === 'absent')
+    ) {
         return null;
     }
 
@@ -360,6 +376,7 @@ export function VenueMenuQrWidget({
 
             {listings.map((listing) => {
                 const state = states.get(listing.id) ?? { status: 'loading' as const };
+                if (state.status === 'absent') return null;
 
                 return (
                     <div

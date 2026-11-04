@@ -10,7 +10,7 @@
  * The carta, the menú del día and the venue agenda are ENTITLEMENT-GATED
  * content: the public routes withhold them from an owner whose plan does not
  * grant the key, and the service-core readers do not. So this assembler gates
- * them too, from the capability flag the ROUTE resolved for the owner.
+ * them too, from the section availability the route resolved for the listing.
  *
  * Today that gate never fires — every venue or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
@@ -107,7 +107,7 @@ export interface VenueContextMenuItem {
  * @param venue - The venue row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
- * @param includeMenu - Whether the owner has `manage_venue_menu`.
+ * @param includeMenu - Whether the menu section is available.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
@@ -197,9 +197,12 @@ export function buildVenueMarkdownContext(
             'La carta y los precios son los que el local guardó por última vez, no datos en vivo.'
         );
     } else if (includeMenu && venue.menuUrl) {
-        // No structured carta reached us — either the venue has none, or its
-        // plan does not grant it. Either way the link is public information.
-        lines.push('', '### Carta', 'El local publica su carta en un enlace externo.');
+        // An available menu may consist only of the external link.
+        lines.push(
+            '',
+            '### Carta',
+            `El local publica su carta en: ${fenceOwnerValue(venue.menuUrl)}`
+        );
     }
 
     // --- FAQs (owner free text — fenced) ---
@@ -252,7 +255,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
  * Secondary reads (FAQs, carta) degrade to empty lists with a logged warning —
  * a chat request must not fail because one relation is unavailable.
  *
- * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
+ * @param input - Actor, entity id, resolved prompt, locale and listing states.
  * @returns The context block, system message and venue name.
  */
 export async function assembleVenueContext(
@@ -292,7 +295,7 @@ export async function assembleVenueContext(
         venue,
         faqs,
         menuItems,
-        input.ownerCapabilities.manageVenueMenu === true
+        input.listingSections.get('menu')?.state === 'available'
     );
 
     return {

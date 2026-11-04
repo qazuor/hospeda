@@ -51,7 +51,8 @@ import {
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnSubscriptionsResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
-    type SubscriptionCancellationResponseSchema
+    type SubscriptionCancellationResponseSchema,
+    type VenueListingSectionStatesSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
@@ -2423,6 +2424,15 @@ export const ownerListingsApi = {
 };
 
 export const listingAnalyticsApi = {
+    /** Read the owner's resolved venue section and trait availability. */
+    getVenueSectionStates({
+        venueId
+    }: {
+        readonly venueId: string;
+    }): Promise<ApiResult<z.infer<typeof VenueListingSectionStatesSchema>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/venues/${venueId}/sections` });
+    },
+
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
      * venue/experience verticals, over a rolling window.
