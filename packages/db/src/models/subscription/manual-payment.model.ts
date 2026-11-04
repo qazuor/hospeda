@@ -159,6 +159,68 @@ export class ManualPaymentModel {
         return row ?? null;
     }
 
+    /** Locks the latest installment after the subscription lock. */
+    async findLatestInstallment(input: {
+        readonly subscriptionId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<SelectManualPayment | null> {
+        const [row] = await input.tx
+            .select()
+            .from(manualPayments)
+            .where(eq(manualPayments.subscriptionId, input.subscriptionId))
+            .orderBy(
+                desc(manualPayments.periodStart),
+                desc(manualPayments.createdAt),
+                desc(manualPayments.id)
+            )
+            .limit(1)
+            .for('update');
+        return row ?? null;
+    }
+
+    /** Reads the first installment for terminal first-period decisions. */
+    async findFirstInstallment(input: {
+        readonly subscriptionId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<SelectManualPayment | null> {
+        const [row] = await input.tx
+            .select()
+            .from(manualPayments)
+            .where(eq(manualPayments.subscriptionId, input.subscriptionId))
+            .orderBy(
+                asc(manualPayments.periodStart),
+                asc(manualPayments.createdAt),
+                asc(manualPayments.id)
+            )
+            .limit(1)
+            .for('update');
+        return row ?? null;
+    }
+
+    /** Inserts a registered transfer that is not allocated to an open installment. */
+    async insertRegisteredUnallocated(input: {
+        readonly subscriptionId: string;
+        readonly periodStart: Date;
+        readonly registeredBy: string;
+        readonly registeredAt: Date;
+        readonly proofRef?: string;
+        readonly tx: DrizzleClient;
+    }): Promise<SelectManualPayment> {
+        const [row] = await input.tx
+            .insert(manualPayments)
+            .values({
+                subscriptionId: input.subscriptionId,
+                periodStart: input.periodStart,
+                status: 'REGISTERED',
+                registeredBy: input.registeredBy,
+                registeredAt: input.registeredAt,
+                proofRef: input.proofRef ?? null
+            })
+            .returning();
+        if (!row) throw new Error('Manual payment insert returned no row');
+        return row;
+    }
+
     /** Locks one installment after its subscription has been locked. */
     async lockInstallment(input: {
         readonly manualPaymentId: string;
