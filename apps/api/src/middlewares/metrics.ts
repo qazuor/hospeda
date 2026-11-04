@@ -46,7 +46,10 @@ export type CounterResult = 'success' | 'failure';
  * accidentally let a free-form string proliferate; widen this union when a
  * second domain (e.g. webhooks) needs a counter.
  */
-export type DomainCounterName = 'media_upload_total' | 'media_delete_total';
+export type DomainCounterName =
+    | 'media_upload_total'
+    | 'media_delete_total'
+    | 'listing_empty_business_lines_total';
 
 class MetricsStore {
     private requestCounts = new Map<string, number>();

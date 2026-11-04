@@ -398,6 +398,47 @@ describe('HOS-1721 pre-trial host adds photos to their own DRAFT', () => {
     });
 });
 
+describe('TEST:3.12:2 listings with an impossible empty business line set', () => {
+    it('blocks a non-common section write but allows a basic-info edit', async () => {
+        const { getDomainCounters, resetMetrics } = await import('../../src/middlewares/metrics');
+        resetMetrics();
+        const errorLog = vi.spyOn(apiLogger, 'error');
+        mocks.loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: OWNER,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                businessLines: [],
+                type: 'RESTAURANT'
+            },
+            ownerId: OWNER
+        });
+        const putMenu = await probe(appFor({ listingSection: { id: 'menu', intent: 'write' } }));
+        expect(putMenu.status).toBe(500);
+        expect(putMenu.body.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expect(getDomainCounters()['listing_empty_business_lines_total{result=failure}']).toBe(1);
+        // The body carries no `type`: the log must fall back to the persisted
+        // row value the port read from `loadFacts`, never `null`.
+        expect(errorLog).toHaveBeenCalledWith(
+            { vertical: VerticalEnum.VENUE, id: LISTING, type: 'RESTAURANT' },
+            expect.stringContaining('no business lines')
+        );
+
+        mocks.effectiveSet.mockResolvedValueOnce(
+            rehydrateEffectiveSet({
+                version: 1,
+                userId: OWNER,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+        );
+        const basicInfo = await probe(appFor({}));
+        expect(basicInfo.status).toBe(200);
+        errorLog.mockRestore();
+    });
+});
+
 describe('AC:V5:8 foreign listing subject', () => {
     it('hides a protected foreign write without the action permission', async () => {
         const result = await probe(appFor({ actorId: ADMIN }));

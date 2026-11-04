@@ -9,7 +9,8 @@ import {
 import {
     isAdministrativeActionPermitted,
     OPERATION_STEP6_KEY,
-    resolveListingAccess
+    resolveListingAccess,
+    resolveListingSectionPresence
 } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -19,6 +20,7 @@ import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
 import { apiLogger } from '../utils/logger';
+import { incrementDomainCounter } from './metrics';
 
 /** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
 function isPublishCapabilityKey({
@@ -214,6 +216,41 @@ export async function enforceListingAccess(args: {
         config.operation === 'CREATE'
             ? (bodyLines ?? [])
             : (bodyLines ?? facts?.businessLines ?? []);
+    // The integrity failure is about a listing that EXISTS with an impossible
+    // empty set (the DB CHECK should prevent it). A missing row has `facts ===
+    // null` and belongs to the resolver's NOT_FOUND step, not here; firing this
+    // branch on a missing row turned the 404 of `menuQr`/`menuQrScans` into a
+    // 500 before the handler could throw.
+    // Only the actor who may actually write this listing sees the integrity
+    // failure. A foreign or unauthenticated caller must still get the resolver's
+    // 404/401 priority, not a 500 leaked from a row it may not touch.
+    if (
+        config.operation !== 'CREATE' &&
+        bodyLines === undefined &&
+        facts !== null &&
+        // An explicit empty array is the impossible persisted state. `undefined`
+        // means the row object did not report the column (test doubles), not
+        // that the listing has zero lines.
+        facts.businessLines !== undefined &&
+        facts.businessLines.length === 0 &&
+        (!isForeign || adminAction?.permitted === true)
+    ) {
+        apiLogger.error(
+            { vertical: config.vertical, id: listingId, type: body?.type ?? facts.type ?? null },
+            'Listing has no business lines during section write authorization'
+        );
+        incrementDomainCounter('listing_empty_business_lines_total', 'failure');
+        const absent = resolveListingSectionPresence({
+            vertical: config.vertical,
+            businessLines: [],
+            requested: requestedSections.map(({ id }) => id)
+        });
+        if (requestedSections.some(({ id }) => absent.get(id)))
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Listing has no business lines for requested section'
+            );
+    }
     const sections = requestedSections.length
         ? {
               requested: requestedSections.map((section) => ({ ...section, traits })),
@@ -233,6 +270,11 @@ export async function enforceListingAccess(args: {
         sections,
         limit,
         billing: ports.billing,
+        // Leave `effectiveSet` failures untouched here. This middleware is shared
+        // by every listing route, so mapping its failures to 503 would widen the
+        // degraded-editor contract (HOS-1844 §3.12) to the whole authorization
+        // chain. The 503 is scoped to the `sectionStates` maps; widening it is a
+        // separate follow-up.
         effectiveSet: ports.effectiveSet,
         preTrialDraftLimits: ports.preTrialDraftLimits
     });
