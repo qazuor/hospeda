@@ -6747,7 +6747,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:514, .specs
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:515, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135
 
-## Reglas propias y comportamiento medido, RP1–RP12 (`B/20` §3.2)
+## Reglas propias y comportamiento medido, RP1–RP16 (`B/20` §3.2)
 
 <a id="rp-rp1"></a>
 
@@ -6789,7 +6789,7 @@ a cobrar no coincide exactamente con el monto autorizado** (`06` §4.4 y §9).
 producción, ni comparación de forma, ni quién avisara si no corría**. Desde esta revisión es una
 batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
 
-1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y las doce reglas propias y comportamientos medidos (caso 28; `RP12`, mediciones del 2026-09-29, punto 4): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
+1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y las dieciséis reglas propias y comportamientos medidos (caso 28; `RP12`, mediciones del 2026-09-29, punto 4): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
    cambiar ninguna mentira. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen
@@ -6957,6 +6957,50 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:544, .specs
 - **fila**: `EX-36` (2026-09-29, sandbox) · `PA-3` (2026-09-15, producción)
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:545, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:135
+
+<a id="rp-rp13"></a>
+
+### `RP:RP13` · `RP13`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B6](10-corte/B6.md#pieza-b6) (HOS-1553, una vez: idempotencia y devoluciones de orden)
+- **Fuente de la asignación**: HOS-1553 (fuera del corpus de fuentes)
+- **qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido)**: la búsqueda de órdenes exige **las dos fechas de creación**, un rango de **hasta 30 días** y coincidencia **exacta** de la referencia
+- **fila**: `EX-57` (2026-09-30, sandbox)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:546
+
+<a id="rp-rp14"></a>
+
+### `RP:RP14` · `RP14`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B6](10-corte/B6.md#pieza-b6) (HOS-1553, una vez: idempotencia y devoluciones de orden)
+- **Fuente de la asignación**: HOS-1553 (fuera del corpus de fuentes)
+- **qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido)**: los reembolsos de órdenes (`MP:EX-58`) exigen **idempotency key**: la reejecución idéntica devuelve **la primera respuesta completa**, un monto distinto devuelve **`409`**, y las respuestas **listan todos los reembolsos de la orden**
+- **fila**: `EX-58` (2026-09-30, sandbox)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:547
+
+<a id="rp-rp15"></a>
+
+### `RP:RP15` · `RP15`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B6](10-corte/B6.md#pieza-b6) (HOS-1554)
+- **Fuente de la asignación**: HOS-1554 (fuera del corpus de fuentes)
+- **qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido)**: la creación de una orden de pago único es **idempotente por clave**: otro body devuelve **`409`** y la referencia **no deduplica**
+- **fila**: `EX-41` (2026-09-25, sandbox)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:548
+
+<a id="rp-rp16"></a>
+
+### `RP:RP16` · `RP16`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B6](10-corte/B6.md#pieza-b6) (HOS-1554)
+- **Fuente de la asignación**: HOS-1554 (fuera del corpus de fuentes)
+- **qué exige el proveedor (o, desde el caso 28, cómo se comporta, medido)**: un pago único **rechazado crea una orden fallida** y devuelve su `id`
+- **fila**: `EX-30` (2026-09-29, sandbox)
+
+Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:549
 
 ## Guards (`V/20` §2 y `B/20` §2)
 
