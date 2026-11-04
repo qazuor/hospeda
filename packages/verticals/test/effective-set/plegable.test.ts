@@ -110,4 +110,26 @@ describe('HOS-2027 — a same-vertical SUBSCRIPTION title supersedes the TRIAL',
 
         expect(folded.get(ACCOMMODATIONS)).toBe(3);
     });
+
+    it('a subscription of ANOTHER vertical (the inherited Tourist VIP) does not drop the trial', () => {
+        const touristTrial = trial([cap(1)]);
+        const inherited = { ...subscription([cap(5)]), foreignVertical: true as const };
+        const plegable = selectPlegableSources({ sources: [touristTrial, inherited] });
+
+        expect(plegable).toContain(touristTrial);
+        expect(foldPlegableSet({ sources: [touristTrial, inherited] }).get(ACCOMMODATIONS)).toBe(6);
+    });
+
+    it('a subscription of the trial vertical drops it, even beside an inherited one', () => {
+        const ownTrial = trial([cap(1)]);
+        const plegable = selectPlegableSources({
+            sources: [
+                ownTrial,
+                subscription([cap(1)]),
+                { ...subscription([cap(5)]), foreignVertical: true as const }
+            ]
+        });
+
+        expect(plegable).not.toContain(ownTrial);
+    });
 });

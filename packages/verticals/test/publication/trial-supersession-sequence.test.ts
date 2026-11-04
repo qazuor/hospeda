@@ -12,6 +12,7 @@ import { type CoverageSource, CoverageSourceSchema } from '@repo/billing-vertica
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { foldPlegableSet } from '../../src/effective-set/fold';
+import { selectPlegableSources } from '../../src/effective-set/plegable';
 import type { FoldableSource } from '../../src/effective-set/types';
 import { recalculateCoverage } from '../../src/publication/coverage-recalculation';
 import type {
@@ -145,6 +146,11 @@ describe('trial supersession across coverage recalculation (HOS-2027)', () => {
         // Window with both titles, then after the trial left: both folded by the real fold.
         const limits = [limitOf([trial(), subscription()]), limitOf([subscription()])];
         expect(limits).toEqual([1, 1]);
+        // The direction is pinned: the subscription survives, the trial is dropped.
+        const survivors = selectPlegableSources({ sources: [trial(), subscription()] }).map(
+            ({ source }) => source.type
+        );
+        expect(survivors).toEqual(['SUBSCRIPTION']);
 
         const harness = await recalculateWithLimits(limits);
 
