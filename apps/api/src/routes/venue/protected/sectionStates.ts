@@ -1,9 +1,12 @@
 /** GET /api/v1/protected/venues/:id/sections */
 import { ServiceErrorCode, VenueListingSectionStatesSchema, VerticalEnum } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+// Same module instance `utils/response-helpers` compares against: importing
+// `ServiceError` from the package ROOT yields a DIFFERENT class under the test
+// resolver (the global stand-in only replaces the root specifier), and
+// `instanceof` then fails — a SERVICE_UNAVAILABLE answered as a 500.
+import { ServiceError } from '@repo/service-core/types';
 import { resolveListingSections } from '@repo/verticals';
 import type { Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -32,7 +35,10 @@ export const protectedGetVenueSectionStatesRoute = createProtectedRoute({
                 vertical: VerticalEnum.VENUE
             });
         } catch {
-            throw new HTTPException(503, { message: 'Unable to read listing entitlements' });
+            throw new ServiceError(
+                ServiceErrorCode.SERVICE_UNAVAILABLE,
+                'Unable to read listing entitlements'
+            );
         }
         const resolved = resolveListingSections({
             vertical: 'venue',

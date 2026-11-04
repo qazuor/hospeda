@@ -72,6 +72,17 @@ describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () 
         expect((await response.json()).error.code).toBe('SERVICE_UNAVAILABLE');
     });
 
+    it('TEST:3.12:4 regression — ServiceError(SERVICE_UNAVAILABLE) keeps 503 through the real HTTP route', async () => {
+        // The route throws `ServiceError`, not `HTTPException`; this is the case
+        // that used to answer 500 when the handler and the route factory imported
+        // two different ServiceError classes under the test resolver.
+        effectiveRead.mockRejectedValueOnce(new Error('unavailable'));
+        const response = await app().request(`/${VENUE}/sections`);
+        const body = await response.json();
+        expect(response.status).toBe(503);
+        expect(body.error).toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
+    });
+
     it('resolves the owner plan and all menu traits, including for action 15 support', async () => {
         const own = await app().request(`/${VENUE}/sections`);
         const ownBody = await own.json();
