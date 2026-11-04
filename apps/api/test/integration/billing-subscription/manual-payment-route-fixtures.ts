@@ -58,8 +58,14 @@ export function actorHeaders(id: string, permissions: readonly PermissionEnum[])
 /** Seed only the rows needed by one manual payment route case. */
 export async function seedManualRoute(
     input: {
-        readonly status?: 'PENDING_AUTHORIZATION' | 'ACTIVE' | 'GRACE_PERIOD';
+        readonly status?:
+            | 'PENDING_AUTHORIZATION'
+            | 'ACTIVE'
+            | 'GRACE_PERIOD'
+            | 'SUSPENDED'
+            | 'CANCELLED';
         readonly prior?: boolean;
+        readonly installmentStatus?: 'AWAITING' | 'DECLARED_UNPAID' | 'REGISTERED';
     } = {}
 ) {
     const db = getDb();
@@ -155,7 +161,10 @@ export async function seedManualRoute(
         .values({
             subscriptionId: subscription.id,
             periodStart: PERIOD_START,
-            status: 'AWAITING'
+            status: input.installmentStatus ?? 'AWAITING',
+            ...(input.installmentStatus === 'REGISTERED'
+                ? { registeredBy: admin.id, registeredAt: NOW }
+                : {})
         })
         .returning();
     if (!installment) throw new Error('Installment fixture failed');

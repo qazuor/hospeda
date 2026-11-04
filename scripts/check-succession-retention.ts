@@ -8,7 +8,7 @@
  *        in the FIRST `if` of its body (D-4: "falle la condición que falle");
  *   (g2) `checkLatePaymentConditions` feeds `isPredecessorInSuccession` with
  *        `await isLiveSuccessionPredecessor(…)`;
- *   (g3) every registered reactivator (`REACTIVATORS`: S5, S7 and MP1) calls
+ *   (g3) every registered reactivator (`REACTIVATORS`: S5, S7, MP1 and MP4) calls
  *        `checkLatePaymentConditions` and returns from a `'retainedForS19' in <verdict>` branch
  *        BEFORE its status write (or the call to its writer);
  *   (g4) no other production function writes `subscriptions.status` to `ACTIVE` or
@@ -69,6 +69,12 @@ export const REACTIVATORS = [
         file: `${SUBSCRIPTION_DIR}/register-manual-payment.service.ts`,
         entry: 'registerManualPayment',
         writer: 'reactivateFromGrace'
+    },
+    {
+        // MP4 (AC:B5:18): S19 retention returns before the SUSPENDED → ACTIVE write.
+        file: `${SUBSCRIPTION_DIR}/register-late-manual-payment.service.ts`,
+        entry: 'registerLateManualPayment',
+        writer: 'registerLateManualPayment'
     }
 ] as const;
 
@@ -242,11 +248,18 @@ function reactivatorChecks(root: string, r: Reactivator): Finding[] {
         findReactivationWrites({ file: r.file, source })
     );
     const exitAt = (exit as ts.IfStatement | null)?.getStart() ?? Number.POSITIVE_INFINITY;
+    const retentionBranchWrite =
+        r.entry === 'registerLateManualPayment' &&
+        exit !== null &&
+        writes.some(
+            (at) => at >= exit.thenStatement.getStart() && at < exit.thenStatement.getEnd()
+        );
     if (
         verdicts.size === 0 ||
         exit === null ||
         writes.length === 0 ||
-        writes.some((at) => at < exitAt)
+        writes.some((at) => at < exitAt) ||
+        retentionBranchWrite
     )
         return [
             {

@@ -187,7 +187,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
 - **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
 
-### S11 — Manual payment installments (HOS-1541)
+### S11 — Manual payment installments (HOS-1541, HOS-1542)
+
+Run this item after HOS-1489 ships the manual S1 route (PM-153).
 
 - **Preconditions:** HOS-1629 manual signup is deployed on staging; use only a test account and a SUPER_ADMIN. The manual payment path does not call Mercado Pago, except that activation can cancel an inherited Tourist VIP.
 - **Steps:**
@@ -197,10 +199,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   4. Register the second installment. Confirm `ACTIVE`, cleared grace and one cycle of date advancement.
   5. Repeat step 3 and declare the new installment unpaid. Confirm `DECLARED_UNPAID`, `SUSPENDED`, the manual payer suspension notice and removal from public coverage.
   6. Confirm an ADMIN without the action permissions receives 403 on both POST routes, a foreign installment receives 404, and declaring unpaid on an `ACTIVE` row receives 409.
-- **Expected:** Steps 1–6 reach exactly the states, dates, notices, receipt and HTTP responses stated above, without creating duplicate installments or notices on retry.
-- **Evidence:** The API responses, the test subscription and installment rows, its receipts and coverage, the per-admin outbox rows and the `manual-installment-open` cron run.
-- **Covers:** AC:B5:13–16; TEST:B5:7 and the MP2 half of TEST:B5:8.
-- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+  7. Leave a new `AWAITING` installment past `grace_ends_at` and wait for `manual-grace-expiry`. Confirm it becomes `DECLARED_UNPAID`, the subscription becomes `SUSPENDED`, and retrying the job leaves exactly one installment for that period.
+  8. Preview and register that late payment through `GET` and `POST …/{id}/register-late`. Repeat with a period that has already ended. Confirm the first returns through S7, and the ended period is reimputed to the reactivation period with its next charge date advanced by one cycle. Compare preview results with the persisted row after the GET to confirm no writes.
+  9. On a separate manual subscription whose latest installment is `REGISTERED` and covered, preview and register a second transfer through `GET` and `POST …/unallocated`. Confirm the new `UNALLOCATED` row is `REGISTERED`, the mark reason is `COBRO_DUPLICADO` (20), and coverage, subscription state and next charge date are unchanged. Repeat on a `CANCELLED` subscription with a final `DECLARED_UNPAID` installment and on an `ABANDONED` subscription with its first installment `DECLARED_UNPAID`; confirm `COBRO_POSTERIOR_A_LA_BAJA` (2).
+- **Expected:** Steps 1–9 reach the stated states, dates, notices, receipts, marks and HTTP responses; MP4 and MP6 previews preserve subscription, installments and marks; retries do not duplicate installments or notices.
+- **Evidence:** The API responses, the test subscription and installment rows, receipts, coverage, reconciliation marks, per-admin outbox rows and the `manual-installment-open` and `manual-grace-expiry` cron runs.
+- **Covers:** AC:B5:13–19, AC:B5:35; TEST:B5:7, TEST:B5:8 (MP2 and MP3), TEST:B5:9, TEST:B5:10 and the MP5 half of TEST:B5:18.
 
 ### S12 — Partner presence and moderation (HOS-1488)
 

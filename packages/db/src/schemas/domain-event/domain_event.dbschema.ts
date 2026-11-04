@@ -57,6 +57,8 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   one: `canCharge` keeps counting it until the 16th deadline's window ends,
  *   and the `LIVE_PREAPPROVAL_ON_CLOSED_ROW` pair re-sends the cancellation on
  *   it (B11 §3; HOS-1676 H-2).
+ * - `manual_payment.reimputed`: MP4 moved a late installment to the period
+ *   beginning at reactivation (AC:B5:18); changes record both period starts.
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
@@ -77,6 +79,7 @@ export const DOMAIN_EVENT_TYPES = [
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
+    'manual_payment.reimputed',
     /** An open reconciliation mark passed deadline 17; written by the sweep. */
     'reconciliation.mark_escalated',
     /** An accredited payment was charged below the expected amount (corrida 2). */

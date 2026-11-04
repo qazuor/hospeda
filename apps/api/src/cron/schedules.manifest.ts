@@ -153,6 +153,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Open due manual installments and apply S4 (HOS-1541, AC:B5:13, MP5).'
     },
     {
+        name: 'manual-grace-expiry',
+        displayName: 'Vencimiento del grace manual',
+        category: 'billing',
+        schedule: '43 * * * *',
+        description: 'Suspend expired unpaid manual graces (HOS-1542, AC:B5:17, MP3).'
+    },
+    {
         name: 'subscription-pause-end',
         displayName: 'Fin de pausas de suscripción',
         category: 'billing',

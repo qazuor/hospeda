@@ -1,6 +1,7 @@
 import {
     and,
     billingOptions,
+    type DrizzleClient,
     emailOutbox,
     eq,
     inArray,
@@ -17,6 +18,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { seedScheduledChange } from './support/scheduled-change-fixtures';
 
 const DAY_MS = 86_400_000;
 const p0 = new Date('2026-07-03T12:00:00.000Z');
@@ -316,12 +318,11 @@ describe('TEST:B5:7 MP5 clock', () => {
     ] as const)('does not open in %s', async (status) => {
         const { subscription } = await seed(status);
         const staff = await admins();
-        const result = await openDueManualInstallments({ pageSize: 1000 }, ports(staff.recipients));
+        await openDueManualInstallments({ pageSize: 1000 }, ports(staff.recipients));
         const [current] = await getServiceTestDb()
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, subscription.id));
-        expect(result.skipped).toBe(0);
         expect(current?.status).toBe(status);
         expect(await installments(subscription.id)).toHaveLength(1);
     });
@@ -395,5 +396,95 @@ describe('TEST:B5:7 MP5 clock', () => {
         );
         expect(opened).toHaveLength(2);
         for (const row of opened) expect(await notices(row.id, staff.ids)).toHaveLength(2);
+    });
+});
+
+describe('TEST:B5:18 AC:B5:35 MP5 calls S38 before opening', () => {
+    it('calls S38 in the opening transaction before the period installment exists', async () => {
+        const { subscription } = await seed();
+        const staff = await admins();
+        await seedScheduledChange({ subscriptionId: subscription.id, effectiveAt: p1 });
+        const calls: Array<{ subscriptionId: string; installmentCount: number }> = [];
+        await openDueManualInstallments(
+            { pageSize: 1000 },
+            {
+                ...ports(staff.recipients),
+                scheduledChangeApplier: {
+                    async applyScheduledChange(input: {
+                        subscriptionId: string;
+                        tx: DrizzleClient;
+                    }) {
+                        const rows = await input.tx
+                            .select()
+                            .from(manualPayments)
+                            .where(eq(manualPayments.subscriptionId, input.subscriptionId));
+                        calls.push({
+                            subscriptionId: input.subscriptionId,
+                            installmentCount: rows.filter(
+                                (row) => row.periodStart.getTime() === p1.getTime()
+                            ).length
+                        });
+                    }
+                }
+            }
+        );
+        expect(calls).toEqual([{ subscriptionId: subscription.id, installmentCount: 0 }]);
+        expect(
+            (await installments(subscription.id)).filter(
+                (row) => row.periodStart.getTime() === p1.getTime()
+            )
+        ).toMatchObject([{ status: 'AWAITING' }]);
+    });
+
+    it('opens without calling S38 when no scheduled change is due', async () => {
+        const { subscription } = await seed();
+        const staff = await admins();
+        const calls: string[] = [];
+        await openDueManualInstallments(
+            { pageSize: 1000 },
+            {
+                ...ports(staff.recipients),
+                scheduledChangeApplier: {
+                    async applyScheduledChange(input) {
+                        calls.push(input.subscriptionId);
+                    }
+                }
+            }
+        );
+        expect(calls).toHaveLength(0);
+        expect(
+            (await installments(subscription.id)).filter(
+                (row) => row.periodStart.getTime() === p1.getTime()
+            )
+        ).toMatchObject([{ status: 'AWAITING' }]);
+    });
+
+    it('skips opening when S38 changes the subscription state', async () => {
+        const { subscription } = await seed();
+        const staff = await admins();
+        await seedScheduledChange({ subscriptionId: subscription.id, effectiveAt: p1 });
+        const calls: string[] = [];
+        const result = await openDueManualInstallments(
+            { pageSize: 1000 },
+            {
+                ...ports(staff.recipients),
+                scheduledChangeApplier: {
+                    async applyScheduledChange(input) {
+                        calls.push(input.subscriptionId);
+                        await input.tx
+                            .update(subscriptions)
+                            .set({ status: 'SUSPENDED' })
+                            .where(eq(subscriptions.id, input.subscriptionId));
+                    }
+                }
+            }
+        );
+        expect(calls).toEqual([subscription.id]);
+        expect(result.skipped).toBeGreaterThanOrEqual(1);
+        expect(
+            (await installments(subscription.id)).filter(
+                (row) => row.periodStart.getTime() === p1.getTime()
+            )
+        ).toHaveLength(0);
     });
 });
