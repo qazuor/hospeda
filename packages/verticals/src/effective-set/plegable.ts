@@ -37,7 +37,17 @@ export function hasLiveNonTrialTitle({
 
 /**
  * The plegable set of a `user + vertical`: TITLE and BASE always, COMPLEMENT only
- * when {@link hasLiveNonTrialTitle} holds.
+ * when {@link hasLiveNonTrialTitle} holds, and a TRIAL only while no live
+ * SUBSCRIPTION title is present.
+ *
+ * The TRIAL rule (HOS-2027, owner decision 2026-11-04): a subscription supersedes
+ * the trial of its vertical. Folding both summed `SUM` keys such as
+ * `max_accommodations` (trial 1 + plan 1 = 2) for the window between subscribing
+ * and the trial's conversion, which restored a listing the billing had
+ * unpublished and then trimmed the owner's newest one once the trial left. The
+ * set is already scoped to one vertical (`billing.coverage(user, vertical)`),
+ * so no vertical match is needed here. If the subscription title goes away the
+ * trial contributes again. `cobertura` still lists the TRIAL (contract §2.1).
  *
  * @param args.sources - The live sources of the coverage set, with their values.
  * @returns The sources the four aggregation strategies fold.
@@ -47,11 +57,16 @@ export function selectPlegableSources({
 }: {
     readonly sources: readonly FoldableSource[];
 }): readonly FoldableSource[] {
+    const hasSubscriptionTitle = sources.some(
+        ({ source }) =>
+            source.type === 'SUBSCRIPTION' &&
+            coverageSourceClassOf({ source }).sourceClass === 'TITLE'
+    );
     const admitsComplements = hasLiveNonTrialTitle({
         sources: sources.map(({ source }) => source)
     });
-    return sources.filter(
-        ({ source }) =>
-            coverageSourceClassOf({ source }).sourceClass !== 'COMPLEMENT' || admitsComplements
-    );
+    return sources.filter(({ source }) => {
+        if (source.type === 'TRIAL' && hasSubscriptionTitle) return false;
+        return coverageSourceClassOf({ source }).sourceClass !== 'COMPLEMENT' || admitsComplements;
+    });
 }

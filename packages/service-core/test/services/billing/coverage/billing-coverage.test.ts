@@ -135,7 +135,7 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
         expect(response).toEqual({ covered: false, sources: [baseSource, addonSource] });
     });
 
-    it('lets an emitted SUBSCRIPTION supersede the TRIAL source for the requested vertical while keeping ADDON', async () => {
+    it('lists the TRIAL beside an emitted SUBSCRIPTION: the contract returns every live source (the fold supersedes, not the coverage)', async () => {
         vi.mocked(resolveSubscriptionSources).mockResolvedValue({
             sources: [subscriptionSource('paid-plan-version')]
         });
@@ -146,21 +146,11 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
         }).coverage({ userId, vertical: VerticalEnum.ACCOMMODATION });
 
         expect(response.sources).toEqual([
+            trialSource,
             baseSource,
             subscriptionSource('paid-plan-version'),
             addonSource
         ]);
-    });
-
-    it('keeps TRIAL when no coverage-granting SUBSCRIPTION is emitted', async () => {
-        vi.mocked(resolveSubscriptionSources).mockResolvedValue({ sources: [] });
-        vi.mocked(resolveAddonSources).mockResolvedValue({ sources: [] });
-
-        const response = await createBillingCoverage({
-            ports: fakePorts({ covered: false, sources: [trialSource, baseSource] })
-        }).coverage({ userId, vertical: VerticalEnum.ACCOMMODATION });
-
-        expect(response.sources).toEqual([trialSource, baseSource]);
     });
 
     it('emits no COURTESY or GRANT source when the person holds neither', async () => {
