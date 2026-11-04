@@ -151,6 +151,30 @@ function ports() {
     };
 }
 
+async function cancelS24(fixture: Awaited<ReturnType<typeof seed>>) {
+    const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+    await cancelDirectSubscription(
+        {
+            actor: { id: fixture.user.id, roles: [], permissions: [] },
+            subscriptionId: fixture.subscription.id
+        },
+        {
+            provider: fake,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            coverageNotices: { emitCoverageChanged: async () => {} },
+            orphanhood: {
+                addonPolicy: async () => {
+                    throw new Error('Unexpected addon policy');
+                },
+                listing: async () => {
+                    throw new Error('Unexpected listing');
+                }
+            }
+        }
+    );
+}
+
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
     it('expires due grace, preserves its anchor, and sends one arrears notice', async () => {
         const fixture = await seed();
@@ -245,27 +269,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
             })
             .returning();
         if (!registered) throw new Error('Registered fixture failed');
-        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
-        await cancelDirectSubscription(
-            {
-                actor: { id: fixture.user.id, roles: [], permissions: [] },
-                subscriptionId: fixture.subscription.id
-            },
-            {
-                provider: fake,
-                clock,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' },
-                coverageNotices: { emitCoverageChanged: async () => {} },
-                orphanhood: {
-                    addonPolicy: async () => {
-                        throw new Error('Unexpected addon policy');
-                    },
-                    listing: async () => {
-                        throw new Error('Unexpected listing');
-                    }
-                }
-            }
-        );
+        await cancelS24(fixture);
         const written = await read(fixture);
         const [old] = await getDb()
             .select()
@@ -274,6 +278,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         expect(written.subscription?.status).toBe('CANCELLED');
         expect(written.installment?.status).toBe('DECLARED_UNPAID');
         expect(old?.status).toBe('REGISTERED');
+    });
+
+    it('rejects MP1 after S24 without advancing next charge date', async () => {
+        const fixture = await seed();
+        await cancelS24(fixture);
         await expect(
             registerManualPayment(
                 {
@@ -289,6 +298,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
             )
         ).rejects.toMatchObject({ reason: 'MANUAL_PAYMENT_NOT_AWAITING' });
         const afterRegistration = await read(fixture);
+        expect(afterRegistration.subscription?.status).toBe('CANCELLED');
+        expect(afterRegistration.installment?.status).toBe('DECLARED_UNPAID');
         expect(afterRegistration.subscription?.nextChargeAt).toEqual(
             fixture.subscription.nextChargeAt
         );
