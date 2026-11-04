@@ -117,6 +117,40 @@ describe('PhotoMetadataEditor', () => {
         });
     });
 
+    it('closes the text panel after a successful save', async () => {
+        const onSave = vi.fn().mockResolvedValue(true);
+        render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+        openPanel();
+        fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+            target: { value: 'Living con sofá' }
+        });
+        fireEvent.click(screen.getByText('Guardar'));
+
+        await waitFor(() => {
+            expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
+        });
+        expect(screen.getByLabelText('Editar textos de la foto 1')).toHaveAttribute(
+            'aria-expanded',
+            'false'
+        );
+    });
+
+    it('keeps the typed text panel open when saving fails', async () => {
+        const onSave = vi.fn().mockResolvedValue(false);
+        render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+        openPanel();
+        const field = screen.getByLabelText('¿Qué muestra la foto?') as HTMLTextAreaElement;
+        fireEvent.change(field, { target: { value: 'Living con sofá' } });
+        fireEvent.click(screen.getByText('Guardar'));
+
+        await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+        expect(screen.getByLabelText('¿Qué muestra la foto?')).toHaveValue('Living con sofá');
+        expect(screen.getByLabelText('Cerrar edición de textos de la foto 1')).toHaveAttribute(
+            'aria-expanded',
+            'true'
+        );
+    });
+
     it('shows the CURRENT alt when opened, and replaces it (not appends) on correction', async () => {
         const itemWithAlt: AccommodationMediaItem = { ...BASE_ITEM, alt: 'foto vieja' };
         const onSave = vi.fn().mockResolvedValue(true);
@@ -323,7 +357,7 @@ describe('PhotoMetadataEditor', () => {
 
     // ── Save confirmation ─────────────────────────────────────────────────
 
-    it('shows a saved confirmation after a successful save', async () => {
+    it('closes after successful save instead of leaving a stale saved confirmation open', async () => {
         const onSave = vi.fn().mockResolvedValue(true);
         render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
         openPanel();
@@ -333,7 +367,9 @@ describe('PhotoMetadataEditor', () => {
         });
         fireEvent.click(screen.getByText('Guardar'));
 
-        await waitFor(() => expect(screen.getByText('Guardado')).toBeInTheDocument());
+        await waitFor(() => {
+            expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
+        });
     });
 
     it('does not show a saved confirmation when onSave fails', async () => {

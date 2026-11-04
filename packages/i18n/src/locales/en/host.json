@@ -399,8 +399,8 @@
                 "altWarningMessage": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_one": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
-                "altWarningGoBack": "Go back and fill them in",
-                "altWarningContinue": "Continue without filling them in"
+                "altWarningGoBack": "Complete now",
+                "altWarningContinue": "Continue anyway"
             },
             "video": {
                 "sectionTitle": "Videos",

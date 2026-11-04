@@ -95,6 +95,8 @@ export interface UseUnsavedChangesGuardOptions {
      * runs — the host was shown, and answered, all of them in a single dialog.
      */
     readonly onConfirm?: () => void;
+    /** Called when the host dismisses the dialog and stays on the current page. */
+    readonly onCancel?: () => void;
     /**
      * What this warning is about. Defaults to `'unsaved-changes'`, which is
      * what every consumer of this hook meant before kinds existed. Only used to
@@ -144,6 +146,7 @@ export function useUnsavedChangesGuard({
     cancelLabel,
     includeBeforeUnload = true,
     onConfirm,
+    onCancel,
     kind = 'unsaved-changes',
     count,
     locale
@@ -174,7 +177,8 @@ export function useUnsavedChangesGuard({
             count,
             locale,
             copy: { message, title, confirmLabel, cancelLabel },
-            onConfirm
+            onConfirm,
+            onCancel
         });
 
         return () => {
@@ -191,6 +195,7 @@ export function useUnsavedChangesGuard({
         cancelLabel,
         includeBeforeUnload,
         onConfirm,
+        onCancel,
         kind,
         count,
         locale

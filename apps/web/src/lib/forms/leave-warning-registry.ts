@@ -94,6 +94,8 @@ export interface LeaveWarningEntry {
      * one whose copy happened to be displayed.
      */
     readonly onConfirm?: () => void;
+    /** Run when the host dismisses the dialog and stays on the current page. */
+    readonly onCancel?: () => void;
 }
 
 /**
@@ -184,6 +186,16 @@ function resolveCopy(entries: readonly LeaveWarningEntry[]): LeaveWarningCopy {
 }
 
 /**
+ * Shows a registered warning before a non-navigation action such as saving.
+ * Returns true when the action may continue; missing registrations are a no-op.
+ */
+export async function requestPhotoTextWarning(kind: LeaveWarningKind): Promise<boolean> {
+    const entries = activeEntries().filter((entry) => entry.kind === kind);
+    if (entries.length === 0) return true;
+    return requestEntriesConfirmation(entries);
+}
+
+/**
  * Resolves the router's `navigate` up front, mirroring `dialog-history.ts`'s
  * `warmRouter()`: the click handler must decide synchronously, so awaiting the
  * import there would let the navigation slip. If it never resolves we fall back
@@ -215,29 +227,36 @@ function handleClickCapture(event: MouseEvent): void {
     // navigation. Nothing has been fetched or swapped yet.
     event.preventDefault();
 
-    if (dialogOpen) return;
-
     const entries = activeEntries();
-    dialogOpen = true;
     const href = anchor.href;
 
-    void showConfirmationDialog(resolveCopy(entries))
-        .then((confirmed) => {
-            if (!confirmed) return;
+    void requestEntriesConfirmation(entries).then((confirmed) => {
+        if (!confirmed) {
+            return;
+        }
 
-            for (const entry of entries) {
-                entry.onConfirm?.();
-            }
+        if (navigate) {
+            navigate(href);
+        } else {
+            window.location.href = href;
+        }
+    });
+}
 
-            if (navigate) {
-                navigate(href);
-            } else {
-                window.location.href = href;
-            }
-        })
-        .finally(() => {
-            dialogOpen = false;
-        });
+/** Shared confirmation runner for navigation and action-triggered warnings. */
+async function requestEntriesConfirmation(entries: readonly LeaveWarningEntry[]): Promise<boolean> {
+    if (dialogOpen) return false;
+    dialogOpen = true;
+    try {
+        const confirmed = await showConfirmationDialog(resolveCopy(entries));
+        for (const entry of entries) {
+            if (confirmed) entry.onConfirm?.();
+            else entry.onCancel?.();
+        }
+        return confirmed;
+    } finally {
+        dialogOpen = false;
+    }
 }
 
 /**

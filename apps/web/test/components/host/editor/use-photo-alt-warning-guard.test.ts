@@ -13,7 +13,10 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
 import type { AccommodationMediaItem } from '@/lib/api/types';
-import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
+import {
+    __resetLeaveWarningRegistry,
+    requestPhotoTextWarning
+} from '@/lib/forms/leave-warning-registry';
 import { __setNavigateImpl } from '../../../stubs/astro-transitions-client';
 
 const ACCOMMODATION_ID = 'acc-hos-1018-a';
@@ -113,6 +116,57 @@ describe('usePhotoAltWarningGuard', () => {
     });
 
     describe('with photos missing alt text', () => {
+        it('does not ask again for a save in the same mounted session after continuing', async () => {
+            showConfirmationDialogMock.mockResolvedValue(true);
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [buildItem({ id: 'g1', alt: '' })]
+                })
+            );
+
+            await act(async () => {
+                expect(await requestPhotoTextWarning('photo-alt')).toBe(true);
+            });
+            await flushRouterImport();
+            await act(async () => Promise.resolve());
+            expect(await requestPhotoTextWarning('photo-alt')).toBe(true);
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('focuses the first incomplete photo when the host chooses to complete its text', async () => {
+            const galleryItems = [buildItem({ id: 'g1', alt: '' })];
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const photo = document.createElement('div');
+            photo.dataset.photoMetadataId = 'g1';
+            photo.dataset.photoMetadataMissing = 'true';
+            const toggle = document.createElement('button');
+            toggle.setAttribute('aria-expanded', 'false');
+            const field = document.createElement('textarea');
+            field.id = 'photo-alt-g1';
+            toggle.addEventListener('click', () => photo.append(field));
+            photo.append(toggle);
+            document.body.append(photo);
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems
+                })
+            );
+            await flushRouterImport();
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+            clickAnchor(anchor);
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+
+            expect(document.activeElement).toBe(field);
+        });
+
         it('shows the dialog with the correct missing-alt count on leave', async () => {
             const featuredItem = buildItem({ id: 'featured', alt: undefined, isFeatured: true });
             const galleryItems = [
@@ -141,8 +195,8 @@ describe('usePhotoAltWarningGuard', () => {
             const call = showConfirmationDialogMock.mock.calls[0]?.[0];
             expect(call?.message).toBe('host.properties.editor.photo.altWarningMessage::count=3');
             expect(call?.title).toBe('Fotos sin texto alternativo');
-            expect(call?.confirmLabel).toBe('Continuar sin completarlos');
-            expect(call?.cancelLabel).toBe('Volver y completarlos');
+            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.cancelLabel).toBe('Completar ahora');
         });
 
         it('proceeds with navigation when the host chooses "continue"', async () => {

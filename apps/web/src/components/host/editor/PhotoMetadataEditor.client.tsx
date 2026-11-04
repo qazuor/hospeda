@@ -97,7 +97,6 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     const [creditUrl, setCreditUrl] = useState(item.attribution?.sourceUrl ?? '');
     const [fieldErrors, setFieldErrors] = useState<PhotoMetadataFieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
-    const [justSaved, setJustSaved] = useState(false);
 
     const handleToggle = () => {
         if (!isOpen) {
@@ -111,7 +110,6 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             setPhotographer(item.attribution?.photographer ?? '');
             setCreditUrl(item.attribution?.sourceUrl ?? '');
             setFieldErrors({});
-            setJustSaved(false);
         }
         setIsOpen((prev) => !prev);
     };
@@ -125,7 +123,6 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         }
 
         setIsSaving(true);
-        setJustSaved(false);
         // The row's existing credit is passed along so a stock import keeps its
         // provider and licence when the host only corrects the photographer.
         const ok = await onSave(
@@ -133,9 +130,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             buildPhotoMetadataUpdateBody(values, item.attribution ?? undefined)
         );
         setIsSaving(false);
-        if (ok) {
-            setJustSaved(true);
-        }
+        if (ok) setIsOpen(false);
     };
 
     // Enter inside a single-line input would otherwise submit the enclosing
@@ -155,6 +150,8 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     return (
         <div
             className={`${styles.metadataBlock} ${compactLayout ? styles.metadataBlockCompact : ''}`}
+            data-photo-metadata-id={item.id}
+            data-photo-metadata-missing={item.alt?.trim() ? undefined : 'true'}
         >
             <button
                 type="button"
@@ -344,14 +341,6 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                         >
                             {t('host.properties.editor.action.cancel', 'Cancelar')}
                         </button>
-                        {justSaved && (
-                            <span className={styles.metadataSavedBadge}>
-                                {t(
-                                    'host.properties.editor.photo.metadataSavedConfirmation',
-                                    'Guardado'
-                                )}
-                            </span>
-                        )}
                     </div>
                 </div>
             )}

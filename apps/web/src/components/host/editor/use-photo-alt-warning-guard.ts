@@ -29,7 +29,7 @@
  *    if they try to leave again with photos still missing alt text.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -102,6 +102,20 @@ function writeDismissed(accommodationId: string): void {
     }
 }
 
+/** Opens and focuses the first photo whose required alt text is incomplete. */
+function focusFirstIncompletePhoto(): void {
+    const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
+    if (!first) return;
+
+    const toggle = first.querySelector<HTMLButtonElement>('button[aria-expanded="false"]');
+    if (!toggle) return;
+    toggle.click();
+
+    window.setTimeout(() => {
+        first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
+    }, 0);
+}
+
 /**
  * Warns the host before they leave the Fotos section while photos still have
  * an empty `alt` text.
@@ -132,7 +146,7 @@ export function usePhotoAltWarningGuard({
     // this page is per-accommodation). Not re-read on every render: nothing
     // in this render path writes the flag, only `onConfirm` below does, right
     // before the navigation that unmounts this hook.
-    const isDismissed = useMemo(() => readDismissed(accommodationId), [accommodationId]);
+    const [isDismissed, setIsDismissed] = useState(() => readDismissed(accommodationId));
 
     const shouldWarn = missingAltCount > 0 && !isDismissed;
 
@@ -140,7 +154,11 @@ export function usePhotoAltWarningGuard({
     // `PhotoSection` re-renders on every `uploadProgress` / `isCompressing`
     // tick during an upload. An inline closure would unregister and re-register
     // the leave warning on each of those renders for no reason.
-    const handleConfirm = useCallback(() => writeDismissed(accommodationId), [accommodationId]);
+    const handleConfirm = useCallback(() => {
+        writeDismissed(accommodationId);
+        setIsDismissed(true);
+    }, [accommodationId]);
+    const handleCancel = useCallback(focusFirstIncompletePhoto, []);
 
     useUnsavedChangesGuard({
         isDirty: shouldWarn,
@@ -156,11 +174,9 @@ export function usePhotoAltWarningGuard({
         message: tPlural('host.properties.editor.photo.altWarningMessage', missingAltCount, {
             count: missingAltCount
         }),
-        confirmLabel: t(
-            'host.properties.editor.photo.altWarningContinue',
-            'Continuar sin completarlos'
-        ),
-        cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Volver y completarlos'),
-        onConfirm: handleConfirm
+        confirmLabel: t('host.properties.editor.photo.altWarningContinue', 'Seguir igual'),
+        cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Completar ahora'),
+        onConfirm: handleConfirm,
+        onCancel: handleCancel
     });
 }
