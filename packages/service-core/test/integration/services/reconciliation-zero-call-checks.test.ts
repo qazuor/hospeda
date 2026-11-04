@@ -81,7 +81,7 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         const hangSpy = vi.fn(async (..._args: unknown[]) => {});
         const summary = await withSeededZeroCallPopulations(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: provider as never,
                     clock: reconciliationClock,
@@ -151,7 +151,7 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         for (const id of subscriptionIds) zeroCallSubscriptionIds.add(id);
         const again = await withSeededZeroCallPopulations(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: provider as never,
                     clock: reconciliationClock,
@@ -183,7 +183,7 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         const courtesy = await seedDeferredCourtesy();
         const summary = await withSeededZeroCallPopulations(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: createReconciliationFake().provider,
                     clock: reconciliationClock,
@@ -237,7 +237,7 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         let branchCalls = 0;
         const summary = await withSeededZeroCallPopulations(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: createReconciliationFake().provider,
                     clock: reconciliationClock,
@@ -295,7 +295,7 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         const p2 = await seedRetainedPayment(second.subscription.id);
         const summary = await withSeededZeroCallPopulations(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: createReconciliationFake().provider,
                     clock: reconciliationClock,
@@ -330,7 +330,10 @@ describe('TEST:B11:18 seeded zero-call checks', () => {
         const succession = await seedSuccession('CANCELLED');
         const { fake } = createReconciliationFake();
         const summary = await withSeededZeroCallPopulations(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'single' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(summary.zeroCallChecks).toBeUndefined();
         expect(

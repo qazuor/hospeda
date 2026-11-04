@@ -6,7 +6,8 @@ import type {
     ProviderRead
 } from '@repo/payments';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
-import { readChargeForAct } from './read-charge-for-act';
+import type { ClosedChargeSnapshots } from '../charge-snapshots/closed-charge-snapshot';
+import { readChargeInventory } from './read-charge-inventory';
 
 /** The most recent listed charge record (by `createdAt`), read by id. */
 export interface PeriodChargesLatestCharge {
@@ -58,7 +59,10 @@ export async function readPeriodCharges(
         readonly authorizationRead: ProviderRead<AuthorizationSnapshot>;
         readonly act: ActStart;
     },
-    ports: { readonly provider: PaymentProvider }
+    ports: {
+        readonly provider: PaymentProvider;
+        readonly closedChargeSnapshots?: ClosedChargeSnapshots;
+    }
 ): Promise<PeriodChargesVerdict> {
     try {
         const { snapshot: authorization } = assertFreshForAct({
@@ -68,15 +72,16 @@ export async function readPeriodCharges(
         const { chargeIds } = await ports.provider.listCharges({
             authorizationId: authorization.authorizationId
         });
-        const charges = await Promise.all(
-            chargeIds.map(async (chargeId) => {
-                const read = await readChargeForAct({
-                    provider: ports.provider,
-                    chargeId,
-                    act: input.act
-                });
-                return assertFreshForAct({ read, act: input.act }).snapshot;
-            })
+        const inventory = await readChargeInventory({
+            provider: ports.provider,
+            chargeIds,
+            act: input.act,
+            ...(ports.closedChargeSnapshots
+                ? { closedChargeSnapshots: ports.closedChargeSnapshots }
+                : {})
+        });
+        const charges = inventory.live.map(
+            (read) => assertFreshForAct({ read, act: input.act }).snapshot
         );
         const latest = charges.sort(
             (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)

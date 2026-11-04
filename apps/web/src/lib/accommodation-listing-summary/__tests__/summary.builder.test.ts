@@ -430,13 +430,22 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toContain('sin filtros activos');
         });
 
-        it('should not be active when price fields are null', () => {
+        it('should not be active when price fields are null and the opt-out is unset', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { price: { min: null, max: null, includeWithoutPrice: null } },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('sin filtros activos');
+        });
+
+        it('should describe the opt-out when includeWithoutPrice is explicitly false (HOS-1980)', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
                 filters: { price: { min: null, max: null, includeWithoutPrice: false } },
                 counts: { shown: 10, globalTotal: 50 }
             });
-            expect(result).toContain('sin filtros activos');
+            expect(result).toContain('solo con precio definido');
         });
 
         it('should handle string price values', () => {
@@ -673,13 +682,22 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).not.toContain('con calificación mínima de');
         });
 
-        it('should not be active when minRating is null and includeWithoutRating is false', () => {
+        it('should not be active when minRating and includeWithoutRating are unset', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { minRating: null, includeWithoutRating: null },
+                counts: { shown: 50, globalTotal: 50 }
+            });
+            expect(result).toContain('sin filtros activos');
+        });
+
+        it('should describe the opt-out when includeWithoutRating is explicitly false (HOS-1980)', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
                 filters: { minRating: null, includeWithoutRating: false },
                 counts: { shown: 50, globalTotal: 50 }
             });
-            expect(result).toContain('sin filtros activos');
+            expect(result).toContain('solo con reseñas');
         });
     });
 

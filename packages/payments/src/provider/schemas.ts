@@ -16,6 +16,7 @@ import type {
     ChargeRef,
     Money,
     NoticeDelivery,
+    OneTimeChargeInput,
     OrderRef,
     OrderRefundInput,
     OrderSearchInput,
@@ -59,6 +60,17 @@ export const ChargeInputSchema: z.ZodType<ChargeInput> = z.strictObject({
     authorizationId: NonEmptyId,
     amount: PositiveMoneySchema,
     reference: NonEmptyId
+});
+
+/** Validates a one-time order before any provider call (AC:B6:12, MP:EX-41/EX-30). */
+export const OneTimeChargeInputSchema: z.ZodType<OneTimeChargeInput> = z.strictObject({
+    reference: NonEmptyId,
+    idempotencyKey: NonEmptyId,
+    amount: PositiveMoneySchema,
+    payerEmail: z.email(),
+    paymentToken: NonEmptyId,
+    paymentBrand: NonEmptyId,
+    paymentKind: z.enum(['credit', 'debit'])
 });
 
 /** Input of capability 3. */

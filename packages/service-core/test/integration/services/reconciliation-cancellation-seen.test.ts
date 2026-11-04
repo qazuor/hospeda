@@ -54,7 +54,7 @@ async function run(
     return withSeededReconciliationInventory(() =>
         withSeededCancellationRetryInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,

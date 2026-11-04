@@ -14,7 +14,7 @@ import {
     markAdminToursSeen,
     markProfileCompleted
 } from './api-helpers.ts';
-import { acceptedRunId, waitForAcceptedCronRun } from './cron-run-wait.ts';
+import { acceptedRunId, cronTriggerUrl, waitForAcceptedCronRun } from './cron-run-wait.ts';
 import { execSQL, getDbPool } from './db-helpers.ts';
 import {
     E2E_RECEIVER_PATH,
@@ -200,7 +200,7 @@ export async function runCron(args: {
     readonly jobName: string;
     readonly adminCookie: string;
 }): Promise<CronData> {
-    const response = await fetch(`${API_URL}/api/v1/admin/cron/${args.jobName}`, {
+    const response = await fetch(cronTriggerUrl({ apiUrl: API_URL, jobName: args.jobName }), {
         method: 'POST',
         headers: { cookie: args.adminCookie }
     });

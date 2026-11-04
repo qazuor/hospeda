@@ -14,6 +14,7 @@ export * from './permanent-grant.dbschema.ts';
 export * from './plan-catalog.dbschema.ts';
 export * from './plan-migration.dbschema.ts';
 export * from './promo.dbschema.ts';
+export * from './provider-charge-snapshot.dbschema.ts';
 export * from './provider-link.dbschema.ts';
 export * from './provider-notification.dbschema.ts';
 export * from './quota-window.dbschema.ts';

@@ -119,7 +119,7 @@ export async function sweep(
     try {
         return await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 {
                     provider: fixture.provider,
                     clock: fixture.clock,

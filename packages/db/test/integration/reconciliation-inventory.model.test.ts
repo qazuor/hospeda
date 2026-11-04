@@ -2,6 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { domainEventModel } from '../../src/models/domain-event/domain-event.model.ts';
 import { reconciliationInventoryModel as model } from '../../src/models/reconciliation-inventory/reconciliation-inventory.model.ts';
+import { reconciliationSweepRunModel } from '../../src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts';
 import { domainEvent } from '../../src/schemas/domain-event/domain_event.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { billingOptions } from '../../src/schemas/vertical/billing-option.dbschema.ts';
@@ -11,7 +12,14 @@ import {
     subscriptions
 } from '../../src/schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
-import { closeTestPool, getTestDb, getTestPool, testData, withTestTransaction } from './helpers.ts';
+import {
+    closeTestPool,
+    getTestDb,
+    getTestPool,
+    testData,
+    withCleanSlate,
+    withTestTransaction
+} from './helpers.ts';
 
 afterAll(closeTestPool);
 
@@ -29,7 +37,7 @@ function postgresCause(
     return null;
 }
 
-async function anchor(tx: DrizzleClient) {
+async function anchor(tx: DrizzleClient, rank = 1) {
     const [plan] = await tx
         .insert(plans)
         .values({
@@ -44,7 +52,7 @@ async function anchor(tx: DrizzleClient) {
         .values({
             planId: plan.id,
             vertical: 'accommodation',
-            rank: 1,
+            rank,
             sellable: true,
             current: true,
             trialDays: 0,
@@ -163,6 +171,191 @@ describe('reconciliation inventory and re-link persistence', () => {
                 )
             ).toEqual(sorted);
         });
+    });
+
+    it('includes rows created after the cycle anchor and orders the null-stamped set by id', async () => {
+        await withTestTransaction(async (tx) => {
+            const anchors = await anchor(tx);
+            const cycle = await reconciliationSweepRunModel.openSlice({
+                correlationId: crypto.randomUUID(),
+                tx
+            });
+            const created = [
+                await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'ACTIVE',
+                    linked: true,
+                    class: 'COMPLEMENTO'
+                })
+            ];
+            for (let index = 1; index < 3; index += 1) {
+                created.push(
+                    await addSubscription({
+                        tx,
+                        anchors,
+                        status: 'ACTIVE',
+                        linked: true,
+                        class: 'COMPLEMENTO'
+                    })
+                );
+            }
+            const rows = await model.listSweepInventoryPage({
+                cycleId: cycle.cycleId!,
+                limit: 10,
+                tx
+            });
+            const ids = created.map(({ subscription }) => subscription.id).sort();
+            expect(rows.map(({ subscription }) => subscription.id)).toEqual(ids);
+        });
+    });
+
+    it('pages new rows before earlier stamps and orders prior stamps oldest first', async () => {
+        try {
+            await withCleanSlate(async (db) => {
+                const anchors = await anchor(db, 9001);
+                const earlier = await addSubscription({
+                    tx: db,
+                    anchors,
+                    status: 'ACTIVE',
+                    linked: true,
+                    class: 'COMPLEMENTO'
+                });
+                const later = await addSubscription({
+                    tx: db,
+                    anchors,
+                    status: 'ACTIVE',
+                    linked: true,
+                    class: 'COMPLEMENTO'
+                });
+                const firstRun = await reconciliationSweepRunModel.openSlice({
+                    correlationId: crypto.randomUUID(),
+                    tx: db
+                });
+                await reconciliationSweepRunModel.stampSweptRow({
+                    runId: firstRun.id,
+                    subscriptionId: earlier.subscription.id,
+                    counters: {},
+                    tx: db
+                });
+                await getTestPool().query('SELECT pg_sleep(0.02)');
+                await reconciliationSweepRunModel.stampSweptRow({
+                    runId: firstRun.id,
+                    subscriptionId: later.subscription.id,
+                    counters: {},
+                    tx: db
+                });
+                await reconciliationSweepRunModel.closeSlice({
+                    id: firstRun.id,
+                    outcome: 'CYCLE_DONE',
+                    phase: 'DONE',
+                    rowsComplete: true,
+                    passesCompleted: [],
+                    failedSubscriptionIds: [],
+                    tx: db
+                });
+                const nextCycle = await reconciliationSweepRunModel.openSlice({
+                    correlationId: crypto.randomUUID(),
+                    tx: db
+                });
+                const createdMidCycle = await addSubscription({
+                    tx: db,
+                    anchors,
+                    status: 'ACTIVE',
+                    linked: true,
+                    class: 'COMPLEMENTO'
+                });
+                const rows = await model.listSweepInventoryPage({
+                    cycleId: nextCycle.cycleId!,
+                    limit: 10,
+                    tx: db
+                });
+                expect(rows.map(({ subscription }) => subscription.id)).toEqual([
+                    createdMidCycle.subscription.id,
+                    earlier.subscription.id,
+                    later.subscription.id
+                ]);
+            });
+        } finally {
+            await withCleanSlate(async () => {});
+        }
+    });
+
+    it('stamps only the sweep fields, commits with the tombstone trigger, and rejects a closed slice', async () => {
+        try {
+            await withCleanSlate(async (db) => {
+                const anchors = await anchor(db, 9002);
+                const { subscription } = await addSubscription({
+                    tx: db,
+                    anchors,
+                    status: 'ACTIVE',
+                    linked: true,
+                    class: 'COMPLEMENTO'
+                });
+                const run = await reconciliationSweepRunModel.openSlice({
+                    correlationId: crypto.randomUUID(),
+                    tx: db
+                });
+                const [before] = await db
+                    .select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscription.id));
+                if (!before) throw new Error('Expected subscription fixture');
+
+                const trigger = await getTestPool().query<{ exists: boolean }>(
+                    "SELECT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_subscription_tombstone_provider_link' AND NOT tgisinternal) AS exists"
+                );
+                expect(trigger.rows[0]?.exists).toBe(true);
+
+                expect(
+                    await reconciliationSweepRunModel.stampSweptRow({
+                        runId: run.id,
+                        subscriptionId: subscription.id,
+                        counters: { rowsRead: 1 },
+                        tx: db
+                    })
+                ).toEqual({ stamped: true });
+                const [after] = await db
+                    .select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscription.id));
+                if (!after) throw new Error('Expected stamped subscription');
+                const {
+                    lastSweptAt: beforeStamp,
+                    updatedAt: beforeUpdate,
+                    ...unchangedFields
+                } = before;
+                expect(after).toMatchObject(unchangedFields);
+                expect(after.lastSweptAt).toBeInstanceOf(Date);
+                expect(after.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+                expect(beforeStamp).toBeNull();
+
+                await reconciliationSweepRunModel.closeSlice({
+                    id: run.id,
+                    outcome: 'TIMED_OUT',
+                    phase: 'ROWS',
+                    rowsComplete: false,
+                    passesCompleted: [],
+                    failedSubscriptionIds: [],
+                    tx: db
+                });
+                expect(
+                    await reconciliationSweepRunModel.stampSweptRow({
+                        runId: run.id,
+                        subscriptionId: subscription.id,
+                        counters: { rowsRead: 1 },
+                        tx: db
+                    })
+                ).toEqual({ stamped: false });
+                const [stillStamped] = await db
+                    .select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscription.id));
+                expect(stillStamped?.lastSweptAt).toEqual(after.lastSweptAt);
+            });
+        } finally {
+            await withCleanSlate(async () => {});
+        }
     });
 
     it('finds links, locks the subscription row, and never updates subscription fields', async () => {
