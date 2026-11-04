@@ -24,7 +24,7 @@ import type {
 } from './reconciliation-sweep.types.js';
 import { SweepLeaseLostError, SweepTimedOutError } from './sweep-control.js';
 import { runSweepPostLoop, type SweepPostLoopResult } from './sweep-post-loop.js';
-import { openCycleSlice, skippedSummary } from './sweep-slice-open.js';
+import { openCycleSlice, openSingleRun, skippedSummary } from './sweep-slice-open.js';
 
 export type {
     ReconciliationRowCheck,
@@ -70,14 +70,15 @@ export async function runReconciliationSweep(
     const startedAt = ports.clock.now();
     // The budget is wall time; the injected clock drives the row's act (it may be faked ahead).
     const budgetClock: Clock = input.budgetClock ? { now: input.budgetClock } : ports.clock;
-    const cycleMode = input.mode === 'cycle';
+    const cycleMode = input.mode !== 'single';
     const opened = cycleMode
         ? await openCycleSlice({ correlationId, newCycle: input.newCycle, startedAt, ports })
-        : {
-              run: await reconciliationSweepRunModel.open({ correlationId, startedAt }),
-              summary: undefined
-          };
-    if (opened.summary) return opened.summary;
+        : await openSingleRun({ correlationId, startedAt, ports });
+    if (opened.summary)
+        return {
+            ...opened.summary,
+            ...(opened.orphanedCycle ? { orphanedCycle: opened.orphanedCycle } : {})
+        };
     const run = opened.run;
     const cycleId = cycleMode ? (run.cycleId ?? run.id) : '';
     const sliceIndex = run.sliceIndex ?? 0;
@@ -133,7 +134,11 @@ export async function runReconciliationSweep(
         if (passesCompleted.includes(pass)) return;
         if (cycleMode) {
             const next = [...passesCompleted, pass];
-            const ok = await extendRunLease({ lease, id: run.id, set: { passesCompleted: next } });
+            const ok = await extendRunLease({
+                lease,
+                id: run.id,
+                set: { rowsComplete, passesCompleted: rowsComplete ? next : [] }
+            });
             if (!ok) throw new SweepLeaseLostError();
         }
         passesCompleted.push(pass);
@@ -340,7 +345,7 @@ export async function runReconciliationSweep(
                 outcome: 'FAILED',
                 phase,
                 rowsComplete,
-                passesCompleted,
+                passesCompleted: rowsComplete ? passesCompleted : [],
                 failedSubscriptionIds,
                 rowsRead,
                 rowsFailed
@@ -440,6 +445,7 @@ export async function runReconciliationSweep(
         sliceIndex,
         cycleId,
         ...(cycle ? { cycle } : {}),
+        ...(opened.orphanedCycle ? { orphanedCycle: opened.orphanedCycle } : {}),
         incomplete: input.lastSlot === true && (outcome !== 'CYCLE_DONE' || !rowsComplete)
     };
 }

@@ -1,3 +1,4 @@
+import { ProviderTrafficGovernor } from '@repo/payments';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { info, warn, createStore, env } = vi.hoisted(() => ({
@@ -108,5 +109,47 @@ describe('Mercado Pago traffic governor composition', () => {
         expect(createStore).toHaveBeenCalledWith({ redisUrl: 'redis://test.invalid' });
         await shutdownMercadoPagoTrafficGovernor();
         expect(closed).toBe(true);
+    });
+
+    it('never consults a governor under off: no instance, so no acquire and no window log (AC-7)', async () => {
+        const acquire = vi.spyOn(ProviderTrafficGovernor.prototype, 'acquire');
+        const governor = createMercadoPagoTrafficGovernor({ mode: 'off' });
+        expect(governor).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor })).toBeUndefined();
+        expect(acquire).not.toHaveBeenCalled();
+        expect(info).not.toHaveBeenCalled();
+        acquire.mockRestore();
+    });
+
+    it('logs one mp_traffic_window per class every 60 s with traffic (AC-18)', async () => {
+        vi.useFakeTimers();
+        try {
+            let clock = 1_000_000;
+            const governor = createMercadoPagoTrafficGovernor({
+                mode: 'observe',
+                now: () => clock
+            });
+            await governor?.acquire({ trafficClass: 'interactive', capability: 'read' });
+            await governor?.acquire({ trafficClass: 'background', capability: 'read' });
+            clock += 60_000;
+            vi.advanceTimersByTime(60_000);
+            const windows = info.mock.calls
+                .map(
+                    ([entry]) =>
+                        entry as { message?: string; trafficClass?: string; requests?: number }
+                )
+                .filter((entry) => entry.message === 'mp_traffic_window');
+            expect(windows.map(({ trafficClass }) => trafficClass).sort()).toEqual([
+                'background',
+                'interactive'
+            ]);
+            info.mockClear();
+            clock += 60_000;
+            vi.advanceTimersByTime(60_000);
+            expect(info).not.toHaveBeenCalled();
+            governor?.stop();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

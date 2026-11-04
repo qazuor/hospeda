@@ -197,7 +197,8 @@ export class ReconciliationSweepRunModel {
                     sliceIndex: prior ? (prior.sliceIndex ?? 0) + 1 : 0,
                     phase: 'ROWS',
                     rowsComplete: false,
-                    passesCompleted: prior?.passesCompleted ?? [],
+                    passesCompleted:
+                        prior?.rowsComplete === true ? (prior.passesCompleted ?? []) : [],
                     leaseUntil: sql`now() + (${input.ttlMs ?? 300_000} * interval '1 millisecond')`
                 })
                 .returning();
@@ -257,7 +258,8 @@ export class ReconciliationSweepRunModel {
                 outcome: input.outcome,
                 phase: input.phase,
                 rowsComplete: input.rowsComplete,
-                passesCompleted: [...input.passesCompleted],
+                // A pass is reusable only after the row phase completed for this slice.
+                passesCompleted: input.rowsComplete ? [...input.passesCompleted] : [],
                 failedSubscriptionIds: [...input.failedSubscriptionIds],
                 rowsRead: input.rowsRead,
                 rowsFailed: input.rowsFailed,

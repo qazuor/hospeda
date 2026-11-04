@@ -1,6 +1,7 @@
 import {
     eq,
     inArray,
+    isNull,
     isReconciliationSweepRunComplete,
     reconciliationSweepRunModel,
     reconciliationSweepRuns,
@@ -38,6 +39,59 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         expect(read).not.toHaveBeenCalled();
         const stillOpen = await reconciliationSweepRunModel.findById({ id: liveRun.id });
         expect(stillOpen?.outcome).toBeNull();
+        await reconciliationSweepRunModel.closeAbandoned({ id: liveRun.id });
+    });
+
+    it('refuses a single-mode run while a cycle slice holds a live lease', async () => {
+        getServiceTestDb();
+        const liveRun = await reconciliationSweepRunModel.openSlice({
+            correlationId: crypto.randomUUID()
+        });
+        const { fake } = createReconciliationFake();
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const summary = await runReconciliationSweep(
+            { mode: 'single' },
+            { provider: fake, clock: reconciliationClock }
+        );
+        expect(summary.skipped).toBe('lease_held');
+        expect(read).not.toHaveBeenCalled();
+        const openRuns = await getServiceTestDb()
+            .select({ id: reconciliationSweepRuns.id })
+            .from(reconciliationSweepRuns)
+            .where(isNull(reconciliationSweepRuns.outcome));
+        expect(openRuns.map(({ id }) => id)).toEqual([liveRun.id]);
+        await reconciliationSweepRunModel.closeAbandoned({ id: liveRun.id });
+    });
+
+    it('refuses the single mode in production, whatever the call site looks like', async () => {
+        getServiceTestDb();
+        const { fake } = createReconciliationFake();
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const mode = ['sin', 'gle'].join('') as 'single';
+        vi.stubEnv('NODE_ENV', 'production');
+        try {
+            await expect(
+                runReconciliationSweep({ mode }, { provider: fake, clock: reconciliationClock })
+            ).rejects.toThrow(/test-only/);
+        } finally {
+            vi.unstubAllEnvs();
+        }
+        expect(read).not.toHaveBeenCalled();
+        expect(await getServiceTestDb().select().from(reconciliationSweepRuns)).toEqual([]);
+    });
+
+    it('defaults to the leased cycle mode when no mode is given', async () => {
+        getServiceTestDb();
+        const liveRun = await reconciliationSweepRunModel.openSlice({
+            correlationId: crypto.randomUUID()
+        });
+        const { fake } = createReconciliationFake();
+        const summary = await runReconciliationSweep(
+            {},
+            { provider: fake, clock: reconciliationClock }
+        );
+        expect(summary.skipped).toBe('lease_held');
+        expect(summary.sliceIndex).toBe(-1);
         await reconciliationSweepRunModel.closeAbandoned({ id: liveRun.id });
     });
 

@@ -1,6 +1,6 @@
 {
-  "id": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
-  "prevId": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "id": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "prevId": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -23352,12 +23352,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -32175,6 +32169,121 @@
           "value": "\"vertical_deadline_version\".\"changed_key\" BETWEEN 1 AND 9 OR \"vertical_deadline_version\".\"changed_key\" IS NULL"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.provider_charge_snapshot": {
+      "name": "provider_charge_snapshot",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charge_id": {
+          "name": "charge_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authorization_id": {
+          "name": "authorization_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_created_at": {
+          "name": "provider_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decline_reason": {
+          "name": "decline_reason",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refunded_amount_minor": {
+          "name": "refunded_amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charged_back": {
+          "name": "charged_back",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_provider_charge_snapshot_provider_charge": {
+          "name": "uq_provider_charge_snapshot_provider_charge",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider",
+            "charge_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
