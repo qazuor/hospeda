@@ -277,8 +277,8 @@ describe('leave warnings on a page that mounts two guards', () => {
             expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
             const call = showConfirmationDialogMock.mock.calls[0]?.[0];
             expect(call?.title).toBe('Fotos sin texto alternativo');
-            expect(call?.confirmLabel).toBe('Continuar sin completarlos');
-            expect(call?.cancelLabel).toBe('Volver y completarlos');
+            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.cancelLabel).toBe('Completar ahora');
             expect(call?.message).toContain('4 fotos');
             expect(call?.message).not.toContain('cambios sin guardar');
         });

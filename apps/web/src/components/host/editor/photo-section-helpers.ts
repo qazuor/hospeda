@@ -379,6 +379,11 @@ export interface PhotoMetadataEditableItem {
     readonly attribution: MediaAttribution | null | undefined;
 }
 
+/** HOS-1018 requires a non-blank alt; captions and descriptions are optional. */
+export function isPhotoAltIncomplete(item: Pick<PhotoMetadataEditableItem, 'alt'>): boolean {
+    return !item.alt?.trim();
+}
+
 /** Raw form field values for the photo metadata editor, always plain strings. */
 export interface PhotoMetadataFormValues {
     readonly alt: string;

@@ -34,6 +34,7 @@ import type { AccommodationMediaItem } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { isPhotoAltIncomplete } from './photo-section-helpers';
 
 /** Params accepted by {@link usePhotoAltWarningGuard}. */
 export interface UsePhotoAltWarningGuardParams {
@@ -41,11 +42,6 @@ export interface UsePhotoAltWarningGuardParams {
     readonly accommodationId: string;
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
-}
-
-/** Whether an item's `alt` is meaningfully filled in (not empty/whitespace). */
-function hasAlt(item: Pick<AccommodationMediaItem, 'alt'>): boolean {
-    return Boolean(item.alt && item.alt.trim().length > 0);
 }
 
 /** Counts featured + gallery items whose `alt` is empty or whitespace-only. */
@@ -56,7 +52,7 @@ function countMissingAlt(
     const all: readonly AccommodationMediaItem[] = featuredItem
         ? [featuredItem, ...galleryItems]
         : galleryItems;
-    return all.filter((item) => !hasAlt(item)).length;
+    return all.filter(isPhotoAltIncomplete).length;
 }
 
 /**
@@ -142,10 +138,8 @@ export function usePhotoAltWarningGuard({
         [featuredItem, galleryItems]
     );
 
-    // Re-read only when the listing id changes (a fresh mount, in practice —
-    // this page is per-accommodation). Not re-read on every render: nothing
-    // in this render path writes the flag, only `onConfirm` below does, right
-    // before the navigation that unmounts this hook.
+    // Re-read only when the listing id changes. Confirmation updates local
+    // state too, so a save can dismiss the prompt without unmounting this hook.
     const [isDismissed, setIsDismissed] = useState(() => readDismissed(accommodationId));
 
     const shouldWarn = missingAltCount > 0 && !isDismissed;

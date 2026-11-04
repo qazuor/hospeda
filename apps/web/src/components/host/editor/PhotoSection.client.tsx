@@ -300,6 +300,7 @@ export function PhotoSection({
                         <PhotoMetadataEditor
                             locale={locale}
                             item={featuredItem}
+                            closeOnSuccessfulSave
                             disabled={anyOpInFlight || !opsReady}
                             toggleAriaLabel={t(
                                 'host.properties.editor.photo.editFeaturedDetailsAria',

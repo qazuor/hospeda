@@ -15,6 +15,7 @@
 import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
+import { requestPhotoTextWarning } from '@/lib/forms/leave-warning-registry';
 import {
     buildReorderPayload,
     mediaRowToItem,
@@ -249,12 +250,14 @@ export function usePhotoGalleryMutations({
      * save on one photo never touches any other photo's fields — and merges
      * the server's authoritative row back into whichever slot the item lives
      * in (portada or gallery), without disturbing the rest of that slot's
-     * state. Returns `true` on success so the calling form can show a
-     * "saved" confirmation and stay open for further edits.
+     * state. It also runs the existing HOS-1018 warning before a photo-text
+     * save when other photos still have incomplete alt text.
      */
     const handleUpdateMediaText = useCallback(
         async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
             if (!item.id) return false;
+            const maySave = await requestPhotoTextWarning('photo-alt');
+            if (!maySave) return false;
             setError(null);
             setOpLoading(true);
 

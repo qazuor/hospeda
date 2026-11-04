@@ -49,6 +49,7 @@ import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
 import {
     buildPhotoMetadataUpdateBody,
+    isPhotoAltIncomplete,
     type PhotoMetadataEditableItem,
     type PhotoMetadataFieldErrors,
     type PhotoMetadataUpdateBody,
@@ -64,6 +65,8 @@ export interface PhotoMetadataEditorProps<
     readonly disabled: boolean;
     /** Gallery thumbnails need a wider floating panel than their own narrow column. */
     readonly compactLayout?: boolean;
+    /** Close after a successful save (enabled for accommodation photos only). */
+    readonly closeOnSuccessfulSave?: boolean;
     /** Accessible label for the toggle button while the panel is closed. */
     readonly toggleAriaLabel: string;
     /** Accessible label for the toggle button while the panel is open. */
@@ -74,7 +77,7 @@ export interface PhotoMetadataEditorProps<
 /**
  * Expandable per-photo panel to write/correct `alt`, `caption`, and
  * `description`. Render-only aside from its own form-local state (open/closed,
- * field values, validation errors, saving/saved status) — persistence is
+ * field values and validation errors) — persistence is
  * fully owned by the `onSave` callback passed in.
  */
 export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
@@ -82,6 +85,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     item,
     disabled,
     compactLayout = false,
+    closeOnSuccessfulSave = false,
     toggleAriaLabel,
     closeAriaLabel,
     onSave
@@ -130,7 +134,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             buildPhotoMetadataUpdateBody(values, item.attribution ?? undefined)
         );
         setIsSaving(false);
-        if (ok) setIsOpen(false);
+        if (ok && closeOnSuccessfulSave) setIsOpen(false);
     };
 
     // Enter inside a single-line input would otherwise submit the enclosing
@@ -151,7 +155,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         <div
             className={`${styles.metadataBlock} ${compactLayout ? styles.metadataBlockCompact : ''}`}
             data-photo-metadata-id={item.id}
-            data-photo-metadata-missing={item.alt?.trim() ? undefined : 'true'}
+            data-photo-metadata-missing={isPhotoAltIncomplete(item) ? 'true' : undefined}
         >
             <button
                 type="button"

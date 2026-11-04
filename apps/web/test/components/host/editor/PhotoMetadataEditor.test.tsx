@@ -119,7 +119,7 @@ describe('PhotoMetadataEditor', () => {
 
     it('closes the text panel after a successful save', async () => {
         const onSave = vi.fn().mockResolvedValue(true);
-        render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+        render(<PhotoMetadataEditor {...makeProps({ onSave, closeOnSuccessfulSave: true })} />);
         openPanel();
         fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
             target: { value: 'Living con sofá' }
@@ -357,22 +357,7 @@ describe('PhotoMetadataEditor', () => {
 
     // ── Save confirmation ─────────────────────────────────────────────────
 
-    it('closes after successful save instead of leaving a stale saved confirmation open', async () => {
-        const onSave = vi.fn().mockResolvedValue(true);
-        render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
-        openPanel();
-
-        fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
-            target: { value: 'Living luminoso' }
-        });
-        fireEvent.click(screen.getByText('Guardar'));
-
-        await waitFor(() => {
-            expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
-        });
-    });
-
-    it('does not show a saved confirmation when onSave fails', async () => {
+    it('keeps the panel and typed value after a failed save', async () => {
         const onSave = vi.fn().mockResolvedValue(false);
         render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
         openPanel();
@@ -383,7 +368,10 @@ describe('PhotoMetadataEditor', () => {
         fireEvent.click(screen.getByText('Guardar'));
 
         await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-        expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('¿Qué muestra la foto?')).toBeInTheDocument();
+        expect((screen.getByLabelText('¿Qué muestra la foto?') as HTMLTextAreaElement).value).toBe(
+            'Living luminoso'
+        );
     });
 
     // ── Photo credit (H-125, attribution half) ────────────────────────────

@@ -371,7 +371,6 @@
                 "galleryLoading": "Photo gallery",
                 "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "metadataSaveFailed": "Couldn't save the photo's details",
-                "metadataSavedConfirmation": "Saved",
                 "moveDownAria": "Move photo {{index}} down",
                 "moveUpAria": "Move photo {{index}} up",
                 "persistFailed": "The photo could not be saved",
