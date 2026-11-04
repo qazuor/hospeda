@@ -248,11 +248,18 @@ function reactivatorChecks(root: string, r: Reactivator): Finding[] {
         findReactivationWrites({ file: r.file, source })
     );
     const exitAt = (exit as ts.IfStatement | null)?.getStart() ?? Number.POSITIVE_INFINITY;
+    const retentionBranchWrite =
+        r.entry === 'registerLateManualPayment' &&
+        exit !== null &&
+        writes.some(
+            (at) => at >= exit.thenStatement.getStart() && at < exit.thenStatement.getEnd()
+        );
     if (
         verdicts.size === 0 ||
         exit === null ||
         writes.length === 0 ||
-        writes.some((at) => at < exitAt)
+        writes.some((at) => at < exitAt) ||
+        retentionBranchWrite
     )
         return [
             {

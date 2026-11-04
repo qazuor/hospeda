@@ -265,48 +265,19 @@ export async function registerLateManualPayment(
         const checked = await check({ ...parsed, actor: input.actor }, tx, true);
         const { subscription, installment, everyMonths } = checked;
         const conditions = await checkLatePaymentConditions(lateConditionsInput(checked, tx));
-        if ('retainedForS19' in conditions) {
-            const registered = await manualPaymentModel.markRegisteredFromDeclaredUnpaid({
-                manualPaymentId: installment.id,
-                registeredBy: input.actor.id,
-                registeredAt: now,
-                proofRef: parsed.proofRef,
-                tx
-            });
-            if (!registered) reject(ServiceErrorCode.ALREADY_EXISTS, 'LOST_RACE');
-            await retainPaymentForSuccession({
-                subscriptionId: subscription.id,
-                payment: { source: 'MANUAL_PAYMENT', id: installment.id },
-                unpaidSince: subscription.graceStartedAt ?? now,
-                now,
-                tx
-            });
-            return {
-                subscription,
-                result: {
-                    effect: 'S19' as const,
-                    nextChargeAt:
-                        subscription.nextChargeAt ??
-                        candidateManualPaymentPeriod({
-                            originalPeriodStart: installment.periodStart,
-                            everyMonths,
-                            now: installment.periodStart
-                        }).nextChargeAt,
-                    periodStart: installment.periodStart,
-                    reimputedFrom: null,
-                    receiptId: null
-                }
-            };
-        }
-        if (!conditions.ok)
+        const retainedForS19 = 'retainedForS19' in conditions;
+        if (!retainedForS19 && !conditions.ok)
             reject(ServiceErrorCode.ALREADY_EXISTS, 'MANUAL_PAYMENT_CONDITION_FAILED');
+        // S19 has no reactivation instant: it pays the original period, as MP1 does.
+        // Both destinations claim C5 through the same SAVEPOINT and conflict fallback.
         const period = await claimManualPaymentPeriod({
             tx,
             subscriptionId: subscription.id,
             manualPaymentId: installment.id,
             originalPeriodStart: installment.periodStart,
             everyMonths,
-            now
+            now,
+            ...(retainedForS19 ? { periodAt: installment.periodStart } : {})
         });
         const registered = await manualPaymentModel.markRegisteredFromDeclaredUnpaid({
             manualPaymentId: installment.id,
@@ -342,6 +313,34 @@ export async function registerLateManualPayment(
             payer,
             issuedAt: now
         });
+        if ('retainedForS19' in conditions) {
+            await retainPaymentForSuccession({
+                subscriptionId: subscription.id,
+                payment: { source: 'MANUAL_PAYMENT', id: installment.id },
+                unpaidSince: subscription.graceStartedAt ?? now,
+                now,
+                tx
+            });
+            await tx
+                .update(subscriptions)
+                .set({ nextChargeAt: period.nextChargeAt, updatedAt: now })
+                .where(
+                    and(
+                        eq(subscriptions.id, subscription.id),
+                        eq(subscriptions.status, 'SUSPENDED')
+                    )
+                );
+            return {
+                subscription,
+                result: {
+                    effect: 'S19' as const,
+                    nextChargeAt: period.nextChargeAt,
+                    periodStart: period.periodStart,
+                    reimputedFrom: period.reimputedFrom,
+                    receiptId: receipt.receiptId
+                }
+            };
+        }
         const [updated] = await tx
             .update(subscriptions)
             .set({

@@ -209,7 +209,11 @@ describe('TEST:B5:10 MP4 registration', () => {
                 nextChargeAt: new Date('2026-10-03T12:00:00.000Z')
             });
         // Act
-        const result = await registerLateManualPayment(fixture.request, { clock });
+        const emitCoverageChanged = vi.fn(async () => {});
+        const result = await registerLateManualPayment(fixture.request, {
+            clock,
+            coverageNotices: { emitCoverageChanged }
+        });
         // Assert
         const rows = await state(fixture);
         const retentions = await getServiceTestDb()
@@ -217,14 +221,55 @@ describe('TEST:B5:10 MP4 registration', () => {
             .from(successionRetainedPayments)
             .where(eq(successionRetainedPayments.manualPaymentId, fixture.installment.id));
         expect(result.effect).toBe('S19');
-        expect(result.receiptId).toBeNull();
+        expect(result.receiptId).toBe(rows.receipt[0]?.id);
+        expect(result.nextChargeAt).toEqual(new Date('2026-10-03T12:00:00.000Z'));
         expect(rows.installment?.status).toBe('REGISTERED');
         expect(rows.subscription?.status).toBe('SUSPENDED');
-        expect(rows.coverage).toHaveLength(0);
+        expect(rows.subscription?.nextChargeAt).toEqual(result.nextChargeAt);
+        expect(rows.coverage).toHaveLength(1);
+        expect(rows.coverage[0]).toMatchObject({
+            manualPaymentId: fixture.installment.id,
+            periodStart: runningPeriod,
+            creditedAt: now
+        });
+        expect(rows.receipt).toHaveLength(1);
         expect(retentions).toHaveLength(1);
         expect(retentions[0]).toMatchObject({
             manualPaymentId: fixture.installment.id,
             releasedAt: null
+        });
+        expect(emitCoverageChanged).not.toHaveBeenCalled();
+    });
+
+    it('keeps the original period while S19 defers reactivation', async () => {
+        const expiredPeriod = new Date('2026-07-03T12:00:00.000Z');
+        const fixture = await seed({ periodStart: expiredPeriod });
+        await getServiceTestDb().insert(subscriptions).values({
+            userId: fixture.payer.id,
+            vertical: 'partner',
+            class: 'PRINCIPAL',
+            status: 'ACTIVE',
+            paymentMethod: 'MANUAL',
+            planVersionId: fixture.version.id,
+            billingOptionId: fixture.option.id,
+            succeedsId: fixture.subscription.id
+        });
+
+        const result = await registerLateManualPayment(fixture.request, { clock });
+        const rows = await state(fixture);
+        expect(result).toMatchObject({
+            effect: 'S19',
+            periodStart: expiredPeriod,
+            reimputedFrom: null,
+            nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
+            receiptId: rows.receipt[0]?.id
+        });
+        expect(rows.installment?.periodStart).toEqual(expiredPeriod);
+        expect(rows.coverage[0]?.periodStart).toEqual(expiredPeriod);
+        expect(rows.coverage[0]?.creditedAt).toEqual(now);
+        expect(rows.subscription).toMatchObject({
+            status: 'SUSPENDED',
+            nextChargeAt: result.nextChargeAt
         });
     });
 

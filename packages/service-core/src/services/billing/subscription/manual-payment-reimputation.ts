@@ -64,8 +64,12 @@ export async function claimManualPaymentPeriod(input: {
     readonly originalPeriodStart: Date;
     readonly everyMonths: number;
     readonly now: Date;
+    readonly periodAt?: Date;
 }): Promise<ManualPaymentPeriod> {
-    const candidate = candidateManualPaymentPeriod(input);
+    const candidate = candidateManualPaymentPeriod({
+        ...input,
+        now: input.periodAt ?? input.now
+    });
     if (await insertCoverage({ ...input, periodStart: candidate.periodStart })) return candidate;
     if (candidate.reimputedFrom) {
         const original = candidateManualPaymentPeriod({
