@@ -219,6 +219,35 @@ export class ManualPaymentModel {
         return Boolean(row);
     }
 
+    /** Registers a declared-unpaid installment and changes its period only on reimputation. */
+    async markRegisteredFromDeclaredUnpaid(input: {
+        readonly manualPaymentId: string;
+        readonly registeredBy: string;
+        readonly registeredAt: Date;
+        readonly proofRef?: string;
+        readonly periodStart?: Date;
+        readonly tx: DrizzleClient;
+    }): Promise<SelectManualPayment | null> {
+        const [row] = await input.tx
+            .update(manualPayments)
+            .set({
+                status: 'REGISTERED',
+                registeredBy: input.registeredBy,
+                registeredAt: input.registeredAt,
+                proofRef: input.proofRef ?? null,
+                ...(input.periodStart ? { periodStart: input.periodStart } : {}),
+                updatedAt: input.registeredAt
+            })
+            .where(
+                and(
+                    eq(manualPayments.id, input.manualPaymentId),
+                    eq(manualPayments.status, 'DECLARED_UNPAID')
+                )
+            )
+            .returning();
+        return row ?? null;
+    }
+
     /** Declares an awaiting installment unpaid inside the caller's transaction. */
     async markDeclaredUnpaid(input: {
         readonly manualPaymentId: string;
