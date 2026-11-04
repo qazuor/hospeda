@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, gte, isNotNull, isNull, sql, sum } from 'drizzle-orm';
+import { and, eq, getTableColumns, isNotNull, isNull, sql, sum } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     RECONCILIATION_SWEEP_OUTCOMES,
@@ -8,7 +8,12 @@ import {
 } from '../../schemas/vertical/reconciliation-sweep-run.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { closeRunIfOpen, extendRunLease, getRunLiveness } from '../../utils/run-lease.ts';
+import {
+    closeRunIfOpen,
+    extendRunLease,
+    getRunLiveness,
+    liveRunPredicate
+} from '../../utils/run-lease.ts';
 
 export type { ReconciliationSweepOutcome };
 /** Terminal outcomes permitted for a reconciliation slice. */
@@ -40,12 +45,6 @@ export interface CloseReconciliationSweepRunInput {
 /** Input for finding a sweep run by identity. */
 export interface FindReconciliationSweepRunInput {
     readonly id: string;
-    readonly tx?: DrizzleClient;
-}
-
-/** Input for finding the most recent open sweep run started within a window. */
-export interface FindOpenReconciliationSweepRunInput {
-    readonly since: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -133,21 +132,15 @@ export class ReconciliationSweepRunModel {
         return row ?? null;
     }
 
-    /** Finds the latest still-open run started at or after `since`, or null. */
-    async findOpenStartedSince(
-        input: FindOpenReconciliationSweepRunInput
+    /** Finds any sweep run with an open outcome and a lease live on the database clock. */
+    async findLiveRun(
+        input: { readonly tx?: DrizzleClient } = {}
     ): Promise<SelectReconciliationSweepRun | null> {
         const db = input.tx ?? getDb();
         const [row] = await db
             .select()
             .from(reconciliationSweepRuns)
-            .where(
-                and(
-                    isNull(reconciliationSweepRuns.finishedAt),
-                    gte(reconciliationSweepRuns.startedAt, input.since)
-                )
-            )
-            .orderBy(desc(reconciliationSweepRuns.startedAt))
+            .where(liveRunPredicate(runLease))
             .limit(1);
         return row ?? null;
     }

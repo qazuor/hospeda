@@ -1,5 +1,7 @@
 import { reconciliationSweepRunModel } from '@repo/db';
+import { reconciliationSweepRuns } from '@repo/db/schemas';
 import { FakePaymentProvider } from '@repo/payments/fake';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runNoticeDeferredCancellationRetry } from '../../../src/services/billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 import { runOurCancellationRetry } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry.js';
@@ -18,7 +20,7 @@ import {
 
 const minute = 60_000;
 const day = 24 * 60 * minute;
-const input = () => ({ correlationId: crypto.randomUUID(), sweepRunMaxAgeMs: 600_000 });
+const input = () => ({ correlationId: crypto.randomUUID() });
 const fresh = { state: 'SENT' as const, settledAgeMs: 30_000 };
 
 beforeAll(() => getServiceTestDb());
@@ -132,55 +134,57 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
         expect(callCounts.filter((count) => count === 0)).toHaveLength(2);
     });
 
-    it('TEST:1955:2 skips a recent open sweep, ignores an old one, and shares idempotence with the sweep pass', async () => {
+    it('skips only while a sweep lease is live, regardless of age or outcome', async () => {
         const h = deferredRetryHarness();
-        const row = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
-        h.notices.set(row.subscription.id, fresh);
-        const recent = await reconciliationSweepRunModel.open({
+        const expiredRow = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
+        h.notices.set(expiredRow.subscription.id, fresh);
+        const expired = await reconciliationSweepRunModel.open({
             correlationId: crypto.randomUUID(),
             startedAt: new Date(retryNow.getTime() - minute)
         });
-        try {
-            const skipped = await withSeededCancellationRetryInventory(() =>
-                runNoticeDeferredCancellationRetry(input(), h.ports)
-            );
-            expect(skipped).toMatchObject({ skipped: 'SWEEP_RUNNING', candidates: 0, rowsRead: 0 });
-            expect(h.read).not.toHaveBeenCalled();
-            expect(callsFor(h.cancel, row.providerId)).toBe(0);
-        } finally {
-            await reconciliationSweepRunModel.close({
-                id: recent.id,
-                finishedAt: retryNow,
-                rowsRead: 0,
-                rowsFailed: 0
-            });
-        }
-        const old = await reconciliationSweepRunModel.open({
+        await getServiceTestDb()
+            .update(reconciliationSweepRuns)
+            .set({ leaseUntil: sql`now() - interval '1 second'` })
+            .where(eq(reconciliationSweepRuns.id, expired.id));
+        const afterExpiredLease = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(afterExpiredLease).toMatchObject({ retried: { confirmed: 1 }, rowsRead: 1 });
+        expect(callsFor(h.cancel, expiredRow.providerId)).toBe(1);
+
+        const oldRow = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
+        h.notices.set(oldRow.subscription.id, fresh);
+        const oldLive = await reconciliationSweepRunModel.open({
             correlationId: crypto.randomUUID(),
-            startedAt: new Date(retryNow.getTime() - 20 * minute)
+            startedAt: new Date(retryNow.getTime() - 3 * 60 * minute)
         });
-        try {
-            const result = await withSeededCancellationRetryInventory(() =>
-                runNoticeDeferredCancellationRetry(input(), h.ports)
-            );
-            expect(result.retried.confirmed).toBe(1);
-            expect(callsFor(h.cancel, row.providerId)).toBe(1);
-            const sweepPass = await withSeededCancellationRetryInventory(() =>
-                runOurCancellationRetry(
-                    { correlationId: crypto.randomUUID(), pageSize: 100 },
-                    h.ports
-                )
-            );
-            expect(sweepPass.confirmed).toBe(1);
-            expect(callsFor(h.cancel, row.providerId)).toBe(1);
-        } finally {
-            await reconciliationSweepRunModel.close({
-                id: old.id,
-                finishedAt: retryNow,
-                rowsRead: 0,
-                rowsFailed: 0
-            });
-        }
+        await getServiceTestDb()
+            .update(reconciliationSweepRuns)
+            .set({ leaseUntil: sql`now() + interval '1 minute'` })
+            .where(eq(reconciliationSweepRuns.id, oldLive.id));
+        const skipped = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(skipped).toMatchObject({ skipped: 'SWEEP_RUNNING', candidates: 0, rowsRead: 0 });
+        expect(callsFor(h.cancel, oldRow.providerId)).toBe(0);
+
+        await getServiceTestDb()
+            .update(reconciliationSweepRuns)
+            .set({ outcome: 'ABANDONED' })
+            .where(eq(reconciliationSweepRuns.id, oldLive.id));
+        const closed = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(closed).toMatchObject({ retried: { confirmed: 2 }, rowsRead: 2 });
+        expect(callsFor(h.cancel, expiredRow.providerId)).toBe(1);
+        expect(callsFor(h.cancel, oldRow.providerId)).toBe(1);
+
+        const sweepPass = await withSeededCancellationRetryInventory(() =>
+            runOurCancellationRetry({ correlationId: crypto.randomUUID(), pageSize: 100 }, h.ports)
+        );
+        expect(sweepPass.confirmed).toBe(2);
+        expect(callsFor(h.cancel, expiredRow.providerId)).toBe(1);
+        expect(callsFor(h.cancel, oldRow.providerId)).toBe(1);
     });
 
     it('TEST:1955:3 confirms an already-cancelled authorization without calling it again', async () => {
