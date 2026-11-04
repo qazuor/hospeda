@@ -269,6 +269,15 @@ export const VenueProtectedSchema = VenueSchema.pick({
     menuFileUrl: true,
     menuFileKind: true,
     openingHours: true,
+    // HOS-1846: the nightInfo section, read by the owner editor (sub-spec 5).
+    // Public exposure is HOS-1849 (4.5) and deliberately not added here.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    entryPriceUpdatedAt: true,
+    minAge: true,
+    dressCode: true,
+    dressCodeNoteI18n: true,
 
     // Protected: ownership
     ownerId: true,

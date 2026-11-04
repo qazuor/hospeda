@@ -48,6 +48,13 @@ export {
 } from './venue.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getVenueMenu, replaceVenueMenu } from './venue.menu';
+// nightInfo section rules (HOS-1846 / DEC-FAC-058)
+export {
+    resolveVenueNightInfoPatch,
+    VENUE_NIGHT_INFO_WRITABLE_FIELDS,
+    type VenueNightInfoCurrent,
+    type VenueNightInfoPatch
+} from './venue.night-info';
 // Permission helpers
 export {
     checkVenueCanAdminList,
