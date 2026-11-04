@@ -70,6 +70,8 @@ import {
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
+    VenueDressCodeEnum,
+    VenueEntryKindEnum,
     VenueTypeEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -309,6 +311,16 @@ export const NotificationRecipientSidePgEnum = pgEnum(
 export const VenueTypePgEnum = pgEnum('venue_type_enum', enumToTuple(VenueTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
+
+export const VenueEntryKindPgEnum = pgEnum(
+    'venue_entry_kind_enum',
+    enumToTuple(VenueEntryKindEnum)
+);
+
+export const VenueDressCodePgEnum = pgEnum(
+    'venue_dress_code_enum',
+    enumToTuple(VenueDressCodeEnum)
+);
 
 export const ExternalPlatformPgEnum = pgEnum(
     'external_platform_enum',

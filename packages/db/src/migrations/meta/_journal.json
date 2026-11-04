@@ -1338,6 +1338,13 @@
       "when": 1793748337941,
       "tag": "0190_confused_violations",
       "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1793821854618,
+      "tag": "0191_chemical_thunderbolts",
+      "breakpoints": true
     }
   ]
 }
