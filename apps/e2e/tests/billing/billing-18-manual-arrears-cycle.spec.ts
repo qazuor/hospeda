@@ -168,11 +168,12 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
                 }
             );
             const body = (await response.json()) as {
-                effect?: string;
-                reimputedFrom?: string | null;
+                success?: boolean;
+                data?: { effect?: string; reimputedFrom?: string | null };
             };
             expect(response.status, JSON.stringify(body)).toBe(200);
-            expect(body).toMatchObject({ effect: 'S7', reimputedFrom: null });
+            expect(body.success).toBe(true);
+            expect(body.data).toMatchObject({ effect: 'S7', reimputedFrom: null });
             const rows = await execSQL<{
                 status: string;
                 grace_started_at: Date | null;
