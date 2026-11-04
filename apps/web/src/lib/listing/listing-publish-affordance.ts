@@ -16,7 +16,8 @@ import {
 type SubscribeDestinationApi = Pick<typeof publishApi, 'subscribeDestination'>;
 
 /**
- * Reads subscribe-destination for each vertical with at least one draft.
+ * Reads subscribe-destination for each vertical with a draft or a billing-unpublished listing.
+ * HOS-2023: billing-unpublished venues also need the server publish decision to show republish.
  *
  * @param input.listings - The cards rendered by the owner index.
  * @param input.cookieHeader - Authenticated SSR cookie header, if present.
@@ -35,7 +36,11 @@ export async function resolveListingPublishAffordances({
     const verticals = [
         ...new Set(
             listings
-                .filter((listing) => listing.publicationStatus === PublicationStatusEnum.DRAFT)
+                .filter(
+                    (listing) =>
+                        listing.publicationStatus === PublicationStatusEnum.DRAFT ||
+                        listing.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                )
                 .map((listing) => listing.vertical)
         )
     ];
