@@ -6,6 +6,7 @@ import {
     enterGraceOnRejectedCharge
 } from '../../subscription/enter-grace.service.js';
 import { noCreditedPayments } from '../../subscription/subscription-billing-ports.js';
+import type { ClosedChargeSnapshots } from '../charge-snapshots/closed-charge-snapshot';
 import { readPeriodCharges } from '../period-charges/read-period-charges.js';
 import type { ReconciliationRowCheck } from './reconciliation-sweep.service.js';
 
@@ -14,6 +15,7 @@ const logger = createLogger('billing-lost-rejection-check');
 export interface LostFirstRejectionCheckPorts extends EnterGracePorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly closedChargeSnapshots?: ClosedChargeSnapshots;
 }
 
 /** Runs S4 for an ACTIVE card principal whose current period was rejected. */
@@ -37,7 +39,12 @@ export function createLostFirstRejectionCheck(
 
         const result = await readPeriodCharges(
             { authorizationRead: input.read, act: input.act },
-            { provider: ports.provider }
+            {
+                provider: ports.provider,
+                ...(ports.closedChargeSnapshots
+                    ? { closedChargeSnapshots: ports.closedChargeSnapshots }
+                    : {})
+            }
         );
         if (result.verdict !== 'NOT_CHARGED') return;
 
