@@ -46,6 +46,17 @@ const subscriptionSource = (planVersionId: string): CoverageSource => ({
     floor: null
 });
 
+const trialSource: CoverageSource = {
+    type: 'TRIAL',
+    reference: { kind: 'PLAN_VERSION', planVersionId: 'trial-version' },
+    scope: 'VERTICAL',
+    target: null,
+    since,
+    until: new Date('2026-11-01T00:00:00.000Z'),
+    charged: null,
+    floor: null
+};
+
 const addonSource: CoverageSource = {
     type: 'ADDON',
     reference: { kind: 'ADDON_VERSION', addonVersionId: 'addon-version' },
@@ -122,6 +133,34 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
 
         // Assert
         expect(response).toEqual({ covered: false, sources: [baseSource, addonSource] });
+    });
+
+    it('lets an emitted SUBSCRIPTION supersede the TRIAL source for the requested vertical while keeping ADDON', async () => {
+        vi.mocked(resolveSubscriptionSources).mockResolvedValue({
+            sources: [subscriptionSource('paid-plan-version')]
+        });
+        vi.mocked(resolveAddonSources).mockResolvedValue({ sources: [addonSource] });
+
+        const response = await createBillingCoverage({
+            ports: fakePorts({ covered: true, sources: [trialSource, baseSource] })
+        }).coverage({ userId, vertical: VerticalEnum.ACCOMMODATION });
+
+        expect(response.sources).toEqual([
+            baseSource,
+            subscriptionSource('paid-plan-version'),
+            addonSource
+        ]);
+    });
+
+    it('keeps TRIAL when no coverage-granting SUBSCRIPTION is emitted', async () => {
+        vi.mocked(resolveSubscriptionSources).mockResolvedValue({ sources: [] });
+        vi.mocked(resolveAddonSources).mockResolvedValue({ sources: [] });
+
+        const response = await createBillingCoverage({
+            ports: fakePorts({ covered: false, sources: [trialSource, baseSource] })
+        }).coverage({ userId, vertical: VerticalEnum.ACCOMMODATION });
+
+        expect(response.sources).toEqual([trialSource, baseSource]);
     });
 
     it('emits no COURTESY or GRANT source when the person holds neither', async () => {

@@ -65,8 +65,16 @@ export function createBillingCoverage(args: {
                 resolveAddonSources({ userId, vertical, ports, tx }),
                 resolveCourtesyAndGrantSources({ userId, vertical, ports, tx })
             ]);
+            // `subscription.sources` only contains statuses accepted by the
+            // canonical subscription coverage predicate. Since every resolver
+            // call is scoped to this `(userId, vertical)`, that title supersedes
+            // the trial source for this vertical alone.
+            const trialSources =
+                subscription.sources.length > 0
+                    ? trialAndBase.sources.filter((source) => source.type !== 'TRIAL')
+                    : trialAndBase.sources;
             const sources: CoverageSource[] = [
-                ...trialAndBase.sources,
+                ...trialSources,
                 ...subscription.sources,
                 ...courtesyAndGrant.sources,
                 ...addon.sources
