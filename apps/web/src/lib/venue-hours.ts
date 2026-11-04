@@ -84,27 +84,75 @@ export function parseTimeToMinutes(timeStr: string | undefined): number | null {
 }
 
 /**
+ * Returns `true` when any shift of `entry` covers `currentMinutes` on the day
+ * that entry describes. A wrapping shift (close <= open) only covers the
+ * `[open, 24:00)` part of its start day; the part after midnight belongs to
+ * the following day's lookback.
+ */
+function entryCoversNowOnItsStartDay(
+    entry: VenueOpeningHoursEntry | undefined,
+    currentMinutes: number
+): boolean {
+    if (!entry?.isOpen || entry.shifts.length === 0) return false;
+
+    for (const shift of entry.shifts) {
+        const openMinutes = parseTimeToMinutes(shift.open);
+        const closeMinutes = parseTimeToMinutes(shift.close);
+        if (openMinutes === null || closeMinutes === null) continue;
+
+        if (closeMinutes <= openMinutes) {
+            // Overnight shift: only its start-day part [open, 24:00) is today.
+            if (currentMinutes >= openMinutes) return true;
+        } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Returns `true` when a wrapping shift of `entry` (the previous day) spills
+ * past midnight into the current one, i.e. `now < close`.
+ */
+function entryWrapsIntoToday(
+    entry: VenueOpeningHoursEntry | undefined,
+    currentMinutes: number
+): boolean {
+    if (!entry?.isOpen || entry.shifts.length === 0) return false;
+
+    for (const shift of entry.shifts) {
+        const openMinutes = parseTimeToMinutes(shift.open);
+        const closeMinutes = parseTimeToMinutes(shift.close);
+        if (openMinutes === null || closeMinutes === null) continue;
+
+        if (closeMinutes <= openMinutes && currentMinutes < closeMinutes) return true;
+    }
+
+    return false;
+}
+
+/**
  * Computes whether the venue listing is currently open based on the
  * `openingHours` map and the current local time.
  *
  * A day can have multiple shifts (e.g. midday and night service); the listing
- * is "open now" when the current time falls inside ANY of today's shifts.
+ * is "open now" when the current time falls inside ANY shift that covers it.
  *
- * Rules:
- * - If the entry for today does not exist → `null` (badge omitted).
- * - If the day is closed or has no shifts → `false`.
- * - Otherwise → `true` when the current local time is inside any shift window.
- *   A shift whose `close` is EARLIER than its `open` is an overnight span
- *   (22:00 → 02:00) and wraps around midnight. Since HOS-813 that is a
- *   first-class, schema-accepted shape rather than the defensive fallback it
- *   used to be — it is how a night bar or a dawn excursion states its hours.
- *
- *   The wrap is evaluated against TODAY's entry: at 01:00 the listing reads as
- *   open when TODAY declares an overnight shift, not when yesterday did. That
- *   approximation predates this change and is left as-is deliberately — every
- *   real overnight schedule in scope repeats across consecutive days, so the two
- *   readings agree, and changing it would alter the badge for data that already
- *   exists.
+ * Rules (DEC-FAC-052):
+ * - A shift belongs to the day it starts on. An overnight shift that wraps
+ *   midnight (22:00 → 02:00) belongs to its start day, not the following one.
+ * - Today's shifts cover `[open, close)`; a wrapping shift (close <= open) is
+ *   only evaluated on `[open, 24:00)` of its start day, because the part after
+ *   midnight belongs to the previous day's shift, not to today's copy.
+ * - Yesterday's wrapping shifts cover `now` when `now < close`. Yesterday is
+ *   the previous `getDay()` index, so Sunday looks back to Saturday and Monday
+ *   to Sunday.
+ * - If a shift from today or yesterday covers `now` → `true`, even when
+ *   today's entry is missing or has `isOpen: false` (e.g. Sunday 03:00 after a
+ *   Saturday overnight shift).
+ * - Otherwise → `null` when there is no entry for today (badge omitted), and
+ *   `false` when today's entry exists.
  *
  * @param openingHours - The full week map from the API response.
  * @param now - Moment to evaluate. Defaults to `new Date()`.
@@ -114,25 +162,18 @@ export function computeOpenNowStatus(
     openingHours: Record<string, VenueOpeningHoursEntry>,
     now: Date = new Date()
 ): boolean | null {
-    const dayKey = getDayKey(now);
-    const entry = openingHours[dayKey];
-    if (!entry) return null;
-    if (!entry.isOpen || entry.shifts.length === 0) return false;
-
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayKey = getDayKey(now);
+    const todayEntry = openingHours[todayKey];
 
-    for (const shift of entry.shifts) {
-        const openMinutes = parseTimeToMinutes(shift.open);
-        const closeMinutes = parseTimeToMinutes(shift.close);
-        if (openMinutes === null || closeMinutes === null) continue;
+    if (entryCoversNowOnItsStartDay(todayEntry, currentMinutes)) return true;
 
-        if (closeMinutes <= openMinutes) {
-            // Overnight span: e.g. open=22:00, close=02:00 (HOS-813).
-            if (currentMinutes >= openMinutes || currentMinutes < closeMinutes) return true;
-        } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
-            return true;
-        }
-    }
+    // Yesterday is `(getDay() + 6) % 7`: Sunday looks back to Saturday and
+    // Monday to Sunday (DEC-FAC-052).
+    const yesterdayKey = DAY_INDEX_TO_KEY[(now.getDay() + 6) % 7] ?? 'monday';
+    const yesterdayEntry = openingHours[yesterdayKey];
 
-    return false;
+    if (entryWrapsIntoToday(yesterdayEntry, currentMinutes)) return true;
+
+    return todayEntry ? false : null;
 }
