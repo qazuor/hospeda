@@ -5,7 +5,7 @@ import {
     createSingleItemResponseSchema
 } from '../../api/response/base-response.schema.js';
 import { adminSearchPartnerSchema } from './partner.admin-search.schema.js';
-import { createPartnerSchema } from './partner.create.schema.js';
+import { adminCreatePartnerSchema } from './partner.create.schema.js';
 import { partnerSchema } from './partner.schema.js';
 import { updatePartnerSchema } from './partner.update.schema.js';
 
@@ -49,7 +49,7 @@ export const publicPartnersListResponseSchema = createPaginatedResponseSchema(
  * Admin API request schemas
  */
 export const adminCreatePartnerRequestSchema = z.object({
-    body: createPartnerSchema
+    body: adminCreatePartnerSchema
 });
 
 export const adminUpdatePartnerRequestSchema = z.object({

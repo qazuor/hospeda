@@ -5,6 +5,15 @@ import * as migration from '../../src/data-migrations/0110-hos1457-v53-permissio
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
+/**
+ * 0110 is ledgered and frozen. A role born after it gets its grants from its own
+ * data-migration (PARTNER_OWNER: 0143, HOS-1487), never by editing 0110.
+ */
+const ROLES_BORN_AFTER_0110: readonly RoleEnum[] = [RoleEnum.PARTNER_OWNER];
+
+const rolesKnownTo0110 = (): RoleEnum[] =>
+    Object.values(RoleEnum).filter((role) => !ROLES_BORN_AFTER_0110.includes(role));
+
 const STUB_ACTOR: Actor = {
     id: 'actor-stub-hos1457-permissions-test',
     role: RoleEnum.SUPER_ADMIN,
@@ -52,7 +61,7 @@ describe('TEST:V5:9 support — HOS-1457 permission data migration', () => {
             PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
             PermissionEnum.BILLING_VIEW_OWN
         ]);
-        const baseline = Object.values(RoleEnum).flatMap((role) =>
+        const baseline = rolesKnownTo0110().flatMap((role) =>
             (ROLE_PERMISSIONS[role] ?? [])
                 .filter((permission) => newPermissions.has(permission))
                 .map((permission) => ({ role, permission }))
@@ -84,7 +93,7 @@ describe('TEST:V5:9 support — HOS-1457 permission data migration', () => {
     });
 
     it('gives own billing to exactly the roles that hold USER_UPDATE_SELF, excluding guest and system', () => {
-        const selfRoles = Object.values(RoleEnum).filter((role) =>
+        const selfRoles = rolesKnownTo0110().filter((role) =>
             (ROLE_PERMISSIONS[role] ?? []).includes(PermissionEnum.USER_UPDATE_SELF)
         );
         expect([...migration.OWN_BILLING_ROLES].sort()).toEqual(selfRoles.sort());

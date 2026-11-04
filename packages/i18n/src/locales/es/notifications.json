@@ -22,7 +22,7 @@
             "preview": "Aprobamos la postulación de {{partnerName}}",
             "heading": "Aprobamos la postulación de {{partnerName}}",
             "body": "Para administrarlo, abrí el link de abajo e iniciá sesión con la cuenta con la que lo vas a manejar. Esa cuenta queda como dueña del Partner.",
-            "singleUse": "El link es personal y sirve una sola vez. No lo reenvíes.",
+            "singleUse": "El link es personal y sirve una sola vez. Si te mandamos otro antes, ese ya no funciona. No lo reenvíes.",
             "ignore": "Si no te postulaste como Partner de Hospeda, ignorá este correo.",
             "cta": "Reclamar el Partner"
         },
