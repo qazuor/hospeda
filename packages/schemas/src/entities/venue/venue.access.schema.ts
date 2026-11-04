@@ -94,7 +94,19 @@ export const VenuePublicSchema = VenueSchema.pick({
     socialNetworks: true,
 
     // Opening hours (public)
-    openingHours: true
+    openingHours: true,
+
+    // nightInfo (public, HOS-1849 / 4.5). Presence is decided by the public
+    // projector: when the section is not `available` it removes all seven
+    // fields, so this pick is safe and the web reads their absence as "do not
+    // render". `entryPriceUpdatedAt` is server-managed but still public data.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    entryPriceUpdatedAt: true,
+    minAge: true,
+    dressCode: true,
+    dressCodeNoteI18n: true
 }).extend({
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
@@ -103,6 +115,14 @@ export const VenuePublicSchema = VenueSchema.pick({
      * exposed here. Defaults to `false` for a read that did not derive it.
      */
     isFeatured: z.boolean().default(false),
+    /**
+     * Server-resolved fact for the `nightInfo` heading (DEC-FAC-050, HOS-1849):
+     * true when more than one of the listing's business lines owns a section
+     * that is not `absent`. The web component asks this and never compares
+     * business lines (G-FAC-03). Optional because list reads of other
+     * verticals never derive it.
+     */
+    multiLine: z.boolean().optional(),
     /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich

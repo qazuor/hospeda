@@ -126,7 +126,9 @@ export const LISTING_SECTIONS = {
             ],
             // Server-managed: never writable and never counted by sections-touched.
             readOnlyFields: ['entryPriceUpdatedAt'],
-            headingWhenMultiLineKey: 'De noche',
+            // DEC-FAC-050 / DEC-FAC-068: an i18n key, never the Spanish text.
+            // The component resolves it through `t()`.
+            headingWhenMultiLineKey: 'venue.detail.nightInfo.headingMultiLine',
             order: 11,
             group: 'property'
         },
