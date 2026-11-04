@@ -21,10 +21,16 @@
  * @module routes/partners/protected/mine
  */
 
-import { PartnerOwnerUpdateSchema, PartnerOwnerViewSchema, PermissionEnum } from '@repo/schemas';
+import {
+    PartnerOwnerPresenceSchema,
+    PartnerOwnerUpdateSchema,
+    PartnerOwnerViewSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { readOwnerPartnerPresence } from '../../../services/partner-presence/partner-presence-read.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -42,6 +48,10 @@ const partnerService = new PartnerService({ logger: apiLogger });
  */
 const MyPartnerResponseSchema = z.object({
     partner: PartnerOwnerViewSchema.nullable()
+});
+const MyPartnerWithPresenceResponseSchema = z.object({
+    partner: PartnerOwnerViewSchema.nullable(),
+    presence: PartnerOwnerPresenceSchema.nullable()
 });
 
 /**
@@ -61,7 +71,19 @@ export async function handleGetMyPartner(ctx: Context) {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return { partner: result.data?.partner ?? null };
+    const partner = result.data?.partner ?? null;
+    return {
+        partner,
+        presence: partner
+            ? await readOwnerPartnerPresence({
+                  partner: {
+                      id: partner.id,
+                      ownerUserId: partner.ownerUserId ?? null,
+                      presenceModerated: partner.presenceModerated
+                  }
+              })
+            : null
+    };
 }
 
 /** Handler for the edit. Exported standalone for the same reason. */
@@ -91,9 +113,9 @@ export const protectedGetMyPartnerRoute = createProtectedRoute({
     path: '/mine',
     summary: "Get the caller's own partner listing",
     description:
-        'Returns the partner listing owned by the authenticated caller, or null when they own none — never 404, never 403. Auth-only; no PARTNER_* permission required, because an approved partner is an ordinary account (HOS-278 AC-7). Includes the pending content and its review state so the page can show what is still awaiting approval.',
+        'Returns the authenticated caller’s own partner listing and owner-only public presence explanation, or null when they own none. Auth-only; no PARTNER_* permission required. Includes pending content and review state.',
     tags: ['Partners'],
-    responseSchema: MyPartnerResponseSchema,
+    responseSchema: MyPartnerWithPresenceResponseSchema,
     handler: async (ctx: Context) => handleGetMyPartner(ctx),
     options: {
         customRateLimit: { requests: 60, windowMs: 60_000 }

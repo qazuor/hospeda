@@ -1981,6 +1981,16 @@ export interface MyPartner {
 export interface MyPartnerResponse {
     /** `null` when the caller owns no partner listing — never a 403/404. */
     readonly partner: MyPartner | null;
+    /** Owner-only explanation of the public presence surfaces (AC:V8b:1; V7 §1.6). */
+    readonly presence: MyPartnerPresence | null;
+}
+
+/** Presence visibility derived by the API's shared public key reader. */
+export interface MyPartnerPresence {
+    readonly publicPage: 'visible' | 'hidden';
+    readonly carousel: 'visible' | 'hidden';
+    readonly moderated: boolean;
+    readonly moderationReason: string | null;
 }
 
 /**

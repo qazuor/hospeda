@@ -1489,6 +1489,12 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             }
+        },
+        "presence": {
+            "hidden": "Mientras tanto, para el público tu página responde como si no existiera.",
+            "notDeleted": "No se borró nada: tu ficha y tus datos siguen guardados.",
+            "returnsAlone": "Tu presencia vuelve sola cuando recuperes el plan que la otorga.",
+            "moderated": "Un administrador moderó tu presencia. Aunque tengas el plan, no se verá hasta que se levante la moderación."
         }
     },
     "partnerStats": {

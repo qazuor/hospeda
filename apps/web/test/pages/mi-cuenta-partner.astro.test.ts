@@ -21,9 +21,16 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import en from '../../../../packages/i18n/src/locales/en/account.json';
+import es from '../../../../packages/i18n/src/locales/es/account.json';
+import pt from '../../../../packages/i18n/src/locales/pt/account.json';
 
 const source = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/partner/index.astro'),
+    'utf8'
+);
+const sectionCardSource = readFileSync(
+    resolve(__dirname, '../../src/components/account/AccountSectionCard.astro'),
     'utf8'
 );
 
@@ -43,6 +50,34 @@ function getApprovedBranch(): string {
 }
 
 describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () => {
+    it('renders row 22 outside the revoked status branch and guards moderation reason', () => {
+        const card = source.indexOf('data-testid="partner-presence-notice"');
+        const revoked = source.indexOf('isRevoked ? (');
+        expect(card).toBeGreaterThan(-1);
+        expect(revoked).toBeGreaterThan(card);
+        expect(source).toContain('presence.moderated ||');
+        expect(source).toContain(
+            "presence.moderated || (isContentApproved && presence.publicPage === 'hidden' && presence.carousel === 'hidden')"
+        );
+        expect(sectionCardSource).toContain("interface Props extends HTMLAttributes<'section'>");
+        expect(sectionCardSource).toContain('<section {...attributes} class:list=');
+        const moderation = source.slice(
+            source.indexOf('data-testid="partner-presence-moderated"'),
+            source.indexOf('</div>', source.indexOf('data-testid="partner-presence-moderated"'))
+        );
+        expect(moderation).toContain('presence.moderationReason !== null');
+        expect(moderation).toContain('data-testid="partner-presence-moderation-reason"');
+        expect(moderation).not.toContain('set:html');
+    });
+
+    it('ships every row 22 translation key in all supported locales', () => {
+        const keys = ['hidden', 'notDeleted', 'returnsAlone', 'moderated'];
+        for (const key of keys) {
+            expect(es.partner.presence[key as keyof typeof es.partner.presence]).toBeTruthy();
+            expect(en.partner.presence[key as keyof typeof en.partner.presence]).toBeTruthy();
+            expect(pt.partner.presence[key as keyof typeof pt.partner.presence]).toBeTruthy();
+        }
+    });
     it('is SSR (prerender = false — authenticated, owner-scoped data)', () => {
         expect(source).toContain('prerender = false');
     });

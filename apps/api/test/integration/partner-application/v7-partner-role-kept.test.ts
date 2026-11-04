@@ -328,6 +328,12 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         expect(ownerResponse.status).toBe(200);
         const ownerBody = await ownerResponse.json();
         expect(ownerBody.data.partner).toMatchObject({ id: partnerId });
+        expect(ownerBody.data.presence).toEqual({
+            publicPage: 'hidden',
+            carousel: 'hidden',
+            moderated: false,
+            moderationReason: null
+        });
 
         const visitorResponse = await app.request('/api/v1/protected/partners/mine', {
             headers: actorHeaders({ id: visitor.id, role: RoleEnum.USER, permissions: [] })
@@ -335,7 +341,7 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         expect(visitorResponse.status).toBe(200);
         expect(await visitorResponse.json()).toEqual({
             success: true,
-            data: { partner: null },
+            data: { partner: null, presence: null },
             metadata: { timestamp: expect.any(String), requestId: expect.any(String) }
         });
     });

@@ -8,15 +8,16 @@
  * section heading; omit it on single-card pages (the page H1 already titles them).
  */
 import styles from './AccountSection.module.css';
+import type { HTMLAttributes } from 'astro/types';
 
-interface Props {
+interface Props extends HTMLAttributes<'section'> {
     readonly title?: string;
 }
 
-const { title } = Astro.props;
+const { title, class: className, ...attributes } = Astro.props;
 ---
 
-<section class={styles.card}>
+<section {...attributes} class:list={[styles.card, className]}>
     {title && <h2 class={styles.cardTitle}>{title}</h2>}
     <slot />
 </section>
