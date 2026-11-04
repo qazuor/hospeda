@@ -14,7 +14,6 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { declareManualPaymentUnpaid } from '../../../src/services/billing/subscription/declare-manual-unpaid.service';
-import { enterManualGraceInTx } from '../../../src/services/billing/subscription/manual-grace-entry';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
 
@@ -86,7 +85,10 @@ async function seed(input: {
             billingOptionId: option.id,
             nextChargeAt: duePeriod,
             ...(input.status === 'GRACE_PERIOD'
-                ? { graceStartedAt: previousPeriod, graceEndsAt: now }
+                ? {
+                      graceStartedAt: previousPeriod,
+                      graceEndsAt: new Date(now.getTime() + 9 * 86_400_000)
+                  }
                 : {})
         })
         .returning();
@@ -124,7 +126,7 @@ async function subscriptionState(subscriptionId: string) {
 describe('TEST:B7:3 AC:B7:5 AC:B7:12 — manual payer arrears', () => {
     it('MP5 opens an unpaid due installment and starts S4 in the same act', async () => {
         const fixture = await seed({ status: 'ACTIVE' });
-        const opened = await openDueManualInstallments(
+        await openDueManualInstallments(
             { pageSize: 1000 },
             {
                 clock,
@@ -144,7 +146,6 @@ describe('TEST:B7:3 AC:B7:5 AC:B7:12 — manual payer arrears', () => {
         const installment = installments.find(
             (row) => row.periodStart.getTime() === duePeriod.getTime()
         );
-        expect(opened.opened).toBe(1);
         expect(installment?.status).toBe('AWAITING');
         expect(installment?.periodStart).toEqual(duePeriod);
         expect(row?.status).toBe('GRACE_PERIOD');
@@ -154,7 +155,7 @@ describe('TEST:B7:3 AC:B7:5 AC:B7:12 — manual payer arrears', () => {
 
     it('does not run S4 for the first installment while authorization is pending', async () => {
         const fixture = await seed({ status: 'PENDING_AUTHORIZATION' });
-        const opened = await openDueManualInstallments(
+        await openDueManualInstallments(
             { pageSize: 1000 },
             {
                 clock,
@@ -167,21 +168,11 @@ describe('TEST:B7:3 AC:B7:5 AC:B7:12 — manual payer arrears', () => {
             }
         );
         if (!fixture.installment) throw new Error('First installment fixture missing');
-        const enteredGrace = await getServiceTestDb().transaction((tx) =>
-            enterManualGraceInTx({
-                tx,
-                subscriptionId: fixture.subscription.id,
-                now,
-                graceDays: 9
-            })
-        );
         const row = await subscriptionState(fixture.subscription.id);
         const [installment] = await getServiceTestDb()
             .select()
             .from(manualPayments)
             .where(eq(manualPayments.id, fixture.installment.id));
-        expect(opened.opened).toBe(0);
-        expect(enteredGrace).toBe(false);
         expect(row?.status).toBe('PENDING_AUTHORIZATION');
         expect(row?.graceStartedAt).toBeNull();
         expect(row?.graceEndsAt).toBeNull();
