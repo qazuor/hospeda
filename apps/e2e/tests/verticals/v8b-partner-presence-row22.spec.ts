@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import type { CreatedUser } from '../../fixtures/api-helpers.ts';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { attachSession } from '../../fixtures/listing-notices.ts';
@@ -33,6 +33,8 @@ test.describe('TEST:V8b:1 AC:V8b:1 partner owner sees row 22 with and without th
         userIds.push(owner1.id);
         const owner2: CreatedUser = await createUser({}, { apiBaseUrl: API_URL });
         userIds.push(owner2.id);
+        await markProfileCompleted({ userId: owner1.id });
+        await markProfileCompleted({ userId: owner2.id });
         const reason = `Row 22 moderation ${randomUUID()}`;
         const insertPartner = async (ownerId: string, name: string) => {
             const id = randomUUID();
