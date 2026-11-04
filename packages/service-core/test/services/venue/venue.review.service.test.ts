@@ -511,3 +511,23 @@ describe('VenueReviewService.search pagination (HOS-1900)', () => {
         expect(model.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 5 });
     });
 });
+
+describe('VenueReviewService rating recompute dimension votes', () => {
+    it('passes only explicitly voted dimensions and retains overallRating', async () => {
+        const service = makeService(null);
+        const model = (service as AnyService).model;
+        model.findAll.mockResolvedValue({
+            items: [makeReview({ rating: { service: 3 }, overallRating: 4 })],
+            total: 1
+        });
+        const recompute = (service as AnyService)._venueService.recomputeRating;
+
+        await (service as AnyService)._recomputeListingRating(VENUE_ID, {});
+
+        expect(recompute).toHaveBeenCalledWith(
+            VENUE_ID,
+            [{ service: 3, overallRating: 4 }],
+            undefined
+        );
+    });
+});
