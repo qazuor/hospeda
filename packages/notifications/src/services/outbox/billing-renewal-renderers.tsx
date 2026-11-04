@@ -23,7 +23,8 @@ function renewalUpcoming(row: EmailOutboxRow) {
         !/^\d{4}-\d{2}-\d{2}$/.test(data.renewalDate) ||
         typeof data.daysBefore !== 'number' ||
         !Number.isInteger(data.daysBefore) ||
-        data.daysBefore <= 0
+        data.daysBefore <= 0 ||
+        (data.paymentMethod !== 'CARD' && data.paymentMethod !== 'MANUAL')
     )
         throw new TypeError('Faltan datos requeridos del aviso de renovación');
 
@@ -34,6 +35,7 @@ function renewalUpcoming(row: EmailOutboxRow) {
                 planName={data.planName}
                 renewalDate={data.renewalDate}
                 daysBefore={data.daysBefore}
+                paymentMethod={data.paymentMethod}
             />
         )
     };

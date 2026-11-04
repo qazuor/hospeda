@@ -18,6 +18,7 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
                     planName: 'Plan premium',
                     renewalDate: '2026-10-20',
                     daysBefore: 5,
+                    paymentMethod: 'CARD',
                     deadlinesVersion: 1
                 }
             })
@@ -29,6 +30,21 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
         expect(html).toContain('Mercado Pago');
         expect(html).toContain('darte de baja');
         expect(html).not.toContain(subscriptionId);
+        const manual = renderers['billing.renewal-upcoming']!({
+            row: row({
+                template: 'billing.renewal-upcoming',
+                payload: {
+                    subscriptionId,
+                    planName: 'Plan premium',
+                    renewalDate: '2026-10-20',
+                    daysBefore: 5,
+                    paymentMethod: 'MANUAL'
+                }
+            })
+        });
+        const manualHtml = renderToStaticMarkup(manual.react);
+        expect(manualHtml).toContain('transferencia');
+        expect(manualHtml).not.toMatch(/tarjeta|débito|cobro automático|Mercado Pago/i);
     });
 
     it('uses singular preview text one day before renewal', async () => {
@@ -39,7 +55,8 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
                     subscriptionId,
                     planName: 'Plan premium',
                     renewalDate: '2026-10-20',
-                    daysBefore: 1
+                    daysBefore: 1,
+                    paymentMethod: 'CARD'
                 }
             })
         });

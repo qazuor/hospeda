@@ -17,7 +17,8 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
         data.daysBefore <= 0 ||
         !Number.isInteger(data.deadlinesVersion) ||
         typeof data.deadlinesVersion !== 'number' ||
-        data.deadlinesVersion <= 0
+        data.deadlinesVersion <= 0 ||
+        (data.paymentMethod !== 'CARD' && data.paymentMethod !== 'MANUAL')
     )
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
     const endDate = new Date(data.graceEndsAt);
@@ -31,6 +32,7 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
                 graceEndDate={getLocalDateString({ instant: endDate })}
                 daysBefore={data.daysBefore}
                 subscriptionUrl={`${siteUrl}/es/mi-cuenta/suscripcion/`}
+                paymentMethod={data.paymentMethod}
             />
         )
     };

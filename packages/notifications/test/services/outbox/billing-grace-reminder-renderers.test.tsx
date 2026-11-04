@@ -10,7 +10,8 @@ const base = {
     vertical: 'venue',
     graceEndsAt: '2026-10-20T02:00:00.000Z',
     daysBefore: 3,
-    deadlinesVersion: 1
+    deadlinesVersion: 1,
+    paymentMethod: 'CARD'
 };
 
 describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
@@ -26,6 +27,15 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         expect(html).toContain('Mercado Pago');
         expect(html).toContain('https://hospeda.test/es/mi-cuenta/suscripcion/');
         expect(html).not.toContain('private-id');
+        const manual = renderers['billing.grace-reminder']!({
+            row: row({
+                template: 'billing.grace-reminder',
+                payload: { ...base, paymentMethod: 'MANUAL' }
+            })
+        });
+        const manualHtml = renderToStaticMarkup(manual.react);
+        expect(manualHtml).not.toMatch(/tarjeta|débito|cobro automático|Mercado Pago/i);
+        expect(manualHtml).toContain('transferencia');
     });
     it('uses singular wording and rejects incomplete payloads', () => {
         const result = renderers['billing.grace-reminder']!({
