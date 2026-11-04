@@ -294,14 +294,14 @@ function AccommodationCardPopup({
     item,
     viewDetailsLabel,
     priceConsultLabel,
-    consultAvailabilityLabel,
+    consultCtaLabel,
     locale,
     onClose
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
     readonly priceConsultLabel?: string;
-    readonly consultAvailabilityLabel?: string;
+    readonly consultCtaLabel?: string;
     readonly locale: SupportedLocale;
     readonly onClose: () => void;
 }) {
@@ -369,7 +369,7 @@ function AccommodationCardPopup({
                 item={item}
                 viewDetailsLabel={viewDetailsLabel}
                 priceConsultLabel={priceConsultLabel}
-                consultAvailabilityLabel={consultAvailabilityLabel}
+                consultCtaLabel={consultCtaLabel}
                 locale={locale}
             />
         </div>,
@@ -702,7 +702,7 @@ export function ListingMapInner(props: ListingMapProps) {
                         item={openAccommodationItem}
                         viewDetailsLabel={i18nStrings.viewDetails}
                         priceConsultLabel={i18nStrings.priceConsult}
-                        consultAvailabilityLabel={i18nStrings.consultAvailability}
+                        consultCtaLabel={i18nStrings.consultCta}
                         locale={locale}
                         onClose={() => setOpenCardId(null)}
                     />
@@ -725,13 +725,13 @@ function AccommodationPopupContent({
     item,
     viewDetailsLabel,
     priceConsultLabel,
-    consultAvailabilityLabel,
+    consultCtaLabel,
     locale
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
     readonly priceConsultLabel?: string;
-    readonly consultAvailabilityLabel?: string;
+    readonly consultCtaLabel?: string;
     readonly locale: SupportedLocale;
 }) {
     const hasRating =
@@ -795,18 +795,28 @@ function AccommodationPopupContent({
                         <span className={styles.popupPrice}>{item.priceLabel}</span>
                     ) : (
                         <span className={styles.popupPrice}>
-                            {priceConsultLabel ?? 'Precio a consultar'}
+                            {priceConsultLabel ??
+                                (locale === 'en'
+                                    ? 'Price on request'
+                                    : locale === 'pt'
+                                      ? 'Preço sob consulta'
+                                      : 'Precio a consultar')}
                         </span>
                     )}
                     {item.detailHref ? (
                         <a
                             href={item.detailHref}
-                            className={styles.popupCta}
+                            className={`${styles.popupCta}${item.priceLabel ? '' : ` ${styles.popupCtaCompact}`}`}
                         >
                             <span>
                                 {item.priceLabel
                                     ? (viewDetailsLabel ?? 'Ver más')
-                                    : (consultAvailabilityLabel ?? 'Consultar disponibilidad')}
+                                    : (consultCtaLabel ??
+                                      (locale === 'en'
+                                          ? 'Inquire'
+                                          : locale === 'pt'
+                                            ? 'Consultar'
+                                            : 'Consultar'))}
                             </span>
                             <span aria-hidden="true">→</span>
                         </a>

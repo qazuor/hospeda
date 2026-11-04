@@ -331,10 +331,18 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('data.cityName ?? data.location.city');
         });
 
-        it('should conditionally render price when formattedPrice exists', () => {
-            expect(src).toContain('formattedPrice');
+        it('keeps the price slot and CTA in both priced and no-price variants', () => {
+            const priceRow = src.split('<!-- Price + CTA row -->')[1] ?? '';
+            const noPriceBlock = priceRow.split('home.accommodations.price.consult')[0] ?? '';
+
+            expect(src).toContain('formattedPrice ? (');
             expect(src).toContain("home.accommodations.price.consult', 'Precio a consultar'");
-            expect(src).toContain('home.accommodations.price.consultAvailability');
+            expect(priceRow).toContain('class="acc-card__price-block"');
+            expect(noPriceBlock).toContain('acc-card__price-value');
+            expect(priceRow).toContain("!formattedPrice && 'acc-card__cta-btn--compact'");
+            expect(priceRow).toContain('home.accommodations.price.consultCta');
+            expect(priceRow).toContain('→');
+            expect(src).toContain('class="acc-card__price-row"');
         });
 
         it('should render star rating icons', () => {

@@ -49,7 +49,8 @@
             "from": "A partir de",
             "perNight": "/noite",
             "consult": "Preço sob consulta",
-            "consultAvailability": "Consultar disponibilidade"
+            "consultAvailability": "Consultar disponibilidade",
+            "consultCta": "Consultar"
         },
         "amenities": {
             "label": "Comodidades"

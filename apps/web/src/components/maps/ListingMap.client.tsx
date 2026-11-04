@@ -92,6 +92,7 @@ interface ListingMapStrings {
     readonly viewDetails?: string;
     readonly priceConsult?: string;
     readonly consultAvailability?: string;
+    readonly consultCta?: string;
 }
 
 interface BaseProps {

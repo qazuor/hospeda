@@ -156,7 +156,7 @@ describe('MapCardsSidebar — accommodation price slot', () => {
                     ...item,
                     priceConsultLabel: 'Precio a consultar',
                     ctaLabel: 'Ver más →',
-                    noPriceCtaLabel: 'Consultar disponibilidad',
+                    noPriceCtaLabel: 'Consultar',
                     detailHref: '/es/alojamientos/casa-rio/'
                 },
                 {
@@ -175,9 +175,9 @@ describe('MapCardsSidebar — accommodation price slot', () => {
         expect(pricedFooter?.children).toHaveLength(2);
         expect(noPriceFooter?.firstElementChild).toHaveTextContent('Precio a consultar');
         const availabilityLink = screen.getByRole('link', {
-            name: 'Consultar disponibilidad — Casa del Río'
+            name: 'Consultar — Casa del Río'
         });
-        expect(availabilityLink).toHaveTextContent('Consultar disponibilidad');
+        expect(availabilityLink).toHaveTextContent('Consultar →');
         expect(availabilityLink).toHaveAttribute('href', '/es/alojamientos/casa-rio/');
     });
 });

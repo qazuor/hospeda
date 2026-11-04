@@ -71,6 +71,7 @@ interface AccommodationsListingMapProps {
         readonly viewDetails?: string;
         readonly priceConsult?: string;
         readonly consultAvailability?: string;
+        readonly consultCta?: string;
     };
     /**
      * Localised label for the type chip on each popup, keyed by the API's

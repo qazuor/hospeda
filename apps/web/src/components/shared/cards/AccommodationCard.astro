@@ -252,10 +252,10 @@ const isNew = data.createdAt
 						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Precio a consultar')}</span>
 					</div>
 				)}
-				<span class="acc-card__cta-btn">
+				<span class:list={['acc-card__cta-btn', !formattedPrice && 'acc-card__cta-btn--compact']}>
 					{formattedPrice
 						? `${t('common.readMore', 'Ver más')} →`
-						: `${t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad')} →`}
+						: `${t('home.accommodations.price.consultCta', 'Consultar')} →`}
 				</span>
 			</div>
 		</div>
@@ -755,6 +755,11 @@ const isNew = data.createdAt
 
 	.acc-card:hover .acc-card__cta-btn {
 		opacity: 0.85;
+	}
+
+	.acc-card__cta-btn--compact {
+		padding-right: 10px;
+		padding-left: 10px;
 	}
 
 	/*

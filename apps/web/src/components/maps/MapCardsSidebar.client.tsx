@@ -67,6 +67,7 @@ export interface MapSidebarCardData {
     readonly pricePerNightLabel?: string;
     readonly priceConsultLabel?: string;
     readonly ctaLabel?: string;
+    /** Short localized CTA label used beside the no-price explanation. */
     readonly noPriceCtaLabel?: string;
     /** Amenities row: up to 4 resolved icon entries + a +N counter for the rest. */
     readonly amenities?: ReadonlyArray<MapSidebarAmenity>;
@@ -495,7 +496,7 @@ export function MapCardsSidebar({
                                         {item.ctaLabel && item.detailHref ? (
                                             <a
                                                 href={item.detailHref}
-                                                className={sidebarStyles.cardCta}
+                                                className={`${sidebarStyles.cardCta}${item.priceLabel ? '' : ` ${sidebarStyles.cardCtaCompact}`}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 onMouseDown={(e) => e.stopPropagation()}
                                                 aria-label={`${item.priceLabel ? item.ctaLabel : (item.noPriceCtaLabel ?? item.ctaLabel)} — ${item.name}`}
@@ -503,6 +504,9 @@ export function MapCardsSidebar({
                                                 {item.priceLabel
                                                     ? item.ctaLabel
                                                     : (item.noPriceCtaLabel ?? item.ctaLabel)}
+                                                {item.priceLabel ? null : (
+                                                    <span aria-hidden="true"> →</span>
+                                                )}
                                             </a>
                                         ) : null}
                                     </div>
