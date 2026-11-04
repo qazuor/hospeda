@@ -1366,6 +1366,13 @@
       "when": 1793748695941,
       "tag": "0194_hos1487_partner_edit_own",
       "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1793779569400,
+      "tag": "0195_hos1488_partner_presence_moderation",
+      "breakpoints": true
     }
   ]
 }

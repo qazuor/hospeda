@@ -156,6 +156,32 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         return this.findOne({ slug });
     }
 
+    /** Locks a non-deleted Partner row for ACC:12 (sources: action 13), AC:V7:14; V7 §1.6. */
+    async lockById(args: {
+        readonly tx: DrizzleClient;
+        readonly partnerId: string;
+    }): Promise<Partner | null> {
+        const rows = await args.tx
+            .select()
+            .from(partners)
+            .where(and(eq(partners.id, args.partnerId), isNull(partners.deletedAt)))
+            .for('update')
+            .limit(1);
+        return (rows[0] as Partner | undefined) ?? null;
+    }
+
+    /** Writes the sole ACC:12 (sources: action 13) presence bit, AC:V7:14; V7 §1.6. */
+    async setPresenceModerated(args: {
+        readonly tx: DrizzleClient;
+        readonly partnerId: string;
+        readonly moderated: boolean;
+    }): Promise<void> {
+        await args.tx
+            .update(partners)
+            .set({ presenceModerated: args.moderated })
+            .where(and(eq(partners.id, args.partnerId), isNull(partners.deletedAt)));
+    }
+
     /**
      * Find one live, owned and unmoderated public presence candidate by slug.
      * AC:V7:13; V7 §1.6 (V/18 §1.6).
