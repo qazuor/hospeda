@@ -12,7 +12,7 @@ import type { PaymentProviderMethod } from './payment-provider';
 /** Capability → the interface methods that implement it. */
 export const CAPABILITY_METHODS = {
     authorize: ['authorize'],
-    charge: ['charge'],
+    charge: ['charge', 'chargeOnce'],
     changeAmount: ['changeAmount'],
     pauseAndResume: ['pause', 'resume'],
     cancel: ['cancel'],

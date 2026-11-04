@@ -328,6 +328,8 @@ describe('TEST:1734 rejected charge edges', () => {
             authorize: (input: Parameters<PaymentProvider['authorize']>[0]) =>
                 own.provider.authorize(input),
             charge: (input: Parameters<PaymentProvider['charge']>[0]) => own.provider.charge(input),
+            chargeOnce: (input: Parameters<PaymentProvider['chargeOnce']>[0]) =>
+                own.provider.chargeOnce(input),
             changeAmount: (input: Parameters<PaymentProvider['changeAmount']>[0]) =>
                 own.provider.changeAmount(input),
             pause: (input: Parameters<PaymentProvider['pause']>[0]) => own.provider.pause(input),

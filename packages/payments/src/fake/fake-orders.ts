@@ -26,6 +26,11 @@ export const FAKE_ORDER_SEARCH_MAX_MS = 30 * 24 * 60 * 60_000;
  */
 export class FakeOrders {
     private readonly orders = new Map<string, FakeRefundableOrder>();
+    /** RP15: one stable response for each order creation key (AC:B6:12, MP:EX-41). */
+    readonly chargeByKey = new Map<
+        string,
+        { readonly body: string; readonly orderId: string; readonly declined: boolean }
+    >();
 
     constructor(private readonly args: { readonly ledger: FakeLedger; readonly clock: Clock }) {}
 
@@ -53,6 +58,20 @@ export class FakeOrders {
             }
         });
         return { orderId };
+    }
+
+    /** Counts orders and approved payments for an exact customer request (AC:B6:12, MP:EX-41). */
+    countFor(input: { readonly reference: string }): {
+        readonly orders: number;
+        readonly paid: number;
+    } {
+        const matches = [...this.orders.values()].filter(
+            ({ snapshot }) => snapshot.reference === input.reference
+        );
+        return {
+            orders: matches.length,
+            paid: matches.filter(({ snapshot }) => snapshot.hasApprovedPayment).length
+        };
     }
 
     /** One order by id, or `NOT_FOUND`. */

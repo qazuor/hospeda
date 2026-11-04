@@ -80,6 +80,23 @@ export interface ChargeResult {
     readonly chargeId: string;
 }
 
+/** Capability 2 one-time order request (AC:B6:11/12, MP:EX-41, MP:EX-30). */
+export interface OneTimeChargeInput {
+    readonly reference: string;
+    readonly idempotencyKey: string;
+    readonly amount: Money;
+    readonly payerEmail: string;
+    readonly paymentToken: string;
+    readonly paymentBrand: string;
+    readonly paymentKind: 'credit' | 'debit';
+}
+
+/** One-time order creation result; a declined payment still has an order id (AC:B6:12, MP:EX-30). */
+export interface OneTimeChargeResult {
+    readonly orderId: string;
+    readonly declined: boolean;
+}
+
 /** Identifies one authorization. */
 export interface AuthorizationRef {
     readonly authorizationId: string;
@@ -312,6 +329,8 @@ export interface PaymentProvider {
     authorize(input: AuthorizeInput): Promise<AuthorizeResult>;
     /** Capability 2 · charge. */
     charge(input: ChargeInput): Promise<ChargeResult>;
+    /** Capability 2 · create one order with the request's stable key (AC:B6:11/12, MP:EX-41). */
+    chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult>;
     /** Capability 3 · change the amount. Accepted is not applied: re-read. */
     changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement>;
     /** Capability 4 · pause. Accepted is not applied: re-read. */

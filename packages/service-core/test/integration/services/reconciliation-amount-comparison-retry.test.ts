@@ -56,6 +56,7 @@ function providerWithoutAppliedAmount(fake: FakePaymentProvider): PaymentProvide
         capabilitySupport: fake.capabilitySupport,
         authorize: (input) => fake.authorize(input),
         charge: (input) => fake.charge(input),
+        chargeOnce: (input) => fake.chargeOnce(input),
         changeAmount: async (input) => ({ accepted: true, resourceId: input.authorizationId }),
         pause: (input) => fake.pause(input),
         resume: (input) => fake.resume(input),
