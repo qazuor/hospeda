@@ -38,6 +38,23 @@ import { describe, expect, it } from 'vitest';
  */
 const SPREAD = /\.\.\.availabilityParams\b/;
 
+const PARSER_PATH = join(
+    import.meta.dirname,
+    '../../src/lib/accommodation-listing-filters/parse-listing-filters.ts'
+);
+
+/** The `apiQuery` object literal of the shared parser (what the pages spread into the request). */
+function extractParserApiQuery(): string {
+    const source = readFileSync(PARSER_PATH, 'utf8');
+    const start = source.indexOf('const apiQuery');
+    if (start === -1) throw new Error('apiQuery literal not found in the parser');
+    const end = source.indexOf('};', start);
+    return source.slice(start, end);
+}
+
+/** The page spreads the parser's apiQuery, anchored so a rename is caught. */
+const PAGE_SPREADS_API_QUERY = /\.\.\.parsedFilters\.apiQuery\b/;
+
 const PAGES_ROOT = join(import.meta.dirname, '../../src/pages/[lang]/alojamientos');
 
 /**
@@ -45,9 +62,9 @@ const PAGES_ROOT = join(import.meta.dirname, '../../src/pages/[lang]/alojamiento
  * therefore also send them to the API.
  */
 const LISTING_PAGES = [
-    { label: 'base listing', path: join(PAGES_ROOT, 'index.astro') },
-    { label: 'map view', path: join(PAGES_ROOT, 'mapa.astro') },
-    { label: 'type landing', path: join(PAGES_ROOT, 'tipo/[type]/index.astro') }
+    { label: 'base listing', path: join(PAGES_ROOT, 'index.astro'), viaParser: true },
+    { label: 'map view', path: join(PAGES_ROOT, 'mapa.astro'), viaParser: false },
+    { label: 'type landing', path: join(PAGES_ROOT, 'tipo/[type]/index.astro'), viaParser: true }
 ] as const;
 
 /**
@@ -85,6 +102,14 @@ describe('H-120 guard — listing surfaces forward the availability range', () =
             const source = readFileSync(page.path, 'utf8');
 
             it('reads checkIn and checkOut from the URL', () => {
+                if (page.viaParser) {
+                    // The shared parser owns the read; the page must not re-read it.
+                    const parser = readFileSync(PARSER_PATH, 'utf8');
+                    expect(parser).toContain("text('checkIn')");
+                    expect(parser).toContain("text('checkOut')");
+                    expect(source).toContain('parseAccommodationListingFilters(');
+                    return;
+                }
                 expect(source).toContain("url.searchParams.get('checkIn')");
                 expect(source).toContain("url.searchParams.get('checkOut')");
             });
@@ -92,11 +117,19 @@ describe('H-120 guard — listing surfaces forward the availability range', () =
             it('builds the pair through the shared both-or-neither helper', () => {
                 // Hand-rolling the rule per page is how one of the three ends up
                 // sending a lone date that the server silently drops.
-                expect(source).toContain('buildAvailabilityParams(');
+                const owner = page.viaParser ? readFileSync(PARSER_PATH, 'utf8') : source;
+                expect(owner).toContain('buildAvailabilityParams(');
             });
 
             it('spreads the range INSIDE the accommodationsApi.list call', () => {
                 const call = extractListCall(source);
+                if (page.viaParser) {
+                    // The page spreads the parser's apiQuery, and THAT literal
+                    // must itself carry the validated availability pair.
+                    expect(call).toMatch(PAGE_SPREADS_API_QUERY);
+                    expect(extractParserApiQuery()).toMatch(SPREAD);
+                    return;
+                }
                 expect(call).toMatch(SPREAD);
             });
         });

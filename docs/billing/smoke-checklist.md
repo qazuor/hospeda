@@ -81,9 +81,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Preconditions:** An active card subscription exists on `staging` whose Mercado Pago
   preapproval is `authorized`.
 - **Steps:**
-  1. Run the `billing-reconciliation-sweep` cron on `staging` and confirm that
-     `subscription.next_charge_at` equals the preapproval's `next_payment_date` (read-only
-     `GET /preapproval/{id}`).
+  1. Trigger `billing-reconciliation-sweep?newCycle=true` on `staging`. The exclusive
+     manual trigger answers `202` with a `runId`; read the result from `cron_runs`.
+     Confirm that `subscription.next_charge_at` equals the preapproval's
+     `next_payment_date` (read-only `GET /preapproval/{id}`).
   2. On a staging test subscription created for this smoke (never a real customer's row), write
      `next_charge_at` 5 days ahead of the AR day, after the sweep and before the next one.
   3. Run the `subscription-renewal-notice` cron on `staging`.
@@ -95,6 +96,16 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
 - **Covers:** HOS-1685 (provider next charge date copy); AC:B13a:13 (renewal notices at 5 and 1 day);
   TEST:B13a:13 (integration).
+
+### S4a — Resumable sweep slicing
+
+- **Preconditions:** Staging test subscriptions are available and no reconciliation sweep is running.
+- **Steps:**
+  1. Configure a small slice budget in the test harness so one cycle spans 02:10, 03:10 and 04:10.
+  2. Kill one slice mid-run, then allow the next scheduled slice to resume.
+  3. Read the completed cycle summary from `cron_runs` and confirm the interrupted row was safely retried.
+- **Expected:** The cycle reaches `CYCLE_DONE`, preserves completed row/pass progress, and reports its aggregate summary.
+- **Evidence:** The three slice records and the final cycle summary in `cron_runs`.
 
 ### S5 — Cloudflare edge cache and revalidation
 

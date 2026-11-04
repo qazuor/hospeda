@@ -38,6 +38,22 @@ function query(href: string): URLSearchParams {
     return new URLSearchParams(href.split('?')[1] ?? '');
 }
 
+const PARSER_PATH = resolve(
+    __dirname,
+    '../../src/lib/accommodation-listing-filters/parse-listing-filters.ts'
+);
+
+function parserSource(): string {
+    return readFileSync(PARSER_PATH, 'utf8');
+}
+
+/** The `apiQuery` object literal of the shared parser. */
+function parserApiQuery(): string {
+    const source = parserSource();
+    const start = source.indexOf('const apiQuery');
+    return source.slice(start, source.indexOf('};', start));
+}
+
 describe('alojamientos/index.astro — type chips wired to real multi-select (HOS-96 T-011)', () => {
     describe('source wiring', () => {
         it('imports resolveFacetChipHref (the CAPPED builder, HOS-524) and buildClearFacetChip', () => {
@@ -106,11 +122,17 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
             expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
 
             const fetchBlock = src.slice(callIndex, callIndex + 400);
-            expect(fetchBlock).toContain('types,');
+            expect(fetchBlock).toMatch(/\.\.\.parsedFilters\.apiQuery\b/);
+            // ...and the parser's apiQuery literal itself carries `types`.
+            expect(parserApiQuery()).toMatch(/^\s*types,\s*$/m);
         });
 
         it('types is read as a raw URL string, never a JS array (String(array) footgun guard)', () => {
-            expect(src).toContain("const types = url.searchParams.get('types') ?? undefined;");
+            // The read lives in the shared parser now; the page must not re-read it,
+            // and the parser must read it as the raw string (no split/array).
+            expect(src).not.toMatch(/url\.searchParams\.get\('types'\)/);
+            expect(src).toContain('parseAccommodationListingFilters(');
+            expect(parserSource()).toContain("const types = text('types');");
         });
 
         // HOS-96 pre-merge review (Option A): a legacy `?type=HOTEL` link must
@@ -128,24 +150,10 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
             expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
 
             const fetchBlock = src.slice(callIndex, callIndex + 700);
-            const forwarded = fetchBlock.match(/^\s*type:\s*(.+?),\s*$/m);
-            expect(
-                forwarded,
-                'accommodationsApi.list does not forward a singular `type`'
-            ).not.toBeNull();
-
-            const expression = (forwarded as RegExpMatchArray)[1].trim();
-            const readsParamInline = /url\.searchParams\.get\('type'\)/.test(expression);
-            const readsParamViaConst =
-                /^[A-Za-z_$][\w$]*$/.test(expression) &&
-                new RegExp(`const ${expression}\\s*=\\s*url\\.searchParams\\.get\\('type'\\)`).test(
-                    src
-                );
-
-            expect(
-                readsParamInline || readsParamViaConst,
-                `forwarded \`type\` value \`${expression}\` does not come from the ?type= param`
-            ).toBe(true);
+            expect(fetchBlock).toMatch(/\.\.\.parsedFilters\.apiQuery\b/);
+            // The singular `type` comes from the ?type= param and is sent as `type`.
+            expect(parserSource()).toContain("const legacyType = text('type');");
+            expect(parserApiQuery()).toMatch(/^\s*type:\s*legacyType,\s*$/m);
         });
     });
 });

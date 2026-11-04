@@ -134,11 +134,29 @@ export function ReviewSidebarCard({
         setOpen(true);
     }, []);
 
+    // Pending timers (reset after close, reload after success). Kept in refs so
+    // unmount can cancel them: a timer that outlives the component touches a
+    // gone tree (and, in jsdom, an environment already torn down).
+    const resetTimerRef = useRef<number | null>(null);
+    const reloadTimerRef = useRef<number | null>(null);
+    // In-flight submit; aborted on unmount so a late response cannot set state.
+    const submitAbortRef = useRef<AbortController | null>(null);
+    useEffect(
+        () => () => {
+            submitAbortRef.current?.abort();
+            if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+            if (reloadTimerRef.current !== null) window.clearTimeout(reloadTimerRef.current);
+        },
+        []
+    );
+
     const handleClose = useCallback(() => {
         setOpen(false);
         // Reset state shortly after the dialog has closed so the closing
         // animation doesn't briefly flash the empty form.
-        window.setTimeout(() => {
+        if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = window.setTimeout(() => {
+            resetTimerRef.current = null;
             setRatings(INITIAL_RATINGS);
             setTitle('');
             setContent('');
@@ -162,6 +180,8 @@ export function ReviewSidebarCard({
             if (!allRated || submitting || !contentValid) return;
             setSubmitting(true);
             setError(null);
+            const controller = new AbortController();
+            submitAbortRef.current = controller;
 
             try {
                 const response = await fetch(
@@ -169,6 +189,7 @@ export function ReviewSidebarCard({
                     {
                         method: 'POST',
                         credentials: 'include',
+                        signal: controller.signal,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             rating: ratings,
@@ -189,6 +210,7 @@ export function ReviewSidebarCard({
                     } catch {
                         // body wasn't JSON
                     }
+                    if (controller.signal.aborted) return;
                     setError(
                         translateApiError({
                             error: apiError,
@@ -212,11 +234,12 @@ export function ReviewSidebarCard({
                 });
 
                 setSuccess(true);
-                window.setTimeout(() => {
+                reloadTimerRef.current = window.setTimeout(() => {
                     if (typeof window === 'undefined') return;
                     window.location.reload();
                 }, 1400);
             } catch {
+                if (controller.signal.aborted) return;
                 setError(
                     t(
                         'common.apiError.NETWORK_ERROR',
@@ -224,7 +247,7 @@ export function ReviewSidebarCard({
                     )
                 );
             } finally {
-                setSubmitting(false);
+                if (!controller.signal.aborted) setSubmitting(false);
             }
         },
         [

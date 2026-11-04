@@ -57,6 +57,17 @@ export interface AccommodationSummaryFilters {
     readonly bathrooms?: number | string | null;
     /** Featured-only filter. `true` = only featured, `false` = only non-featured. */
     readonly featured?: boolean | null;
+    /** Boolean convenience amenities. */
+    readonly quickAmenities?: {
+        readonly wifi?: boolean;
+        readonly pool?: boolean;
+        readonly parking?: boolean;
+        readonly pets?: boolean;
+    } | null;
+    /** Distance from a selected location in kilometres. */
+    readonly location?: { readonly radiusKm: number } | null;
+    /** Requested stay dates. */
+    readonly availability?: { readonly checkIn: string; readonly checkOut: string } | null;
 }
 
 /** Sort configuration applied to the listing. */
