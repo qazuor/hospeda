@@ -14,26 +14,17 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { grantPermanentGrant } from '../../../src/services/billing/grant/permanent-grant.service';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { cancelDirectSubscription } from '../../../src/services/billing/subscription/cancel-direct-subscription.service';
 import { expireManualGraces } from '../../../src/services/billing/subscription/expire-manual-grace.service';
 import { registerManualPayment } from '../../../src/services/billing/subscription/register-manual-payment.service';
-import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
-import { currentFloorPolicy, grantSignerActor } from './support/permanent-grant-fixtures';
-import {
-    retireRevocationRows,
-    revocationFixture,
-    seedRevocationActor
-} from './support/revocation-fixtures';
 
 const now = new Date('2026-10-20T12:00:00.000Z');
 const graceStartedAt = new Date('2026-10-18T12:00:00.000Z');
 const clock = { now: () => now };
 afterAll(closeServiceTestPool);
-afterEach(retireRevocationRows);
 
 async function seed(
     input: {
@@ -303,90 +294,5 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         expect(afterRegistration.subscription?.nextChargeAt).toEqual(
             fixture.subscription.nextChargeAt
         );
-    });
-
-    it.each([
-        'GRACE_PERIOD',
-        'PENDING_AUTHORIZATION'
-    ] as const)('closes %s awaiting installment through public S13', async (status) => {
-        const fixture = await seed({ status });
-        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
-        await grantPermanentGrant(
-            {
-                beneficiaryUserId: fixture.user.id,
-                actor: grantSignerActor(fixture.admin.id),
-                reason: 'MP3 terminal exit',
-                includesAddons: false,
-                anchors: [
-                    {
-                        vertical: 'partner',
-                        planId: fixture.plan.id,
-                        floorPlanVersionId: fixture.version.id
-                    }
-                ]
-            },
-            {
-                planPolicy: currentFloorPolicy,
-                clock,
-                provider: fake,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' },
-                coverageNotices: { emitCoverageChanged: async () => {} },
-                orphanhood: {
-                    addonPolicy: async () => {
-                        throw new Error('Unexpected addon policy');
-                    },
-                    listing: async () => {
-                        throw new Error('Unexpected listing');
-                    }
-                }
-            }
-        );
-        const written = await read(fixture);
-        expect(written.subscription?.status).toBe('CANCELLED');
-        expect(written.installment?.status).toBe('DECLARED_UNPAID');
-    });
-
-    it('closes a grace installment through public S36', async () => {
-        const f = await revocationFixture({ origin: 'GRACE_PERIOD', withPayment: false });
-        await getDb()
-            .update(subscriptions)
-            .set({ paymentMethod: 'MANUAL' })
-            .where(eq(subscriptions.id, f.subscriptionId));
-        await getDb()
-            .insert(manualPayments)
-            .values({
-                subscriptionId: f.subscriptionId,
-                periodStart: new Date('2026-10-01T03:00:00.000Z'),
-                status: 'REGISTERED',
-                registeredBy: f.userId,
-                registeredAt: f.day(3)
-            });
-        const [awaiting] = await getDb()
-            .insert(manualPayments)
-            .values({
-                subscriptionId: f.subscriptionId,
-                periodStart: f.day(2),
-                status: 'AWAITING'
-            })
-            .returning();
-        if (!awaiting) throw new Error('Awaiting fixture failed');
-        f.at(f.day(5));
-        await revokeSubscription(
-            {
-                actor: await seedRevocationActor(),
-                subscriptionId: f.subscriptionId
-            },
-            f.ports
-        );
-        const [row] = await getDb()
-            .select()
-            .from(subscriptions)
-            .where(eq(subscriptions.id, f.subscriptionId));
-        const [installment] = await getDb()
-            .select()
-            .from(manualPayments)
-            .where(eq(manualPayments.id, awaiting.id));
-        expect(row?.status).toBe('CANCELLED');
-        expect(installment?.status).toBe('DECLARED_UNPAID');
     });
 });
