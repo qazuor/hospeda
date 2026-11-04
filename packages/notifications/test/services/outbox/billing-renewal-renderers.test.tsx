@@ -102,6 +102,16 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
                 daysBefore: 5,
                 paymentMethod: 'CASH'
             }
+        ],
+        [
+            'null payment method',
+            {
+                subscriptionId,
+                planName: 'Plan',
+                renewalDate: '2026-10-20',
+                daysBefore: 5,
+                paymentMethod: null
+            }
         ]
     ])('rejects %s', (_label, payload) => {
         expect(() =>

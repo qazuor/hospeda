@@ -59,12 +59,12 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         expect(html).not.toContain('transferencia');
     });
 
-    it('rejects an unknown payment method', () => {
+    it.each([['CASH'], [null]])('rejects a present payment method %s', (paymentMethod) => {
         expect(() =>
             renderers['billing.grace-reminder']!({
                 row: row({
                     template: 'billing.grace-reminder',
-                    payload: { ...base, paymentMethod: 'CASH' }
+                    payload: { ...base, paymentMethod }
                 })
             })
         ).toThrow(TypeError);

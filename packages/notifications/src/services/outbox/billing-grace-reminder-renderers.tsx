@@ -8,7 +8,8 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload))
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
     const data = payload as Record<string, unknown>;
-    const paymentMethod = data.paymentMethod ?? 'CARD';
+    // Only an ABSENT field means a payload enqueued before the method existed; null is invalid.
+    const paymentMethod = 'paymentMethod' in data ? data.paymentMethod : 'CARD';
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.vertical !== 'string' ||

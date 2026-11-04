@@ -15,7 +15,8 @@ function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
 
 function renewalUpcoming(row: EmailOutboxRow) {
     const data = objectPayload(row);
-    const paymentMethod = data.paymentMethod ?? 'CARD';
+    // Only an ABSENT field means a payload enqueued before the method existed; null is invalid.
+    const paymentMethod = 'paymentMethod' in data ? data.paymentMethod : 'CARD';
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.planName !== 'string' ||
