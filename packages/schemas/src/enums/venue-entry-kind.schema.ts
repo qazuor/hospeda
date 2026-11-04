@@ -8,4 +8,5 @@ import { VenueEntryKindEnum } from './venue-entry-kind.enum.js';
 export const VenueEntryKindEnumSchema = z.nativeEnum(VenueEntryKindEnum, {
     error: () => ({ message: 'zodError.enums.venueEntryKind.invalid' })
 });
+/** How a venue charges for entry: `free`, `paid` (with a price) or `varies`. */
 export type VenueEntryKind = z.infer<typeof VenueEntryKindEnumSchema>;

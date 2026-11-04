@@ -8,4 +8,5 @@ import { VenueDressCodeEnum } from './venue-dress-code.enum.js';
 export const VenueDressCodeEnumSchema = z.nativeEnum(VenueDressCodeEnum, {
     error: () => ({ message: 'zodError.enums.venueDressCode.invalid' })
 });
+/** The dress code a venue declares in its `nightInfo` section. */
 export type VenueDressCode = z.infer<typeof VenueDressCodeEnumSchema>;
