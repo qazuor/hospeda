@@ -407,7 +407,8 @@ describe('TEST:3.12:2 listings with an impossible empty business line set', () =
             facts: {
                 ownerId: OWNER,
                 publicationStatus: PublicationStatusEnum.PUBLISHED,
-                businessLines: []
+                businessLines: [],
+                type: 'RESTAURANT'
             },
             ownerId: OWNER
         });
@@ -415,8 +416,10 @@ describe('TEST:3.12:2 listings with an impossible empty business line set', () =
         expect(putMenu.status).toBe(500);
         expect(putMenu.body.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(getDomainCounters()['listing_empty_business_lines_total{result=failure}']).toBe(1);
+        // The body carries no `type`: the log must fall back to the persisted
+        // row value the port read from `loadFacts`, never `null`.
         expect(errorLog).toHaveBeenCalledWith(
-            { vertical: VerticalEnum.VENUE, id: LISTING, type: null },
+            { vertical: VerticalEnum.VENUE, id: LISTING, type: 'RESTAURANT' },
             expect.stringContaining('no business lines')
         );
 

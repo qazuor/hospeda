@@ -216,13 +216,27 @@ export async function enforceListingAccess(args: {
         config.operation === 'CREATE'
             ? (bodyLines ?? [])
             : (bodyLines ?? facts?.businessLines ?? []);
+    // The integrity failure is about a listing that EXISTS with an impossible
+    // empty set (the DB CHECK should prevent it). A missing row has `facts ===
+    // null` and belongs to the resolver's NOT_FOUND step, not here; firing this
+    // branch on a missing row turned the 404 of `menuQr`/`menuQrScans` into a
+    // 500 before the handler could throw.
+    // Only the actor who may actually write this listing sees the integrity
+    // failure. A foreign or unauthenticated caller must still get the resolver's
+    // 404/401 priority, not a 500 leaked from a row it may not touch.
     if (
         config.operation !== 'CREATE' &&
         bodyLines === undefined &&
-        (facts?.businessLines?.length ?? 0) === 0
+        facts !== null &&
+        // An explicit empty array is the impossible persisted state. `undefined`
+        // means the row object did not report the column (test doubles), not
+        // that the listing has zero lines.
+        facts.businessLines !== undefined &&
+        facts.businessLines.length === 0 &&
+        (!isForeign || adminAction?.permitted === true)
     ) {
         apiLogger.error(
-            { vertical: config.vertical, id: listingId, type: body?.type ?? null },
+            { vertical: config.vertical, id: listingId, type: body?.type ?? facts.type ?? null },
             'Listing has no business lines during section write authorization'
         );
         incrementDomainCounter('listing_empty_business_lines_total', 'failure');
@@ -256,15 +270,12 @@ export async function enforceListingAccess(args: {
         sections,
         limit,
         billing: ports.billing,
-        effectiveSet: async (args) => {
-            try {
-                return await ports.effectiveSet(args);
-            } catch {
-                throw new HTTPException(503, {
-                    message: 'Unable to read listing entitlements'
-                });
-            }
-        },
+        // Leave `effectiveSet` failures untouched here. This middleware is shared
+        // by every listing route, so mapping its failures to 503 would widen the
+        // degraded-editor contract (HOS-1844 §3.12) to the whole authorization
+        // chain. The 503 is scoped to the `sectionStates` maps; widening it is a
+        // separate follow-up.
+        effectiveSet: ports.effectiveSet,
         preTrialDraftLimits: ports.preTrialDraftLimits
     });
     if (result.allowed) {
