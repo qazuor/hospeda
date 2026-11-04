@@ -113,6 +113,7 @@ async function seed(
                   subscriptionId: subscription.id,
                   periodStart,
                   status: installmentStatus,
+                  createdAt: new Date('2026-09-01T12:00:00.000Z'),
                   registeredBy: installmentStatus === 'REGISTERED' ? admin.id : null,
                   registeredAt: installmentStatus === 'REGISTERED' ? now : null
               })
