@@ -1,6 +1,8 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    CHARGE_SNAPSHOT_PROVIDER,
     createAmountComparison,
+    createClosedChargeSnapshots,
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     createNextChargeSync,
@@ -38,6 +40,9 @@ import { getPaymentProvider } from '../../utils/payment-provider.js';
 import { isLastSlot } from '../last-slot.js';
 import type { CronJobDefinition } from '../types.js';
 
+/** Holders inside this window are presumed to be the competing tick for this slot. */
+export const SAME_SLOT_WINDOW_MS = 10 * 60_000;
+
 /** HOS-1602, AC:B11:1: reconcile the owned billing inventory every day. */
 export const billingReconciliationSweepJob: CronJobDefinition = {
     name: 'billing-reconciliation-sweep',
@@ -46,14 +51,37 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
     schedule: '10 2,3,4 * * *',
     exclusive: true,
     acceptsNewCycle: true,
-    onOverlapSkipped: ({ logger, startedAt }) => {
-        // A scheduled tick refused by the cron lock at the last slot leaves the cycle unfinished.
-        if (isLastSlot({ schedule: billingReconciliationSweepJob.schedule, now: startedAt }))
+    onOverlapSkipped: ({
+        logger,
+        startedAt,
+        holderRunId,
+        holderStartedAt,
+        holderExecutionMode
+    }) => {
+        if (!isLastSlot({ schedule: billingReconciliationSweepJob.schedule, now: startedAt }))
+            return;
+        const holderAgeMs = holderStartedAt
+            ? startedAt.getTime() - holderStartedAt.getTime()
+            : null;
+        // Only a SCHEDULED holder is the competing tick of this slot (a Coolify rollout). A manual
+        // run starting minutes earlier may stop on budget without finishing the cycle, so its
+        // overlap with the last slot must still alert.
+        const sameSlot =
+            holderExecutionMode === 'scheduled' &&
+            holderAgeMs !== null &&
+            Math.abs(holderAgeMs) <= SAME_SLOT_WINDOW_MS;
+        if (sameSlot) {
+            logger.info('reconciliation last slot overlaps a run for the same slot', {
+                holderRunId,
+                holderStartedAt
+            });
+        } else {
             logger.error(
-                'reconciliation last slot skipped: the previous run still holds the lock',
-                {},
+                'reconciliation last slot skipped: another run still holds the lock',
+                { holderRunId, holderStartedAt, holderExecutionMode, holderAgeMs },
                 { capture: true }
             );
+        }
     },
     budgetMs: 2_700_000,
     enabled: true,
@@ -80,6 +108,10 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 retryOwnership: isMercadoPagoGovernorEnforcing() ? 'governor' : 'legacy'
             });
             const clock = getClock().clock;
+            const closedChargeSnapshots = createClosedChargeSnapshots({
+                provider: CHARGE_SNAPSHOT_PROVIDER,
+                clock
+            });
             const lastSlot = isLastSlot({
                 schedule: billingReconciliationSweepJob.schedule,
                 now: new Date(),
@@ -107,6 +139,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createStateComparison(),
                         createPeriodChargesComparison({
                             provider,
+                            closedChargeSnapshots,
                             dailySummary: createPersistedReconciliationDailySummary({
                                 correlationId: ctx.correlationId,
                                 clock
@@ -134,6 +167,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createLostFirstRejectionCheck({
                             provider,
                             clock,
+                            closedChargeSnapshots,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
                             billingFacts: getAnalyticsFactSink()
@@ -167,6 +201,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createGraceExpiryCheck({
                             provider,
                             clock,
+                            closedChargeSnapshots,
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
@@ -256,6 +291,26 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     durationMs: Date.now() - startedAt.getTime(),
                     details: { skipped: summary.skipped, outcome: summary.outcome ?? null }
                 };
+            }
+            if (summary.orphanedCycle) {
+                const orphan = summary.orphanedCycle;
+                const data = {
+                    cycleId: orphan.cycleId,
+                    failedSubscriptionIds: orphan.failedSubscriptionIds,
+                    rowsFailed: orphan.rowsFailed,
+                    forcedNewCycle: true
+                };
+                if (orphan.rowsFailed > 0 || orphan.failedSubscriptionIds.length > 0)
+                    logger.error(
+                        `forced newCycle abandoned unfinished cycle ${orphan.cycleId}`,
+                        data,
+                        { capture: true }
+                    );
+                else
+                    logger.warn(
+                        `forced newCycle abandoned unfinished cycle ${orphan.cycleId}`,
+                        data
+                    );
             }
             const { failures, ...details } = summary;
             const outcome =

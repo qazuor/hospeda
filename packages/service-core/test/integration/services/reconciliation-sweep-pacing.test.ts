@@ -112,7 +112,7 @@ describe('HOS-1737 reconciliation sweep provider pacing', () => {
         const correlationId = crypto.randomUUID();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: createSweepPacedProvider({
                         provider: fake,
@@ -156,7 +156,7 @@ describe('HOS-1737 reconciliation sweep provider pacing', () => {
         const ping = { ping: vi.fn() };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );

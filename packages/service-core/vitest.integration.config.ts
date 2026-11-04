@@ -30,6 +30,7 @@ export default defineConfig({
         pool: 'forks',
         maxWorkers: 3,
         include: ['test/integration/services/**/*.test.ts'],
+        setupFiles: [path.resolve(__dirname, 'test/integration/services/sweep-serial-setup.ts')],
         globalSetup: [path.resolve(__dirname, 'test/integration/services/global-setup.ts')],
         testTimeout: 30_000,
         hookTimeout: 60_000,

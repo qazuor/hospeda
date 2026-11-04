@@ -124,7 +124,7 @@ describe('TEST:1620:4 sweep writers record the failed late-payment condition', (
         const correlationId = crypto.randomUUID();
         await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -192,7 +192,7 @@ describe('TEST:1620:4 sweep writers record the failed late-payment condition', (
             const correlationId = crypto.randomUUID();
             await withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    { correlationId },
+                    { mode: 'single', correlationId },
                     {
                         provider: fake,
                         clock: reconciliationClock,
@@ -233,7 +233,7 @@ describe('TEST:1620:4 sweep writers record the failed late-payment condition', (
             const correlationId = crypto.randomUUID();
             await withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    { correlationId },
+                    { mode: 'single', correlationId },
                     {
                         provider: fake,
                         clock: reconciliationClock,
