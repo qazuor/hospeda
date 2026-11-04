@@ -140,7 +140,7 @@ export async function applyRenewalNotice(input: {
     if (
         row?.status !== 'ACTIVE' ||
         row.class !== 'PRINCIPAL' ||
-        row.paymentMethod !== 'CARD' ||
+        (row.paymentMethod !== 'CARD' && row.paymentMethod !== 'MANUAL') ||
         !row.nextChargeAt ||
         row.nextChargeAt <= input.now
     ) {
@@ -221,6 +221,7 @@ export async function applyRenewalNotice(input: {
                 }),
                 renewalDate: milestone.targetDate,
                 daysBefore: milestone.daysBefore,
+                paymentMethod: row.paymentMethod,
                 deadlinesVersion
             },
             dedupKey

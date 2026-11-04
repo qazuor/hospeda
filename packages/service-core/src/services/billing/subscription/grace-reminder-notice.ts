@@ -65,6 +65,7 @@ export async function applyGraceReminder(input: {
             userId: db.subscriptions.userId,
             status: db.subscriptions.status,
             class: db.subscriptions.class,
+            paymentMethod: db.subscriptions.paymentMethod,
             vertical: db.subscriptions.vertical,
             startedAt: db.subscriptions.graceStartedAt,
             endsAt: db.subscriptions.graceEndsAt,
@@ -147,7 +148,8 @@ export async function applyGraceReminder(input: {
                 vertical: row.vertical,
                 graceEndsAt: row.endsAt.toISOString(),
                 daysBefore: milestone.daysBefore,
-                deadlinesVersion: version.version
+                deadlinesVersion: version.version,
+                paymentMethod: row.paymentMethod
             },
             dedupKey: db.buildEmailDedupKey({
                 recipient: row.userId,
