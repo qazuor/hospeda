@@ -46,12 +46,14 @@ test.describe('AC:V7:11 admin direct partner creation sends the claim notice wit
         await page.goto(`${ADMIN_URL}/partners/new`, { waitUntil: 'domcontentloaded' });
         // The form is in the SSR HTML; input typed before hydration is wiped (HOS-1889).
         // The slug auto-fills from the name only once React owns the form, so it proves hydration.
+        // Scoped to the partner form: the hydrated feedback modal also has a «Tipo» select.
+        const form = page.locator('form').filter({ has: page.locator('select#type') });
         await expect(async () => {
-            await page.getByLabel('Nombre').fill(partnerName);
-            await expect(page.getByLabel('Slug')).not.toHaveValue('', { timeout: 1000 });
+            await form.getByLabel('Nombre').fill(partnerName);
+            await expect(form.getByLabel('Slug')).not.toHaveValue('', { timeout: 1000 });
         }).toPass({ timeout: 15_000 });
-        await page.getByLabel('Tipo').selectOption('business');
-        await page.getByLabel(/Correo para el aviso de reclamo/).fill(claimEmail);
+        await form.locator('select#type').selectOption('business');
+        await form.getByLabel(/Correo para el aviso de reclamo/).fill(claimEmail);
 
         const response = page.waitForResponse(
             (candidate) =>
