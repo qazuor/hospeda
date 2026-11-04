@@ -34,6 +34,7 @@ const photo: AccommodationMediaItem = {
 describe('photo text saves and the HOS-1018 warning registry', () => {
     beforeEach(() => {
         updateMediaMock.mockReset();
+        updateMediaMock.mockResolvedValue({ ok: false, error: { message: 'save failed' } });
         showConfirmationDialogMock.mockReset();
         showConfirmationDialogMock.mockResolvedValue(false);
         __resetLeaveWarningRegistry();
