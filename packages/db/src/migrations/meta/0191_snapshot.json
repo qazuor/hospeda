@@ -1,6 +1,6 @@
 {
-  "id": "3123a95a-8790-4be9-ab2c-52c4964e05d1",
-  "prevId": "cfb140e1-3be8-4b70-bb91-296267753e44",
+  "id": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "prevId": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1979,6 +1979,63 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.creation_sweep_attempt": {
+      "name": "creation_sweep_attempt",
+      "schema": "",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_search_at": {
+          "name": "next_search_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reset_marker": {
+          "name": "reset_marker",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
+          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
+          "tableFrom": "creation_sweep_attempt",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_creation_sweep_attempts_nonnegative": {
+          "name": "ck_creation_sweep_attempts_nonnegative",
+          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.features": {
@@ -23295,12 +23352,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -28106,63 +28157,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.creation_sweep_attempt": {
-      "name": "creation_sweep_attempt",
-      "schema": "",
-      "columns": {
-        "subscription_id": {
-          "name": "subscription_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "next_search_at": {
-          "name": "next_search_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reset_marker": {
-          "name": "reset_marker",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
-          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
-          "tableFrom": "creation_sweep_attempt",
-          "tableTo": "subscription",
-          "columnsFrom": [
-            "subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_creation_sweep_attempts_nonnegative": {
-          "name": "ck_creation_sweep_attempts_nonnegative",
-          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.idempotency_key": {
       "name": "idempotency_key",
       "schema": "",
@@ -30796,6 +30790,66 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "cycle_id": {
+          "name": "cycle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cycle_date": {
+          "name": "cycle_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cycle_started_at": {
+          "name": "cycle_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slice_index": {
+          "name": "slice_index",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phase": {
+          "name": "phase",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rows_complete": {
+          "name": "rows_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "passes_completed": {
+          "name": "passes_completed",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_subscription_ids": {
+          "name": "failed_subscription_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -30810,6 +30864,60 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_reconciliation_sweep_run_cycle_slice": {
+          "name": "uq_reconciliation_sweep_run_cycle_slice",
+          "columns": [
+            {
+              "expression": "cycle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slice_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reconciliation_sweep_run\".\"cycle_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_reconciliation_sweep_run_open": {
+          "name": "idx_reconciliation_sweep_run_open",
+          "columns": [
+            {
+              "expression": "lease_until",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"reconciliation_sweep_run\".\"outcome\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_reconciliation_sweep_run_one_open": {
+          "name": "uq_reconciliation_sweep_run_one_open",
+          "columns": [
+            {
+              "expression": "(true)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reconciliation_sweep_run\".\"outcome\" IS NULL AND \"reconciliation_sweep_run\".\"cycle_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -31442,9 +31550,36 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "last_swept_at": {
+          "name": "last_swept_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
+        "idx_subscription_last_swept_at": {
+          "name": "idx_subscription_last_swept_at",
+          "columns": [
+            {
+              "expression": "last_swept_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "first"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "uq_subscription_commitment_origin": {
           "name": "uq_subscription_commitment_origin",
           "columns": [
@@ -32034,6 +32169,121 @@
           "value": "\"vertical_deadline_version\".\"changed_key\" BETWEEN 1 AND 9 OR \"vertical_deadline_version\".\"changed_key\" IS NULL"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.provider_charge_snapshot": {
+      "name": "provider_charge_snapshot",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charge_id": {
+          "name": "charge_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authorization_id": {
+          "name": "authorization_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_created_at": {
+          "name": "provider_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decline_reason": {
+          "name": "decline_reason",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refunded_amount_minor": {
+          "name": "refunded_amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charged_back": {
+          "name": "charged_back",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_provider_charge_snapshot_provider_charge": {
+          "name": "uq_provider_charge_snapshot_provider_charge",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider",
+            "charge_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
@@ -33189,8 +33439,6 @@
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
         "billing.refund",
-        "billing.registerManualPayment",
-        "billing.declareManualUnpaid",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
@@ -33232,7 +33480,6 @@
         "partner.viewAll",
         "partner.manage",
         "partner.resolveApplication",
-        "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

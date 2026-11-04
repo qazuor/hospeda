@@ -7,6 +7,12 @@ import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
 import {
+    createdPartnerIds,
+    createdUserIds,
+    seedPartner,
+    seedPlan
+} from '../partner-presence/partner-presence.helpers';
+import {
     createApplicationEmail,
     deleteApplications,
     deletePartners,
@@ -97,6 +103,16 @@ beforeAll(async () => {
 });
 afterEach(async () => {
     for (const value of emails.splice(0)) await deleteApplications({ email: value });
+    for (const partnerId of createdPartnerIds.splice(0)) {
+        await getDb().execute(sql`DELETE FROM partners WHERE id = ${partnerId}::uuid`);
+    }
+    for (const userId of createdUserIds.splice(0)) {
+        await getDb().execute(
+            sql`DELETE FROM payment WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ${userId}::uuid)`
+        );
+        await getDb().execute(sql`DELETE FROM subscription WHERE user_id = ${userId}::uuid`);
+        await getDb().execute(sql`DELETE FROM users WHERE id = ${userId}::uuid`);
+    }
     await deletePartners({ ids: partnerIds.splice(0) });
     for (const id of userIds.splice(0)) {
         const db = getDb();
@@ -210,12 +226,10 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         const approvedId = (response.body as { data: { partnerId: string } }).data.partnerId;
         partnerIds.push(approvedId);
 
-        const active = await getDb().execute(sql`
-            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id)
-            VALUES (${`hos1485-canary-${crypto.randomUUID()}`}, 'HOS1485 Canary Active', 'business', 'ACTIVE', ${actorId}, ${actorId})
-            RETURNING id`);
-        const activeId = String(active.rows[0]?.id);
-        partnerIds.push(activeId);
+        const gold = await seedPlan('GOLD');
+        const silver = await seedPlan('SILVER');
+        const active = await seedPartner({ gold, silver });
+        const activeId = active.partner.id;
         const listing = await app.request('/api/v1/public/partners?pageSize=100', {
             headers: { 'user-agent': 'pp2-integration-test' }
         });

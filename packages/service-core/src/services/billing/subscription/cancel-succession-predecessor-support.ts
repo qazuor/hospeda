@@ -9,6 +9,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { z } from 'zod';
+import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close';
 
 /** Validated S17 input. */
 export const cancelSuccessionPredecessorInputSchema = z.strictObject({
@@ -78,6 +79,12 @@ export async function writeSuccessionPredecessorCancellation(input: {
             )
         )
         .returning({ id: subscriptions.id });
+    if (written)
+        await closeAwaitingManualInstallmentsInTx({
+            tx: input.tx,
+            subscriptionId: input.subscriptionId,
+            now: input.now
+        });
     return written !== undefined;
 }
 

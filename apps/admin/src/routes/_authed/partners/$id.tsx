@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
+import { PartnerPresenceModerationCard } from '@/features/partners/components/PartnerPresenceModerationCard';
 import {
     usePartnerQuery,
     useRegisterPartnerManualPaymentMutation
@@ -87,6 +88,11 @@ function PartnerViewPage() {
                         {partner.description ?? 'Sin descripción'}
                     </div>
                 </div>
+
+                <PartnerPresenceModerationCard
+                    partnerId={partner.id}
+                    presenceModerated={partner.presenceModerated}
+                />
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-3 rounded-lg border p-4">

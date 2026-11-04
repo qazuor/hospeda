@@ -16,6 +16,12 @@ export const ManualPaymentRegistrationBodySchema = z.strictObject({
     proofRef: z.string().min(1).max(500).optional()
 });
 
+/** Optional proof for an MP4 payment received after declaration. */
+export const LateManualPaymentBodySchema = ManualPaymentRegistrationBodySchema;
+
+/** Optional proof for an MP6 transfer without an open installment. */
+export const UnallocatedManualPaymentBodySchema = ManualPaymentRegistrationBodySchema;
+
 const iso = z.iso.datetime();
 const effect = z.enum(['S29', 'S5', 'S19', 'NONE']);
 
@@ -35,6 +41,41 @@ export const ManualPaymentRegistrationResponseSchema = z.strictObject({
     receiptId: z.uuid(),
     receiptNumber: z.number().int(),
     nextChargeAt: iso
+});
+
+/** Read-only confirmation of MP4. */
+export const LateManualPaymentPreviewResponseSchema = z.strictObject({
+    subscriptionId: z.uuid(),
+    manualPaymentId: z.uuid(),
+    periodStart: iso,
+    reimputedPeriodStart: iso.nullable(),
+    nextChargeAt: iso,
+    effect: z.enum(['S7', 'S19'])
+});
+
+/** Result of MP4. */
+export const LateManualPaymentResponseSchema = z.strictObject({
+    effect: z.enum(['S7', 'S19']),
+    nextChargeAt: iso,
+    periodStart: iso,
+    reimputedFrom: iso.nullable(),
+    receiptId: z.uuid().nullable()
+});
+
+/** Read-only confirmation of MP6. */
+export const UnallocatedManualPaymentPreviewResponseSchema = z.strictObject({
+    subscriptionId: z.uuid(),
+    periodStart: iso,
+    mark: z.enum(['COBRO_DUPLICADO', 'COBRO_POSTERIOR_A_LA_BAJA'])
+});
+
+/** Result of MP6. */
+export const UnallocatedManualPaymentResponseSchema = z.strictObject({
+    manualPaymentId: z.uuid(),
+    periodStart: iso,
+    markId: z.uuid(),
+    mark: z.enum(['COBRO_DUPLICADO', 'COBRO_POSTERIOR_A_LA_BAJA']),
+    outcome: z.enum(['OPENED', 'ACCUMULATED'])
 });
 
 /** Read-only confirmation of MP2. */

@@ -5,6 +5,7 @@ export * from './partner.admin-search.schema.js';
 export * from './partner.create.schema.js';
 export * from './partner.http.schema.js';
 export * from './partner.owner.schema.js';
+export * from './partner.presence-moderation.schema.js';
 export * from './partner.query.schema.js';
 export * from './partner.schema.js';
 export * from './partner.update.schema.js';

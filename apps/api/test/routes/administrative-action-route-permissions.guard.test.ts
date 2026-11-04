@@ -66,6 +66,12 @@ type Binding =
     | { readonly kind: 'ownershipBypass'; readonly file: string; readonly route: string }
     | { readonly kind: 'tableGate'; readonly file: string; readonly markers: readonly string[] };
 
+const manualBinding = (route: string, late = false): Binding => ({
+    kind: 'required',
+    file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
+    route
+});
+
 type BoundEntry = { readonly bindings: readonly Binding[] };
 type UnboundEntry = { readonly unbound: string };
 
@@ -156,30 +162,18 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 file: 'apps/api/src/routes/partners/admin/manual-payment.ts',
                 route: 'adminManualPaymentRoute'
             },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
-                route: 'adminManualPaymentRegistrationPreviewRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
-                route: 'adminRegisterManualPaymentRoute'
-            }
+            manualBinding('adminManualPaymentRegistrationPreviewRoute'),
+            manualBinding('adminRegisterManualPaymentRoute'),
+            manualBinding('adminLateManualPaymentPreviewRoute', true),
+            manualBinding('adminRegisterLateManualPaymentRoute', true),
+            manualBinding('adminUnallocatedManualPaymentPreviewRoute', true),
+            manualBinding('adminRegisterUnallocatedManualPaymentRoute', true)
         ]
     },
     ACC_4: {
         bindings: [
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
-                route: 'adminManualUnpaidPreviewRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
-                route: 'adminDeclareManualUnpaidRoute'
-            }
+            manualBinding('adminManualUnpaidPreviewRoute'),
+            manualBinding('adminDeclareManualUnpaidRoute')
         ]
     },
     ACC_5: {
@@ -254,6 +248,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/experience/admin/moderate.ts',
                 route: 'adminModerateExperienceRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partners/admin/presence-moderation.ts',
+                route: 'adminModeratePartnerPresenceRoute'
             }
         ]
     },
@@ -465,10 +464,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 45 bindings across 17 bound rows', () => {
+    it('b. checks exactly 50 bindings across 17 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(17);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(45);
+        expect(total).toBe(50);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))

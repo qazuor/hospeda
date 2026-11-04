@@ -33,6 +33,7 @@ import {
 } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { RefundSource } from '../refund/refund-source';
+import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close';
 import { requestOneTimeAddonRefunds } from './revocation-addon-refunds';
 import { revocationRejection as reject } from './revocation-payment';
 import {
@@ -152,6 +153,11 @@ async function writeRevocation(input: {
         )
         .returning({ id: subscriptions.id });
     if (!row) return false;
+    await closeAwaitingManualInstallmentsInTx({
+        tx: input.tx,
+        subscriptionId: input.subscriptionId,
+        now: input.now
+    });
     if (CLOSES_OPEN_PAUSE[input.origin]) {
         const closed = await input.tx
             .update(subscriptionPauses)

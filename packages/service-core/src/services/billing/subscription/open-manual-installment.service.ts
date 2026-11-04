@@ -12,6 +12,11 @@ import {
     enqueueManualInstallmentUnpaidNotice,
     type ManualInstallmentNoticeRecipients
 } from './manual-installment-unpaid-notice';
+import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
+import {
+    type ScheduledChangeApplier,
+    unimplementedScheduledChangeApplier
+} from './subscription-billing-ports';
 
 const logger = createLogger('open-manual-installment');
 const inputSchema = z.strictObject({ pageSize: z.number().int().positive().max(1000) });
@@ -23,9 +28,14 @@ export interface OpenDueManualInstallmentsPorts {
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly billingFacts?: BillingFactSink;
     readonly recipients?: ManualInstallmentNoticeRecipients;
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
-/** Opens each due manual installment in its own transaction and applies manual S4. */
+/**
+ * Opens each due manual installment in its own transaction and applies manual S4.
+ * Without B8b's S38 applier, a due scheduled change fails closed in its own
+ * transaction and increments `errors`; other candidates continue.
+ */
 export async function openDueManualInstallments(
     input: { readonly pageSize: number },
     ports: OpenDueManualInstallmentsPorts
@@ -71,7 +81,26 @@ export async function openDueManualInstallments(
                     row.nextChargeAt > now
                 )
                     return { outcome: 'SKIPPED' as const };
-                const periodStart = row.nextChargeAt;
+                const scheduledChange = await applyOverdueScheduledChangeOnReturn(
+                    { subscriptionId: row.id, now, tx },
+                    {
+                        scheduledChangeApplier:
+                            ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
+                    }
+                );
+                const [current] = scheduledChange.called
+                    ? await tx.select().from(subscriptions).where(eq(subscriptions.id, row.id))
+                    : [row];
+                if (
+                    !current ||
+                    current.status !== 'ACTIVE' ||
+                    current.paymentMethod !== 'MANUAL' ||
+                    current.class !== 'PRINCIPAL' ||
+                    !current.nextChargeAt ||
+                    current.nextChargeAt > now
+                )
+                    return { outcome: 'SKIPPED' as const };
+                const periodStart = current.nextChargeAt;
                 if (
                     await manualPaymentModel.hasInstallmentForPeriod({
                         subscriptionId: row.id,

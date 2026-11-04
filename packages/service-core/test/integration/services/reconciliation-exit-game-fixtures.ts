@@ -112,7 +112,10 @@ export async function runExitGameSweep(input: {
         withSeededCancellationRetryInventory(() =>
             withSeededTerminalReturnInventory(() =>
                 runReconciliationSweep(
-                    { ...(input.correlationId ? { correlationId: input.correlationId } : {}) },
+                    {
+                        mode: 'single',
+                        ...(input.correlationId ? { correlationId: input.correlationId } : {})
+                    },
                     {
                         provider,
                         clock: input.clock,

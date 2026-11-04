@@ -1040,6 +1040,24 @@
         "errorTitle": "No se pudo dar de baja la cuenta",
         "stateChanged": "La cuenta cambió desde que abriste esta confirmación y no se dio de baja. Volvimos a revisar qué le queda."
     },
+    "partnerPresenceModeration": {
+        "title": "Presencia pública",
+        "state": {
+            "visible": "Visible si el plan del socio la incluye",
+            "moderated": "Moderada: la página y el carrusel no la muestran"
+        },
+        "actions": { "moderate": "Moderar presencia", "lift": "Levantar moderación" },
+        "dialog": {
+            "reasonLabel": "Motivo",
+            "reasonHelp": "Queda registrado con tu usuario. No toca el cobro del socio.",
+            "confirm": "Confirmar",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "title": "No se pudo aplicar la moderación",
+            "alreadyApplied": "La presencia ya estaba en ese estado. Recargá la página."
+        }
+    },
     "listingModeration": {
         "title": "Moderación de la ficha",
         "statusLabel": "Estado",

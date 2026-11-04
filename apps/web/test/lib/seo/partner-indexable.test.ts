@@ -2,19 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { evaluatePartnerIndexability } from '../../../src/lib/seo/partner-indexable';
 
 describe('evaluatePartnerIndexability', () => {
-    it('keeps partner pages out of the index until V7 restores them', () => {
+    it('indexes a page when its entitlement and description are present', () => {
         expect(
             evaluatePartnerIndexability({
-                lifecycleState: 'ACTIVE',
+                hasPublicPage: true,
                 description: 'Excursiones por el Litoral con guías locales.'
             })
-        ).toEqual({ isIndexable: false, reason: 'not-visible' });
+        ).toEqual({ isIndexable: true, reason: null });
     });
 
-    it('keeps absent and incomplete partner data dark as well', () => {
-        expect(evaluatePartnerIndexability({})).toEqual({
+    it('keeps a partner without a page out of the index', () => {
+        expect(
+            evaluatePartnerIndexability({ hasPublicPage: false, description: 'Description' })
+        ).toEqual({
             isIndexable: false,
             reason: 'not-visible'
+        });
+    });
+
+    it('requires a non-empty description', () => {
+        expect(evaluatePartnerIndexability({ hasPublicPage: true, description: '  ' })).toEqual({
+            isIndexable: false,
+            reason: 'missing-description'
         });
     });
 });

@@ -156,6 +156,14 @@
         "reason": "S36 moves ACTIVE/GRACE_PERIOD/CANCEL_SCHEDULED/PAUSED to CANCELLED and ends service now (AC:B5:20); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/register-late-manual-payment.service.ts",
+        "symbol": "registerLateManualPayment",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "MP4 moves SUSPENDED, which emits no source, to ACTIVE on S7; emitAddedAfterCommit sends the ADDED coverage notice after commit (AC:B5:18)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts",
         "symbol": "reactivateSuspendedOnCreditedPayment",
         "table": "subscriptions",
@@ -378,5 +386,21 @@
         "effect": "neutral",
         "via": null,
         "reason": "S18 records the balance of a courtesy on a dead predecessor; its pause was already closed, so no live coverage source turns off here (AC:B8b:10)."
+    },
+    {
+        "file": "packages/db/src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts",
+        "symbol": "stampSweptRow",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
+        "symbol": "sendOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
     }
 ]

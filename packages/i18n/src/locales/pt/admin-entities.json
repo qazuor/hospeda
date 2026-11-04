@@ -1040,6 +1040,24 @@
         "errorTitle": "Não foi possível encerrar a conta",
         "stateChanged": "A conta mudou desde que você abriu esta confirmação e não foi encerrada. Verificamos de novo o que ainda resta."
     },
+    "partnerPresenceModeration": {
+        "title": "Presença pública",
+        "state": {
+            "visible": "Visível se o plano do parceiro incluir",
+            "moderated": "Moderada: a página e o carrossel não a exibem"
+        },
+        "actions": { "moderate": "Moderar presença", "lift": "Suspender moderação" },
+        "dialog": {
+            "reasonLabel": "Motivo",
+            "reasonHelp": "Fica registrado com seu usuário. Não altera a cobrança do parceiro.",
+            "confirm": "Confirmar",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "title": "Não foi possível aplicar a moderação",
+            "alreadyApplied": "A presença já estava nesse estado. Recarregue a página."
+        }
+    },
     "listingModeration": {
         "title": "Moderação da ficha",
         "statusLabel": "Status",

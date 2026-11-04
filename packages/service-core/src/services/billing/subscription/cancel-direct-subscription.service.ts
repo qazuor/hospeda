@@ -26,6 +26,7 @@ import {
     cancelActiveRejection
 } from './cancel-active-subscription.service.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
+import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -164,6 +165,12 @@ async function writeDirectCancellation(input: {
             and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, input.origin))
         )
         .returning({ id: subscriptions.id });
+    if (row)
+        await closeAwaitingManualInstallmentsInTx({
+            tx: input.tx,
+            subscriptionId: input.subscriptionId,
+            now: input.now
+        });
     return row !== undefined;
 }
 

@@ -384,7 +384,7 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 rowChecks: []
             };
             const withPass = await runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 { ...ports, markEscalation: {} }
             );
             expect(withPass.markEscalation).toMatchObject({
@@ -395,7 +395,7 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 failures: []
             });
             const withoutPass = await runReconciliationSweep(
-                { correlationId: crypto.randomUUID() },
+                { mode: 'single', correlationId: crypto.randomUUID() },
                 ports
             );
             expect(withoutPass).not.toHaveProperty('markEscalation');

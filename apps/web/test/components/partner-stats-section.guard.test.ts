@@ -258,7 +258,7 @@ describe('HOS-1063 AC-9 — no numeral where the metric does not apply', () => {
     });
 });
 
-describe('partner statistics and carousel keep the internal page dark', () => {
+describe('partner statistics and carousel use the partner page when it is public', () => {
     it('stats section delegates visibility to the shared resolver', () => {
         expect(readCode(STATS_SECTION)).toContain('resolvePartnerStatsView');
         expect(readCode('src/lib/partner-stats-cards.ts')).toContain('resolvePartnerLogoLink');
@@ -268,9 +268,10 @@ describe('partner statistics and carousel keep the internal page dark', () => {
         expect(readCode(PARTNERS_SECTION)).toContain('resolvePartnerLogoLink');
     });
 
-    it('the resolver emits only outbound destinations', () => {
+    it('the resolver records the internal page destination for public pages', () => {
         const code = readCode('src/lib/partner-logo-link.ts');
         expect(code).toContain("destination: 'EXTERNAL'");
-        expect(code).not.toContain("destination: 'OWN_PAGE'");
+        // HOS-1488 Q-2, decisión del owner 2026-11-04
+        expect(code).toContain("destination: 'OWN_PAGE'");
     });
 });

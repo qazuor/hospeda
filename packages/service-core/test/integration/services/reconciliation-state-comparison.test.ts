@@ -77,7 +77,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         const correlationId = crypto.randomUUID();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -88,7 +88,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         expect(summary).toMatchObject({ divergences: 1, marksOpened: 1, rowsFailed: 0 });
         const repeated = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -156,7 +156,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         const sweep = () =>
             withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    { correlationId },
+                    { mode: 'single', correlationId },
                     {
                         provider: fake,
                         clock: reconciliationClock,
@@ -198,7 +198,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         await fake.pause({ authorizationId: seeded.providerId! });
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -231,7 +231,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         const make = () =>
             withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fake,
                         clock: reconciliationClock,
@@ -263,7 +263,7 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         const correlationId = crypto.randomUUID();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake,
                     clock: reconciliationClock,

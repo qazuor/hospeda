@@ -518,6 +518,19 @@ decides the action permission, subject, system actor and `actor = subject`, so a
 
 `GET /api/v1/admin/billing-subscription/{subscriptionId}/manual-payments` requires `BILLING_SUBSCRIPTION_INSPECT`, lists that subscription's installments, and returns 404 for an unknown subscription. Both previews write no billing state.
 
+### Action 3: late and unallocated manual payments (MP4 and MP6)
+
+`GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register-late` (MP4) and `/manual-payments/unallocated` (MP6) require `BILLING_REGISTER_MANUAL_PAYMENT`. The route factory returns 403 without it. Invalid UUIDs and a `proofRef` outside 1–500 characters return 400. Both previews use the same business evaluation as their acts and write no billing state.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND`, `MANUAL_PAYMENT_NOT_FOUND` (including an installment of another subscription) | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MANUAL_PAYMENT_NOT_DECLARED_UNPAID`, `MANUAL_PAYMENT_NOT_SUSPENDED`, `MANUAL_PAYMENT_COVERAGE_CONFLICT`, `RETAINED_PAYMENT`, `LOST_RACE`, `MANUAL_PAYMENT_OPEN_INSTALLMENT` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_MANUAL`, `MANUAL_PAYMENT_CONDITION_FAILED`, `MANUAL_PAYMENT_NO_PERIOD`, `MANUAL_PAYMENT_PERIOD_NOT_COVERED`, `MANUAL_PAYMENT_NOT_ALLOCATABLE` | 422 | `VALIDATION_ERROR` |
+
+MP4 returns its S7 or S19 effect, period and optional reimputation. MP6 returns the new manual payment, its period and the S14 mark. A second transfer on a covered period opens reason 20; a transfer after cancellation or abandonment with a declared unpaid installment opens reason 2.
+
 ## Action 8 revocation rejections (B5, S36)
 
 `GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/revocation` (ACC:8 with reason revocation, S36; HOS-1543) answer every typed rejection of `previewSubscriptionRevocation` and `revokeSubscription` with its `reason`. The preview rejects with the same reasons as the act and writes nothing. The mapping lives in `src/routes/billing-subscription/admin/revocation.ts` as an exhaustive `Record` over `REVOKE_SUBSCRIPTION_REJECTIONS`, so a new service reason without an entry breaks the typecheck.

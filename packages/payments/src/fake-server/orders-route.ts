@@ -7,6 +7,29 @@ const PartialBodySchema = z.strictObject({
     transactions: z.array(z.strictObject({ id: z.string().min(1), amount: z.string() })).length(1)
 });
 
+const CreateBodySchema = z.strictObject({
+    type: z.literal('online'),
+    external_reference: z.string().min(1),
+    total_amount: z.string().regex(/^\d+\.\d{2}$/),
+    processing_mode: z.literal('automatic'),
+    payer: z.strictObject({ email: z.email() }),
+    transactions: z.strictObject({
+        payments: z
+            .array(
+                z.strictObject({
+                    amount: z.string().regex(/^\d+\.\d{2}$/),
+                    payment_method: z.strictObject({
+                        id: z.string().min(1),
+                        type: z.enum(['credit_card', 'debit_card']),
+                        token: z.string().min(1),
+                        installments: z.literal(1)
+                    })
+                })
+            )
+            .length(1)
+    })
+});
+
 function refundsOf(
     refunds: readonly {
         readonly refundId: string;
@@ -29,6 +52,49 @@ export async function handleOrdersRoute(args: {
     readonly headers: IncomingHttpHeaders;
     readonly body: unknown;
 }): Promise<{ readonly status: number; readonly body?: unknown } | null> {
+    if (args.method === 'POST' && args.url.pathname === '/v1/orders') {
+        const key = args.headers['x-idempotency-key'];
+        if (typeof key !== 'string' || key.length === 0)
+            return { status: 400, body: { code: 'empty_required_header' } };
+        const parsed = CreateBodySchema.safeParse(args.body);
+        if (
+            !parsed.success ||
+            parsed.data.total_amount !== parsed.data.transactions.payments[0]?.amount
+        )
+            return { status: 400, body: { code: 'invalid_body' } };
+        const body = parsed.data;
+        const payment = body.transactions.payments[0];
+        if (!payment) return { status: 400, body: { code: 'invalid_body' } };
+        try {
+            const result = await args.provider.chargeOnce({
+                reference: body.external_reference,
+                idempotencyKey: key,
+                amount: {
+                    amountMinor: Math.round(Number(body.total_amount) * 100),
+                    currency: 'ARS'
+                },
+                payerEmail: body.payer.email,
+                paymentToken: payment.payment_method.token,
+                paymentBrand: payment.payment_method.id,
+                paymentKind: payment.payment_method.type === 'credit_card' ? 'credit' : 'debit'
+            });
+            return result.declined
+                ? {
+                      status: 402,
+                      body: {
+                          message: 'payment declined',
+                          data: { id: result.orderId, status: 'failed' }
+                      }
+                  }
+                : { status: 201, body: { id: result.orderId, status: 'processed' } };
+        } catch (error) {
+            if (!(error instanceof PaymentProviderError)) throw error;
+            if (error.refundRefusal === 'KEY_REUSED')
+                return { status: 409, body: { code: 'idempotency_key_already_used' } };
+            if (error.code === 'REJECTED') return { status: 400, body: { code: 'rejected' } };
+            throw error;
+        }
+    }
     const refundMatch = /^\/v1\/orders\/([^/]+)\/refund$/.exec(args.url.pathname);
     if (args.method === 'POST' && refundMatch) {
         const reference = args.headers['x-idempotency-key'];

@@ -40,6 +40,8 @@ import type {
     Money,
     MutationAcknowledgement,
     NoticeDelivery,
+    OneTimeChargeInput,
+    OneTimeChargeResult,
     OrderRef,
     OrderRefundInput,
     OrderRefundResult,
@@ -77,6 +79,7 @@ import {
     type FakePaymentProviderOptions,
     parseFakeOptions
 } from './fake-options';
+import { chargeFakeOrder } from './fake-order-charge';
 import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
 import * as pauseCycle from './fake-pause-cycle';
@@ -108,6 +111,7 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly simulating: ReadonlySet<string>;
     private readonly without: ReadonlySet<string>;
     private readonly usedPaymentTokens = new Set<string>();
+    private readonly declinedOrderPaymentTokens = new Set<string>();
 
     /**
      * @param options.clock - The clock every read and every delay runs on
@@ -397,6 +401,16 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Creates one order under its stable key (AC:B6:12, MP:EX-41/EX-30). */
+    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
+        return chargeFakeOrder({
+            input,
+            orders: this.orders,
+            simulating: this.simulating,
+            usedPaymentTokens: this.usedPaymentTokens,
+            declinedPaymentTokens: this.declinedOrderPaymentTokens
+        });
+    }
     /**
      * Capability 3 · change the amount of a live authorization. A paused one
      * refuses it (RP6); the new amount keeps the range (RP3, RP4). No notice
@@ -664,6 +678,12 @@ export class FakePaymentProvider implements PaymentProvider {
         return this.orders.place(input);
     }
 
+    /** Test handle for declined one-time payments (AC:B6:12, MP:EX-30). */
+    readonly declineOrderPayments = (input: { readonly paymentToken: string }): void => {
+        this.declinedOrderPaymentTokens.add(input.paymentToken);
+    };
+    /** Test handle counting orders and approved payments (AC:B6:12, MP:EX-41). */
+    readonly ordersFor = (input: { readonly reference: string }) => this.orders.countFor(input);
     /** Test handle: holds a refund as pending (AC:B6:8, TRANS:B:RF3). */
     holdOrderRefund(input: { readonly orderId: string; readonly refundId: string }): void {
         this.orders.hold(input);

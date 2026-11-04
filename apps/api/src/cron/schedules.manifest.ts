@@ -85,7 +85,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',
-        schedule: '10 2 * * *',
+        schedule: '10 2,3,4 * * *',
         description:
             'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1).'
     },
@@ -151,6 +151,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'billing',
         schedule: '13 * * * *',
         description: 'Open due manual installments and apply S4 (HOS-1541, AC:B5:13, MP5).'
+    },
+    {
+        name: 'manual-grace-expiry',
+        displayName: 'Vencimiento del grace manual',
+        category: 'billing',
+        schedule: '43 * * * *',
+        description: 'Suspend expired unpaid manual graces (HOS-1542, AC:B5:17, MP3).'
     },
     {
         name: 'subscription-pause-end',

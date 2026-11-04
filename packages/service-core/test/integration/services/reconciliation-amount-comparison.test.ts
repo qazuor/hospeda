@@ -117,7 +117,10 @@ async function sweep(input: {
 }) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            { ...(input.correlationId ? { correlationId: input.correlationId } : {}) },
+            {
+                mode: 'single',
+                ...(input.correlationId ? { correlationId: input.correlationId } : {})
+            },
             {
                 provider: input.fake,
                 clock: input.clock,
@@ -153,7 +156,7 @@ describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears withou
         const correlationId = crypto.randomUUID();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake,
                     clock,
@@ -411,7 +414,7 @@ describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears withou
         const summary = await withSeededReconciliationInventory(() =>
             withSeededCancellationRetryInventory(() =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider,
                         clock: reconciliationClock,
