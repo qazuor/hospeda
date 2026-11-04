@@ -33,6 +33,8 @@ export interface MarkEscalationSummary {
 
 /** Optional transaction port for isolated callers and tests. */
 export interface MarkEscalationPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly clock: Clock;
     readonly tx?: DrizzleClient;
     /** Omit to run the pass without enqueuing escalation notices. */
@@ -133,6 +135,7 @@ export async function runMarkEscalation(
                 });
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterMarkId = page.at(-1)?.id;
     }

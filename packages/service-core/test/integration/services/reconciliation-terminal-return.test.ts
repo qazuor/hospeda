@@ -102,7 +102,7 @@ async function sweep(fake: FakePaymentProvider) {
         withSeededCancellationRetryInventory(() =>
             withSeededTerminalReturnInventory(() =>
                 runReconciliationSweep(
-                    { correlationId: crypto.randomUUID() },
+                    { mode: 'single', correlationId: crypto.randomUUID() },
                     {
                         provider: fake as unknown as PaymentProvider,
                         clock,
@@ -261,7 +261,7 @@ describe('TEST:B11:14 terminal return and exemption', () => {
             withSeededCancellationRetryInventory(() =>
                 withSeededTerminalReturnInventory(() =>
                     runReconciliationSweep(
-                        {},
+                        { mode: 'single' },
                         {
                             provider: fake as unknown as PaymentProvider,
                             clock,

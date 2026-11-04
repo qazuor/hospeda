@@ -18,7 +18,12 @@ export type RunCronJobDecision =
           readonly runId: string;
           readonly completion: Promise<CronJobResult>;
       }
-    | { readonly started: false; readonly holderRunId: string | null };
+    | {
+          readonly started: false;
+          readonly holderRunId: string | null;
+          readonly holderStartedAt: Date | null;
+          readonly holderExecutionMode: 'scheduled' | 'manual' | null;
+      };
 
 /** Build the run context with mode-specific log names and cooperative budget fields. */
 export function createCronJobContext(args: {
@@ -30,6 +35,7 @@ export function createCronJobContext(args: {
     readonly signal: AbortSignal;
     readonly deadlineAt: Date;
     readonly dryRun: boolean;
+    readonly newCycle?: boolean;
 }): CronJobContext {
     const prefix = args.executionMode === 'scheduled' ? 'CRON' : 'ADMIN-CRON';
     const ids = { runId: args.runId, correlationId: args.correlationId };
@@ -65,7 +71,9 @@ export function createCronJobContext(args: {
         correlationId: args.correlationId,
         signal: args.signal,
         deadlineAt: args.deadlineAt,
-        dryRun: args.dryRun
+        dryRun: args.dryRun,
+        executionMode: args.executionMode,
+        ...(args.newCycle === undefined ? {} : { newCycle: args.newCycle })
     };
 }
 
@@ -74,6 +82,7 @@ export async function runCronJob(args: {
     readonly job: CronJobDefinition;
     readonly executionMode: 'scheduled' | 'manual';
     readonly dryRun: boolean;
+    readonly newCycle?: boolean;
     readonly scheduleExpression?: string;
 }): Promise<RunCronJobDecision> {
     const { job, executionMode, dryRun } = args;
@@ -92,7 +101,8 @@ export async function runCronJob(args: {
         correlationId,
         signal: controller.signal,
         deadlineAt,
-        dryRun
+        dryRun,
+        newCycle: args.newCycle
     });
     const monitored = executionMode === 'scheduled' && monitoredJobs.has(job.name);
 
@@ -101,7 +111,13 @@ export async function runCronJob(args: {
     if (job.exclusive) {
         let lock: CronLockDecision<CronJobResult>;
         try {
-            lock = await withCronLock({ name: job.name, runId, handler: startHandler });
+            lock = await withCronLock({
+                name: job.name,
+                runId,
+                startedAt,
+                executionMode,
+                handler: startHandler
+            });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             await recordCronRun({
@@ -144,9 +160,25 @@ export async function runCronJob(args: {
                 processed: 0,
                 errors: 0,
                 durationMs: 0,
-                details: { runId, skipped: 'overlap', holderRunId: lock.holderRunId }
+                details: {
+                    runId,
+                    skipped: 'overlap',
+                    holderRunId: lock.holderRunId,
+                    holderStartedAt: lock.holderStartedAt
+                }
             };
-            ctx.logger.info('Skipped overlapping run', { holderRunId: lock.holderRunId });
+            ctx.logger.info('Skipped overlapping run', {
+                holderRunId: lock.holderRunId,
+                holderStartedAt: lock.holderStartedAt
+            });
+            if (executionMode === 'scheduled')
+                job.onOverlapSkipped?.({
+                    logger: ctx.logger,
+                    startedAt,
+                    holderRunId: lock.holderRunId,
+                    holderStartedAt: lock.holderStartedAt,
+                    holderExecutionMode: lock.holderExecutionMode
+                });
             await recordCronRun({
                 jobName: job.name,
                 executionMode,
@@ -155,7 +187,12 @@ export async function runCronJob(args: {
                 finishedAt: new Date(),
                 result
             });
-            return { started: false, holderRunId: lock.holderRunId };
+            return {
+                started: false,
+                holderRunId: lock.holderRunId,
+                holderStartedAt: lock.holderStartedAt,
+                holderExecutionMode: lock.holderExecutionMode
+            };
         }
         handlerPromise = lock.completion;
     } else {

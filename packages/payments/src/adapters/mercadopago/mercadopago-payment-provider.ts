@@ -27,6 +27,8 @@ import type {
     ChargeSnapshot,
     MutationAcknowledgement,
     NoticeDelivery,
+    OneTimeChargeInput,
+    OneTimeChargeResult,
     OrderRef,
     OrderRefundInput,
     OrderRefundResult,
@@ -48,6 +50,7 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    OneTimeChargeInputSchema,
     OrderRefSchema,
     OrderRefundInputSchema,
     OrderSearchInputSchema,
@@ -67,6 +70,7 @@ import {
     setMercadoPagoStatus
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
+import { chargeMercadoPagoOrder } from './mercadopago-order-charge';
 import { refundMercadoPagoOrder } from './mercadopago-order-refund';
 import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
 import {
@@ -315,6 +319,12 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Creates one order with its persisted key (AC:B6:11/12, MP:EX-41/EX-30). */
+    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
+        const ref = { schema: OneTimeChargeInputSchema, input, capability: 'charge' } as const;
+        const { value } = parseProviderInput(ref);
+        return chargeMercadoPagoOrder({ input: value, send: (args) => this.send(args) });
+    }
     /** Capability 3 · change the amount. */
     async changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: ChangeAmountInputSchema, input, capability: 'changeAmount' });

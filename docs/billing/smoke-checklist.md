@@ -81,9 +81,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Preconditions:** An active card subscription exists on `staging` whose Mercado Pago
   preapproval is `authorized`.
 - **Steps:**
-  1. Run the `billing-reconciliation-sweep` cron on `staging` and confirm that
-     `subscription.next_charge_at` equals the preapproval's `next_payment_date` (read-only
-     `GET /preapproval/{id}`).
+  1. Trigger `billing-reconciliation-sweep?newCycle=true` on `staging`. The exclusive
+     manual trigger answers `202` with a `runId`; read the result from `cron_runs`.
+     Confirm that `subscription.next_charge_at` equals the preapproval's
+     `next_payment_date` (read-only `GET /preapproval/{id}`).
   2. On a staging test subscription created for this smoke (never a real customer's row), write
      `next_charge_at` 5 days ahead of the AR day, after the sweep and before the next one.
   3. Run the `subscription-renewal-notice` cron on `staging`.
@@ -95,6 +96,16 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
 - **Covers:** HOS-1685 (provider next charge date copy); AC:B13a:13 (renewal notices at 5 and 1 day);
   TEST:B13a:13 (integration).
+
+### S4a — Resumable sweep slicing
+
+- **Preconditions:** Staging test subscriptions are available and no reconciliation sweep is running.
+- **Steps:**
+  1. Configure a small slice budget in the test harness so one cycle spans 02:10, 03:10 and 04:10.
+  2. Kill one slice mid-run, then allow the next scheduled slice to resume.
+  3. Read the completed cycle summary from `cron_runs` and confirm the interrupted row was safely retried.
+- **Expected:** The cycle reaches `CYCLE_DONE`, preserves completed row/pass progress, and reports its aggregate summary.
+- **Evidence:** The three slice records and the final cycle summary in `cron_runs`.
 
 ### S5 — Cloudflare edge cache and revalidation
 
@@ -164,6 +175,17 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** B owns the Partner with `PARTNER_OWNER` and A is unchanged; the second claim shows «Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; the altered secret shows the nonexistent-Partner state; C becomes verified, its other session stops working within 5 minutes (session-cache window, R-1) and Google can no longer sign in; the sign-in URL never contains the secret.
 - **Evidence:** `hops psql --target=staging`, read-only queries: `owner_user_id` and `claim_secret_hash` for the Partner before and after (the hash is unchanged); the `partner.claimed` event with `reason = 'claim_link'` and, for C, `changes` containing `email_verified`, `revoked_session_count`, and `removed_credential_providers`; C's `session` and `account` rows.
 - **Covers:** AC:V7:7, AC:V7:8, AC:V7:9; TEST:V7:7, TEST:V7:8, TEST:V7:9, TEST:V7:22.
+
+### V7.3 · Alta directa de Partner (HOS-1487)
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; two mailboxes controlled by the executor; an admin with `PARTNER_MANAGE`.
+- **Steps:**
+  1. Create a Partner in the admin and enter a claim notice address controlled by the executor.
+  2. Verify the claim notice arrives at that address.
+  3. Claim the Partner with a different account.
+  4. Verify the Partner is owned by the claiming account and the mailbox account received no other email.
+- **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
+- **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
 
 ### S11 — Manual payment installments (HOS-1541)
 

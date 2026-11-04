@@ -57,7 +57,7 @@ async function seedPromo(
 async function sweep(input: Awaited<ReturnType<typeof setup>>) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            { correlationId: crypto.randomUUID() },
+            { mode: 'single', correlationId: crypto.randomUUID() },
             {
                 provider: input.provider,
                 clock: reconciliationClock,
