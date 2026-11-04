@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4031
+    {
+        id: '2026-11-03-accommodation-list-filter-by-currency-and-date',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los alojamientos se pueden filtrar por moneda y por fecha de alta',
+            en: 'Accommodations can now be filtered by currency and listing date',
+            pt: 'As acomodações agora podem ser filtradas por moeda e por data de cadastro'
+        },
+        body: {
+            es: 'El listado público de alojamientos ahora respeta el filtro por **moneda** del precio y por **fecha de alta** (desde y hasta). Combinados con el tipo, devuelven solo los alojamientos que cumplen todo.',
+            en: 'The public accommodation list now respects the filter by price **currency** and by **listing date** (from and to). Combined with the type, they return only the accommodations that match everything.',
+            pt: 'A lista pública de acomodações agora respeita o filtro por **moeda** do preço e por **data de cadastro** (desde e até). Combinados com o tipo, devolvem apenas as acomodações que atendem a tudo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
