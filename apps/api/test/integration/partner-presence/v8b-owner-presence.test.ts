@@ -70,6 +70,37 @@ describe('AC:V8b:1 TEST:V8b:1 (API half) — the owner reads presence with the p
         });
     });
 
+    it('keeps an unowned moderated partner hidden and returns its moderation reason', async () => {
+        const gold = await seedPlan('GOLD');
+        const silver = await seedPlan('SILVER');
+        const fixture = await seedPartner({ gold, silver });
+        const admin = await createOwner();
+        createdUserIds.push(admin.id);
+
+        expect(
+            (await moderate(fixture.partner.id, admin.id, 'MODERATE', 'Unowned moderation')).status
+        ).toBe(200);
+        await db()
+            .update(partners)
+            .set({ ownerUserId: null })
+            .where(eq(partners.id, fixture.partner.id));
+
+        await expect(
+            readOwnerPartnerPresence({
+                partner: {
+                    id: fixture.partner.id,
+                    ownerUserId: null,
+                    presenceModerated: true
+                }
+            })
+        ).resolves.toEqual({
+            publicPage: 'hidden',
+            carousel: 'hidden',
+            moderated: true,
+            moderationReason: 'Unowned moderation'
+        });
+    });
+
     it('reports owner keys, suspended plans, moderation history, and null ownership', async () => {
         const gold = await seedPlan('GOLD');
         const silver = await seedPlan('SILVER');
