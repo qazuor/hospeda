@@ -1,6 +1,8 @@
 import { PartnerModel, type SearchPartnerFilters } from '@repo/db';
 import {
     EntitlementKeyEnum,
+    type PartnerCarouselItem,
+    PartnerCarouselItemSchema,
     type PartnerPublic,
     PartnerPublicSchema,
     VerticalEnum
@@ -58,22 +60,39 @@ export async function listCarouselPartners(args: {
     readonly filters: SearchPartnerFilters;
     readonly page: number;
     readonly pageSize: number;
-}): Promise<{ readonly items: PartnerPublic[]; readonly total: number }> {
+}): Promise<{ readonly items: PartnerCarouselItem[]; readonly total: number }> {
     const candidates = await partnerModel.findPresenceCandidates({ filters: args.filters });
-    const keyByOwner = new Map<string, Promise<boolean>>();
-    const visible: PartnerPublic[] = [];
+    const keysByOwner = new Map<string, Promise<{ carousel: boolean; page: boolean }>>();
+    const visible: PartnerCarouselItem[] = [];
     for (const candidate of candidates) {
         const ownerId = candidate.ownerUserId;
         if (!ownerId) continue;
-        let key = keyByOwner.get(ownerId);
-        if (!key) {
-            key = hasPresenceKey({
-                userId: ownerId,
-                key: EntitlementKeyEnum.PARTNER_CAROUSEL_PRESENCE
-            });
-            keyByOwner.set(ownerId, key);
+        let keys = keysByOwner.get(ownerId);
+        if (!keys) {
+            keys = getListingAccessPorts()
+                .effectiveSet({ userId: ownerId, vertical: VerticalEnum.PARTNER })
+                .then((set) => ({
+                    carousel:
+                        set.entitlements.get({
+                            key: EntitlementKeyEnum.PARTNER_CAROUSEL_PRESENCE,
+                            userId: ownerId,
+                            vertical: VerticalEnum.PARTNER
+                        }) !== undefined,
+                    page:
+                        set.entitlements.get({
+                            key: EntitlementKeyEnum.PARTNER_PUBLIC_PAGE,
+                            userId: ownerId,
+                            vertical: VerticalEnum.PARTNER
+                        }) !== undefined
+                }));
+            keysByOwner.set(ownerId, keys);
         }
-        if (await key) visible.push(PartnerPublicSchema.parse(candidate));
+        const ownerKeys = await keys;
+        if (ownerKeys.carousel) {
+            visible.push(
+                PartnerCarouselItemSchema.parse({ ...candidate, hasPublicPage: ownerKeys.page })
+            );
+        }
     }
     const offset = (args.page - 1) * args.pageSize;
     return {

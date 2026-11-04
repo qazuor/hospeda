@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 /** TEST:V7:13 — public Partner presence follows its own entitlement key and live moderation bit. */
 import { eq, getDb, partners, payments, subscriptions } from '@repo/db';
-import { PartnerPublicSchema, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    PartnerCarouselItemSchema,
+    PartnerPublicSchema,
+    PermissionEnum,
+    RoleEnum
+} from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -46,12 +51,16 @@ async function publicPage(slug: string) {
     });
 }
 
-async function carouselIds(ids: readonly string[]): Promise<string[]> {
+async function carouselItems(
+    ids: readonly string[]
+): Promise<Array<ReturnType<typeof PartnerCarouselItemSchema.parse>>> {
     const response = await app.request('/api/v1/public/partners?pageSize=100', {
         headers: { 'user-agent': 'vitest', accept: 'application/json' }
     });
-    const body = (await response.json()) as { data: { items: Array<{ id: string }> } };
-    return body.data.items.filter((item) => ids.includes(item.id)).map((item) => item.id);
+    const body = (await response.json()) as { data: { items: unknown[] } };
+    return body.data.items
+        .map((item) => PartnerCarouselItemSchema.parse(item))
+        .filter((item) => ids.includes(item.id));
 }
 
 describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderation', () => {
@@ -81,11 +90,20 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         expect((await publicPage(s.partner.slug)).status).toBe(404);
         expect((await publicPage(m.partner.slug)).status).toBe(404);
         expect((await publicPage(u[0].slug)).status).toBe(404);
-        const initialIds = await carouselIds([g.partner.id, s.partner.id, m.partner.id, u[0].id]);
-        expect(initialIds).toContain(g.partner.id);
-        expect(initialIds).toContain(s.partner.id);
-        expect(initialIds).not.toContain(m.partner.id);
-        expect(initialIds).not.toContain(u[0].id);
+        const initialItems = await carouselItems([
+            g.partner.id,
+            s.partner.id,
+            m.partner.id,
+            u[0].id
+        ]);
+        expect(initialItems.find(({ id }) => id === g.partner.id)).toEqual(
+            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+        );
+        expect(initialItems.find(({ id }) => id === s.partner.id)).toEqual(
+            PartnerCarouselItemSchema.parse({ ...s.partner, hasPublicPage: false })
+        );
+        expect(initialItems.map(({ id }) => id)).not.toContain(m.partner.id);
+        expect(initialItems.map(({ id }) => id)).not.toContain(u[0].id);
 
         // TEST:V7:13 (b) A suspended Silver loses carousel presence after effective-set invalidation.
         await db()
@@ -94,9 +112,10 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
             .where(eq(subscriptions.id, s.subscriptionId));
         // In production coverage notice or the daily reconciler invalidates this cache (V7 §1.6).
         await invalidateEffectiveSetsForUser(s.owner!.id);
-        const afterSilverSuspension = await carouselIds([g.partner.id, s.partner.id]);
-        expect(afterSilverSuspension).toContain(g.partner.id);
-        expect(afterSilverSuspension).not.toContain(s.partner.id);
+        const afterSilverSuspension = await carouselItems([g.partner.id, s.partner.id]);
+        expect(afterSilverSuspension).toEqual([
+            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+        ]);
 
         // TEST:V7:13 (c) Gold downgraded to Silver loses its page but keeps carousel presence.
         await db()
@@ -105,7 +124,9 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
             .where(eq(subscriptions.id, g.subscriptionId));
         await invalidateEffectiveSetsForUser(g.owner!.id);
         expect((await publicPage(g.partner.slug)).status).toBe(404);
-        expect(await carouselIds([g.partner.id])).toContain(g.partner.id);
+        expect(await carouselItems([g.partner.id])).toEqual([
+            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: false })
+        ]);
 
         // TEST:V7:13 (d) Moderation answers 404 without changing billing or retained content.
         const subscriptionBefore = await db()
@@ -155,6 +176,9 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
             .where(eq(subscriptions.id, g.subscriptionId));
         await invalidateEffectiveSetsForUser(g.owner!.id);
         expect((await publicPage(g.partner.slug)).status).toBe(200);
+        expect(await carouselItems([g.partner.id])).toEqual([
+            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+        ]);
         // TEST:V7:13 (f) Moderation goes through the admin route while the response cache is warm.
         const adminId = randomUUID();
         const moderationHeaders = actorHeaders({
@@ -172,7 +196,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         );
         expect(moderationResponse.status).toBe(200);
         expect((await publicPage(g.partner.slug)).status).toBe(404);
-        expect(await carouselIds([g.partner.id])).not.toContain(g.partner.id);
+        expect(await carouselItems([g.partner.id])).toEqual([]);
         const liftResponse = await app.request(
             `/api/v1/admin/partners/${g.partner.id}/presence-moderation`,
             {

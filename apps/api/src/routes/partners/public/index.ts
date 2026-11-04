@@ -2,7 +2,7 @@
  * Public partners list endpoint
  * Returns partners whose owners hold the carousel key and whose presence is unmoderated.
  */
-import { PartnerPublicSchema, PartnerSearchHttpSchema } from '@repo/schemas';
+import { PartnerCarouselItemSchema, PartnerSearchHttpSchema } from '@repo/schemas';
 import { listCarouselPartners } from '../../../services/partner-presence/partner-presence-read.service.js';
 import { createRouter } from '../../../utils/create-app';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -22,7 +22,7 @@ const publicListPartnersRoute = createPublicListRoute({
     description: 'Returns owners with the carousel presence key and an unmoderated presence.',
     tags: ['Partners'],
     requestQuery: PartnerSearchHttpSchema.shape,
-    responseSchema: PartnerPublicSchema,
+    responseSchema: PartnerCarouselItemSchema,
     handler: async (_ctx, _params, _body, query) => {
         const { page, pageSize } = extractPaginationParams(query || {});
         const result = await listCarouselPartners({
