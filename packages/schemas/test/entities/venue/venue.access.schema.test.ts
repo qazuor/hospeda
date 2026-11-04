@@ -17,6 +17,7 @@ describe('VenuePublicSchema', () => {
     it('should exclude ownerId from public response', () => {
         const data = {
             ...createValidVenue(),
+            rating: { food: { average: 4, count: 2 } },
             ownerId: '123e4567-e89b-12d3-a456-426614174000'
         };
         const result = VenuePublicSchema.safeParse(data);
