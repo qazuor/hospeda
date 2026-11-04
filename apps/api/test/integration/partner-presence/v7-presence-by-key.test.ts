@@ -203,6 +203,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         if (!u[0]) throw new Error('Expected unowned Partner');
         createdPartnerIds.push(u[0].id);
 
+        // TEST:V7:13 (a) Gold and Silver have distinct presence keys; moderated and unowned rows are hidden.
         const goldPage = await publicPage(g.partner.slug);
         expect(goldPage.status, await goldPage.clone().text()).toBe(200);
         expect((await goldPage.json()).data).toEqual(PartnerPublicSchema.parse(g.partner));
@@ -215,6 +216,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         expect(initialIds).not.toContain(m.partner.id);
         expect(initialIds).not.toContain(u[0].id);
 
+        // TEST:V7:13 (b) A suspended Silver loses carousel presence after effective-set invalidation.
         await db()
             .update(subscriptions)
             .set({ status: 'SUSPENDED' })
@@ -226,6 +228,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         expect(afterSilverSuspension).toContain(g.partner.id);
         expect(afterSilverSuspension).not.toContain(s.partner.id);
 
+        // TEST:V7:13 (c) Gold downgraded to Silver loses its page but keeps carousel presence.
         await db()
             .update(subscriptions)
             .set({ planVersionId: silver.versionId, billingOptionId: silver.optionId })
@@ -235,6 +238,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         expect((await publicPage(g.partner.slug)).status).toBe(404);
         expect(await carouselIds([g.partner.id])).toContain(g.partner.id);
 
+        // TEST:V7:13 (d) Moderation answers 404 without changing billing or retained content.
         const subscriptionBefore = await db()
             .select()
             .from(subscriptions)
@@ -275,6 +279,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         expect(partnerAfter[0]?.deletedAt).toBeNull();
         expect(partnerAfter[0]?.description).toBe(partnerBefore[0]?.description);
 
+        // TEST:V7:13 (e) Restoring Gold makes the page available on the next read.
         await db()
             .update(subscriptions)
             .set({ planVersionId: gold.versionId, billingOptionId: gold.optionId })
@@ -282,6 +287,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         await invalidateEffectiveSetsForUser(g.owner!.id);
         publicPartnerCache();
         expect((await publicPage(g.partner.slug)).status).toBe(200);
+        // TEST:V7:13 (f) The moderation bit is read from the row without effective-set invalidation.
         await db()
             .update(partners)
             .set({ presenceModerated: true })
@@ -296,6 +302,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         publicPartnerCache();
         expect((await publicPage(g.partner.slug)).status).toBe(200);
 
+        // TEST:V7:13 (g) Legacy revoked_at does not replace key-based presence with 410.
         const revoked = await seedPartner({ gold, silver, revoked: true });
         expect((await publicPage(revoked.partner.slug)).status).toBe(200);
         // V/21 §4 moves administrative revocation from the 410 response to the moderation bit.
