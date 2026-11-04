@@ -63,6 +63,23 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         await reconciliationSweepRunModel.closeAbandoned({ id: liveRun.id });
     });
 
+    it('refuses the single mode in production, whatever the call site looks like', async () => {
+        getServiceTestDb();
+        const { fake } = createReconciliationFake();
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const mode = ['sin', 'gle'].join('') as 'single';
+        vi.stubEnv('NODE_ENV', 'production');
+        try {
+            await expect(
+                runReconciliationSweep({ mode }, { provider: fake, clock: reconciliationClock })
+            ).rejects.toThrow(/test-only/);
+        } finally {
+            vi.unstubAllEnvs();
+        }
+        expect(read).not.toHaveBeenCalled();
+        expect(await getServiceTestDb().select().from(reconciliationSweepRuns)).toEqual([]);
+    });
+
     it('defaults to the leased cycle mode when no mode is given', async () => {
         getServiceTestDb();
         const liveRun = await reconciliationSweepRunModel.openSlice({

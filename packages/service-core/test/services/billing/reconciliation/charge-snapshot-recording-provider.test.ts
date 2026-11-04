@@ -45,4 +45,31 @@ describe('createChargeSnapshotRecordingProvider', () => {
         );
         expect(recorder.record).toHaveBeenCalledTimes(2);
     });
+
+    it('wraps the same raw instance again for a second recorder and leaves no marker on it', async () => {
+        const clock: Clock = { now: () => new Date('2026-10-12T00:00:00Z') };
+        const provider = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorization = await provider.authorize({
+            reference: 'twice',
+            amount: { amountMinor: 2_000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'test',
+            returnUrl: 'https://example.test'
+        });
+        await provider.approve({ authorizationId: authorization.authorizationId });
+        const charge = await provider.charge({
+            authorizationId: authorization.authorizationId,
+            amount: { amountMinor: 2_000, currency: 'ARS' },
+            reference: 'charge'
+        });
+        const first = { record: vi.fn() };
+        const second = { record: vi.fn() };
+        createChargeSnapshotRecordingProvider({ provider, recorder: first });
+        const again = createChargeSnapshotRecordingProvider({ provider, recorder: second });
+        expect(again).not.toBe(provider);
+        expect(Object.getOwnPropertySymbols(provider)).toEqual([]);
+        await again.readCharge({ chargeId: charge.chargeId });
+        expect(second.record).toHaveBeenCalledOnce();
+        expect(first.record).not.toHaveBeenCalled();
+    });
 });

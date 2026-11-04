@@ -14,7 +14,8 @@ const ALLOWED = new Set([
     'packages/service-core/src/services/billing/reconciliation/sweep/reconciliation-sweep.types.ts',
     'packages/service-core/src/services/billing/reconciliation/sweep/reconciliation-sweep.service.ts'
 ]);
-const PRODUCTION = /^(?:(?:packages|apps)\/[^/]+\/src|scripts)\/.+\.(?:ts|tsx|mts|cts|js|mjs)$/;
+const PRODUCTION =
+    /^(?:(?:packages|apps)\/[^/]+\/(?:src|scripts)|scripts)\/.+\.(?:ts|tsx|mts|cts|js|mjs)$/;
 const TEST_PATH = /(?:^|\/)(?:test|tests|__tests__)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const MODE_SINGLE = /\bmode\s*:\s*['"`]single['"`]/;
 const SINGLE_LITERAL = /['"`]single['"`]/;
@@ -42,7 +43,9 @@ describe('sweep single mode guard', () => {
                 '--exclude-standard',
                 '--',
                 ':(glob)packages/*/src/**',
+                ':(glob)packages/*/scripts/**',
                 ':(glob)apps/*/src/**',
+                ':(glob)apps/*/scripts/**',
                 'scripts'
             ],
             { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }

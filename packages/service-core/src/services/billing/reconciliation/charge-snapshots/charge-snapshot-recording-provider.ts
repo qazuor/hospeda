@@ -3,15 +3,15 @@ import type { ChargeSnapshot, PaymentProvider, ProviderRead } from '@repo/paymen
 import type { ChargeSnapshotRecorder } from './charge-snapshot-recorder';
 
 const logger = createLogger('charge-snapshot-recorder');
-const WRAPPED = Symbol('charge-snapshot-recording-provider');
+/** Proxies this module made. A marker property would land on the target (no defineProperty trap). */
+const RECORDING_PROXIES = new WeakSet<object>();
 
 /** Decorate live charge reads with best-effort snapshot recording. */
 export function createChargeSnapshotRecordingProvider(input: {
     readonly provider: PaymentProvider;
     readonly recorder: ChargeSnapshotRecorder;
 }): PaymentProvider {
-    if ((input.provider as PaymentProvider & { [WRAPPED]?: boolean })[WRAPPED])
-        return input.provider;
+    if (RECORDING_PROXIES.has(input.provider)) return input.provider;
     const wrapped = new Proxy(input.provider, {
         get(target, property) {
             const value = Reflect.get(target, property, target) as unknown;
@@ -30,6 +30,6 @@ export function createChargeSnapshotRecordingProvider(input: {
             return typeof value === 'function' ? value.bind(target) : value;
         }
     });
-    Object.defineProperty(wrapped, WRAPPED, { value: true });
+    RECORDING_PROXIES.add(wrapped);
     return wrapped;
 }

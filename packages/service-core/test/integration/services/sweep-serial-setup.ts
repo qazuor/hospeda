@@ -3,6 +3,9 @@ import { Client } from 'pg';
 import { afterAll, beforeAll, expect } from 'vitest';
 
 /**
+ * Why this exists: parallel workers share one DB and one sweep lease, so a `single` run refused
+ * (or a cycle slice skipped) whenever another file held it. Serializing the sweep files removes that.
+ *
  * The reconciliation sweep owns one global lease: a `single` run refuses while any cycle slice
  * holds it, and two cycle slices exclude each other. Test files run in parallel workers over one
  * database, so every file that drives the sweep takes this session-level advisory lock for its
