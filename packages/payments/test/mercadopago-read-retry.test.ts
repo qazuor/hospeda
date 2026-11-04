@@ -1,7 +1,12 @@
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it, vi } from 'vitest';
 import { MercadoPagoPaymentProvider } from '../src/adapters/mercadopago/mercadopago-payment-provider';
-import type { MercadoPagoReadRetryPolicy } from '../src/adapters/mercadopago/mercadopago-read-retry';
+import {
+    type MercadoPagoReadRetryPolicy,
+    sendWithReadRetry
+} from '../src/adapters/mercadopago/mercadopago-read-retry';
+import { runWithTrafficClass } from '../src/provider/traffic-context';
+import { ProviderTrafficGovernor } from '../src/provider/traffic-governor';
 
 const clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
 const auth = {
@@ -43,6 +48,107 @@ function setup(
 }
 
 describe('MercadoPago GET retry policy', () => {
+    it('passes remaining interactive budget to each governor acquisition (kills token waits outside 4 s)', async () => {
+        let elapsed = 0;
+        const waits: number[] = [];
+        const result = await sendWithReadRetry({
+            method: 'GET',
+            retryOwnership: 'governor',
+            trafficClass: 'interactive',
+            random: () => 0,
+            now: () => new Date(elapsed),
+            attempt: async ({ maxWaitMs }) => {
+                waits.push(maxWaitMs ?? -1);
+                if (waits.length === 1) elapsed = 3000;
+                return response(waits.length === 1 ? 503 : 200);
+            },
+            sleep: async (ms) => {
+                elapsed += ms;
+            }
+        });
+        expect(result.status).toBe(200);
+        expect(waits).toEqual([2000, 750]);
+        expect(elapsed).toBeLessThanOrEqual(4000);
+    });
+    it('does not retry an interactive governor rejection (kills treating it as retryable UNAVAILABLE)', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(0);
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            coolDownStore: { until: () => 30_000, extend: () => {} }
+        });
+        const fetch = vi.fn<typeof globalThis.fetch>();
+        const sleep = vi.fn(async (_ms: number) => {});
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'unit-test-token',
+            fetch,
+            governor,
+            sleep
+        });
+        await expect(
+            provider.readAuthorization({ authorizationId: 'preapproval-1' })
+        ).rejects.toMatchObject({ governorRejected: true });
+        expect(fetch).not.toHaveBeenCalled();
+        expect(sleep).not.toHaveBeenCalled();
+        governor.stop();
+        vi.useRealTimers();
+    });
+    it('moves background 429 waiting into acquire and ignores the interactive budget (kills L1 post-429 sleep)', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(0);
+        const governor = new ProviderTrafficGovernor({ mode: 'enforce', random: () => 0 });
+        const fetch = vi
+            .fn<typeof globalThis.fetch>()
+            .mockResolvedValueOnce(response(429, { 'Retry-After': '30' }))
+            .mockResolvedValueOnce(response(200));
+        const sleep = vi.fn(async (_ms: number) => {});
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'unit-test-token',
+            fetch,
+            governor,
+            sleep
+        });
+        const pending = runWithTrafficClass({
+            context: { trafficClass: 'background' },
+            fn: () => provider.readAuthorization({ authorizationId: 'preapproval-1' })
+        });
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+        expect(sleep).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(30_000);
+        await expect(pending).resolves.toMatchObject({ snapshot: { status: 'active' } });
+        expect(fetch).toHaveBeenCalledTimes(2);
+        governor.stop();
+        vi.useRealTimers();
+    });
+    it('makes a PUT wait for an open enforce cool-down before fetch (kills unpaced write attempts)', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(1_000_000);
+        const deadline = 1_001_000;
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            coolDownStore: { until: () => (Date.now() < deadline ? deadline : 0), extend: () => {} }
+        });
+        const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(response(200));
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'unit-test-token',
+            fetch,
+            governor
+        });
+        const pending = runWithTrafficClass({
+            context: { trafficClass: 'background' },
+            fn: () => provider.cancel({ authorizationId: 'preapproval-1' })
+        });
+        await Promise.resolve();
+        expect(fetch).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1000);
+        await expect(pending).resolves.toBeDefined();
+        expect(fetch).toHaveBeenCalledTimes(1);
+        governor.stop();
+        vi.useRealTimers();
+    });
     it('TEST:1737:1 retries a 429 and resolves on the next authorization read', async () => {
         const fetch = vi
             .fn<typeof globalThis.fetch>()

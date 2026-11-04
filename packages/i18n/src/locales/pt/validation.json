@@ -3263,6 +3263,16 @@
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
     "venue": {
+        "businessLines": {
+            "EMPTY": "Selecione pelo menos um segmento",
+            "DUPLICATE": "Os segmentos não podem se repetir",
+            "NOT_IN_VERTICAL": "Este segmento não pertence a esta vertical",
+            "NOT_ALLOWED_FOR_TYPE": "Este tipo de estabelecimento não permite esse segmento",
+            "MAX_EXCEEDED": "Selecione menos segmentos",
+            "EXCLUDED_PAIR": "Estes segmentos não podem ser combinados",
+            "invalid": "O segmento é inválido",
+            "invalidType": "Os segmentos devem ser uma lista"
+        },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },

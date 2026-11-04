@@ -118,6 +118,8 @@ export interface RetryOurCancellationInput {
 
 /** Ports of {@link retryOurCancellation}. */
 export interface RetryOurCancellationPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
@@ -322,6 +324,8 @@ export async function runOurCancellationRetry(
             unconfirmedOnly: input.unconfirmedOnly
         });
         for (const row of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 const result = await retryOurCancellation(
                     {
@@ -343,6 +347,7 @@ export async function runOurCancellationRetry(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }

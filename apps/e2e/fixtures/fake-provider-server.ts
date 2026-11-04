@@ -79,6 +79,9 @@ export async function startE2eFakeProvider(options: {
         requests() {
             return server.requests();
         },
+        setThrottle(args) {
+            server.setThrottle(args);
+        },
         deliverDue(args) {
             return server.deliverDue(args);
         },

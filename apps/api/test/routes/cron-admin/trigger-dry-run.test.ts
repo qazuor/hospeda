@@ -4,6 +4,7 @@
  * (`Boolean('false') === true`).
  */
 
+import { currentTrafficContext, ProviderTrafficGovernor } from '@repo/payments';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -61,6 +62,7 @@ const trigger = async (rawQuery: Record<string, string>) => {
     const parsed = querySchema.parse(rawQuery);
     return (await triggerConfig.handler({}, { jobName: 'demo' }, {}, parsed)) as {
         dryRun: boolean;
+        details?: Record<string, unknown>;
     };
 };
 
@@ -88,6 +90,28 @@ describe('POST /admin/cron/{jobName} dryRun query (HOS-410)', () => {
 
         expect(res.dryRun).toBe(true);
         expect(mockJobHandler).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true }));
+    });
+
+    it('runs manual handlers as background and persists governed traffic details (kills class loss in manual trigger)', async () => {
+        mockJobHandler.mockImplementation(async () => {
+            expect(currentTrafficContext()?.trafficClass).toBe('background');
+            const governor = new ProviderTrafficGovernor({ mode: 'observe' });
+            await governor.acquire({ trafficClass: 'background', capability: 'read' });
+            governor.observe({ trafficClass: 'background', capability: 'read', status: 200 });
+            return {
+                success: true,
+                message: 'ok',
+                processed: 1,
+                errors: 0,
+                durationMs: 1,
+                details: { retained: true }
+            };
+        });
+        const result = await trigger({});
+        expect(result.details).toMatchObject({
+            retained: true,
+            providerTraffic: { requests: 1, status2xx: 1 }
+        });
     });
 
     it('an absent dryRun keeps the historical default (real run)', async () => {

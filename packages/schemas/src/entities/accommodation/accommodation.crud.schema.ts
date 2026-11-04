@@ -70,7 +70,11 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     featuredByEntitlement: true
 }).extend({
     /** Optional create-time business line selection; omitted values use the catalog preselection. */
-    businessLines: z.array(z.string()).optional(),
+    businessLines: z
+        .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     slug: z
         .string()
         .min(3, { message: 'zodError.accommodation.slug.min' })
@@ -178,6 +182,11 @@ export const AccommodationUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+                error: 'zodError.venue.businessLines.invalidType'
+            })
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (SPEC-172 write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.

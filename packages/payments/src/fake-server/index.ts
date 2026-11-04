@@ -4,7 +4,8 @@ export type {
     AdjustableFakeServerClock,
     FakeProviderRequest,
     FakeProviderServer,
-    FakeProviderServerOptions
+    FakeProviderServerOptions,
+    FakeProviderThrottle
 } from './fake-provider-server';
 export { startFakeProviderServer } from './fake-provider-server';
 export type { MercadoPagoDeliveriesResult, MercadoPagoDelivery } from './mercadopago-deliveries';
