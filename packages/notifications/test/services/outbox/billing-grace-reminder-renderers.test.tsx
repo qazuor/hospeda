@@ -48,4 +48,25 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
             })
         ).toThrow(TypeError);
     });
+
+    it('renders legacy payloads without paymentMethod with the card copy', () => {
+        const { paymentMethod: _ignored, ...legacyPayload } = base;
+        const result = renderers['billing.grace-reminder']!({
+            row: row({ template: 'billing.grace-reminder', payload: legacyPayload })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain('transferencia');
+    });
+
+    it('rejects an unknown payment method', () => {
+        expect(() =>
+            renderers['billing.grace-reminder']!({
+                row: row({
+                    template: 'billing.grace-reminder',
+                    payload: { ...base, paymentMethod: 'CASH' }
+                })
+            })
+        ).toThrow(TypeError);
+    });
 });

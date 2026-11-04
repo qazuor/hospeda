@@ -15,6 +15,7 @@ function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
 
 function renewalUpcoming(row: EmailOutboxRow) {
     const data = objectPayload(row);
+    const paymentMethod = data.paymentMethod ?? 'CARD';
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.planName !== 'string' ||
@@ -24,7 +25,7 @@ function renewalUpcoming(row: EmailOutboxRow) {
         typeof data.daysBefore !== 'number' ||
         !Number.isInteger(data.daysBefore) ||
         data.daysBefore <= 0 ||
-        (data.paymentMethod !== 'CARD' && data.paymentMethod !== 'MANUAL')
+        (paymentMethod !== 'CARD' && paymentMethod !== 'MANUAL')
     )
         throw new TypeError('Faltan datos requeridos del aviso de renovación');
 
@@ -35,7 +36,7 @@ function renewalUpcoming(row: EmailOutboxRow) {
                 planName={data.planName}
                 renewalDate={data.renewalDate}
                 daysBefore={data.daysBefore}
-                paymentMethod={data.paymentMethod}
+                paymentMethod={paymentMethod}
             />
         )
     };

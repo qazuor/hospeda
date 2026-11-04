@@ -65,6 +65,23 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
         );
     });
 
+    it('renders legacy payloads without paymentMethod with the card copy', () => {
+        const result = renderers['billing.renewal-upcoming']!({
+            row: row({
+                template: 'billing.renewal-upcoming',
+                payload: {
+                    subscriptionId,
+                    planName: 'Plan premium',
+                    renewalDate: '2026-10-20',
+                    daysBefore: 5
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain('transferencia');
+    });
+
     it.each([
         ['empty payload', {}],
         [
@@ -75,7 +92,17 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
             'zero days',
             { subscriptionId, planName: 'Plan', renewalDate: '2026-10-20', daysBefore: 0 }
         ],
-        ['empty plan', { subscriptionId, planName: '', renewalDate: '2026-10-20', daysBefore: 5 }]
+        ['empty plan', { subscriptionId, planName: '', renewalDate: '2026-10-20', daysBefore: 5 }],
+        [
+            'unknown payment method',
+            {
+                subscriptionId,
+                planName: 'Plan',
+                renewalDate: '2026-10-20',
+                daysBefore: 5,
+                paymentMethod: 'CASH'
+            }
+        ]
     ])('rejects %s', (_label, payload) => {
         expect(() =>
             renderers['billing.renewal-upcoming']!({

@@ -32,7 +32,8 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             expect(rows[0]?.payload).toMatchObject({
                 subscriptionId: fixture.started.subscriptionId,
                 daysBefore: 3,
-                deadlinesVersion: 2
+                deadlinesVersion: 2,
+                paymentMethod: 'CARD'
             });
             await configureGraceReminderSubscription({
                 subscriptionId: fixture.started.subscriptionId,
@@ -40,6 +41,48 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
                 endsAt: instant('2099-03-20'),
                 status: 'SUSPENDED'
             });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'enqueues the configured payment method in each subscription payload',
+        async () => {
+            const cardFixture = await graceFixture();
+            const manualFixture = await graceFixture();
+            await insertGraceReminderDeadline({
+                version: 81707006,
+                createdAt: instant('2099-03-01'),
+                daysBefore: [3]
+            });
+            for (const [fixture, paymentMethod] of [
+                [cardFixture, 'CARD'],
+                [manualFixture, 'MANUAL']
+            ] as const) {
+                await configureGraceReminderSubscription({
+                    subscriptionId: fixture.started.subscriptionId,
+                    startedAt: instant('2099-03-01'),
+                    endsAt: instant('2099-03-20'),
+                    paymentMethod
+                });
+            }
+
+            const result = await sendGraceReminders(
+                { limit: 1000 },
+                { clock: { now: () => instant('2099-03-17') } }
+            );
+
+            expect(result.enqueued).toBe(2);
+            for (const [fixture, paymentMethod] of [
+                [cardFixture, 'CARD'],
+                [manualFixture, 'MANUAL']
+            ] as const) {
+                const rows = await readGraceReminderOutbox(fixture.started.subscriptionId);
+                expect(rows).toHaveLength(1);
+                expect(rows[0]?.payload).toMatchObject({
+                    subscriptionId: fixture.started.subscriptionId,
+                    paymentMethod
+                });
+            }
         }
     );
 
