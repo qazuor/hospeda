@@ -65,6 +65,8 @@ export * from './billing/addon/addon-coverage-verticals.js';
 export * from './billing/addon/addon-instance-a5.js';
 export * from './billing/addon/addon-orphanhood.js';
 export * from './billing/addon/addon-orphanhood-ports.js';
+export * from './billing/addon/send-one-time-order.service.js';
+export * from './billing/addon/send-one-time-order-types.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
 export * from './billing/coverage/can-charge.js';

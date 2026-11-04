@@ -14,6 +14,7 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         },
         charge: (input) =>
             fake.charge({ ...input, authorizationId: internal(input.authorizationId) }),
+        chargeOnce: (input) => fake.chargeOnce(input),
         changeAmount: (input) =>
             fake.changeAmount({ ...input, authorizationId: internal(input.authorizationId) }),
         pause: (input) => fake.pause({ authorizationId: internal(input.authorizationId) }),
