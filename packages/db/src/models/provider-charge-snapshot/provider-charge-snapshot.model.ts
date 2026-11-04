@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type InsertProviderChargeSnapshot,
@@ -8,37 +8,57 @@ import type { DrizzleClient } from '../../types.ts';
 
 /** Ordered persistence operations for provider charge snapshots. */
 export class ProviderChargeSnapshotModel {
-    /** Store a read unless a later observation already won the race. */
+    /**
+     * Stores a live read. Ordered by our observation instant: a read observed earlier than the
+     * stored one never overwrites its fields. Two fields only ever grow at the provider, so they
+     * are merged monotonically instead (a slow stale read can never erase a refund or a
+     * chargeback a newer read already saw, and an older read that saw more still raises them).
+     *
+     * @param input.row - The row built from the live read.
+     * @param input.tx - Optional transaction.
+     * @returns `written` is true when the stored row changed.
+     */
     async upsertOrdered(input: {
         readonly row: InsertProviderChargeSnapshot;
         readonly tx?: DrizzleClient;
     }): Promise<{ readonly written: boolean }> {
+        const table = providerChargeSnapshots;
+        const newer = sql`excluded.observed_at >= ${table.observedAt}`;
+        const pick = (column: string, current: unknown) =>
+            sql`CASE WHEN ${newer} THEN excluded.${sql.raw(column)} ELSE ${current} END`;
         const [row] = await (input.tx ?? getDb())
-            .insert(providerChargeSnapshots)
+            .insert(table)
             .values(input.row)
             .onConflictDoUpdate({
-                target: [providerChargeSnapshots.provider, providerChargeSnapshots.chargeId],
+                target: [table.provider, table.chargeId],
                 set: {
-                    authorizationId: sql`excluded.authorization_id`,
-                    providerCreatedAt: sql`excluded.provider_created_at`,
-                    expiresAt: sql`excluded.expires_at`,
-                    status: sql`excluded.status`,
-                    purpose: sql`excluded.purpose`,
-                    reference: sql`excluded.reference`,
-                    declineReason: sql`excluded.decline_reason`,
-                    amountMinor: sql`excluded.amount_minor`,
-                    refundedAmountMinor: sql`excluded.refunded_amount_minor`,
-                    currency: sql`excluded.currency`,
-                    chargedBack: sql`excluded.charged_back`,
-                    observedAt: sql`excluded.observed_at`
+                    authorizationId: pick('authorization_id', table.authorizationId),
+                    providerCreatedAt: pick('provider_created_at', table.providerCreatedAt),
+                    expiresAt: pick('expires_at', table.expiresAt),
+                    status: pick('status', table.status),
+                    purpose: pick('purpose', table.purpose),
+                    reference: pick('reference', table.reference),
+                    declineReason: pick('decline_reason', table.declineReason),
+                    amountMinor: pick('amount_minor', table.amountMinor),
+                    currency: pick('currency', table.currency),
+                    refundedAmountMinor: sql`GREATEST(${table.refundedAmountMinor}, excluded.refunded_amount_minor)`,
+                    chargedBack: sql`${table.chargedBack} OR excluded.charged_back`,
+                    observedAt: sql`GREATEST(${table.observedAt}, excluded.observed_at)`
                 },
-                where: lte(providerChargeSnapshots.observedAt, sql`excluded.observed_at`)
+                where: sql`${newer} OR excluded.refunded_amount_minor > ${table.refundedAmountMinor} OR (excluded.charged_back AND NOT ${table.chargedBack})`
             })
-            .returning({ id: providerChargeSnapshots.id });
+            .returning({ id: table.id });
         return { written: row !== undefined };
     }
 
-    /** Find snapshots for one provider and a set of charge ids. */
+    /**
+     * Find snapshots for one provider and a set of charge ids.
+     *
+     * @param input.provider - Provider code of the snapshots.
+     * @param input.chargeIds - Provider charge ids to look up; empty returns no rows.
+     * @param input.tx - Optional transaction.
+     * @returns The stored rows, in no particular order.
+     */
     async findByChargeIds(input: {
         readonly provider: string;
         readonly chargeIds: readonly string[];
