@@ -116,9 +116,28 @@ function entriesFor(userId: string): string[] {
     if (userId === OWNER.touristVip) return ['can_view_search_history'];
     if (userId === OWNER.premium) return KEYS;
     if (userId === OWNER.pro) return ['can_use_rich_description', 'can_embed_video'];
-    if (userId === OWNER.basic) return ['ai_chat'];
+    if (userId === OWNER.basic) return ['ai_chat', 'can_embed_video'];
     return [];
 }
+
+describe('HOS-2037 Básico public video entitlement', () => {
+    it('keeps a Básico host video when the effective set grants the video link', () => {
+        expect(entriesFor(OWNER.basic)).toContain('can_embed_video');
+        const basicGrant = filterPublicPaidFields(accommodation(OWNER.basic), {
+            richDescription: false,
+            video: true,
+            verification: false,
+            aiChat: false
+        });
+
+        expect(basicGrant.videos).toEqual([
+            { url: 'https://vimeo.com/123', moderationState: 'APPROVED' }
+        ]);
+        expect(basicGrant.media.videos).toEqual([
+            { url: 'https://vimeo.com/123', moderationState: 'APPROVED' }
+        ]);
+    });
+});
 
 function accommodation(ownerId: string) {
     const video = { url: 'https://vimeo.com/123', moderationState: 'APPROVED' };

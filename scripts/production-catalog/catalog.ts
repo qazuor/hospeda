@@ -1821,6 +1821,16 @@ export const PRODUCTION_PLAN_CATALOG = [
     }
 ] as const satisfies readonly PlanCatalogDefinition[];
 
+/**
+ * Entitlement-only catalog publications after the immutable V2.4b baseline.
+ * These entries intentionally publish new plan versions instead of editing
+ * the versions generated into migration 0144.
+ */
+export const PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS = [
+    { vertical: 'accommodation', slug: 'owner-basico', key: 'can_embed_video' },
+    { vertical: 'accommodation', slug: 'trial', key: 'can_embed_video' }
+] as const;
+
 /** V2.4a fixture retained for the mechanism tests. */
 export const PLACEHOLDER_CATALOG = [
     {
