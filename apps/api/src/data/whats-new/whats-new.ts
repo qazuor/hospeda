@@ -152,6 +152,95 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4020
+    {
+        id: '2026-11-02-lifting-a-moderation-keeps-published-listings',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al levantar una moderación no se baja ninguna ficha publicada',
+            en: 'Lifting a moderation never takes down a published listing',
+            pt: 'Ao levantar uma moderação nenhuma ficha publicada é despublicada'
+        },
+        body: {
+            es: 'Si una ficha moderada se aprueba de nuevo y tu cupo está lleno, queda aprobada pero sin publicar, y tus fichas ya publicadas siguen visibles. Para publicarla, despublicá otra.',
+            en: 'If a moderated listing is approved again and your quota is full, it stays approved but unpublished, and your already published listings stay visible. To publish it, unpublish another one.',
+            pt: 'Se uma ficha moderada for aprovada de novo e sua cota estiver cheia, ela fica aprovada mas sem publicar, e suas fichas já publicadas continuam visíveis. Para publicá-la, despublique outra.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4006
+    {
+        id: '2026-11-02-admin-moderation-terms-list-loads',
+        publishedAt: 'on-promotion',
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        highlight: false,
+        title: {
+            es: 'La lista de términos de moderación vuelve a cargar',
+            en: 'The moderation terms list loads again',
+            pt: 'A lista de termos de moderação volta a carregar'
+        },
+        body: {
+            es: 'En el panel de administración, el listado de términos de moderación vuelve a abrirse con su paginación, en lugar de mostrar un error.',
+            en: 'In the admin panel, the moderation terms list opens again with its pagination, instead of showing an error.',
+            pt: 'No painel de administração, a lista de termos de moderação volta a abrir com sua paginação, em vez de mostrar um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4029
+    {
+        id: '2026-11-03-rich-text-editor-toolbar-dark-mode',
+        publishedAt: 'on-promotion',
+        roles: ['HOST', 'EDITOR'],
+        highlight: false,
+        title: {
+            es: 'El editor de texto se ve bien en modo oscuro',
+            en: 'The text editor looks right in dark mode',
+            pt: 'O editor de texto fica bom no modo escuro'
+        },
+        body: {
+            es: 'La barra de herramientas y el área de escritura del editor de texto de fichas, notas y eventos ahora usan los colores del modo oscuro, sin el bloque blanco de antes.',
+            en: 'The toolbar and writing area of the text editor for listings, posts and events now use dark mode colors, without the white block it had before.',
+            pt: 'A barra de ferramentas e a área de escrita do editor de texto de fichas, notas e eventos agora usam as cores do modo escuro, sem o bloco branco de antes.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4000
+    {
+        id: '2026-11-02-accommodation-save-rejects-unknown-fields',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al guardar un alojamiento, los campos mal enviados ahora avisan',
+            en: 'Saving an accommodation now warns about fields sent the wrong way',
+            pt: 'Ao salvar uma acomodação, os campos enviados de forma errada agora avisam'
+        },
+        body: {
+            es: 'Si al guardar tu alojamiento se manda un dato que no se puede guardar de esa forma, ahora recibís un error que nombra el campo, en lugar de ver "guardado" sin que se haya guardado nada. Los datos de capacidad, ubicación y precio se guardan como siempre.',
+            en: 'If saving your accommodation sends a value that cannot be saved that way, you now get an error naming the field, instead of seeing "saved" when nothing was saved. Capacity, location and price data are saved as usual.',
+            pt: 'Se ao salvar sua acomodação for enviado um dado que não pode ser salvo dessa forma, agora você recebe um erro que nomeia o campo, em vez de ver "salvo" sem que nada tenha sido salvo. Os dados de capacidade, localização e preço são salvos como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4031
+    {
+        id: '2026-11-03-accommodation-list-filter-by-currency-and-date',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los alojamientos se pueden filtrar por moneda y por fecha de alta',
+            en: 'Accommodations can now be filtered by currency and listing date',
+            pt: 'As acomodações agora podem ser filtradas por moeda e por data de cadastro'
+        },
+        body: {
+            es: 'El listado público de alojamientos ahora respeta el filtro por **moneda** del precio y por **fecha de alta** (desde y hasta). Combinados con el tipo, devuelven solo los alojamientos que cumplen todo.',
+            en: 'The public accommodation list now respects the filter by price **currency** and by **listing date** (from and to). Combined with the type, they return only the accommodations that match everything.',
+            pt: 'A lista pública de acomodações agora respeita o filtro por **moeda** do preço e por **data de cadastro** (desde e até). Combinados com o tipo, devolvem apenas as acomodações que atendem a tudo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
