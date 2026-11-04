@@ -30,6 +30,7 @@ import {
     DestinationTypeEnum,
     normalizeBusinessLines,
     type PermissionEnum,
+    REVIEW_RULES,
     RoleGrantReason,
     ServiceErrorCode,
     validateBusinessLines
@@ -1070,12 +1071,9 @@ export abstract class BaseListingService<
      */
     public async recomputeRating(
         listingId: string,
-        ratingRows: readonly {
-            readonly food?: number | null;
-            readonly service?: number | null;
-            readonly ambiance?: number | null;
-            readonly value?: number | null;
-        }[],
+        ratingRows: readonly (Partial<Record<string, number | null>> & {
+            readonly overallRating?: number | null;
+        })[],
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity | null>> {
         try {
@@ -1090,26 +1088,44 @@ export abstract class BaseListingService<
                 return { data: updated as TEntity };
             }
 
-            const sum = { food: 0, service: 0, ambiance: 0, value: 0 };
-            for (const row of ratingRows) {
-                sum.food += row.food ?? 0;
-                sum.service += row.service ?? 0;
-                sum.ambiance += row.ambiance ?? 0;
-                sum.value += row.value ?? 0;
+            const rules = REVIEW_RULES[this._revalidationEntityType];
+            const dimensions = rules.dimensions;
+            const granular: Record<string, { average: number; count: number } | number> = {};
+            let averageRating: number;
+            if (rules.dimensionAveraging === 'legacyNullAsZero') {
+                const sums = new Map<string, number>(dimensions.map(({ id }) => [id, 0]));
+                for (const row of ratingRows)
+                    for (const { id } of dimensions)
+                        sums.set(id, (sums.get(id) ?? 0) + (row[id] ?? 0));
+                for (const { id } of dimensions)
+                    granular[id] = Math.round(((sums.get(id) ?? 0) / count) * 100) / 100;
+                averageRating =
+                    Math.round(
+                        (dimensions.reduce((total, { id }) => total + (granular[id] as number), 0) /
+                            dimensions.length) *
+                            100
+                    ) / 100;
+            } else {
+                for (const { id } of dimensions) {
+                    const votes = ratingRows.flatMap((row) =>
+                        row[id] == null ? [] : [row[id] as number]
+                    );
+                    if (votes.length > 0)
+                        granular[id] = {
+                            average:
+                                Math.round(
+                                    (votes.reduce((a, b) => a + b, 0) / votes.length) * 100
+                                ) / 100,
+                            count: votes.length
+                        };
+                }
+                averageRating =
+                    Math.round(
+                        (ratingRows.reduce((sum, row) => sum + (row.overallRating ?? 0), 0) /
+                            count) *
+                            100
+                    ) / 100;
             }
-
-            const granular = {
-                food: Math.round((sum.food / count) * 100) / 100,
-                service: Math.round((sum.service / count) * 100) / 100,
-                ambiance: Math.round((sum.ambiance / count) * 100) / 100,
-                value: Math.round((sum.value / count) * 100) / 100
-            };
-
-            const averageRating =
-                Math.round(
-                    ((granular.food + granular.service + granular.ambiance + granular.value) / 4) *
-                        100
-                ) / 100;
 
             const updated = await this.model.update(
                 { id: listingId },

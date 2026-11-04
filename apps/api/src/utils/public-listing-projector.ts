@@ -1,4 +1,4 @@
-import { LISTING_SECTIONS, VerticalEnum } from '@repo/schemas';
+import { LISTING_SECTIONS, REVIEW_RULES, VerticalEnum } from '@repo/schemas';
 import {
     type RehydratedEffectiveSet,
     rehydrateEffectiveSet,
@@ -171,6 +171,25 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
                     meetingPoint?.traits.get('directions') === 'available'
             } as T;
         }
-        return projected;
+        return projectVenueDimensionRatings(projected, resolved.sections);
     });
+}
+
+/** Hide persisted dimension aggregates when the dimension's section is absent. */
+export function projectVenueDimensionRatings<T extends Record<string, unknown>>(
+    listing: T,
+    states: ReadonlyMap<
+        string,
+        { readonly state: string; readonly traits: ReadonlyMap<string, string> }
+    >
+): T {
+    const rating = listing.rating;
+    if (!rating || typeof rating !== 'object' || Array.isArray(rating)) return listing;
+    const next = { ...(rating as Record<string, unknown>) };
+    for (const dimension of REVIEW_RULES.venue.dimensions) {
+        if (dimension.boundSection && states.get(dimension.boundSection)?.state === 'absent') {
+            delete next[dimension.id];
+        }
+    }
+    return { ...listing, rating: next } as T;
 }

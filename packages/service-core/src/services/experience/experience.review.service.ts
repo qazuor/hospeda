@@ -639,7 +639,8 @@ export class ExperienceReviewService extends BaseCrudService<
                     food: rating?.food ?? null,
                     service: rating?.service ?? null,
                     ambiance: rating?.ambiance ?? null,
-                    value: rating?.value ?? null
+                    value: rating?.value ?? null,
+                    overallRating: raw.overallRating as number | null | undefined
                 };
             });
 

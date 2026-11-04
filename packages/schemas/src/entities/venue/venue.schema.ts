@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { REVIEW_RULES } from '../../catalog/review-dimensions.js';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
@@ -10,7 +11,6 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { VenueRatingSchema } from '../../common/venue-rating.schema.js';
 import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
@@ -153,7 +153,18 @@ export const VenueSchema = z.object({
      * Aggregate of individual `venueReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: VenueRatingSchema.nullish()
+    rating: z
+        .object(
+            Object.fromEntries(
+                REVIEW_RULES.venue.dimensions.map(({ id }) => [
+                    id,
+                    z.object({ average: z.number(), count: z.number().int().nonnegative() })
+                ])
+            )
+        )
+        .partial()
+        .nullable()
+        .optional()
 });
 
 /** TypeScript type inferred from {@link VenueSchema}. */
