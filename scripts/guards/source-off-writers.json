@@ -378,5 +378,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "S18 records the balance of a courtesy on a dead predecessor; its pause was already closed, so no live coverage source turns off here (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
+        "symbol": "sendOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
     }
 ]
