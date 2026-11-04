@@ -50,7 +50,8 @@ describe('createClosedChargeSnapshots', () => {
         const port = createClosedChargeSnapshots({
             provider: 'MP',
             clock: { now: () => now },
-            deadlines
+            deadlines,
+            floorDays: 0
         });
         await expect(port.find({ chargeIds: ['x'] })).resolves.toMatchObject([
             { chargeId: 'expired-rejected' },
@@ -69,7 +70,8 @@ describe('createClosedChargeSnapshots', () => {
         const port = createClosedChargeSnapshots({
             provider: 'MP',
             clock: { now: () => now },
-            deadlines
+            deadlines,
+            floorDays: 0
         });
         expect(await port.find({ chargeIds: ['charge'] })).toHaveLength(1);
         days = 30;
@@ -77,10 +79,43 @@ describe('createClosedChargeSnapshots', () => {
         const missing = createClosedChargeSnapshots({
             provider: 'MP',
             clock: { now: () => now },
+            floorDays: 0,
             deadlines: {
                 current: vi.fn(async () => ({ values: {} }))
             } as unknown as CanChargeDeadlines
         });
         await expect(missing.find({ chargeIds: ['charge'] })).resolves.toEqual([]);
+    });
+
+    it('never closes an approved charge younger than the 180-day floor, however short deadline 18 is set', async () => {
+        findByChargeIds.mockResolvedValue([
+            row({ chargeId: 'day-100', providerCreatedAt: new Date('2026-07-04T00:00:00Z') }),
+            row({ chargeId: 'day-179', providerCreatedAt: new Date('2026-04-16T00:00:00Z') }),
+            row({ chargeId: 'day-200', providerCreatedAt: new Date('2026-03-26T00:00:00Z') })
+        ]);
+        const port = createClosedChargeSnapshots({
+            provider: 'MP',
+            clock: { now: () => now },
+            deadlines: {
+                current: vi.fn(async () => ({ values: { '18': { days: 1 } } }))
+            } as unknown as CanChargeDeadlines
+        });
+        await expect(port.find({ chargeIds: ['x'] })).resolves.toMatchObject([
+            { chargeId: 'day-200' }
+        ]);
+    });
+
+    it('lets a deadline 18 longer than the floor keep charges open past it', async () => {
+        findByChargeIds.mockResolvedValue([
+            row({ chargeId: 'day-200', providerCreatedAt: new Date('2026-03-26T00:00:00Z') })
+        ]);
+        const port = createClosedChargeSnapshots({
+            provider: 'MP',
+            clock: { now: () => now },
+            deadlines: {
+                current: vi.fn(async () => ({ values: { '18': { days: 365 } } }))
+            } as unknown as CanChargeDeadlines
+        });
+        await expect(port.find({ chargeIds: ['x'] })).resolves.toEqual([]);
     });
 });

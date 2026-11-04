@@ -56,7 +56,7 @@ async function activate() {
 
 describe('HOS-1999 provider read scope', () => {
     /** Activates a credited subscription with `count` monthly charge records, the first one read by webhook. */
-    async function seedMonthlyRecords(count: number) {
+    async function seedMonthlyRecords(count: number, spacingDays = 31) {
         const created = await activate();
         const chargeIds: string[] = [];
         for (let index = 0; index < count; index += 1) {
@@ -77,7 +77,7 @@ describe('HOS-1999 provider read scope', () => {
                     })
                 );
             }
-            fixture.clock.advance({ ms: 31 * DAY });
+            fixture.clock.advance({ ms: spacingDays * DAY });
         }
         return { created, chargeIds };
     }
@@ -102,7 +102,7 @@ describe('HOS-1999 provider read scope', () => {
     }
 
     /** Publishes a newer deadline version so deadline 18 (the snapshot horizon) is shorter than the cadence. */
-    async function useShortDeadline18() {
+    async function publishDeadline18Days(days = 20) {
         const [latest] = await getDb()
             .select({
                 version: billingDeadlineVersions.version,
@@ -116,7 +116,7 @@ describe('HOS-1999 provider read scope', () => {
             .insert(billingDeadlineVersions)
             .values({
                 version: latest.version + 1,
-                values: { ...latest.values, '18': { days: 20 } }
+                values: { ...latest.values, '18': { days } }
             });
         return latest.version + 1;
     }
@@ -274,8 +274,10 @@ describe('HOS-1999 provider read scope', () => {
 
     // Deadline versions are append-only, so the tests that publish a short deadline 18 run last.
     it('reads a steady-state 12-record row in at most 4 requests (AC-9, kills snapshots not consulted)', async () => {
-        await useShortDeadline18();
-        const { created, chargeIds } = await seedMonthlyRecords(12);
+        // Records are 200 days apart: deadline 18 (20 days) is shorter than the cadence and even
+        // the 180-day safety floor is, so only the latest charge is younger than the horizon.
+        await publishDeadline18Days();
+        const { created, chargeIds } = await seedMonthlyRecords(12, 200);
         const warm = await sweepInventoryPaths({
             authorizationId: created.authorizationId,
             chargeIds
@@ -293,8 +295,8 @@ describe('HOS-1999 provider read scope', () => {
     });
 
     it('adds only the extra listing pages for 36 records (AC-10, kills snapshots not consulted for history)', async () => {
-        await useShortDeadline18();
-        const { created, chargeIds } = await seedMonthlyRecords(36);
+        await publishDeadline18Days();
+        const { created, chargeIds } = await seedMonthlyRecords(36, 200);
         await sweepInventoryPaths({ authorizationId: created.authorizationId, chargeIds });
         const steady = await sweepInventoryPaths({
             authorizationId: created.authorizationId,
@@ -304,5 +306,31 @@ describe('HOS-1999 provider read scope', () => {
         expect(steady.filter((path) => path.startsWith('/v1/payments/'))).toHaveLength(1);
         expect(steady).toHaveLength(2 + listingPages.length);
         expect(listingPages.length).toBeGreaterThan(2);
+    });
+
+    it('adds exactly one request per extra open approved charge when deadline 18 outlasts the cadence (AC-9)', async () => {
+        // Charges are 100 days apart and the last one is 100 days old. The horizon is
+        // max(deadline 18, 180-day floor): 250 days leaves the last two open, 350 the last three.
+        // Each open charge beyond the latest (always read live) costs exactly one more request.
+        for (const { days, open } of [
+            { days: 250, open: 2 },
+            { days: 350, open: 3 }
+        ]) {
+            await publishDeadline18Days(days);
+            const { created, chargeIds } = await seedMonthlyRecords(12, 100);
+            await sweepInventoryPaths({ authorizationId: created.authorizationId, chargeIds });
+            const steady = await sweepInventoryPaths({
+                authorizationId: created.authorizationId,
+                chargeIds
+            });
+            const charges = steady.filter((path) => path.startsWith('/v1/payments/'));
+            expect(charges.sort()).toEqual(
+                chargeIds
+                    .slice(-open)
+                    .map((chargeId) => `/v1/payments/${chargeId}`)
+                    .sort()
+            );
+            expect(steady).toHaveLength(3 + open);
+        }
     });
 });
