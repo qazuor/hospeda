@@ -1,12 +1,14 @@
 import {
     billingOptions,
     coverageLosses,
+    coveredPeriods,
     eq,
     getDb,
     manualPaymentModel,
     manualPayments,
     plans,
     planVersions,
+    sql,
     subscriptionModel,
     subscriptions,
     successionRetainedPayments,
@@ -217,11 +219,55 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         expect(written.installment?.status).toBe('AWAITING');
     });
 
+    it('processes a due grace beyond more than one cron page of open S19 retentions', async () => {
+        const pageSize = 3;
+        const held = await Promise.all(
+            Array.from({ length: pageSize + 1 }, (_, index) =>
+                seed({ graceEndsAt: new Date(now.getTime() - (index + 2) * 60_000) })
+            )
+        );
+        for (const fixture of held) {
+            await getDb().insert(successionRetainedPayments).values({
+                subscriptionId: fixture.subscription.id,
+                manualPaymentId: fixture.installment.id,
+                unpaidSince: graceStartedAt
+            });
+        }
+        const due = await seed({ graceEndsAt: new Date(now.getTime() - 30_000) });
+
+        const result = await expireManualGraces({ pageSize }, ports());
+
+        expect(result.suspended).toBe(1);
+        expect(result.scanned).toBe(1);
+        expect((await read(due)).installment?.status).toBe('DECLARED_UNPAID');
+        for (const fixture of held) {
+            expect((await read(fixture)).installment?.status).toBe('AWAITING');
+        }
+    });
+
     it('waits for a concurrent manual registration before expiring its grace', {
         timeout: 30_000
     }, async () => {
         const fixture = await seed();
-        const payment = await getServiceTestPool().connect();
+        const originalLock = manualPaymentModel.lockInstallment;
+        let releaseMp1!: () => void;
+        let reachedLock!: () => void;
+        const heldAtLock = new Promise<void>((resolve) => {
+            reachedLock = resolve;
+        });
+        const continueMp1 = new Promise<void>((resolve) => {
+            releaseMp1 = resolve;
+        });
+        let pid: number | undefined;
+        const registrationLock = vi
+            .spyOn(manualPaymentModel, 'lockInstallment')
+            .mockImplementation(async (input) => {
+                const result = await input.tx.execute(sql`SELECT pg_backend_pid() AS pid`);
+                pid = Number(result.rows[0]?.pid);
+                reachedLock();
+                await continueMp1;
+                return originalLock.call(manualPaymentModel, input);
+            });
         const originalMark = manualPaymentModel.markDeclaredUnpaid;
         let declared = false;
         const mark = vi
@@ -235,14 +281,22 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
             .spyOn(manualPaymentModel, 'findManualGracesDue')
             .mockResolvedValueOnce([fixture.subscription]);
         let expiry: Promise<Awaited<ReturnType<typeof expireManualGraces>>> | undefined;
+        let registration: ReturnType<typeof registerManualPayment> | undefined;
         try {
-            // Payment transaction A owns the subscription row before expiry transaction B starts.
-            await payment.query('BEGIN');
-            await payment.query('SELECT id FROM subscription WHERE id = $1 FOR UPDATE', [
-                fixture.subscription.id
-            ]);
-            const pid = (await payment.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))
-                .rows[0]?.pid;
+            // MP1 has locked the subscription and pauses before locking its installment.
+            registration = registerManualPayment(
+                {
+                    actor: {
+                        id: fixture.admin.id,
+                        roles: [RoleEnum.ADMIN],
+                        permissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT]
+                    },
+                    subscriptionId: fixture.subscription.id,
+                    manualPaymentId: fixture.installment.id
+                },
+                { clock }
+            );
+            await heldAtLock;
             expiry = expireManualGraces({ pageSize: 1 }, ports());
 
             // A lock waiter proves B reached the row; a completed unpaid write proves
@@ -257,29 +311,30 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
             }
             expect(parked || declared).toBe(true);
 
-            // Complete registration in A. A missing subscription lock lets B declare
-            // the installment first, producing a conflicting write or a deadlock.
-            await payment.query(
-                "UPDATE manual_payment SET status = 'REGISTERED', registered_by = $2, registered_at = $3 WHERE id = $1 AND status = 'AWAITING'",
-                [fixture.installment.id, fixture.admin.id, now]
-            );
-            await payment.query(
-                "UPDATE subscription SET status = 'ACTIVE', grace_started_at = NULL, grace_ends_at = NULL WHERE id = $1",
-                [fixture.subscription.id]
-            );
-            await payment.query('COMMIT');
+            releaseMp1();
+            const registered = await registration;
+            expect(registered.effect).toBe('S5');
+            expect(registered.receiptId).toBeTruthy();
 
             expect(await expiry).toEqual({ scanned: 1, suspended: 0, skipped: 1, errors: 0 });
             const written = await read(fixture);
             expect(written.subscription?.status).toBe('ACTIVE');
             expect(written.installment?.status).toBe('REGISTERED');
+            expect(written.subscription?.nextChargeAt).toEqual(registered.nextChargeAt);
             expect(written.losses).toHaveLength(0);
+            const coverage = await getDb()
+                .select()
+                .from(coveredPeriods)
+                .where(eq(coveredPeriods.manualPaymentId, fixture.installment.id));
+            expect(coverage).toHaveLength(1);
         } finally {
-            await payment.query('ROLLBACK');
-            payment.release();
+            releaseMp1();
+            await Promise.allSettled(
+                [registration, expiry].filter((promise) => promise !== undefined)
+            );
+            registrationLock.mockRestore();
             finder.mockRestore();
             mark.mockRestore();
-            await expiry;
         }
     });
 

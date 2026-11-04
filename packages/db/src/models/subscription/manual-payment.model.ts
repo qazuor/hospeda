@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, exists, lte, notExists } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, isNull, lte, notExists } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     manualPayments,
     type SelectManualPayment
 } from '../../schemas/vertical/manual-payment.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
+import { successionRetainedPayments } from '../../schemas/vertical/succession-retained-payment.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
 /** Persistence for manual subscription installments. */
@@ -20,6 +21,17 @@ export class ManualPaymentModel {
                     eq(subscriptions.paymentMethod, 'MANUAL'),
                     eq(subscriptions.status, 'GRACE_PERIOD'),
                     lte(subscriptions.graceEndsAt, input.now),
+                    notExists(
+                        getDb()
+                            .select({ id: successionRetainedPayments.id })
+                            .from(successionRetainedPayments)
+                            .where(
+                                and(
+                                    eq(successionRetainedPayments.subscriptionId, subscriptions.id),
+                                    isNull(successionRetainedPayments.releasedAt)
+                                )
+                            )
+                    ),
                     exists(
                         getDb()
                             .select({ id: manualPayments.id })
