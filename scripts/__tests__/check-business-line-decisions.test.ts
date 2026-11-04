@@ -24,7 +24,7 @@ function fixture(source: string): string {
     );
     writeFileSync(
         path.join(root, 'apps/web/src/business-line.ts'),
-        "export type BusinessLine = 'food' | 'nightlife';\n"
+        "export type BusinessLineValue = 'food' | 'nightlife'; export type BusinessLine = BusinessLineValue;\n"
     );
     writeFileSync(path.join(root, 'apps/web/src/example.tsx'), source);
     return root;

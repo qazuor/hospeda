@@ -17,7 +17,8 @@ function lineOf(node: ts.Node, sf: ts.SourceFile): number {
 }
 function businessLineType(type: ts.Type, checker: ts.TypeChecker): boolean {
     const symbol = type.aliasSymbol ?? type.getSymbol();
-    if (symbol?.getName() === 'BusinessLine') return true;
+    if (symbol?.getName() === 'BusinessLine' || symbol?.getName() === 'BusinessLineValue')
+        return true;
     if (type.isUnionOrIntersection())
         return type.types.some((part) => businessLineType(part, checker));
     if (checker.isArrayType(type) || checker.isTupleType(type)) {
