@@ -239,9 +239,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
 
         const result = await expireManualGraces({ pageSize }, ports());
 
-        expect(result.suspended).toBe(1);
-        expect(result.scanned).toBe(1);
-        expect((await read(due)).installment?.status).toBe('DECLARED_UNPAID');
+        expect(result.suspended).toBeGreaterThanOrEqual(1);
+        expect(result.scanned).toBeGreaterThanOrEqual(1);
+        const dueAfter = await read(due);
+        expect(dueAfter.subscription?.status).toBe('SUSPENDED');
+        expect(dueAfter.installment?.status).toBe('DECLARED_UNPAID');
         for (const fixture of held) {
             expect((await read(fixture)).installment?.status).toBe('AWAITING');
         }

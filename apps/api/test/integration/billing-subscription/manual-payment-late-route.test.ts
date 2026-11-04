@@ -184,13 +184,6 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
             it(`${action} ${method} returns 404 for a foreign subscription or installment`, async () => {
                 const own = await seedManualRoute();
                 const foreign = await seedManualRoute();
-                const response = await request({
-                    method,
-                    action,
-                    subscriptionId: own.subscription.id,
-                    manualPaymentId: foreign.installment.id,
-                    actorId: own.admin.id
-                });
                 if (action === 'unallocated') {
                     const absent = await request({
                         method,
@@ -201,13 +194,23 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
                     expect(absent.status).toBe(404);
                     expect((await absent.json()).error.reason).toBe('SUBSCRIPTION_NOT_FOUND');
                 } else {
+                    const response = await request({
+                        method,
+                        action,
+                        subscriptionId: own.subscription.id,
+                        manualPaymentId: foreign.installment.id,
+                        actorId: own.admin.id
+                    });
                     expect(response.status).toBe(404);
                     expect((await response.json()).error.reason).toBe('MANUAL_PAYMENT_NOT_FOUND');
                 }
             });
 
             it(`${action} ${method} returns 409 for incompatible state`, async () => {
-                const seeded = await seedManualRoute({ status: 'ACTIVE' });
+                const seeded = await seedManualRoute({
+                    status: 'ACTIVE',
+                    installmentStatus: action === 'register-late' ? 'DECLARED_UNPAID' : 'AWAITING'
+                });
                 const response = await request({
                     method,
                     action,
@@ -216,7 +219,13 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
                     actorId: seeded.admin.id
                 });
                 expect(response.status).toBe(409);
-                expect((await response.json()).error.code).toBe('ALREADY_EXISTS');
+                expect((await response.json()).error).toMatchObject({
+                    code: 'ALREADY_EXISTS',
+                    reason:
+                        action === 'register-late'
+                            ? 'MANUAL_PAYMENT_NOT_SUSPENDED'
+                            : 'MANUAL_PAYMENT_OPEN_INSTALLMENT'
+                });
             });
 
             it(`${action} ${method} returns 422 for an unmet business rule`, async () => {
@@ -241,7 +250,13 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
                     actorId: seeded.admin.id
                 });
                 expect(response.status).toBe(422);
-                expect((await response.json()).error.code).toBe('VALIDATION_ERROR');
+                expect((await response.json()).error).toMatchObject({
+                    code: 'VALIDATION_ERROR',
+                    reason:
+                        action === 'register-late'
+                            ? 'MANUAL_PAYMENT_NOT_MANUAL'
+                            : 'MANUAL_PAYMENT_NO_PERIOD'
+                });
             });
         }
     }
