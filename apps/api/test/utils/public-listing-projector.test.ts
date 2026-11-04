@@ -126,6 +126,35 @@ describe('projectPublicListing', () => {
         expect(noStore).toHaveBeenCalledOnce();
     });
 
+    it('TEST:3.12:1 recovers an empty restaurant selection from type preselection', async () => {
+        const { getDomainCounters, resetMetrics } = await import('../../src/middlewares/metrics');
+        const { apiLogger } = await import('../../src/utils/logger');
+        const errorLog = vi.spyOn(apiLogger, 'error');
+        resetMetrics();
+        mocks.effectiveSet.mockResolvedValueOnce(
+            effective([{ key: 'manage_venue_menu', value: 1 }])
+        );
+        const [listing] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [
+                {
+                    id: 'empty',
+                    ownerId: 'owner',
+                    type: 'RESTAURANT',
+                    businessLines: [],
+                    menuUrl: '/menu'
+                }
+            ]
+        });
+        expect(listing).toHaveProperty('menuUrl', '/menu');
+        expect(errorLog).toHaveBeenCalledWith(
+            { vertical: 'venue', id: 'empty', type: 'RESTAURANT' },
+            expect.stringContaining('no business lines')
+        );
+        expect(getDomainCounters()['listing_empty_business_lines_total{result=failure}']).toBe(1);
+        errorLog.mockRestore();
+    });
+
     it('publishes catalog menu fields only for a granted food listing', () => {
         const state = resolveListingSections({
             vertical: 'venue',

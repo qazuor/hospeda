@@ -1,4 +1,5 @@
 import {
+    BUSINESS_LINE_RULES,
     BUSINESS_LINES,
     getCatalogKey,
     LISTING_SECTIONS,
@@ -22,6 +23,20 @@ const VERTICAL_ENUM: Readonly<Record<ListingVertical, VerticalEnum>> = {
     experience: VerticalEnum.EXPERIENCE,
     accommodation: VerticalEnum.ACCOMMODATION
 };
+
+/** Recover a missing/empty persisted selection from the listing type's defaults. */
+export function resolvePublicBusinessLines(args: {
+    readonly vertical: 'venue' | 'experience';
+    readonly type: string;
+    readonly businessLines: readonly string[] | null | undefined;
+}): readonly string[] {
+    if (args.businessLines?.length) return args.businessLines;
+    const rules = BUSINESS_LINE_RULES[args.vertical].typeRules as Record<
+        string,
+        { readonly preselect?: readonly string[] }
+    >;
+    return rules[args.type]?.preselect ?? [];
+}
 
 /** A business line or the catalog names a section id the vertical's catalog does not have. */
 export class UnknownListingSectionIdError extends Error {

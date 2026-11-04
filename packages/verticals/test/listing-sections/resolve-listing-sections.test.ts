@@ -4,6 +4,7 @@ import { isGranted } from '../../src/authorization/entitlement-step';
 import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
 import {
     resolveListingSections,
+    resolvePublicBusinessLines,
     UnknownBusinessLineError,
     UnknownListingSectionIdError,
     UnknownListingSectionKeyError
@@ -27,6 +28,18 @@ function effective(vertical: 'venue' | 'experience' | 'accommodation', keys: rea
 }
 
 describe('resolveListingSections', () => {
+    it('TEST:3.12:1 derives an empty venue selection from the listing type preselection', () => {
+        expect(
+            resolvePublicBusinessLines({ vertical: 'venue', type: 'RESTAURANT', businessLines: [] })
+        ).toEqual(['food']);
+        expect(
+            resolvePublicBusinessLines({
+                vertical: 'venue',
+                type: 'RESTAURANT',
+                businessLines: ['nightlife']
+            })
+        ).toEqual(['nightlife']);
+    });
     it('TEST:3.1:1 resolves venue food and nightlife, including locked, absent and multiline states', () => {
         const locked = resolveListingSections({
             vertical: 'venue',

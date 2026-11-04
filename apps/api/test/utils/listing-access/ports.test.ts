@@ -125,4 +125,23 @@ describe('HOS-1834 loadFacts business lines', () => {
         expect(result.facts?.businessLines).toEqual(['food']);
         expect(result.ownerId).toBe('owner');
     });
+
+    it('carries the persisted type from the same row, without a second query', async () => {
+        const query = getDb() as unknown as {
+            limit: { mockResolvedValueOnce(value: unknown): void };
+        };
+        query.limit.mockResolvedValueOnce([
+            {
+                ownerId: 'owner',
+                publicationStatus: 'PUBLISHED',
+                businessLines: [],
+                type: 'RESTAURANT'
+            }
+        ]);
+        const result = await getListingAccessPorts().loadFacts({
+            vertical: VerticalEnum.VENUE,
+            listingId: 'listing'
+        });
+        expect(result.facts?.type).toBe('RESTAURANT');
+    });
 });
