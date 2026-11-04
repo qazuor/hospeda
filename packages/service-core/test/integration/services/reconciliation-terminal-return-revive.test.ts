@@ -93,7 +93,7 @@ async function runSweep(
         withSeededCancellationRetryInventory(() =>
             withSeededTerminalReturnInventory(() =>
                 runReconciliationSweep(
-                    { correlationId: crypto.randomUUID() },
+                    { mode: 'single', correlationId: crypto.randomUUID() },
                     {
                         provider: fake as unknown as PaymentProvider,
                         clock,
@@ -157,7 +157,7 @@ describe('TEST:B11:14 provider rejection revival', () => {
                 withSeededCancellationRetryInventory(() =>
                     withSeededTerminalReturnInventory(() =>
                         runReconciliationSweep(
-                            { correlationId: crypto.randomUUID() },
+                            { mode: 'single', correlationId: crypto.randomUUID() },
                             {
                                 provider: fake as unknown as PaymentProvider,
                                 clock,
@@ -218,7 +218,7 @@ describe('TEST:B11:14 provider rejection revival', () => {
             withSeededCancellationRetryInventory(() =>
                 withSeededTerminalReturnInventory(() =>
                     runReconciliationSweep(
-                        {},
+                        { mode: 'single' },
                         {
                             provider: fake as unknown as PaymentProvider,
                             clock,

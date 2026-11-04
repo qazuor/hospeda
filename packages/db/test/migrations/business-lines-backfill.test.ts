@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const root = process.cwd().endsWith('/packages/db') ? join(process.cwd(), '../..') : process.cwd();
 const migration = readFileSync(
-    join(root, 'packages/db/src/migrations/0189_confused_violations.sql'),
+    join(root, 'packages/db/src/migrations/0190_confused_violations.sql'),
     'utf8'
 );
 
