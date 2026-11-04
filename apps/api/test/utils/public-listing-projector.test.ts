@@ -93,10 +93,10 @@ describe('projectPublicListing', () => {
                 }
             ]
         });
-        expect(restaurant.rating).toHaveProperty('food');
-        expect(boliche.rating).not.toHaveProperty('food');
-        expect(boliche.rating).toHaveProperty('service');
-        expect(returned.rating).toHaveProperty('food');
+        expect(restaurant!.rating).toHaveProperty('food');
+        expect(boliche!.rating).not.toHaveProperty('food');
+        expect(boliche!.rating).toHaveProperty('service');
+        expect(returned!.rating).toHaveProperty('food');
     });
 
     it('keeps food aggregates when the menu is locked', async () => {
@@ -111,7 +111,7 @@ describe('projectPublicListing', () => {
                 }
             ]
         });
-        expect(listing.rating).toHaveProperty('food');
+        expect(listing!.rating).toHaveProperty('food');
     });
 
     it('fails closed and signals the route to disable caching when a set read fails', async () => {
