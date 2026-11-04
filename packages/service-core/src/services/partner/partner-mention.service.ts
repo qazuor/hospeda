@@ -34,9 +34,9 @@ import {
 /**
  * Notified once per submission, after the rows are committed (HOS-377 AC-9).
  *
- * A port rather than a direct dependency, matching `PartnerRevokeNotifyPort`:
- * `apps/api` owns the notification transport, and a context that injects none
- * simply does not send — logging a mention must never depend on mail working.
+ * A port rather than a direct dependency: `apps/api` owns the notification
+ * transport, and a context that injects none simply does not send — logging a
+ * mention must never depend on mail working.
  */
 export type PartnerMentionNotifyPort = (input: {
     readonly partnerId: string;
