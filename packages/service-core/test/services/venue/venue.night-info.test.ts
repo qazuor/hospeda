@@ -6,7 +6,7 @@
  * the freshness stamp is exact.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VenueEntryKindEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveVenueNightInfoPatch } from '../../../src/services/venue/venue.night-info';
 import { ServiceError } from '../../../src/types';
@@ -22,7 +22,11 @@ describe('resolveVenueNightInfoPatch', () => {
     it('stamps the date when the price changes', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { entryPriceFrom: 7000 },
-            current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
             now: NOW
         });
         expect(patch).toEqual({ entryPriceFrom: 7000, entryPriceUpdatedAt: NOW });
@@ -31,7 +35,11 @@ describe('resolveVenueNightInfoPatch', () => {
     it('does not move the date when the same price is re-sent', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { entryPriceFrom: 5000 },
-            current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
             now: NOW
         });
         expect(patch).toEqual({});
@@ -49,7 +57,11 @@ describe('resolveVenueNightInfoPatch', () => {
     it('erases price and date when the entry leaves paid', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { entryKind: 'free' },
-            current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
             now: NOW
         });
         expect(patch).toEqual({ entryPriceFrom: null, entryPriceUpdatedAt: null });
@@ -58,7 +70,11 @@ describe('resolveVenueNightInfoPatch', () => {
     it('erases the date when the price is deleted while still paid', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { entryPriceFrom: null },
-            current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
             now: NOW
         });
         expect(patch).toEqual({ entryPriceFrom: null, entryPriceUpdatedAt: null });
@@ -68,7 +84,11 @@ describe('resolveVenueNightInfoPatch', () => {
         const run = () =>
             resolveVenueNightInfoPatch({
                 body: { entryKind: 'varies', entryPriceFrom: 1000 },
-                current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+                current: {
+                    entryKind: VenueEntryKindEnum.PAID,
+                    entryPriceFrom: 5000,
+                    entryPriceUpdatedAt: OLD_DATE
+                },
                 now: NOW
             });
         expect(run).toThrow(ServiceError);
@@ -83,7 +103,7 @@ describe('resolveVenueNightInfoPatch', () => {
         const run = () =>
             resolveVenueNightInfoPatch({
                 body: { entryPriceFrom: 1000 },
-                current: { entryKind: 'free', entryPriceFrom: null },
+                current: { entryKind: VenueEntryKindEnum.FREE, entryPriceFrom: null },
                 now: NOW
             });
         expect(run).toThrow(ServiceError);
@@ -92,7 +112,11 @@ describe('resolveVenueNightInfoPatch', () => {
     it('leaves paid state untouched for an unrelated minAge edit', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { minAge: 18 },
-            current: { entryKind: 'paid', entryPriceFrom: 5000, entryPriceUpdatedAt: OLD_DATE },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
             now: NOW
         });
         expect(patch).toEqual({});
