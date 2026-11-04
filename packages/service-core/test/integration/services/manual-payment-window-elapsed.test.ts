@@ -19,7 +19,12 @@ import { cancelDirectSubscription } from '../../../src/services/billing/subscrip
 import { expireManualGraces } from '../../../src/services/billing/subscription/expire-manual-grace.service';
 import { registerManualPayment } from '../../../src/services/billing/subscription/register-manual-payment.service';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers';
 
 const now = new Date('2026-10-20T12:00:00.000Z');
 const graceStartedAt = new Date('2026-10-18T12:00:00.000Z');
@@ -210,6 +215,72 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:8 MP3', () => {
         expect(written.subscription?.status).toBe('GRACE_PERIOD');
         expect(written.subscription?.graceEndsAt).toEqual(future);
         expect(written.installment?.status).toBe('AWAITING');
+    });
+
+    it('waits for a concurrent manual registration before expiring its grace', {
+        timeout: 30_000
+    }, async () => {
+        const fixture = await seed();
+        const payment = await getServiceTestPool().connect();
+        const originalMark = manualPaymentModel.markDeclaredUnpaid;
+        let declared = false;
+        const mark = vi
+            .spyOn(manualPaymentModel, 'markDeclaredUnpaid')
+            .mockImplementation(async (input) => {
+                const result = await originalMark.call(manualPaymentModel, input);
+                declared = result;
+                return result;
+            });
+        const finder = vi
+            .spyOn(manualPaymentModel, 'findManualGracesDue')
+            .mockResolvedValueOnce([fixture.subscription]);
+        let expiry: Promise<Awaited<ReturnType<typeof expireManualGraces>>> | undefined;
+        try {
+            // Payment transaction A owns the subscription row before expiry transaction B starts.
+            await payment.query('BEGIN');
+            await payment.query('SELECT id FROM subscription WHERE id = $1 FOR UPDATE', [
+                fixture.subscription.id
+            ]);
+            const pid = (await payment.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))
+                .rows[0]?.pid;
+            expiry = expireManualGraces({ pageSize: 1 }, ports());
+
+            // A lock waiter proves B reached the row; a completed unpaid write proves
+            // the missing-lock mutation overtook A. Neither branch relies on elapsed time.
+            let parked = false;
+            for (let poll = 0; poll < 500 && !parked && !declared; poll++) {
+                const result = await getServiceTestPool().query<{ parked: number }>(
+                    'SELECT count(*)::int AS parked FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))',
+                    [pid]
+                );
+                parked = (result.rows[0]?.parked ?? 0) > 0;
+            }
+            expect(parked || declared).toBe(true);
+
+            // Complete registration in A. A missing subscription lock lets B declare
+            // the installment first, producing a conflicting write or a deadlock.
+            await payment.query(
+                "UPDATE manual_payment SET status = 'REGISTERED', registered_by = $2, registered_at = $3 WHERE id = $1 AND status = 'AWAITING'",
+                [fixture.installment.id, fixture.admin.id, now]
+            );
+            await payment.query(
+                "UPDATE subscription SET status = 'ACTIVE', grace_started_at = NULL, grace_ends_at = NULL WHERE id = $1",
+                [fixture.subscription.id]
+            );
+            await payment.query('COMMIT');
+
+            expect(await expiry).toEqual({ scanned: 1, suspended: 0, skipped: 1, errors: 0 });
+            const written = await read(fixture);
+            expect(written.subscription?.status).toBe('ACTIVE');
+            expect(written.installment?.status).toBe('REGISTERED');
+            expect(written.losses).toHaveLength(0);
+        } finally {
+            await payment.query('ROLLBACK');
+            payment.release();
+            finder.mockRestore();
+            mark.mockRestore();
+            await expiry;
+        }
     });
 
     it('rolls back the installment for an open S19 retention', async () => {
