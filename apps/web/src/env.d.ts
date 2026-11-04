@@ -41,6 +41,12 @@ interface Window {
 declare namespace App {
     interface Locals {
         /**
+         * Current middleware pass depth for this request; depth 1 is the
+         * initial pass and greater than 1 means an Astro rewrite pass.
+         */
+        middlewarePassDepth?: number;
+
+        /**
          * The validated locale for the current request, extracted from the URL path.
          * Always a supported locale (es | en | pt) — guaranteed by middleware.
          */

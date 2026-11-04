@@ -178,10 +178,14 @@ if (import.meta.env.SSR) {
  * setting the headers inline at each early return.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+    const passDepth = context.locals.middlewarePassDepth ?? 0;
+    context.locals.middlewarePassDepth = passDepth + 1;
+    const isNestedPass = passDepth > 0;
+
     // HOS-1973: bind the visitor IP so SSR calls to the API forward it.
     const response = await runWithVisitorIp({
         headers: context.request.headers,
-        fn: () => runMiddlewarePipeline(context, next)
+        fn: () => runMiddlewarePipeline(context, next, isNestedPass)
     });
     applySecurityHeaders({ headers: response.headers });
     return response;
@@ -196,7 +200,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
  * @param next - Astro's `MiddlewareNext`, invoking the rest of the pipeline.
  * @returns The `Response` for this request.
  */
-async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext): Promise<Response> {
+async function runMiddlewarePipeline(
+    context: APIContext,
+    next: MiddlewareNext,
+    isNestedPass: boolean
+): Promise<Response> {
     // Step -1: Take this process's one shot at purging the edge cache for the
     // deploy that started it (HOS-427). Deliberately the FIRST thing in the
     // handler, before the static-asset early return, so that whatever request
@@ -487,13 +495,17 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     let response = await next();
 
     // Step 8: If the downstream handler returned a 404, rewrite to our custom 404 page
-    // so it renders with the full site layout and i18n context.
+    // so it renders with the full site layout and i18n context. Astro shares
+    // `locals` across rewrite rendering phases and re-runs middleware for each
+    // phase. HOS-2015: rewriting a nested pagination 404 starts another phase
+    // from inside a rewrite, eventually producing Astro's 508 Loop Detected.
+    // Leave nested 404s raw so the outermost pass renders the custom page once.
     //
     // The rewritten response is assigned to `response` and FALLS THROUGH to
     // Steps 9-11 instead of returning (HOS-263): an early `return` here skipped
     // the CSP header, the noindex `X-Robots-Tag` and the cache-tag handling, so
     // every error page shipped without a policy.
-    if (response.status === 404) {
+    if (response.status === 404 && !isNestedPass) {
         response = await context.rewrite('/404');
     }
 
@@ -521,7 +533,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // `new Response(null, { status: 410 })` with no headers — a future 410
     // producer that attaches headers (e.g. Cache-Control) would silently lose
     // them here.
-    if (response.status === 410) {
+    if (response.status === 410 && !isNestedPass) {
         const rendered = await context.rewrite('/404');
         response = new Response(rendered.body, {
             status: 410,
