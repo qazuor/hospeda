@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4029
+    {
+        id: '2026-11-03-rich-text-editor-toolbar-dark-mode',
+        publishedAt: 'on-promotion',
+        roles: ['HOST', 'EDITOR'],
+        highlight: false,
+        title: {
+            es: 'El editor de texto se ve bien en modo oscuro',
+            en: 'The text editor looks right in dark mode',
+            pt: 'O editor de texto fica bom no modo escuro'
+        },
+        body: {
+            es: 'La barra de herramientas y el área de escritura del editor de texto de fichas, notas y eventos ahora usan los colores del modo oscuro, sin el bloque blanco de antes.',
+            en: 'The toolbar and writing area of the text editor for listings, posts and events now use dark mode colors, without the white block it had before.',
+            pt: 'A barra de ferramentas e a área de escrita do editor de texto de fichas, notas e eventos agora usam as cores do modo escuro, sem o bloco branco de antes.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
