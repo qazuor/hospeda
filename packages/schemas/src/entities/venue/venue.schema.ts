@@ -156,7 +156,7 @@ export const VenueSchema = z.object({
     rating: z
         .object(
             Object.fromEntries(
-                REVIEW_RULES.venue.dimensions.map(({ id }) => [
+                REVIEW_RULES.venue.dimensions.map(({ id }: { readonly id: string }) => [
                     id,
                     z.object({ average: z.number(), count: z.number().int().nonnegative() })
                 ])

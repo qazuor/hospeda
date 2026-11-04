@@ -1088,7 +1088,10 @@ export abstract class BaseListingService<
                 return { data: updated as TEntity };
             }
 
-            const rules = REVIEW_RULES[this._revalidationEntityType];
+            const rules = REVIEW_RULES[this._revalidationEntityType] as {
+                readonly dimensionAveraging: 'votedOnly' | 'legacyNullAsZero';
+                readonly dimensions: readonly { readonly id: string }[];
+            };
             const dimensions = rules.dimensions;
             const granular: Record<string, { average: number; count: number } | number> = {};
             let averageRating: number;
@@ -1101,7 +1104,10 @@ export abstract class BaseListingService<
                     granular[id] = Math.round(((sums.get(id) ?? 0) / count) * 100) / 100;
                 averageRating =
                     Math.round(
-                        (dimensions.reduce((total, { id }) => total + (granular[id] as number), 0) /
+                        (dimensions.reduce<number>(
+                            (total, { id }) => total + (granular[id] as number),
+                            0
+                        ) /
                             dimensions.length) *
                             100
                     ) / 100;
