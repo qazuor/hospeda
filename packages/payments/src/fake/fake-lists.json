@@ -217,6 +217,18 @@
             "kind": "rule",
             "name": "MP:EX-58 order refunds require an idempotency key; identical replays return the first full response, changed amounts return 409, and responses list all order refunds",
             "measured": [{ "row": "EX-58", "date": "2026-09-30", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP15",
+            "kind": "rule",
+            "name": "one-time order creation is idempotent by key; another body returns 409 and the reference does not deduplicate",
+            "measured": [{ "row": "EX-41", "date": "2026-09-25", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP16",
+            "kind": "rule",
+            "name": "a declined one-time payment creates a failed order and returns its id",
+            "measured": [{ "row": "EX-30", "date": "2026-09-29", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

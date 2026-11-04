@@ -38,6 +38,19 @@ const VALID_CALLS: readonly {
         input: { authorizationId: 'a', amount: ARS, reference: 'c' }
     },
     {
+        method: 'chargeOnce',
+        capability: 'charge',
+        input: {
+            reference: 'purchase',
+            idempotencyKey: 'purchase-key',
+            amount: ARS,
+            payerEmail: 'buyer@example.test',
+            paymentToken: 'token',
+            paymentBrand: 'master',
+            paymentKind: 'credit'
+        }
+    },
+    {
         method: 'changeAmount',
         capability: 'changeAmount',
         input: { authorizationId: 'a', amount: ARS }
@@ -120,8 +133,8 @@ describe('MercadoPagoPaymentProvider', () => {
         });
     });
 
-    it('covers all fifteen interface methods in this table', () => {
-        expect(VALID_CALLS).toHaveLength(15);
+    it('covers all sixteen interface methods in this table', () => {
+        expect(VALID_CALLS).toHaveLength(16);
     });
 
     it.each(VALID_CALLS)('$method validates its input first', async ({ method, capability }) => {
@@ -208,7 +221,7 @@ describe('MercadoPagoPaymentProvider', () => {
                     body: '{"type":"payment","data":{"id":"table-charge"}}'
                 })
             ).resolves.toMatchObject({ resourceKind: 'charge', resourceId: 'table-charge' });
-            expect(VALID_CALLS).toHaveLength(15);
+            expect(VALID_CALLS).toHaveLength(16);
         } finally {
             await server.close();
         }
