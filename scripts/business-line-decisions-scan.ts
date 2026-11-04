@@ -27,6 +27,32 @@ function businessLineType(type: ts.Type, checker: ts.TypeChecker): boolean {
     }
     return false;
 }
+function hasBusinessLineAnnotation(node: ts.Node, checker: ts.TypeChecker): boolean {
+    const symbols = [checker.getSymbolAtLocation(node)];
+    if (ts.isPropertyAccessExpression(node)) symbols.push(checker.getSymbolAtLocation(node.name));
+    for (const symbol of symbols) {
+        for (const declaration of symbol?.declarations ?? []) {
+            const declaredType = 'type' in declaration ? declaration.type : undefined;
+            if (!declaredType) continue;
+            let found = false;
+            const visit = (current: ts.Node): void => {
+                if (
+                    ts.isTypeReferenceNode(current) &&
+                    ts.isIdentifier(current.typeName) &&
+                    ['BusinessLine', 'BusinessLineValue'].includes(
+                        checker.getSymbolAtLocation(current.typeName)?.getName() ??
+                            current.typeName.text
+                    )
+                )
+                    found = true;
+                ts.forEachChild(current, visit);
+            };
+            visit(declaredType);
+            if (found) return true;
+        }
+    }
+    return false;
+}
 function symbolName(node: ts.Node): string {
     for (let current: ts.Node | undefined = node; current; current = current.parent) {
         if ((ts.isFunctionDeclaration(current) || ts.isMethodDeclaration(current)) && current.name)
@@ -141,7 +167,9 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
                 ) {
                     if (
                         businessLineType(checker.getTypeAtLocation(node.left), checker) ||
-                        businessLineType(checker.getTypeAtLocation(node.right), checker)
+                        businessLineType(checker.getTypeAtLocation(node.right), checker) ||
+                        hasBusinessLineAnnotation(node.left, checker) ||
+                        hasBusinessLineAnnotation(node.right, checker)
                     )
                         addDecision(node, 'comparison operand has type BusinessLine');
                 }
@@ -176,7 +204,11 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
                             businessLineType(checker.getTypeAtLocation(param), checker)
                         );
                     });
-                    if (businessLineType(receiver, checker) || callbackHasBusinessLine)
+                    if (
+                        businessLineType(receiver, checker) ||
+                        hasBusinessLineAnnotation(node.expression.expression, checker) ||
+                        callbackHasBusinessLine
+                    )
                         addDecision(node, `${node.expression.name.text} operates on BusinessLine`);
                 }
                 ts.forEachChild(node, visit);
