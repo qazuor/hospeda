@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
 const {
@@ -97,6 +97,16 @@ function context(dryRun = false): CronJobContext {
 describe('billing reconciliation sweep cron', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // The job derives `lastSlot` from the wall clock against '10 2,3,4 * * *' in the
+        // market timezone. Pin it after the 04:10 slot (09:00 in Buenos Aires) so the
+        // expectations do not depend on the hour CI runs at: between 00:00 and 04:10
+        // Buenos Aires time the real clock yields `lastSlot: false`.
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-10-11T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('TEST:HOS-1589:2 wires promo services and the recorded amount decision reader', async () => {
