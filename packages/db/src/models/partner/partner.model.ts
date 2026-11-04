@@ -24,9 +24,11 @@ export interface AdminSearchPartnerFilters extends SearchPartnerFilters {
 function partnerFilterConditions(filters: SearchPartnerFilters): SQL[] {
     const conditions: SQL[] = [];
     if (filters.q) {
-        conditions.push(
-            or(safeIlike(partners.name, filters.q), safeIlike(partners.description, filters.q))!
+        const textFilter = or(
+            safeIlike(partners.name, filters.q),
+            safeIlike(partners.description, filters.q)
         );
+        if (textFilter) conditions.push(textFilter);
     }
     if (filters.type) conditions.push(eq(partners.type, filters.type));
     return conditions;
