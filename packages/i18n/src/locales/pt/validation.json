@@ -3771,6 +3771,12 @@
         },
         "websiteUrl": {
             "invalid": "O site deve ser uma URL http:// ou https:// válida"
+        },
+        "presenceModeration": {
+            "reason": {
+                "required": "Informe o motivo da moderação",
+                "max": "O motivo da moderação não pode exceder {{max}} caracteres"
+            }
         }
     },
     "poiCategory": {
