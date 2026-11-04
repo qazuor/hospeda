@@ -122,6 +122,9 @@ describe('TEST:V7:14 AC:V7:14 — Partner presence moderation uses ACC:12 and is
             }
         );
         expect(retiredRevoke.status).toBe(404);
+        scheduleSpy.mockImplementationOnce(() => {
+            throw new Error('Simulated edge revalidation failure');
+        });
         // TEST:V7:14 (b) LISTING_MODERATE alone can moderate; the response cache is purged after commit.
         const moderated = await moderationRequest({
             partnerId: fixture.partner.id,
