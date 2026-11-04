@@ -35,13 +35,31 @@ describe('VenueReviewSchema', () => {
         const data = {
             ...validReviewBase(),
             rating: {
-                food: 4.5,
+                food: 5,
                 service: 4,
-                ambiance: 3.5,
+                ambiance: 3,
                 value: 4
             }
         };
         expect(() => VenueReviewSchema.parse(data)).not.toThrow();
+    });
+
+    it('should accept a breakdown that omits a dimension (votedOnly: absent key = not voted)', () => {
+        const data = {
+            ...validReviewBase(),
+            rating: { service: 4, ambiance: 3, value: 4 }
+        };
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
+    });
+
+    it('should reject a zero-valued dimension (votedOnly: 0 is a shape failure)', () => {
+        const data = { ...validReviewBase(), rating: { food: 0 } };
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
+    });
+
+    it('should reject an unknown rating dimension key', () => {
+        const data = { ...validReviewBase(), rating: { invented: 4 } };
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should validate a guest review with null userId', () => {

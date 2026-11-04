@@ -114,7 +114,7 @@ export function reviewRatingSchemaFor<V extends ListingVertical>(args: { readonl
                     ? 'zodError.review.dimension.unknown'
                     : 'zodError.review.dimension.type'
         })
-        .strict();
+        .strict() as z.ZodType<ReviewDimensionRating<V>>;
 }
 
 type SectionStateEntry = { readonly state: ListingSectionState };

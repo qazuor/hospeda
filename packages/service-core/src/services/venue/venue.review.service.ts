@@ -26,18 +26,26 @@ import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
 import {
     type CountResponse,
     LifecycleStatusEnum,
+    type ListingSectionId,
+    type ListingSectionState,
     ModerationStatusEnum,
     PermissionEnum,
     type PublicationStatusEnum,
+    REVIEW_RULES,
     ServiceErrorCode,
     type VenueReview,
     type VenueReviewCreateInput,
     VenueReviewCreateInputSchema,
     VenueReviewUpdateInputSchema,
     type VenueSearch,
-    VenueSearchSchema
+    VenueSearchSchema,
+    validateReviewDimensions
 } from '@repo/schemas';
-import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import {
+    readListingAccessFacts,
+    resolveListingSectionPresence,
+    resolveResourceStep
+} from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -79,11 +87,16 @@ export interface VenueReviewModerateInput {
  * @param input - The validated create input.
  * @returns The effective scalar rating to persist as `averageRating`.
  */
-function computeEffectiveRating(input: VenueReviewCreateInput): number {
+export function computeEffectiveRating(input: VenueReviewCreateInput): number {
     const breakdown = input.rating;
     if (breakdown) {
-        const mean =
-            (breakdown.food + breakdown.service + breakdown.ambiance + breakdown.value) / 4;
+        const dimensions = REVIEW_RULES.venue.dimensions;
+        const voted = dimensions.flatMap(({ id }) => {
+            const value = breakdown[id];
+            return value === undefined ? [] : [value];
+        });
+        if (voted.length === 0) return input.overallRating;
+        const mean = voted.reduce((sum, value) => sum + value, 0) / voted.length;
         return Math.round(mean * 100) / 100;
     }
     return input.overallRating;
@@ -298,6 +311,39 @@ export class VenueReviewService extends BaseCrudService<
             }).allowed
         ) {
             throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
+        }
+        if (data.rating) {
+            const facts = readListingAccessFacts({ entity: venue });
+            const requested = REVIEW_RULES.venue.dimensions.flatMap((dimension) =>
+                'boundSection' in dimension ? [dimension.boundSection] : []
+            );
+            const presence = resolveListingSectionPresence({
+                vertical: 'venue',
+                businessLines: facts?.businessLines ?? [],
+                requested
+            });
+            const sectionStates = new Map<
+                ListingSectionId<'venue'>,
+                { state: ListingSectionState }
+            >(
+                [...presence].map(([id, absent]) => [
+                    id as ListingSectionId<'venue'>,
+                    { state: absent ? 'absent' : 'available' }
+                ])
+            );
+            const validation = validateReviewDimensions({
+                vertical: 'venue',
+                sectionStates,
+                rating: data.rating
+            });
+            if (!validation.ok && validation.reason === 'DIMENSION_NOT_APPLICABLE') {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Review dimension is not applicable to this listing.',
+                    { field: validation.field, reason: validation.reason },
+                    validation.reason
+                );
+            }
         }
         const existing = await this.model.findOne({
             userId: actor.id,
