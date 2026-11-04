@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4020
+    {
+        id: '2026-11-02-lifting-a-moderation-keeps-published-listings',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al levantar una moderación no se baja ninguna ficha publicada',
+            en: 'Lifting a moderation never takes down a published listing',
+            pt: 'Ao levantar uma moderação nenhuma ficha publicada é despublicada'
+        },
+        body: {
+            es: 'Si una ficha moderada se aprueba de nuevo y tu cupo está lleno, queda aprobada pero sin publicar, y tus fichas ya publicadas siguen visibles. Para publicarla, despublicá otra.',
+            en: 'If a moderated listing is approved again and your quota is full, it stays approved but unpublished, and your already published listings stay visible. To publish it, unpublish another one.',
+            pt: 'Se uma ficha moderada for aprovada de novo e sua cota estiver cheia, ela fica aprovada mas sem publicar, e suas fichas já publicadas continuam visíveis. Para publicá-la, despublique outra.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
