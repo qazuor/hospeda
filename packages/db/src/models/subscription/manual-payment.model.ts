@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, lte, notExists } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, lte, notExists } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     manualPayments,
@@ -9,6 +9,52 @@ import type { DrizzleClient } from '../../types.ts';
 
 /** Persistence for manual subscription installments. */
 export class ManualPaymentModel {
+    /** Finds expired manual principal graces with an awaiting installment. */
+    async findManualGracesDue(input: { readonly now: Date; readonly limit: number }) {
+        return getDb()
+            .select()
+            .from(subscriptions)
+            .where(
+                and(
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    eq(subscriptions.paymentMethod, 'MANUAL'),
+                    eq(subscriptions.status, 'GRACE_PERIOD'),
+                    lte(subscriptions.graceEndsAt, input.now),
+                    exists(
+                        getDb()
+                            .select({ id: manualPayments.id })
+                            .from(manualPayments)
+                            .where(
+                                and(
+                                    eq(manualPayments.subscriptionId, subscriptions.id),
+                                    eq(manualPayments.status, 'AWAITING')
+                                )
+                            )
+                    )
+                )
+            )
+            .orderBy(asc(subscriptions.graceEndsAt))
+            .limit(input.limit);
+    }
+
+    /** Closes awaiting installments after a terminal subscription transition. */
+    async closeAwaitingForSubscription(input: {
+        readonly subscriptionId: string;
+        readonly now: Date;
+        readonly tx: DrizzleClient;
+    }): Promise<number> {
+        const rows = await input.tx
+            .update(manualPayments)
+            .set({ status: 'DECLARED_UNPAID', updatedAt: input.now })
+            .where(
+                and(
+                    eq(manualPayments.subscriptionId, input.subscriptionId),
+                    eq(manualPayments.status, 'AWAITING')
+                )
+            )
+            .returning({ id: manualPayments.id });
+        return rows.length;
+    }
     /** Finds due active manual principals without an installment for their charge date. */
     async findDueManualSubscriptions(input: {
         readonly now: Date;

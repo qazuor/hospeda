@@ -32,6 +32,7 @@ import {
     cancelOurAuthorization
 } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
+import { closeAwaitingManualInstallmentsInTx } from '../subscription/manual-installment-close.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -145,6 +146,7 @@ async function writeS13Cancellation(input: {
             undefined,
             'PERMANENT_GRANT_ROW_CHANGED'
         );
+    await closeAwaitingManualInstallmentsInTx({ tx, subscriptionId: row.subscriptionId, now });
     if (CLOSES_OPEN_PAUSE[row.origin])
         await tx
             .update(subscriptionPauses)
