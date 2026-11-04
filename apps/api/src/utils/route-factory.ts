@@ -115,10 +115,9 @@ export interface CreateOpenApiRouteInterface {
      * return 200 OK because an upload may overwrite an existing asset and
      * therefore is not strictly a creation — SPEC-078-GAPS T-029).
      *
-     * Only 200 and 201 are supported here because `createResponse()` only
-     * types those two codes.
+     * Supports 200, 201, and 202 for standard accepted responses.
      */
-    successStatusCode?: 200 | 201;
+    successStatusCode?: 200 | 201 | 202 | ((result: unknown) => 200 | 201 | 202);
     handler: (
         c: Context,
         params: Record<string, unknown>,
@@ -539,7 +538,10 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
             // Media upload routes use this to return 200 instead of 201 because
             // an upload may overwrite an existing asset (SPEC-078-GAPS T-029).
             const defaultStatusCode = options.method === 'post' ? 201 : 200;
-            const statusCode = options.successStatusCode ?? defaultStatusCode;
+            const statusCode =
+                typeof options.successStatusCode === 'function'
+                    ? options.successStatusCode(result)
+                    : (options.successStatusCode ?? defaultStatusCode);
             return createResponse(result, ctx, statusCode, options.responseSchema);
         } catch (error) {
             return handleRouteError(error, ctx);

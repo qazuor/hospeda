@@ -18,7 +18,8 @@ export const subscriptionServiceEndJob: CronJobDefinition = {
     name: 'subscription-service-end',
     description:
         'Run S12 on scheduled cancellations whose end of service passed: principals and their orphanhood first, then complements (HOS-1569, AC:B8a:5-6)',
-    schedule: '*/15 * * * *',
+    schedule: '12-59/15 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 120_000,
 

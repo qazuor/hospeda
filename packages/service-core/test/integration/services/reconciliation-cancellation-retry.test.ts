@@ -93,7 +93,7 @@ async function runDay(
     const summary = await withSeededReconciliationInventory(() =>
         withSeededCancellationRetryInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock,

@@ -9,6 +9,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 export const protectedGetVenueSectionStatesRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/sections',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     summary: 'Read venue listing section states',

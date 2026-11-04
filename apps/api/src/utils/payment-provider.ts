@@ -1,20 +1,31 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { MercadoPagoPaymentProvider, type PaymentProvider } from '@repo/payments';
+import {
+    CHARGE_SNAPSHOT_PROVIDER,
+    createChargeSnapshotRecordingProvider,
+    createDbChargeSnapshotRecorder
+} from '@repo/service-core';
 import { env } from './env';
+import { getMercadoPagoTrafficGovernor } from './mp-traffic-governor';
 
 let injectedProvider: PaymentProvider | undefined;
 
 /** Composition root injection; tests can supply the fake without importing it in production. */
 export function injectPaymentProvider(input: { readonly provider: PaymentProvider }): void {
-    injectedProvider = input.provider;
+    injectedProvider = createChargeSnapshotRecordingProvider({
+        provider: input.provider,
+        recorder: createDbChargeSnapshotRecorder({ provider: CHARGE_SNAPSHOT_PROVIDER })
+    });
 }
 
 export function defaultPaymentProvider(input: { readonly clock: Clock }): PaymentProvider {
+    const governor = getMercadoPagoTrafficGovernor();
     return new MercadoPagoPaymentProvider({
         clock: input.clock,
         baseUrl: env.HOSPEDA_MERCADO_PAGO_API_BASE_URL,
         accessToken: env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN,
-        timeoutMs: env.HOSPEDA_MERCADO_PAGO_TIMEOUT
+        timeoutMs: env.HOSPEDA_MERCADO_PAGO_TIMEOUT,
+        ...(governor ? { governor } : {})
     });
 }
 

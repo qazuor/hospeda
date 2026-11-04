@@ -6,6 +6,11 @@ import type {
     ProviderRead
 } from '@repo/payments';
 import { assertFreshForAct, CAPABILITY_METHODS } from '@repo/payments';
+import type {
+    ClosedChargeSnapshot,
+    ClosedChargeSnapshots
+} from '../../charge-snapshots/closed-charge-snapshot';
+import { readChargeInventory } from '../../period-charges/read-charge-inventory';
 
 /** Lists every charge and re-reads each listed id within the same act. */
 export async function readListedCharges(
@@ -13,10 +18,14 @@ export async function readListedCharges(
         readonly authorizationRead: ProviderRead<AuthorizationSnapshot>;
         readonly act: ActStart;
     },
-    ports: { readonly provider: PaymentProvider }
+    ports: {
+        readonly provider: PaymentProvider;
+        readonly closedChargeSnapshots?: ClosedChargeSnapshots;
+    }
 ): Promise<{
     readonly complete: boolean;
     readonly charges: readonly ProviderRead<ChargeSnapshot>[];
+    readonly closed: readonly ClosedChargeSnapshot[];
 }> {
     const { snapshot: authorization } = assertFreshForAct({
         read: input.authorizationRead,
@@ -26,17 +35,20 @@ export async function readListedCharges(
     const { chargeIds } = await ports.provider[CAPABILITY_METHODS.read[2]]({
         authorizationId: authorization.authorizationId
     });
-    const charges = await Promise.all(
-        chargeIds.map(async (chargeId) => {
-            const read = await ports.provider.readCharge({ chargeId });
-            assertFreshForAct({ read, act: input.act });
-            return read;
-        })
-    );
+    const inventory = await readChargeInventory({
+        provider: ports.provider,
+        chargeIds,
+        act: input.act,
+        ...(ports.closedChargeSnapshots
+            ? { closedChargeSnapshots: ports.closedChargeSnapshots }
+            : {})
+    });
+    for (const read of inventory.live) assertFreshForAct({ read, act: input.act });
     return {
         complete:
             authorization.chargeRecordCount !== null &&
             authorization.chargeRecordCount === chargeIds.length,
-        charges
+        charges: inventory.live,
+        closed: inventory.closed
     };
 }

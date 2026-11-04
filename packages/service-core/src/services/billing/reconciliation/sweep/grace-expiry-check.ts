@@ -17,6 +17,7 @@ import {
     type SuspendForArrearsPorts,
     suspendForArrears
 } from '../../subscription/suspend-for-arrears.service.js';
+import type { ClosedChargeSnapshots } from '../charge-snapshots/closed-charge-snapshot';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import { readPeriodCharges } from '../period-charges/read-period-charges.js';
 import type { ReconciliationRowCheck } from './reconciliation-sweep.service.js';
@@ -45,6 +46,7 @@ export type GraceExpiryCheckPorts = SuspendForArrearsPorts &
     SettleChargedPeriodPorts & {
         /** The DEC-OBS-001 channel (B11/B13a); defaults to a structured warning. */
         readonly unresolvedPeriodCharges?: UnresolvedPeriodCharges;
+        readonly closedChargeSnapshots?: ClosedChargeSnapshots;
     };
 
 /**
@@ -192,7 +194,12 @@ export async function runArrearsDecisionAfterPeriodRead(
     });
     const result = await readPeriodCharges(
         { authorizationRead: read, act },
-        { provider: ports.provider }
+        {
+            provider: ports.provider,
+            ...(ports.closedChargeSnapshots
+                ? { closedChargeSnapshots: ports.closedChargeSnapshots }
+                : {})
+        }
     );
     switch (result.verdict) {
         case 'NOT_CHARGED':

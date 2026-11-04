@@ -91,7 +91,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         track(seeded.subscription.id, seeded.subscription.userId);
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -144,7 +144,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
             .where(eq(coveredPeriods.subscriptionId, seeded.subscription.id));
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'single', correlationId },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -219,7 +219,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         });
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -266,7 +266,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         );
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -312,7 +312,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         const run = () =>
             withSeededReconciliationInventory(() =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fake as unknown as PaymentProvider,
                         clock,
@@ -379,7 +379,7 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         await fake.pause({ authorizationId: paused.providerId! });
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,

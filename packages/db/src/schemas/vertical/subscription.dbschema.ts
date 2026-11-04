@@ -3,6 +3,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
     check,
     foreignKey,
+    index,
     integer,
     pgTable,
     timestamp,
@@ -117,7 +118,8 @@ export const subscriptions = pgTable(
         /** sucedida_por */
         succeededById: uuid('succeeded_by_id').references((): AnyPgColumn => subscriptions.id),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+        updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+        lastSweptAt: timestamp('last_swept_at', { withTimezone: true })
     },
     (t) => ({
         paymentMethodCheck: check(
@@ -163,6 +165,10 @@ export const subscriptions = pgTable(
         renewalNoticePair: check(
             'ck_subscription_renewal_notice_pair',
             sql`(${t.renewalNoticeDeadlineVersion} IS NULL AND ${t.renewalNoticeChargeAt} IS NULL) OR (${t.renewalNoticeDeadlineVersion} IS NOT NULL AND ${t.renewalNoticeChargeAt} IS NOT NULL)`
+        ),
+        lastSweptAtIndex: index('idx_subscription_last_swept_at').on(
+            t.lastSweptAt.asc().nullsFirst(),
+            t.id.asc()
         ),
         optionVersionFk: foreignKey({
             name: 'fk_subscription_billing_option_version',

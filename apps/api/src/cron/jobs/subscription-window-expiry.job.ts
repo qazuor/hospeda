@@ -19,7 +19,8 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
     name: 'subscription-window-expiry',
     description:
         'Recover credited pending signups and expire authorization windows (HOS-1521, HOS-1740)',
-    schedule: '*/15 * * * *',
+    schedule: '7-59/15 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 120_000,
 

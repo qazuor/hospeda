@@ -2,8 +2,10 @@
  * A read by id carries its instant, and a decision refuses an old one
  * (AC:B1:4, INV:D17, DEC-TEST-003#📌1).
  *
- * `ProviderRead<T>` is the ONLY way a decision receives the provider's state:
- * `readAuthorization` and `readCharge` return it, and only an implementation of
+ * `ProviderRead<T>` is the way a decision receives provider state. `ClosedChargeSnapshot`
+ * is the sole non-decision exception: the period-charges comparison consumes it,
+ * while `readPeriodCharges` uses it only to select the latest charge and re-reads that charge live.
+ * `readAuthorization` and `readCharge` return ProviderRead, and only an implementation of
  * the interface (the adapter, the fake) builds it, through `stampProviderRead`,
  * which this package does not export. The brand is a module-private symbol, so
  * an object literal shaped like a read is not one, and neither is a clone of
@@ -20,6 +22,11 @@ import { z } from 'zod';
 
 /** Module-private brand: its value is the read's instant, in epoch milliseconds. */
 const PROVIDER_READ = Symbol('ProviderRead');
+
+/** Check the module-private brand without exposing it through the package entry. */
+export function isProviderRead(value: unknown): boolean {
+    return typeof value === 'object' && value !== null && PROVIDER_READ in value;
+}
 
 /** What the provider said about one resource, read by id, and when. */
 export interface ProviderRead<T> {
