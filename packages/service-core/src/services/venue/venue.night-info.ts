@@ -83,12 +83,12 @@ export function resolveVenueNightInfoPatch(args: {
 
     if (!VENUE_NIGHT_INFO_WRITABLE_FIELDS.some(has)) return {};
 
-    const entryKind =
-        (has('entryKind')
-            ? (body.entryKind as Venue['entryKind'] | null | undefined)
-            : undefined) ??
-        current?.entryKind ??
-        null;
+    // An explicit `entryKind: null` clears the kind: it must not fall back to
+    // the stored value, or an orphaned `paid` price would survive the write.
+    const bodyKind = has('entryKind')
+        ? (body.entryKind as Venue['entryKind'] | null | undefined)
+        : undefined;
+    const entryKind = bodyKind === undefined ? (current?.entryKind ?? null) : bodyKind;
     const bodyPrice = has('entryPriceFrom')
         ? (body.entryPriceFrom as number | null | undefined)
         : undefined;

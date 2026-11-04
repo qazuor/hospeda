@@ -67,6 +67,21 @@ describe('resolveVenueNightInfoPatch', () => {
         expect(patch).toEqual({ entryPriceFrom: null, entryPriceUpdatedAt: null });
     });
 
+    it('erases price and date when entryKind is cleared with an explicit null', () => {
+        // An explicit null leaves `paid` just like `free` does; it must not
+        // fall back to the stored `paid` and keep an orphaned price.
+        const patch = resolveVenueNightInfoPatch({
+            body: { entryKind: null },
+            current: {
+                entryKind: VenueEntryKindEnum.PAID,
+                entryPriceFrom: 5000,
+                entryPriceUpdatedAt: OLD_DATE
+            },
+            now: NOW
+        });
+        expect(patch).toEqual({ entryPriceFrom: null, entryPriceUpdatedAt: null });
+    });
+
     it('erases the date when the price is deleted while still paid', () => {
         const patch = resolveVenueNightInfoPatch({
             body: { entryPriceFrom: null },
