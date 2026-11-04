@@ -1,64 +1,44 @@
 /**
- * Public partner detail endpoint (HOS-294 D-5).
- *
- * Keeps the public detail page dark until V7 restores it on the public key.
+ * Public partner detail endpoint, gated by the owner's public-page key.
  */
 
 import { PartnerPublicSchema, ServiceErrorCode } from '@repo/schemas';
-import { PartnerService, ServiceError } from '@repo/service-core';
-import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
+import { ServiceError } from '@repo/service-core';
+import { getPublicPartnerPage } from '../../../services/partner-presence/partner-presence-read.service.js';
 import { createPublicRoute } from '../../../utils/route-factory.js';
 import { z } from '../../../utils/zod';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
- * Resolves a partner for a public detail request, or raises the right refusal.
- *
- * The public page is unavailable until V7 restores it on the public key, so
- * every successful lookup outcome is translated to HTTP 404.
- *
- * A service ERROR is re-raised as itself, never folded into a 404: an outage
- * that renders as "this partner does not exist" is an outage nobody notices.
- *
- * Exported so the mapping can be asserted without standing up the middleware
- * chain, following the precedent in `send-link.content-gate.test.ts`.
- *
- * @param ctx - Hono context, used only to resolve the (anonymous) actor.
+ * Resolve a public partner page or return the indistinguishable 404 refusal.
+ * AC:V7:13; V7 §1.6 (V/18 §1.6).
  * @param params - Validated route params carrying `slug`.
  * @returns The public partner payload.
- * @throws {ServiceError} `GONE` or `NOT_FOUND`, per the outcome.
+ * @throws {ServiceError} `NOT_FOUND` when no public presence is available.
  */
 export const getPublicPartnerBySlugHandler = async (
-    ctx: Context,
+    _ctx: unknown,
     params: Record<string, unknown>
 ) => {
-    const actor = getActorFromContext(ctx);
     const slug = params.slug as string;
-
-    const result = await partnerService.getPublicBySlug(actor, { slug });
-
-    if (result.error) {
-        throw new ServiceError(result.error.code, result.error.message);
+    const result = await getPublicPartnerPage({ slug });
+    if (!result) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Partner with slug "${slug}" not found`);
     }
-
-    throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Partner with slug "${slug}" not found`);
+    return result.partner;
 };
 
 /**
  * GET /api/v1/public/partners/{slug}
  *
- * The public page remains unavailable until V7 restores it on the public key.
+ * The page is visible only while its owner has the public-page key and presence is unmoderated.
+ * AC:V7:13; V7 §1.6 (V/18 §1.6).
  */
 export const publicGetPartnerBySlugRoute = createPublicRoute({
     method: 'get',
     path: '/{slug}',
     summary: 'Get a partner by slug',
     description:
-        'The public detail page remains unavailable until V7 restores it on the public key. ' +
-        'Responds 404 until V7 restores the public page on the partner key.',
+        'Returns a partner page when its owner has the public-page key and presence is unmoderated; otherwise returns 404.',
     tags: ['Partners'],
     requestParams: {
         slug: z
