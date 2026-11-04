@@ -14,6 +14,11 @@ export interface RunLeaseDescriptor {
     readonly outcome: PgColumn;
 }
 
+/** Shared database-clock predicate for a run whose lease is still live. */
+export function liveRunPredicate(lease: RunLeaseDescriptor) {
+    return and(isNull(lease.outcome), sql`${lease.leaseUntil} > now()`);
+}
+
 function payload(
     lease: RunLeaseDescriptor,
     column: PgColumn,
@@ -61,8 +66,8 @@ export async function extendRunLease(input: {
 /**
  * Reads one run's liveness on the database clock: `live` (open, lease in the future),
  * `abandoned` (open, lease expired or never set), `closed` (has an outcome) or `missing`.
- * Another job adopts this over any table with the descriptor's columns, instead of deriving
- * a maximum age from a timeout.
+ * Another job can adopt this for any table with the descriptor's columns and use the lease
+ * state on the database clock.
  */
 export async function getRunLiveness(input: {
     readonly lease: RunLeaseDescriptor;
@@ -73,7 +78,7 @@ export async function getRunLiveness(input: {
     const [row] = await db
         .select({
             outcome: input.lease.outcome,
-            leaseLive: sql<boolean>`COALESCE(${input.lease.leaseUntil} > now(), false)`
+            leaseLive: sql<boolean>`COALESCE(${liveRunPredicate(input.lease)}, false)`
         })
         .from(input.lease.table)
         .where(eq(input.lease.id, input.id))

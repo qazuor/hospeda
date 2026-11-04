@@ -1,5 +1,5 @@
 /**
- * Retries recent terminal rows whose deciding before-cancel notice has settled. A recent open
+ * Retries recent terminal rows whose deciding before-cancel notice has settled. A live
  * reconciliation sweep blocks this pass because provider cancellation is not idempotent.
  * This service uses the sweep's retry policy; it never invokes provider cancellation or the
  * direct cancellation helper itself, and it never touches money.
@@ -29,7 +29,6 @@ export const NOTICE_DEFERRED_RETRY_PAGE_SIZE = 100;
 
 const inputSchema = z.object({
     correlationId: z.string().min(1),
-    sweepRunMaxAgeMs: z.number().int().positive(),
     maxRows: z.number().int().positive().max(NOTICE_DEFERRED_RETRY_MAX_ROWS).optional()
 });
 
@@ -82,10 +81,8 @@ export async function runNoticeDeferredCancellationRetry(
         rowsRead: 0
     };
     const now = ports.clock.now();
-    const open = await reconciliationSweepRunModel.findOpenStartedSince({
-        since: new Date(now.getTime() - parsed.sweepRunMaxAgeMs)
-    });
-    if (open) {
+    const liveRun = await reconciliationSweepRunModel.findLiveRun();
+    if (liveRun) {
         return {
             skipped: 'SWEEP_RUNNING',
             ...counts,

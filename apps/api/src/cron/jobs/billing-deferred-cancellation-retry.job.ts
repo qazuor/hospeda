@@ -15,7 +15,6 @@ import {
 import { getClock } from '../../utils/clock.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
-import { billingReconciliationSweepJob } from './billing-reconciliation-sweep.job.js';
 
 /** HOS-1955, AC:B11:6: retry settled before-cancel notices within minutes. */
 export const billingDeferredCancellationRetryJob: CronJobDefinition = {
@@ -43,8 +42,7 @@ export const billingDeferredCancellationRetryJob: CronJobDefinition = {
             const clock = getClock().clock;
             const summary = await runNoticeDeferredCancellationRetry(
                 {
-                    correlationId: ctx.correlationId,
-                    sweepRunMaxAgeMs: billingReconciliationSweepJob.timeoutMs ?? 600_000
+                    correlationId: ctx.correlationId
                 },
                 {
                     provider: getPaymentProvider(),
