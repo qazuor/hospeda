@@ -110,7 +110,7 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         const summary = await withSeededReconciliationInventory(() =>
             withSeededCancellationRetryInventory(() =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: fake as unknown as PaymentProvider,
                         clock: reconciliationClock,
@@ -176,7 +176,7 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         const summary = await withSeededReconciliationInventory(() =>
             withSeededCancellationRetryInventory(() =>
                 runReconciliationSweep(
-                    { correlationId },
+                    { mode: 'single', correlationId },
                     {
                         provider: fake as unknown as PaymentProvider,
                         clock: reconciliationClock,
@@ -269,7 +269,7 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         }
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -324,7 +324,7 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         });
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'single' },
                 {
                     provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
@@ -368,7 +368,7 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         const summary = await withSeededReconciliationInventory(() =>
             withSeededCancellationRetryInventory(() =>
                 runReconciliationSweep(
-                    { correlationId },
+                    { mode: 'single', correlationId },
                     {
                         provider,
                         clock: reconciliationClock,

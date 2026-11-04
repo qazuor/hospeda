@@ -34,7 +34,10 @@ describe('TEST:B11:20 LISTA cláusula 1 and TEST:B11:1 inventory source', () => 
         const reads = vi.spyOn(fake, 'readAuthorization');
         const searches = vi.spyOn(fake, 'searchAuthorizations');
         const summary = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'single' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(summary.rowsRead).toBe(2);
         expect(reads.mock.calls.map(([input]) => input.authorizationId).sort()).toEqual(
@@ -55,7 +58,10 @@ describe('TEST:B11:20 LISTA cláusula 1 and TEST:B11:1 inventory source', () => 
         );
         const reads = vi.spyOn(fake, 'readAuthorization');
         const summary = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({ pageSize: 2 }, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'single', pageSize: 2 },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(summary.rowsRead).toBeGreaterThanOrEqual(5);
         for (const row of rows)
@@ -73,7 +79,7 @@ describe('TEST:B11:20 LISTA cláusula 1 and TEST:B11:1 inventory source', () => 
         instant = new Date(instant.getTime() + 1_000);
         vi.spyOn(fake, 'readAuthorization').mockResolvedValue(stale);
         const summary = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock })
+            runReconciliationSweep({ mode: 'single' }, { provider: fake, clock })
         );
         expect(summary.rowsFailed).toBe(1);
         expect(summary.failures[0]?.message).toContain('before the act started');
@@ -93,7 +99,10 @@ describe('TEST:B11:20 LISTA cláusula 1 and TEST:B11:1 inventory source', () => 
             return read(input);
         });
         const summary = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'single' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(summary.rowsFailed).toBe(1);
         expect(summary.failures).toContainEqual({

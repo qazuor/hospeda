@@ -78,17 +78,23 @@ async function sweep(input: {
 }) {
     const summary = input.dailySummary ?? { addUndercharge: vi.fn(async () => undefined) };
     const result = await withSeededReconciliationInventory(() =>
-        runReconciliationSweep(input.correlationId ? { correlationId: input.correlationId } : {}, {
-            provider: input.provider as unknown as PaymentProvider,
-            clock: reconciliationClock,
-            markPayments: createPaymentReconciliationMarkPayments(reconciliationClock),
-            comparisons: [
-                createPeriodChargesComparison({
-                    provider: input.provider as unknown as PaymentProvider,
-                    dailySummary: summary
-                })
-            ]
-        })
+        runReconciliationSweep(
+            {
+                mode: 'single',
+                ...(input.correlationId ? { correlationId: input.correlationId } : {})
+            },
+            {
+                provider: input.provider as unknown as PaymentProvider,
+                clock: reconciliationClock,
+                markPayments: createPaymentReconciliationMarkPayments(reconciliationClock),
+                comparisons: [
+                    createPeriodChargesComparison({
+                        provider: input.provider as unknown as PaymentProvider,
+                        dailySummary: summary
+                    })
+                ]
+            }
+        )
     );
     return { result, summary };
 }

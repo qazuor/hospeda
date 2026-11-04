@@ -393,6 +393,15 @@ jobs:
       # why (b). Its message names which predicate failed.
       - name: Check the fake provider lies only from its closed list (GUARD:G15)
         run: pnpm check:fake-lies
+      # Drizzle skips, without an error, any migration whose `when` is not above the
+      # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
+      # above origin/<base>) only on a PR to staging or main. On `push` base_ref is
+      # empty, so only rule 1 runs. fetch-depth: 0 above already brings origin/<base>;
+      # the guard fails closed if it cannot read it.
+      - name: Check migration journal `when` order (rule 2 needs the PR target)
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: pnpm check:migration-when-order
       # AC:V5:29 requires an independent CI step for the API exit guard.
       - name: Check no transitional gate markers remain in apps/api/src (AC:V5:29)
         run: pnpm check:no-transitional-gate-markers

@@ -23,9 +23,12 @@ import type { ZeroCallChecksPorts, ZeroCallChecksSummary } from './zero-call-che
 /** Inputs accepted by one reconciliation sweep slice. */
 export interface ReconciliationSweepInput {
     /**
-     * `cycle` runs one leased slice of the resumable nightly cycle (what the cron job uses).
-     * The default `single` keeps the pre-cycle behavior: one unsliced run over the whole
-     * inventory with no lease and no `last_swept_at` stamping.
+     * `cycle` (the default) runs one leased slice of the resumable nightly cycle: it fails
+     * closed, because the lease and the partial unique "one open slice" index make a second
+     * concurrent run impossible. `single` is a test-only escape hatch: one unsliced run over
+     * the whole inventory with no lease, no `last_swept_at` stamping and no cycle id, so it
+     * bypasses that index. It refuses to start while any slice holds a live lease. Production
+     * source must never pass it (static guard `sweep-single-mode-test-only.guard.test.ts`).
      */
     readonly mode?: 'cycle' | 'single';
     readonly pageSize?: number;
@@ -129,6 +132,15 @@ export interface ReconciliationSweepSummary {
     readonly sliceIndex: number;
     readonly cycleId: string;
     readonly cycle?: {
+        readonly cycleId: string;
+        readonly cycleDate: string;
+        readonly slices: number;
+        readonly rowsRead: number;
+        readonly rowsFailed: number;
+        readonly failedSubscriptionIds: readonly string[];
+    };
+    /** A prior unfinished cycle explicitly abandoned by a forced new-cycle request. */
+    readonly orphanedCycle?: {
         readonly cycleId: string;
         readonly cycleDate: string;
         readonly slices: number;

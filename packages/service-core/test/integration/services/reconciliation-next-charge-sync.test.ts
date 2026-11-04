@@ -39,7 +39,7 @@ async function sweep(
 ) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
-            {},
+            { mode: 'single' },
             {
                 provider,
                 clock,
