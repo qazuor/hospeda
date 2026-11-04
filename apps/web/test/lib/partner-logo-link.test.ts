@@ -4,16 +4,18 @@ import { resolvePartnerLogoLink } from '../../src/lib/partner-logo-link';
 const partner = { name: 'Acme', logoPath: '/a.png', aspectRatio: 3.5, slug: 'acme' };
 
 describe('resolvePartnerLogoLink', () => {
-    it('keeps the internal page destination dark until V7', () => {
-        const link = resolvePartnerLogoLink({ partner, locale: 'es' });
+    it('links a partner with a page and slug internally without outbound attributes', () => {
+        const link = resolvePartnerLogoLink({
+            partner: { ...partner, hasPublicPage: true },
+            locale: 'es'
+        });
 
-        expect(link.href).toBeUndefined();
-        expect(link.destination).not.toBe('OWN_PAGE');
+        expect(link).toEqual({ href: '/es/partners/acme/', destination: 'OWN_PAGE' });
     });
 
-    it('uses only the safe external site when one is available', () => {
+    it('uses the safe external site when the partner has no page', () => {
         const link = resolvePartnerLogoLink({
-            partner: { ...partner, url: 'https://acme.example.com' },
+            partner: { ...partner, url: 'https://acme.example.com', hasPublicPage: false },
             locale: 'es'
         });
 
@@ -21,6 +23,16 @@ describe('resolvePartnerLogoLink', () => {
         expect(link.destination).toBe('EXTERNAL');
         expect(link.rel).toBe('sponsored nofollow noopener');
         expect(link.target).toBe('_blank');
+    });
+
+    it('fails closed when a page entitlement has no slug', () => {
+        const link = resolvePartnerLogoLink({
+            partner: { ...partner, slug: undefined, hasPublicPage: true },
+            locale: 'es'
+        });
+
+        expect(link.href).toBeUndefined();
+        expect(link.destination).toBeUndefined();
     });
 
     it('returns no link when the external URL is unsafe', () => {
