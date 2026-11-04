@@ -332,6 +332,9 @@ jobs:
       # GUARD:G-FAC-04 (HOS-1838). Section and trait gates use catalog keys.
       - name: Check no section key literals (GUARD:G-FAC-04)
         run: pnpm check:no-section-key-literals
+      # GUARD:G-FAC-03 (HOS-1844). Business lines are decided only by the resolver and read only by inventoried modules.
+      - name: Check business line decisions and readers (GUARD:G-FAC-03)
+        run: pnpm check:business-line-decisions
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.
