@@ -98,6 +98,13 @@ describe('comer-y-salir/[slug].astro', () => {
         it('renders ImageGallery for the photo gallery', () => {
             expect(src).toContain('ImageGallery');
         });
+
+        it('TEST:4.5:5 mounts VenueNightInfo with the transformed nightInfo', () => {
+            expect(src).toContain(
+                "import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';"
+            );
+            expect(src).toContain('<VenueNightInfo nightInfo={venue.nightInfo} locale={locale} />');
+        });
     });
 
     describe('richDescription', () => {

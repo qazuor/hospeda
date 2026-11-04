@@ -24,6 +24,7 @@ import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
+import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -444,6 +445,11 @@ const breadcrumbItems = [
         {faqs.length > 0 && (
             <FaqAccordion faqs={faqs} lang={locale} />
         )}
+
+        <!-- Night info (HOS-1849 / 4.5): entry, dress code and age badge. The
+             component self-hides when the API removed the section's fields, and
+             never inspects business lines — see its frontmatter. -->
+        <VenueNightInfo nightInfo={venue.nightInfo} locale={locale} />
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->

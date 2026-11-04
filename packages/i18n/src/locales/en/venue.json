@@ -94,6 +94,27 @@
             "weekly": "Every {{weekday}}",
             "range": "{{when}}, {{start}} to {{end}}",
             "fromOnly": "{{when}}, from {{start}}"
+        },
+        "nightInfo": {
+            "headingMultiLine": "At night",
+            "heading": "Night out info",
+            "entryLabel": "Entry",
+            "entryKind": {
+                "free": "Free entry",
+                "paid": "Paid entry",
+                "varies": "Entry varies"
+            },
+            "priceFrom": "From {{price}}",
+            "approxUpdated": "approx., updated {{month}}",
+            "dressCodeLabel": "Dress code",
+            "dressCode": {
+                "casual": "Casual",
+                "smart_casual": "Smart casual",
+                "elegant": "Formal",
+                "no_restrictions": "No dress code"
+            },
+            "minAgeLabel": "Minimum age",
+            "legalAge": "Sale of alcoholic beverages to persons under 18 is prohibited (Argentine Law 24.788)."
         }
     },
     "types": {

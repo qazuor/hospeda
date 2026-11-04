@@ -12,6 +12,7 @@
 
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
+import type { VenueNightInfoData } from '../lib/venue/night-info';
 
 // Re-export UI types from split file for backward compatibility
 export type {
@@ -1241,6 +1242,12 @@ export interface VenueDetailData extends VenueCardData {
      * `manage_venue_events` — same withholding as {@link menuSections}.
      */
     readonly venueEvents?: readonly VenueEvent[];
+    /**
+     * The `nightInfo` section (HOS-1849 / 4.5). Every field is `null` when the
+     * section is not `available` — the API's projector removes them — so the
+     * component renders nothing without asking about business lines.
+     */
+    readonly nightInfo?: VenueNightInfoData;
     /** Social network links provided by the owner. */
     readonly socialNetworks: VenueSocialNetworks | null;
     /** SEO metadata fields. */
