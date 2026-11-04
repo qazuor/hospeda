@@ -91,9 +91,7 @@ describe('ContactInfoSchema (WRITE) — the bounds are NOT relaxed by the null',
         const result = ContactInfoSchema.safeParse({ mobilePhone: 'not-a-phone-number' });
         expect(result.success).toBe(false);
         if (!result.success) {
-            expect(result.error.issues[0]?.message).toBe(
-                'zodError.common.contact.mobilePhone.international'
-            );
+            expect(result.error.issues[0]?.message).toBe('zodError.common.contact.phone.argentina');
         }
     });
 

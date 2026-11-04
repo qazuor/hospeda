@@ -16,7 +16,7 @@ import {
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { stripShapeDefaults } from '../../utils/utils.js';
+import { argentinePhoneSchema, stripShapeDefaults } from '../../utils/utils.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
@@ -361,8 +361,8 @@ export const AccommodationCreateHttpSchema = z.object({
     media: HttpMediaSchema.optional(),
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
-    phone: z.string().optional(),
-    whatsapp: z.string().optional(),
+    phone: argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina').optional(),
+    whatsapp: argentinePhoneSchema('zodError.common.contact.phone.argentina').optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -481,7 +481,7 @@ export const AccommodationCreateDraftHttpSchema = z.object({
 
     // --- Optional contact (→ contactInfo) ---
     /** Mobile phone. Maps to `contactInfo.mobilePhone`. */
-    phone: z.string().optional(),
+    phone: argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina').optional(),
     /** Website URL. Maps to `contactInfo.website`. */
     website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 

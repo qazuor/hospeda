@@ -16,6 +16,18 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('normalizePhoneNumber()', () => {
+    it.each([
+        '3442 45-2345',
+        '3442452345',
+        '(3442) 45-2345',
+        '03442 452345',
+        '3442 15 45-2345',
+        '+54 9 3442 45-2345',
+        '+5493442452345',
+        '54 3442 452345'
+    ])('normalizes Argentine format %s to the canonical stored form', (phone) =>
+        expect(normalizePhoneNumber(phone)).toBe('+543442452345'));
+
     it('should keep number that already starts with +', () => {
         expect(normalizePhoneNumber('+541155550002')).toBe('+541155550002');
     });

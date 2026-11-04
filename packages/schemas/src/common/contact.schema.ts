@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PreferredContactEnumSchema } from '../enums/index.js';
-import { InternationalPhoneRegex } from '../utils/utils.js';
+import { argentinePhoneSchema } from '../utils/utils.js';
 import { safeExternalUrl } from './safe-external-url.schema.js';
 
 /**
@@ -37,30 +37,10 @@ export const ContactInfoSchema = z.object({
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
         .nullish(),
     workEmail: z.string().email({ message: 'zodError.common.contact.workEmail.invalid' }).nullish(),
-    homePhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.homePhone.international'
-        })
-        .nullish(),
-    workPhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.workPhone.international'
-        })
-        .nullish(),
-    mobilePhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.mobilePhone.international'
-        })
-        .nullish(),
-    whatsapp: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.whatsapp.international'
-        })
-        .nullish(),
+    homePhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
+    workPhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
+    mobilePhone: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
+    whatsapp: argentinePhoneSchema('zodError.common.contact.phone.argentina').nullish(),
     website: safeExternalUrl('zodError.common.contact.website.invalid').nullish(),
     preferredEmail: PreferredContactEnumSchema.nullish(),
     preferredPhone: PreferredContactEnumSchema.nullish()

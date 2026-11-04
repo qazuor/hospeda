@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { ExperiencePriceUnitEnumSchema, ExperienceTypeEnumSchema } from '../../enums/index.js';
-import { stripShapeDefaults } from '../../utils/utils.js';
+import { argentinePhoneSchema, stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible experience search schema with automatic coercion.
@@ -88,7 +88,7 @@ export const ExperienceCreateHttpSchema = z.object({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional(),
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
-    phone: z.string().optional(),
+    phone: argentinePhoneSchema('zodError.common.contact.phone.argentina').optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })

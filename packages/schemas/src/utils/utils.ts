@@ -13,6 +13,28 @@ export const TimeRegExp = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // while still accepting spaced local formats like "+54 11 1234 5678".
 export const InternationalPhoneRegex = /^\+[1-9](?:\s?\d){6,14}$/;
 
+/** Shared write validator for Argentine phones in common human-entered formats. */
+export const ArgentinePhoneRegex = /^\+?[0-9().\s-]+$/;
+
+/** Returns whether a phone contains a supported Argentine number of digits. */
+export const isValidArgentinePhone = (phone: string): boolean => {
+    if (InternationalPhoneRegex.test(phone.trim())) return true;
+    if (!ArgentinePhoneRegex.test(phone.trim())) return false;
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('549')) digits = digits.slice(3);
+    else if (digits.startsWith('54')) digits = digits.slice(2);
+    else if (digits.startsWith('0')) digits = digits.slice(1);
+    const mobilePrefixIndex = [2, 3, 4].find((index) => digits.slice(index, index + 2) === '15');
+    if (mobilePrefixIndex !== undefined) {
+        digits = digits.slice(0, mobilePrefixIndex) + digits.slice(mobilePrefixIndex + 2);
+    }
+    return digits.length === 10;
+};
+
+/** Builds the shared Zod phone validator with a caller-specific translation key. */
+export const argentinePhoneSchema = (message: string) =>
+    z.string().refine(isValidArgentinePhone, { message });
+
 // Regex for social network URLs
 export const FacebookUrlRegex = /^https?:\/\/(www\.)?facebook\.com\//;
 export const InstagramUrlRegex = /^https?:\/\/(www\.)?instagram\.com\//;

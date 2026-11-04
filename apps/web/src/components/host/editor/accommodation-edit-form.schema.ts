@@ -18,7 +18,7 @@
 
 import {
     AccommodationUpdateHttpSchema,
-    InternationalPhoneRegex,
+    argentinePhoneSchema,
     PriceCurrencyEnumSchema
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -39,8 +39,8 @@ import { z } from 'zod';
  *  - `phone`/`whatsapp`: HTTP types these as a bare `z.string().optional()` with
  *    NO format check (unlike `email`/`website`/every social URL in the same
  *    schema), so `"asdasd"` passed both the client gate and the server. They are
- *    re-tightened to the shared `InternationalPhoneRegex` — the same E.164
- *    pattern `ProfileEditSchema.phone` enforces. `''` stays valid so a host can
+ *    re-tightened to the shared Argentine phone validator used by the HTTP
+ *    schema. `''` stays valid so a host can
  *    clear the field (HOS-190).
  *  - `phone`/`email`: also get accommodation-scoped messages
  *    (`zodError.accommodation.contactInfo.*`) instead of the shared
@@ -137,9 +137,7 @@ const currencyField = PriceCurrencyEnumSchema.nullable().optional();
 const phoneField = z
     .union([
         z.literal(''),
-        z.string().regex(InternationalPhoneRegex, {
-            message: 'zodError.accommodation.contactInfo.phone.international'
-        })
+        argentinePhoneSchema('zodError.accommodation.contactInfo.phone.argentina')
     ])
     .optional();
 
@@ -154,12 +152,7 @@ const emailField = z
     .optional();
 
 const whatsappField = z
-    .union([
-        z.literal(''),
-        z.string().regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.whatsapp.international'
-        })
-    ])
+    .union([z.literal(''), argentinePhoneSchema('zodError.common.contact.phone.argentina')])
     .optional();
 
 /**

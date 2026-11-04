@@ -20,10 +20,25 @@ import type { AdminInfoType } from '@repo/schemas';
  * ```
  */
 export const normalizePhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
 
-    // If it doesn't start with +, add it
+    // Argentine landline/mobile formats normalize to the existing +54 format.
+    // Drop the domestic trunk prefix, optional mobile marker (15), and the
+    // international mobile marker (9) before prefixing +54.
+    const hadInternationalPrefix = cleaned.startsWith('+');
+    let digits = cleaned.replace(/\D/g, '');
+    if (digits.startsWith('549') && (hadInternationalPrefix || digits.length === 13)) {
+        digits = digits.slice(3);
+        return `+54${digits}`;
+    }
+    if (digits.startsWith('54') && digits.length === 12) digits = digits.slice(2);
+    if (digits.startsWith('0') && digits.length === 11) digits = digits.slice(1);
+    const mobilePrefixIndex = [2, 3, 4].find((index) => digits.slice(index, index + 2) === '15');
+    if (mobilePrefixIndex !== undefined) {
+        digits = digits.slice(0, mobilePrefixIndex) + digits.slice(mobilePrefixIndex + 2);
+    }
+    if (digits.length === 10) return `+54${digits}`;
+
     if (!cleaned.startsWith('+')) {
         // Assume it's an Argentine number if no country code
         if (cleaned.startsWith('54')) {
