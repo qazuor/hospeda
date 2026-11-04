@@ -157,7 +157,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
         publishedAt: 'on-promotion',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Volvé a publicar las fichas que tu plan dejó sin publicar',
             en: 'Republish the listings your plan unpublished',
