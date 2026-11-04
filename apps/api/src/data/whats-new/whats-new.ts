@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4006
+    {
+        id: '2026-11-02-admin-moderation-terms-list-loads',
+        publishedAt: 'on-promotion',
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        highlight: false,
+        title: {
+            es: 'La lista de términos de moderación vuelve a cargar',
+            en: 'The moderation terms list loads again',
+            pt: 'A lista de termos de moderação volta a carregar'
+        },
+        body: {
+            es: 'En el panel de administración, el listado de términos de moderación vuelve a abrirse con su paginación, en lugar de mostrar un error.',
+            en: 'In the admin panel, the moderation terms list opens again with its pagination, instead of showing an error.',
+            pt: 'No painel de administração, a lista de termos de moderação volta a abrir com sua paginação, em vez de mostrar um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
