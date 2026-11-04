@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { eq, getDb, partners, sql, subscriptions } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -53,6 +54,37 @@ const moderate = (id: string, adminId: string, action: 'MODERATE' | 'LIFT', reas
     });
 
 describe('AC:V8b:1 TEST:V8b:1 (API half) — the owner reads presence with the public reader', () => {
+    it('returns hidden presence for approved content without either paid surface', async () => {
+        const owner = await createOwner();
+        createdUserIds.push(owner.id);
+        const [partner] = await db()
+            .insert(partners)
+            .values({
+                slug: `v8b-approved-hidden-${randomUUID()}`,
+                name: 'V8b approved content without paid presence',
+                type: 'business',
+                ownerUserId: owner.id,
+                contentApprovedAt: new Date()
+            })
+            .returning();
+        if (!partner) throw new Error('Expected approved Partner fixture');
+        createdPartnerIds.push(partner.id);
+
+        const response = await mine(owner);
+        expect(response.status).toBe(200);
+        const body = (await response.json()).data;
+        expect(body.partner).toMatchObject({
+            id: partner.id,
+            contentApprovedAt: expect.any(String)
+        });
+        expect(body.presence).toEqual({
+            publicPage: 'hidden',
+            carousel: 'hidden',
+            moderated: false,
+            moderationReason: null
+        });
+    });
+
     it('fails closed on both surfaces when the partner has no owner', async () => {
         await expect(
             readOwnerPartnerPresence({
