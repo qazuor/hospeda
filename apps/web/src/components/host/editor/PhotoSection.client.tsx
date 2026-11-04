@@ -466,7 +466,7 @@ export function PhotoSection({
                     accept="image/jpeg,image/png,image/webp,image/heic"
                     multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
-                    disabled={!isGalleryCapResolved}
+                    disabled={!isGalleryCapResolved || isGalleryFull}
                     onChange={handleGallerySelect}
                 />
             </div>
