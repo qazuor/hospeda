@@ -26,6 +26,7 @@ describe('BaseListingService votedOnly recomputation', () => {
 
         expect(result.error).toBeUndefined();
         const [, patch] = update.mock.calls[0] ?? [];
+        if (!patch) throw new Error('Expected rating update patch');
         expect(patch.rating).toEqual({
             food: { average: 4, count: 1 },
             service: { average: 4, count: 2 }
