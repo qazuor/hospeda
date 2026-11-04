@@ -220,6 +220,7 @@ describe('TEST:B5:10 MP6 unallocated transfers', () => {
         expect(after.rows.find((row) => row.id === result.manualPaymentId)).toMatchObject({
             periodStart,
             status: 'REGISTERED',
+            entry: 'UNALLOCATED',
             registeredBy: fixture.actor.id,
             registeredAt: now
         });
@@ -360,6 +361,7 @@ describe('TEST:B5:10 MP6 unallocated transfers', () => {
         });
         const after = await snapshot(fixture.subscription.id);
         expect(after.rows).toHaveLength(3);
+        expect(after.rows.filter((row) => row.entry === 'UNALLOCATED')).toHaveLength(2);
         expect(after.marks).toHaveLength(1);
         expect(after.coverage).toHaveLength(0);
         expect((await hung(first.markId)).map((row) => row.manualPaymentId).sort()).toEqual(

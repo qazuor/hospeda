@@ -1,5 +1,5 @@
 {
-  "id": "02b91635-0241-4f24-a86e-8b3e223bdc7b",
+  "id": "ad3fc666-edd2-42fa-bd92-853c4e902d2b",
   "prevId": "3123a95a-8790-4be9-ab2c-52c4964e05d1",
   "version": "7",
   "dialect": "postgresql",
@@ -28251,6 +28251,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "entry": {
+          "name": "entry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INSTALLMENT'"
+        },
         "registered_by": {
           "name": "registered_by",
           "type": "uuid",
@@ -28320,6 +28327,10 @@
         "ck_manual_payment_status": {
           "name": "ck_manual_payment_status",
           "value": "\"manual_payment\".\"status\" IN ('AWAITING', 'REGISTERED', 'DECLARED_UNPAID')"
+        },
+        "ck_manual_payment_entry": {
+          "name": "ck_manual_payment_entry",
+          "value": "\"manual_payment\".\"entry\" IN ('INSTALLMENT', 'UNALLOCATED')"
         },
         "ck_manual_payment_registration": {
           "name": "ck_manual_payment_registration",

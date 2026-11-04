@@ -4,34 +4,17 @@ import {
     manualPayments,
     type SelectManualPayment
 } from '../../schemas/vertical/manual-payment.dbschema.ts';
-import { receipts } from '../../schemas/vertical/receipt.dbschema.ts';
-import { reconciliationMarkPayments } from '../../schemas/vertical/reconciliation-mark-payment.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
 import { successionRetainedPayments } from '../../schemas/vertical/succession-retained-payment.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
 /** Persistence for manual subscription installments. */
 export class ManualPaymentModel {
-    /** MP6 transfers are marked without a receipt; registered installments receive one. */
+    /** Selects real installments, including those hung on a reconciliation mark. */
     private installmentCondition(subscriptionId: string) {
         return and(
             eq(manualPayments.subscriptionId, subscriptionId),
-            notExists(
-                getDb()
-                    .select({ id: reconciliationMarkPayments.id })
-                    .from(reconciliationMarkPayments)
-                    .where(
-                        and(
-                            eq(reconciliationMarkPayments.manualPaymentId, manualPayments.id),
-                            notExists(
-                                getDb()
-                                    .select({ id: receipts.id })
-                                    .from(receipts)
-                                    .where(eq(receipts.manualPaymentId, manualPayments.id))
-                            )
-                        )
-                    )
-            )
+            eq(manualPayments.entry, 'INSTALLMENT')
         );
     }
     /** Finds expired manual principal graces with an awaiting installment. */
@@ -237,6 +220,7 @@ export class ManualPaymentModel {
                 subscriptionId: input.subscriptionId,
                 periodStart: input.periodStart,
                 status: 'REGISTERED',
+                entry: 'UNALLOCATED',
                 registeredBy: input.registeredBy,
                 registeredAt: input.registeredAt,
                 proofRef: input.proofRef ?? null
