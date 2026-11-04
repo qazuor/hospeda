@@ -39,7 +39,14 @@ vi.mock('../../src/lib/env', () => ({
 
 // Mirrors the REAL public API list shape: { success, data: { items, pagination } }.
 // (The previous mock used data.data, which masked the empty-sitemap bug.)
-function makeApiResponse(items: Array<{ slug: string; updatedAt?: string }>): Response {
+function makeApiResponse(
+    items: Array<{
+        slug: string;
+        updatedAt?: string;
+        hasPublicPage?: boolean;
+        description?: string | null;
+    }>
+): Response {
     return new Response(
         JSON.stringify({
             success: true,
@@ -83,6 +90,40 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('lists only partner items with a page entitlement and a description', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn((input: string | URL | Request) => {
+                const url = String(input);
+                if (url.includes('/partners?')) {
+                    return Promise.resolve(
+                        makeApiResponse([
+                            {
+                                slug: 'gold-partner',
+                                hasPublicPage: true,
+                                description: 'A description'
+                            },
+                            {
+                                slug: 'silver-partner',
+                                hasPublicPage: false,
+                                description: 'A description'
+                            },
+                            { slug: 'thin-partner', hasPublicPage: true, description: '  ' }
+                        ])
+                    );
+                }
+                return Promise.resolve(makeEmptyApiResponse());
+            })
+        );
+
+        const response = await GET({});
+        const body = await response.text();
+
+        expect(body).toContain('https://hospeda.test/es/partners/gold-partner/');
+        expect(body).not.toContain('/partners/silver-partner/');
+        expect(body).not.toContain('/partners/thin-partner/');
     });
 
     it('returns XML with correct Content-Type header', async () => {

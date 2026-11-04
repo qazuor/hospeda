@@ -3358,8 +3358,9 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
-        // Retained for the internal page link V7 restores on the public key.
+        // Public-page visibility comes from the carousel's effective entitlement set.
         slug: item.slug == null ? undefined : String(item.slug),
+        hasPublicPage: item.hasPublicPage === true,
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

@@ -7,14 +7,16 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('partner detail remains dark until V7', () => {
+describe('partner detail indexability', () => {
     it('keeps the indexability predicate and actor-blind rendering', () => {
         expect(src).toContain('evaluatePartnerIndexability');
         expect(src).toContain('noindex={!isIndexable}');
         expect(src).not.toContain('Astro.locals.user');
     });
 
-    it('keeps the page at 404 until V7 restores it', () => {
+    it('treats an API 200 as confirmation of page presence', () => {
         expect(src).toContain('if (!result.ok) return new Response(null, { status: 404 });');
+        expect(src).toContain('hasPublicPage: true');
+        expect(src).toContain('description: partner.description');
     });
 });
