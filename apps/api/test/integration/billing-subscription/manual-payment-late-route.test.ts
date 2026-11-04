@@ -175,7 +175,10 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
                     permissions: [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT]
                 });
                 expect(response.status).toBe(403);
-                expect((await response.json()).error.code).toBe('FORBIDDEN');
+                expect((await response.json()).error).toMatchObject({
+                    code: 'FORBIDDEN',
+                    message: 'Insufficient admin permissions'
+                });
             });
 
             it(`${action} ${method} returns 404 for a foreign subscription or installment`, async () => {
