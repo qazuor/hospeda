@@ -249,11 +249,13 @@ const isNew = data.createdAt
 					</div>
 				) : (
 					<div class="acc-card__price-block">
-						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Consultar')}</span>
+						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Precio a consultar')}</span>
 					</div>
 				)}
 				<span class="acc-card__cta-btn">
-					{t('common.readMore', 'Ver más')} →
+					{formattedPrice
+						? `${t('common.readMore', 'Ver más')} →`
+						: `${t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad')} →`}
 				</span>
 			</div>
 		</div>

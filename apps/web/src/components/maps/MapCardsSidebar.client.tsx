@@ -67,6 +67,7 @@ export interface MapSidebarCardData {
     readonly pricePerNightLabel?: string;
     readonly priceConsultLabel?: string;
     readonly ctaLabel?: string;
+    readonly noPriceCtaLabel?: string;
     /** Amenities row: up to 4 resolved icon entries + a +N counter for the rest. */
     readonly amenities?: ReadonlyArray<MapSidebarAmenity>;
     readonly extraAmenitiesCount?: number;
@@ -497,9 +498,11 @@ export function MapCardsSidebar({
                                                 className={sidebarStyles.cardCta}
                                                 onClick={(e) => e.stopPropagation()}
                                                 onMouseDown={(e) => e.stopPropagation()}
-                                                aria-label={`${item.ctaLabel} — ${item.name}`}
+                                                aria-label={`${item.priceLabel ? item.ctaLabel : (item.noPriceCtaLabel ?? item.ctaLabel)} — ${item.name}`}
                                             >
-                                                {item.ctaLabel}
+                                                {item.priceLabel
+                                                    ? item.ctaLabel
+                                                    : (item.noPriceCtaLabel ?? item.ctaLabel)}
                                             </a>
                                         ) : null}
                                     </div>

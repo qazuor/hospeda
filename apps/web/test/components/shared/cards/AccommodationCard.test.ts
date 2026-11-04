@@ -333,6 +333,8 @@ describe('AccommodationCard.astro', () => {
 
         it('should conditionally render price when formattedPrice exists', () => {
             expect(src).toContain('formattedPrice');
+            expect(src).toContain("home.accommodations.price.consult', 'Precio a consultar'");
+            expect(src).toContain('home.accommodations.price.consultAvailability');
         });
 
         it('should render star rating icons', () => {

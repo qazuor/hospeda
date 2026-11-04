@@ -525,7 +525,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				newText={newColors.text}
 				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
 				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
-				priceConsultLabel={t('home.accommodations.price.consult', 'Consultar')}
+				priceConsultLabel={t('home.accommodations.price.consult', 'Precio a consultar')}
+				noPriceCtaLabel={t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad')}
 				ctaLabel={`${t('common.readMore', 'Ver más')} →`}
 				amenitiesLabel={t('home.accommodations.amenities.label', 'Amenidades')}
 				showSidebar={true}
@@ -547,6 +548,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					attribution: t('maps.attribution'),
 					approximateDisclaimer: t('maps.approximateDisclaimer'),
 					viewDetails: t('maps.viewDetails', 'Ver más'),
+					priceConsult: t('home.accommodations.price.consult', 'Precio a consultar'),
+					consultAvailability: t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad'),
 				}}
 			>
 				<MapPlaceholder

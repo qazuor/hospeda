@@ -69,6 +69,8 @@ interface AccommodationsListingMapProps {
         readonly attribution: string;
         readonly approximateDisclaimer: string;
         readonly viewDetails?: string;
+        readonly priceConsult?: string;
+        readonly consultAvailability?: string;
     };
     /**
      * Localised label for the type chip on each popup, keyed by the API's
@@ -102,6 +104,7 @@ interface AccommodationsListingMapProps {
     readonly pricePerNightLabel?: string;
     readonly priceConsultLabel?: string;
     readonly ctaLabel?: string;
+    readonly noPriceCtaLabel?: string;
     readonly amenitiesLabel?: string;
     /** Pre-pluralised "9 fotos" / "1 foto" / "8 photos" per accommodation id. */
     readonly photosLabelById?: Record<string, string>;
@@ -137,6 +140,7 @@ export function AccommodationsListingMap({
     pricePerNightLabel,
     priceConsultLabel,
     ctaLabel,
+    noPriceCtaLabel,
     amenitiesLabel,
     photosLabelById,
     priceLabelById,
@@ -248,6 +252,7 @@ export function AccommodationsListingMap({
                         pricePerNightLabel,
                         priceConsultLabel,
                         ctaLabel,
+                        noPriceCtaLabel,
                         amenities,
                         extraAmenitiesCount,
                         amenitiesLabel,
@@ -279,6 +284,7 @@ export function AccommodationsListingMap({
             pricePerNightLabel,
             priceConsultLabel,
             ctaLabel,
+            noPriceCtaLabel,
             amenitiesLabel,
             photosLabelById,
             priceLabelById

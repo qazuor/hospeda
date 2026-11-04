@@ -293,11 +293,15 @@ const FLOATING_CARD_GAP_ABOVE_MARKER = 18;
 function AccommodationCardPopup({
     item,
     viewDetailsLabel,
+    priceConsultLabel,
+    consultAvailabilityLabel,
     locale,
     onClose
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
+    readonly priceConsultLabel?: string;
+    readonly consultAvailabilityLabel?: string;
     readonly locale: SupportedLocale;
     readonly onClose: () => void;
 }) {
@@ -364,6 +368,8 @@ function AccommodationCardPopup({
             <AccommodationPopupContent
                 item={item}
                 viewDetailsLabel={viewDetailsLabel}
+                priceConsultLabel={priceConsultLabel}
+                consultAvailabilityLabel={consultAvailabilityLabel}
                 locale={locale}
             />
         </div>,
@@ -695,6 +701,8 @@ export function ListingMapInner(props: ListingMapProps) {
                         key={openAccommodationItem.id}
                         item={openAccommodationItem}
                         viewDetailsLabel={i18nStrings.viewDetails}
+                        priceConsultLabel={i18nStrings.priceConsult}
+                        consultAvailabilityLabel={i18nStrings.consultAvailability}
                         locale={locale}
                         onClose={() => setOpenCardId(null)}
                     />
@@ -716,10 +724,14 @@ export function ListingMapInner(props: ListingMapProps) {
 function AccommodationPopupContent({
     item,
     viewDetailsLabel,
+    priceConsultLabel,
+    consultAvailabilityLabel,
     locale
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
+    readonly priceConsultLabel?: string;
+    readonly consultAvailabilityLabel?: string;
     readonly locale: SupportedLocale;
 }) {
     const hasRating =
@@ -782,14 +794,20 @@ function AccommodationPopupContent({
                     {item.priceLabel ? (
                         <span className={styles.popupPrice}>{item.priceLabel}</span>
                     ) : (
-                        <span aria-hidden="true" />
+                        <span className={styles.popupPrice}>
+                            {priceConsultLabel ?? 'Precio a consultar'}
+                        </span>
                     )}
                     {item.detailHref ? (
                         <a
                             href={item.detailHref}
                             className={styles.popupCta}
                         >
-                            <span>{viewDetailsLabel ?? 'Ver más'}</span>
+                            <span>
+                                {item.priceLabel
+                                    ? (viewDetailsLabel ?? 'Ver más')
+                                    : (consultAvailabilityLabel ?? 'Consultar disponibilidad')}
+                            </span>
                             <span aria-hidden="true">→</span>
                         </a>
                     ) : null}

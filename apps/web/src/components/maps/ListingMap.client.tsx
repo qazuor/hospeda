@@ -90,6 +90,8 @@ interface ListingMapStrings {
     readonly attribution: string;
     readonly approximateDisclaimer: string;
     readonly viewDetails?: string;
+    readonly priceConsult?: string;
+    readonly consultAvailability?: string;
 }
 
 interface BaseProps {

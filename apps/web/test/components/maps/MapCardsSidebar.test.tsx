@@ -148,6 +148,38 @@ describe('MapCardsSidebar — A1 loading overlay', () => {
     });
 });
 
+describe('MapCardsSidebar — accommodation price slot', () => {
+    it('keeps the price and CTA slots when price is unknown and explains the inquiry action', () => {
+        renderSidebar({
+            items: [
+                {
+                    ...item,
+                    priceConsultLabel: 'Precio a consultar',
+                    ctaLabel: 'Ver más →',
+                    noPriceCtaLabel: 'Consultar disponibilidad',
+                    detailHref: '/es/alojamientos/casa-rio/'
+                },
+                {
+                    ...item,
+                    id: 'acc-priced',
+                    name: 'Casa con precio',
+                    priceLabel: '$ 120.000',
+                    ctaLabel: 'Ver más →',
+                    detailHref: '/es/alojamientos/casa-con-precio/'
+                }
+            ]
+        });
+
+        const [noPriceFooter, pricedFooter] = document.querySelectorAll('.cardPriceRow');
+        expect(noPriceFooter?.children).toHaveLength(2);
+        expect(pricedFooter?.children).toHaveLength(2);
+        expect(noPriceFooter?.firstElementChild).toHaveTextContent('Precio a consultar');
+        expect(
+            screen.getByRole('link', { name: 'Consultar disponibilidad — Casa del Río' })
+        ).toHaveAttribute('href', '/es/alojamientos/casa-rio/');
+    });
+});
+
 describe('MapCardsSidebar — contextual CompareButton (HOS-85)', () => {
     it('renders no compare control while compare mode is off (the default)', () => {
         // Arrange / Act
