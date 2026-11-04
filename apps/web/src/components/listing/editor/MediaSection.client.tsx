@@ -376,9 +376,8 @@ export function MediaSection({
     /**
      * Upload a new photo and mark it as the featured image.
      *
-     * Flow: upload → addMedia (create row) → setFeaturedMedia (mark featured).
-     * The backend's single-featured invariant unmarks the previous featured
-     * row; we move it to the gallery locally.
+     * Flow: upload → addFeaturedMedia. The server creates the cover and
+     * replaces the old cover atomically without spending a gallery slot.
      */
     const handleFeaturedSelect = useCallback(
         async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,7 +420,7 @@ export function MediaSection({
                     role: 'featured'
                 });
 
-                const addResult = await listingMediaApi.addMedia({
+                const featuredResult = await listingMediaApi.addFeaturedMedia({
                     vertical,
                     id: listingId,
                     body: {
@@ -431,36 +430,15 @@ export function MediaSection({
                     }
                 });
 
-                if (!addResult.ok) {
-                    reportError(
-                        addResult.error.message ?? t('listing.owner.editor.media.persistFailed')
-                    );
-                    return;
-                }
-
-                const newRow = addResult.data.media;
-
-                const featuredResult = await listingMediaApi.setFeaturedMedia({
-                    vertical,
-                    id: listingId,
-                    mediaId: newRow.id
-                });
-
                 if (!featuredResult.ok) {
                     reportError(
                         featuredResult.error.message ??
-                            t('listing.owner.editor.media.featuredFailed')
+                            t('listing.owner.editor.media.persistFailed')
                     );
                     return;
                 }
 
-                // The old featured becomes a gallery item; new row is featured.
-                setGalleryItems((prev) => {
-                    const base = featuredItem
-                        ? [...prev, { ...featuredItem, isFeatured: false }]
-                        : [...prev];
-                    return base;
-                });
+                // The server soft-deletes the replaced cover atomically.
                 setFeaturedItem(rowToItem(featuredResult.data.media));
             } catch (err) {
                 reportError(describeUploadError(err, t));
@@ -471,7 +449,7 @@ export function MediaSection({
                 }
             }
         },
-        [vertical, listingId, featuredItem, t, reportError]
+        [vertical, listingId, t, reportError]
     );
 
     /**
@@ -792,7 +770,8 @@ export function MediaSection({
 
                 <div className={styles.mediaGroup}>
                     <span className={fieldStyles.label}>
-                        {t('listing.owner.editor.media.gallery', 'Galería de fotos')}
+                        {t('listing.owner.editor.media.gallery', 'Galería de fotos')} (
+                        {galleryItems.length}/{galleryCap})
                     </span>
                     <div className={styles.mediaGallery}>
                         {galleryItems.map((image, index) => (
@@ -861,6 +840,7 @@ export function MediaSection({
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/heic"
                         multiple={remainingGallerySlots > 1}
+                        disabled={isGalleryFull}
                         aria-label={t('listing.owner.editor.media.gallery', 'Galería de fotos')}
                         className={styles.mediaFileInput}
                         onChange={handleGallerySelect}
