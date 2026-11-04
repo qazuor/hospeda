@@ -31,6 +31,7 @@ import { protectedGetWhatsAppRoute } from './getWhatsApp';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
 import { protectedImportFromUrlRoute } from './import-from-url';
+import { protectedImportFromUrlAccessRoute } from './import-from-url-access';
 import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
@@ -108,6 +109,7 @@ app.route('/', protectedImportFromUrlRoute);
 // GET /import-from-url/status - Poll an async Apify import run (HOS-50 T-011)
 // Two path segments — never collides with GET /:id (single segment) above.
 app.route('/', protectedImportFromUrlStatusRoute);
+app.route('/', protectedImportFromUrlAccessRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);

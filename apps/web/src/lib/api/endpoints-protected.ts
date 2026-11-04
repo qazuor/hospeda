@@ -11,6 +11,7 @@
 import type {
     AccommodationCalendarSyncStatus,
     AccommodationComparisonResponse,
+    AccommodationImportAccessResponse,
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
     AccommodationImportStatusQuery,
@@ -4391,6 +4392,12 @@ export function isAsyncImportStart(
 
 /** Protected accommodation import-from-URL API endpoint (SPEC-222 / HOS-50). */
 export const accommodationsImportApi = {
+    /** Read the API's importer entitlement/new-user decision for the create flow. */
+    getAccess(): Promise<ApiResult<AccommodationImportAccessResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/import-from-url/access`
+        });
+    },
     /**
      * Import accommodation data from an external listing URL.
      *

@@ -1216,6 +1216,30 @@ export interface SlidingWindowStore {
     oldestInWindow(key: string, windowMs: number): Promise<number | undefined>;
 }
 
+/** Conditional per-identity consumer backed by the API's sliding-window store. */
+export function createConditionalSlidingWindowConsumer(opts: {
+    readonly windowMs: number;
+    readonly max: number;
+    readonly keyPrefix: string;
+}): {
+    readonly count: (identity: string) => Promise<number>;
+    readonly consume: (identity: string) => Promise<boolean>;
+} {
+    const store = (): SlidingWindowStore => resolveDefaultSlidingWindowStore();
+    const keyFor = (identity: string) => `${opts.keyPrefix}:${identity}`;
+    return {
+        count(identity) {
+            return store().count(keyFor(identity), opts.windowMs);
+        },
+        async consume(identity) {
+            const key = keyFor(identity);
+            if ((await store().count(key, opts.windowMs)) >= opts.max) return false;
+            await store().record(key, opts.windowMs);
+            return true;
+        }
+    };
+}
+
 // ─── Redis Sliding-Window Store ───────────────────────────────────────────────
 
 /**

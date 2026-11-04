@@ -106,11 +106,26 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     const [showHelp, setShowHelp] = useState(false);
     // HOS-50 T-013: non-null while an async Apify run is being polled.
     const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
+    const [access, setAccess] = useState<{
+        readonly allowed: boolean;
+        readonly reason?: 'entitlement' | 'new_user_cap';
+    } | null>(null);
     // Guards against re-handling a settle outcome on unrelated re-renders
     // while `runHandle` is unchanged, and is reset whenever a NEW run starts.
     const handledSettleRef = useRef(false);
 
     const pollResult = useImportStatus(runHandle, runHandle !== null);
+
+    useEffect(() => {
+        let active = true;
+        void accommodationsImportApi.getAccess().then((result) => {
+            if (!active || !result.ok) return;
+            setAccess(result.data);
+        });
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const submitDisabled = isSubmitting || !legalConfirmed;
 
@@ -307,6 +322,39 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             onImported?.(pollResult.draft);
         }
     }, [pollResult, onError, onImported, t]);
+
+    if (access?.allowed === false) {
+        const entitlementDenied = access.reason === 'entitlement';
+        return (
+            <section className={styles.importFromUrl}>
+                <div
+                    className="form-error-banner"
+                    role="status"
+                >
+                    {entitlementDenied
+                        ? t(
+                              'common.apiError.ENTITLEMENT_REQUIRED',
+                              'Tu plan no incluye esta función. Actualizalo para continuar.'
+                          )
+                        : t(
+                              'host.importFromUrl.errors.rateLimit',
+                              'Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.'
+                          )}
+                    {entitlementDenied ? (
+                        <a
+                            className={styles.errorAction}
+                            href={buildUrl({
+                                locale,
+                                path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
+                            })}
+                        >
+                            {t('host.importFromUrl.errors.entitlementCta', 'Ver planes')}
+                        </a>
+                    ) : null}
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className={styles.importFromUrl}>

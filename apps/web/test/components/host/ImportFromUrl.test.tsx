@@ -12,8 +12,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
-const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
+const { mockImportFromUrl, mockGetAccess, mockUseImportStatus } = vi.hoisted(() => ({
     mockImportFromUrl: vi.fn(),
+    mockGetAccess: vi.fn(),
     mockUseImportStatus: vi.fn()
 }));
 
@@ -32,7 +33,8 @@ vi.mock('@/lib/i18n', () => ({
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationsImportApi: {
-        importFromUrl: (...args: unknown[]) => mockImportFromUrl(...args)
+        importFromUrl: (...args: unknown[]) => mockImportFromUrl(...args),
+        getAccess: (...args: unknown[]) => mockGetAccess(...args)
     },
     // Mirrors the real structural guard: only the async `202` shape has `runId`.
     isAsyncImportStart: (data: unknown) =>
@@ -60,7 +62,39 @@ const IDLE_POLL_RESULT = {
 describe('ImportFromUrl', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetAccess.mockResolvedValue({
+            ok: true,
+            data: {
+                allowed: true,
+                isNewUser: true,
+                hasEntitlement: false,
+                remainingNewUserImports: 5
+            }
+        });
         mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
+    });
+
+    it('shows the importer when the server says a new user is allowed', async () => {
+        render(<ImportFromUrl locale="es" />);
+        expect(await screen.findByRole('button', { name: /Importar/i })).toBeInTheDocument();
+    });
+
+    it('shows the plan message when the server denies a returning user', async () => {
+        mockGetAccess.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                allowed: false,
+                isNewUser: false,
+                hasEntitlement: false,
+                remainingNewUserImports: null,
+                reason: 'entitlement'
+            }
+        });
+        render(<ImportFromUrl locale="es" />);
+        expect(await screen.findByRole('status')).toHaveTextContent(
+            'Tu plan no incluye esta función. Actualizalo para continuar.'
+        );
+        expect(screen.queryByLabelText('URL del alojamiento')).not.toBeInTheDocument();
     });
 
     it('keeps the Importar button disabled until the legal checkbox is ticked', () => {

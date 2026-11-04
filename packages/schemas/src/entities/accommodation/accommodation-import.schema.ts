@@ -726,3 +726,15 @@ export const AccommodationImportStatusResponseSchema = z
 export type AccommodationImportStatusResponse = z.infer<
     typeof AccommodationImportStatusResponseSchema
 >;
+
+/** Server-resolved permission state used to render the importer in the create flow. */
+export const AccommodationImportAccessResponseSchema = z.object({
+    allowed: z.boolean(),
+    isNewUser: z.boolean(),
+    hasEntitlement: z.boolean(),
+    remainingNewUserImports: z.number().int().nonnegative().nullable(),
+    reason: z.enum(['entitlement', 'new_user_cap']).optional()
+});
+export type AccommodationImportAccessResponse = z.infer<
+    typeof AccommodationImportAccessResponseSchema
+>;

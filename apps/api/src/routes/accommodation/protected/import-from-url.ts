@@ -30,9 +30,10 @@
  *
  * ## AI extraction
  *
- * Strategy B (AI-assisted extraction) only runs for sparse generic pages.
- * AI extraction runs without a plan entitlement or monthly quota during the
- * billing transition.
+ * Strategy B only runs for sparse generic pages. Entitled users keep the
+ * existing monthly quota; a new user without prior accommodation trial,
+ * subscription, or published listing may import five times per rolling 24h.
+ * Returning users without the entitlement are denied before scraping.
  *
  * @module apps/api/routes/accommodation/protected/import-from-url
  */
@@ -71,6 +72,7 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory'
 import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { requireAccommodationImportAccess } from '../../../utils/listing-access/accommodation-import-access';
 import { type AiQuotaDecision, evaluateAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -278,8 +280,9 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         'Extracts structured accommodation data from an external listing URL and returns a ' +
         'per-field draft (with confidence + source) for the host to review before saving. ' +
         'Stateless — nothing is persisted. Reviews and ratings are never returned. ' +
-        'AI-assisted extraction (for sparse pages) is gated by the accommodation_import ' +
-        'entitlement and monthly quota; lacking it degrades to a structured-only partial.',
+        'AI-assisted extraction (for sparse pages) requires the accommodation_import entitlement ' +
+        'and monthly quota, except new users without accommodation billing history or a published ' +
+        'listing who receive up to five imports per rolling 24 hours.',
     tags: ['Accommodations'],
     requestBody: AccommodationImportRequestSchema,
     responseSchema: AccommodationImportResponseSchema,
@@ -321,6 +324,9 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
 
         const locale = input.locale ?? DEFAULT_LOCALE;
         const gate: AiGateState = { blockedReason: null };
+        // Run the existing entitlement + monthly quota gate first. This keeps
+        // entitled users on the exact same AI quota path as before; only the
+        // missing-entitlement decision consults new-user history and the cap.
         const quota = await evaluateAiQuota({
             userId: actor.id,
             vertical: VerticalEnum.ACCOMMODATION,
@@ -328,7 +334,11 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             entitlementKey: 'ai_accommodation_import',
             limitKey: 'max_ai_accommodation_import_per_month'
         });
-        gate.blockedReason = getImportAiBlockedReason(quota);
+        if (!quota.allowed && quota.reason === 'entitlement') {
+            await requireAccommodationImportAccess(actor.id);
+        } else {
+            gate.blockedReason = getImportAiBlockedReason(quota);
+        }
 
         const context: ImportContext = {
             locale,
