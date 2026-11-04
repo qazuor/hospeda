@@ -1489,6 +1489,12 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             }
+        },
+        "presence": {
+            "hidden": "Meanwhile, your page appears not to exist to the public.",
+            "notDeleted": "Nothing was deleted: your listing and data are still saved.",
+            "returnsAlone": "Your presence returns on its own when you regain the plan that grants it.",
+            "moderated": "An administrator moderated your presence. Even with the plan, it will not appear until moderation is lifted."
         }
     },
     "partnerStats": {

@@ -12,7 +12,7 @@
  * ordinary account, so ownership of the row — not a role or permission — is
  * what lets someone reach this page's content.
  *
- * Four renders, mirroring the provider ficha:
+ * Owner-only presence notice plus four renders, mirroring the provider ficha:
  * - fetch failed   -> friendly error state (never a crash).
  * - `partner: null`-> empty state ("you haven't applied / been approved yet"),
  *   linking back to the aliados hub. NOT an error, NOT a 404.
@@ -71,6 +71,7 @@ const partnerResult = await partnersApi.mine({
 
 const fetchFailed = !partnerResult.ok;
 const partner = partnerResult.ok ? partnerResult.data.partner : null;
+const presence = partnerResult.ok ? partnerResult.data.presence ?? null : null;
 
 // `!= null` (not `!== null`) on purpose, and it is load-bearing twice over:
 // `contentApprovedAt` is `z.coerce.date().nullish()` on the owner view, so an
@@ -79,6 +80,7 @@ const partner = partnerResult.ok ? partnerResult.data.partner : null;
 // "approved" and offer to charge a partner nobody reviewed, which is AC-11
 // failing open. Same reason the provider page tests `revokedAt` this way.
 const isContentApproved = partner !== null && partner.contentApprovedAt != null;
+const showPresenceNotice = presence !== null && (presence.moderated || (isContentApproved && presence.publicPage === 'hidden' && presence.carousel === 'hidden'));
 // Same `!= null` reasoning, and it pre-empts every other state below: a
 // revoked partner is not "waiting for review" or "ready to pay", and offering
 // either would contradict the email they just received.
@@ -89,6 +91,20 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner">
     <AccountPageHeader title={title} description={subtitle} />
+
+    {showPresenceNotice && presence !== null && (
+        <AccountSectionCard data-testid="partner-presence-notice">
+            <p>{t('account.partner.presence.notDeleted', 'No se borró nada: tu ficha y tus datos siguen guardados.')}</p>
+            <p>{t('account.partner.presence.hidden', 'Mientras tanto, para el público tu página responde como si no existiera.')}</p>
+            <p>{t('account.partner.presence.returnsAlone', 'Tu presencia vuelve sola cuando recuperes el plan que la otorga.')}</p>
+            {presence.moderated && (
+                <div data-testid="partner-presence-moderated" role="alert">
+                    <p>{t('account.partner.presence.moderated', 'Un administrador moderó tu presencia. Aunque tengas el plan, no se verá hasta que se levante la moderación.')}</p>
+                    {presence.moderationReason !== null && <p data-testid="partner-presence-moderation-reason">{presence.moderationReason}</p>}
+                </div>
+            )}
+        </AccountSectionCard>
+    )}
 
     {
         fetchFailed ? (
