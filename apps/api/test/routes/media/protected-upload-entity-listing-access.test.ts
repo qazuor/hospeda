@@ -258,6 +258,34 @@ describe('TEST:M1682:2 coverage and the plan photo limit gate the upload', () =>
         });
         expect(mocks.upload).not.toHaveBeenCalled();
     });
+
+    it('accepts a 15th gallery photo with a cover present and rejects the 16th', async () => {
+        configure({ maxPhotos: 15 });
+        vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
+            items: [],
+            total: 14
+        } as never);
+
+        const fifteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
+        vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
+            items: [],
+            total: 15
+        } as never);
+        const sixteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
+
+        expect(fifteenth.status).toBe(200);
+        expect(sixteenth.status).toBe(403);
+        expect(sixteenth.body.error).toMatchObject({
+            code: ServiceErrorCode.LIMIT_REACHED,
+            details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 15 }
+        });
+        expect(accommodationMediaModel.findByAccommodation).toHaveBeenNthCalledWith(1, {
+            accommodationId: LISTING_ID,
+            state: 'visible',
+            isFeatured: false
+        });
+        expect(mocks.upload).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe('TEST:M1682:3 the listing state gates the upload', () => {
