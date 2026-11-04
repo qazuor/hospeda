@@ -17,7 +17,7 @@
         {
             "file": "apps/api/src/middlewares/listing-access.ts",
             "symbol": "enforceListingAccess",
-            "count": 2,
+            "count": 3,
             "category": "editor",
             "spec": ".hoja/contexto.md:28-39"
         },

@@ -52,6 +52,21 @@ describe('TEST:3.12:5 GUARD:G-FAC-03', () => {
         expect(scanBusinessLineDecisions(root).decisions).toHaveLength(2);
     });
 
+    it('inventories and rejects snake_case business_lines reads outside the inventory', () => {
+        const root = fixture(
+            "import type { BusinessLine } from '@repo/schemas'; declare const sql: { (parts: TemplateStringsArray): unknown }; const query = sql`select business_lines from venues`; const column = 'business_lines'; declare const lines: BusinessLine[]; void lines;"
+        );
+        const scan = scanBusinessLineDecisions(root);
+        expect(scan.readers).toHaveLength(2);
+        expect(scan.readers.every((hit) => hit.file === 'apps/web/src/example.tsx')).toBe(true);
+
+        const inventoryPath = path.join(root, 'inventory.json');
+        writeFileSync(inventoryPath, JSON.stringify({ readers: [], imports: [] }));
+        const guard = run({ root, inventoryPath, minScannedFiles: 0 });
+        expect(guard.exitCode).toBe(1);
+        expect(guard.output).toContain('reader outside inventory');
+    });
+
     it('keeps string style comparisons and rating object keys green', () => {
         const root = fixture(
             "const style = 'standard'; style === 'standard'; const rating = { food: { average: 5 } };"

@@ -99,7 +99,19 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
             }
         );
         if (!parsed) continue;
-        const program = ts.createProgram({ rootNames: parsed.fileNames, options: parsed.options });
+        // Only production `src` files matter: the walk below already ignores
+        // tests and declarations, but leaving them as program roots makes
+        // TypeScript parse and check the whole test tree first. Dropping them
+        // from `rootNames` cuts the run cost without losing any scanned file.
+        const rootNames = parsed.fileNames.filter((file) => {
+            const rel = relative(root, file).replaceAll('\\', '/');
+            return (
+                /^apps\/[^/]+\/src\/|^packages\/[^/]+\/src\//.test(rel) &&
+                !/\.(test|spec)\.[jt]sx?$/.test(rel) &&
+                !/\.d\.ts$/.test(rel)
+            );
+        });
+        const program = ts.createProgram({ rootNames, options: parsed.options });
         const checker = program.getTypeChecker();
         for (const sourceFile of program.getSourceFiles()) {
             const abs = sourceFile.fileName;
@@ -119,7 +131,9 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
             };
             const visit = (node: ts.Node): void => {
                 if (
-                    (ts.isPropertyAccessExpression(node) && node.name.text === 'businessLines') ||
+                    (ts.isPropertyAccessExpression(node) &&
+                        (node.name.text === 'businessLines' ||
+                            node.name.text === 'business_lines')) ||
                     (ts.isElementAccessExpression(node) &&
                         node.argumentExpression &&
                         ts.isStringLiteral(node.argumentExpression) &&
@@ -134,9 +148,35 @@ export function scanBusinessLineDecisions(root: string): ScanResult {
                 if (
                     ts.isBindingElement(node) &&
                     (node.propertyName?.getText(sourceFile) === 'businessLines' ||
+                        node.propertyName?.getText(sourceFile) === 'business_lines' ||
                         (!node.propertyName &&
                             ts.isIdentifier(node.name) &&
-                            node.name.text === 'businessLines'))
+                            (node.name.text === 'businessLines' ||
+                                node.name.text === 'business_lines')))
+                ) {
+                    readers.push({
+                        file,
+                        symbol: symbolName(node),
+                        line: lineOf(node, sourceFile)
+                    });
+                }
+                // The persisted column is `business_lines`. Raw SQL
+                // (`sql\`... business_lines ...\``), Drizzle's column name
+                // (`text('business_lines')`) and any string literal naming the
+                // column are reads of the same data as `.businessLines`; a new
+                // one outside the inventory must turn the guard red.
+                if (ts.isStringLiteral(node) && node.text === 'business_lines') {
+                    readers.push({
+                        file,
+                        symbol: symbolName(node),
+                        line: lineOf(node, sourceFile)
+                    });
+                }
+                if (
+                    ts.isTaggedTemplateExpression(node) &&
+                    ts.isIdentifier(node.tag) &&
+                    node.tag.text === 'sql' &&
+                    node.template.getText(sourceFile).includes('business_lines')
                 ) {
                     readers.push({
                         file,
