@@ -152,30 +152,6 @@ export const PARTNER_CONTENT_NOT_APPROVED_MESSAGE =
  * Service for managing partners.
  * Provides CRUD operations and permission/lifecycle hooks for Partner entities.
  */
-/**
- * The result of a public partner-detail lookup (HOS-294 D-3b, D-6).
- *
- * Three outcomes rather than a nullable partner, because the HTTP layer has to
- * answer two different questions with two different status codes:
- *
- * - `found`    — the page exists and is served (200).
- * - `gone`     — a gold partner that fails the visibility check. It WAS
- *                published, so the URL is deliberately retired (410), which is
- *                what tells a crawler to deindex it.
- * - `notFound` — no row, a soft-deleted row, or a partner that is not gold.
- *                This URL was never served, so it is a plain 404.
- *
- * "Was it published before?" is answered from the CURRENT row alone — no
- * history is stored, and none is needed: only gold ever had a page, so a gold
- * row failing visibility is exactly the set of URLs that went away. The known
- * consequence is that a gold partner downgraded to silver 404s instead of
- * 410ing; the URL leaves the sitemap either way.
- */
-export type PartnerPublicLookup =
-    | { readonly outcome: 'found'; readonly partner: Partner }
-    | { readonly outcome: 'gone' }
-    | { readonly outcome: 'notFound' };
-
 export class PartnerService extends BaseCrudService<
     Partner,
     PartnerModel,
@@ -508,27 +484,6 @@ export class PartnerService extends BaseCrudService<
     protected async _afterUpdate(entity: Partner): Promise<Partner> {
         this._schedulePartnerRevalidation(entity);
         return entity;
-    }
-
-    /**
-     * Public partner pages remain dark until V7 rewrites this lookup over the
-     * claim key «página propia» (V6.md:85; V7.md:512). Every slug returns 404.
-     */
-    public async getPublicBySlug(
-        actor: Actor,
-        input: { readonly slug: string },
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<PartnerPublicLookup>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'getPublicBySlug',
-            input: { actor, slug: input.slug },
-            schema: z.object({ slug: z.string().min(1) }),
-            ctx,
-            execute: async (_validated, a) => {
-                checkCanSearch(a);
-                return { outcome: 'notFound' } as const;
-            }
-        });
     }
 
     /**
