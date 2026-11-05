@@ -153,6 +153,7 @@ import {
     protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
+import { adminEmptyPartnerPresenceRoute } from './partners/admin/empty-presence';
 import { adminModeratePartnerPresenceRoute } from './partners/admin/presence-moderation';
 import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
@@ -572,6 +573,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         app.route('/api/v1/admin/partners', adminModeratePartnerPresenceRoute);
+        app.route('/api/v1/admin/partners', adminEmptyPartnerPresenceRoute);
         app.route('/api/v1/admin/partners', adminPreviewPartnerBillingSetupRoute);
         app.route('/api/v1/admin/partners', adminConfigurePartnerBillingRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts

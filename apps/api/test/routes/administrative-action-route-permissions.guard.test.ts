@@ -421,7 +421,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             }
         ]
     },
-    ACC_25: { unbound: 'legacy HOS-278 partner routes; V8b (HOS-1498) builds it' },
+    ACC_25: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partners/admin/empty-presence.ts',
+                route: 'adminEmptyPartnerPresenceRoute'
+            }
+        ]
+    },
     ACC_26: {
         bindings: [
             {
@@ -468,10 +476,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-    it('b. checks exactly 52 bindings across 18 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(18);
+    it('b. checks exactly 53 bindings across 19 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(19);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(52);
+        expect(total).toBe(53);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))

@@ -1351,6 +1351,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/partners/:id/empty-presence"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/partners/:id/manual-payment"
         },
         {

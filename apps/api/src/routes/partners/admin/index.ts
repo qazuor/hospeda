@@ -4,6 +4,7 @@ export {
 } from './billing-setup.js';
 export { adminCreatePartnerRoute } from './create.js';
 export { adminDeletePartnerRoute } from './delete.js';
+export { adminEmptyPartnerPresenceRoute } from './empty-presence.js';
 export { adminGetPartnerRoute } from './get.js';
 export { adminListPartnersRoute } from './list.js';
 export { adminManualPaymentRoute } from './manual-payment.js';
