@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { VenueSchema } from './venue.schema.js';
@@ -73,6 +74,8 @@ export const VenueSearchSchema = BaseSearchSchema.extend({
     destinationId: z.string().uuid().optional(),
     /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
+    /** Filter by one business line (internal catalog value, English). */
+    businessLine: z.enum(VENUE_BUSINESS_LINE_VALUES).optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter listings that have all these amenity UUIDs. */
