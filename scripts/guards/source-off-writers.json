@@ -296,5 +296,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
+    },
+    {
+        "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
+        "symbol": "reanchorSubscriptionsToVersion",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2037 moves a live subscription to an additive, price-neutral twin version; status and coverage periods are untouched, so no coverage source turns off."
     }
 ]
