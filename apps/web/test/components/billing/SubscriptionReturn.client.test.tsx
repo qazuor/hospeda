@@ -116,6 +116,26 @@ describe('SubscriptionReturn polling', () => {
         expect(reload).not.toHaveBeenCalled();
     });
 
+    it('never refreshes when the marker write is silently dropped', async () => {
+        const reload = vi.fn();
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => undefined);
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
     it('never refreshes when only reading sessionStorage throws', async () => {
         const reload = vi.fn();
         vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {

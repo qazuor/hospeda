@@ -95,6 +95,8 @@ export function SubscriptionReturn({
         refreshedAfterConfirmationRef.current = true;
         try {
             window.sessionStorage.setItem(storageKey, '1');
+            // Read it back: only a marker that is actually stored can stop the next load.
+            if (window.sessionStorage.getItem(storageKey) !== '1') return;
         } catch {
             return;
         }
