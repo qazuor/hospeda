@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4112
+    {
+        id: '2026-11-05-phone-numbers-as-you-write-them',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Escribí tu teléfono como siempre: nosotros lo ordenamos',
+            en: 'Type your phone number however you like: we tidy it up',
+            pt: 'Digite seu telefone como de costume: nós organizamos'
+        },
+        body: {
+            es: 'En **Contacto y redes** podés cargar el teléfono y el WhatsApp con espacios, guiones, paréntesis, el 0 o el 15, por ejemplo `3442 45-2345` o `+54 9 3442 45-2345`. Lo guardamos en un único formato. Si el número no es válido, te decimos cómo escribirlo.',
+            en: 'In **Contact and social**, you can enter your phone and WhatsApp with spaces, dashes, brackets, the leading 0 or the 15, for example `3442 45-2345` or `+54 9 3442 45-2345`. We save it in a single format. If the number is not valid, we tell you how to write it.',
+            pt: 'Em **Contato e redes**, você pode informar o telefone e o WhatsApp com espaços, hífens, parênteses, o 0 ou o 15, por exemplo `3442 45-2345` ou `+54 9 3442 45-2345`. Guardamos tudo em um único formato. Se o número não for válido, dizemos como escrevê-lo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4110
     {
         id: '2026-11-05-cover-photo-outside-the-cap',
