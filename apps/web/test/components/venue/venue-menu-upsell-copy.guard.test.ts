@@ -10,7 +10,7 @@
  *
  * The guard is static on purpose — copy drifts silently, and the three locales
  * would drift independently. It scans the two upsell keys per locale and the
- * Spanish fallbacks the manager renders when a key is missing.
+ * Spanish fallbacks rendered by both upsell components when a key is missing.
  */
 
 import fs from 'node:fs';
@@ -22,20 +22,28 @@ const MANAGER_SOURCE_PATH = path.resolve(
     '../../../src/components/venue/VenueMenuManager.client.tsx'
 );
 
+const PLAN_NOTICE_SOURCE_PATH = path.resolve(
+    __dirname,
+    '../../../src/components/venue/VenueMenuPlanNotice.client.tsx'
+);
+
 const I18N_LOCALES_DIR = path.resolve(__dirname, '../../../../../packages/i18n/src/locales');
 
 /** The two upsell keys this leaf rewrites. */
 const UPSELL_KEYS = ['locked', 'lockedPreTrial'] as const;
 
 /**
- * Forbidden promises per language: a single file type, or the link as a
- * feature of its own. "archivo"/"file" is deliberately allowed — the approved
- * copy names the carta's contents as a whole, not one deliverable.
+ * Forbidden promises per language: a single deliverable (file type, image,
+ * document) or the act of sending one, plus the link as a feature of its own.
+ *
+ * The bare noun for the carta's uploaded file ("archivo"/"file"/"arquivo") is
+ * deliberately absent: the approved copy names the carta's contents as a whole
+ * and uses that noun, so it is not a promise of a separate deliverable.
  */
 const FORBIDDEN_TERMS_BY_LOCALE: Readonly<Record<'es' | 'en' | 'pt', readonly string[]>> = {
-    es: ['pdf', 'foto', 'enlace'],
-    en: ['pdf', 'photo', 'link'],
-    pt: ['pdf', 'foto', 'link']
+    es: ['pdf', 'foto', 'enlace', 'imagen', 'documento', 'subir'],
+    en: ['pdf', 'photo', 'link', 'image', 'document', 'upload'],
+    pt: ['pdf', 'foto', 'link', 'imagem', 'documento', 'enviar']
 };
 
 /** The word that names the section in each language. */
@@ -74,6 +82,28 @@ function sourceAttribute(name: string): string {
     return match[1];
 }
 
+/** Reads the Spanish fallback passed to `t(key, fallback)` in a source file. */
+function translationFallback(sourcePath: string, key: string): string {
+    const source = fs.readFileSync(sourcePath, 'utf-8');
+    const match = source.match(
+        new RegExp(`'venue\\.owner\\.editor\\.menuManager\\.${key}'\\s*,\\s*'([^']+)'`)
+    );
+
+    if (!match?.[1]) {
+        throw new Error(`${path.basename(sourcePath)} is missing the "${key}" fallback`);
+    }
+
+    return match[1];
+}
+
+function assertNoForbiddenPromises(fallbacks: readonly string[], origin: string): void {
+    const hits = fallbacks.flatMap((text) =>
+        forbiddenHits(text, FORBIDDEN_TERMS_BY_LOCALE.es).map((term) => `"${term}" in "${text}"`)
+    );
+
+    expect(hits, `Forbidden promises in ${origin}: ${hits.join(', ')}`).toEqual([]);
+}
+
 function forbiddenHits(text: string, terms: readonly string[]): string[] {
     const lower = text.toLowerCase();
     return terms.filter((term) => lower.includes(term));
@@ -104,20 +134,19 @@ describe('carta upsell wording (AC:5:8)', () => {
     }
 
     it('the Spanish fallbacks rendered by the manager carry no forbidden promise', () => {
-        const fallbacks = [
-            sourceAttribute('messageFallback'),
-            sourceAttribute('preTrialMessageFallback')
-        ];
-
-        const hits = fallbacks.flatMap((text) =>
-            forbiddenHits(text, FORBIDDEN_TERMS_BY_LOCALE.es).map(
-                (term) => `"${term}" in "${text}"`
-            )
+        assertNoForbiddenPromises(
+            [sourceAttribute('messageFallback'), sourceAttribute('preTrialMessageFallback')],
+            'VenueMenuManager fallbacks'
         );
+    });
 
-        expect(
-            hits,
-            `Forbidden promises in VenueMenuManager fallbacks: ${hits.join(', ')}`
-        ).toEqual([]);
+    it('the Spanish fallbacks rendered by the plan notice carry no forbidden promise', () => {
+        assertNoForbiddenPromises(
+            [
+                translationFallback(PLAN_NOTICE_SOURCE_PATH, 'locked'),
+                translationFallback(PLAN_NOTICE_SOURCE_PATH, 'lockedPreTrial')
+            ],
+            'VenueMenuPlanNotice fallbacks'
+        );
     });
 });
