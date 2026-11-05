@@ -49,6 +49,7 @@ const allianceLeadService = new AllianceLeadService(
  * is forwarded to the service.
  */
 const CreateLeadRequestSchema = AllianceLeadCreateInputSchema.extend({
+    kind: z.enum(['sponsor', 'editor', 'service_provider']),
     /**
      * Honeypot field — must be absent or empty.
      * Hidden from real users via CSS (`display:none` / `visibility:hidden`);
@@ -64,7 +65,7 @@ type CreateLeadRequest = z.infer<typeof CreateLeadRequestSchema>;
  * POST /api/v1/public/alliance/leads
  *
  * Accepts an alliance lead submission from one of the four "aliados" public
- * landing forms (`partner`, `sponsor`, `editor`, `service_provider`).
+ * landing forms (`sponsor`, `editor`, `service_provider`). AC:V7:15
  * Returns 200 with `{ id }` on success — only the new lead's UUID is
  * disclosed. On honeypot trigger, returns the same shape with a nil-UUID
  * sentinel id (all-zeros) so bots cannot distinguish a rejection from a real
@@ -124,6 +125,7 @@ export const publicCreateAllianceLeadRoute = createPublicRoute({
         // Return only the id — no PII, status, adminNote, or audit fields.
         return { id: lead.id };
     },
+    successStatusCode: 200,
     options: {
         // 5 submissions per IP per minute — legitimate users rarely resubmit
         // within the same minute; bots hit this quickly.

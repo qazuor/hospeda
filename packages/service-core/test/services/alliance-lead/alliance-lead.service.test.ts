@@ -64,21 +64,18 @@ const authenticatedActor: Actor = {
 };
 
 const createInput = {
-    kind: 'partner' as const,
+    kind: 'sponsor' as const,
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
     phone: '+5491112345678',
-    message:
-        'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.',
-    // partnerType is required for kind='partner' since HOS-278 provisioning
-    // slice D (refineAllianceLeadKindFields) — without it, createLead's
-    // AllianceLeadSubmissionSchema.parse rejects every fixture below.
-    partnerType: PartnerTypeEnum.BUSINESS
+    message: 'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.'
 };
 
 const mockLead = {
     id: LEAD_ID,
     ...createInput,
+    kind: 'partner' as const,
+    partnerType: PartnerTypeEnum.BUSINESS,
     status: 'pending' as string,
     adminNote: null,
     applicantUserId: null as string | null,
