@@ -209,10 +209,10 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
             createHash('sha256').update(silverSecret, 'utf8').digest('hex')
         ]);
         await seedCookieConsent(page);
+        await attachSession({ page, sessionCookie: silverOwner.sessionCookie });
         await page.goto(
             `${WEB_URL}/es/partners/reclamar/#partner=${silverPartnerId}&secret=${encodeURIComponent(silverSecret)}`
         );
-        await attachSession({ page, sessionCookie: silverOwner.sessionCookie });
         await page.getByRole('button', { name: 'Reclamar el Partner' }).click();
         await expect(
             page.getByText('Listo: el Partner quedó vinculado a tu cuenta.')
