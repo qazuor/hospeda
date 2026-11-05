@@ -142,11 +142,13 @@ export async function cutSuccessorWrites(
         .select({ id: subscriptions.id })
         .from(subscriptions)
         .where(eq(subscriptions.succeededById, successor.id));
-    const closeReason =
-        'CONTRACARGO_DE_LA_PREDECESORA' satisfies (typeof COURTESY_CLOSE_REASONS)[number];
     const grants = await input.tx
         .update(courtesyGrants)
-        .set({ balanceClosedAt: now, closeReason })
+        .set({
+            balanceClosedAt: now,
+            closeReason:
+                'CONTRACARGO_DE_LA_PREDECESORA' satisfies (typeof COURTESY_CLOSE_REASONS)[number]
+        })
         .where(
             and(
                 inArray(courtesyGrants.subscriptionId, predecessorRows),
