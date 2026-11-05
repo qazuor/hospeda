@@ -105,9 +105,7 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
 
         await pickGalleryFile();
 
-        await waitFor(() => {
-            expect(screen.getAllByText(EXPECTED_ES).length).toBeGreaterThan(0);
-        });
+        expect(await screen.findAllByText(EXPECTED_ES)).not.toHaveLength(0);
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 
@@ -125,9 +123,7 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
 
         await pickGalleryFile();
 
-        await waitFor(() => {
-            expect(screen.getAllByText(EXPECTED_ES).length).toBeGreaterThan(0);
-        });
+        expect(await screen.findAllByText(EXPECTED_ES)).not.toHaveLength(0);
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 });
