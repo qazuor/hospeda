@@ -18,7 +18,11 @@ type DriverInstance = {
 export function TourController({ locale, userRoles }: TourControllerProps) {
     const { t } = createTranslations(locale);
     const { isLoading, hasSeen, markSeen } = useTourState();
-    const [isRunning, setIsRunning] = useState(false);
+    // HOS-1856: "is running" lives in a ref, not in state. As state it was a
+    // dependency of the effect that starts the tour, so `setIsRunning(true)`
+    // right before `drive()` changed the deps, React ran that effect's
+    // cleanup, and the cleanup destroyed the driver before it could render.
+    const isRunningRef = useRef(false);
     const [shouldStart, setShouldStart] = useState(false);
     const driverRef = useRef<DriverInstance | null>(null);
 
@@ -36,19 +40,19 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
     const handleComplete = useCallback(() => {
         if (!tour) return;
         markSeen({ tourId: tour.id, version: tour.version });
-        setIsRunning(false);
+        isRunningRef.current = false;
         setShouldStart(false);
     }, [tour, markSeen]);
 
     const handleSkip = useCallback(() => {
         if (!tour) return;
         markSeen({ tourId: tour.id, version: tour.version });
-        setIsRunning(false);
+        isRunningRef.current = false;
         setShouldStart(false);
     }, [tour, markSeen]);
 
     useEffect(() => {
-        if (!shouldStart || !tour || isRunning) return;
+        if (!shouldStart || !tour || isRunningRef.current) return;
 
         const activeTour = tour;
 
@@ -78,7 +82,7 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
 
             if (cancelled) return;
 
-            setIsRunning(true);
+            isRunningRef.current = true;
             setShouldStart(false);
 
             const handleDestroy = () => {
@@ -121,14 +125,23 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
 
         void startTour();
 
+        // HOS-1856: this cleanup only cancels an in-flight start. Destroying
+        // here killed the tour the moment `shouldStart` flipped to false right
+        // after `drive()`; the driver is torn down by `onDestroyStarted` or by
+        // the unmount-only effect below.
         return () => {
             cancelled = true;
-            if (driverRef.current) {
-                driverRef.current.destroy();
-                driverRef.current = null;
-            }
         };
-    }, [shouldStart, tour, isRunning, handleComplete, handleSkip, t]);
+    }, [shouldStart, tour, handleComplete, handleSkip, t]);
+
+    // HOS-1856: the driver must survive effect re-runs and only die with the
+    // component. Empty deps so this runs on unmount only.
+    useEffect(() => {
+        return () => {
+            driverRef.current?.destroy();
+            driverRef.current = null;
+        };
+    }, []);
 
     return null;
 }
