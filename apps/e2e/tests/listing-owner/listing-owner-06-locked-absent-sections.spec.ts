@@ -276,13 +276,23 @@ test.describe('AC:5:2 owner sees absent sections go to the hub and locked sectio
         );
 
         // The stored dish is on screen, but nothing is editable and there is
-        // no Save button: this is the read-only half of DEC-FAC-025.
+        // no Save button: this is the read-only half of DEC-FAC-025. The
+        // manager now reads `/menu` with the session cookie, so the dish the
+        // "N cargados" notice counted actually reaches the locked panel.
         await expect(page.getByText('Empanadas')).toBeVisible({ timeout: 20_000 });
         await expect(page.locator('#editor-menu input')).toHaveCount(0);
         await expect(page.getByRole('button', { name: 'Guardar carta' })).toHaveCount(0);
+        await expect(page.getByText('No hay datos cargados en esta sección.')).toHaveCount(0);
 
         // Proactive upsell, present before any refusal could have produced it.
-        await expect(page.getByTestId('venue-section-locked-notice')).toBeVisible();
+        // This owner has no title and can still activate the trial, so the
+        // product copy is the pre-trial one: publishing is what unlocks it.
+        await expect(page.getByTestId('venue-section-locked-notice')).toContainText(
+            'La carta se habilita cuando publiques tu ficha'
+        );
+
+        // The section holds data, so "Vaciar" is offered next to the upsell.
+        await expect(page.getByTestId('venue-section-vaciar')).toBeVisible();
 
         // Emptying is the one allowed write. The PUT body must be EMPTY — an
         // empty replacement classifies as `delete` (DEC-FAC-041).
