@@ -15,9 +15,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublishReadyDialog } from '@/components/host/editor/PublishReadyDialog.client';
 
 const publishMock = vi.hoisted(() => vi.fn());
+const photoWarningMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationEditApi: { publish: publishMock }
+}));
+vi.mock('@/lib/forms/leave-warning-registry', () => ({
+    requestPhotoTextWarning: photoWarningMock
 }));
 
 /** The trial line, asserted both present and absent. */
@@ -38,6 +42,7 @@ function props(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
     vi.clearAllMocks();
     publishMock.mockResolvedValue({ ok: true, data: {} });
+    photoWarningMock.mockResolvedValue(true);
 });
 
 describe('PublishReadyDialog', () => {
@@ -74,7 +79,19 @@ describe('PublishReadyDialog', () => {
 
         await user.click(screen.getByText('Publicar ahora'));
 
+        expect(photoWarningMock).toHaveBeenCalledWith('photo-alt');
         await waitFor(() => expect(publishMock).toHaveBeenCalledWith({ id: 'acc-42' }));
+    });
+
+    it('does not publish when the photo warning is cancelled', async () => {
+        photoWarningMock.mockResolvedValue(false);
+        const user = userEvent.setup();
+        render(<PublishReadyDialog {...props()} />);
+
+        await user.click(screen.getByText('Publicar ahora'));
+
+        expect(photoWarningMock).toHaveBeenCalledWith('photo-alt');
+        expect(publishMock).not.toHaveBeenCalled();
     });
 
     it('turns into the plans link when the verdict went stale', async () => {

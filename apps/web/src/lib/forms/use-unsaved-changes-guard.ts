@@ -45,15 +45,12 @@
  * and `includeBeforeUnload: false` has to keep meaning "this condition does
  * not raise the native prompt".
  *
- * ## Not covered
- *
- * Back/forward navigation. By the time any event fires the browser has already
- * committed the history entry, so only a history trap could catch it — see the
- * spec's NG-6. A user who presses back still loses unsaved edits.
+ * The registry also restores the active history entry on popstate while the
+ * host decides whether to leave; see `leave-warning-registry.ts`.
  */
 
 import { useEffect } from 'react';
-import type { LeaveWarningKind } from '@/lib/forms/leave-warning-registry';
+import type { LeaveWarningCopy, LeaveWarningKind } from '@/lib/forms/leave-warning-registry';
 import { registerLeaveWarning } from '@/lib/forms/leave-warning-registry';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -109,6 +106,8 @@ export interface UseUnsavedChangesGuardOptions {
      * already carries its own count in that case.
      */
     readonly count?: number;
+    /** Rebuilds this warning's copy when a save changes its count. */
+    readonly copyForCount?: (count: number) => LeaveWarningCopy;
     /**
      * Locale used to build the COMBINED copy when this warning shares a page
      * with another one. Optional, and irrelevant while this is the only guard
@@ -149,6 +148,7 @@ export function useUnsavedChangesGuard({
     onCancel,
     kind = 'unsaved-changes',
     count,
+    copyForCount,
     locale
 }: UseUnsavedChangesGuardOptions): void {
     useEffect(() => {
@@ -177,6 +177,7 @@ export function useUnsavedChangesGuard({
             count,
             locale,
             copy: { message, title, confirmLabel, cancelLabel },
+            copyForCount,
             onConfirm,
             onCancel
         });
@@ -198,6 +199,7 @@ export function useUnsavedChangesGuard({
         onCancel,
         kind,
         count,
+        copyForCount,
         locale
     ]);
 }

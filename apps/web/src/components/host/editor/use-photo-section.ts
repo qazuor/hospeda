@@ -167,6 +167,7 @@ export function usePhotoSection({
     );
 
     const [isHydrated, setIsHydrated] = useState(false);
+    const [mediaLoadSucceeded, setMediaLoadSucceeded] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isCompressing, setIsCompressing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -209,6 +210,7 @@ export function usePhotoSection({
 
     useEffect(() => {
         let cancelled = false;
+        setMediaLoadSucceeded(false);
 
         accommodationMediaApi
             .listMedia({ id: accommodationId })
@@ -222,6 +224,7 @@ export function usePhotoSection({
                 const { featured, gallery } = splitMediaRows(result.data.media);
                 setFeaturedItem(featured);
                 setGalleryItems(gallery);
+                setMediaLoadSucceeded(true);
                 setIsHydrated(true);
             })
             .catch((err: unknown) => {
@@ -602,7 +605,7 @@ export function usePhotoSection({
     });
 
     const anyOpInFlight = isUploading || isCompressing || opLoading;
-    const opsReady = isHydrated;
+    const opsReady = mediaLoadSucceeded;
 
     return {
         featuredItem,

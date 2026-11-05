@@ -16,12 +16,9 @@
  *
  * Two differences from a normal "unsaved changes" use of that hook:
  *
- * 1. `includeBeforeUnload: false` — this is not data loss, so there is no
- *    reason to also raise the browser's own non-customizable tab-close/reload
- *    prompt. Back/forward navigation and tab close are a known, accepted gap
- *    (see the base hook's "Not covered" section); adding `beforeunload` here
- *    would not close that gap anyway, since its text cannot be customized and
- *    would not carry this feature's explanation.
+ * 1. `includeBeforeUnload: false` — hard exits use the browser's own
+ *    non-customizable prompt, which cannot carry this feature's explanation.
+ *    Back/forward navigation is handled by the shared leave-warning registry.
  * 2. `onConfirm` persists a per-accommodation `sessionStorage` flag so the
  *    prompt does not reappear for the rest of the session once the host has
  *    chosen to continue without finishing the alt texts. Choosing to go back
@@ -29,7 +26,7 @@
  *    if they try to leave again with photos still missing alt text.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -144,6 +141,9 @@ export function usePhotoAltWarningGuard({
     // Re-read only when the listing id changes. Confirmation updates local
     // state too, so a save can dismiss the prompt without unmounting this hook.
     const [isDismissed, setIsDismissed] = useState(() => readDismissed(accommodationId));
+    useEffect(() => {
+        setIsDismissed(readDismissed(accommodationId));
+    }, [accommodationId]);
 
     const shouldWarn = missingAltCount > 0 && !isDismissed;
 
@@ -156,6 +156,15 @@ export function usePhotoAltWarningGuard({
         setIsDismissed(true);
     }, [accommodationId]);
     const handleCancel = useCallback(focusFirstIncompletePhoto, []);
+    const copyForCount = useCallback(
+        (count: number) => ({
+            title: t('host.properties.editor.photo.altWarningTitle', 'Fotos sin texto alternativo'),
+            message: tPlural('host.properties.editor.photo.altWarningMessage', count, { count }),
+            confirmLabel: t('host.properties.editor.photo.altWarningContinue', 'Seguir igual'),
+            cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Completar ahora')
+        }),
+        [t, tPlural]
+    );
 
     useUnsavedChangesGuard({
         isDirty: shouldWarn,
@@ -166,6 +175,7 @@ export function usePhotoAltWarningGuard({
         // `lib/forms/leave-warning-copy.ts`.
         kind: 'photo-alt',
         count: missingAltCount,
+        copyForCount,
         locale,
         title: t('host.properties.editor.photo.altWarningTitle', 'Fotos sin texto alternativo'),
         message: tPlural('host.properties.editor.photo.altWarningMessage', missingAltCount, {

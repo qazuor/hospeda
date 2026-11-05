@@ -135,6 +135,21 @@ describe('PhotoMetadataEditor', () => {
         );
     });
 
+    it('keeps accommodation panel open when a save fails', async () => {
+        const onSave = vi.fn().mockResolvedValue(false);
+        render(<PhotoMetadataEditor {...makeProps({ onSave, closeOnSuccessfulSave: true })} />);
+        openPanel();
+        fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+            target: { value: 'Texto que debe conservarse' }
+        });
+        fireEvent.click(screen.getByText('Guardar'));
+
+        await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+        expect(screen.getByLabelText('¿Qué muestra la foto?')).toHaveValue(
+            'Texto que debe conservarse'
+        );
+    });
+
     it('leaves shared non-accommodation panels open after a successful save', async () => {
         const onSave = vi.fn().mockResolvedValue(true);
         render(<PhotoMetadataEditor {...makeProps({ onSave })} />);

@@ -28,6 +28,9 @@ const photo: AccommodationMediaItem = {
     url: 'https://example.com/photo.jpg',
     publicId: 'photo-1',
     isFeatured: false,
+    caption: undefined,
+    description: undefined,
+    attribution: undefined,
     alt: 'Texto existente'
 };
 
@@ -79,20 +82,20 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         expect(updateMediaMock).not.toHaveBeenCalled();
     });
 
-    it('does not warn about the photo being completed with the submitted alt value', async () => {
+    it('excludes the photo being completed from the save warning count', async () => {
         const incompletePhoto = { ...photo, alt: '' };
         const { result } = renderHook(() => {
             usePhotoAltWarningGuard({
                 locale: 'es',
                 accommodationId: 'accommodation-1',
                 featuredItem: null,
-                galleryItems: [incompletePhoto]
+                galleryItems: [incompletePhoto, { ...photo, id: 'photo-2', alt: '' }]
             });
             return usePhotoGalleryMutations({
                 accommodationId: 'accommodation-1',
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
-                galleryItems: [incompletePhoto],
+                galleryItems: [incompletePhoto, { ...photo, id: 'photo-2', alt: '' }],
                 isHydrated: true,
                 setFeaturedItem: vi.fn(),
                 setGalleryItems: vi.fn(),
@@ -106,8 +109,10 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
             await result.current.handleUpdateMediaText(incompletePhoto, { alt: 'Completed alt' });
         });
 
-        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
-        expect(updateMediaMock).toHaveBeenCalledTimes(1);
+        expect(showConfirmationDialogMock).toHaveBeenCalledWith(
+            expect.objectContaining({ message: '1 fotos sin texto alternativo' })
+        );
+        expect(updateMediaMock).not.toHaveBeenCalled();
     });
 
     it('merges the server text into the gallery row after a successful save', async () => {

@@ -163,6 +163,20 @@ describe('leave warnings on a page that mounts two guards', () => {
     });
 
     describe('when BOTH conditions hold at once', () => {
+        it('asks before back/forward navigation and restores the page when cancelled', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            renderBothGuards({ videoIsDirty: false, galleryItems: photosWithoutAlt(1) });
+            const currentHref = window.location.href;
+            await flushRouterImport();
+
+            window.history.pushState({}, '', '/es/mi-cuenta/propiedades/');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            await flushRouterImport();
+
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+            expect(window.location.href).toBe(currentHref);
+        });
+
         it('opens exactly ONE dialog whose message carries BOTH warnings', async () => {
             showConfirmationDialogMock.mockResolvedValue(false);
             renderBothGuards({ videoIsDirty: true, galleryItems: photosWithoutAlt(3) });
@@ -185,7 +199,7 @@ describe('leave warnings on a page that mounts two guards', () => {
             expect(call?.message).toContain('3 fotos siguen sin texto alternativo');
             // And it is neither standalone message wearing the other's hat.
             expect(call?.message).not.toBe(VIDEO_COPY.message);
-            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.confirmLabel).toBe('Salir y descartar los cambios');
             expect(call?.cancelLabel).toBe('Completar ahora');
         });
 
@@ -306,19 +320,19 @@ describe('leave warnings on a page that mounts two guards', () => {
                 locale: 'es',
                 title: 'Cambios sin guardar y fotos sin texto alternativo',
                 needle: '5 fotos siguen sin texto alternativo',
-                confirmLabel: 'Seguir igual'
+                confirmLabel: 'Salir y descartar los cambios'
             },
             {
                 locale: 'en',
                 title: 'Unsaved changes and photos without alt text',
                 needle: '5 photos still have no alt text',
-                confirmLabel: 'Continue anyway'
+                confirmLabel: 'Leave and discard the changes'
             },
             {
                 locale: 'pt',
                 title: 'Alterações não salvas e fotos sem texto alternativo',
                 needle: '5 fotos continuam sem texto alternativo',
-                confirmLabel: 'Continuar assim mesmo'
+                confirmLabel: 'Sair e descartar as alterações'
             }
         ];
 
