@@ -291,6 +291,11 @@
             "file": "packages/seed/src/example/venues.seed.ts",
             "category": "seed",
             "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/schemas/src/entities/experience/experience.access.schema.ts",
+            "category": "response-projection",
+            "spec": ".hoja/contexto.md:47-56"
         }
     ]
 }
