@@ -26,14 +26,16 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
-    BUSINESS_LINES_INVALID_REASON,
     BUSINESS_LINE_RULES,
+    BUSINESS_LINES_INVALID_REASON,
     DestinationTypeEnum,
+    isReservedListingSlug,
     normalizeBusinessLines,
     type PermissionEnum,
     REVIEW_RULES,
     RoleGrantReason,
     ServiceErrorCode,
+    type VerticalValue,
     validateBusinessLines
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
@@ -49,6 +51,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
@@ -597,6 +600,12 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        const listingVertical = this.entityName as VerticalValue;
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
         let businessLines = resolveBusinessLinesOnCreate({
             vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
             type: String(payload.type),
@@ -650,6 +659,9 @@ export abstract class BaseListingService<
             const name = payload.name as string;
             const model = this.model;
             const slug = await createUniqueSlug(name, async (candidate) => {
+                if (isReservedListingSlug({ vertical: listingVertical, slug: candidate })) {
+                    return true;
+                }
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
@@ -764,7 +776,14 @@ export abstract class BaseListingService<
         assertSupportEditContentOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
+        const listingVertical = this.entityName as VerticalValue;
         let current: TEntity | null = null;
+
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (slugWasProvided && typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
@@ -795,6 +814,14 @@ export abstract class BaseListingService<
                 typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
                     payload.name as string,
                     async (candidate) => {
+                        if (
+                            isReservedListingSlug({
+                                vertical: listingVertical,
+                                slug: candidate
+                            })
+                        ) {
+                            return true;
+                        }
                         const existing = await this.model.findOne({ slug: candidate });
                         return !!existing && existing.id !== current?.id;
                     }
