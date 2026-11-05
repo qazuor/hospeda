@@ -9,11 +9,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
-const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
+const { mockImportFromUrl, mockGetAccess, mockUseImportStatus } = vi.hoisted(() => ({
     mockImportFromUrl: vi.fn(),
+    mockGetAccess: vi.fn(),
     mockUseImportStatus: vi.fn()
 }));
 
@@ -32,7 +34,8 @@ vi.mock('@/lib/i18n', () => ({
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationsImportApi: {
-        importFromUrl: (...args: unknown[]) => mockImportFromUrl(...args)
+        importFromUrl: (...args: unknown[]) => mockImportFromUrl(...args),
+        getAccess: (...args: unknown[]) => mockGetAccess(...args)
     },
     // Mirrors the real structural guard: only the async `202` shape has `runId`.
     isAsyncImportStart: (data: unknown) =>
@@ -48,6 +51,12 @@ vi.mock('@/hooks/use-import-status', () => ({
 
 import { ImportFromUrl } from '../../../src/components/host/ImportFromUrl.client';
 
+async function renderAndWait(ui: ReactElement) {
+    const result = render(ui);
+    await screen.findByRole('button', { name: /Importar/i });
+    return result;
+}
+
 /** Default no-op poll result — used by every test that doesn't reach the async branch. */
 const IDLE_POLL_RESULT = {
     draft: null,
@@ -60,12 +69,95 @@ const IDLE_POLL_RESULT = {
 describe('ImportFromUrl', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetAccess.mockResolvedValue({
+            ok: true,
+            data: {
+                aiEntitlementAllowed: true,
+                isNewUser: true,
+                hasEntitlement: false,
+                remainingNewUserImports: 5
+            }
+        });
         mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
     });
 
-    it('keeps the Importar button disabled until the legal checkbox is ticked', () => {
-        // Arrange
+    it('shows the importer when the server says a new user is allowed', async () => {
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(mockGetAccess).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        const button = screen.getByRole('button', { name: /Importar/i });
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(button).toBeEnabled();
+    });
+
+    it('keeps the importer non-actionable while the server access decision is pending', () => {
+        mockGetAccess.mockReturnValue(new Promise(() => {}));
         render(<ImportFromUrl locale="es" />);
+        expect(screen.getByRole('status')).toHaveTextContent('Verificando disponibilidad');
+        expect(screen.queryByLabelText('URL del alojamiento')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Importar/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the importer with no banner when the access precheck cannot be read', async () => {
+        mockGetAccess.mockRejectedValueOnce(new Error('network'));
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
+    });
+
+    it('shows the importer with no banner when the access endpoint answers not-ok', async () => {
+        mockGetAccess.mockResolvedValueOnce({ ok: false });
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+    });
+
+    it('shows dedicated copy when a new user has reached the 24-hour cap', async () => {
+        mockGetAccess.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                aiEntitlementAllowed: false,
+                isNewUser: true,
+                hasEntitlement: false,
+                remainingNewUserImports: 0,
+                reason: 'new_user_cap'
+            }
+        });
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(await screen.findByRole('alert')).toHaveTextContent('últimas 24 horas');
+        // The server still serves the structured import to a capped user.
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
+        expect(screen.queryByRole('link', { name: /Ver planes/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the plan message when the server denies a returning user', async () => {
+        mockGetAccess.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                aiEntitlementAllowed: false,
+                isNewUser: false,
+                hasEntitlement: false,
+                remainingNewUserImports: null,
+                reason: 'entitlement'
+            }
+        });
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
+        );
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Ver planes/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
+    });
+
+    it('keeps the Importar button disabled until the legal checkbox is ticked', async () => {
+        // Arrange
+        await renderAndWait(<ImportFromUrl locale="es" />);
         const button = screen.getByRole('button', { name: /Importar/i });
 
         // Assert (initial)
@@ -85,7 +177,7 @@ describe('ImportFromUrl', () => {
             data: { draft: {}, source: 'generic', methodsUsed: [], partial: true }
         });
         const onImported = vi.fn();
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -114,7 +206,7 @@ describe('ImportFromUrl', () => {
 
     it('shows an error and does not call the endpoint when the URL is empty', async () => {
         // Arrange
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         // Act: tick legal, leave URL empty, submit.
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
@@ -137,7 +229,7 @@ describe('ImportFromUrl', () => {
                 message: 'La extracción asistida por IA no está incluida en tu plan.'
             }
         });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         // Act
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
@@ -150,9 +242,9 @@ describe('ImportFromUrl', () => {
         expect(await screen.findByRole('status')).toHaveTextContent(/no está incluida en tu plan/i);
     });
 
-    it('toggles the URL-acquisition help panel (US-7)', () => {
+    it('toggles the URL-acquisition help panel (US-7)', async () => {
         // Arrange
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
         expect(screen.queryByText(/Cómo copiar la URL/i)).not.toBeInTheDocument();
 
         // Act: open the help panel.
@@ -187,7 +279,7 @@ describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
         });
         const onImported = vi.fn();
         const onError = vi.fn();
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -242,7 +334,7 @@ describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
                 message: 'some server message'
             }
         });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         // Act
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
@@ -281,7 +373,7 @@ describe('R5 manual path invariant (SPEC-277)', () => {
                 failureCode
             }
         });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
         fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
@@ -332,7 +424,7 @@ describe('R5 manual path invariant (SPEC-277)', () => {
     it('re-enables submit and shows network error after non-200 HTTP failure — URL input stays editable', async () => {
         // Arrange: mock returns a non-ok response (HTTP error path)
         mockImportFromUrl.mockResolvedValueOnce({ ok: false });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
         fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
@@ -365,7 +457,7 @@ describe('R5 manual path invariant (SPEC-277)', () => {
         });
         mockImportFromUrl.mockReturnValueOnce(pendingPromise);
 
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
         fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
             target: { value: 'https://www.airbnb.com.ar/rooms/789' }
@@ -417,7 +509,7 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
             data: { draft: {}, source: 'generic', methodsUsed: [], partial: true }
         });
         const onImported = vi.fn();
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -443,7 +535,7 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
                 ? { draft: null, failureCode: null, settled: false, isPolling: true, error: null }
                 : IDLE_POLL_RESULT;
         });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
 
         // Act
         await submitAirbnbUrl();
@@ -481,7 +573,7 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
                 : IDLE_POLL_RESULT;
         });
         const onImported = vi.fn();
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -514,7 +606,7 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
         });
         const onImported = vi.fn();
         const onError = vi.fn();
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -543,7 +635,7 @@ describe('HOS-50 T-013: async 202+poll flow', () => {
                 : IDLE_POLL_RESULT;
         });
         const onImported = vi.fn();
-        const { unmount } = render(
+        const { unmount } = await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onImported={onImported}
@@ -581,6 +673,7 @@ describe('ImportFromUrl i18n keys', () => {
                       actions?: Record<string, string>;
                       errors?: {
                           urlInvalid?: string;
+                          newUserCap?: string;
                           failure?: Record<string, string>;
                       };
                       help?: {
@@ -599,7 +692,9 @@ describe('ImportFromUrl i18n keys', () => {
             expect(block?.fields?.url).toBeTruthy();
             expect(block?.fields?.legalConfirm).toBeTruthy();
             expect(block?.actions?.submit).toBeTruthy();
+            expect(block?.actions?.checkingAccess).toBeTruthy();
             expect(block?.errors?.urlInvalid).toBeTruthy();
+            expect(block?.errors?.newUserCap).toBeTruthy();
             // SPEC-258 C.1: every failure-mode key must exist in each locale so a
             // classified failure always resolves to localized text.
             for (const key of [
@@ -666,7 +761,7 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
     /** Fill URL, tick legal, submit against a mocked non-ok result, return the alert. */
     async function submitWithError(error: unknown) {
         mockImportFromUrl.mockResolvedValueOnce({ ok: false, error });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
         fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
             target: { value: 'https://www.airbnb.com.ar/rooms/789' }
@@ -683,7 +778,7 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
             ok: false,
             error: { status: 402, code: 'ENTITLEMENT_REQUIRED', reason: 'TRIAL_EXPIRED' }
         });
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onError={onError}
@@ -719,7 +814,7 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
     it('fires onError("unknown") on a non-ok result that is not an entitlement gate', async () => {
         const onError = vi.fn();
         mockImportFromUrl.mockResolvedValueOnce({ ok: false, error: { status: 403 } });
-        render(
+        await renderAndWait(
             <ImportFromUrl
                 locale="es"
                 onError={onError}
@@ -747,7 +842,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
     /** Fill URL, tick legal, submit against a mocked non-ok result, return the alert. */
     async function submitWithError(error: unknown) {
         mockImportFromUrl.mockResolvedValueOnce({ ok: false, error });
-        render(<ImportFromUrl locale="es" />);
+        await renderAndWait(<ImportFromUrl locale="es" />);
         fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
         fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
             target: { value: 'https://www.airbnb.com.ar/rooms/789' }
@@ -792,7 +887,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert — `code` resolves via `t(key, fallback)`, so the mock returns
         // the component's own fallback string rather than the key.
-        expect(alert).toHaveTextContent(/tu plan no incluye esta función/i);
+        expect(alert).toHaveTextContent(/tu plan no incluye la extracción de datos con IA/i);
     });
 
     it('renders an upgrade CTA pointing at the owner plans page', async () => {
