@@ -295,12 +295,24 @@ function handleClickCapture(event: MouseEvent): void {
     });
 }
 
+/** Resolves after the confirmation dialog's deferred unmount and focus restore. */
+function afterDialogTeardown(): Promise<void> {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, 0);
+    });
+}
+
 /** Shared confirmation runner for navigation and action-triggered warnings. */
 async function requestEntriesConfirmation(entries: readonly LeaveWarningEntry[]): Promise<boolean> {
     if (dialogOpen) return false;
     dialogOpen = true;
     try {
         const confirmed = await showConfirmationDialog(resolveCopy(entries));
+        // The dialog resolves first and unmounts afterwards, and its unmount
+        // restores focus to whatever was focused before it opened. A cancel
+        // action that moves focus (e.g. "Completar ahora") must therefore run
+        // after that teardown, or the restore silently undoes it.
+        if (!confirmed && entries.length === 1) await afterDialogTeardown();
         for (const entry of entries) {
             if (confirmed) entry.onConfirm?.();
             // A combined dialog carries a neutral cancel label, so entry-specific
