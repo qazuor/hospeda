@@ -259,6 +259,7 @@ export function BusinessLinesField({
             {error ? (
                 <p
                     id={errorId}
+                    data-testid="business-lines-error"
                     className="text-destructive text-sm"
                 >
                     {error}

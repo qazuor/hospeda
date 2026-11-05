@@ -60,6 +60,11 @@ describe('EntityFormSection — BUSINESS_LINES branch', () => {
             />
         );
 
-        expect(screen.getAllByText(NOT_ALLOWED_KEY).length).toBeGreaterThan(0);
+        // The field error node proves the branch read HELADERIA from `values`:
+        // with no listing type there is no selection error at all.
+        expect(screen.getByTestId('business-lines-error')).toHaveTextContent(NOT_ALLOWED_KEY);
+        expect(
+            screen.getByRole('button', { name: 'venue.owner.businessLines.useSuggested' })
+        ).toBeInTheDocument();
     });
 });
