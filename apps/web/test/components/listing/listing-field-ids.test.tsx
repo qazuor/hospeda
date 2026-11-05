@@ -177,6 +177,17 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     refreshSlugFromName: 'conditional opt-in, carries no error of its own'
 };
 
+/**
+ * Exempt keys that still render a GROUP CONTAINER at their derived id.
+ *
+ * `businessLines` is a checkbox group: its `<fieldset>` carries the derived id
+ * (HOS-1787 leaf 5.6) but is not a focusable single control, so the focus move
+ * has nothing to land on there — exactly the reason it stays in
+ * `NO_SINGLE_CONTROL`. Asserted to be a non-focusable `<fieldset>` instead of
+ * "nothing at all".
+ */
+const GROUP_CONTAINER_KEYS = new Set(['businessLines']);
+
 const SCHEMA_BY_VERTICAL = {
     venue: VenueOwnerUpdateInputSchema,
     experience: ExperienceOwnerUpdateInputSchema
@@ -268,8 +279,21 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
                 renderEditor(vertical);
 
                 for (const key of allKeysFor(vertical).filter((k) => k in NO_SINGLE_CONTROL)) {
+                    const element = document.getElementById(idFor(key));
+
+                    if (GROUP_CONTAINER_KEYS.has(key) && vertical === 'venue') {
+                        expect(element?.tagName, `"${key}" should render a group container`).toBe(
+                            'FIELDSET'
+                        );
+                        expect(
+                            isFocusableControl(element as HTMLElement),
+                            `"${key}" is exempt, so its container must not take focus.`
+                        ).toBe(false);
+                        continue;
+                    }
+
                     expect(
-                        document.getElementById(idFor(key)),
+                        element,
                         `"${key}" is listed as having no single control, but id "${idFor(key)}" ` +
                             'resolves. Remove it from NO_SINGLE_CONTROL so it gets covered.'
                     ).toBeNull();

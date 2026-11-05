@@ -29,6 +29,10 @@ vi.mock('../../../src/components/listing/ListingCreateForm.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+vi.mock('../../../src/components/listing/editor/BusinessLinesField.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
 vi.mock('../../../src/lib/urls', () => ({
     buildUrl: ({ locale, path = '' }: { locale: string; path?: string }) => `/${locale}/${path}/`
 }));
@@ -109,6 +113,70 @@ describe('ListingCreateForm', () => {
             fireEvent.change(input, { target: { value: 'La Parrilla de Juan' } });
 
             expect(input).toHaveValue('La Parrilla de Juan');
+        });
+    });
+
+    describe('business lines (HOS-1787 leaf 5.6)', () => {
+        it('preselects the type lines and sends the BOLICHE minAge (TEST:5.6:5)', async () => {
+            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-bl') });
+
+            render(
+                <ListingCreateForm
+                    vertical="venue"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'BAR' }
+            });
+
+            expect(screen.getByRole('checkbox', { name: /food/ })).toBeChecked();
+            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
+
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'BOLICHE' }
+            });
+
+            expect(screen.queryByRole('checkbox', { name: /food/ })).toBeNull();
+            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
+            expect(screen.getByLabelText('Edad mínima')).toHaveValue(18);
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Boliche del Puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Noche y música en el puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Un boliche con música en vivo todos los fines de semana.' }
+            });
+
+            fireEvent.click(screen.getByTestId('listing-create-submit'));
+
+            await waitFor(() => {
+                expect(mockCreate).toHaveBeenCalledTimes(1);
+            });
+
+            const call = mockCreate.mock.calls[0]?.[0];
+            expect(call?.data).toMatchObject({
+                businessLines: ['nightlife'],
+                minAge: 18
+            });
+        });
+
+        it('does not render the business-line fieldset for an experience (AC:5:9)', () => {
+            render(
+                <ListingCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            expect(document.getElementById('ce-businessLines')).toBeNull();
+            expect(screen.queryByRole('checkbox', { name: 'food' })).toBeNull();
         });
     });
 

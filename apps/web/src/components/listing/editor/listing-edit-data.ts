@@ -62,6 +62,13 @@ export interface ListingEditData {
     readonly destinationId: string;
     readonly description: string;
     readonly listingType: string;
+    /**
+     * Business lines the venue is assigned to (HOS-1787 leaf 5.6). The editor
+     * only renders a selector for verticals with more than one catalog line;
+     * the value is still part of the shared state for both verticals so the
+     * diff stays a plain string-list comparison.
+     */
+    readonly businessLines: readonly string[];
     readonly summary: string;
     readonly richDescription: string;
     readonly contact: ContactValues;

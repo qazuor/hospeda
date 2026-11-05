@@ -11,5 +11,16 @@
             "spec": ".hoja/contexto.md:1"
         }
     ],
-    "resolveBusinessLineOptions": []
+    "resolveBusinessLineOptions": [
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        }
+    ]
 }
