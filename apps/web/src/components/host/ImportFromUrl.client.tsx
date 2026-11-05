@@ -122,15 +122,13 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             try {
                 const result = await accommodationsImportApi.getAccess();
                 if (active && result.ok) setAccess(result.data);
-                else if (active) setAccess({ aiEntitlementAllowed: true });
             } catch (cause) {
                 webLogger.warn(
-                    'ImportFromUrl: access precheck failed; server will enforce access on submit',
+                    'ImportFromUrl: access precheck failed; keeping importer unavailable',
                     {
                         error: cause
                     }
                 );
-                if (active) setAccess({ aiEntitlementAllowed: true });
             }
         }
         void loadAccess();
@@ -337,6 +335,18 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
 
     const entitlementDenied = access?.reason === 'entitlement';
     const capReached = access?.reason === 'new_user_cap';
+    if (access === null) {
+        return (
+            <section className={styles.importFromUrl}>
+                <p role="status">
+                    {t(
+                        'host.importFromUrl.actions.checkingAccess',
+                        'Verificando disponibilidad de importación…'
+                    )}
+                </p>
+            </section>
+        );
+    }
     return (
         <section className={styles.importFromUrl}>
             {access?.aiEntitlementAllowed === false ? (
@@ -351,8 +361,8 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                           )
                         : entitlementDenied
                           ? t(
-                                'common.apiError.ENTITLEMENT_REQUIRED',
-                                'Tu plan no incluye esta función. Actualizalo para continuar.'
+                                'host.importFromUrl.errors.entitlement',
+                                'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
                             )
                           : null}
                     {entitlementDenied ? (

@@ -735,6 +735,7 @@ export const AccommodationImportAccessResponseSchema = z.object({
     remainingNewUserImports: z.number().int().nonnegative().nullable(),
     reason: z.enum(['entitlement', 'new_user_cap']).optional()
 });
+/** Server-resolved entitlement and new-user cap state for the accommodation importer UI. */
 export type AccommodationImportAccessResponse = z.infer<
     typeof AccommodationImportAccessResponseSchema
 >;

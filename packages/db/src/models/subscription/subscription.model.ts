@@ -18,6 +18,7 @@ import {
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
+    SUBSCRIPTION_STATUSES,
     subscriptions
 } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -168,11 +169,15 @@ export class SubscriptionModel {
                 and(
                     eq(subscriptions.userId, input.userId),
                     eq(subscriptions.vertical, input.vertical),
-                    notInArray(subscriptions.status, [
-                        'PENDING_AUTHORIZATION',
-                        'ABANDONED',
-                        'CHARGE_DECLINED'
-                    ])
+                    notInArray(
+                        subscriptions.status,
+                        SUBSCRIPTION_STATUSES.filter(
+                            (status) =>
+                                status !== 'PENDING_AUTHORIZATION' &&
+                                status !== 'ABANDONED' &&
+                                status !== 'CHARGE_DECLINED'
+                        )
+                    )
                 )
             )
             .limit(1);

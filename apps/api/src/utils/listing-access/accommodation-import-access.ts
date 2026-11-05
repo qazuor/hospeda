@@ -44,7 +44,7 @@ export async function getAccommodationImportAccess(input: {
     };
 }
 
-/** Claim an AI import slot for a new user; denial falls back to structured import. */
+/** Claim an AI import slot for a new user; a denied claim blocks AI extraction with 429. */
 export async function requireAccommodationImportAccess(input: {
     readonly userId: string;
     readonly hasEntitlement?: boolean;

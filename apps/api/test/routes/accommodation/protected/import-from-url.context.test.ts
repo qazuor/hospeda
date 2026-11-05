@@ -15,13 +15,19 @@ import { AccommodationImportService, type ImportContext } from '@repo/service-co
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSlidingWindowStore } from '../../../../src/middlewares/rate-limit';
 
-const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken, gateState, accessState } =
-    vi.hoisted(() => ({
-        mockDispatchImportFromUrl: vi.fn(),
-        mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token'),
-        gateState: { entitlement: true, limit: 10, count: 0 },
-        accessState: { isNewUser: true }
-    }));
+const {
+    mockDispatchImportFromUrl,
+    mockGetValidMercadoLibreToken,
+    gateState,
+    accessState,
+    capState
+} = vi.hoisted(() => ({
+    mockDispatchImportFromUrl: vi.fn(),
+    mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token'),
+    gateState: { entitlement: true, limit: 10, count: 0 },
+    accessState: { isNewUser: true },
+    capState: { consumeCalls: 0 }
+}));
 
 vi.mock(
     '../../../../src/utils/listing-access/accommodation-import-access-ports',
@@ -46,7 +52,10 @@ vi.mock(
                 hasHadSubscription: async () => false,
                 hasPublishedAccommodation: async () => false,
                 countNewUserImports: ({ userId }: { userId: string }) => consumer.count(userId),
-                consumeNewUserImport: ({ userId }: { userId: string }) => consumer.consume(userId)
+                consumeNewUserImport: ({ userId }: { userId: string }) => {
+                    capState.consumeCalls += 1;
+                    return consumer.consume(userId);
+                }
             })
         };
     }
@@ -117,6 +126,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         gateState.limit = 10;
         gateState.count = 0;
         accessState.isNewUser = true;
+        capState.consumeCalls = 0;
         app = initApp();
     });
 
@@ -215,7 +225,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         expect(res.status).toBe(200);
         const body = (await res.json()) as { data: AccommodationImportResponse };
         expect(body.data.message).toBeUndefined();
-        expect(gateState.count).toBe(0);
+        expect(capState.consumeCalls).toBe(0);
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 

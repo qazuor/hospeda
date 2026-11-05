@@ -53,11 +53,7 @@ import { ImportFromUrl } from '../../../src/components/host/ImportFromUrl.client
 
 async function renderAndWait(ui: ReactElement) {
     const result = render(ui);
-    await waitFor(() =>
-        expect(
-            screen.queryByText('Verificando disponibilidad de importación…')
-        ).not.toBeInTheDocument()
-    );
+    await screen.findByRole('button', { name: /Importar/i });
     return result;
 }
 
@@ -88,13 +84,18 @@ describe('ImportFromUrl', () => {
     it('shows the importer when the server says a new user is allowed', async () => {
         await renderAndWait(<ImportFromUrl locale="es" />);
         expect(mockGetAccess).toHaveBeenCalledTimes(1);
-        expect(await screen.findByRole('button', { name: /Importar/i })).toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        const button = screen.getByRole('button', { name: /Importar/i });
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(button).toBeEnabled();
     });
 
-    it('keeps the URL input available while the server access decision is pending', () => {
+    it('keeps the importer non-actionable while the server access decision is pending', () => {
         mockGetAccess.mockReturnValue(new Promise(() => {}));
         render(<ImportFromUrl locale="es" />);
-        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent('Verificando disponibilidad');
+        expect(screen.queryByLabelText('URL del alojamiento')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Importar/i })).not.toBeInTheDocument();
     });
 
     it('keeps the importer neutral until the server access decision arrives', async () => {
@@ -148,7 +149,7 @@ describe('ImportFromUrl', () => {
         });
         await renderAndWait(<ImportFromUrl locale="es" />);
         expect(await screen.findByRole('alert')).toHaveTextContent(
-            'Tu plan no incluye esta función. Actualizalo para continuar.'
+            'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
         );
         expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
     });
@@ -885,7 +886,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert — `code` resolves via `t(key, fallback)`, so the mock returns
         // the component's own fallback string rather than the key.
-        expect(alert).toHaveTextContent(/tu plan no incluye esta función/i);
+        expect(alert).toHaveTextContent(/tu plan no incluye la extracción de datos con IA/i);
     });
 
     it('renders an upgrade CTA pointing at the owner plans page', async () => {

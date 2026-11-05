@@ -20,4 +20,10 @@ describe('accommodation import access reader wiring', () => {
         expect(portsSource).not.toContain('from(subscriptions)');
         expect(portsSource).toContain('AI_ENTITLEMENT_KEY_BY_FEATURE.accommodation_import');
     });
+
+    it('requires a live, non-deleted published accommodation to disqualify a new user', () => {
+        expect(portsSource).toContain('PublicationStatusEnum.PUBLISHED');
+        expect(portsSource).toContain('isNull(accommodations.deletedAt)');
+        expect(portsSource).toContain('eq(accommodations.ownerId, input.userId)');
+    });
 });
