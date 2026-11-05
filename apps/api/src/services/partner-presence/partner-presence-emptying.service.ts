@@ -106,28 +106,31 @@ export async function emptyPartnerPresence(
     }
 
     const initialPlan = assetPlan(initial, deps.cloudName);
-    if (initialPlan.publicIds.length > 0 && deps.mediaProvider === null) {
-        throw new ServiceError(
-            ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'Remote media provider unavailable',
-            undefined,
-            'MEDIA_PROVIDER_UNAVAILABLE'
-        );
-    }
-    for (const publicId of initialPlan.publicIds) {
-        try {
-            await deps.mediaProvider!.delete({ publicId });
-        } catch (error) {
-            apiLogger.error(
-                { partnerId: input.partnerId, error },
-                '[partner-presence] remote asset deletion failed'
-            );
+    if (initialPlan.publicIds.length > 0) {
+        const mediaProvider = deps.mediaProvider;
+        if (mediaProvider === null) {
             throw new ServiceError(
                 ServiceErrorCode.SERVICE_UNAVAILABLE,
-                'Remote media deletion failed',
+                'Remote media provider unavailable',
                 undefined,
-                'REMOTE_DELETE_FAILED'
+                'MEDIA_PROVIDER_UNAVAILABLE'
             );
+        }
+        for (const publicId of initialPlan.publicIds) {
+            try {
+                await mediaProvider.delete({ publicId });
+            } catch (error) {
+                apiLogger.error(
+                    { partnerId: input.partnerId, error },
+                    '[partner-presence] remote asset deletion failed'
+                );
+                throw new ServiceError(
+                    ServiceErrorCode.SERVICE_UNAVAILABLE,
+                    'Remote media deletion failed',
+                    undefined,
+                    'REMOTE_DELETE_FAILED'
+                );
+            }
         }
     }
 

@@ -9,7 +9,8 @@ describe('classifyPartnerRemoteAssets', () => {
             classifyPartnerRemoteAssets({
                 urls: [
                     logo,
-                    logo,
+                    logo.replace('.png', '.jpg'),
+                    'https://res.cloudinary.com/another/image/upload/v1/hospeda/test/x.png',
                     'https://res.cloudinary.com/another/image/upload/v1/hospeda/test/x.png',
                     'https://res.cloudinary.com/hospeda-test/image/upload/v1/other/x.png',
                     'https://images.pexels.com/x.png',
