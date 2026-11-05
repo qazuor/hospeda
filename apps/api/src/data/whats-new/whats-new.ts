@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4113
+    {
+        id: '2026-11-05-photo-texts-panel-and-reminder',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los textos de tus fotos ahora se guardan y se cierran solos',
+            en: 'Your photo texts now save and close on their own',
+            pt: 'Os textos das suas fotos agora são salvos e fecham sozinhos'
+        },
+        body: {
+            es: 'En **Fotos**, al guardar los textos de una foto el panel se cierra solo. Y si salís de la sección con fotos sin descripción, te avisamos y podés completarlas en el momento o seguir igual.',
+            en: 'In **Photos**, saving a photo’s texts now closes the panel on its own. And if you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
+            pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho. E se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4114
     {
         id: '2026-11-05-video-link-in-every-plan',
