@@ -1078,7 +1078,10 @@
             "visible": "Visible si el plan del socio la incluye",
             "moderated": "Moderada: la página y el carrusel no la muestran"
         },
-        "actions": { "moderate": "Moderar presencia", "lift": "Levantar moderación" },
+        "actions": {
+            "moderate": "Moderar presencia",
+            "lift": "Levantar moderación"
+        },
         "dialog": {
             "reasonLabel": "Motivo",
             "reasonHelp": "Queda registrado con tu usuario. No toca el cobro del socio.",
@@ -1257,6 +1260,31 @@
             "business": "Empresa",
             "ngo": "Organización sin fines de lucro",
             "institution": "Institución"
+        }
+    },
+    "partnerEmptyPresence": {
+        "title": "Vaciar la presencia del Partner",
+        "description": "A pedido de su dueño, como parte de la baja manual de la cuenta. No es una moderación.",
+        "action": "Vaciar presencia",
+        "dialog": {
+            "title": "Vaciar la presencia de {name}",
+            "deletes": "Se borra el contenido de la presencia de {name}: el logo, la descripción, el sitio web, las redes y los datos de contacto, y los archivos del logo guardados en nuestro almacenamiento externo. Este contenido se borra y no vuelve.",
+            "pending": "También se borra lo que el Partner había enviado y todavía esperaba revisión.",
+            "untouched": "El Partner, su cobro y su postulación no se tocan.",
+            "reasonLabel": "Por qué",
+            "reasonHelp": "Queda en el registro, junto con quién la vació y de qué Partner es.",
+            "cancel": "Cancelar",
+            "confirm": "Vaciar la presencia",
+            "confirming": "Vaciando…"
+        },
+        "successTitle": "Presencia vaciada",
+        "successMessage": "El contenido de {name} se borró y no vuelve.",
+        "errors": {
+            "title": "No se pudo vaciar la presencia",
+            "alreadyEmpty": "La presencia ya no tiene contenido. Recargá la página.",
+            "stateChanged": "El contenido cambió desde que abriste esta confirmación y no se vació. Cerrala y volvé a abrirla.",
+            "storage": "No pudimos borrar los archivos del almacenamiento externo. No se vació nada: probá de nuevo en unos minutos.",
+            "forbidden": "No podés vaciar la presencia de un Partner que es tuyo: lo hace otra cuenta del equipo con el permiso."
         }
     }
 }
