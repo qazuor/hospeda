@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4109
+    {
+        id: '2026-11-05-paying-keeps-your-published-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Al pasar de la prueba gratis a un plan, tus fichas publicadas siguen igual',
+            en: 'Moving from the free trial to a plan keeps your published listings as they are',
+            pt: 'Ao passar do teste grátis para um plano, seus anúncios publicados continuam iguais'
+        },
+        body: {
+            es: 'Si tu plan permite menos alojamientos de los que cargaste, al contratarlo quedan publicados los que publicaste más recientemente, los mismos que ya estaban en línea durante la prueba.',
+            en: 'If your plan allows fewer properties than you have listed, the ones you published most recently stay published when you subscribe — the same ones that were live during your trial.',
+            pt: 'Se o seu plano permite menos hospedagens do que você cadastrou, ao contratá-lo continuam publicadas as que você publicou mais recentemente, as mesmas que já estavam no ar durante o teste.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4111, #4132
     {
         id: '2026-11-05-price-on-request-cards',
