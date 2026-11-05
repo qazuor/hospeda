@@ -51,7 +51,7 @@ function structuredTrail(src: string): string {
 }
 
 describe('alliance-lead landings — the guard reads a real page set', () => {
-    it('finds all four pages, non-empty', () => {
+    it('finds all three remaining landings, non-empty', () => {
         // Complementary half: every per-page loop below is vacuous if this set
         // is empty or a path silently stopped resolving.
         expect(sources.size).toBe(3);
