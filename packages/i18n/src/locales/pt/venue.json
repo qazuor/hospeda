@@ -325,7 +325,8 @@
                 "vaciarError": "Não foi possível esvaziar a seção.",
                 "vaciarSuccess": "A seção foi esvaziada.",
                 "inactive": "Não é exibido",
-                "unavailable": "Indisponível"
+                "unavailable": "Indisponível",
+                "fileUnavailable": "Não é possível abrir este arquivo."
             },
             "acceptsEvents": {
                 "label": "Aceito eventos (aniversários, empresas, casamentos)",

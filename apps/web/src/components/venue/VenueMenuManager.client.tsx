@@ -915,8 +915,8 @@ export function VenueMenuManager({
                             ) : (
                                 <span className={styles.intro}>
                                     {t(
-                                        'venue.owner.editor.menuManager.fileUnavailable',
-                                        'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
+                                        'venue.owner.editor.lockedSection.fileUnavailable',
+                                        'No se puede abrir este archivo.'
                                     )}
                                 </span>
                             )}

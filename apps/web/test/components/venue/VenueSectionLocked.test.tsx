@@ -245,6 +245,29 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
         expect(screen.queryByText('No hay datos cargados en esta sección.')).toBeNull();
         expect(screen.getByTestId('venue-section-vaciar')).toBeInTheDocument();
     });
+
+    it('uses a non-actionable message when the locked file cannot be opened', async () => {
+        mockGet.mockResolvedValue({
+            ok: true as const,
+            data: {
+                sections: [],
+                file: { url: 'javascript:alert(1)', kind: 'pdf' as const }
+            }
+        } as never);
+
+        render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+            />
+        );
+
+        // There is no delete or upload control in `locked`, so the message
+        // cannot tell the owner to do something the page does not offer.
+        expect(await screen.findByText('No se puede abrir este archivo.')).toBeInTheDocument();
+        expect(screen.queryByText(/Eliminalo y subilo de nuevo/)).toBeNull();
+    });
 });
 
 describe('VenueDailySpecialsManager — a locked section is read-only and can be emptied (TEST:5.2:1)', () => {

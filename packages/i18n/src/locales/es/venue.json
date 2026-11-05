@@ -325,7 +325,8 @@
                 "vaciarError": "No se pudo vaciar la sección.",
                 "vaciarSuccess": "Se vació la sección.",
                 "inactive": "No se muestra",
-                "unavailable": "No disponible"
+                "unavailable": "No disponible",
+                "fileUnavailable": "No se puede abrir este archivo."
             },
             "acceptsEvents": {
                 "label": "Acepto eventos (cumpleaños, empresas, casamientos)",

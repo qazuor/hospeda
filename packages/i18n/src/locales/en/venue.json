@@ -325,7 +325,8 @@
                 "vaciarError": "The section could not be emptied.",
                 "vaciarSuccess": "The section was emptied.",
                 "inactive": "Not shown",
-                "unavailable": "Unavailable"
+                "unavailable": "Unavailable",
+                "fileUnavailable": "This file cannot be opened."
             },
             "acceptsEvents": {
                 "label": "We accept events (birthdays, corporate, weddings)",
