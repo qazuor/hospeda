@@ -350,6 +350,20 @@ describe('AccommodationCard.astro', () => {
             );
         });
 
+        it('anchors the divider + price/CTA footer to the bottom of the card (HOS-2035)', () => {
+            // Arrange — the content column grows to fill the card (flex: 1), so the
+            // footer only lines up across a row when it is pushed to the bottom.
+            // Without this, a card whose title wraps to one line puts its footer
+            // ~28px higher than its neighbours (measured on the home "Destacados").
+            const contentRule = src.match(/\.acc-card__content\s*\{[^}]*\}/)?.[0] ?? '';
+            const dividerRule = src.match(/\.acc-card__divider\s*\{[^}]*\}/)?.[0] ?? '';
+
+            // Assert
+            expect(contentRule).toMatch(/flex:\s*1/);
+            expect(contentRule).toMatch(/flex-direction:\s*column/);
+            expect(dividerRule).toMatch(/margin-top:\s*auto/);
+        });
+
         it('allows the consult label to wrap in narrow cards without widening the CTA row', () => {
             expect(src).toMatch(/\.acc-card__price-value--consult\s*\{[^}]*white-space:\s*normal/);
             expect(src).toMatch(/\.acc-card__price-block\s*\{[^}]*min-width:\s*0/);

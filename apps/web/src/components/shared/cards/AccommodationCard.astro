@@ -692,8 +692,11 @@ const isNew = data.createdAt
 		color: var(--core-muted-foreground);
 	}
 
-	/* Divider */
+	/* Divider — `margin-top: auto` pushes it and the price/CTA row below it to
+	 * the bottom of the (flex: 1) content column, so the footer lines up across
+	 * a row of cards whatever the title/description length (HOS-2035). */
 	.acc-card__divider {
+		margin-top: auto;
 		height: 1px;
 		background-color: var(--border);
 		width: 100%;
