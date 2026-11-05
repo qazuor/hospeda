@@ -28,8 +28,7 @@ describe('useVideoSection', () => {
         updateMock.mockResolvedValue({ ok: true });
     });
 
-    it('cancels saving when the host chooses to complete missing photo text', async () => {
-        requestLeaveWarningMock.mockResolvedValue(false);
+    it('saves video edits with incomplete photos without showing the photo-alt dialog', async () => {
         const { result } = renderHook(() =>
             useVideoSection({
                 locale: 'es',
@@ -43,26 +42,7 @@ describe('useVideoSection', () => {
             await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
         });
 
-        expect(requestLeaveWarningMock).toHaveBeenCalledWith('photo-alt');
-        expect(updateMock).not.toHaveBeenCalled();
-    });
-
-    it('saves after the host chooses to continue with incomplete photo text', async () => {
-        requestLeaveWarningMock.mockResolvedValue(true);
-        const { result } = renderHook(() =>
-            useVideoSection({
-                locale: 'es',
-                accommodationId: 'acc-1',
-                initialVideos: [{ url: 'https://youtube.com/watch?v=abc', caption: 'Recorrido' }]
-            })
-        );
-
-        act(() => result.current.setRowField(0, 'caption', 'Tour completo'));
-        await act(async () => {
-            await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
-        });
-
-        expect(requestLeaveWarningMock).toHaveBeenCalledWith('photo-alt');
+        expect(requestLeaveWarningMock).not.toHaveBeenCalled();
         expect(updateMock).toHaveBeenCalledTimes(1);
     });
 });

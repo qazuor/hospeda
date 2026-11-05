@@ -1,7 +1,7 @@
 /**
  * @file use-photo-alt-warning-guard.ts
- * @description Registers the HOS-1018 photo-alt warning for internal links and
- * guarded saves while persisted photos still have an empty `alt` text.
+ * @description Registers the HOS-1018 photo-alt warning for internal links
+ * while persisted photos still have an empty `alt` text.
  *
  * On the sample listing that motivated this, all fifteen photos had an empty
  * `alt`, caption, and description — nothing on the page asks for or explains
@@ -19,7 +19,8 @@
  * 1. `includeBeforeUnload: false` — hard exits use the browser's own
  *    non-customizable prompt, which cannot carry this feature's explanation.
  *    Browser back/forward navigation is outside this guard; only internal
- *    link clicks and guarded save actions use the shared registry.
+ *    link clicks use the shared registry. Photo text saves are not
+ *    guarded by this nudge.
  * 2. `onConfirm` persists a per-accommodation `sessionStorage` flag so the
  *    prompt does not reappear for the rest of the session once the host has
  *    chosen to continue without finishing the alt texts. Choosing to go back
@@ -110,11 +111,10 @@ function clearFocusTimers(): void {
  * Opens and focuses the alt field of the first photo whose required alt text
  * is incomplete.
  *
- * Polls instead of focusing once: the toggle is disabled while an operation is
- * in flight, and the textarea stays disabled while its own save is pending. A
- * save-triggered dialog is answered while `isSaving` is still true, so a single
- * `focus()` call on a disabled element would silently do nothing. Gives up
- * after ~5 seconds.
+ * Polls instead of focusing once because the section toggle or textarea may
+ * still be disabled while the incomplete-photo panel opens or its own save is
+ * pending. A single `focus()` call on a disabled element would silently do
+ * nothing. Gives up after ~5 seconds.
  */
 function focusFirstIncompletePhoto(): void {
     clearFocusTimers();
@@ -222,6 +222,7 @@ export function usePhotoAltWarningGuard({
         // time, and build one dialog that states both — see
         // `lib/forms/leave-warning-copy.ts`.
         kind: 'photo-alt',
+        guardsSaves: false,
         count: missingAltCount,
         copyForCount,
         locale,

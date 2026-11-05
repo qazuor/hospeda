@@ -15,7 +15,6 @@
 
 import { useCallback, useState } from 'react';
 import type { AccommodationVideoEntry } from '@/lib/api/types';
-import { requestLeaveWarning } from '@/lib/forms/leave-warning-registry';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -162,9 +161,6 @@ export function useVideoSection({
                     return;
                 }
             }
-
-            const maySave = await requestLeaveWarning('photo-alt');
-            if (!maySave) return;
 
             setIsSaving(true);
             try {
