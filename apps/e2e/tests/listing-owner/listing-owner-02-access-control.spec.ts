@@ -181,11 +181,13 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/`);
 
         // Additionally confirm the venue editor input is NOT present on this page.
-        // #ce-menuUrl is the stable, unique id for the venue editor's menuUrl field
-        // inside ListingEditor. Its absence confirms we landed on the listing index
-        // (which has no editor island) rather than the editor page. Using toHaveCount(0)
-        // avoids strict-mode multi-match violations — it passes even if the selector would
-        // theoretically match zero OR many elements, since we only care about absence.
+        // #ce-menuUrl is the stable, unique id for the venue editor's menu-link
+        // field, mounted by the CARTA section (DEC-FAC-062 moved it out of
+        // price; HOS-1787 leaf 5.3). Its absence confirms we landed on the
+        // listing index (which has no editor island) rather than any editor
+        // page. Using toHaveCount(0) avoids strict-mode multi-match violations —
+        // it passes even if the selector would theoretically match zero OR many
+        // elements, since we only care about absence.
         await expect(page.locator('#ce-menuUrl')).toHaveCount(0);
     });
 });
