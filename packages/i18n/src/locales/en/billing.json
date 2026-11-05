@@ -557,7 +557,7 @@
         "publish_experience": "Publish experience listings",
         "download_listing_pdf": "Printable PDF listing sheet",
         "issue_experience_certificate": "Experience certificates",
-        "manage_venue_menu": "Structured menu with sections and dishes",
+        "manage_venue_menu": "Structured menu with sections, dishes and link to your menu",
         "menu_item_photos": "Photo for each dish on the menu",
         "manage_experience_directions": "Meeting point map and how to get there",
         "manage_venue_daily_special": "Dish of the day with its own validity window",
@@ -638,7 +638,8 @@
             "venueMenu": "The menu",
             "experienceListing": "Your experience on Hospeda",
             "experienceService": "Before and after the outing",
-            "listingExtras": "Extra tools"
+            "listingExtras": "Extra tools",
+            "catalogSections": "Sections of your listing"
         },
         "row": {
             "favorites": "Favorites",
@@ -675,7 +676,7 @@
             "maxVenues": "Venues you can list",
             "publishVenue": "Publish your venue",
             "editVenueInfo": "Edit the venue's information",
-            "venueMenu": "Menu loaded into Hospeda",
+            "venueMenu": "Menu loaded into Hospeda and link to your menu",
             "venueDailySpecial": "Dish of the day",
             "venueEvents": "Venue events",
             "menuItemPhotos": "Photos per dish",
@@ -725,7 +726,7 @@
             "maxVenues": "Number of venues you can have published at once.",
             "publishVenue": "Publish your venue so visitors can find it on Hospeda.",
             "editVenueInfo": "Update your venue's details and information whenever you like.",
-            "venueMenu": "Load your menu into Hospeda so it shows on your venue's page.",
+            "venueMenu": "Load your menu into Hospeda and add the link to your menu so it shows on your venue page.",
             "venueDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
             "venueEvents": "Announce the events you host on your venue's page.",
             "menuItemPhotos": "Add a photo to every dish on your menu.",
@@ -768,7 +769,8 @@
             "max_search_history_entries": "Search history entries",
             "max_collections": "Favorites collections",
             "max_active_private_galleries": "Active private galleries"
-        }
+        },
+        "lineMark": "For listings in the {{rubro}} category"
     },
     "limitHelp": {
         "max_accommodations": "How many places you can have published at once. At the cap you need to unpublish one, or move up a plan, to add another.",

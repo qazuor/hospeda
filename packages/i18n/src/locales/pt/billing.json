@@ -557,7 +557,7 @@
         "publish_experience": "Publicar experiências",
         "download_listing_pdf": "Ficha em PDF para imprimir",
         "issue_experience_certificate": "Certificados de experiência",
-        "manage_venue_menu": "Cardápio com seções e pratos",
+        "manage_venue_menu": "Cardápio com seções, pratos e link para o seu cardápio",
         "menu_item_photos": "Foto por prato no cardápio",
         "manage_experience_directions": "Mapa do ponto de encontro e como chegar",
         "manage_venue_daily_special": "Prato do dia com validade própria",
@@ -638,7 +638,8 @@
             "venueMenu": "O cardápio",
             "experienceListing": "Sua experiência na Hospeda",
             "experienceService": "Antes e depois do passeio",
-            "listingExtras": "Ferramentas extras"
+            "listingExtras": "Ferramentas extras",
+            "catalogSections": "Seções da sua ficha"
         },
         "row": {
             "favorites": "Favoritos",
@@ -675,7 +676,7 @@
             "maxVenues": "Estabelecimentos que você pode publicar",
             "publishVenue": "Publicar seu estabelecimento",
             "editVenueInfo": "Editar as informações do estabelecimento",
-            "venueMenu": "Cardápio carregado na Hospeda",
+            "venueMenu": "Cardápio carregado na Hospeda e link para o seu cardápio",
             "venueDailySpecial": "Prato do dia",
             "venueEvents": "Eventos do estabelecimento",
             "menuItemPhotos": "Fotos por prato",
@@ -725,7 +726,7 @@
             "maxVenues": "Quantidade de estabelecimentos que você pode ter publicados ao mesmo tempo.",
             "publishVenue": "Publique seu estabelecimento para que os visitantes o encontrem na Hospeda.",
             "editVenueInfo": "Atualize os dados e detalhes do seu estabelecimento quando quiser.",
-            "venueMenu": "Carregue seu cardápio na Hospeda para que apareça na página do seu estabelecimento.",
+            "venueMenu": "Carregue seu cardápio na Hospeda e adicione o link para o seu cardápio para que apareça na página do seu estabelecimento.",
             "venueDailySpecial": "Mostre o prato do dia na sua publicação e troque quando quiser.",
             "venueEvents": "Divulgue na página do seu estabelecimento os eventos que você organiza.",
             "menuItemPhotos": "Adicione uma foto a cada prato do seu cardápio.",
@@ -768,7 +769,8 @@
             "max_search_history_entries": "Entradas do histórico de buscas",
             "max_collections": "Coleções de favoritos",
             "max_active_private_galleries": "Galerias privadas ativas"
-        }
+        },
+        "lineMark": "Para estabelecimentos do segmento {{rubro}}"
     },
     "limitHelp": {
         "max_accommodations": "Quantas hospedagens você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa despublicar uma ou mudar para um plano maior para somar outra.",
