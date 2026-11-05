@@ -16,6 +16,15 @@ const src = readFileSync(
     'utf8'
 );
 
+/**
+ * The badge now lives in a React island, so its styles moved to a CSS Module.
+ * These tests read that file to keep the BETA-117 contrast guarantees.
+ */
+const badgeCss = readFileSync(
+    resolve(__dirname, '../../../src/components/venue/VenueOpenNowBadge.module.css'),
+    'utf8'
+);
+
 describe('VenueCard.astro', () => {
     describe('locale access', () => {
         it('uses Astro.locals.locale via createTranslations(locale), not Astro.params.lang', () => {
@@ -89,35 +98,29 @@ describe('VenueCard.astro', () => {
     });
 
     describe('open-now badge', () => {
-        it('imports computeOpenNowStatus from the hours helper', () => {
-            expect(src).toContain('computeOpenNowStatus');
-            expect(src).toContain('venue-hours');
+        it('TEST:6.3:3 mounts the badge island with client:idle only when openingHours is present', () => {
+            expect(src).toMatch(
+                /\{data\.openingHours && \(\s*<VenueOpenNowBadge\s+client:idle\s+locale=\{locale\}\s+openingHours=\{data\.openingHours\}\s*\/>\s*\)\}/
+            );
         });
 
-        it('only renders the badge when openNowStatus is non-null', () => {
-            expect(src).toContain('openNowStatus !== null');
-        });
-
-        it('uses venue.card.openNow i18n key', () => {
-            expect(src).toContain('venue.card.openNow');
-        });
-
-        it('uses venue.card.closedNow i18n key', () => {
-            expect(src).toContain('venue.card.closedNow');
+        it('TEST:6.3:3 leaves the server-side calculation and badge markup out of the card', () => {
+            expect(src).not.toContain('computeOpenNowStatus');
+            expect(src).not.toContain('venue-hours');
+            expect(src).not.toContain('venue-card__open-badge');
+            expect(src).not.toContain('venue.card.openNow');
+            expect(src).not.toContain('venue.card.closedNow');
         });
 
         // BETA-117: the badge was illegible over photos because it used
         // near-transparent alpha tints. It must use solid/opaque fills.
         it('uses the green brand fill for the open state', () => {
-            expect(src).toContain(
-                '.venue-card__open-badge--open {\n' +
-                    '        background-color: var(--hospeda-forest);'
-            );
+            expect(badgeCss).toContain('.open {\n    background-color: var(--hospeda-forest);');
         });
 
         it('darkens the red fill for the closed state (dark-mode contrast)', () => {
-            expect(src).toContain('.venue-card__open-badge--closed {\n');
-            expect(src).toContain(
+            expect(badgeCss).toContain('.closed {\n');
+            expect(badgeCss).toContain(
                 'background-color: color-mix(in oklab, var(--destructive) 85%, black);'
             );
         });
@@ -126,22 +129,33 @@ describe('VenueCard.astro', () => {
         // foreground, because the per-theme `*-foreground` tokens flip to
         // near-black in dark and fail WCAG AA (< 4.5:1) on the badge fills.
         it('uses a theme-constant white foreground on the badge base', () => {
-            expect(src).toMatch(
-                /\.venue-card__open-badge \{[\s\S]*?color: var\(--destructive-foreground\);[\s\S]*?\}/
+            expect(badgeCss).toMatch(
+                /\.badge \{[\s\S]*?color: var\(--destructive-foreground\);[\s\S]*?\}/
             );
         });
 
         it('does not use the theme-flipping --primary-foreground on the badges', () => {
-            expect(src).not.toContain(
-                '.venue-card__open-badge--open {\n' +
-                    '        background-color: var(--hospeda-forest);\n' +
-                    '        color: var(--primary-foreground);'
-            );
+            expect(badgeCss).not.toContain('color: var(--primary-foreground);');
         });
 
         it('does not use low-alpha accent tints for the badge (regression guard)', () => {
-            expect(src).not.toContain('--brand-accent-a15');
-            expect(src).not.toContain('--brand-accent-a05');
+            expect(badgeCss).not.toContain('--brand-accent-a15');
+            expect(badgeCss).not.toContain('--brand-accent-a05');
+        });
+
+        // The move kept every value: the badge stays absolutely positioned over
+        // the image area (late appearance therefore causes no layout shift) and
+        // keeps its mobile corner swap.
+        it('keeps the original absolute geometry', () => {
+            expect(badgeCss).toContain('position: absolute;');
+            expect(badgeCss).toContain('bottom: 48px;');
+            expect(badgeCss).toContain('left: 12px;');
+        });
+
+        it('keeps the mobile bottom-right swap', () => {
+            expect(badgeCss).toMatch(
+                /@media \(max-width: 767px\)[\s\S]*?\.badge \{[\s\S]*?left: auto;[\s\S]*?right: 12px;/
+            );
         });
     });
 

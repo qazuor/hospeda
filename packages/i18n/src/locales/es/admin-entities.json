@@ -192,7 +192,8 @@
             "noPending": "No hay reseñas pendientes de moderación",
             "anonymous": "Anónimo",
             "approve": "Aprobar",
-            "reject": "Rechazar"
+            "reject": "Rechazar",
+            "dimensionsLabel": "Dimensiones votadas"
         },
         "assignOwner": {
             "title": "Asignar propietario",

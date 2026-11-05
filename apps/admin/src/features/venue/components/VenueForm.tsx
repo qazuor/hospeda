@@ -348,37 +348,6 @@ export function VenueForm({
                             )}
                         </form.Field>
 
-                        {/* Menu URL */}
-                        <div className="sm:col-span-2">
-                            <form.Field name="menuUrl">
-                                {(field) => (
-                                    <FieldWrapper
-                                        label="URL del menú online"
-                                        htmlFor={field.name}
-                                        error={
-                                            field.state.meta.isTouched
-                                                ? field.state.meta.errors.join(', ')
-                                                : undefined
-                                        }
-                                    >
-                                        <input
-                                            id={field.name}
-                                            name={field.name}
-                                            type="url"
-                                            value={(field.state.value as string) ?? ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(e.target.value || undefined)
-                                            }
-                                            placeholder="https://tu-restaurante.com/menu"
-                                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                            disabled={isPending}
-                                        />
-                                    </FieldWrapper>
-                                )}
-                            </form.Field>
-                        </div>
-
                         {/* Destination ID */}
                         <form.Field
                             name="destinationId"
