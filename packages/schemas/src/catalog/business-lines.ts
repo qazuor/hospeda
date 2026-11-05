@@ -36,6 +36,12 @@ const foodNight = { allowed: ['food', 'nightlife'], preselect: ['food', 'nightli
 const foodNightRestaurant = { allowed: ['food', 'nightlife'], preselect: ['food'] } as const;
 const foodOnly = { allowed: ['food'], preselect: ['food'] } as const;
 const nightOnly = { allowed: ['nightlife'], preselect: ['nightlife'] } as const;
+/**
+ * `nightOnly` plus the field suggestion the owner editor pre-fills on create
+ * (DEC-FAC-050; owner decision 2026-11-04: the +18 suggestion belongs to the
+ * editor, not to the nightInfo section). `minAge` is editable and clearable.
+ */
+const boliche = { ...nightOnly, fieldDefaults: { minAge: 18 } } as const;
 /** Type-specific rules for assigning business lines. */
 export const BUSINESS_LINE_RULES = {
     venue: {
@@ -51,7 +57,7 @@ export const BUSINESS_LINE_RULES = {
             [VenueTypeEnum.BAR]: foodNight,
             [VenueTypeEnum.CERVECERIA]: foodNight,
             [VenueTypeEnum.PUB]: foodNight,
-            [VenueTypeEnum.BOLICHE]: nightOnly
+            [VenueTypeEnum.BOLICHE]: boliche
         }
     } as const satisfies BusinessLineRules<'venue'>,
     accommodation: {

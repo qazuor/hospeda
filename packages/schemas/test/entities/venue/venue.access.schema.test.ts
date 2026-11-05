@@ -61,6 +61,18 @@ describe('VenueProtectedSchema', () => {
         const keys = Object.keys(VenueProtectedSchema.shape ?? {});
         expect(keys).toContain('publicationStatus');
     });
+
+    it('should include businessLines in the owner detail (HOS-1787 5.6)', () => {
+        expect(Object.keys(VenueProtectedSchema.shape ?? {})).toContain('businessLines');
+
+        const data = { ...createMinimalVenue(), businessLines: ['food', 'nightlife'] };
+        const result = VenueProtectedSchema.safeParse(data);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.businessLines).toEqual(['food', 'nightlife']);
+        }
+    });
 });
 
 describe('VenueAdminSchema', () => {
