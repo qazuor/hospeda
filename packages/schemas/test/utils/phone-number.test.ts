@@ -91,6 +91,23 @@ describe('15 / 0 handling is national-format only', () => {
     });
 });
 
+describe('editor-composed "+54 <typed>" input', () => {
+    it.each([
+        ['+54 3442 15 45-2345', '+5493442452345', '+5493442452345'],
+        ['+54 03442 452345', '+5493442452345', '+543442452345'],
+        ['+54 0223-155-1234', '+5492231551234', '+542231551234'],
+        ['+54 3415 123456', '+5493415123456', '+543415123456'],
+        ['+54 (3442) 45-2345', '+5493442452345', '+543442452345']
+    ])('%s -> mobile %s / landline %s', (input, mobile, landline) => {
+        expect(normalizeArgentinePhone(input, true)).toBe(mobile);
+        expect(normalizeArgentinePhone(input, false)).toBe(landline);
+    });
+
+    it('keeps odd-length legacy +549 values untouched (no 15 stripping after a 9)', () => {
+        expect(normalizeArgentinePhone('+54934515732848', true)).toBe('+54934515732848');
+    });
+});
+
 describe('never tightened', () => {
     it.each(LEGACY_E164)('legacy %s still validates and is kept as E.164', (phone) => {
         expect(InternationalPhoneRegex.test(phone)).toBe(true);
@@ -121,7 +138,15 @@ describe('rejections', () => {
 });
 
 describe('normalize(x) always validates (validator and normalizer share one parser)', () => {
-    const corpus = [...HUMAN_INPUTS, ...LEGACY_E164, '011 15 2345-6789', '3415123456'];
+    const corpus = [
+        ...HUMAN_INPUTS,
+        '+54 3442 15 45-2345',
+        '+54 03442 452345',
+        '+54 0223-155-1234',
+        ...LEGACY_E164,
+        '011 15 2345-6789',
+        '3415123456'
+    ];
     it.each(corpus)('%s', (input) => {
         for (const mobile of [true, false]) {
             expect(isValidPhoneNumber(input)).toBe(true);
