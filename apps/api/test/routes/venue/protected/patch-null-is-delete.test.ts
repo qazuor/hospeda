@@ -227,7 +227,11 @@ async function expectStatus(response: Response, status: number): Promise<ApiEnve
 describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () => {
     let app: AppOpenAPI;
 
-    // HOS-2048: importing the whole app costs ~7s cold and crossed the 30s hookTimeout under CI contention; the venue router alone is ~5s.
+    // HOS-2048: importing the whole app costs ~7s cold and crossed the 30s
+    // hookTimeout under CI contention; the venue router alone is ~5s. The
+    // prefix-wide protected gates (mustChangePasswordGate, per-user rate
+    // limit) are not mounted here: this suite never asserted them, and they
+    // have their own suites under test/middlewares and test/routes.
     beforeAll(async () => {
         const [{ createApp }, { protectedVenueRoutes }] = await Promise.all([
             import('../../../../src/utils/create-app.js'),
