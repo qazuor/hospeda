@@ -5,8 +5,11 @@
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { partnerApplicationApi } from '@/lib/api/endpoints';
+import { fetchAuthMe } from '@/lib/auth-cache';
+import { resendVerificationEmail } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import styles from './PartnerApplication.module.css';
 
 interface TurnstileOptions {
@@ -33,7 +36,8 @@ export interface PartnerApplicationProps {
     readonly turnstileSiteKey?: string;
 }
 
-type FormState = 'idle' | 'sending' | 'success' | 'error';
+type FormState = 'idle' | 'sending' | 'success' | 'error' | 'verify-email';
+type ResendState = 'idle' | 'sending' | 'sent' | 'error';
 
 function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -46,7 +50,10 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
     const [honeypot, setHoneypot] = useState('');
     const [token, setToken] = useState('');
     const [state, setState] = useState<FormState>('idle');
+    const [resendState, setResendState] = useState<ResendState>('idle');
+    const [accountEmail, setAccountEmail] = useState<string | null>(null);
     const widgetRef = useRef<HTMLDivElement>(null);
+    const resendInFlightRef = useRef(false);
 
     useEffect(() => {
         if (!turnstileSiteKey || !widgetRef.current) return;
@@ -102,9 +109,36 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                 email: email.trim(),
                 cfTurnstileToken: token
             });
-            setState(result.ok ? 'success' : 'error');
+            if (result.ok) {
+                setState('success');
+            } else if (result.error.status === 403 && result.error.code === 'EMAIL_NOT_VERIFIED') {
+                const snapshot = await fetchAuthMe();
+                setAccountEmail(snapshot.user?.email ?? null);
+                setState('verify-email');
+            } else {
+                setState('error');
+            }
         } catch {
             setState('error');
+        }
+    };
+
+    const resendVerification = async (): Promise<void> => {
+        if (!accountEmail || resendInFlightRef.current) return;
+
+        resendInFlightRef.current = true;
+        setResendState('sending');
+        try {
+            const callbackURL = new URL(
+                buildUrl({ locale, path: 'sumate/partner' }),
+                window.location.origin
+            ).href;
+            const result = await resendVerificationEmail({ email: accountEmail, callbackURL });
+            setResendState(result.error ? 'error' : 'sent');
+        } catch {
+            setResendState('error');
+        } finally {
+            resendInFlightRef.current = false;
         }
     };
 
@@ -148,6 +182,60 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                 >
                     {t('alliance-leads.partnerApplication.success')}
                 </p>
+            </section>
+        );
+    }
+
+    if (state === 'verify-email') {
+        return (
+            <section
+                className={styles.card}
+                aria-labelledby="partner-application-heading"
+            >
+                <h2
+                    id="partner-application-heading"
+                    className={styles.heading}
+                >
+                    {t('alliance-leads.partnerApplication.title')}
+                </h2>
+                <p
+                    className={styles.message}
+                    role="status"
+                    data-testid="partner-application-verify-email"
+                >
+                    {t('alliance-leads.partnerApplication.verifyEmailFirst')}
+                </p>
+                {resendState === 'sent' ? (
+                    <p
+                        className={styles.message}
+                        role="status"
+                    >
+                        {t('alliance-leads.partnerApplication.verificationResent')}
+                    </p>
+                ) : (
+                    <>
+                        {resendState === 'error' && (
+                            <p
+                                className={styles.error}
+                                role="alert"
+                            >
+                                {t('alliance-leads.partnerApplication.resendVerificationError')}
+                            </p>
+                        )}
+                        {accountEmail !== null && (
+                            <button
+                                type="button"
+                                className={styles.button}
+                                disabled={resendState === 'sending'}
+                                onClick={resendVerification}
+                            >
+                                {resendState === 'sending'
+                                    ? t('alliance-leads.partnerApplication.resendingVerification')
+                                    : t('alliance-leads.partnerApplication.resendVerification')}
+                            </button>
+                        )}
+                    </>
+                )}
             </section>
         );
     }
