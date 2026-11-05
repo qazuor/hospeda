@@ -113,10 +113,7 @@ export const venueListConfig = createListingListConfig<VenueListItem>({
                       labelKey: 'admin-filters.businessLine.label' as const,
                       type: 'select' as const,
                       order: 12,
-                      options: BUSINESS_LINE_FILTER_OPTIONS as unknown as {
-                          value: string;
-                          labelKey: string;
-                      }[]
+                      options: BUSINESS_LINE_FILTER_OPTIONS
                   }
               ]
             : [])
