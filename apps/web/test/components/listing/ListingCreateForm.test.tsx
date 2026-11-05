@@ -21,7 +21,9 @@ vi.mock('../../../src/lib/i18n', () => ({
                 ? 'Nightclub description'
                 : key === 'venue.typeDescriptions.PUB'
                   ? 'Pub description'
-                  : (fallback ?? key)
+                  : key === 'validation.venue.businessLines.NOT_ALLOWED_FOR_TYPE'
+                    ? 'Este tipo de comercio no admite ese rubro'
+                    : (fallback ?? key)
     })
 }));
 
@@ -164,6 +166,46 @@ describe('ListingCreateForm', () => {
                 businessLines: ['nightlife'],
                 minAge: 18
             });
+        });
+
+        it('shows the 400 business-line reason inside the selector (TEST:5.6:4)', async () => {
+            mockCreate.mockResolvedValue({
+                ok: false,
+                error: {
+                    status: 400,
+                    code: 'VALIDATION_ERROR',
+                    message: 'Invalid business lines',
+                    details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+                }
+            } as unknown as Awaited<ReturnType<typeof createOwnerListing>>);
+
+            render(
+                <ListingCreateForm
+                    vertical="venue"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Heladería del Puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'HELADERIA' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Helados artesanales del puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Una heladería artesanal con sabores de la región.' }
+            });
+
+            fireEvent.click(screen.getByTestId('listing-create-submit'));
+
+            const messages = await screen.findAllByRole('alert');
+            expect(messages.map((element) => element.textContent ?? '')).toContain(
+                'Este tipo de comercio no admite ese rubro'
+            );
         });
 
         it('does not render the business-line fieldset for an experience (AC:5:9)', () => {
