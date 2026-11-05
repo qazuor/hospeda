@@ -8,7 +8,7 @@ del MVP (Z): promos con su piso del proveedor y su redondeo, cortesías, `S9` (q
 `staging` entera ([GATE:FP.F2](../30-el-corte.md#gate-fp-f2)), con el gate de toda fase posterior
 ([GATE:FP](../30-el-corte.md#gate-fp)): el momento 2 sobre la rama
 ([GATE:FP.1](../30-el-corte.md#gate-fp-1)), el checklist de smoke extendido
-([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard sin migración estructural
+([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard con sólo migraciones aditivas
 ([GATE:FP.3](../30-el-corte.md#gate-fp-3)); y el momento 1 por pieza
 ([GATE:M1](../30-el-corte.md#gate-m1)).
 
@@ -34,7 +34,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 
 Llama a la pasarela (⛔). Deja funcionando **el resto de `B9`: promos con su piso del proveedor y su
 redondeo, cortesías, `S9` (que comparte con `B8b`), `S30`, `S34`, `S35`, y el canje con
-`extenderTrial`** (corte del MVP, owner 2026-10-01, Z); **sin migración estructural: el esquema lo
+`extenderTrial`** (corte del MVP, owner 2026-10-01, Z); **sin esquema propio: el esquema lo
 creó `B3`** (AP; corte del MVP, owner 2026-10-01, BG); **y la acción administrativa 21, *«crear o
 cerrar un código promocional»*, con su editor del panel, que deja de ser de `B13`** (corte del MVP,
 owner 2026-10-01, BH), **y sólo agrega lo que crea filas** (AS); **y revocar una cortesía temporal
@@ -241,7 +241,7 @@ Fuente: [ACC:1](../02-nucleo.md#acc-1)
   rechaza el canje siguiente y no toca los ya canjeados**; **y revocar una cortesía temporal la
   termina en el acto por `S10`, con `fin_real` escrito y la relectura, sin reembolso, la suscripción
   vuelve a `ACTIVE` y el aviso dice qué día se le cobra** ([AC:B9b:13](#ac-b9b-13)); y la rama no
-  trae migración estructural.
+  trae migración destructiva.
 
 Fuente: [LISTA:B9b](#lista-b9b) · [FILA:B9b](#fila-b9b) · [GATE:FP.F2](../30-el-corte.md#gate-fp-f2)
 
@@ -346,7 +346,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:881
 
 ## Modelo de datos y migraciones
 
-**Sin migración estructural** ([FILA:B9b](#fila-b9b); [GATE:FP.3](../30-el-corte.md#gate-fp-3)): el
+**Sólo migraciones aditivas** ([FILA:B9b](#fila-b9b); [GATE:FP.3](../30-el-corte.md#gate-fp-3); [decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)): el
 esquema de promos —códigos y redenciones— y de cortesías lo crea `B3` al corte
 ([ESQ:6](../10-corte/B3.md#esq-6), [ESQ:7](../10-corte/B3.md#esq-7)). Esta pieza **sólo agrega lo
 que crea filas** (AS): códigos, redenciones con su `cobros_restantes`, `courtesy_grant` en meses y
@@ -569,7 +569,7 @@ Sin `SUPER_ADMIN`, otorgar una cortesía y crear un código reciben el rechazo d
 cada uno deja su auditoría.
 
 <a id="test-b9b-11"></a>
-**TEST:B9b:11** — la rama sin migración estructural
+**TEST:B9b:11** — la rama sin migración destructiva
 
 Tipo: migración desde cero
 
@@ -578,7 +578,7 @@ Cubre: [AC:B9b:11](#ac-b9b-11)
 Fuente: [FILA:B9b](#fila-b9b)
 
 Sobre una base migrada sólo con las migraciones del corte, las tablas de promos y cortesías existen y
-la suite de la pieza corre completa; la rama de la fase no agrega migración estructural.
+la suite de la pieza corre completa; la rama de la fase no agrega migración destructiva.
 
 <a id="test-b9b-12"></a>
 **TEST:B9b:12** — el aviso del canje (fila 7-bis)

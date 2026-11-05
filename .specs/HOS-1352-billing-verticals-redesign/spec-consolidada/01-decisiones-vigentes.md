@@ -6477,7 +6477,7 @@ Tests mínimos: migración desde cero; migración sobre datos; smoke manual · p
      primero; `V9b` se mergea antes de la primera fecha en que un aviso de retención podría salir.
   7. **El esquema** (AD): **todo el esquema de las 25 unidades** —tablas, columnas, enums, `FK`,
      `UNIQUE`, `CHECK` y los extras— **nace en las migraciones de la rama antes del corte**; una
-     fase posterior no trae migración estructural.
+     fase posterior no trae migración estructural. **Redefinida el 2026-11-05**: una fase posterior trae sólo migraciones aditivas ([letra HOS-1361](#own-hos-1361-solo-migraciones-aditivas)).
   8. **Las fases posteriores** (AE): una rama épica nueva por fase, con los mismos gates por unidad,
      que entra a `staging` entera.
   9. **Los guards al corte: 34 de 35**; queda afuera `G-R1-C`, de `B8b`.
@@ -13680,7 +13680,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Pregunta**: qué es «el modelo nace completo»
 - **Elegida**: 1
 - **Recomendada**: sí
-- **En una línea**: todo el esquema de las 25 unidades (tablas, columnas, enums, `FK`, `UNIQUE`, `CHECK`, extras) nace en las migraciones de la rama antes del corte; una fase posterior no trae migración estructural
+- **En una línea**: todo el esquema de las 25 unidades (tablas, columnas, enums, `FK`, `UNIQUE`, `CHECK`, extras) nace en las migraciones de la rama antes del corte; una fase posterior no trae migración estructural *(redefinida el 2026-11-05: sólo migraciones aditivas, [letra HOS-1361](#own-hos-1361-solo-migraciones-aditivas))*
 
 <a id="own-41-corte-del-mvp-t1-ae"></a>
 **Letra AE**
@@ -14359,3 +14359,18 @@ Origen: HOS-1997 (decisión del owner, 2026-11-02)
 - **Elegida**: sí, puede
 - **Recomendada**: —
 - **En una línea**: **`PB1` sale de `UNPUBLISHED_BY_BILLING` también a mano cuando el dueño está cubierto y `publicadas < cupo`; con el cupo lleno se rechaza con `LIMIT_REACHED` (403).** Reemplaza a `G1-1` en lo que decía que esa salida existía *sólo si arranca un trial*; la rama del trial no cambia. Se conservan el lock, el evento de estado (autor: el dueño, así que cuenta como publicación manual para el orden de la restitución), `inactiva_desde` y la revalidación; la publicación a mano desde ahí no consume trial (`T6` es un paso de la primera publicación). Sin cobertura no cambia nada. Es la salida del dueño que `F-8fA2-002` echaba de menos para una ficha de excedente que `PB3` no devuelve. Levantar una moderación con el cupo lleno nunca despublica otra ficha: deja la levantada en `UNPUBLISHED_BY_BILLING` y le avisa al dueño que despublique otra y publique esa. Implementado en el PR #4020
+
+#### Las fases posteriores traen sólo migraciones aditivas (2026-11-05)
+
+<a id="own-hos-1361-solo-migraciones-aditivas"></a>
+**Letra HOS-1361 (AD, `GATE:FP.3`)**
+
+Origen: HOS-1361 (decisión del owner, 2026-11-05)
+
+- **Pregunta**: si la regla «una fase posterior no trae migración estructural» (AD) y la condición 3 del gate de fase (`GATE:FP.3`) se mantienen tal cual o se redefinen, a la vista de que las ramas de las fases ya llevan nueve migraciones
+- **Elegida**: redefinirlas como **«sólo migraciones aditivas»**
+- **Recomendada**: —
+- **En una línea**: **una fase posterior puede traer migraciones, pero sólo aditivas; ninguna destructiva.** *Permitido*: `ALTER TYPE … ADD VALUE` sobre un enum; ensanchar un `CHECK` (`DROP` y `ADD` con más valores); `ADD COLUMN` nullable o con default; índices y restricciones nuevos. *Prohibido*: `DROP` o `RENAME` de una tabla o de una columna, y cambiar el tipo de una columna. Reemplaza a AD en lo que decía «sin migración estructural»; no toca la migración estructural del corte (`V6`, `ESQ:1`), que sigue siendo del corte
+- **Las nueve migraciones que ya están en la épica** (`packages/db/src/migrations/`), todas aditivas; seis son de `V7` (HOS-1484 a HOS-1489) y tres de billing (HOS-1551, HOS-1541, HOS-1542): `0189_hos1484_partner_resolve_application` (`ADD VALUE` de `partner.resolveApplication` y `CHECK` de `domain_event` ensanchado), `0190_hos1551_billing_refund_permission` (`ADD VALUE`), `0191_hos1485_partner_application_resolution` (`CHECK` de `domain_event` ensanchado), `0192_hos1486_session_auth_method` (`ADD COLUMN session.auth_method`, nullable), `0193_hos1541_manual_payment_permissions` (dos `ADD VALUE`), `0194_hos1487_partner_edit_own` (`ADD VALUE`), `0195_hos1488_partner_presence_moderation` (`CHECK` de `domain_event` ensanchado), `0196_hos1542_manual_payment_reimputed_and_entry` (`ADD COLUMN manual_payment.entry` con default, un `CHECK` nuevo sobre ella y `CHECK` de `domain_event` ensanchado) y `0197_hos1489_partner_configure_billing` (`ADD VALUE` de `partner.configureBilling` y `CHECK` de `domain_event` ensanchado)
+- **El drift guard sigue exigido, aparte**: schema TS contra migraciones, en verde sobre la rama de la fase. Lo que cambia es la segunda condición: un guard estático rechaza `DROP` y `RENAME` de tabla o columna y el cambio de tipo en las migraciones que la rama de la fase agrega (`TEST:V8b:8`)
+- **Advertencia sobre el rollback**: un `ADD VALUE` de enum **no se deshace revirtiendo la rama**, porque Postgres no permite quitar un valor de un enum; el `CHECK` ensanchado y las columnas agregadas tampoco vuelven solos. Revertir la rama deja el código sin esos valores, y el valor queda en la base, inerte; deshacerlo sería una migración nueva (y, para el enum, a mano). Por eso las frases «aditiva y sin migración estructural; revertir la rama no toca nada del corte» se reescribieron: revertir la rama no toca nada de lo que dejó el corte, pero no deshace las migraciones aditivas de la propia fase
