@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4114
+    {
+        id: '2026-11-05-video-link-in-every-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ahora podés sumar un video a tu alojamiento desde el plan Básico',
+            en: 'You can now add a video to your listing from the Basic plan',
+            pt: 'Agora você pode adicionar um vídeo à sua hospedagem a partir do plano Básico'
+        },
+        body: {
+            es: 'En **Fotos**, la sección **Videos** acepta enlaces de YouTube, Vimeo o Dailymotion en todos los planes, incluida la prueba gratis. El video se ve en tu ficha pública.',
+            en: 'In **Photos**, the **Videos** section takes YouTube, Vimeo or Dailymotion links on every plan, including the free trial. The video shows on your public listing.',
+            pt: 'Em **Fotos**, a seção **Vídeos** aceita links do YouTube, Vimeo ou Dailymotion em todos os planos, incluído o teste grátis. O vídeo aparece no seu anúncio público.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4009, #4097
     {
         id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
