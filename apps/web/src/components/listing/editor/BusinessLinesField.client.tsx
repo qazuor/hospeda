@@ -118,6 +118,7 @@ export function BusinessLinesField({
                             >
                                 <input
                                     type="checkbox"
+                                    data-testid={`business-line-${option.value}`}
                                     checked={option.selected}
                                     disabled={disabled}
                                     onChange={(event) => toggle(index, event.target.checked)}
