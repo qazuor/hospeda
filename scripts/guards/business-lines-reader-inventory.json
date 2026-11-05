@@ -232,13 +232,6 @@
             "spec": ".hoja/notas.md:5"
         },
         {
-            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
-            "symbol": "BusinessLinesField",
-            "count": 1,
-            "category": "editor",
-            "spec": ".hoja/notas.md:5"
-        },
-        {
             "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
             "symbol": "businessLinesError",
             "count": 1,
