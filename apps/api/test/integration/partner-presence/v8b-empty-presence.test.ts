@@ -3,6 +3,7 @@ import { BillingForVerticalsSimulator } from '@repo/billing-verticals-contract/t
 import {
     eq,
     getDb,
+    PartnerModel,
     partnerPresenceHasContent,
     partners,
     payments,
@@ -328,6 +329,70 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
             { reason: 'Missing', confirm: true }
         );
         expect(missing.status).toBe(404);
+    });
+    it('rechecks content after locking when another request empties an assetless presence', async () => {
+        const fixture = await seedEmptyablePartner();
+        await db()
+            .update(partners)
+            .set({
+                logoUrl: null,
+                pendingLogoUrl: null
+            })
+            .where(eq(partners.id, fixture.partner.id));
+        const before = (
+            await db().select().from(partners).where(eq(partners.id, fixture.partner.id))
+        )[0];
+        expect(before).toBeDefined();
+        expect(partnerPresenceHasContent(before!)).toBe(true);
+        const existingEvents = await db().execute(
+            sql`SELECT id FROM domain_event WHERE entity_id = ${fixture.partner.id} AND event_type = 'partner.presence_emptied'`
+        );
+        expect(existingEvents.rows).toEqual([]);
+        const deleteSpy = vi.spyOn(inMemoryProvider(), 'delete');
+        const originalLockById = PartnerModel.prototype.lockById;
+        let emptiedDuringLock = false;
+        const lockSpy = vi
+            .spyOn(PartnerModel.prototype, 'lockById')
+            .mockImplementation(async function (this: PartnerModel, args) {
+                if (!emptiedDuringLock) {
+                    emptiedDuringLock = true;
+                    await db()
+                        .update(partners)
+                        .set({
+                            logoUrl: null,
+                            websiteUrl: null,
+                            description: null,
+                            contactInfo: null,
+                            socialNetworks: null,
+                            pendingLogoUrl: null,
+                            pendingDescription: null,
+                            pendingWebsiteUrl: null,
+                            contentReviewState: null,
+                            contentReviewNote: null
+                        })
+                        .where(eq(partners.id, fixture.partner.id));
+                }
+                return originalLockById.call(this, args);
+            });
+        try {
+            const response = await request(
+                fixture.partner.id,
+                randomUUID(),
+                [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.PARTNER_EMPTY_PRESENCE],
+                { reason: 'Concurrent emptying', confirm: true }
+            );
+            expect(emptiedDuringLock).toBe(true);
+            expect(response.status).toBe(409);
+            expect((await response.json()).error.reason).toBe('PRESENCE_ALREADY_EMPTY');
+            const events = await db().execute(
+                sql`SELECT id FROM domain_event WHERE entity_id = ${fixture.partner.id} AND event_type = 'partner.presence_emptied'`
+            );
+            expect(events.rows).toEqual([]);
+            expect(deleteSpy).not.toHaveBeenCalled();
+        } finally {
+            lockSpy.mockRestore();
+            deleteSpy.mockRestore();
+        }
     });
     it('skips foreign cloud and non-Hospeda assets, and works without a provider when no owned asset remains', async () => {
         const fixture = await seedEmptyablePartner();
