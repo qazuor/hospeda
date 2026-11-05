@@ -1,3 +1,4 @@
+import esAdminEntities from '@repo/i18n/locales/es/admin-entities.json';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -147,6 +148,12 @@ beforeEach(() => {
 });
 
 describe('PartnerEmptyPresenceCard', () => {
+    it('keeps the Spanish confirmation explicit that deleted content does not come back', () => {
+        expect(esAdminEntities.partnerEmptyPresence.dialog.deletes).toContain(
+            'Este contenido se borra y no vuelve.'
+        );
+    });
+
     it('renders nothing without its dedicated permission', () => {
         mocks.hasPermission = false;
         setup();
