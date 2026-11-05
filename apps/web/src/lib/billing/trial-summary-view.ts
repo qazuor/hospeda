@@ -6,6 +6,7 @@ type SummaryWithTrial = Extract<TrialSummaryResponse, { totalDays: number }>;
 /** Data needed to render a current trial summary. */
 export interface RunningTrialSummaryView {
     readonly kind: 'running';
+    readonly canChoosePlan: boolean;
     readonly totalDays: number;
     readonly origins: SummaryWithTrial['origins'];
     readonly startedAt: string | null;
@@ -16,9 +17,17 @@ export interface RunningTrialSummaryView {
 export type TrialSummaryView =
     | { readonly kind: 'hidden' }
     | RunningTrialSummaryView
-    | { readonly kind: 'ended_converted' }
-    | { readonly kind: 'ended_converted_without_plan'; readonly endsAt: string | null }
-    | { readonly kind: 'ended_expired'; readonly endsAt: string | null };
+    | { readonly kind: 'ended_converted'; readonly canChoosePlan: false }
+    | {
+          readonly kind: 'ended_converted_without_plan';
+          readonly canChoosePlan: true;
+          readonly endsAt: string | null;
+      }
+    | {
+          readonly kind: 'ended_expired';
+          readonly canChoosePlan: true;
+          readonly endsAt: string | null;
+      };
 
 type ViewResolver = (params: {
     readonly summary: SummaryWithTrial;
@@ -26,8 +35,9 @@ type ViewResolver = (params: {
 }) => TrialSummaryView;
 
 const VIEW_BY_STATUS: Record<TrialStatusEnum, ViewResolver> = {
-    [TrialStatusEnum.TRIAL_ACTIVE]: ({ summary }) => ({
+    [TrialStatusEnum.TRIAL_ACTIVE]: ({ summary, hasLiveSubscription }) => ({
         kind: 'running',
+        canChoosePlan: !hasLiveSubscription,
         totalDays: summary.totalDays,
         origins: summary.origins,
         startedAt: summary.startedAt,
@@ -35,10 +45,11 @@ const VIEW_BY_STATUS: Record<TrialStatusEnum, ViewResolver> = {
     }),
     [TrialStatusEnum.TRIAL_CONVERTED]: ({ summary, hasLiveSubscription }) =>
         hasLiveSubscription
-            ? { kind: 'ended_converted' }
-            : { kind: 'ended_converted_without_plan', endsAt: summary.endsAt },
+            ? { kind: 'ended_converted', canChoosePlan: false }
+            : { kind: 'ended_converted_without_plan', canChoosePlan: true, endsAt: summary.endsAt },
     [TrialStatusEnum.TRIAL_EXPIRED]: ({ summary }) => ({
         kind: 'ended_expired',
+        canChoosePlan: true,
         endsAt: summary.endsAt
     })
 };

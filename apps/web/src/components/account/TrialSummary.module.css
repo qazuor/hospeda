@@ -43,3 +43,17 @@
     font-size: 0.8125rem;
     color: var(--core-muted-foreground);
 }
+
+.planMessage {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.45;
+}
+
+.planButton {
+    composes: primary from "./AccountButton.module.css";
+    align-self: flex-start;
+    margin-top: var(--space-1, 0.25rem);
+    text-decoration: none;
+}
