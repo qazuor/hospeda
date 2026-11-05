@@ -3,6 +3,7 @@
 export * from './partner.access.schema.js';
 export * from './partner.admin-search.schema.js';
 export * from './partner.create.schema.js';
+export * from './partner.empty-presence.schema.js';
 export * from './partner.http.schema.js';
 export * from './partner.owner.schema.js';
 export * from './partner.owner-presence.schema.js';
