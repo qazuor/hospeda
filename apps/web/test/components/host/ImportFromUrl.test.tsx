@@ -125,7 +125,7 @@ describe('ImportFromUrl', () => {
             }
         });
         await renderAndWait(<ImportFromUrl locale="es" />);
-        expect(await screen.findByRole('status')).toHaveTextContent('últimas 24 horas');
+        expect(await screen.findByRole('alert')).toHaveTextContent('últimas 24 horas');
     });
 
     it('shows the plan message when the server denies a returning user', async () => {
@@ -140,7 +140,7 @@ describe('ImportFromUrl', () => {
             }
         });
         await renderAndWait(<ImportFromUrl locale="es" />);
-        expect(await screen.findByRole('status')).toHaveTextContent(
+        expect(await screen.findByRole('alert')).toHaveTextContent(
             'Tu plan no incluye esta función. Actualizalo para continuar.'
         );
         expect(screen.queryByLabelText('URL del alojamiento')).not.toBeInTheDocument();
