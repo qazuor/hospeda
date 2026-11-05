@@ -600,6 +600,10 @@ jobs:
         run: pnpm check:i18n-keys
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards` is NOT what makes a guard run in this job.
+      # This is the additive-only migrations half of GATE:FP.3; the drift guard above is the separate other condition.
+      - name: Check a phase branch adds only additive migrations (GATE:FP.3, TEST:V8b:8)
+        run: pnpm check:additive-migrations
       - name: Check DROP COLUMN ships with a release-gap marker (HOS-601)
         # PR_BODY is passed via env (never inlined into `run:`) — same reason
         # as the seed dual-write step below: it is untrusted, attacker-
