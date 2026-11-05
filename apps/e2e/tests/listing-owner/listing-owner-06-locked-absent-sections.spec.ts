@@ -33,7 +33,11 @@
  */
 
 import { type BrowserContext, expect, test } from '@playwright/test';
-import { type CreatedUser, createUser } from '../../fixtures/api-helpers.ts';
+import {
+    type CreatedUser,
+    createUser,
+    getAnyCityDestinationId
+} from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { listingEditorUrl } from '../../fixtures/listing-editor-helpers.ts';
@@ -94,6 +98,7 @@ async function createVenue({
     readonly type: 'RESTAURANT' | 'BOLICHE';
     readonly name: string;
 }): Promise<CreatedVenue> {
+    const destinationId = await getAnyCityDestinationId();
     const response = await fetch(`${API_URL}/api/v1/protected/venues`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', cookie: sessionCookie },
@@ -102,7 +107,10 @@ async function createVenue({
             summary: 'E2E fixture for the locked/absent editor sections.',
             description:
                 'A listing created by the HOS-1854 end-to-end fixture, long enough for the create schema.',
-            type
+            type,
+            // The owner schema keeps it optional, but the route re-parses with
+            // the admin schema, which requires it (see `create.ts`).
+            destinationId
         })
     });
 
