@@ -192,7 +192,8 @@
             "noPending": "No reviews pending moderation",
             "anonymous": "Anonymous",
             "approve": "Approve",
-            "reject": "Reject"
+            "reject": "Reject",
+            "dimensionsLabel": "Rated dimensions"
         },
         "assignOwner": {
             "title": "Assign owner",
