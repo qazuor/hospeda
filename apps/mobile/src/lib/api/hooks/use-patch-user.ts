@@ -18,7 +18,7 @@
  * @module lib/api/hooks/use-patch-user
  */
 
-import { InternationalPhoneRegex, UserSelfSchema } from '@repo/schemas';
+import { ContactInfoSchema, UserSelfSchema } from '@repo/schemas';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
@@ -54,16 +54,11 @@ const LocationPatchSchema = z.object({
 /**
  * Schema for the contactInfo sub-object passed in the PATCH body.
  * The API stores phone under `contactInfo.mobilePhone`.
- * Validates against the canonical {@link InternationalPhoneRegex} so invalid
- * formats (e.g. hyphenated) are caught client-side before reaching the server.
+ * Validates with the shared phone parser so client and server accept the same
+ * Argentine and international formats.
  */
 const ContactInfoPatchSchema = z.object({
-    mobilePhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.mobilePhone.international'
-        })
-        .optional()
+    mobilePhone: ContactInfoSchema.shape.mobilePhone
 });
 
 /**

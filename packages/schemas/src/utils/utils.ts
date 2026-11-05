@@ -73,7 +73,9 @@ export const isValidArgentinePhone = isValidPhoneNumber;
 export const normalizeArgentinePhone = (phone: string, mobileByMeaning = false): string => {
     const parsed = parsePhoneNumber(phone, mobileByMeaning);
     if (!parsed) return phone;
-    return parsed.kind === 'international' ? parsed.value : `+54${parsed.digits}`;
+    return parsed.kind === 'international'
+        ? parsed.value
+        : `+54${parsed.mobile ? '9' : ''}${parsed.digits}`;
 };
 
 /** Builds the shared Zod phone validator with a caller-specific translation key. */

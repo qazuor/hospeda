@@ -46,11 +46,8 @@ import { z } from 'zod';
  *    generic "Numero" / "Email" (`ContactInfoSection.client.tsx`) for a
  *    PROPERTY's contact section, not a person's profile, so the shared
  *    person-profile wording ("El telefono celular...", "El email
- *    personal...") read as a mismatch. The shared keys are untouched: every
- *    other consumer (user profile, venue, experience, event organizer)
- *    keeps using them. `whatsapp`/`website` are NOT touched here: their
- *    existing messages ("El numero de WhatsApp...", "El sitio web...")
- *    already match their labels.
+ *    personal...") read as a mismatch. `whatsapp` uses the shared contact
+ *    phone message, which gives the same Argentine format guidance.
  *
  * The numeric fields are widened with `.nullable()`: the inherited
  * `z.coerce.number()` would otherwise silently coerce an explicit `null` (host

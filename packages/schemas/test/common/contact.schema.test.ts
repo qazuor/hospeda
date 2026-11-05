@@ -50,7 +50,7 @@ describe('ContactInfoSchema', () => {
         '+5493442452345',
         '54 3442 452345'
     ])('normalizes %s to the shared canonical Argentine form', (phone) => {
-        expect(normalizeArgentinePhone(phone, true)).toBe('+543442452345');
+        expect(normalizeArgentinePhone(phone, true)).toBe('+5493442452345');
     });
 
     it('allows a cleared accommodation phone in the HTTP update contract', () => {

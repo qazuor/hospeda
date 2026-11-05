@@ -127,7 +127,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { parseIdOrSlug } from '../../utils';
+import { normalizeContactInfo, parseIdOrSlug } from '../../utils';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { liveParentOrNull } from '../../utils/live-parent';
 import { hasPermission } from '../../utils/permission';
@@ -1391,10 +1391,18 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const domainInput = httpToDomainAccommodationCreateDraft(
+                const mappedDomainInput = httpToDomainAccommodationCreateDraft(
                     validatedData,
                     validatedActor.id
                 );
+                const domainInput = mappedDomainInput.contactInfo
+                    ? {
+                          ...mappedDomainInput,
+                          contactInfo: normalizeContactInfo(
+                              mappedDomainInput.contactInfo
+                          ) as typeof mappedDomainInput.contactInfo
+                      }
+                    : mappedDomainInput;
 
                 // Wrap the draft insert, slug generation, amenity junction sync,
                 // and USER -> HOST role promotion in a single short transaction.

@@ -10,7 +10,7 @@
 import { z } from 'zod';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
-import { InternationalPhoneRegex } from '../../utils/utils.js';
+import { phoneNumberSchema } from '../../utils/utils.js';
 import { ThemeEnumSchema } from './user.settings.schema.js';
 
 // ---------------------------------------------------------------------------
@@ -117,15 +117,10 @@ export const CompleteProfileBodySchema = z
 
         /**
          * Mobile phone number.
-         * Must follow E.164-compatible format (enforced by InternationalPhoneRegex).
+         * Uses the shared contact phone parser for Argentine and international formats.
          * Persisted into users.contact_info.mobilePhone JSONB path.
          */
-        phone: z
-            .string()
-            .regex(InternationalPhoneRegex, {
-                message: 'zodError.common.contact.mobilePhone.international'
-            })
-            .optional(),
+        phone: phoneNumberSchema('zodError.common.contact.phone.argentina').optional(),
 
         /**
          * Preferred locale for the web surface.
