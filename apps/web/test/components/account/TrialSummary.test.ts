@@ -3,10 +3,8 @@
  * @description TEST:V8a:7 (component level, HOS-1492, row 4): the accumulated
  * free-trial days per vertical and their origin in Mi Suscripción.
  *
- * Vitest cannot render `.astro` in this repo, so these assertions read the
- * SOURCE for the component's decisions (nothing for `NONE` or zero days, only
- * the origins above zero, the dates when both are known, no fetch, no island)
- * and the real locale files for the copy the row obliges.
+ * Source and locale copy contract assertions. Behavioural markup rendering is
+ * covered in TrialSummary.render.test.ts.
  */
 
 import { readFileSync } from 'node:fs';
@@ -157,13 +155,14 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
         expect(SOURCE).toContain("venue: 'planes/comer-y-salir/precios'");
         expect(SOURCE).toContain("experience: 'planes/experiencias/precios'");
         expect(SOURCE).toContain(
-            'planHref: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
+            'href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
         );
         expect(SOURCE).toContain("'account.subscription.trialSummary.activePlanMessage'");
         expect(SOURCE).toContain("'account.subscription.trialSummary.choosePlan'");
         expect(SOURCE).toContain(
-            '<a class={styles.planButton} href={view.planHref}>{view.planLabel}</a>'
+            '<a class={styles.planButton} href={view.plan.href}>{view.plan.label}</a>'
         );
+        expect(SOURCE).toContain('{view.plan && (');
         expect(SOURCE).toContain(
             'hasLiveSubscription: liveSubscriptionVerticals.includes(vertical)'
         );
@@ -172,10 +171,10 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
 
     it('uses ended copy and the same localized pricing link for expired trials', () => {
         expect(SOURCE).toContain(
-            "planMessage: t('account.subscription.trialSummary.endedPlanMessage')"
+            "message: t('account.subscription.trialSummary.endedPlanMessage')"
         );
         expect(SOURCE).toContain(
-            'planHref: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
+            'href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
         );
         const copy = readCopy('es');
         expect(copy.endedPlanMessage).toBe(

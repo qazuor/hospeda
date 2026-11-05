@@ -62,9 +62,11 @@ type SummaryCardView = {
 	readonly origins: string;
 	readonly dates: string | null;
 	readonly notice: string | null;
-	readonly planMessage: string;
-	readonly planHref: string;
-	readonly planLabel: string;
+	readonly plan?: {
+		readonly message: string;
+		readonly href: string;
+		readonly label: string;
+	};
 };
 
 const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
@@ -93,9 +95,13 @@ const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
 				? t('account.subscription.trialSummary.dates', undefined, { start, end })
 				: null,
 			notice: null,
-			planMessage: t('account.subscription.trialSummary.activePlanMessage'),
-			planHref: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] }),
-			planLabel: t('account.subscription.trialSummary.choosePlan')
+			...(state.canChoosePlan && {
+				plan: {
+					message: t('account.subscription.trialSummary.activePlanMessage'),
+					href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] }),
+					label: t('account.subscription.trialSummary.choosePlan')
+				}
+			})
 		}];
 	}
 
@@ -119,9 +125,13 @@ const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
 		origins: '',
 		dates: null,
 		notice,
-		planMessage: t('account.subscription.trialSummary.endedPlanMessage'),
-		planHref: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] }),
-		planLabel: t('account.subscription.trialSummary.choosePlan')
+		...(state.canChoosePlan && {
+			plan: {
+				message: t('account.subscription.trialSummary.endedPlanMessage'),
+				href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] }),
+				label: t('account.subscription.trialSummary.choosePlan')
+			}
+		})
 	}];
 });
 ---
@@ -139,8 +149,12 @@ const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
 					)}
 					{view.notice && <p class={styles.total}>{view.notice}</p>}
 					{view.dates && <p class={styles.dates}>{view.dates}</p>}
-					<p class={styles.planMessage}>{view.planMessage}</p>
-					<a class={styles.planButton} href={view.planHref}>{view.planLabel}</a>
+					{view.plan && (
+						<>
+							<p class={styles.planMessage}>{view.plan.message}</p>
+							<a class={styles.planButton} href={view.plan.href}>{view.plan.label}</a>
+						</>
+					)}
 				</article>
 			))}
 		</section>
