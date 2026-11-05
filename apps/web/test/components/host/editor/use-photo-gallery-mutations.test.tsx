@@ -115,6 +115,90 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         expect(updateMediaMock).not.toHaveBeenCalled();
     });
 
+    it('saves the last incomplete photo without showing a warning', async () => {
+        const incompletePhoto = { ...photo, alt: '' };
+        updateMediaMock.mockResolvedValue({
+            ok: true,
+            data: {
+                media: {
+                    id: incompletePhoto.id,
+                    url: incompletePhoto.url,
+                    publicId: incompletePhoto.publicId,
+                    alt: 'Completed alt',
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'approved'
+                }
+            }
+        });
+        const { result } = renderHook(() => {
+            usePhotoAltWarningGuard({
+                locale: 'es',
+                accommodationId: 'accommodation-1',
+                featuredItem: null,
+                galleryItems: [incompletePhoto]
+            });
+            return usePhotoGalleryMutations({
+                accommodationId: 'accommodation-1',
+                t: (_key, fallback) => fallback ?? '',
+                featuredItem: null,
+                galleryItems: [incompletePhoto],
+                isHydrated: true,
+                setFeaturedItem: vi.fn(),
+                setGalleryItems: vi.fn(),
+                setError: vi.fn(),
+                setOpLoading: vi.fn(),
+                reportUploadError: vi.fn()
+            });
+        });
+
+        await act(async () => {
+            expect(
+                await result.current.handleUpdateMediaText(incompletePhoto, {
+                    alt: 'Completed alt'
+                })
+            ).toBe(true);
+        });
+
+        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        expect(updateMediaMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('includes a newly cleared alt in the warning count', async () => {
+        const completePhoto = { ...photo, id: 'photo-complete', alt: 'Existing alt' };
+        const incompletePhoto = { ...photo, id: 'photo-incomplete', alt: '' };
+        const { result } = renderHook(() => {
+            usePhotoAltWarningGuard({
+                locale: 'es',
+                accommodationId: 'accommodation-1',
+                featuredItem: null,
+                galleryItems: [completePhoto, incompletePhoto]
+            });
+            return usePhotoGalleryMutations({
+                accommodationId: 'accommodation-1',
+                t: (_key, fallback) => fallback ?? '',
+                featuredItem: null,
+                galleryItems: [completePhoto, incompletePhoto],
+                isHydrated: true,
+                setFeaturedItem: vi.fn(),
+                setGalleryItems: vi.fn(),
+                setError: vi.fn(),
+                setOpLoading: vi.fn(),
+                reportUploadError: vi.fn()
+            });
+        });
+
+        await act(async () => {
+            await result.current.handleUpdateMediaText(completePhoto, { alt: '' });
+        });
+
+        expect(showConfirmationDialogMock).toHaveBeenCalledWith(
+            expect.objectContaining({ message: '2 fotos sin texto alternativo' })
+        );
+        expect(updateMediaMock).not.toHaveBeenCalled();
+    });
+
     it('merges the server text into the gallery row after a successful save', async () => {
         updateMediaMock.mockResolvedValue({
             ok: true,

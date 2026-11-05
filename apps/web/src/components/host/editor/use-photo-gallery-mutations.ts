@@ -265,7 +265,9 @@ export function usePhotoGalleryMutations({
             const maySave = await requestLeaveWarning('photo-alt', {
                 count: Math.max(
                     0,
-                    incompleteAltCount - Number(currentIsIncomplete && submittedAltIsComplete)
+                    incompleteAltCount +
+                        Number(!currentIsIncomplete && !submittedAltIsComplete) -
+                        Number(currentIsIncomplete && submittedAltIsComplete)
                 )
             });
             if (!maySave) return false;

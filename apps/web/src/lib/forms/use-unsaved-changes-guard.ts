@@ -45,8 +45,10 @@
  * and `includeBeforeUnload: false` has to keep meaning "this condition does
  * not raise the native prompt".
  *
- * The registry also restores the active history entry on popstate while the
- * host decides whether to leave; see `leave-warning-registry.ts`.
+ * ## Not covered
+ *
+ * Browser back/forward navigation. The shared registry intercepts internal
+ * link clicks and guarded save actions, but does not trap `popstate`.
  */
 
 import { useEffect } from 'react';

@@ -18,7 +18,8 @@
  *
  * 1. `includeBeforeUnload: false` — hard exits use the browser's own
  *    non-customizable prompt, which cannot carry this feature's explanation.
- *    Back/forward navigation is handled by the shared leave-warning registry.
+ *    Browser back/forward navigation is outside this guard; only internal
+ *    link clicks and guarded save actions use the shared registry.
  * 2. `onConfirm` persists a per-accommodation `sessionStorage` flag so the
  *    prompt does not reappear for the rest of the session once the host has
  *    chosen to continue without finishing the alt texts. Choosing to go back
@@ -98,19 +99,31 @@ function writeDismissed(accommodationId: string): void {
 }
 
 /** Opens and focuses the first photo whose required alt text is incomplete. */
+let focusRetryTimer: number | undefined;
+let focusFieldTimer: number | undefined;
+
+function clearFocusTimers(): void {
+    if (focusRetryTimer !== undefined) window.clearTimeout(focusRetryTimer);
+    if (focusFieldTimer !== undefined) window.clearTimeout(focusFieldTimer);
+    focusRetryTimer = undefined;
+    focusFieldTimer = undefined;
+}
+
 function focusFirstIncompletePhoto(): void {
+    clearFocusTimers();
     let attempts = 0;
     const openAndFocus = (): void => {
         const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
         const toggle = first?.querySelector<HTMLButtonElement>('button[aria-expanded]');
         if (!first || !toggle?.isConnected) return;
         if (toggle.disabled) {
-            if (attempts++ < 100) window.setTimeout(openAndFocus, 50);
+            if (attempts++ < 100) focusRetryTimer = window.setTimeout(openAndFocus, 50);
             return;
         }
         if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
-        window.setTimeout(() => {
+        focusFieldTimer = window.setTimeout(() => {
             first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
+            focusFieldTimer = undefined;
         }, 0);
     };
     openAndFocus();
@@ -136,6 +149,7 @@ export function usePhotoAltWarningGuard({
     galleryItems,
     opsReady = true
 }: UsePhotoAltWarningGuardParams): void {
+    useEffect(() => clearFocusTimers, []);
     const { t, tPlural } = createTranslations(locale);
 
     const missingAltCount = useMemo(

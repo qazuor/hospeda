@@ -191,10 +191,8 @@ export function PhotoSection({
         initialGallery
     });
 
-    // HOS-1018: nudge (never blocks) the host to fill in `alt` text before
-    // leaving the section — see the hook's file header for why this is a
-    // separate, narrower guard than `useUnsavedChangesGuard`'s usual "unsaved
-    // changes" wiring.
+    // HOS-1018: ask before leaving or saving while required photo alt text is
+    // incomplete. The host can continue, or stay and focus the first photo.
     usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems, opsReady });
 
     // HOS-1183: the main photo is a blocking publish requirement, and this is
@@ -210,7 +208,7 @@ export function PhotoSection({
     const hasHydratedRef = useRef(false);
 
     useEffect(() => {
-        // `opsReady` is the hook's hydration flag. Before it flips, a null →
+        // `opsReady` means persisted media loaded successfully. Before it flips, a null →
         // non-null change is the API answering, not the host uploading — firing
         // there would open the dialog on page load for a listing that already
         // had its cover.

@@ -96,6 +96,6 @@ function buildUnsavedChangesAndPhotoAltCopy(
         ),
         message: tPlural(`${UNSAVED_AND_PHOTO_ALT}.message`, count, { count }),
         confirmLabel: t(`${UNSAVED_AND_PHOTO_ALT}.confirm`, 'Salir y descartar los cambios'),
-        cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Completar ahora')
+        cancelLabel: t(`${UNSAVED_AND_PHOTO_ALT}.cancel`, 'Seguir editando')
     };
 }

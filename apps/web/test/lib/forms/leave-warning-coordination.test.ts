@@ -186,7 +186,7 @@ describe('leave warnings on a page that mounts two guards', () => {
             // And it is neither standalone message wearing the other's hat.
             expect(call?.message).not.toBe(VIDEO_COPY.message);
             expect(call?.confirmLabel).toBe('Salir y descartar los cambios');
-            expect(call?.cancelLabel).toBe('Completar ahora');
+            expect(call?.cancelLabel).toBe('Seguir editando');
         });
 
         it('pluralizes the photo count in the singular', async () => {
@@ -301,28 +301,32 @@ describe('leave warnings on a page that mounts two guards', () => {
             readonly title: string;
             readonly needle: string;
             readonly confirmLabel: string;
+            readonly cancelLabel: string;
         }> = [
             {
                 locale: 'es',
                 title: 'Cambios sin guardar y fotos sin texto alternativo',
                 needle: '5 fotos siguen sin texto alternativo',
-                confirmLabel: 'Salir y descartar los cambios'
+                confirmLabel: 'Salir y descartar los cambios',
+                cancelLabel: 'Seguir editando'
             },
             {
                 locale: 'en',
                 title: 'Unsaved changes and photos without alt text',
                 needle: '5 photos still have no alt text',
-                confirmLabel: 'Leave and discard the changes'
+                confirmLabel: 'Leave and discard the changes',
+                cancelLabel: 'Keep editing'
             },
             {
                 locale: 'pt',
                 title: 'Alterações não salvas e fotos sem texto alternativo',
                 needle: '5 fotos continuam sem texto alternativo',
-                confirmLabel: 'Sair e descartar as alterações'
+                confirmLabel: 'Sair e descartar as alterações',
+                cancelLabel: 'Continuar editando'
             }
         ];
 
-        for (const { locale, title, needle, confirmLabel } of cases) {
+        for (const { locale, title, needle, confirmLabel, cancelLabel } of cases) {
             it(`is really translated in ${locale}, not just present`, () => {
                 const copy = buildCombinedLeaveWarningCopy([
                     { kind: 'unsaved-changes', copy: VIDEO_COPY },
@@ -333,7 +337,7 @@ describe('leave warnings on a page that mounts two guards', () => {
                 expect(copy?.title).toBe(title);
                 expect(copy?.message).toContain(needle);
                 expect(copy?.confirmLabel).toBe(confirmLabel);
-                expect(copy?.cancelLabel).toMatch(/Completar ahora|Complete now|Completar agora/);
+                expect(copy?.cancelLabel).toBe(cancelLabel);
                 // A missing key degrades to the raw dotted key; a real
                 // translation never contains one.
                 expect(copy?.message).not.toContain('common.confirmations');

@@ -15,13 +15,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublishReadyDialog } from '@/components/host/editor/PublishReadyDialog.client';
 
 const publishMock = vi.hoisted(() => vi.fn());
-const photoWarningMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationEditApi: { publish: publishMock }
-}));
-vi.mock('@/lib/forms/leave-warning-registry', () => ({
-    requestLeaveWarning: photoWarningMock
 }));
 
 /** The trial line, asserted both present and absent. */
@@ -42,7 +38,6 @@ function props(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
     vi.clearAllMocks();
     publishMock.mockResolvedValue({ ok: true, data: {} });
-    photoWarningMock.mockResolvedValue(true);
 });
 
 describe('PublishReadyDialog', () => {
@@ -73,13 +68,12 @@ describe('PublishReadyDialog', () => {
         });
     });
 
-    it('publishes the accommodation it was given without a photo warning', async () => {
+    it('publishes the accommodation it was given', async () => {
         const user = userEvent.setup();
         render(<PublishReadyDialog {...props({ accommodationId: 'acc-42' })} />);
 
         await user.click(screen.getByText('Publicar ahora'));
 
-        expect(photoWarningMock).not.toHaveBeenCalled();
         await waitFor(() => expect(publishMock).toHaveBeenCalledWith({ id: 'acc-42' }));
     });
 
