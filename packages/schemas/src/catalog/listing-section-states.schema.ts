@@ -39,3 +39,20 @@ function createSectionStatesSchema(vertical: 'venue' | 'experience') {
 export const VenueListingSectionStatesSchema = createSectionStatesSchema('venue');
 /** Response schema for experience listing section and trait availability. */
 export const ExperienceListingSectionStatesSchema = createSectionStatesSchema('experience');
+
+/**
+ * Optional `businessLines` query parameter of the section-state read
+ * (HOS-1787 leaf 5.7).
+ *
+ * The owner editor needs to know which sections a HYPOTHETICAL selection would
+ * hide BEFORE saving a removal, and only the section resolver may decide that
+ * (G-FAC-03). The parameter is a comma-separated list of catalog values; the
+ * route splits it and validates the resulting selection with
+ * `validateBusinessLines` (G-FAC-09). Omitting it returns the stored selection.
+ */
+export const ListingSectionStatesBusinessLinesQuerySchema = z
+    .string()
+    .optional()
+    .describe(
+        'Comma-separated business-line values to resolve section states for, instead of the stored selection.'
+    );

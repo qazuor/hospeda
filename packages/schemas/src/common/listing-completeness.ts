@@ -91,6 +91,19 @@ export interface ListingCompletenessListing {
     readonly ownerId?: string | null;
     /** Vertical-specific sub-category (e.g. `RESTAURANT`, `TOUR_GUIDE`). Required. */
     readonly type?: string | null;
+    /**
+     * Business lines the listing is assigned to (HOS-1787 leaf 5.7). Required
+     * to carry at least one value.
+     *
+     * Every vertical already stores `business_lines` with a database CHECK
+     * (`venues_business_lines_valid`, `accommodations_business_lines_valid`,
+     * `experiences_business_lines_valid`) whose `cardinality(...) >= 1` makes
+     * an empty set impossible, so this requirement is a safety net: it keeps
+     * the publish gate honest for a partial projection or a legacy row read
+     * through a path the constraint cannot reach, rather than deciding
+     * anything the schema does not already enforce.
+     */
+    readonly businessLines?: readonly string[] | null;
     /** Media block. Required to carry a `featuredImage`. */
     readonly media?: Pick<Media, 'featuredImage'> | null;
     /** Contact channels. Required: at least one phone OR email field set. */
@@ -302,6 +315,14 @@ export function resolveListingCompleteness(
     }
     if (!isNonEmptyString(listing.type)) {
         missing.push('type');
+    }
+    // HOS-1787 leaf 5.7: a listing with no business line has no section to
+    // publish. Read the LENGTH only — whether the value belongs to the
+    // vertical/type is `validateBusinessLines`' job (G-FAC-09), never this
+    // gate's. The DB CHECK already forbids an empty set; this is the safety net
+    // described on {@link ListingCompletenessListing.businessLines}.
+    if (!listing.businessLines || listing.businessLines.length === 0) {
+        missing.push('businessLines');
     }
     if (!listing.media?.featuredImage) {
         missing.push('media.featuredImage');
