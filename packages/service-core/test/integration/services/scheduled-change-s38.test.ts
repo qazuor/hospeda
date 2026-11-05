@@ -26,10 +26,19 @@ import { successionClock } from './support/succession-fixtures.js';
 const migrationSubscriptionIds: string[] = [];
 const migrationIds: string[] = [];
 afterEach(async () => {
-    if (migrationSubscriptionIds.length)
+    if (migrationSubscriptionIds.length) {
+        await getServiceTestDb()
+            .delete(subscriptionScheduledChanges)
+            .where(
+                inArray(
+                    subscriptionScheduledChanges.planMigrationSubscriptionId,
+                    migrationSubscriptionIds
+                )
+            );
         await getServiceTestDb()
             .delete(planMigrationSubscriptions)
             .where(inArray(planMigrationSubscriptions.id, migrationSubscriptionIds.splice(0)));
+    }
     if (migrationIds.length)
         await getServiceTestDb()
             .delete(planMigrations)
