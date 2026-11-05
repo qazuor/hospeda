@@ -1387,6 +1387,13 @@
       "when": 1793843845269,
       "tag": "0197_hos1489_partner_configure_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1793901650473,
+      "tag": "0198_hos1498_partner_empty_presence",
+      "breakpoints": true
     }
   ]
 }
