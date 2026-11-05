@@ -27,7 +27,6 @@ import {
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
-import { requestPhotoTextWarning } from '@/lib/forms/leave-warning-registry';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -81,8 +80,6 @@ export function PublishReadyDialog({
     }
 
     async function handlePublish(): Promise<void> {
-        const mayLeave = await requestPhotoTextWarning('photo-alt');
-        if (!mayLeave) return;
         setState('publishing');
         const result = await accommodationEditApi.publish({ id: accommodationId });
 

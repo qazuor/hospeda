@@ -15,7 +15,7 @@
 import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
-import { requestPhotoTextWarning } from '@/lib/forms/leave-warning-registry';
+import { requestLeaveWarning } from '@/lib/forms/leave-warning-registry';
 import {
     buildReorderPayload,
     isPhotoAltIncomplete,
@@ -262,7 +262,7 @@ export function usePhotoGalleryMutations({
             if (!item.id) return false;
             const currentIsIncomplete = isPhotoAltIncomplete(item);
             const submittedAltIsComplete = Boolean(body.alt?.trim());
-            const maySave = await requestPhotoTextWarning('photo-alt', {
+            const maySave = await requestLeaveWarning('photo-alt', {
                 count: Math.max(
                     0,
                     incompleteAltCount - Number(currentIsIncomplete && submittedAltIsComplete)

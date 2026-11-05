@@ -43,7 +43,7 @@
  * `validatePhotoMetadataFields`).
  */
 
-import { type KeyboardEvent, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
@@ -103,6 +103,14 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const toggleRef = useRef<HTMLButtonElement>(null);
+    const restoreToggleFocusRef = useRef(false);
+
+    useEffect(() => {
+        if (!isOpen && !isSaving && restoreToggleFocusRef.current) {
+            restoreToggleFocusRef.current = false;
+            toggleRef.current?.focus();
+        }
+    }, [isOpen, isSaving]);
 
     const handleToggle = () => {
         if (!isOpen) {
@@ -140,8 +148,8 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         setIsSaving(false);
         if (ok) {
             if (closeOnSuccessfulSave) {
+                restoreToggleFocusRef.current = true;
                 setIsOpen(false);
-                toggleRef.current?.focus();
             } else {
                 setJustSaved(true);
             }

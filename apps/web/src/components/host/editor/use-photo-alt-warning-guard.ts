@@ -99,16 +99,21 @@ function writeDismissed(accommodationId: string): void {
 
 /** Opens and focuses the first photo whose required alt text is incomplete. */
 function focusFirstIncompletePhoto(): void {
-    const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
-    if (!first) return;
-
-    const toggle = first.querySelector<HTMLButtonElement>('button[aria-expanded]');
-    if (!toggle) return;
-    if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
-
-    window.setTimeout(() => {
-        first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
-    }, 0);
+    let attempts = 0;
+    const openAndFocus = (): void => {
+        const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
+        const toggle = first?.querySelector<HTMLButtonElement>('button[aria-expanded]');
+        if (!first || !toggle?.isConnected) return;
+        if (toggle.disabled) {
+            if (attempts++ < 100) window.setTimeout(openAndFocus, 50);
+            return;
+        }
+        if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+        window.setTimeout(() => {
+            first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
+        }, 0);
+    };
+    openAndFocus();
 }
 
 /**
@@ -157,13 +162,29 @@ export function usePhotoAltWarningGuard({
     }, [accommodationId]);
     const handleCancel = useCallback(focusFirstIncompletePhoto, []);
     const copyForCount = useCallback(
-        (count: number) => ({
-            title: t('host.properties.editor.photo.altWarningTitle', 'Fotos sin texto alternativo'),
-            message: tPlural('host.properties.editor.photo.altWarningMessage', count, { count }),
-            confirmLabel: t('host.properties.editor.photo.altWarningContinue', 'Seguir igual'),
-            cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Completar ahora')
-        }),
-        [t, tPlural]
+        (count: number) => {
+            const translations = createTranslations(locale);
+            return {
+                title: translations.t(
+                    'host.properties.editor.photo.altWarningTitle',
+                    'Fotos sin texto alternativo'
+                ),
+                message: translations.tPlural(
+                    'host.properties.editor.photo.altWarningMessage',
+                    count,
+                    { count }
+                ),
+                confirmLabel: translations.t(
+                    'host.properties.editor.photo.altWarningContinue',
+                    'Seguir igual'
+                ),
+                cancelLabel: translations.t(
+                    'host.properties.editor.photo.altWarningGoBack',
+                    'Completar ahora'
+                )
+            };
+        },
+        [locale]
     );
 
     useUnsavedChangesGuard({

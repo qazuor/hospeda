@@ -133,6 +133,7 @@ describe('PhotoMetadataEditor', () => {
             'aria-expanded',
             'false'
         );
+        expect(screen.getByLabelText('Editar textos de la foto 1')).toHaveFocus();
     });
 
     it('keeps accommodation panel open when a save fails', async () => {

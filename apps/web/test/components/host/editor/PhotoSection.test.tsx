@@ -59,7 +59,7 @@ const {
 
 vi.mock('@/lib/forms/leave-warning-registry', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/forms/leave-warning-registry')>()),
-    requestPhotoTextWarning: vi.fn().mockResolvedValue(true)
+    requestLeaveWarning: vi.fn().mockResolvedValue(true)
 }));
 
 // ---------------------------------------------------------------------------

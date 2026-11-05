@@ -21,7 +21,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationEditApi: { publish: publishMock }
 }));
 vi.mock('@/lib/forms/leave-warning-registry', () => ({
-    requestPhotoTextWarning: photoWarningMock
+    requestLeaveWarning: photoWarningMock
 }));
 
 /** The trial line, asserted both present and absent. */
@@ -73,25 +73,14 @@ describe('PublishReadyDialog', () => {
         });
     });
 
-    it('publishes the accommodation it was given', async () => {
+    it('publishes the accommodation it was given without a photo warning', async () => {
         const user = userEvent.setup();
         render(<PublishReadyDialog {...props({ accommodationId: 'acc-42' })} />);
 
         await user.click(screen.getByText('Publicar ahora'));
 
-        expect(photoWarningMock).toHaveBeenCalledWith('photo-alt');
+        expect(photoWarningMock).not.toHaveBeenCalled();
         await waitFor(() => expect(publishMock).toHaveBeenCalledWith({ id: 'acc-42' }));
-    });
-
-    it('does not publish when the photo warning is cancelled', async () => {
-        photoWarningMock.mockResolvedValue(false);
-        const user = userEvent.setup();
-        render(<PublishReadyDialog {...props()} />);
-
-        await user.click(screen.getByText('Publicar ahora'));
-
-        expect(photoWarningMock).toHaveBeenCalledWith('photo-alt');
-        expect(publishMock).not.toHaveBeenCalled();
     });
 
     it('turns into the plans link when the verdict went stale', async () => {

@@ -115,7 +115,6 @@ const registrations = new Map<symbol, LeaveWarningEntry>();
 let listenerInstalled = false;
 let dialogOpen = false;
 let navigate: NavigateFn | null = null;
-let lastKnownHref = '';
 
 /**
  * Returns true when a click should be left alone: anything the router itself
@@ -195,7 +194,7 @@ function resolveCopy(entries: readonly LeaveWarningEntry[]): LeaveWarningCopy {
  * Shows a registered warning before a non-navigation action such as saving.
  * Returns true when the action may continue; missing registrations are a no-op.
  */
-export async function requestPhotoTextWarning(
+export async function requestLeaveWarning(
     kind: LeaveWarningKind,
     options?: { readonly count?: number }
 ): Promise<boolean> {
@@ -257,20 +256,6 @@ function handleClickCapture(event: MouseEvent): void {
     });
 }
 
-/** Restores the current history entry while the host decides whether to leave. */
-function handlePopState(): void {
-    if (registrations.size === 0 || !lastKnownHref) return;
-    const targetHref = window.location.href;
-    const returnHref = lastKnownHref;
-    window.history.pushState(window.history.state, '', returnHref);
-    void requestEntriesConfirmation(activeEntries()).then((confirmed) => {
-        if (!confirmed) return;
-        lastKnownHref = targetHref;
-        if (navigate) navigate(targetHref);
-        else window.location.href = targetHref;
-    });
-}
-
 /** Shared confirmation runner for navigation and action-triggered warnings. */
 async function requestEntriesConfirmation(entries: readonly LeaveWarningEntry[]): Promise<boolean> {
     if (dialogOpen) return false;
@@ -312,8 +297,6 @@ export function registerLeaveWarning(entry: LeaveWarningEntry): () => void {
         // Capture phase is load-bearing: the router listens in the bubble
         // phase, so this must run first for `defaultPrevented` to reach it.
         document.addEventListener('click', handleClickCapture, true);
-        window.addEventListener('popstate', handlePopState);
-        lastKnownHref = window.location.href;
         listenerInstalled = true;
     }
     warmRouter();
@@ -322,8 +305,6 @@ export function registerLeaveWarning(entry: LeaveWarningEntry): () => void {
         registrations.delete(token);
         if (listenerInstalled && registrations.size === 0) {
             document.removeEventListener('click', handleClickCapture, true);
-            window.removeEventListener('popstate', handlePopState);
-            lastKnownHref = '';
             listenerInstalled = false;
         }
     };
@@ -340,10 +321,8 @@ export function __resetLeaveWarningRegistry(): void {
     registrations.clear();
     if (listenerInstalled) {
         document.removeEventListener('click', handleClickCapture, true);
-        window.removeEventListener('popstate', handlePopState);
         listenerInstalled = false;
     }
-    lastKnownHref = '';
     dialogOpen = false;
     navigate = null;
 }

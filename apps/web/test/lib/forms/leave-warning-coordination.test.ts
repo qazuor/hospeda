@@ -163,20 +163,6 @@ describe('leave warnings on a page that mounts two guards', () => {
     });
 
     describe('when BOTH conditions hold at once', () => {
-        it('asks before back/forward navigation and restores the page when cancelled', async () => {
-            showConfirmationDialogMock.mockResolvedValue(false);
-            renderBothGuards({ videoIsDirty: false, galleryItems: photosWithoutAlt(1) });
-            const currentHref = window.location.href;
-            await flushRouterImport();
-
-            window.history.pushState({}, '', '/es/mi-cuenta/propiedades/');
-            window.dispatchEvent(new PopStateEvent('popstate'));
-            await flushRouterImport();
-
-            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
-            expect(window.location.href).toBe(currentHref);
-        });
-
         it('opens exactly ONE dialog whose message carries BOTH warnings', async () => {
             showConfirmationDialogMock.mockResolvedValue(false);
             renderBothGuards({ videoIsDirty: true, galleryItems: photosWithoutAlt(3) });

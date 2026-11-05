@@ -9,14 +9,14 @@
  * navigation (which does not exist).
  */
 
-import { act, fireEvent, render, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import {
     __resetLeaveWarningRegistry,
-    requestPhotoTextWarning
+    requestLeaveWarning
 } from '@/lib/forms/leave-warning-registry';
 import { __setNavigateImpl } from '../../../stubs/astro-transitions-client';
 
@@ -133,11 +133,11 @@ describe('usePhotoAltWarningGuard', () => {
             );
 
             await act(async () => {
-                expect(await requestPhotoTextWarning('photo-alt')).toBe(true);
+                expect(await requestLeaveWarning('photo-alt')).toBe(true);
             });
             await flushRouterImport();
             await act(async () => Promise.resolve());
-            expect(await requestPhotoTextWarning('photo-alt')).toBe(true);
+            expect(await requestLeaveWarning('photo-alt')).toBe(true);
             expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
         });
 
@@ -171,6 +171,41 @@ describe('usePhotoAltWarningGuard', () => {
             await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
             expect(document.activeElement).toBe(field());
+        });
+
+        it('waits for an in-flight operation to enable the toggle before focusing', async () => {
+            let resolveDialog!: (confirmed: boolean) => void;
+            showConfirmationDialogMock.mockImplementation(
+                () =>
+                    new Promise<boolean>((resolve) => {
+                        resolveDialog = resolve;
+                    })
+            );
+            const photo = buildItem({ id: 'busy-photo', alt: '' });
+            const editorProps = (disabled: boolean) => ({
+                locale: 'es' as const,
+                item: photo,
+                disabled,
+                toggleAriaLabel: 'Editar textos',
+                closeAriaLabel: 'Cerrar textos',
+                onSave: vi.fn().mockResolvedValue(true)
+            });
+            const editor = render(<PhotoMetadataEditor {...editorProps(true)} />);
+            const field = () =>
+                editor.container.querySelector<HTMLTextAreaElement>('#photo-alt-busy-photo');
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [photo]
+                })
+            );
+            await flushRouterImport();
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            editor.rerender(<PhotoMetadataEditor {...editorProps(false)} />);
+            await act(async () => resolveDialog(false));
+            await waitFor(() => expect(document.activeElement).toBe(field()));
         });
 
         it('focuses the alt field when the first incomplete photo panel is already open', async () => {
