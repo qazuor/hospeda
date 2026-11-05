@@ -1,7 +1,7 @@
 /**
  * Public alliance lead intake endpoint (HOS-277 §6.3)
  *
- * Receives a prospective partner/sponsor/editor/service_provider's "aliados"
+ * Receives a prospective sponsor/editor/service_provider's "aliados"
  * form submission and persists it as an AllianceLead record for admin
  * review. No authentication is required — this is a public acquisition
  * funnel endpoint.
@@ -64,7 +64,7 @@ type CreateLeadRequest = z.infer<typeof CreateLeadRequestSchema>;
 /**
  * POST /api/v1/public/alliance/leads
  *
- * Accepts an alliance lead submission from one of the four "aliados" public
+ * Accepts an alliance lead submission from one of the three "aliados" public
  * landing forms (`sponsor`, `editor`, `service_provider`). AC:V7:15
  * Returns 200 with `{ id }` on success — only the new lead's UUID is
  * disclosed. On honeypot trigger, returns the same shape with a nil-UUID
@@ -78,8 +78,8 @@ export const publicCreateAllianceLeadRoute = createPublicRoute({
     path: '/',
     summary: 'Submit an alliance lead',
     description:
-        'Accepts one of the four "aliados" form submissions (partner, sponsor, ' +
-        'editor, service_provider). No authentication required. Includes honeypot ' +
+        'Accepts one of the three "aliados" form submissions (sponsor, editor, ' +
+        'service_provider); Partner applications go through PP1. No authentication required. Includes honeypot ' +
         'spam guard. Returns 200 on both success and honeypot rejection to prevent ' +
         'bot discovery. Response is limited to { id } — no PII, status, or audit ' +
         'fields are disclosed.',
