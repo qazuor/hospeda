@@ -6,7 +6,7 @@ import {
 import { VerticalEnum } from '../../src/enums/vertical.enum.js';
 
 describe('RESERVED_LISTING_SLUGS', () => {
-    it('reserves club-collection and pagination segments for venues', () => {
+    it('reserves rubro and pagination segments for venues', () => {
         expect(RESERVED_LISTING_SLUGS[VerticalEnum.VENUE]).toEqual(['page', 'rubro']);
     });
 
