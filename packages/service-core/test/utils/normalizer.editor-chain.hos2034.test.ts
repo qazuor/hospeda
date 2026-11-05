@@ -25,7 +25,8 @@ describe('editor composed phone -> HTTP schema -> normalizer -> stored contactIn
         ['+54 9 3442 45-2345', '+5493442452345'],
         ['+5493442452345', '+5493442452345'],
         ['54 3442 452345', '+5493442452345'],
-        ['0223-155-1234', '+5492231551234']
+        ['0223-155-1234', '+5492231551234'],
+        ['0 3442 452345', '+5493442452345']
     ])('%s is stored as %s in mobilePhone and whatsapp', (typed, stored) => {
         // Same string composePhoneValue yields for the default Argentina selector.
         const composed = typed.startsWith('+')

@@ -103,6 +103,17 @@ describe('editor-composed "+54 <typed>" input', () => {
         expect(normalizeArgentinePhone(input, false)).toBe(landline);
     });
 
+    it('treats a rest starting with the trunk 0 as trunk, not as national digits', () => {
+        // 0 + 10 digits: trunk dropped, then classified by the remaining length
+        expect(normalizeArgentinePhone('+54 03442 452345', true)).toBe('+5493442452345');
+        // 10 digits starting with 0 (only 9 after the trunk): never a national number
+        expect(parsePhoneNumber('+54 0344245234')).toEqual({
+            kind: 'international',
+            value: '+540344245234'
+        });
+        expect(normalizeArgentinePhone('+54 0344245234', true)).toBe('+540344245234');
+    });
+
     it('keeps odd-length legacy +549 values untouched (no 15 stripping after a 9)', () => {
         expect(normalizeArgentinePhone('+54934515732848', true)).toBe('+54934515732848');
     });
