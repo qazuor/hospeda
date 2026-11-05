@@ -5,8 +5,12 @@
  * Assembles the shared listing sections (identity + operational) and injects
  * a venue-specific section in between that covers:
  *   - type (VenueTypeEnum SELECT)
+ *   - businessLines (catalog-driven, required when the vertical offers a choice)
  *   - priceRange (PriceRangeEnum SELECT, optional)
- *   - menuUrl (TEXT, optional — URL field)
+ *
+ * The online-menu link is NOT part of this form (HOS-1874): it belongs to the
+ * paid menu section and is managed through the owner surface, not the admin.
+ * Nor does the form expose the nightlife section, whose fields the owner edits.
  *
  * Used by both the view/edit flow (`EntityPageBase`) and the create flow
  * (`EntityCreatePageBase`).
@@ -50,9 +54,9 @@ const PRICE_RANGE_OPTIONS = [
  * identity and operational sections.
  *
  * Fields:
- *  - `type`       — Venue sub-category (SELECT, required).
- *  - `priceRange` — Price-range tier (SELECT, optional).
- *  - `menuUrl`    — Online menu URL (TEXT, optional).
+ *  - `type`         — Venue sub-category (SELECT, required).
+ *  - `businessLines` — Catalog-driven lines (required when offered).
+ *  - `priceRange`   — Price-range tier (SELECT, optional).
  *
  * @returns A `ConsolidatedSectionConfig` for venue-specific fields.
  */
@@ -93,7 +97,7 @@ function createVenueSpecificSection(
     return {
         id: 'venue-specific',
         title: 'Detalles de Gastronomía',
-        description: 'Tipo de establecimiento, rango de precios y menú online',
+        description: 'Tipo de establecimiento y rango de precios',
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
@@ -145,22 +149,6 @@ function createVenueSpecificSection(
                         label: string;
                     }[]
                 }
-            },
-            {
-                id: 'menuUrl',
-                type: FieldTypeEnum.TEXT,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'URL del Menú Online',
-                description: 'Enlace al menú digital del establecimiento (https://…)',
-                placeholder: 'https://tu-restaurante.com/menu',
-                permissions: {
-                    view: [PermissionEnum.VENUE_VIEW_ALL],
-                    edit: [PermissionEnum.VENUE_EDIT_ALL]
-                },
-                typeConfig: {
-                    maxLength: 500
-                }
             }
         ]
     };
@@ -175,7 +163,7 @@ function createVenueSpecificSection(
  *
  * Section order:
  *  1. Listing identity section (shared — name, slug, summary, description, …)
- *  2. Venue-specific section (type, priceRange, menuUrl)
+ *  2. Venue-specific section (type, businessLines, priceRange)
  *  3. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`

@@ -5,7 +5,9 @@
  *
  * Covers:
  *  - createVenueConsolidatedConfig returns at least 3 sections
- *  - Includes a venue-specific section with the type, priceRange, menuUrl fields
+ *  - Includes a venue-specific section with the type, businessLines and priceRange fields
+ *  - The online-menu link is absent from view, edit and create (HOS-1874)
+ *  - No nightlife-section field is exposed by the form (HOS-1874)
  *  - listing-identity section is present
  *  - listing-operational section is present
  *  - Metadata has entityName / entityNamePlural
@@ -14,7 +16,7 @@
  *  - priceRange field is optional
  */
 
-import { PermissionEnum, VenueTypeEnum } from '@repo/schemas';
+import { LISTING_SECTIONS, PermissionEnum, VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
@@ -70,11 +72,28 @@ describe('createVenueConsolidatedConfig', () => {
         expect(field?.required).toBeFalsy();
     });
 
-    it('venue-specific section should include a "menuUrl" field', () => {
+    it('does not expose an online-menu field in any mode (HOS-1874)', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'venue-specific');
-        const field = section?.fields.find((f) => f.id === 'menuUrl');
-        expect(field).toBeDefined();
+        for (const mode of ['view', 'edit', 'create'] as const) {
+            const ids = filterSectionsByMode(config.sections, mode).flatMap((section) =>
+                section.fields.map((field) => field.id)
+            );
+            expect(ids).not.toContain('menuUrl');
+        }
+    });
+
+    it('does not expose any field of the nightlife section (HOS-1874)', () => {
+        const config = createVenueConsolidatedConfig(t);
+        const nightInfo = LISTING_SECTIONS.venue.find((entry) => entry.id === 'nightInfo');
+        const nightInfoFields: readonly string[] = nightInfo ? [...nightInfo.fields] : [];
+        expect(nightInfoFields.length).toBeGreaterThan(0);
+
+        const configuredIds = config.sections.flatMap((section) =>
+            section.fields.map((field) => field.id)
+        );
+        for (const id of configuredIds) {
+            expect(nightInfoFields).not.toContain(id);
+        }
     });
 
     it('should include metadata with entityName and entityNamePlural', () => {
