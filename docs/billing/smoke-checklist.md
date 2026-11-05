@@ -187,13 +187,23 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
 - **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
 
-### S11 — Manual payment installments (HOS-1541, HOS-1542)
+### V7.5 · Acción 6: configurar plan y pago de un Partner (HOS-1489)
 
-Run this item after HOS-1489 ships the manual S1 route (PM-153).
+- **Preconditions:** `staging` with a claimed Partner, a monthly `partner-silver` option, and a SUPER_ADMIN.
+- **Steps:**
+  1. Open the Partner detail in the admin, select **Configurar plan y pago**, choose `partner-silver` monthly, and enter a reason. Select **Revisar**; confirm the panel names the Partner, owner, plan, amount and Manual method, while no subscription has been written.
+  2. Select **Confirmar**. Confirm one `MANUAL` subscription in `PENDING_AUTHORIZATION`, one `AWAITING` installment, one `partner.billing_configured` event with the actor, Partner and reason, and one unpaid installment notice per SUPER_ADMIN in the outbox.
+  3. Register the installment (action 3, MP1, S11 step 2). Confirm the subscription becomes `ACTIVE` and the Partner's plan presence appears in the carousel (Silver) and page (Gold).
+  4. Confirm an admin without `partner.configureBilling` does not see the button and receives 403 from `POST …/billing-setup`.
+- **Expected:** The action writes only after explicit confirmation and records actor, subject and reason.
+- **Evidence:** The preview and POST responses; read-only queries on `subscription`, `manual_payment`, `domain_event` and `email_outbox`.
+- **Covers:** AC:V7:17; TEST:V7:18.
+
+### S11 — Manual payment installments (HOS-1541, HOS-1542)
 
 - **Preconditions:** HOS-1629 manual signup is deployed on staging; use only a test account and a SUPER_ADMIN. The manual payment path does not call Mercado Pago, except that activation can cancel an inherited Tourist VIP.
 - **Steps:**
-  1. Start a manual plan. Confirm `PENDING_AUTHORIZATION`, one `AWAITING` installment and one unpaid installment notice per SUPER_ADMIN.
+  1. In the Partner detail, use **Configurar plan y pago** to select a manual plan, review the confirmation panel, and confirm. Verify `PENDING_AUTHORIZATION`, one `AWAITING` installment and one unpaid installment notice per SUPER_ADMIN.
   2. As SUPER_ADMIN, call `GET …/manual-payments`, preview `GET …/{id}/register`, then `POST …/{id}/register` with `proofRef`. Confirm preview effect `S29` and the new date, then `REGISTERED` with actor, time and proof, `ACTIVE`, one `receipt`, one cycle of `next_charge_at`, signup confirmation and publishable coverage.
   3. Set `next_charge_at` in the past on that test row with `hops psql --target=staging` and wait for `manual-installment-open` at minute 13. Confirm a second `AWAITING` installment, `GRACE_PERIOD`, `grace_ends_at` after the plan's grace days and one admin notice. Rerun the job and confirm exact counts remain one installment and one notice for that period.
   4. Register the second installment. Confirm `ACTIVE`, cleared grace and one cycle of date advancement.
