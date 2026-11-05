@@ -121,7 +121,7 @@ describe('usePhotoAltWarningGuard', () => {
     });
 
     describe('with photos missing alt text', () => {
-        it('does not ask again for a save in the same mounted session after continuing', async () => {
+        it('does not ask again when leaving in the same session after continuing', async () => {
             showConfirmationDialogMock.mockResolvedValue(true);
             renderHook(() =>
                 usePhotoAltWarningGuard({
@@ -132,12 +132,17 @@ describe('usePhotoAltWarningGuard', () => {
                 })
             );
 
-            await act(async () => {
-                expect(await requestLeaveWarning('photo-alt')).toBe(true);
-            });
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+            clickAnchor(anchor);
             await flushRouterImport();
             await act(async () => Promise.resolve());
-            expect(await requestLeaveWarning('photo-alt')).toBe(true);
+            expect(
+                window.sessionStorage.getItem(
+                    `hospeda:photoAltWarning:dismissed:${ACCOMMODATION_ID}`
+                )
+            ).toBe('1');
+            clickAnchor(anchor);
+            await flushRouterImport();
             expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
         });
 
@@ -239,26 +244,19 @@ describe('usePhotoAltWarningGuard', () => {
             await waitFor(() => expect(document.activeElement).toBe(field));
         });
 
-        it('waits for a pending save to re-enable the alt field before focusing it', async () => {
-            // The dialog is answered while the editor's own save is still
-            // awaiting it, so the textarea is disabled at the moment the guard
-            // asks for focus (HOS-2032 review round 7).
-            let resolveDialog!: (confirmed: boolean) => void;
-            showConfirmationDialogMock.mockImplementation(
-                () =>
-                    new Promise<boolean>((resolve) => {
-                        resolveDialog = resolve;
-                    })
-            );
+        it('saves one photo without warning when other photos remain incomplete', async () => {
             const photo = buildItem({ id: 'saving-photo', alt: '' });
-            const { container, getByText } = render(
+            const otherIncompletePhoto = buildItem({ id: 'other-incomplete-photo', alt: '' });
+            const onSave = vi.fn(() => requestLeaveWarning('photo-alt'));
+            const { container, getByText, queryByText } = render(
                 <PhotoMetadataEditor
                     locale="es"
                     item={photo}
                     disabled={false}
                     toggleAriaLabel="Editar textos"
                     closeAriaLabel="Cerrar textos"
-                    onSave={() => requestLeaveWarning('photo-alt')}
+                    closeOnSuccessfulSave
+                    onSave={onSave}
                 />
             );
             renderHook(() =>
@@ -266,20 +264,15 @@ describe('usePhotoAltWarningGuard', () => {
                     locale: 'es',
                     accommodationId: ACCOMMODATION_ID,
                     featuredItem: null,
-                    galleryItems: [photo]
+                    galleryItems: [photo, otherIncompletePhoto]
                 })
             );
             await flushRouterImport();
             fireEvent.click(container.querySelector('button')!);
-            const field = () =>
-                container.querySelector<HTMLTextAreaElement>('#photo-alt-saving-photo')!;
             fireEvent.click(getByText('Guardar'));
-            await waitFor(() => expect(field().disabled).toBe(true));
-
-            await act(async () => resolveDialog(false));
-
-            await waitFor(() => expect(field().disabled).toBe(false));
-            await waitFor(() => expect(document.activeElement).toBe(field()));
+            await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+            expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+            expect(queryByText('Guardar')).not.toBeInTheDocument();
         });
 
         it('does not warn about SSR placeholders before media hydration', async () => {

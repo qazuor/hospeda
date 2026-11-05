@@ -75,6 +75,11 @@ export interface LeaveWarningCopy {
 export interface LeaveWarningEntry {
     /** Which warning this is. See {@link LeaveWarningKind}. */
     readonly kind: LeaveWarningKind;
+    /**
+     * Whether non-navigation actions such as saves should request this
+     * warning. Defaults to `true`; set to `false` for leave-only nudges.
+     */
+    readonly guardsSaves?: boolean;
     /** Copy shown when this is the ONLY active warning. */
     readonly copy: LeaveWarningCopy;
     /** Rebuilds count-sensitive copy when an action supplies a live count. */
@@ -225,7 +230,9 @@ export async function requestLeaveWarning(
     kind: LeaveWarningKind,
     options?: { readonly count?: number }
 ): Promise<boolean> {
-    const entries = activeEntries().filter((entry) => entry.kind === kind);
+    const entries = activeEntries().filter(
+        (entry) => entry.kind === kind && entry.guardsSaves !== false
+    );
     if (entries.length === 0) return true;
     const adjustedEntries =
         options?.count === undefined

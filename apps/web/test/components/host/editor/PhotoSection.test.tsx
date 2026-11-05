@@ -44,7 +44,8 @@ const {
     mockReorderMedia,
     mockUpdateMedia,
     mockUploadEntityImage,
-    mockAddToast
+    mockAddToast,
+    mockRequestLeaveWarning
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
@@ -54,12 +55,13 @@ const {
     mockReorderMedia: vi.fn(),
     mockUpdateMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
-    mockAddToast: vi.fn()
+    mockAddToast: vi.fn(),
+    mockRequestLeaveWarning: vi.fn().mockResolvedValue(true)
 }));
 
 vi.mock('@/lib/forms/leave-warning-registry', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/forms/leave-warning-registry')>()),
-    requestLeaveWarning: vi.fn().mockResolvedValue(true)
+    requestLeaveWarning: mockRequestLeaveWarning
 }));
 
 // ---------------------------------------------------------------------------
@@ -436,6 +438,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 const urls = imgs.map((i) => i.getAttribute('src'));
                 expect(urls).toContain(NEW_ROW.url);
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('does NOT mutate gallery state when addMedia fails', async () => {
@@ -499,6 +502,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(imgs).toHaveLength(1);
                 expect(imgs[0]).toHaveAttribute('src', GALLERY_ROW_2.url);
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('does NOT remove the item from state when removeMedia fails', async () => {
@@ -979,6 +983,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                     orderedIds: [FEATURED_ROW.id, GALLERY_ROW_2.id, GALLERY_ROW_1.id]
                 });
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('disables move-up on the first item and move-down on the last item', async () => {

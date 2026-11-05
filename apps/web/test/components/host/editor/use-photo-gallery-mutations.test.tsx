@@ -43,19 +43,34 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         __resetLeaveWarningRegistry();
     });
 
-    it('asks before saving photo texts when another photo has incomplete alt text', async () => {
+    it('saves photo texts when another photo has incomplete alt text', async () => {
+        updateMediaMock.mockResolvedValue({
+            ok: true,
+            data: {
+                media: {
+                    id: photo.id,
+                    url: photo.url,
+                    publicId: photo.publicId,
+                    alt: 'Updated',
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'approved'
+                }
+            }
+        });
         const { result } = renderHook(() => {
             usePhotoAltWarningGuard({
                 locale: 'es',
                 accommodationId: 'accommodation-1',
                 featuredItem: null,
-                galleryItems: [{ ...photo, alt: '' }]
+                galleryItems: [photo, { ...photo, id: 'photo-2', alt: '' }]
             });
             return usePhotoGalleryMutations({
                 accommodationId: 'accommodation-1',
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
-                galleryItems: [{ ...photo, alt: '' }],
+                galleryItems: [photo, { ...photo, id: 'photo-2', alt: '' }],
                 isHydrated: true,
                 setFeaturedItem: vi.fn(),
                 setGalleryItems: vi.fn(),
@@ -67,23 +82,31 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
 
         await act(async () => {
             expect(await result.current.handleUpdateMediaText(photo, { alt: 'Updated' })).toBe(
-                false
+                true
             );
         });
 
-        expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
-        expect(showConfirmationDialogMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                title: 'Fotos sin texto alternativo',
-                confirmLabel: 'Seguir igual',
-                cancelLabel: 'Completar ahora'
-            })
-        );
-        expect(updateMediaMock).not.toHaveBeenCalled();
+        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        expect(updateMediaMock).toHaveBeenCalledTimes(1);
     });
 
-    it('excludes the photo being completed from the save warning count', async () => {
+    it('saves a completed photo while another incomplete photo remains', async () => {
         const incompletePhoto = { ...photo, alt: '' };
+        updateMediaMock.mockResolvedValue({
+            ok: true,
+            data: {
+                media: {
+                    id: incompletePhoto.id,
+                    url: incompletePhoto.url,
+                    publicId: incompletePhoto.publicId,
+                    alt: 'Completed alt',
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'approved'
+                }
+            }
+        });
         const { result } = renderHook(() => {
             usePhotoAltWarningGuard({
                 locale: 'es',
@@ -106,13 +129,15 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         });
 
         await act(async () => {
-            await result.current.handleUpdateMediaText(incompletePhoto, { alt: 'Completed alt' });
+            expect(
+                await result.current.handleUpdateMediaText(incompletePhoto, {
+                    alt: 'Completed alt'
+                })
+            ).toBe(true);
         });
 
-        expect(showConfirmationDialogMock).toHaveBeenCalledWith(
-            expect.objectContaining({ message: '1 fotos sin texto alternativo' })
-        );
-        expect(updateMediaMock).not.toHaveBeenCalled();
+        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        expect(updateMediaMock).toHaveBeenCalledTimes(1);
     });
 
     it('saves the last incomplete photo without showing a warning', async () => {
@@ -165,7 +190,7 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         expect(updateMediaMock).toHaveBeenCalledTimes(1);
     });
 
-    it('includes a newly cleared alt in the warning count', async () => {
+    it('saves a cleared alt without warning when other photos are incomplete', async () => {
         const completePhoto = { ...photo, id: 'photo-complete', alt: 'Existing alt' };
         const incompletePhoto = { ...photo, id: 'photo-incomplete', alt: '' };
         const { result } = renderHook(() => {
@@ -193,10 +218,8 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
             await result.current.handleUpdateMediaText(completePhoto, { alt: '' });
         });
 
-        expect(showConfirmationDialogMock).toHaveBeenCalledWith(
-            expect.objectContaining({ message: '2 fotos sin texto alternativo' })
-        );
-        expect(updateMediaMock).not.toHaveBeenCalled();
+        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        expect(updateMediaMock).toHaveBeenCalledTimes(1);
     });
 
     it('merges the server text into the gallery row after a successful save', async () => {

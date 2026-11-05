@@ -103,6 +103,11 @@ export interface UseUnsavedChangesGuardOptions {
      */
     readonly kind?: LeaveWarningKind;
     /**
+     * Whether non-navigation actions such as saves should request this
+     * warning. Defaults to `true`; set to `false` for leave-only nudges.
+     */
+    readonly guardsSaves?: boolean;
+    /**
      * How many items the warning is about, for kinds whose combined copy is
      * pluralized. Ignored when this warning is the only active one — `message`
      * already carries its own count in that case.
@@ -155,6 +160,7 @@ export function useUnsavedChangesGuard({
     onConfirm,
     onCancel,
     kind = 'unsaved-changes',
+    guardsSaves = true,
     count,
     copyForCount,
     interceptReloadLinks = !includeBeforeUnload,
@@ -183,6 +189,7 @@ export function useUnsavedChangesGuard({
         // all but the first — see this file's header and HOS-1018.
         const unregister = registerLeaveWarning({
             kind,
+            guardsSaves,
             count,
             locale,
             copy: { message, title, confirmLabel, cancelLabel },
@@ -208,6 +215,7 @@ export function useUnsavedChangesGuard({
         onConfirm,
         onCancel,
         kind,
+        guardsSaves,
         count,
         copyForCount,
         interceptReloadLinks,
