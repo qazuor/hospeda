@@ -36,7 +36,8 @@ import { type BrowserContext, expect, test } from '@playwright/test';
 import {
     type CreatedUser,
     createUser,
-    getAnyCityDestinationId
+    getAnyCityDestinationId,
+    markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
@@ -129,7 +130,17 @@ async function createVenue({
     return { id, slug };
 }
 
-/** A fresh owner with no trial and a DRAFT venue of the requested type. */
+/**
+ * A fresh owner with no trial and a DRAFT venue of the requested type.
+ *
+ * `createUser` leaves `profile_completed = false`, and the web middleware
+ * bounces every signed-in user with that flag to
+ * `/{locale}/mi-cuenta/completar-perfil/` before the editor route runs
+ * (SPEC-113). The other `listing-owner-0*` specs use pre-seeded owners, which
+ * `markUserReady` already marks as completed; a freshly created owner needs
+ * the same state written here, or every navigation lands on the profile form
+ * and the editor assertions read as a missing feature.
+ */
 async function createOwnerWithVenue({
     type,
     name
@@ -138,6 +149,7 @@ async function createOwnerWithVenue({
     readonly name: string;
 }): Promise<{ owner: CreatedUser; venue: CreatedVenue }> {
     const owner = await createUser({}, { apiBaseUrl: API_URL, webBaseUrl: WEB_URL });
+    await markProfileCompleted({ userId: owner.id });
     const venue = await createVenue({ sessionCookie: owner.sessionCookie, type, name });
     return { owner, venue };
 }
