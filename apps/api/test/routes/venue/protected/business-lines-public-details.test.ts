@@ -9,10 +9,14 @@
  * only configuration that proves the public contract instead of the dev escape
  * hatch.
  *
- * It goes through `initApp()` and the real protected POST route, so the
+ * It goes through `initApp()` and the real protected POST/PATCH routes, so the
  * response is produced by the real `handleRouteError` — not by
  * `createErrorHandler`, which has always emitted every 4xx detail (HOS-700).
+ * Both cases prove the same contract: the route must carry
+ * `result.error.reason` into the thrown `ServiceError`; a gate on the shape of
+ * `details` would let an unrelated `VALIDATION_ERROR` through.
  */
+import { PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
@@ -31,9 +35,63 @@ const BASE = '/api/v1/protected/venues';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
-const { fakeModel } = vi.hoisted(() => ({
-    fakeModel: { findById: vi.fn(), update: vi.fn(), create: vi.fn(), findOne: vi.fn() }
-}));
+const { fakeModel } = vi.hoisted(() => {
+    const row = {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        slug: 'night-venue',
+        name: 'Night Venue',
+        summary: 'A night venue summary.',
+        description: 'A detailed description of this night venue for visitors.',
+        type: 'HELADERIA',
+        businessLines: ['food'],
+        ownerId: '11111111-1111-4111-8111-111111111111',
+        destinationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        publicationStatus: 'DRAFT',
+        featuredByEntitlement: false,
+        media: null,
+        videos: [],
+        averageRating: 0,
+        reviewsCount: 0,
+        rating: null,
+        seo: null,
+        tags: [],
+        priceRange: null,
+        menuUrl: null,
+        menuFileUrl: null,
+        menuFileKind: null,
+        openingHours: null,
+        contactInfo: null,
+        socialNetworks: null,
+        faqs: [],
+        nameI18n: null,
+        summaryI18n: null,
+        descriptionI18n: null,
+        richDescriptionI18n: null,
+        entryKind: null,
+        entryNoteI18n: null,
+        entryPriceFrom: null,
+        entryPriceUpdatedAt: null,
+        minAge: null,
+        dressCode: null,
+        dressCodeNoteI18n: null,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-01T00:00:00Z'),
+        createdById: null,
+        updatedById: null
+    } as Record<string, unknown>;
+
+    return {
+        fakeModel: {
+            findById: vi.fn(async () => ({ ...row })),
+            update: vi.fn(async (_where: unknown, data: Record<string, unknown>) => ({
+                ...row,
+                ...data
+            })),
+            create: vi.fn(),
+            findOne: vi.fn(async () => null)
+        }
+    };
+});
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
@@ -100,6 +158,29 @@ describe('POST /api/v1/protected/venues — public business-line details', () =>
                 destinationId: VALID_UUID,
                 businessLines: ['nightlife']
             })
+        });
+
+        expect(res.status, await res.clone().text()).toBe(400);
+        const body = (await res.json()) as {
+            error: { code?: string; details?: { field?: string; reason?: string } };
+        };
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.details?.field).toBe('businessLines');
+        expect(body.error.details?.reason).toBe('NOT_ALLOWED_FOR_TYPE');
+    });
+
+    it('returns the validated cause on PATCH with HOSPEDA_API_DEBUG_ERRORS off', async () => {
+        const res = await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'VENUE_OWNER',
+                'x-mock-actor-id': OWNER_ID,
+                'x-mock-actor-permissions': JSON.stringify([PermissionEnum.VENUE_EDIT_OWN]),
+                authorization: 'Bearer valid-test-token'
+            },
+            body: JSON.stringify({ businessLines: ['nightlife'] })
         });
 
         expect(res.status, await res.clone().text()).toBe(400);

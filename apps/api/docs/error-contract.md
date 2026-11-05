@@ -163,9 +163,11 @@ errors keep the debug-only behavior.
 `VALIDATION_ERROR` gets the same narrow treatment for business-line
 rejections: the response publishes `details: { field: 'businessLines', reason }`
 so the owner form can show which rule rejected the selection. The gate accepts
-only that exact payload (the service tags the error with
-`reason: 'BUSINESS_LINES_INVALID'`); every other `VALIDATION_ERROR` keeps its
-`details` debug-only — this is not an opening of the whole code.
+only the top-level `reason: 'BUSINESS_LINES_INVALID'` the service tags the error
+with — both owner handlers (create and patch) propagate `result.error.reason`
+when they rebuild the `ServiceError` — and never the shape of `details` itself,
+so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
+`details` debug-only. This is not an opening of the whole code.
 
 | `error.code` | `details` shape | Why the client needs it |
 |---|---|---|
@@ -178,7 +180,7 @@ This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
 comment) because widening it changes the public contract of every route that
 passes through `handleRouteError`. The `ALREADY_EXISTS` and `VALIDATION_ERROR`
-exceptions are gated by an exact, machine-readable shape; other errors with
+exceptions are gated by an exact, machine-readable reason; other errors with
 those codes keep debug-only details. Adding another public details case is a contract change: update
 `PUBLIC_DETAILS_ERROR_CODES` in `utils/response-helpers.ts` **and** this table
 in the same PR — do not fall back to "make it match the global handler" for
