@@ -109,6 +109,7 @@ import {
     resolveMissingPublishRequirements,
     ServiceErrorCode,
     type Success,
+    VerticalEnum,
     validateBusinessLines,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
@@ -130,6 +131,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
+import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { liveParentOrNull } from '../../utils/live-parent';
 import { hasPermission } from '../../utils/permission';
@@ -820,6 +822,14 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<Partial<Accommodation>> {
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (typeof data.slug === 'string' && data.slug.length > 0) {
+            assertListingSlugNotReserved({
+                vertical: VerticalEnum.ACCOMMODATION,
+                slug: data.slug
+            });
+        }
         await this._assertDestinationIsCity(data.destinationId);
         let businessLines = resolveBusinessLinesOnCreate({
             vertical: 'accommodation',
@@ -1112,6 +1122,15 @@ export class AccommodationService extends BaseCrudService<
         assertSupportEditContentOnly({ data: data as Record<string, unknown> });
         const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
         let current: Accommodation | null = null;
+
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (slugWasProvided && typeof data.slug === 'string' && data.slug.length > 0) {
+            assertListingSlugNotReserved({
+                vertical: VerticalEnum.ACCOMMODATION,
+                slug: data.slug
+            });
+        }
 
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
         if (data.destinationId) {
