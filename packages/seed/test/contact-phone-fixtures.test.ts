@@ -21,6 +21,12 @@ const fixtureFiles = collectJsonFiles(directory);
 describe('seed contact phone fixtures', () => {
     it('has fixtures to check', () => {
         expect(fixtureFiles.length).toBeGreaterThan(0);
+        const withContact = fixtureFiles.filter((file) => {
+            const fixture = JSON.parse(readFileSync(file, 'utf8')) as { contactInfo?: unknown };
+            return fixture.contactInfo !== undefined;
+        });
+        // Guard against the per-file check below passing vacuously.
+        expect(withContact.length).toBeGreaterThan(100);
     });
 
     it.each(fixtureFiles)('%s has valid contactInfo phone values', (file) => {
