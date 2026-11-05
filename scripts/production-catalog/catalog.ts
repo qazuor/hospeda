@@ -1823,12 +1823,11 @@ export const PRODUCTION_PLAN_CATALOG = [
 
 /**
  * Entitlement-only catalog publications after the immutable V2.4b baseline.
- * These entries intentionally publish new plan versions instead of editing
- * the versions generated into migration 0144.
+ * Owned by the seed package (migration 0133 consumes it); re-exported here so the
+ * catalog source stays the one place to read the whole catalog. Not part of the
+ * generated SQL on purpose: see the constant's own docblock (GUARD:G18).
  */
-export const PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS = [
-    { vertical: 'accommodation', slug: 'owner-basico', key: 'can_embed_video' }
-] as const;
+export { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../packages/seed/src/data-migrations/helpers/next-version-entitlements.js';
 
 /** V2.4a fixture retained for the mechanism tests. */
 export const PLACEHOLDER_CATALOG = [

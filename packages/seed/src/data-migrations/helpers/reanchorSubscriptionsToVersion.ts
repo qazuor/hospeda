@@ -262,3 +262,83 @@ export async function reanchorSubscriptionsToVersion(input: {
     );
     return { movedCount: live.length, remappedScheduledChanges: queued.length, userIds };
 }
+
+/** A source version {@link reanchorOlderVersions} refused to move. */
+export interface SkippedReanchor {
+    /** The older version that failed a guard rail. */
+    readonly versionId: string;
+    /** The refusal message. */
+    readonly reason: string;
+}
+
+/** Outcome of {@link reanchorOlderVersions}. */
+export interface ReanchorOlderResult extends ReanchorResult {
+    /** Source versions that were refused; their rows were left untouched. */
+    readonly skipped: readonly SkippedReanchor[];
+}
+
+/**
+ * Re-anchors live subscriptions (and queued changes) pinned to EVERY other version of
+ * `planId` onto `toVersionId`. Each source runs in its own savepoint with the full guard
+ * rails of {@link reanchorSubscriptionsToVersion}; a source that fails them (different
+ * price, shrunk entitlement, missing option) is rolled back, logged and returned in
+ * `skipped`, and the remaining sources still move. Skipping instead of aborting is
+ * deliberate: an old, incompatible version must not block the deploy nor strand the
+ * compatible ones, and the caller surfaces the skipped ids. Versions with nothing
+ * anchored to them are not evaluated at all.
+ *
+ * @param input - Receive-object.
+ * @param input.db - Transaction-scoped client.
+ * @param input.planId - The plan whose older versions are swept.
+ * @param input.toVersionId - The version to anchor to.
+ * @returns Summed counts, affected users and the skipped sources.
+ */
+export async function reanchorOlderVersions(input: {
+    readonly db: DrizzleClient;
+    readonly planId: string;
+    readonly toVersionId: string;
+}): Promise<ReanchorOlderResult> {
+    const { db, planId, toVersionId } = input;
+    const versions = await db.select().from(planVersions).where(eq(planVersions.planId, planId));
+    let movedCount = 0;
+    let remappedScheduledChanges = 0;
+    const userIds = new Set<string>();
+    const skipped: SkippedReanchor[] = [];
+    for (const version of versions) {
+        if (version.id === toVersionId) continue;
+        const [live] = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(
+                and(
+                    eq(subscriptions.planVersionId, version.id),
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
+                )
+            )
+            .limit(1);
+        const [queued] = await db
+            .select({ id: subscriptionScheduledChanges.id })
+            .from(subscriptionScheduledChanges)
+            .where(eq(subscriptionScheduledChanges.targetPlanVersionId, version.id))
+            .limit(1);
+        if (!live && !queued) continue;
+        try {
+            const result = await db.transaction(async (savepoint) =>
+                reanchorSubscriptionsToVersion({
+                    db: savepoint,
+                    fromVersionId: version.id,
+                    toVersionId
+                })
+            );
+            movedCount += result.movedCount;
+            remappedScheduledChanges += result.remappedScheduledChanges;
+            for (const id of result.userIds) userIds.add(id);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            logger.warn(`Skipped re-anchor of version ${version.id}: ${reason}`);
+            skipped.push({ versionId: version.id, reason });
+        }
+    }
+    return { movedCount, remappedScheduledChanges, userIds: [...userIds], skipped };
+}

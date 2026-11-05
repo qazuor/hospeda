@@ -1,8 +1,8 @@
 /**
- * Publishes a new immutable version of each accommodation plan with the video
- * link entitlement. The production catalog source declares this delta in
- * `PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS`; this migration applies it to existing catalogs
- * and re-anchors every live Basic subscription (and queued plan change) to the new version.
+ * Publishes a new immutable version of each plan listed in
+ * `PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS` (read from `./helpers/next-version-entitlements`,
+ * which the production catalog source re-exports) with the listed entitlement, and re-anchors
+ * every live subscription (and queued plan change) pinned to ANY older version of that plan.
  *
  * `contentOnly` is deliberate: a fresh database applies 0144 first, then this
  * migration runs for real instead of baseline-stamping an incomplete catalog.
@@ -16,13 +16,11 @@ import {
     planVersionLimits,
     planVersions
 } from '@repo/db';
-import { EntitlementKeyEnum } from '@repo/schemas';
 import { buildPublicationContext, validatePublication } from '@repo/service-core';
 import { logger } from '../utils/logger.js';
-import { reanchorSubscriptionsToVersion } from './helpers/reanchorSubscriptionsToVersion.js';
+import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from './helpers/next-version-entitlements.js';
+import { reanchorOlderVersions } from './helpers/reanchorSubscriptionsToVersion.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
-
-const VIDEO_PLAN_SLUGS = ['owner-basico'] as const;
 
 /** Ledger identity of this migration; `contentOnly` so fresh databases run it for real. */
 export const meta = {
@@ -33,29 +31,32 @@ export const meta = {
 } as const satisfies SeedMigrationModule['meta'];
 
 /**
- * Publishes the next version of each plan in {@link VIDEO_PLAN_SLUGS} with `can_embed_video`
- * and re-anchors its live subscriptions. Idempotent: skips a plan whose current version
- * already grants it.
+ * Publishes the next version of each plan in {@link PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS}
+ * and re-anchors the live subscriptions pinned to its older versions. Idempotent: a plan whose
+ * current version already grants the entitlement is not republished, but older-version
+ * stragglers are still moved. A source version that fails the re-anchor guard rails is
+ * skipped and reported in the summary; the others still move.
  *
  * @param ctx - Transaction-scoped migration context.
  * @returns Summary of how many plan versions were published.
  */
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     let published = 0;
-    for (const slug of VIDEO_PLAN_SLUGS) {
+    const skipped: string[] = [];
+    for (const { vertical, slug, key: grantKey } of PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS) {
         const [plan] = await ctx.db
             .select()
             .from(plans)
-            .where(and(eq(plans.vertical, 'accommodation'), eq(plans.slug, slug)))
+            .where(and(eq(plans.vertical, vertical), eq(plans.slug, slug)))
             .limit(1);
-        if (!plan) throw new Error(`Missing accommodation plan ${slug}`);
+        if (!plan) throw new Error(`Missing plan ${slug}`);
 
         const [current] = await ctx.db
             .select()
             .from(planVersions)
             .where(and(eq(planVersions.planId, plan.id), eq(planVersions.current, true)))
             .limit(1);
-        if (!current) throw new Error(`Missing current version for accommodation plan ${slug}`);
+        if (!current) throw new Error(`Missing current version for plan ${slug}`);
 
         const existingGrant = await ctx.db
             .select({ id: planVersionEntitlements.id })
@@ -63,11 +64,19 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             .where(
                 and(
                     eq(planVersionEntitlements.planVersionId, current.id),
-                    eq(planVersionEntitlements.key, EntitlementKeyEnum.CAN_EMBED_VIDEO)
+                    eq(planVersionEntitlements.key, grantKey)
                 )
             )
             .limit(1);
-        if (existingGrant.length > 0) continue;
+        if (existingGrant.length > 0) {
+            const stragglers = await reanchorOlderVersions({
+                db: ctx.db,
+                planId: plan.id,
+                toVersionId: current.id
+            });
+            skipped.push(...stragglers.skipped.map((item) => `${slug}:${item.versionId}`));
+            continue;
+        }
 
         const oldEntitlements = await ctx.db
             .select()
@@ -94,7 +103,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                     planQuota,
                     trialQuota
                 })),
-                { key: EntitlementKeyEnum.CAN_EMBED_VIDEO }
+                { key: grantKey }
             ],
             limits: oldLimits.map(({ key, value }) => ({ key, value })),
             cycles: oldOptions.map(
@@ -139,7 +148,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 planQuota,
                 trialQuota
             })),
-            { planVersionId: newVersionId, key: EntitlementKeyEnum.CAN_EMBED_VIDEO }
+            { planVersionId: newVersionId, key: grantKey }
         ]);
 
         if (oldLimits.length > 0) {
@@ -167,18 +176,19 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         // The seed process has no effective-set cache client; entries expire on
         // their own within 15 minutes (ENTRY_MAX_AGE_MS) and the change is
         // additive, so no user loses a grant meanwhile.
-        const moved = await reanchorSubscriptionsToVersion({
+        const moved = await reanchorOlderVersions({
             db: ctx.db,
-            fromVersionId: current.id,
+            planId: plan.id,
             toVersionId: newVersionId
         });
+        skipped.push(...moved.skipped.map((item) => `${slug}:${item.versionId}`));
         logger.info(
-            `HOS-2037 re-anchored ${moved.movedCount} live subscription(s) and remapped ${moved.remappedScheduledChanges} scheduled change(s) for ${slug}.`
+            `HOS-2037 re-anchored ${moved.movedCount} live subscription(s) and remapped ${moved.remappedScheduledChanges} scheduled change(s) for ${slug}; skipped ${moved.skipped.length} incompatible version(s).`
         );
         published += 1;
     }
 
     return {
-        summary: `Published video-link entitlement on ${published} accommodation plan version(s).`
+        summary: `Published next entitlement version on ${published} plan(s).${skipped.length ? ` Skipped incompatible older versions (still unmoved): ${skipped.join(', ')}.` : ''}`
     };
 }
