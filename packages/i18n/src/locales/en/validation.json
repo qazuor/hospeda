@@ -631,7 +631,8 @@
             "max": "Email must not exceed {{max}} characters"
         },
         "kind": {
-            "invalid": "Type is invalid"
+            "invalid": "Type is invalid",
+            "partnerMovedToApplication": "Partner applications go through their own form"
         },
         "markHandled": {
             "status": {
