@@ -25,13 +25,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-/** The four landings that mount `AllianceLead`. */
-const LANDINGS = [
-    'sumate/partner',
-    'sumate/proveedor',
-    'sumate/sponsor',
-    'colaborar/editores'
-] as const;
+/** The three remaining landings that mount `AllianceLead` (AC:V7:15). */
+const LANDINGS = ['sumate/proveedor', 'sumate/sponsor', 'colaborar/editores'] as const;
 
 const sources = new Map<string, string>(
     LANDINGS.map((rel) => [
@@ -59,7 +54,7 @@ describe('alliance-lead landings — the guard reads a real page set', () => {
     it('finds all four pages, non-empty', () => {
         // Complementary half: every per-page loop below is vacuous if this set
         // is empty or a path silently stopped resolving.
-        expect(sources.size).toBe(4);
+        expect(sources.size).toBe(3);
         for (const [rel, src] of sources) {
             expect(src.length, `${rel} is empty`).toBeGreaterThan(500);
         }
@@ -103,7 +98,7 @@ describe('alliance-lead landings — the structured trail matches the visible on
         // There is no /sumate/ index page. It is context for a human and a 404
         // for a crawler, so the structured trail is home → this page, two levels,
         // while the VISIBLE trail shows three.
-        for (const rel of ['sumate/partner', 'sumate/proveedor', 'sumate/sponsor'] as const) {
+        for (const rel of ['sumate/proveedor', 'sumate/sponsor'] as const) {
             const trail = structuredTrail(sources.get(rel) as string);
             expect((trail.match(/\{\s*name:/g) ?? []).length, `${rel} structured levels`).toBe(2);
             expect(trail, `${rel} must not link /sumate/`).not.toContain("path: 'sumate'");
