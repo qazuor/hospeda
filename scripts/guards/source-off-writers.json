@@ -131,6 +131,23 @@
         "reason": "S17 cancels the predecessor after its successor authorized; the coverage notice is emitted after commit (AC:B8b:9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "writeSuccessorCutStatus",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/successor-cut-after-commit.ts",
+        "reason": "S31 cuts the successor after a predecessor chargeback; AC:B8b:13 requires the transaction-local status write and post-commit coverage notice."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "cutSuccessorWrites",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S31 closes the deferred courtesy balance as an audit record without changing its coverage source (AC:B8b:13)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
         "symbol": "writePausedCancellation",
         "table": "subscriptions",

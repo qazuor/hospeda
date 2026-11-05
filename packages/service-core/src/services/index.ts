@@ -279,6 +279,18 @@ export * from './billing/subscription/succession-permanent-grant.js';
 export * from './billing/subscription/succession-retained-payment.js';
 export * from './billing/subscription/succession-target-guard.js';
 export * from './billing/subscription/successor-credit.js';
+export {
+    completeSuccessorCut,
+    runWithSuccessorCut
+} from './billing/subscription/successor-cut-after-commit.js';
+export type {
+    SuccessorCutResult,
+    SuccessorCutter
+} from './billing/subscription/successor-cutter.js';
+export {
+    createSuccessorCutter,
+    unimplementedSuccessorCutter
+} from './billing/subscription/successor-cutter.js';
 export * from './billing/subscription/suspend-for-arrears.service.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
