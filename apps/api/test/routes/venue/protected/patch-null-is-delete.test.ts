@@ -215,10 +215,13 @@ async function withBody(response: Response): Promise<{
     return { status: response.status, body: text ? JSON.parse(text) : null };
 }
 
-async function expectStatus(response: Response, status: number): Promise<Record<string, any>> {
+/** Response envelope as the tests read it: `data` holds the venue row. */
+type ApiEnvelope = { readonly data: Record<string, unknown> } & Record<string, unknown>;
+
+async function expectStatus(response: Response, status: number): Promise<ApiEnvelope> {
     const actual = await withBody(response);
     expect(actual.status, JSON.stringify(actual.body)).toBe(status);
-    return actual.body as Record<string, any>;
+    return actual.body as ApiEnvelope;
 }
 
 describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () => {
