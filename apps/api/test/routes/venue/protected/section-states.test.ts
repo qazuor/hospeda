@@ -11,10 +11,16 @@ let actorId = OWNER;
 let actorPermissions: PermissionEnum[] = [];
 let ownerId = OWNER;
 let businessLines: string[] = ['food'];
+let listingType = 'RESTAURANT';
 let ownerKeys: string[] = ['edit_venue_info'];
 const effectiveRead = vi.fn();
 const loadFacts = vi.fn(async () => ({
-    facts: { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED, businessLines },
+    facts: {
+        ownerId,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        businessLines,
+        type: listingType
+    },
     ownerId
 }));
 
@@ -46,6 +52,7 @@ beforeEach(() => {
     actorId = OWNER;
     ownerId = OWNER;
     businessLines = ['food'];
+    listingType = 'RESTAURANT';
     ownerKeys = ['edit_venue_info'];
     actorPermissions = [];
     effectiveRead.mockImplementation(
@@ -106,6 +113,32 @@ describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () 
         expect(loadFacts).toHaveBeenCalledTimes(2);
         expect(supportBody.data.sections.menu.state).toBe('locked');
         expect(effectiveRead).toHaveBeenLastCalledWith({ userId: OWNER, vertical: 'venue' });
+    });
+
+    it('TEST:5.7:3 resolves the map for a hypothetical business-line selection', async () => {
+        // The owner editor asks this before saving a removal: nightInfo must be
+        // visible under the hypothetical selection, and the STORED row is not
+        // modified by the read.
+        const response = await app().request(`/${VENUE}/sections?businessLines=nightlife`);
+        const body = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(body.data.sections.nightInfo.state).toBe('available');
+        expect(body.data.sections.menu.state).toBe('absent');
+        expect(businessLines).toEqual(['food']);
+    });
+
+    it('TEST:5.7:3 rejects hypothetical lines that the listing type does not admit', async () => {
+        listingType = 'HELADERIA';
+        const response = await app().request(`/${VENUE}/sections?businessLines=nightlife`);
+        const body = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.details).toMatchObject({
+            field: 'businessLines',
+            reason: 'NOT_ALLOWED_FOR_TYPE'
+        });
     });
 
     it('hides a foreign listing without action 15 and resolves nightlife/multi-line sections', async () => {
