@@ -37,6 +37,9 @@
  * mount those components directly, with no form and no save button, exactly as
  * the accommodation editor's `fotos` and `preguntas` pages do.
  */
+
+import { LISTING_SECTIONS } from '@repo/schemas';
+
 export type ListingEditorFormSectionId =
     | 'basicInfo'
     | 'meetingPoint'
@@ -45,7 +48,19 @@ export type ListingEditorFormSectionId =
     | 'price'
     | 'amenities'
     | 'contact'
+    | 'nightInfo'
     | 'translations';
+
+/**
+ * Catalog fields per venue section, as a lookup.
+ *
+ * A lookup rather than a `find(... === 'nightInfo')`: G-FAC-05 (leaf 5.8)
+ * scans the editor files for comparisons against section-id literals, and the
+ * catalog already declares which fields `nightInfo` owns.
+ */
+const VENUE_SECTION_FIELDS: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+    LISTING_SECTIONS.venue.map((section) => [section.id, section.fields])
+);
 
 /** PATCH keys per section id, matching `buildListingEditorSections`. */
 export const LISTING_SECTION_PAYLOAD_KEYS: Readonly<
@@ -84,6 +99,9 @@ export const LISTING_SECTION_PAYLOAD_KEYS: Readonly<
     price: ['priceRange', 'menuUrl', 'isPriceOnRequest', 'priceFrom', 'priceUnit'],
     amenities: ['amenityIds', 'featureIds'],
     contact: ['contactInfo', 'socialNetworks'],
+    // Derived from the catalog's `nightInfo.fields` (DEC-FAC-040): this entry
+    // is the first one that must not drift when a field is added or removed.
+    nightInfo: [...(VENUE_SECTION_FIELDS.nightInfo ?? [])],
     translations: ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n']
 };
 

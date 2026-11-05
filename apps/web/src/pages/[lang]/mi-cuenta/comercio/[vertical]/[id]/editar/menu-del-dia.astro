@@ -38,6 +38,7 @@ const resolution = await resolveListingEditorPage({
 });
 
 if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
 
 const { detail, locale, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);

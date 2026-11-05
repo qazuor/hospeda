@@ -99,7 +99,8 @@
                 "contactSocial": "Contato e redes",
                 "menu": "Cardápio",
                 "dailySpecials": "Menu do dia",
-                "venueEvents": "Eventos"
+                "venueEvents": "Eventos",
+                "nightInfo": "Info para sair"
             },
             "sections": {
                 "type": "Categoria",
@@ -278,6 +279,22 @@
             },
             "amenities": {
                 "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
+            },
+            "nightInfo": {
+                "entryPriceFrom": "Preço a partir de (em pesos)",
+                "entryNoteLabel": "Nota (es/en/pt)",
+                "dressCodeNoteLabel": "Nota sobre o código de vestimenta (es/en/pt)",
+                "notInformed": "Não informado",
+                "priceUpdatedAt": "Atualizado {{month}}",
+                "localeEs": "Espanhol",
+                "localeEn": "Inglês",
+                "localePt": "Português"
+            },
+            "errorPage": {
+                "title": "Não foi possível carregar o editor",
+                "description": "Não foi possível ler o estado das seções da sua ficha. Tente novamente em alguns minutos.",
+                "retry": "Tentar novamente",
+                "back": "Voltar às minhas fichas"
             }
         },
         "checklist": {

@@ -20,6 +20,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { LISTING_SECTIONS } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     LISTING_SECTION_PAYLOAD_KEYS,
@@ -99,9 +100,10 @@ describe('every PATCH key has exactly one owning section', () => {
 
 describe('the owning sections are real sections', () => {
     it('should name only ids the registry declares', () => {
-        const registryIds = buildListingEditorSections({ vertical: 'experience' }).map(
-            (section) => section.id
-        );
+        const registryIds = [
+            ...buildListingEditorSections({ vertical: 'venue', sectionStates: {} }),
+            ...buildListingEditorSections({ vertical: 'experience', sectionStates: {} })
+        ].map((section) => section.id);
 
         for (const sectionId of Object.keys(LISTING_SECTION_PAYLOAD_KEYS)) {
             expect(registryIds, `"${sectionId}" owns keys but is not a section`).toContain(
@@ -114,9 +116,10 @@ describe('the owning sections are real sections', () => {
         // `media` and `faqs` persist through their own endpoints, so they own no
         // PATCH key and their routes render no form. Any OTHER section missing
         // from the map would be a page with a Save button that saves nothing.
-        const registryIds = buildListingEditorSections({ vertical: 'experience' }).map(
-            (section) => section.id
-        );
+        const registryIds = buildListingEditorSections({
+            vertical: 'experience',
+            sectionStates: {}
+        }).map((section) => section.id);
         const withoutKeys = registryIds.filter((id) => !(id in LISTING_SECTION_PAYLOAD_KEYS));
 
         expect(withoutKeys.sort()).toEqual(['faqs', 'media']);
@@ -145,6 +148,15 @@ describe('the editor actually routes its payload through the restriction', () =>
         expect(editor).toMatch(
             /\[formData, baseline, vertical, currentPublicationStatus, sectionId\]/
         );
+    });
+});
+
+describe('nightInfo fields come from the catalog (TEST:5.1:7)', () => {
+    it('should own exactly the writable fields the catalog declares', () => {
+        const nightInfo = LISTING_SECTIONS.venue.find((section) => section.id === 'nightInfo');
+
+        expect(nightInfo).toBeDefined();
+        expect([...LISTING_SECTION_PAYLOAD_KEYS.nightInfo]).toEqual([...(nightInfo?.fields ?? [])]);
     });
 });
 

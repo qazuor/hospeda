@@ -48,6 +48,7 @@ import type {
     VerticalEnum
 } from '@repo/schemas';
 import {
+    type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnSubscriptionsResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
@@ -2423,14 +2424,49 @@ export const ownerListingsApi = {
     }
 };
 
+/** Section-state response for one vertical, inferred from its catalog schema. */
+type ListingSectionStatesResponse<V extends ListingAnalyticsVertical> = V extends 'venue'
+    ? z.infer<typeof VenueListingSectionStatesSchema>
+    : z.infer<typeof ExperienceListingSectionStatesSchema>;
+
 export const listingAnalyticsApi = {
+    /**
+     * Read the owner's resolved section and trait availability for one listing.
+     *
+     * Generic on the vertical so a venue caller keeps the venue-shaped record
+     * (`sections.menu.traits.qr`) and an experience caller the experience one.
+     * The route already exists for both (`GET /{id}/sections`); until this leaf
+     * only the venue half had a web caller.
+     */
+    getListingSectionStates<V extends ListingAnalyticsVertical>({
+        vertical,
+        listingId,
+        cookieHeader
+    }: {
+        readonly vertical: V;
+        readonly listingId: string;
+        /** Forwarded when called from SSR, like `fetchOwnerListingDetail`. */
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<ListingSectionStatesResponse<V>>> {
+        return apiClient.getProtected<ListingSectionStatesResponse<V>>({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/${listingId}/sections`,
+            cookieHeader
+        });
+    },
+
     /** Read the owner's resolved venue section and trait availability. */
     getVenueSectionStates({
-        venueId
+        venueId,
+        cookieHeader
     }: {
         readonly venueId: string;
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof VenueListingSectionStatesSchema>>> {
-        return apiClient.getProtected({ path: `${PROTECTED}/venues/${venueId}/sections` });
+        return listingAnalyticsApi.getListingSectionStates({
+            vertical: 'venue',
+            listingId: venueId,
+            cookieHeader
+        });
     },
 
     /**

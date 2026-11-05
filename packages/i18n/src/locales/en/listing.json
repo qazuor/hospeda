@@ -99,7 +99,8 @@
                 "contactSocial": "Contact and social",
                 "menu": "Menu",
                 "dailySpecials": "Today's menu",
-                "venueEvents": "Events"
+                "venueEvents": "Events",
+                "nightInfo": "Night out info"
             },
             "sections": {
                 "type": "Category",
@@ -278,6 +279,22 @@
             },
             "amenities": {
                 "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
+            },
+            "nightInfo": {
+                "entryPriceFrom": "Price from (in pesos)",
+                "entryNoteLabel": "Note (es/en/pt)",
+                "dressCodeNoteLabel": "Dress code note (es/en/pt)",
+                "notInformed": "Not informed",
+                "priceUpdatedAt": "Updated {{month}}",
+                "localeEs": "Spanish",
+                "localeEn": "English",
+                "localePt": "Portuguese"
+            },
+            "errorPage": {
+                "title": "We could not load the editor",
+                "description": "We could not read your listing section states. Please try again in a few minutes.",
+                "retry": "Try again",
+                "back": "Back to my listings"
             }
         },
         "checklist": {

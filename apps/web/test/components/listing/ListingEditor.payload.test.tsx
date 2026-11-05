@@ -901,4 +901,18 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(body).toEqual({ priceRange: null });
         });
     });
+
+    describe('nightInfo (HOS-1787 leaf 5.1)', () => {
+        it('sends only dressCode when only dressCode changed', async () => {
+            renderEditor('venue', buildListing({ dressCode: 'casual' }), 'nightInfo');
+
+            fireEvent.change(screen.getByLabelText('Código de vestimenta'), {
+                target: { value: 'elegant' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ dressCode: 'elegant' });
+        });
+    });
 });

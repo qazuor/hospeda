@@ -43,6 +43,13 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         isPriceOnRequest: false,
         priceFrom: null,
         priceUnit: '',
+        entryKind: '',
+        entryNoteI18n: blankI18n(),
+        entryPriceFrom: null,
+        entryPriceUpdatedAt: null,
+        minAge: null,
+        dressCode: '',
+        dressCodeNoteI18n: blankI18n(),
         amenityIds: new Set<string>(),
         featureIds: new Set<string>(),
         i18nValues: {

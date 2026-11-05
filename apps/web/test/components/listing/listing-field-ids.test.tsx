@@ -167,16 +167,6 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // editor gains it in HOS-1787 leaf 5.6; it stays exempt afterwards for the same
     // reason as amenityIds.
     businessLines: 'checkbox group of business lines',
-    // nightInfo (HOS-1846): the API accepts these fields, but the owner editor
-    // only gains their controls in the HOS-1787 editor sub-spec (5). The
-    // "renders no control" assertion below forces their removal from this table
-    // the moment the editor renders them.
-    entryKind: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
-    entryPriceFrom: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
-    entryNoteI18n: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
-    minAge: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
-    dressCode: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
-    dressCodeNoteI18n: 'nightInfo control not built yet (HOS-1787 sub-spec 5)',
     // A bare toggle with no id: it gates priceFrom/priceUnit rather than
     // carrying its own validation message.
     isPriceOnRequest: 'unlabelled toggle, carries no error of its own',
