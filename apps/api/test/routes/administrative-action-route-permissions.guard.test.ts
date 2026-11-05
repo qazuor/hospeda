@@ -23,7 +23,6 @@ const readCode = (file: string): string =>
     readFileSync(file, 'utf-8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/^\s*\/\/.*$/gm, '');
-
 /** The text of one route export, up to the next top-level `export`. */
 const routeBlock = (code: string, exportName: string, file: string): string => {
     const start = code.indexOf(`export const ${exportName} =`);
@@ -31,10 +30,8 @@ const routeBlock = (code: string, exportName: string, file: string): string => {
     const next = code.indexOf('\nexport ', start + 1);
     return next === -1 ? code.slice(start) : code.slice(start, next);
 };
-
 /** enum member name -> value. No casts: the enum object is the map's source. */
 const PERMISSION_BY_KEY = new Map(Object.entries(PermissionEnum));
-
 /** Every `PermissionEnum.<KEY>` in a fragment, translated through the map. */
 const extractPermissions = (fragment: string): PermissionEnum[] => {
     const tokens = fragment.match(/PermissionEnum\.[A-Z0-9_]+/g) ?? [];
@@ -47,14 +44,11 @@ const extractPermissions = (fragment: string): PermissionEnum[] => {
         return permission;
     });
 };
-
 const readRouteBlock = (file: string, route: string): string => {
     const code = readCode(path.join(REPO_ROOT, file));
     return routeBlock(code, route, file);
 };
-
 const list = (permissions: readonly PermissionEnum[]): string => permissions.join(', ');
-
 type ActionRow = {
     readonly permissions: readonly PermissionEnum[];
     readonly pendingOwnPermission: string | null;
@@ -70,13 +64,11 @@ const action6Bindings: readonly Binding[] = [
     'adminPreviewPartnerBillingSetupRoute',
     'adminConfigurePartnerBillingRoute'
 ].map(action6Binding);
-
 const manualBinding = (route: string, late = false): Binding => ({
     kind: 'required',
     file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
     route
 });
-
 type BoundEntry = { readonly bindings: readonly Binding[] };
 type UnboundEntry = { readonly unbound: string };
 
