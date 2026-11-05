@@ -285,13 +285,17 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(87);
+        expect(history.length).toBe(89);
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(
             'packages/seed/test/data-migrations/whats-new-seen-ids-rename.integration.test.ts'
         );
         expect(history).toContain('packages/seed/test/venue-cuisine-features.test.ts');
+        expect(history).toContain('packages/seed/test/venue-night-catalog-items.test.ts');
+        expect(history).toContain(
+            'packages/seed/test/data-migrations/hos1867-night-catalog-items.integration.test.ts'
+        );
         expect(history).toContain(
             'packages/seed/test/data-migrations/hos1943-price-on-request-null.integration.test.ts'
         );

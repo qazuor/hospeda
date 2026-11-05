@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "108-feature-karaoke",
+    "slug": "karaoke",
+    "description": {
+        "es": "Equipo de karaoke para cantar en vivo con amigos",
+        "en": "Karaoke setup to sing along with friends",
+        "pt": "Equipamento de karaoke para cantar com os amigos"
+    },
+    "applicableVerticals": ["venue"],
+    "icon": "TvIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 44,
+    "lifecycleState": "ACTIVE"
+}

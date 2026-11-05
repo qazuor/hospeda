@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "112-amenity-services-vip-area",
+    "slug": "vip_area",
+    "description": {
+        "es": "Sector VIP reservado con servicio exclusivo",
+        "en": "Reserved VIP area with exclusive service",
+        "pt": "Área VIP reservada com serviço exclusivo"
+    },
+    "applicableVerticals": ["venue"],
+    "type": "SERVICES",
+    "icon": "StarIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 42
+}
