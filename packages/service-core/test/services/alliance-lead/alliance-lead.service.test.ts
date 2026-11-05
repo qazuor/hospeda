@@ -194,16 +194,30 @@ beforeEach(() => {
 
 describe('AllianceLeadService', () => {
     describe('createLead', () => {
-        it('should create a lead and return it (no createdById set)', async () => {
+        it('should create a sponsor lead and return it (AC:V7:15)', async () => {
             const service = makeService();
-            (service as any)._model = makeLeadModel();
+            (service as any)._model = makeLeadModel({ ...mockLead, ...createInput });
 
             const result = await service.createLead({ actor: guestActor, input: createInput });
 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
-            expect(result.data?.kind).toBe('partner');
+            expect(result.data?.kind).toBe('sponsor');
             expect(result.data?.email).toBe('juan@example.com');
+        });
+
+        it('rejects Partner submissions at the service boundary (AC:V7:15)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            const result = await service.createLead({
+                actor: guestActor,
+                input: { ...createInput, kind: 'partner', partnerType: PartnerTypeEnum.BUSINESS }
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(model.create).not.toHaveBeenCalled();
         });
 
         it('should not require any permission (public endpoint)', async () => {
