@@ -16,13 +16,14 @@ export type SignupCheckoutConfirmation = {
     readonly authorizationWindowEndsAt: string;
 };
 
-/** The 0144 catalog plans these fixtures hold a monthly option of. */
+/** Catalog slugs used by V7 e2e plan activation (AC:V7:19, TEST:V7:22). */
 export type CatalogSlug =
     | 'owner-basico'
     | 'owner-pro'
     | 'owner-premium'
     | 'tourist-vip'
-    | 'partner-silver';
+    | 'partner-silver'
+    | 'partner-gold';
 
 /**
  * Reads a limit value from the current version of a catalog plan without writing.
