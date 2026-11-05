@@ -167,6 +167,22 @@ describe('TEST:V8b:8 AC:V8b:7 check-additive-migrations destructive SQL guard', 
         ).toEqual([]);
     });
 
+    it('removes inline comments between tokens before recognizing a destructive statement', () => {
+        expect(
+            findDestructiveStatements({
+                file: 'inline-comment.sql',
+                sql: 'ALTER TABLE "x" DROP /* this comment separates the tokens */ COLUMN "y";'
+            })
+        ).toEqual([
+            {
+                file: 'inline-comment.sql',
+                line: 1,
+                rule: 'DROP_COLUMN',
+                statement: 'ALTER TABLE _ DROP COLUMN _'
+            }
+        ]);
+    });
+
     it('accepts the ten real phase migrations, including all five widened CHECK constraints', () => {
         const files = readdirSync(path.join(root, migrations)).filter((name) =>
             /^(?:018[9]|019[0-8])_.*\.sql$/.test(name)
