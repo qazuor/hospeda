@@ -79,6 +79,12 @@ export interface CaptureLogoClickInput {
 export interface GetPartnerStatsInput {
     /** Rolling window in days. The route constrains this to 7 or 30. */
     readonly windowDays: number;
+    /** Reads whether the owner's effective set includes the public-page key. AC:V7:16 */
+    readonly readPublicPage: (args: {
+        readonly partnerId: string;
+        readonly ownerUserId: string;
+        readonly presenceModerated: boolean;
+    }) => Promise<boolean>;
 }
 
 /**
@@ -182,6 +188,11 @@ export class PartnerStatsService {
 
             const partnerId = partner.id as string;
             const { windowDays } = input;
+            const hasPublicPage = await input.readPublicPage({
+                partnerId,
+                ownerUserId,
+                presenceModerated: Boolean(partner.presenceModerated)
+            });
 
             const [viewStats, clickStats] = await Promise.all([
                 this.viewModel.getStatsForEntities(
@@ -210,7 +221,8 @@ export class PartnerStatsService {
                         name: String(partner.name ?? ''),
                         slug: partner.slug == null ? undefined : String(partner.slug),
                         websiteUrl:
-                            partner.websiteUrl == null ? undefined : String(partner.websiteUrl)
+                            partner.websiteUrl == null ? undefined : String(partner.websiteUrl),
+                        hasPublicPage
                     },
                     windowDays,
                     views: { unique: views.unique, total: views.total },
