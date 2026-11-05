@@ -43,7 +43,7 @@ function refreshedStorageKey(subscriptionId: string): string {
  * (or asking for it). There are no automatic retries. The confirmed refresh
  * marker lives in sessionStorage because SSR and the browser read status via
  * different API URLs; a lagging SSR read after reload must never start a reload
- * loop. The in-memory ref remains the fallback when browser storage is blocked.
+ * loop. When browser storage is blocked the page does not refresh at all.
  */
 export function SubscriptionReturn({
     locale,
@@ -82,16 +82,19 @@ export function SubscriptionReturn({
                 return;
             }
         } catch {
-            // Storage may be unavailable; the ref still limits this mount to one refresh.
+            // Unreadable storage is handled by the write below, which fails too.
         }
 
         // Persist before navigating: SSR may still report a lagging status after
-        // reload even though the browser API confirmed the subscription.
+        // reload even though the browser API confirmed the subscription. Without a
+        // marker that survives the reload, a refresh could repeat on every load, so
+        // when storage is unavailable the page skips the refresh entirely: the
+        // banner still says "confirmed" and a manual reload shows the rest.
         refreshedAfterConfirmationRef.current = true;
         try {
             window.sessionStorage.setItem(storageKey, '1');
         } catch {
-            // Keep the in-memory guard when storage is unavailable.
+            return;
         }
         refreshPage();
     }, [refreshPage, subscriptionId, view]);

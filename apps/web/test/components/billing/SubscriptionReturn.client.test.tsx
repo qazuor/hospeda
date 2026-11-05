@@ -91,7 +91,7 @@ describe('SubscriptionReturn polling', () => {
         expect(reload).not.toHaveBeenCalled();
     });
 
-    it('falls back to one refresh per mount when sessionStorage throws', async () => {
+    it('never refreshes when sessionStorage throws, so a lagging SSR read cannot loop', async () => {
         const reload = vi.fn();
         vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
             throw new Error('storage unavailable');
@@ -113,7 +113,7 @@ describe('SubscriptionReturn polling', () => {
         });
 
         expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
-        expect(reload).toHaveBeenCalledTimes(1);
+        expect(reload).not.toHaveBeenCalled();
     });
 
     it('does not refresh when the server already rendered a confirmed subscription', () => {
