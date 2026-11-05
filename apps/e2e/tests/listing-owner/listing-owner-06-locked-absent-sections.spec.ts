@@ -3,9 +3,11 @@
  * `absent` section still resolves to the hub (HOS-1787 leaf 5.2, AC:5:2).
  *
  * Actors: fresh owners created per test. They intentionally get NO trial:
- * the venue BASE plan carries no `manage_venue_menu`, so a DRAFT venue's menu
- * section resolves `locked` (measured before writing this spec with
- * `GET /api/v1/protected/venues/:id/sections`).
+ * the venue BASE plan version carries no `manage_venue_menu` (migration 0144),
+ * so a DRAFT venue's menu section resolves `locked`. The locked cases assert
+ * that state through `GET /api/v1/protected/venues/:id/sections` before they
+ * act, so a fixture that no longer resolves `locked` fails with a measurement
+ * instead of silently passing.
  *
  * Tags: @p0 @listing-owner
  *
