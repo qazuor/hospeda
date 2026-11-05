@@ -246,6 +246,26 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
         expect(screen.getByTestId('venue-section-vaciar')).toBeInTheDocument();
     });
 
+    it('shows the empty message only when there are no dishes, file or link', async () => {
+        mockGet.mockResolvedValue({
+            ok: true as const,
+            data: { sections: [], file: null }
+        } as never);
+
+        render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+            />
+        );
+
+        expect(
+            await screen.findByText('No hay datos cargados en esta sección.')
+        ).toBeInTheDocument();
+        expect(screen.queryByTestId('venue-section-vaciar')).toBeNull();
+    });
+
     it('uses a non-actionable message when the locked file cannot be opened', async () => {
         mockGet.mockResolvedValue({
             ok: true as const,
