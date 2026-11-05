@@ -11,9 +11,11 @@
  *  - the **structured carta** — courses and dishes, typed;
  *  - an **uploaded photo or PDF** of the printed menu.
  *
- * The external link stays where it already was, in `PriceSection`. Nothing here
- * is mandatory and nothing here excludes anything else: an owner may publish
- * with a photo alone, and is never made to type forty dishes.
+ * The external link is the third part of the same section (DEC-FAC-062): it is
+ * edited here, by `VenueMenuLinkField`, and saved with its own one-key PATCH of
+ * the listing. Nothing here is mandatory and nothing here excludes anything
+ * else: an owner may publish with a photo alone, and is never made to type
+ * forty dishes.
  *
  * ## Why this manager persists on its own, like `ListingFaqManager`
  *
@@ -91,6 +93,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { VenueMenuLinkField } from './VenueMenuLinkField.client';
 import styles from './VenueMenuManager.module.css';
 import { VenueMenuPlanNotice } from './VenueMenuPlanNotice.client';
 import { VenueMenuTranslationFields } from './VenueMenuTranslationFields.client';
@@ -897,9 +900,9 @@ export function VenueMenuManager({
                     gate={lockedGate}
                     locale={locale}
                     messageKey="venue.owner.editor.menuManager.locked"
-                    messageFallback="Cargar la carta y subir una foto o un PDF del menú está disponible desde el plan Profesional."
+                    messageFallback="Tu carta completa, con platos y archivo, está disponible desde el plan Profesional."
                     preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
-                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar los platos o subir una foto o un PDF del menú."
+                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar tus platos y el archivo."
                     sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
                     hasData={lockedHasData}
                     vaciar={vaciar}
@@ -1022,6 +1025,15 @@ export function VenueMenuManager({
                             locale={locale}
                         />
                     ) : null}
+
+                    {/* ── The external link (DEC-FAC-062) ───────────────────────── */}
+                    <VenueMenuLinkField
+                        listingId={listingId}
+                        locale={locale}
+                        menuUrl={currentMenuUrl}
+                        disabled={isMenuGated}
+                        onSaved={setCurrentMenuUrl}
+                    />
 
                     {/* ── The uploaded photo / PDF ──────────────────────────────── */}
                     <div className={styles.fileBlock}>

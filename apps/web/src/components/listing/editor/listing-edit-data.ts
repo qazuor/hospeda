@@ -75,7 +75,6 @@ export interface ListingEditData {
     readonly social: SocialValues;
     readonly openingHours: OpeningHours | null;
     readonly priceRange: string;
-    readonly menuUrl: string;
     readonly isPriceOnRequest: boolean;
     readonly priceFrom: number | null;
     readonly priceUnit: string;
@@ -104,7 +103,7 @@ export interface ListingEditData {
      * Where the experience starts (HOS-1048) — experience vertical only, since
      * `meetingPoint` is on `ExperienceOwnerUpdateInputSchema` and not on the
      * venue one. It lives on the shared state object anyway, exactly as
-     * venue's `priceRange`/`menuUrl` do: this type is the union of both
+     * venue's `priceRange` does: this type is the union of both
      * verticals, and `buildPatchPayload` decides what actually ships.
      */
     readonly meetingPoint: string;

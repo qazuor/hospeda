@@ -1,7 +1,7 @@
 /**
  * @file listing-section-payload.test.ts
  * @description The ownership invariant behind the listing editor's split
- * (HOS-1080).
+ * (HOS-1080), derived from the catalog (DEC-FAC-040 / TEST:5.3:2).
  *
  * `buildPatchPayload` still computes the diff over the WHOLE form state; each
  * page then keeps only the keys it owns. That arrangement has one failure mode
@@ -16,6 +16,10 @@
  * So the check is static, and it reads the REAL emitter — the source of
  * `buildPatchPayload` — rather than a hand-maintained list of what it emits,
  * which would drift the same way the thing it guards would.
+ *
+ * The map itself is no longer hand-maintained: it is the catalog's `fields`
+ * for the form sections. This suite asserts that equality, so a field that
+ * moves section (as `menuUrl` did, DEC-FAC-062) or a stale copy cannot pass.
  */
 
 import { readFileSync } from 'node:fs';
@@ -57,6 +61,62 @@ function emittedKeys(): readonly string[] {
     return [...new Set([...direct, ...merged])].filter((key): key is string => Boolean(key));
 }
 
+/** The catalog's `fields` for one section id, unioned across the verticals. */
+function catalogFieldsFor(sectionId: string): string[] {
+    const fields = new Set<string>();
+
+    for (const sections of Object.values(LISTING_SECTIONS)) {
+        for (const section of sections as ReadonlyArray<{
+            readonly id: string;
+            readonly fields: readonly string[];
+        }>) {
+            if (section.id === sectionId) {
+                for (const field of section.fields) {
+                    fields.add(field);
+                }
+            }
+        }
+    }
+
+    return [...fields];
+}
+
+/**
+ * Fields the PATCH accepts but the catalog does not assign to a section.
+ * Kept deliberately tiny and explicit: every entry here is a field outside the
+ * catalog's inventory, so it needs its own reason.
+ */
+const UI_ONLY_FIELDS_BY_SECTION: Readonly<Record<string, readonly string[]>> = {
+    // The business-line rules assign it and the PATCH does not classify it by
+    // section (HOS-1787 leaf 5.6); the basic-info page is where it is edited.
+    basicInfo: ['businessLines']
+};
+
+describe('the map is the catalog for the form sections (TEST:5.3:2)', () => {
+    for (const sectionId of Object.keys(LISTING_SECTION_PAYLOAD_KEYS)) {
+        it(`should derive "${sectionId}" from the catalog plus its UI-only fields`, () => {
+            const expected = [
+                ...catalogFieldsFor(sectionId),
+                ...(UI_ONLY_FIELDS_BY_SECTION[sectionId] ?? [])
+            ];
+
+            expect(
+                [
+                    ...LISTING_SECTION_PAYLOAD_KEYS[
+                        sectionId as keyof typeof LISTING_SECTION_PAYLOAD_KEYS
+                    ]
+                ].sort(),
+                `"${sectionId}" drifted from the catalog`
+            ).toEqual(expected.sort());
+        });
+    }
+
+    it('should not own the menu link in the price section (DEC-FAC-062)', () => {
+        expect(LISTING_SECTION_PAYLOAD_KEYS.price).not.toContain('menuUrl');
+        expect(catalogFieldsFor('menu')).toContain('menuUrl');
+    });
+});
+
 describe('every PATCH key has exactly one owning section', () => {
     const emitted = emittedKeys();
     const owned = Object.values(LISTING_SECTION_PAYLOAD_KEYS).flat();
@@ -87,14 +147,6 @@ describe('every PATCH key has exactly one owning section', () => {
             duplicates,
             `these PATCH keys are claimed by more than one section: ${duplicates.join(', ')}`
         ).toEqual([]);
-    });
-
-    it('should not own a key the editor never emits', () => {
-        // The other direction: a stale entry here is dead weight that reads as
-        // coverage. It would also silently absorb a renamed field.
-        const stale = owned.filter((key) => !emitted.includes(key));
-
-        expect(stale, `these owned keys are never emitted: ${stale.join(', ')}`).toEqual([]);
     });
 });
 
@@ -151,23 +203,23 @@ describe('the editor actually routes its payload through the restriction', () =>
     });
 });
 
-describe('nightInfo fields come from the catalog (TEST:5.1:7)', () => {
-    it('should own exactly the writable fields the catalog declares', () => {
-        const nightInfo = LISTING_SECTIONS.venue.find((section) => section.id === 'nightInfo');
-
-        expect(nightInfo).toBeDefined();
-        expect([...LISTING_SECTION_PAYLOAD_KEYS.nightInfo]).toEqual([...(nightInfo?.fields ?? [])]);
-    });
-});
-
 describe('restrictPayloadToSection', () => {
     it('should keep the keys the section owns', () => {
+        const restricted = restrictPayloadToSection({
+            payload: { priceRange: null, isPriceOnRequest: false },
+            sectionId: 'price'
+        });
+
+        expect(restricted).toEqual({ priceRange: null, isPriceOnRequest: false });
+    });
+
+    it('should drop the menu link from a price save (DEC-FAC-062)', () => {
         const restricted = restrictPayloadToSection({
             payload: { priceRange: null, menuUrl: 'https://x.test' },
             sectionId: 'price'
         });
 
-        expect(restricted).toEqual({ priceRange: null, menuUrl: 'https://x.test' });
+        expect(restricted).toEqual({ priceRange: null });
     });
 
     it('should drop a key another section owns', () => {

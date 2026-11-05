@@ -17,25 +17,22 @@
  * of what happens to be on screen, which is the same guarantee
  * `useAccommodationSectionForm`'s `ownFields` gives the accommodation editor.
  *
- * ## The invariant that matters
+ * ## The map is derived from the catalog (DEC-FAC-040)
  *
- * Every key `buildPatchPayload` can emit belongs to EXACTLY ONE section. A key
- * owned by none is a field the owner can edit and never save; a key owned by two
- * is a field two pages fight over. `listing-section-payload.test.ts` asserts
- * both directions against the real source of `buildPatchPayload`, so adding a
- * field without giving it a home fails CI rather than shipping silently
- * unsaveable.
- */
-
-/**
- * The sections that are edited through the listing PATCH, i.e. the ones
- * `ListingEditor` can render.
+ * The catalog's `fields` are the single source of truth for what a section
+ * owns; this module no longer keeps a second, hand-maintained copy. A field
+ * that moves sections moves here automatically, and a field the catalog assigns
+ * to two sections fails `listing-section-payload.test.ts` instead of letting
+ * two pages fight over it.
  *
- * `media` and `faqs` are deliberately NOT here: they persist through their own
- * endpoints and never contribute to the listing PATCH at all — see
- * `MediaSection` (HOS-372) and `ListingFaqManager` (HOS-811). Their routes
- * mount those components directly, with no form and no save button, exactly as
- * the accommodation editor's `fotos` and `preguntas` pages do.
+ * `price` and other section ids are shared by venue and experience, so the
+ * catalog lookup is the UNION of that section's fields across both verticals.
+ * A page only renders its own vertical's controls, so a union entry the other
+ * vertical owns is inert — it simply never appears in that page's diff.
+ *
+ * `menu` is deliberately absent: it is not a form section (`menuUrl` is saved
+ * by the carta's own PATCH, and the structured carta has its own endpoints), so
+ * it never contributes to the listing PATCH.
  */
 
 import { LISTING_SECTIONS } from '@repo/schemas';
@@ -52,63 +49,84 @@ export type ListingEditorFormSectionId =
     | 'translations';
 
 /**
- * Catalog fields per venue section, as a lookup.
+ * Section ids `ListingEditor` renders as a form page.
  *
- * A lookup rather than a `find(... === 'nightInfo')`: G-FAC-05 (leaf 5.8)
- * scans the editor files for comparisons against section-id literals, and the
- * catalog already declares which fields `nightInfo` owns.
+ * The type above is the compile-time half of this list; this constant is the
+ * runtime half the derivation walks. They are not merged into one generic type
+ * because `Record<ListingEditorFormSectionId, …>` is what gives callers a
+ * closed key set.
  */
-const VENUE_SECTION_FIELDS: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
-    LISTING_SECTIONS.venue.map((section) => [section.id, section.fields])
-);
+const FORM_SECTION_IDS: readonly ListingEditorFormSectionId[] = [
+    'basicInfo',
+    'meetingPoint',
+    'practicalInfo',
+    'openingHours',
+    'price',
+    'amenities',
+    'contact',
+    'nightInfo',
+    'translations'
+];
+
+/**
+ * Catalog fields per section id, unioned across every vertical that declares
+ * the section.
+ *
+ * Built from the catalog rather than compared against a section-id literal:
+ * G-FAC-05 scans the editor files for those comparisons.
+ */
+const CATALOG_FIELDS_BY_SECTION: Readonly<Record<string, readonly string[]>> = (() => {
+    const bySection: Record<string, string[]> = {};
+
+    for (const sections of Object.values(LISTING_SECTIONS)) {
+        for (const section of sections as ReadonlyArray<{
+            readonly id: string;
+            readonly fields: readonly string[];
+        }>) {
+            const fields = bySection[section.id] ?? [];
+            for (const field of section.fields) {
+                if (!fields.includes(field)) {
+                    fields.push(field);
+                }
+            }
+            bySection[section.id] = fields;
+        }
+    }
+
+    return bySection;
+})();
+
+/**
+ * Fields the listing PATCH accepts, but that the catalog deliberately does not
+ * assign to a section. Each one needs its reason here.
+ *
+ * `businessLines` is structural: the business-line rules assign it, the PATCH
+ * does not classify it by section, so the catalog has no home for it. The owner
+ * selector lives on the basic-info page and that is the save that persists it
+ * (HOS-1787 leaf 5.6).
+ */
+const UI_ONLY_FIELDS_BY_SECTION: Readonly<Record<string, readonly string[]>> = {
+    basicInfo: ['businessLines']
+};
+
+const derivedEntries = FORM_SECTION_IDS.map((sectionId) => [
+    sectionId,
+    [
+        ...(CATALOG_FIELDS_BY_SECTION[sectionId] ?? []),
+        ...(UI_ONLY_FIELDS_BY_SECTION[sectionId] ?? [])
+    ]
+]);
+
+// TYPE-WORKAROUND: `Object.fromEntries` widens the closed section-id keys to `string`, so the assertion restores the `ListingEditorFormSectionId` domain the consumers rely on.
+const derivedKeys = Object.fromEntries(derivedEntries) as unknown as Record<
+    ListingEditorFormSectionId,
+    readonly string[]
+>;
 
 /** PATCH keys per section id, matching `buildListingEditorSections`. */
 export const LISTING_SECTION_PAYLOAD_KEYS: Readonly<
     Record<ListingEditorFormSectionId, readonly string[]>
-> = {
-    basicInfo: [
-        'name',
-        'destinationId',
-        'type',
-        'summary',
-        'description',
-        'richDescription',
-        // HOS-1787 leaf 5.6 — the catalog's `basicInfo` section does not name
-        // `businessLines` (it is assigned by the business-line rules, not by a
-        // section), so it is owned explicitly here: the selector lives in the
-        // basic-info page and this is the page whose save may persist it.
-        'businessLines',
-        // Not a field of its own: the opt-in checkbox that rides along with a
-        // name change on a published listing (HOS-784), rendered by
-        // `BasicInfoSection`.
-        'refreshSlugFromName'
-    ],
-    meetingPoint: [
-        'meetingPoint',
-        'meetingPointLat',
-        'meetingPointLong',
-        // HOS-1049 — the paid half, on the same page as the free half. Both are
-        // one errand for the owner ("where do we meet, and how do you get
-        // there"), and splitting them into two nav items would have made the
-        // entitlement look like a different subject rather than a deeper tier.
-        'meetingPointDirections'
-    ],
-    practicalInfo: [
-        'durationMinutes',
-        'whatToBring',
-        'requirements',
-        'cancellationPolicy',
-        'acceptsPrivateGroups'
-    ],
-    openingHours: ['openingHours'],
-    price: ['priceRange', 'menuUrl', 'isPriceOnRequest', 'priceFrom', 'priceUnit'],
-    amenities: ['amenityIds', 'featureIds'],
-    contact: ['contactInfo', 'socialNetworks'],
-    // Derived from the catalog's `nightInfo.fields` (DEC-FAC-040): this entry
-    // is the first one that must not drift when a field is added or removed.
-    nightInfo: [...(VENUE_SECTION_FIELDS.nightInfo ?? [])],
-    translations: ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n']
-};
+> = Object.freeze(derivedKeys);
 
 /**
  * Drops every key the given section does not own.

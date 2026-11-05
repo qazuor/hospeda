@@ -9,8 +9,9 @@
  * They exist because `buildPayload` is not a uniform diff — it carries per-field
  * semantics that a naive rewrite silently flattens:
  *
- *  - venue `priceRange`/`menuUrl` are `.nullish()` on the domain schema and
- *    send an explicit `null` when cleared;
+ *  - venue `priceRange` is `.nullish()` on the domain schema and sends an
+ *    explicit `null` when cleared; `menuUrl` is NOT part of this diff any more
+ *    (DEC-FAC-062) — it belongs to the carta section;
  *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
  *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
  *    nullable, so it clears to an explicit `null` like the venue fields;
@@ -345,31 +346,6 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             // `.nullish()` on the domain schema: null is how the owner clears it.
             expect(body).toHaveProperty('priceRange', null);
-        });
-
-        it('sends menuUrl as an explicit null when the link is cleared', async () => {
-            renderEditor('venue', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
-
-            const input = screen.getByLabelText('Enlace al menú');
-            expect(input).toHaveValue('https://old.test/menu');
-
-            fireEvent.change(input, { target: { value: '' } });
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toHaveProperty('menuUrl', null);
-        });
-
-        it('sends menuUrl as the new value when set', async () => {
-            renderEditor('venue', buildListing(), 'price');
-
-            fireEvent.change(screen.getByLabelText('Enlace al menú'), {
-                target: { value: 'https://menu.test/carta' }
-            });
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toHaveProperty('menuUrl', 'https://menu.test/carta');
         });
     });
 

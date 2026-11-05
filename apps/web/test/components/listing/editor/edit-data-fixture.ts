@@ -40,7 +40,6 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         },
         openingHours: null,
         priceRange: '',
-        menuUrl: '',
         isPriceOnRequest: false,
         priceFrom: null,
         priceUnit: '',
