@@ -87,7 +87,8 @@ export const parsePhoneNumber = (
         const rest = digits.slice(2);
         const marked = rest.startsWith('9');
         const afterMarker = marked ? rest.slice(1) : rest;
-        if (afterMarker.length === NATIONAL_DIGITS) {
+        // A rest starting with 0 is a trunk prefix, never part of the ten digits.
+        if (afterMarker.length === NATIONAL_DIGITS && !afterMarker.startsWith('0')) {
             return { kind: 'argentina', digits: afterMarker, mobile: mobileByMeaning || marked };
         }
         // Editors compose "+54 <typed>", so the national part may still carry the
@@ -124,9 +125,6 @@ export const parsePhoneNumber = (
 /** Accepts valid Argentine input and well-formed international E.164 numbers. */
 export const isValidPhoneNumber = (phone: string): boolean => parsePhoneNumber(phone) !== undefined;
 
-/** Compatibility alias for isValidPhoneNumber. */
-export const isValidArgentinePhone = isValidPhoneNumber;
-
 /** Normalizes an accepted phone to its canonical international representation. */
 export const normalizeArgentinePhone = (phone: string, mobileByMeaning = false): string => {
     const parsed = parsePhoneNumber(phone, mobileByMeaning);
@@ -139,9 +137,6 @@ export const normalizeArgentinePhone = (phone: string, mobileByMeaning = false):
 /** Builds the shared Zod phone validator with a caller-specific translation key. */
 export const phoneNumberSchema = (message: string) =>
     z.string().refine(isValidPhoneNumber, { message });
-
-/** Compatibility alias for phoneNumberSchema. */
-export const argentinePhoneSchema = phoneNumberSchema;
 
 // Regex for social network URLs
 export const FacebookUrlRegex = /^https?:\/\/(www\.)?facebook\.com\//;
