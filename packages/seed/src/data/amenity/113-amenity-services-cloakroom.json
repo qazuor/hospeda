@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "113-amenity-services-cloakroom",
+    "slug": "cloakroom",
+    "description": {
+        "es": "Guardarropa vigilado para dejar abrigos y objetos personales",
+        "en": "Attended cloakroom to leave coats and personal belongings",
+        "pt": "Guarda-volumes com atendimento para deixar casacos e objetos pessoais"
+    },
+    "applicableVerticals": ["venue"],
+    "type": "SERVICES",
+    "icon": "ShirtIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 32
+}
