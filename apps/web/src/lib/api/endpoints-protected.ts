@@ -2071,6 +2071,7 @@ export interface MyPartnerStats {
         readonly name: string;
         readonly slug?: string;
         readonly websiteUrl?: string;
+        readonly hasPublicPage?: boolean;
     };
     readonly windowDays?: number;
     readonly views?: MyPartnerStatsCounts;

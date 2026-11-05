@@ -12,9 +12,8 @@
  *
  * ## The rule, and why it is derived rather than decided
  *
- * The partner detail page stays dark until V7 restores the internal destination.
- * The resolver may still return a safe external site, so clicks can remain
- * measurable without exposing views for a page that is unavailable.
+ * The partner detail page is available only when its effective key is present.
+ * AC:V7:16
  *
  * ## The absent-vs-zero rule
  *
@@ -72,6 +71,7 @@ export function resolvePartnerStatsCards({
             logoPath: '',
             url: stats.partner.websiteUrl,
             slug: stats.partner.slug,
+            hasPublicPage: stats.partner.hasPublicPage === true,
             aspectRatio: 1
         },
         locale
