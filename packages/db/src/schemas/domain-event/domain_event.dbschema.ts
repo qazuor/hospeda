@@ -37,6 +37,7 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  * - `partner_application.approved` / `partner_application.rejected` (PP2/PP3, ACC:5) and `partner.claimed` record the HOS-1485 resolution and claim.
  * - `partner.presence_moderation_changed`: ACC:12 (sources: action 13) moderated or lifted moderation of a Partner presence (`entity_type = 'partner'`, `entity_id` = its id, mandatory `reason`, `changes = [{ field: 'presence_moderated', old, new }]`; HOS-1488, AC:V7:14; V7 §1.6).
  * - `partner.billing_configured`: ACC:6 configured a Partner's manual plan for its owner; the event records the Partner subject, admin actor, reason, and reference-only changes (AC:V7:17).
+ * - `partner.presence_emptied`: ACC:25 emptied a Partner presence at its owner's request (`entity_type = 'partner'`, `entity_id` = the Partner id, mandatory `reason`, and `changes` contains field names only, never values: a delta of a text field IS a copy of the content; HOS-1498, AC:V8b:6, ACC:25).
  * - `subscription.provider_cancellation_decided`: one of our transitions
  *   decided to cancel the preapproval of this subscription (`entity_type =
  *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
@@ -78,6 +79,7 @@ export const DOMAIN_EVENT_TYPES = [
     'partner.claimed',
     'partner.presence_moderation_changed',
     'partner.billing_configured',
+    'partner.presence_emptied',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
