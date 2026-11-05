@@ -21,16 +21,17 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
     test.afterAll(async () => {
         // The helper removes payment rows and test users; deleting users nulls Partner owners.
         if (userIds.length) await cleanupManualArrearsRows({ userIds });
-        if (partnerIds.length)
-            await execSQL('DELETE FROM partners WHERE id = ANY($1::uuid[])', [partnerIds]);
         if (applicationEmails.length)
             await execSQL('DELETE FROM email_outbox WHERE recipient_email = ANY($1::text[])', [
                 applicationEmails
             ]);
+        // partner_application.partner_id references partners: applications go first.
         if (applicationIds.length)
             await execSQL('DELETE FROM partner_application WHERE id = ANY($1::uuid[])', [
                 applicationIds
             ]);
+        if (partnerIds.length)
+            await execSQL('DELETE FROM partners WHERE id = ANY($1::uuid[])', [partnerIds]);
         // domain_event is append-only (migration 0131 and trigger 056 reject DELETE).
         if (userIds.length) await cleanupTestUsers(getDbPool(), userIds);
     });
