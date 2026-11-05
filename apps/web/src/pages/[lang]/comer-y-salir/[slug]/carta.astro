@@ -1,6 +1,6 @@
 ---
 /**
- * @file gastronomia/[slug]/carta.astro
+ * @file comer-y-salir/[slug]/carta.astro
  * @description Dedicated public page for one venue's menu (HOS-1044 §6.1,
  * G-1). A stable URL fit to be the destination of a printed QR — reuses
  * `VenueMenu.astro` verbatim (never reimplemented, per the spec's own
@@ -150,7 +150,7 @@ const hasOpeningHours =
         slot="breadcrumbs"
         locale={locale}
         items={[
-            { label: t('venue.listing.title', 'Gastronomía'), path: 'comer-y-salir/' },
+            { label: t('venue.listing.title'), path: 'comer-y-salir/' },
             { label: venue.name, path: listingPath },
             { label: pageTitleWord }
         ]}

@@ -14,6 +14,7 @@ import { Image } from 'astro:assets';
 import { StarIcon, LocationIcon } from '@repo/icons';
 import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
+import { ENTITY_PUBLIC_PATHS } from '@/lib/seo/entity-public-urls';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { VenueCardData, VenueOpeningHoursEntry } from '@/data/types';
@@ -33,7 +34,10 @@ interface Props {
 const { data, locale, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
 
-const detailUrl = buildUrl({ locale, path: `gastronomia/${data.slug}/` });
+// Canonical venue detail path (HOS-1787 6.1): the card must link to the real
+// page, never to the retired redirect. The segment lives in the shared
+// entity → public-URL registry, not here.
+const detailUrl = buildUrl({ locale, path: ENTITY_PUBLIC_PATHS.venue(data.slug) });
 
 /** Type label from i18n (e.g. 'RESTAURANT' → 'Restaurante'). */
 const typeLabel = t(`venue.types.${data.type}`, data.type);
