@@ -54,25 +54,34 @@ describe('accommodation import access', () => {
 
     it('denies a returning user without the entitlement', async () => {
         state.trial = true;
-        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).rejects.toMatchObject({
-            code: 'ENTITLEMENT_REQUIRED'
-        });
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject(
+            {
+                allowed: false,
+                isNewUser: false,
+                reason: 'entitlement'
+            }
+        );
     });
 
     it('allows an entitled user without consuming the new-user cap', async () => {
         state.hasEntitlement = true;
-        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
-            allowed: true,
-            isNewUser: false
-        });
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject(
+            {
+                allowed: true,
+                hasEntitlement: true
+            }
+        );
         expect(state.used).toBe(0);
     });
 
     it('denies a new user after five imports in the rolling window', async () => {
         state.used = 5;
-        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).rejects.toMatchObject({
-            status: 429
-        });
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject(
+            {
+                allowed: false,
+                reason: 'new_user_cap'
+            }
+        );
         await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: false,
             reason: 'new_user_cap'

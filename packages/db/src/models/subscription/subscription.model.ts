@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, notInArray, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -155,8 +155,9 @@ export interface AbandonPendingAuthorizationResult {
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
     /**
-     * Checks subscription history for a user and vertical, including lapsed and
-     * superseded rows. Used where eligibility depends on ever having subscribed.
+     * Checks completed subscription history for a user and vertical, including
+     * lapsed and superseded rows. Pending checkout and abandoned attempts do not
+     * count as subscription history for new-user eligibility.
      */
     async existsAnyForUser(input: ExistsAnyForUserInput): Promise<boolean> {
         const db = input.tx ?? getDb();
@@ -166,7 +167,8 @@ export class SubscriptionModel {
             .where(
                 and(
                     eq(subscriptions.userId, input.userId),
-                    eq(subscriptions.vertical, input.vertical)
+                    eq(subscriptions.vertical, input.vertical),
+                    notInArray(subscriptions.status, ['PENDING_AUTHORIZATION', 'ABANDONED'])
                 )
             )
             .limit(1);

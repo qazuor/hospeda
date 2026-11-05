@@ -14,6 +14,7 @@ export const protectedImportFromUrlAccessRoute = createProtectedRoute({
     description: 'Returns the server-resolved entitlement or new-user allowance.',
     tags: ['Accommodations'],
     responseSchema: AccommodationImportAccessResponseSchema,
+    options: { customRateLimit: { requests: 60, windowMs: 60_000 } },
     handler: async (ctx): Promise<AccommodationImportAccessResponse> => {
         const actor = getActorFromContext(ctx);
         return getAccommodationImportAccess({ userId: actor.id });

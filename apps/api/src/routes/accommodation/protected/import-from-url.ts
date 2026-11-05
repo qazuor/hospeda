@@ -339,7 +339,15 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             limitKey: AI_LIMIT_KEY_BY_FEATURE.accommodation_import
         });
         if (!quota.allowed && quota.reason === 'entitlement') {
-            await requireAccommodationImportAccess({ userId: actor.id });
+            const access = await requireAccommodationImportAccess({
+                userId: actor.id,
+                hasEntitlement: false
+            });
+            if (!access.allowed) {
+                // Returning users and capped new users retain structured import;
+                // the entitlement gate only disables AI extraction.
+                gate.blockedReason = 'entitlement';
+            }
         } else {
             gate.blockedReason = getImportAiBlockedReason(quota);
         }

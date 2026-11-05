@@ -664,6 +664,7 @@ describe('ImportFromUrl i18n keys', () => {
                       actions?: Record<string, string>;
                       errors?: {
                           urlInvalid?: string;
+                          newUserCap?: string;
                           failure?: Record<string, string>;
                       };
                       help?: {
@@ -682,7 +683,9 @@ describe('ImportFromUrl i18n keys', () => {
             expect(block?.fields?.url).toBeTruthy();
             expect(block?.fields?.legalConfirm).toBeTruthy();
             expect(block?.actions?.submit).toBeTruthy();
+            expect(block?.actions?.checkingAccess).toBeTruthy();
             expect(block?.errors?.urlInvalid).toBeTruthy();
+            expect(block?.errors?.newUserCap).toBeTruthy();
             // SPEC-258 C.1: every failure-mode key must exist in each locale so a
             // classified failure always resolves to localized text.
             for (const key of [

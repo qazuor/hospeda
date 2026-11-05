@@ -23,41 +23,30 @@ const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken, gateState, acc
     }));
 
 vi.mock(
-    '../../../../src/utils/listing-access/accommodation-import-access',
+    '../../../../src/utils/listing-access/accommodation-import-access-ports',
     async (importActual) => {
         const actual =
             await importActual<
-                typeof import('../../../../src/utils/listing-access/accommodation-import-access')
+                typeof import('../../../../src/utils/listing-access/accommodation-import-access-ports')
             >();
+        const consumer = (
+            await import('../../../../src/middlewares/rate-limit')
+        ).createConditionalSlidingWindowConsumer({
+            keyPrefix: 'import-route-test',
+            windowMs: 24 * 60 * 60 * 1000,
+            max: 5
+        });
         return {
             ...actual,
-            getAccommodationImportAccess: async () => ({
-                allowed: !accessState.capReached,
-                isNewUser: accessState.isNewUser,
-                hasEntitlement: gateState.entitlement,
-                remainingNewUserImports: accessState.capReached ? 0 : 5,
-                ...(accessState.capReached ? { reason: 'new_user_cap' as const } : {})
-            }),
-            requireAccommodationImportAccess: async () => {
-                if (!gateState.entitlement && !accessState.isNewUser) {
-                    const { ServiceError } = await import('@repo/service-core');
-                    const { ServiceErrorCode } = await import('@repo/schemas');
-                    throw new ServiceError(
-                        ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                        'Entitlement required'
-                    );
-                }
-                if (!gateState.entitlement && accessState.capReached) {
-                    const { HTTPException } = await import('hono/http-exception');
-                    throw new HTTPException(429, { message: 'New-user import limit reached.' });
-                }
-                return {
-                    allowed: true,
-                    isNewUser: accessState.isNewUser,
-                    hasEntitlement: gateState.entitlement,
-                    remainingNewUserImports: 5
-                };
-            }
+            ACCOMMODATION_IMPORT_NEW_USER_MAX: 5,
+            getAccommodationImportAccessPorts: () => ({
+                hasImportEntitlement: async () => gateState.entitlement,
+                hasHadTrial: async () => !accessState.isNewUser,
+                hasHadSubscription: async () => false,
+                hasPublishedAccommodation: async () => false,
+                countNewUserImports: ({ userId }: { userId: string }) => consumer.count(userId),
+                consumeNewUserImport: ({ userId }: { userId: string }) => consumer.consume(userId)
+            })
         };
     }
 );
@@ -104,12 +93,12 @@ const MINIMAL_RESPONSE: AccommodationImportResponse = {
     partial: true
 };
 
-function authHeaders(): Record<string, string> {
+function authHeaders(userId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'): Record<string, string> {
     return {
         'content-type': 'application/json',
         accept: 'application/json',
         'user-agent': 'vitest',
-        'x-mock-actor-id': 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        'x-mock-actor-id': userId,
         'x-mock-actor-role': 'HOST',
         'x-mock-actor-permissions': JSON.stringify([PermissionEnum.ACCOMMODATION_CREATE])
     };
@@ -217,7 +206,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         });
     });
 
-    it('returns 403 for a returning user without entitlement', async () => {
+    it('keeps structured import available to a returning user without entitlement', async () => {
         gateState.entitlement = false;
         accessState.isNewUser = false;
         const res = await app.request(ENDPOINT, {
@@ -225,20 +214,34 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             headers: authHeaders(),
             body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
         });
-        expect(res.status).toBe(403);
-        expect(mockDispatchImportFromUrl).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        expect(
+            ((await res.json()) as { data: AccommodationImportResponse }).data.message
+        ).toContain('no está incluida');
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
-    it('returns 429 after the new-user import cap', async () => {
+    it('allows five new-user AI imports, then falls back to structured import on the sixth', async () => {
         gateState.entitlement = false;
-        accessState.capReached = true;
-        const res = await app.request(ENDPOINT, {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
-        });
-        expect(res.status).toBe(429);
-        expect(mockDispatchImportFromUrl).not.toHaveBeenCalled();
+        const userId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+        mockDispatchImportFromUrl.mockImplementation(
+            async ({ context }: { context: ImportContext }) => {
+                await context.aiExtract?.({ text: 'page', locale: 'es' });
+                return { kind: 'sync', response: MINIMAL_RESPONSE };
+            }
+        );
+        for (let index = 0; index < 6; index += 1) {
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: authHeaders(userId),
+                body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+            });
+            expect(res.status).toBe(200);
+            const data = ((await res.json()) as { data: AccommodationImportResponse }).data;
+            if (index < 5) expect(data.message).toBeUndefined();
+            else expect(data.message).toContain('no está incluida');
+        }
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(6);
     });
 
     it('constructs AccommodationImportService with exchange-rate deps wired (BETA-181)', async () => {

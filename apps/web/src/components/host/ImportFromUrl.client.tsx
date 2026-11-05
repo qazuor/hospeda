@@ -341,7 +341,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             <section className={styles.importFromUrl}>
                 <div
                     className="form-error-banner"
-                    role="status"
+                    role="alert"
                 >
                     {entitlementDenied
                         ? t(

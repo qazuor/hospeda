@@ -1,5 +1,5 @@
 import { accommodations, and, eq, getDb, isNull, subscriptionModel } from '@repo/db';
-import { VerticalEnum } from '@repo/schemas';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { resolveEntitlementStep } from '@repo/verticals';
 import { createConditionalSlidingWindowConsumer } from '../../middlewares/rate-limit';
 import { buildTrialStartReader } from '../listing-publication/trial-start-reader';
@@ -43,7 +43,7 @@ export function getAccommodationImportAccessPorts() {
                 .where(
                     and(
                         eq(accommodations.ownerId, input.userId),
-                        eq(accommodations.publicationStatus, 'PUBLISHED'),
+                        eq(accommodations.publicationStatus, PublicationStatusEnum.PUBLISHED),
                         isNull(accommodations.deletedAt)
                     )
                 )

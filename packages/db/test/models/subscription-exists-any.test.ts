@@ -20,6 +20,20 @@ describe('SubscriptionModel.existsAnyForUser', () => {
         expect(select).toHaveBeenCalledTimes(1);
         expect(from).toHaveBeenCalledTimes(1);
         expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0]?.[0];
+        expect(condition).toBeDefined();
+        const columnNames: string[] = [];
+        const collectColumnNames = (part: unknown): void => {
+            if (!part || typeof part !== 'object') return;
+            if ('name' in part && typeof part.name === 'string') columnNames.push(part.name);
+            if ('queryChunks' in part && Array.isArray(part.queryChunks)) {
+                part.queryChunks.forEach(collectColumnNames);
+            }
+        };
+        collectColumnNames(condition);
+        expect(columnNames).toContain('user_id');
+        expect(columnNames).toContain('vertical');
+        expect(columnNames).toContain('status');
         expect(limit).toHaveBeenCalledWith(1);
     });
 
