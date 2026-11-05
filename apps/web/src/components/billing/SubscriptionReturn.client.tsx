@@ -136,6 +136,12 @@ export function SubscriptionReturn({
                     <label htmlFor={emailInputId}>
                         {t('billing.checkout.signup.payerEmail.label')}
                     </label>
+                    <p
+                        id={`${emailInputId}-hint`}
+                        className={styles.emailHint}
+                    >
+                        {t('billing.checkout.signup.payerEmail.hint')}
+                    </p>
                     <input
                         id={emailInputId}
                         type="email"
@@ -144,13 +150,19 @@ export function SubscriptionReturn({
                         data-testid="subscription-return-payer-email"
                         value={typedEmail}
                         aria-invalid={emailError}
+                        aria-describedby={`${emailInputId}-hint${emailError ? ` ${emailInputId}-error` : ''}`}
                         onChange={(event) => {
                             setTypedEmail(event.currentTarget.value);
                             setEmailError(false);
                         }}
                     />
                     {emailError && (
-                        <p role="alert">{t('billing.checkout.signup.payerEmail.invalid')}</p>
+                        <p
+                            id={`${emailInputId}-error`}
+                            role="alert"
+                        >
+                            {t('billing.checkout.signup.payerEmail.invalid')}
+                        </p>
                     )}
                 </div>
             )}
