@@ -234,6 +234,8 @@ describe('manual S1 signup', () => {
         const first = await startManualSubscription(input, ports);
         const second = await startManualSubscription(input, ports);
         const rows = await ownRows(user.id);
+        expect(first.created).toBe(true);
+        expect(second.created).toBe(false);
         expect(second).toEqual(first);
         expect(rows.subscriptions).toHaveLength(1);
         expect(rows.installments).toHaveLength(1);
