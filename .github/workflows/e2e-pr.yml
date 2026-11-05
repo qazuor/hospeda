@@ -99,6 +99,9 @@ jobs:
       PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
       VITE_SENTRY_DSN: https://ci-placeholder.invalid
       PUBLIC_POSTHOG_KEY: phc_ci_placeholder
+      # Cloudflare always-pass test keys for the real PP1 form in TEST:V7:22.
+      PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      HOSPEDA_TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
 
       # MercadoPago: PR mode uses simulated webhook only (no real sandbox calls).
       # The webhook secret signs the simulated POST; the access_token is a stub,

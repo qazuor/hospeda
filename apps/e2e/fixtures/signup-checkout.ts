@@ -22,7 +22,8 @@ export type CatalogSlug =
     | 'owner-pro'
     | 'owner-premium'
     | 'tourist-vip'
-    | 'partner-silver';
+    | 'partner-silver'
+    | 'partner-gold';
 
 /**
  * Reads a limit value from the current version of a catalog plan without writing.
