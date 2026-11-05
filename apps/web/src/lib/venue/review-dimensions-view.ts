@@ -41,7 +41,6 @@ export interface ResolvedDimensionAverage extends OfferedReviewDimension {
     readonly average: number;
     readonly count: number;
 }
-
 /** Reads the vertical's rules without assuming every vertical declares any. */
 function reviewRulesFor(vertical: ListingVertical): ReviewRules | undefined {
     return (REVIEW_RULES as Partial<Record<ListingVertical, ReviewRules>>)[vertical];
@@ -70,8 +69,9 @@ export function resolveOfferedReviewDimensions({
     return rules.dimensions
         .filter((dimension) => {
             if (sectionStates === undefined) return true;
-            if (!('boundSection' in dimension)) return true;
-            return sectionStates[dimension.boundSection]?.state !== 'absent';
+            const boundSection = dimension.boundSection;
+            if (boundSection === undefined) return true;
+            return sectionStates[boundSection]?.state !== 'absent';
         })
         .map((dimension) => ({ id: dimension.id, labelKey: dimension.labelKey }));
 }
