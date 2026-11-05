@@ -368,6 +368,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
         // HOS-1697: action 7 (lift a reconciliation mark, S15) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK,
+        // AC:V7:17 ACC:6 configures a Partner's manual billing; SUPER_ADMIN-only.
+        PermissionEnum.PARTNER_CONFIGURE_BILLING,
         // SUPER_ADMIN-only (V5.6).
         PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
         PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
