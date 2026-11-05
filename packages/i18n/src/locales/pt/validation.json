@@ -631,7 +631,8 @@
             "max": "O email não pode exceder {{max}} caracteres"
         },
         "kind": {
-            "invalid": "O tipo é inválido"
+            "invalid": "O tipo é inválido",
+            "partnerMovedToApplication": "As candidaturas de Partner são feitas pelo formulário próprio"
         },
         "markHandled": {
             "status": {

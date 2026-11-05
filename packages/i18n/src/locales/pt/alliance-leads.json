@@ -1,4 +1,14 @@
 {
+    "partnerApplication": {
+        "title": "Candidate-se para ser parceiro",
+        "emailLabel": "Endereço de e-mail",
+        "emailHelp": "Entraremos em contato neste endereço para responder sobre sua candidatura.",
+        "submit": "Enviar candidatura",
+        "sending": "Enviando candidatura…",
+        "success": "Obrigado. Recebemos seu e-mail e entraremos em contato com uma resposta.",
+        "error": "Não foi possível enviar sua candidatura. Tente novamente mais tarde.",
+        "unavailable": "O formulário está indisponível no momento. Tente novamente mais tarde."
+    },
     "form": {
         "fields": {
             "contactName": "Seu nome",

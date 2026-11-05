@@ -2,6 +2,7 @@ import { PartnerContentReviewStateEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { PartnerBillingSetupCard } from '@/features/partners/components/PartnerBillingSetupCard';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import { PartnerPresenceModerationCard } from '@/features/partners/components/PartnerPresenceModerationCard';
 import {
@@ -93,6 +94,8 @@ function PartnerViewPage() {
                     partnerId={partner.id}
                     presenceModerated={partner.presenceModerated}
                 />
+
+                <PartnerBillingSetupCard partnerId={partner.id} />
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-3 rounded-lg border p-4">

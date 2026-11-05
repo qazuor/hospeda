@@ -1342,6 +1342,14 @@
             "path": "/api/v1/admin/partners/:id"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/partners/:id/billing-setup"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partners/:id/billing-setup"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/partners/:id/manual-payment"
         },

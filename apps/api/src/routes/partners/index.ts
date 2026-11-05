@@ -1,9 +1,11 @@
 export {
+    adminConfigurePartnerBillingRoute,
     adminCreatePartnerRoute,
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminPreviewPartnerBillingSetupRoute,
     adminReviewPartnerContentRoute,
     adminUpdatePartnerRoute
 } from './admin/index.js';

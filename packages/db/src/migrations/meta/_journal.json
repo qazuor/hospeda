@@ -1380,6 +1380,13 @@
       "when": 1793796287751,
       "tag": "0196_hos1542_manual_payment_reimputed_and_entry",
       "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1793843845269,
+      "tag": "0197_hos1489_partner_configure_billing",
+      "breakpoints": true
     }
   ]
 }

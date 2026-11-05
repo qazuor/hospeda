@@ -1040,6 +1040,38 @@
         "errorTitle": "No se pudo dar de baja la cuenta",
         "stateChanged": "La cuenta cambió desde que abriste esta confirmación y no se dio de baja. Volvimos a revisar qué le queda."
     },
+    "partnerBillingSetup": {
+        "title": "Plan y pago del Partner",
+        "state": "No hay una suscripción manual configurada.",
+        "configure": "Configurar plan y pago",
+        "planLabel": "Plan",
+        "reasonLabel": "Motivo",
+        "review": "Revisar",
+        "confirmationTitle": "Vas a crear una suscripción de pago manual en espera de autorización y su primera cuota.",
+        "partner": "Partner",
+        "owner": "Dueño",
+        "amount": "Monto",
+        "method": "Método",
+        "manual": "Manual",
+        "confirm": "Confirmar",
+        "back": "Volver",
+        "cancel": "Cancelar",
+        "previewError": "No se pudieron cargar las opciones de plan.",
+        "loading": "Cargando opciones de plan…",
+        "cycle": {
+            "monthly": "mensual",
+            "quarterly": "trimestral",
+            "semiannual": "semestral",
+            "annual": "anual"
+        },
+        "errors": {
+            "forbidden": "No tenés permiso para configurar el plan y el pago.",
+            "partnerWithoutOwner": "Este Partner todavía no tiene dueño.",
+            "commitmentTaken": "El dueño ya tiene una suscripción incompatible.",
+            "planNotForSale": "El plan ya no está disponible para la venta.",
+            "generic": "No se pudo configurar el plan y el pago."
+        }
+    },
     "partnerPresenceModeration": {
         "title": "Presencia pública",
         "state": {

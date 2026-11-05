@@ -137,6 +137,7 @@ import {
 } from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
+    adminConfigurePartnerBillingRoute,
     adminCreatePartnerMentionsRoute,
     adminCreatePartnerRoute,
     adminDeletePartnerMentionRoute,
@@ -145,6 +146,7 @@ import {
     adminListPartnerMentionsRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminPreviewPartnerBillingSetupRoute,
     adminReviewPartnerContentRoute,
     adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
@@ -570,6 +572,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         app.route('/api/v1/admin/partners', adminModeratePartnerPresenceRoute);
+        app.route('/api/v1/admin/partners', adminPreviewPartnerBillingSetupRoute);
+        app.route('/api/v1/admin/partners', adminConfigurePartnerBillingRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
         // on the same prefix and takes the partner from its own path segment.
         app.route('/api/v1/admin/partners', adminListPartnerMentionsRoute);

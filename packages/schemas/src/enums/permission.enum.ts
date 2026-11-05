@@ -987,6 +987,7 @@ export enum PermissionEnum {
     PARTNER_VIEW_ALL = 'partner.viewAll', // Allows viewing all partners (admin).
     PARTNER_MANAGE = 'partner.manage', // Allows managing partner (create, update, delete, send link, manual payment).
     PARTNER_RESOLVE_APPLICATION = 'partner.resolveApplication', // Allows resolving a partner application (approve, reject, cancel the wait): administrative action 5.
+    PARTNER_CONFIGURE_BILLING = 'partner.configureBilling', // Allows action 6 to configure a Partner plan and manual payment; SUPER_ADMIN-only (AC:V7:17, ACC:6).
     PARTNER_EDIT_OWN = 'partner.editOwn', // Allows the owner of a partner to edit their own listing (the partner owner family, V7 step 3).
 
     // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277)

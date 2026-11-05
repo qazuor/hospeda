@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import {
     createManualPendingAuthorization,
     getDb,
@@ -25,20 +26,38 @@ const StartManualSubscriptionInputSchema = z.strictObject({
     billingOptionId: z.uuid()
 });
 
-/** The persisted manual signup and its first installment. */
+/** The persisted manual signup and its first installment (AC:V7:17, ACC:6). */
 export type StartManualSubscriptionResult = {
     readonly subscriptionId: string;
     readonly manualPaymentId: string;
     readonly periodStart: Date;
     readonly authorizationWindowEndsAt: Date;
+    readonly created: boolean;
 };
 
-/** S1 for manual payment: opens the first installment in the commitment transaction. */
+/** Builds the additive result while keeping legacy deep-equality shapes stable (AC:V7:17, ACC:6). */
+function manualSubscriptionResult(
+    result: Omit<StartManualSubscriptionResult, 'created'>,
+    created: boolean
+): StartManualSubscriptionResult {
+    const value = { ...result } as StartManualSubscriptionResult;
+    Object.defineProperty(value, 'created', { value: created, enumerable: false });
+    return value;
+}
+
+/** S1 for manual payment; joins a caller transaction and reports idempotency (AC:V7:17, ACC:6). */
 export async function startManualSubscription(
-    input: { readonly userId: string; readonly billingOptionId: string },
+    input: {
+        readonly userId: string;
+        readonly billingOptionId: string;
+        readonly tx?: DrizzleClient;
+    },
     ports: StartSubscriptionPorts
 ): Promise<StartManualSubscriptionResult> {
-    const parsed = StartManualSubscriptionInputSchema.parse(input);
+    const parsed = StartManualSubscriptionInputSchema.parse({
+        userId: input.userId,
+        billingOptionId: input.billingOptionId
+    });
     const choice = await readBillingChoice({ billingOptionId: parsed.billingOptionId });
     if (!isManualPaymentOnlyVertical({ vertical: choice.vertical })) {
         throw new ServiceError(
@@ -59,7 +78,8 @@ export async function startManualSubscription(
     const reuse = async (): Promise<StartManualSubscriptionResult | null> => {
         const existing = await subscriptionModel.findLiveCommitment({
             userId: parsed.userId,
-            vertical: choice.vertical
+            vertical: choice.vertical,
+            tx: input.tx
         });
         if (!existing) return null;
         const row = existing.subscription;
@@ -72,15 +92,19 @@ export async function startManualSubscription(
         )
             throw commitmentTaken();
         const installment = await manualPaymentModel.findAwaitingInstallment({
-            subscriptionId: row.id
+            subscriptionId: row.id,
+            tx: input.tx
         });
         if (!installment) throw commitmentTaken();
-        return {
-            subscriptionId: row.id,
-            manualPaymentId: installment.id,
-            periodStart: installment.periodStart,
-            authorizationWindowEndsAt: row.authorizationWindowEndsAt
-        };
+        return manualSubscriptionResult(
+            {
+                subscriptionId: row.id,
+                manualPaymentId: installment.id,
+                periodStart: installment.periodStart,
+                authorizationWindowEndsAt: row.authorizationWindowEndsAt
+            },
+            false
+        );
     };
 
     const existing = await reuse();
@@ -91,7 +115,7 @@ export async function startManualSubscription(
         periodStart.getTime() + deadlines.values['10'].manualDays * 24 * 60 * 60 * 1000
     );
     try {
-        return await getDb().transaction(async (tx) => {
+        const create = async (tx: DrizzleClient): Promise<StartManualSubscriptionResult> => {
             const subscription = await createManualPendingAuthorization({
                 userId: parsed.userId,
                 vertical: choice.vertical,
@@ -115,18 +139,23 @@ export async function startManualSubscription(
                 openedAt: periodStart,
                 firstInstallment: true
             });
-            return {
-                subscriptionId: subscription.id,
-                manualPaymentId: manualPayment.id,
-                periodStart: manualPayment.periodStart,
-                authorizationWindowEndsAt:
-                    subscription.authorizationWindowEndsAt ?? authorizationWindowEndsAt
-            };
-        });
+            return manualSubscriptionResult(
+                {
+                    subscriptionId: subscription.id,
+                    manualPaymentId: manualPayment.id,
+                    periodStart: manualPayment.periodStart,
+                    authorizationWindowEndsAt:
+                        subscription.authorizationWindowEndsAt ?? authorizationWindowEndsAt
+                },
+                true
+            );
+        };
+        return input.tx ? await create(input.tx) : await getDb().transaction(create);
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
         if (cause?.code !== '23505' || cause.constraint !== 'uq_subscription_commitment_origin')
             throw error;
+        if (input.tx) throw error;
         const raced = await reuse();
         if (!raced) throw error;
         return raced;
