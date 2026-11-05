@@ -180,9 +180,11 @@ do_full_provision() {
   echo "  -> pnpm db:seed"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed ) \
     || { echo "ERROR: pnpm db:seed failed — aborting auto-heal"; exit 1; }
-  echo "  -> pnpm db:seed:migrate"
-  ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed:migrate ) \
-    || { echo "ERROR: pnpm db:seed:migrate failed — aborting auto-heal"; exit 1; }
+  # Same last step as db:fresh: stamp the historical migrations the baseline seed
+  # already reflects, and run the contentOnly ones (e.g. 0133) for real.
+  echo "  -> seed --data-migrate --baseline-stamp"
+  ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm --filter @repo/seed seed --data-migrate --baseline-stamp ) \
+    || { echo "ERROR: seed --data-migrate --baseline-stamp failed — aborting auto-heal"; exit 1; }
   echo "  -> pnpm db:seed:test-users"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed:test-users ) \
     || { echo "ERROR: pnpm db:seed:test-users failed — aborting auto-heal"; exit 1; }
