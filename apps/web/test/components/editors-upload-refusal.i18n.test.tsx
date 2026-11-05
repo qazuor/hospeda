@@ -52,6 +52,20 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 const ENGLISH = 'Gallery limit of 15 items reached for this entity';
 const EXPECTED_ES = 'Llegaste al límite de 15 fotos de la galería.';
 
+/**
+ * Budget for the async waits in this file (HOS-2041).
+ *
+ * The refusal reaches the screen only after mount → `listMedia` → file change →
+ * `fetch` → `response.json()` → translation → state + toast store update. The
+ * first test in the file also pays the cold cost of mounting the editor. On a
+ * loaded CI unit shard that path measured 1140ms (shard 2/5, run 41985693681,
+ * attempt 1), just past Testing Library's default 1000ms, while the second test
+ * took 54ms. Locally both stay well under 1000ms, which is why it only ever
+ * failed in CI. The budget is per wait and explicit; a real regression (the
+ * message never rendering) still fails, just after 5s instead of 1s.
+ */
+const ASYNC_RENDER_TIMEOUT_MS = 5_000;
+
 function refuseUpload(): void {
     vi.stubGlobal(
         'fetch',
@@ -71,7 +85,9 @@ function refuseUpload(): void {
 }
 
 async function pickGalleryFile(): Promise<void> {
-    await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+    await waitFor(() => expect(mockListMedia).toHaveBeenCalled(), {
+        timeout: ASYNC_RENDER_TIMEOUT_MS
+    });
     const gallery = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
     fireEvent.change(gallery, {
         target: { files: [new File(['img'], 'photo.jpg', { type: 'image/jpeg' })] }
@@ -105,7 +121,9 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
 
         await pickGalleryFile();
 
-        expect(await screen.findAllByText(EXPECTED_ES)).not.toHaveLength(0);
+        expect(
+            await screen.findAllByText(EXPECTED_ES, {}, { timeout: ASYNC_RENDER_TIMEOUT_MS })
+        ).not.toHaveLength(0);
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 
@@ -123,7 +141,9 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
 
         await pickGalleryFile();
 
-        expect(await screen.findAllByText(EXPECTED_ES)).not.toHaveLength(0);
+        expect(
+            await screen.findAllByText(EXPECTED_ES, {}, { timeout: ASYNC_RENDER_TIMEOUT_MS })
+        ).not.toHaveLength(0);
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 });
