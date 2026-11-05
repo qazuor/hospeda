@@ -203,8 +203,9 @@ describe('usePhotoAltWarningGuard', () => {
             );
             await flushRouterImport();
             clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
-            editor.rerender(<PhotoMetadataEditor {...editorProps(false)} />);
             await act(async () => resolveDialog(false));
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
+            editor.rerender(<PhotoMetadataEditor {...editorProps(false)} />);
             await waitFor(() => expect(document.activeElement).toBe(field()));
         });
 
