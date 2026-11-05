@@ -45,6 +45,14 @@ function publicFolderFor(vertical: ListingVertical): string {
     return folder;
 }
 
+/** A static route entry: its slug-like segment and the file that provides it. */
+interface StaticSegment {
+    /** Segment name as it appears in the URL (no `.astro` extension). */
+    readonly segment: string;
+    /** Entry name as it appears on disk, for the failure message. */
+    readonly entry: string;
+}
+
 /**
  * Lists the static route segments directly under a listing folder.
  *
@@ -53,15 +61,17 @@ function publicFolderFor(vertical: ListingVertical): string {
  * extension.
  *
  * @param directory - Absolute path of the listing folder.
- * @returns The static segment names, in directory order.
+ * @returns The static entries, in directory order.
  */
-function staticSegmentsIn(directory: string): string[] {
+function staticSegmentsIn(directory: string): StaticSegment[] {
     return readdirSync(directory, { withFileTypes: true })
         .filter((entry) => !entry.name.startsWith('['))
         .flatMap((entry) => {
-            if (entry.isDirectory()) return [entry.name];
+            if (entry.isDirectory()) {
+                return [{ segment: entry.name, entry: entry.name }];
+            }
             if (entry.isFile() && entry.name.endsWith('.astro') && entry.name !== 'index.astro') {
-                return [entry.name.slice(0, -'.astro'.length)];
+                return [{ segment: entry.name.slice(0, -'.astro'.length), entry: entry.name }];
             }
             return [];
         });
@@ -74,10 +84,10 @@ describe('RESERVED_LISTING_SLUGS matches the static page segments', () => {
             const directory = join(PAGES_DIR, folder);
             const reserved = new Set(RESERVED_LISTING_SLUGS[vertical]);
 
-            for (const segment of staticSegmentsIn(directory)) {
+            for (const { segment, entry } of staticSegmentsIn(directory)) {
                 expect(
                     reserved.has(segment),
-                    `${folder}/${segment} is a static segment but "${segment}" is missing from RESERVED_LISTING_SLUGS.${vertical}`
+                    `${folder}/${entry} is a static segment but "${segment}" is missing from RESERVED_LISTING_SLUGS.${vertical}`
                 ).toBe(true);
             }
         }
@@ -85,7 +95,7 @@ describe('RESERVED_LISTING_SLUGS matches the static page segments', () => {
 
     it('reads the real folders (floor: accommodation contributes tipo and mapa)', () => {
         const folder = publicFolderFor('accommodation');
-        const segments = staticSegmentsIn(join(PAGES_DIR, folder));
+        const segments = staticSegmentsIn(join(PAGES_DIR, folder)).map((item) => item.segment);
 
         expect(segments).toContain('tipo');
         expect(segments).toContain('mapa');
@@ -94,7 +104,9 @@ describe('RESERVED_LISTING_SLUGS matches the static page segments', () => {
     it('reads the real folders (floor: every listing folder has a page segment)', () => {
         for (const vertical of LISTING_VERTICALS) {
             const folder = publicFolderFor(vertical);
-            expect(staticSegmentsIn(join(PAGES_DIR, folder))).toContain('page');
+            expect(staticSegmentsIn(join(PAGES_DIR, folder)).map((item) => item.segment)).toContain(
+                'page'
+            );
         }
     });
 });
