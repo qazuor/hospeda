@@ -281,6 +281,12 @@
                     "lockedWithData_one": "Locked by your plan · {{count}} item saved (not published)",
                     "lockedWithData_other": "Locked by your plan · {{count}} items saved (not published)",
                     "lockedEmpty": "Locked by your plan"
+                },
+                "hidden": {
+                    "title": "Saved but hidden by your business lines",
+                    "intro": "These sections are not shown because your current business lines do not include them. Their data is still saved: if you add the line back, it returns.",
+                    "count_one": "{{count}} saved item",
+                    "count_other": "{{count}} saved items"
                 }
             },
             "lockedNotice": {
@@ -315,6 +321,7 @@
                 "destinationId": "City / Destination",
                 "ownerId": "Owner",
                 "type": "Category",
+                "businessLines": "Business lines",
                 "featuredImage": "Main photo",
                 "contactInfo": "A contact detail (phone or email)",
                 "openingHours": "Opening hours",

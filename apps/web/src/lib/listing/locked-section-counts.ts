@@ -44,6 +44,24 @@ interface EventsCountEnvelope {
     readonly events?: ReadonlyArray<unknown>;
 }
 
+/** Shape of `GET .../venues/:id`, reduced to the nightInfo fields. */
+interface NightInfoCountEnvelope {
+    readonly entryKind?: string | null;
+    readonly entryNoteI18n?: {
+        readonly es?: string;
+        readonly en?: string;
+        readonly pt?: string;
+    } | null;
+    readonly entryPriceFrom?: number | null;
+    readonly minAge?: number | null;
+    readonly dressCode?: string | null;
+    readonly dressCodeNoteI18n?: {
+        readonly es?: string;
+        readonly en?: string;
+        readonly pt?: string;
+    } | null;
+}
+
 /** A reader that turns one section's stored document into a count. */
 type SectionCountReader = (params: {
     readonly listingId: string;
@@ -100,6 +118,41 @@ async function readDailySpecialsCount({
     }
 }
 
+/**
+ * `nightInfo` is not a nested document: its six writable fields live on the
+ * venue row, so counting "how much is stored" means counting the non-empty
+ * ones. A localized note counts once when ANY locale is written.
+ */
+async function readNightInfoCount({
+    listingId,
+    cookieHeader
+}: {
+    readonly listingId: string;
+    readonly cookieHeader?: string;
+}): Promise<number | null> {
+    try {
+        const result = await apiClient.getProtected<NightInfoCountEnvelope>({
+            path: `/api/v1/protected/venues/${listingId}`,
+            cookieHeader
+        });
+        if (!result.ok) return null;
+
+        const hasI18n = (value: NightInfoCountEnvelope['entryNoteI18n']): boolean =>
+            Boolean(value?.es?.trim() || value?.en?.trim() || value?.pt?.trim());
+
+        return [
+            result.data.entryKind,
+            hasI18n(result.data.entryNoteI18n) ? 'note' : null,
+            result.data.entryPriceFrom,
+            result.data.minAge,
+            result.data.dressCode,
+            hasI18n(result.data.dressCodeNoteI18n) ? 'dressNote' : null
+        ].filter((value) => value !== null && value !== undefined && value !== '').length;
+    } catch {
+        return null;
+    }
+}
+
 /** One stored agenda entry is one item. */
 async function readEventsCount({
     listingId,
@@ -131,10 +184,55 @@ const READERS_BY_VERTICAL: Readonly<
     venue: {
         menu: readMenuCount,
         dailySpecials: readDailySpecialsCount,
-        venueEvents: readEventsCount
+        venueEvents: readEventsCount,
+        nightInfo: readNightInfoCount
     },
     experience: {}
 };
+
+/** Facts every count read needs, independent of which states it selects. */
+interface SectionCountsParams {
+    readonly vertical: VenueOrExperience;
+    readonly listingId: string;
+    readonly sectionStates: ListingSectionStates;
+    readonly cookieHeader?: string;
+}
+
+/**
+ * Reads the stored count for every section whose state is one of `states`.
+ *
+ * @param params.vertical - The listing's vertical.
+ * @param params.listingId - UUID of the listing.
+ * @param params.sectionStates - The state map the resolver read from the API.
+ * @param params.states - States whose entries are read (`locked`, `absent`).
+ * @param params.cookieHeader - Session cookie forwarded from SSR.
+ * @returns A count (or `null` on failure) keyed by section id.
+ */
+export async function readSectionCounts({
+    vertical,
+    listingId,
+    sectionStates,
+    states,
+    cookieHeader
+}: SectionCountsParams & {
+    readonly states: readonly ('locked' | 'absent')[];
+}): Promise<LockedSectionCounts> {
+    const readers = READERS_BY_VERTICAL[vertical] ?? {};
+    const selected = Object.entries(sectionStates).filter(([, section]) => {
+        if (section.state !== 'locked' && section.state !== 'absent') return false;
+        return states.includes(section.state);
+    });
+
+    const entries = await Promise.all(
+        selected.map(async ([sectionId]) => {
+            const reader = readers[sectionId];
+            if (!reader) return [sectionId, null] as const;
+            return [sectionId, await reader({ listingId, cookieHeader })] as const;
+        })
+    );
+
+    return Object.fromEntries(entries);
+}
 
 /**
  * Reads the stored count for every section the caller passed as `locked`.
@@ -146,29 +244,55 @@ const READERS_BY_VERTICAL: Readonly<
  * @param params.cookieHeader - Session cookie forwarded from SSR.
  * @returns A count (or `null` on failure) keyed by section id.
  */
-export async function readLockedSectionCounts({
-    vertical,
-    listingId,
-    sectionStates,
+export async function readLockedSectionCounts(
+    params: SectionCountsParams
+): Promise<LockedSectionCounts> {
+    return readSectionCounts({ ...params, states: ['locked'] });
+}
+
+/**
+ * Reads the stored count for every section the business lines currently hide
+ * (`absent`). HOS-1787 leaf 5.7 uses it in the removal notice and in the hub's
+ * "Guardado y oculto por tus rubros" block.
+ *
+ * @param params - Same shape as {@link readSectionCounts}.
+ * @returns A count (or `null` on failure) keyed by section id.
+ */
+export async function readAbsentSectionCounts(
+    params: SectionCountsParams
+): Promise<LockedSectionCounts> {
+    return readSectionCounts({ ...params, states: ['absent'] });
+}
+
+/**
+ * Reads how many times the venue's menu QR was scanned in the last 90 days
+ * (owner decision, HOS-1787 leaf 5.7).
+ *
+ * Never calls `getMenuQr`: that route MINTS the code on first read, and a
+ * removal notice must not provision an asset as a side effect. The scans route
+ * is gate-protected (`menu_qr_scan_metrics`), so a 403/409 means "not readable"
+ * and the caller omits the line — it never renders a fabricated zero.
+ *
+ * @param params.venueId - UUID of the venue.
+ * @param params.cookieHeader - Session cookie forwarded from SSR.
+ * @returns The scan total, or `null` when the metric is not readable.
+ */
+export async function readRecentMenuQrScanCount({
+    venueId,
     cookieHeader
 }: {
-    readonly vertical: VenueOrExperience;
-    readonly listingId: string;
-    readonly sectionStates: ListingSectionStates;
+    readonly venueId: string;
     readonly cookieHeader?: string;
-}): Promise<LockedSectionCounts> {
-    const readers = READERS_BY_VERTICAL[vertical] ?? {};
-    const locked = Object.entries(sectionStates).filter(
-        ([, section]) => section.state === 'locked'
-    );
-
-    const entries = await Promise.all(
-        locked.map(async ([sectionId]) => {
-            const reader = readers[sectionId];
-            if (!reader) return [sectionId, null] as const;
-            return [sectionId, await reader({ listingId, cookieHeader })] as const;
-        })
-    );
-
-    return Object.fromEntries(entries);
+}): Promise<number | null> {
+    try {
+        const result = await apiClient.getProtected<{ readonly total?: number }>({
+            path: `/api/v1/protected/venues/${venueId}/menu-qr/scans`,
+            params: { window: '90d' },
+            cookieHeader
+        });
+        if (!result.ok) return null;
+        return typeof result.data.total === 'number' ? result.data.total : null;
+    } catch {
+        return null;
+    }
 }

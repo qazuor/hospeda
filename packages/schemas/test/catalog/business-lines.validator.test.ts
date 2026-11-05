@@ -118,6 +118,45 @@ describe('TEST:5.6:1 resolveBusinessLineOptions selected flag', () => {
     });
 });
 
+describe('TEST:5.7:1 resolveBusinessLineOptions removable', () => {
+    it('does not let a BOLICHE remove its only allowed business line', () => {
+        const options = resolveBusinessLineOptions({
+            vertical: 'venue',
+            type: 'BOLICHE',
+            selected: ['nightlife']
+        });
+
+        expect(options.find(({ value }) => value === 'nightlife')).toMatchObject({
+            selected: true,
+            removable: false,
+            removeReason: 'EMPTY'
+        });
+    });
+
+    it('lets a BAR remove either of its two lines', () => {
+        const options = resolveBusinessLineOptions({
+            vertical: 'venue',
+            type: 'BAR',
+            selected: ['food', 'nightlife']
+        });
+
+        expect(options.map(({ value, removable }) => ({ value, removable }))).toEqual([
+            { value: 'food', removable: true },
+            { value: 'nightlife', removable: true }
+        ]);
+    });
+
+    it('lets a RESTAURANT remove either of its two lines', () => {
+        const options = resolveBusinessLineOptions({
+            vertical: 'venue',
+            type: 'RESTAURANT',
+            selected: ['food', 'nightlife']
+        });
+
+        expect(options.every(({ removable }) => removable)).toBe(true);
+    });
+});
+
 describe('TEST:5.6:1 resolveBusinessLineDefaults', () => {
     it('returns the BAR defaults', () => {
         expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'BAR' })).toEqual({

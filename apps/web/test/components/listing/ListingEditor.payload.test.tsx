@@ -249,6 +249,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
         slug: 'la-parrilla',
         publicationStatus: 'DRAFT',
         destinationId: DESTINATION_1,
+        businessLines: ['food'],
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides
     } as unknown as ListingDetail;

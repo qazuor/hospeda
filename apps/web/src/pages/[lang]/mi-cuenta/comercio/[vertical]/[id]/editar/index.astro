@@ -18,14 +18,19 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
+import { HiddenByBusinessLinesSummary } from '@/components/listing/HiddenByBusinessLinesSummary.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor-hub-status-model';
+import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { readListingEditorHubFacts } from '@/lib/listing/listing-editor-detail';
-import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
+import {
+	readAbsentSectionCounts,
+	readLockedSectionCounts,
+} from '@/lib/listing/locked-section-counts';
 import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
 
@@ -78,6 +83,33 @@ const lockedSections = Object.fromEntries(
 		.map(([sectionId]) => [sectionId, lockedCounts[sectionId] ?? null])
 );
 
+// HOS-1787 leaf 5.7 (DEC-FAC-063 / DEC-FAC-075): sections hidden by the
+// current business lines. Only the ones that actually hold data get a row, and
+// only the owner gets the destructive action — the API compares the actor to
+// the subject, so staff is shown the counts without "Vaciar".
+const absentCounts = await readAbsentSectionCounts({
+	vertical,
+	listingId,
+	sectionStates: Object.fromEntries(
+		Object.entries(sectionStates).filter(([, section]) => section.state === 'absent'),
+	),
+	cookieHeader,
+});
+const hiddenSections = Object.entries(absentCounts).flatMap(([sectionId, count]) =>
+	typeof count === 'number' && count > 0
+		? [
+				{
+					id: sectionId,
+					labelKey:
+						LISTING_SECTION_PRESENTATION[vertical][sectionId]?.labelKey ??
+						sectionId,
+					count,
+				},
+			]
+		: [],
+);
+const canEmptyHiddenSections = detail.ownerId === Astro.locals.user?.id;
+
 const statuses = resolveListingEditorSectionStatuses({
 	input: {
 		vertical,
@@ -120,6 +152,14 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 	)}
 
 	<SupportEditNotice locale={locale} items={supportEdits.items} />
+
+	<HiddenByBusinessLinesSummary
+		client:load
+		locale={locale}
+		listingId={listingId}
+		sections={hiddenSections}
+		canEmpty={canEmptyHiddenSections}
+	/>
 
 	<EditorHub
 		locale={locale}

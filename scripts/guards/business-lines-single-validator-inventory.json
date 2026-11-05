@@ -9,6 +9,16 @@
             "file": "packages/service-core/src/services/listing/base-listing.service.ts",
             "count": 2,
             "spec": ".hoja/contexto.md:1"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "count": 1,
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
         }
     ],
     "resolveBusinessLineOptions": [

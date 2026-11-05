@@ -2174,6 +2174,13 @@ export const partnersApi = {
 /** Analytics window type for time-range queries */
 type AnalyticsWindow = '7d' | '30d';
 
+/**
+ * Windows the QR scan aggregate accepts (HOS-1787 leaf 5.7 added `90d` for the
+ * business-line removal notice). Deliberately narrower than `AnalyticsWindow`
+ * for the view-stat endpoints, which keep the original two values.
+ */
+type QrScanWindow = AnalyticsWindow | '90d';
+
 /** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
 export const hostAnalyticsApi = {
     /**
@@ -2441,15 +2448,23 @@ export const listingAnalyticsApi = {
     getListingSectionStates<V extends ListingAnalyticsVertical>({
         vertical,
         listingId,
+        businessLines,
         cookieHeader
     }: {
         readonly vertical: V;
         readonly listingId: string;
+        /**
+         * HOS-1787 leaf 5.7: comma-separated hypothetical selection. The API
+         * resolves the map for it instead of the stored row, which is how the
+         * editor learns what a removal would hide before saving it.
+         */
+        readonly businessLines?: readonly string[];
         /** Forwarded when called from SSR, like `fetchOwnerListingDetail`. */
         readonly cookieHeader?: string;
     }): Promise<ApiResult<ListingSectionStatesResponse<V>>> {
         return apiClient.getProtected<ListingSectionStatesResponse<V>>({
             path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/${listingId}/sections`,
+            ...(businessLines ? { params: { businessLines: businessLines.join(',') } } : {}),
             cookieHeader
         });
     },
@@ -2569,10 +2584,10 @@ export const listingAnalyticsApi = {
         window: windowParam
     }: {
         readonly venueId: string;
-        readonly window: AnalyticsWindow;
+        readonly window: QrScanWindow;
     }): Promise<
         ApiResult<{
-            readonly window: AnalyticsWindow;
+            readonly window: QrScanWindow;
             readonly total: number;
             readonly dailySeries: readonly { readonly date: string; readonly total: number }[];
             readonly byDeviceType: Readonly<Record<string, number>>;

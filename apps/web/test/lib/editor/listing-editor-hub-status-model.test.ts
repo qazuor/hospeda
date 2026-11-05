@@ -28,6 +28,7 @@ function completeListing(
         destinationId: '11111111-1111-4111-8111-111111111111',
         ownerId: 'owner-1',
         type: 'RESTAURANT',
+        businessLines: ['food'],
         media: { featuredImage: { url: 'https://cdn.test/a.jpg' } },
         contactInfo: { mobilePhone: '+54 9 11 1234 5678' },
         openingHours: {

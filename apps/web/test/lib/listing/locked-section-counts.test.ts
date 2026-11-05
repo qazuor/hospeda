@@ -13,7 +13,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/lib/api/client';
 import type { ListingSectionStates } from '@/lib/editor/listing-editor-registry';
-import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
+import {
+    readAbsentSectionCounts,
+    readLockedSectionCounts,
+    readRecentMenuQrScanCount
+} from '@/lib/listing/locked-section-counts';
 
 vi.mock('@/lib/api/client', () => ({
     apiClient: {
@@ -125,5 +129,68 @@ describe('readLockedSectionCounts (HOS-1854)', () => {
             venueEvents: 1,
             contact: null
         });
+    });
+});
+
+describe('readAbsentSectionCounts (HOS-1787 leaf 5.7)', () => {
+    it('reads only absent sections and extends the counts to nightInfo', async () => {
+        mockGetProtected.mockImplementation(async ({ path }) => {
+            if (path.endsWith('/menu')) return MENU_ENVELOPE as never;
+            // nightInfo lives on the venue row itself.
+            return {
+                ok: true,
+                data: {
+                    entryKind: 'paid',
+                    entryNoteI18n: { es: 'Hasta las 2', en: '', pt: '' },
+                    entryPriceFrom: 500000,
+                    minAge: 18,
+                    dressCode: null,
+                    dressCodeNoteI18n: null
+                }
+            } as never;
+        });
+
+        const counts = await readAbsentSectionCounts({
+            vertical: 'venue',
+            listingId: LISTING_ID,
+            sectionStates: {
+                menu: { state: 'absent' },
+                nightInfo: { state: 'absent' },
+                dailySpecials: { state: 'available' }
+            }
+        });
+
+        expect(counts.menu).toBe(5);
+        // entryKind + note + price + minAge.
+        expect(counts.nightInfo).toBe(4);
+        expect(mockGetProtected).not.toHaveBeenCalledWith(
+            expect.objectContaining({ path: expect.stringContaining('daily-specials') })
+        );
+    });
+});
+
+describe('readRecentMenuQrScanCount (HOS-1787 leaf 5.7)', () => {
+    it('reads the 90-day aggregate', async () => {
+        mockGetProtected.mockResolvedValue({
+            ok: true,
+            data: { total: 42 }
+        } as never);
+
+        await expect(readRecentMenuQrScanCount({ venueId: LISTING_ID })).resolves.toBe(42);
+        expect(mockGetProtected).toHaveBeenCalledWith(
+            expect.objectContaining({
+                path: `/api/v1/protected/venues/${LISTING_ID}/menu-qr/scans`,
+                params: { window: '90d' }
+            })
+        );
+    });
+
+    it('omits the line (null) when the metric is not readable', async () => {
+        mockGetProtected.mockResolvedValue({
+            ok: false,
+            error: { status: 403, message: 'forbidden' }
+        } as never);
+
+        await expect(readRecentMenuQrScanCount({ venueId: LISTING_ID })).resolves.toBeNull();
     });
 });

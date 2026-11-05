@@ -43,13 +43,6 @@
             "spec": ".hoja/contexto.md:28-39"
         },
         {
-            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
-            "symbol": "protectedGetVenueSectionStatesRoute",
-            "count": 1,
-            "category": "editor",
-            "spec": ".hoja/contexto.md:28-39"
-        },
-        {
             "file": "apps/api/src/utils/public-listing-projector.ts",
             "symbol": "businessLines",
             "count": 1,
@@ -209,6 +202,48 @@
             "count": 4,
             "category": "editor",
             "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "packages/schemas/src/common/listing-completeness.ts",
+            "symbol": "resolveListingCompleteness",
+            "count": 2,
+            "category": "publish-gate",
+            "spec": ".hoja/notas.md:44"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "symbol": "hypothetical",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "symbol": "businessLines",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/web/src/lib/api/endpoints-protected.ts",
+            "symbol": "getListingSectionStates",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "businessLinesError",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "ListingEditor",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
         }
     ],
     "imports": [
@@ -255,6 +290,11 @@
         {
             "file": "packages/seed/src/example/venues.seed.ts",
             "category": "seed",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/schemas/src/entities/experience/experience.access.schema.ts",
+            "category": "response-projection",
             "spec": ".hoja/contexto.md:47-56"
         }
     ]

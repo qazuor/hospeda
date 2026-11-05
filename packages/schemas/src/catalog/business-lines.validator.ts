@@ -84,8 +84,17 @@ export function validateBusinessLines<V extends ListingVertical>({
 
 /**
  * Resolves every catalog option with its current selectable state and reason.
+ *
+ * `removable` answers a different question from `selectable`: not "may this
+ * line be picked?", but "may it be unpicked without leaving an invalid
+ * selection?". The owner editor blocks unchecking the last line, and any line
+ * whose removal would violate a catalog rule, instead of silently dropping a
+ * business line (which hides the sections it owns). The answer comes from
+ * {@link validateBusinessLines} over the selection minus that option, so the
+ * web never compares business-line values itself (G-FAC-03).
+ *
  * @param input - Vertical, listing type, current selection, and optional rule override.
- * @returns Catalog options marked selectable or paired with a blocking reason.
+ * @returns Catalog options marked selectable/removable or paired with blocking reasons.
  */
 export function resolveBusinessLineOptions<V extends ListingVertical>({
     vertical,
@@ -101,7 +110,9 @@ export function resolveBusinessLineOptions<V extends ListingVertical>({
     readonly value: BusinessLineValue<V>;
     readonly selectable: boolean;
     readonly selected: boolean;
+    readonly removable: boolean;
     readonly reason?: BusinessLineValidationReason;
+    readonly removeReason?: BusinessLineValidationReason;
 }[] {
     const typeRule = rules.typeRules[type as keyof typeof rules.typeRules];
     return BUSINESS_LINES[vertical].map(({ value }) => {
@@ -122,11 +133,17 @@ export function resolveBusinessLineOptions<V extends ListingVertical>({
             )
         )
             reason = 'EXCLUDED_PAIR';
+
+        const without = selected.filter((entry) => entry !== value);
+        const removal = validateBusinessLines({ vertical, type, businessLines: without, rules });
+
         return {
             value: value as BusinessLineValue<V>,
             selectable: reason === undefined,
             selected: selected.includes(value),
-            ...(reason ? { reason } : {})
+            removable: removal.ok,
+            ...(reason ? { reason } : {}),
+            ...(removal.ok ? {} : { removeReason: removal.reason })
         };
     });
 }

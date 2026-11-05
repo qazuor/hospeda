@@ -281,6 +281,12 @@
                     "lockedWithData_one": "Bloqueada por tu plan · {{count}} cargado (no se publica)",
                     "lockedWithData_other": "Bloqueada por tu plan · {{count}} cargados (no se publican)",
                     "lockedEmpty": "Bloqueada por tu plan"
+                },
+                "hidden": {
+                    "title": "Guardado y oculto por tus rubros",
+                    "intro": "Estas secciones no se muestran porque tus rubros actuales no las incluyen. Sus datos siguen guardados: si volvés a agregar el rubro, vuelven.",
+                    "count_one": "{{count}} cargado",
+                    "count_other": "{{count}} cargados"
                 }
             },
             "lockedNotice": {
@@ -315,6 +321,7 @@
                 "destinationId": "Ciudad / Destino",
                 "ownerId": "Propietario",
                 "type": "Categoría",
+                "businessLines": "Rubros",
                 "featuredImage": "Foto principal",
                 "contactInfo": "Un dato de contacto (teléfono o email)",
                 "openingHours": "Horarios de atención",

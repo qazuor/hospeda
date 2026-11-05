@@ -54,6 +54,8 @@ export interface ListingSectionRenderContext {
     readonly onToggleFeature: (id: string) => void;
     readonly onI18nChange: (values: ListingI18nValues) => void;
     readonly shouldOfferSlugRefresh: boolean;
+    /** UUID of the listing, forwarded to sections that read listing-scoped data. */
+    readonly listingId: string;
 }
 
 /**
@@ -77,6 +79,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
             errors={context.errors}
             onFieldChange={context.onFieldChange}
             shouldOfferSlugRefresh={context.shouldOfferSlugRefresh}
+            listingId={context.listingId}
         />
     ),
     meetingPoint: (context) =>
