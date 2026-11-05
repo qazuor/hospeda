@@ -196,6 +196,55 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
         );
         expect(bodies.every((body) => body.sections.length === 0)).toBe(true);
     });
+
+    it('does not call a file-only carta empty', async () => {
+        mockGet.mockResolvedValue({
+            ok: true as const,
+            data: {
+                sections: [],
+                file: { url: 'https://res.cloudinary.com/demo/carta.pdf', kind: 'pdf' as const }
+            }
+        } as never);
+
+        render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+            />
+        );
+
+        // The uploaded file IS data: showing it and "No data loaded" together
+        // was a contradiction, and hid the "Vaciar" the file justifies.
+        expect(await screen.findByText('Ver el PDF')).toBeInTheDocument();
+        expect(screen.queryByText('No hay datos cargados en esta sección.')).toBeNull();
+        expect(screen.getByTestId('venue-section-vaciar')).toBeInTheDocument();
+    });
+
+    it('does not call a link-only carta empty and shows the link read-only', async () => {
+        mockGet.mockResolvedValue({
+            ok: true as const,
+            data: { sections: [], file: null }
+        } as never);
+
+        render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+                menuUrl="https://menu.example/carta"
+            />
+        );
+
+        // `menuUrl` belongs to the `menu` section: the count adds it, so the
+        // view must show it and the empty state must not deny it.
+        expect(screen.getByRole('link', { name: 'Enlace al menú' })).toHaveAttribute(
+            'href',
+            'https://menu.example/carta'
+        );
+        expect(screen.queryByText('No hay datos cargados en esta sección.')).toBeNull();
+        expect(screen.getByTestId('venue-section-vaciar')).toBeInTheDocument();
+    });
 });
 
 describe('VenueDailySpecialsManager — a locked section is read-only and can be emptied (TEST:5.2:1)', () => {

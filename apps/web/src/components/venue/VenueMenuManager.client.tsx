@@ -864,6 +864,12 @@ export function VenueMenuManager({
     const safeFileHref = resolveSafeExternalUrl(file?.url);
     const safeMenuHref = resolveSafeExternalUrl(currentMenuUrl);
 
+    // The three things a carta owns (DEC-FAC-062) decide BOTH the empty state
+    // and whether "Vaciar" exists: dishes, the uploaded file, and the link.
+    // Deciding the empty state by `sections` alone called a file-only or
+    // link-only carta "No data", contradicting the link rendered right above.
+    const lockedHasData = sections.length > 0 || file !== null || currentMenuUrl !== null;
+
     return (
         <section
             className={styles.panel}
@@ -887,7 +893,7 @@ export function VenueMenuManager({
                     preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
                     preTrialMessageFallback="La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar los platos o subir una foto o un PDF del menú."
                     sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
-                    hasData={sections.length > 0 || file !== null}
+                    hasData={lockedHasData}
                     vaciar={vaciar}
                 >
                     {file ? (
@@ -926,10 +932,7 @@ export function VenueMenuManager({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    {t(
-                                        'listing.owner.editor.sections.menuUrl',
-                                        'Enlace al menú'
-                                    )}
+                                    {t('listing.owner.editor.sections.menuUrl', 'Enlace al menú')}
                                 </a>
                             ) : (
                                 <span className={styles.intro}>
@@ -942,14 +945,7 @@ export function VenueMenuManager({
                         </div>
                     ) : null}
 
-                    {sections.length === 0 ? (
-                        <p className={styles.intro}>
-                            {t(
-                                'venue.owner.editor.lockedSection.empty',
-                                'No hay datos cargados en esta sección.'
-                            )}
-                        </p>
-                    ) : (
+                    {lockedHasData ? (
                         sections.map((section, sectionIndex) => (
                             <div
                                 // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
@@ -1000,6 +996,13 @@ export function VenueMenuManager({
                                 ) : null}
                             </div>
                         ))
+                    ) : (
+                        <p className={styles.intro}>
+                            {t(
+                                'venue.owner.editor.lockedSection.empty',
+                                'No hay datos cargados en esta sección.'
+                            )}
+                        </p>
                     )}
                 </VenueSectionLockedPanel>
             ) : (
