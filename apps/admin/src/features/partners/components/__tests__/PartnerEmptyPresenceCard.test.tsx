@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
@@ -158,7 +158,14 @@ describe('PartnerEmptyPresenceCard', () => {
         setup();
         openDialog();
         const dialog = screen.getByTestId('partner-empty-presence-dialog');
-        expect(dialog).toHaveTextContent(partnerName);
+        expect(
+            within(dialog).getByRole('heading', { name: `Vaciar la presencia de ${partnerName}` })
+        ).toBeInTheDocument();
+        expect(
+            within(dialog).getByText(
+                `Contenido de ${partnerName}. Este contenido se borra y no vuelve.`
+            )
+        ).toBeInTheDocument();
         expect(dialog).toHaveTextContent('Este contenido se borra y no vuelve.');
         expect(dialog).toHaveTextContent('El Partner, su cobro y su postulación no se tocan.');
     });
