@@ -277,8 +277,15 @@
                     "faqs_other": "{{count}} preguntas",
                     "selected_one": "{{count}} seleccionado",
                     "selected_other": "{{count}} seleccionados",
-                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}",
+                    "lockedWithData_one": "Bloqueada por tu plan · {{count}} cargado (no se publica)",
+                    "lockedWithData_other": "Bloqueada por tu plan · {{count}} cargados (no se publican)",
+                    "lockedEmpty": "Bloqueada por tu plan"
                 }
+            },
+            "lockedNotice": {
+                "plan_one": "Tenés {{count}} cargado que no se publica: tu plan no incluye {{section}}.",
+                "plan_other": "Tenés {{count}} cargados que no se publican: tu plan no incluye {{section}}."
             },
             "amenities": {
                 "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar."

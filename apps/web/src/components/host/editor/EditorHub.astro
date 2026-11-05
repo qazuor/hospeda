@@ -76,6 +76,7 @@ const groups = registry.groups
 												'editor-hub__status',
 												{ 'editor-hub__status--warning': status.tone === 'warning' },
 												{ 'editor-hub__status--blocking': status.tone === 'blocking' },
+												{ 'editor-hub__status--locked': status.tone === 'locked' },
 											]}
 										>
 											{status.tone === 'blocking' && status.missingRequirementLabelKeys
@@ -177,6 +178,13 @@ const groups = registry.groups
 	.editor-hub__status--blocking {
 		color: var(--destructive);
 		font-weight: 600;
+	}
+
+	/* A locked section is stored but withheld by the plan (HOS-1854). Its own
+	   tone keeps it from reading as a warning to fix or as a publish blocker:
+	   the words say "no se publican", the colour is reinforcement. */
+	.editor-hub__status--locked {
+		color: var(--brand-primary);
 	}
 
 	.editor-hub__chevron {

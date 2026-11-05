@@ -43,12 +43,18 @@
  */
 
 import type { JSX } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
+import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import styles from './VenueDailySpecialsManager.module.css';
+import { VenueSectionLockedPanel, type VenueSectionState } from './VenueSectionLockedPanel.client';
+
+/** The entitlement the menú del día write requires. */
+const DAILY_SPECIALS_ENTITLEMENT = 'manage_venue_daily_special';
 
 /** One special, as held in form state. Ids are not carried — see the payload schema. */
 interface DailySpecialDraft {
@@ -78,6 +84,11 @@ export interface VenueDailySpecialsManagerProps {
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
+    /**
+     * The resolved state of this listing's `dailySpecials` section (HOS-1854).
+     * A locked section is read-only and shows its upsell on first render.
+     */
+    readonly sectionState?: VenueSectionState;
 }
 
 /** What the panel is doing right now. */
@@ -122,7 +133,8 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
 
 export function VenueDailySpecialsManager({
     listingId,
-    locale
+    locale,
+    sectionState = 'available'
 }: VenueDailySpecialsManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -130,6 +142,18 @@ export function VenueDailySpecialsManager({
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
+    /**
+     * HOS-1854. The plan gate is read for the proactive upsell's wording; the
+     * section state itself comes from the page, so this panel never has to
+     * wait for a 403 to know the section is locked.
+     */
+    const { gate: readGate } = useListingPlanGate({
+        vertical: 'venue',
+        entitlementKey: DAILY_SPECIALS_ENTITLEMENT
+    });
+    const isSectionLocked = sectionState === 'locked';
+    const lockedGate: Exclude<ListingPlanGate, 'open'> = readGate === 'open' ? 'plan' : readGate;
+    const planNoticeId = useId();
 
     const basePath = `/api/v1/protected/venues/${listingId}/daily-specials`;
 
@@ -143,11 +167,14 @@ export function VenueDailySpecialsManager({
     // for the reason the carta's editor gives: the specials are not part of the
     // listing payload, and adding them there would make every editor load pay
     // for a document most owners will not open.
+    //
+    // Protected read, same reason as `VenueMenuManager` (HOS-1854): without the
+    // session cookie the API answers 401 and a locked section renders empty.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<DailySpecialsEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<DailySpecialsEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }
@@ -246,6 +273,35 @@ export function VenueDailySpecialsManager({
         );
     }, [basePath, specials, t]);
 
+    /**
+     * HOS-1854. Empties a locked menú del día through the API's `delete`
+     * intent: an empty `specials` array classifies the write as a deletion
+     * (DEC-FAC-041), authorized even on a locked section.
+     */
+    const clearSpecials = useCallback(async (): Promise<boolean> => {
+        setState('saving');
+        setMessage(null);
+
+        const result = await apiClient.put<DailySpecialsEnvelope>({
+            path: basePath,
+            body: { specials: [] }
+        });
+        setState('idle');
+
+        if (!result.ok) {
+            setMessage(
+                t('venue.owner.editor.lockedSection.vaciarError', 'No se pudo vaciar la sección.')
+            );
+            return false;
+        }
+
+        setSpecials([]);
+        setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
+        return true;
+    }, [basePath, t]);
+
+    const vaciar = useSectionVaciar({ clear: clearSpecials });
+
     const busy = state === 'loading' || state === 'saving';
 
     return (
@@ -260,180 +316,269 @@ export function VenueDailySpecialsManager({
                 )}
             </p>
 
-            <div className={styles.specialsBlock}>
-                {specials.map((special, index) => {
-                    const isExpired = special.validUntil < today;
-                    const isScheduled = special.validFrom > today;
-
-                    return (
-                        <fieldset
-                            // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                            key={`special-${index}`}
-                            className={styles.specialCard}
-                        >
-                            <legend className={styles.srOnly}>
-                                {special.title ||
-                                    t(
-                                        'venue.owner.editor.dailySpecials.newSpecial',
-                                        'Nuevo plato del día'
-                                    )}
-                            </legend>
-
-                            <div className={styles.specialRow}>
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    value={special.title}
-                                    maxLength={150}
-                                    placeholder={t(
-                                        'venue.owner.editor.dailySpecials.titlePlaceholder',
-                                        'Milanesa a la napolitana con puré'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.dailySpecials.titleLabel',
-                                        'Plato'
-                                    )}
-                                    onChange={(event) =>
-                                        patchSpecial(index, { title: event.target.value })
-                                    }
-                                />
-                                <input
-                                    className={styles.priceInput}
-                                    type="number"
-                                    min={0}
-                                    step={1}
-                                    value={centsToPesosInputValue({ cents: special.priceCents })}
-                                    placeholder={t(
-                                        'venue.owner.editor.dailySpecials.pricePlaceholder',
-                                        'Precio'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.dailySpecials.priceLabel',
-                                        'Precio en pesos'
-                                    )}
-                                    onChange={(event) =>
-                                        patchSpecial(index, {
-                                            priceCents: parsePesosInputToCents({
-                                                raw: event.target.value
-                                            })
-                                        })
-                                    }
-                                />
-                                <button
-                                    type="button"
-                                    className={styles.iconButton}
-                                    disabled={index === 0}
-                                    onClick={() => moveSpecial(index, -1)}
-                                >
-                                    ↑
-                                    <span className={styles.srOnly}>
-                                        {t('venue.owner.editor.dailySpecials.moveUp', 'Subir')}
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.iconButton}
-                                    disabled={index === specials.length - 1}
-                                    onClick={() => moveSpecial(index, 1)}
-                                >
-                                    ↓
-                                    <span className={styles.srOnly}>
-                                        {t('venue.owner.editor.dailySpecials.moveDown', 'Bajar')}
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.dangerButton}
-                                    onClick={() => removeSpecial(index)}
-                                >
-                                    {t('venue.owner.editor.dailySpecials.remove', 'Quitar')}
-                                </button>
-                            </div>
-
-                            <div className={styles.specialRow}>
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    value={special.description}
-                                    maxLength={500}
-                                    placeholder={t(
-                                        'venue.owner.editor.dailySpecials.descriptionPlaceholder',
-                                        'Con guarnición y postre'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.dailySpecials.descriptionLabel',
-                                        'Detalle'
-                                    )}
-                                    onChange={(event) =>
-                                        patchSpecial(index, { description: event.target.value })
-                                    }
-                                />
-                            </div>
-
-                            <div className={styles.specialRow}>
-                                <label className={styles.dateLabel}>
-                                    {t('venue.owner.editor.dailySpecials.from', 'Desde')}
-                                    <input
-                                        className={styles.dateInput}
-                                        type="date"
-                                        value={special.validFrom}
-                                        onChange={(event) =>
-                                            patchSpecial(index, { validFrom: event.target.value })
-                                        }
-                                    />
-                                </label>
-                                <label className={styles.dateLabel}>
-                                    {t('venue.owner.editor.dailySpecials.until', 'Hasta')}
-                                    <input
-                                        className={styles.dateInput}
-                                        type="date"
-                                        value={special.validUntil}
-                                        onChange={(event) =>
-                                            patchSpecial(index, { validUntil: event.target.value })
-                                        }
-                                    />
-                                </label>
-                            </div>
-
-                            {isExpired && (
-                                <p className={styles.expiredNote}>
-                                    {t(
-                                        'venue.owner.editor.dailySpecials.expired',
-                                        'Ya venció — no se está mostrando.'
-                                    )}
-                                </p>
-                            )}
-                            {isScheduled && (
-                                <p className={styles.scheduledNote}>
-                                    {t(
-                                        'venue.owner.editor.dailySpecials.scheduled',
-                                        'Programado — todavía no se muestra.'
-                                    )}
-                                </p>
-                            )}
-                        </fieldset>
-                    );
-                })}
-
-                <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={addSpecial}
+            {isSectionLocked ? (
+                <VenueSectionLockedPanel
+                    id={planNoticeId}
+                    gate={lockedGate}
+                    locale={locale}
+                    messageKey="venue.owner.editor.dailySpecials.locked"
+                    messageFallback="El menú del día está disponible desde el plan Profesional."
+                    preTrialMessageKey="venue.owner.editor.dailySpecials.lockedPreTrial"
+                    preTrialMessageFallback="El menú del día se habilita cuando publiques tu ficha."
+                    sectionLabel={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
+                    hasData={specials.length > 0}
+                    vaciar={vaciar}
                 >
-                    {t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
-                </button>
-            </div>
+                    {specials.length === 0 ? (
+                        <p className={styles.intro}>
+                            {t(
+                                'venue.owner.editor.lockedSection.empty',
+                                'No hay datos cargados en esta sección.'
+                            )}
+                        </p>
+                    ) : (
+                        specials.map((special, index) => {
+                            const isExpired = special.validUntil < today;
+                            const isScheduled = special.validFrom > today;
 
-            <button
-                type="button"
-                className={styles.primaryButton}
-                disabled={busy || isLocked}
-                onClick={() => void save()}
-            >
-                {state === 'saving'
-                    ? t('venue.owner.editor.dailySpecials.saving', 'Guardando…')
-                    : t('venue.owner.editor.dailySpecials.save', 'Guardar menú del día')}
-            </button>
+                            return (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
+                                    key={`locked-special-${index}`}
+                                    className={styles.specialCard}
+                                >
+                                    <p className={styles.readOnlyName}>{special.title}</p>
+                                    {special.description ? (
+                                        <p className={styles.intro}>{special.description}</p>
+                                    ) : null}
+                                    <p className={styles.intro}>
+                                        {special.priceCents === null
+                                            ? t(
+                                                  'venue.owner.editor.dailySpecials.pricePlaceholder',
+                                                  'Precio'
+                                              )
+                                            : `$${centsToPesosInputValue({
+                                                  cents: special.priceCents
+                                              })}`}
+                                        {' · '}
+                                        {t('venue.owner.editor.dailySpecials.from', 'Desde')}{' '}
+                                        {special.validFrom}{' '}
+                                        {t('venue.owner.editor.dailySpecials.until', 'Hasta')}{' '}
+                                        {special.validUntil}
+                                    </p>
+                                    {isExpired && (
+                                        <p className={styles.expiredNote}>
+                                            {t(
+                                                'venue.owner.editor.dailySpecials.expired',
+                                                'Ya venció — no se está mostrando.'
+                                            )}
+                                        </p>
+                                    )}
+                                    {isScheduled && (
+                                        <p className={styles.scheduledNote}>
+                                            {t(
+                                                'venue.owner.editor.dailySpecials.scheduled',
+                                                'Programado — todavía no se muestra.'
+                                            )}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+                </VenueSectionLockedPanel>
+            ) : (
+                <>
+                    <div className={styles.specialsBlock}>
+                        {specials.map((special, index) => {
+                            const isExpired = special.validUntil < today;
+                            const isScheduled = special.validFrom > today;
+
+                            return (
+                                <fieldset
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                                    key={`special-${index}`}
+                                    className={styles.specialCard}
+                                >
+                                    <legend className={styles.srOnly}>
+                                        {special.title ||
+                                            t(
+                                                'venue.owner.editor.dailySpecials.newSpecial',
+                                                'Nuevo plato del día'
+                                            )}
+                                    </legend>
+
+                                    <div className={styles.specialRow}>
+                                        <input
+                                            className={styles.input}
+                                            type="text"
+                                            value={special.title}
+                                            maxLength={150}
+                                            placeholder={t(
+                                                'venue.owner.editor.dailySpecials.titlePlaceholder',
+                                                'Milanesa a la napolitana con puré'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.dailySpecials.titleLabel',
+                                                'Plato'
+                                            )}
+                                            onChange={(event) =>
+                                                patchSpecial(index, { title: event.target.value })
+                                            }
+                                        />
+                                        <input
+                                            className={styles.priceInput}
+                                            type="number"
+                                            min={0}
+                                            step={1}
+                                            value={centsToPesosInputValue({
+                                                cents: special.priceCents
+                                            })}
+                                            placeholder={t(
+                                                'venue.owner.editor.dailySpecials.pricePlaceholder',
+                                                'Precio'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.dailySpecials.priceLabel',
+                                                'Precio en pesos'
+                                            )}
+                                            onChange={(event) =>
+                                                patchSpecial(index, {
+                                                    priceCents: parsePesosInputToCents({
+                                                        raw: event.target.value
+                                                    })
+                                                })
+                                            }
+                                        />
+                                        <button
+                                            type="button"
+                                            className={styles.iconButton}
+                                            disabled={index === 0}
+                                            onClick={() => moveSpecial(index, -1)}
+                                        >
+                                            ↑
+                                            <span className={styles.srOnly}>
+                                                {t(
+                                                    'venue.owner.editor.dailySpecials.moveUp',
+                                                    'Subir'
+                                                )}
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.iconButton}
+                                            disabled={index === specials.length - 1}
+                                            onClick={() => moveSpecial(index, 1)}
+                                        >
+                                            ↓
+                                            <span className={styles.srOnly}>
+                                                {t(
+                                                    'venue.owner.editor.dailySpecials.moveDown',
+                                                    'Bajar'
+                                                )}
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.dangerButton}
+                                            onClick={() => removeSpecial(index)}
+                                        >
+                                            {t('venue.owner.editor.dailySpecials.remove', 'Quitar')}
+                                        </button>
+                                    </div>
+
+                                    <div className={styles.specialRow}>
+                                        <input
+                                            className={styles.input}
+                                            type="text"
+                                            value={special.description}
+                                            maxLength={500}
+                                            placeholder={t(
+                                                'venue.owner.editor.dailySpecials.descriptionPlaceholder',
+                                                'Con guarnición y postre'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.dailySpecials.descriptionLabel',
+                                                'Detalle'
+                                            )}
+                                            onChange={(event) =>
+                                                patchSpecial(index, {
+                                                    description: event.target.value
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className={styles.specialRow}>
+                                        <label className={styles.dateLabel}>
+                                            {t('venue.owner.editor.dailySpecials.from', 'Desde')}
+                                            <input
+                                                className={styles.dateInput}
+                                                type="date"
+                                                value={special.validFrom}
+                                                onChange={(event) =>
+                                                    patchSpecial(index, {
+                                                        validFrom: event.target.value
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                        <label className={styles.dateLabel}>
+                                            {t('venue.owner.editor.dailySpecials.until', 'Hasta')}
+                                            <input
+                                                className={styles.dateInput}
+                                                type="date"
+                                                value={special.validUntil}
+                                                onChange={(event) =>
+                                                    patchSpecial(index, {
+                                                        validUntil: event.target.value
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {isExpired && (
+                                        <p className={styles.expiredNote}>
+                                            {t(
+                                                'venue.owner.editor.dailySpecials.expired',
+                                                'Ya venció — no se está mostrando.'
+                                            )}
+                                        </p>
+                                    )}
+                                    {isScheduled && (
+                                        <p className={styles.scheduledNote}>
+                                            {t(
+                                                'venue.owner.editor.dailySpecials.scheduled',
+                                                'Programado — todavía no se muestra.'
+                                            )}
+                                        </p>
+                                    )}
+                                </fieldset>
+                            );
+                        })}
+
+                        <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={addSpecial}
+                        >
+                            {t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        className={styles.primaryButton}
+                        disabled={busy || isLocked}
+                        onClick={() => void save()}
+                    >
+                        {state === 'saving'
+                            ? t('venue.owner.editor.dailySpecials.saving', 'Guardando…')
+                            : t('venue.owner.editor.dailySpecials.save', 'Guardar menú del día')}
+                    </button>
+                </>
+            )}
 
             {message && <p className={styles.message}>{message}</p>}
         </section>

@@ -84,6 +84,7 @@
 import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
+import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -93,6 +94,7 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './VenueMenuManager.module.css';
 import { VenueMenuPlanNotice } from './VenueMenuPlanNotice.client';
 import { VenueMenuTranslationFields } from './VenueMenuTranslationFields.client';
+import { VenueSectionLockedPanel, type VenueSectionState } from './VenueSectionLockedPanel.client';
 
 /** What the API returns for the uploaded photo/PDF. */
 interface MenuFile {
@@ -172,6 +174,22 @@ export interface VenueMenuManagerProps {
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
+    /**
+     * The resolved state of this listing's `menu` section (HOS-1854).
+     *
+     * `locked` puts the panel in its read-only, proactive state: the upsell is
+     * rendered on the first paint instead of appearing after a 403, the data is
+     * shown without editable controls, and emptying the section is the one
+     * write that stays available (DEC-FAC-025 / DEC-FAC-041).
+     */
+    readonly sectionState?: VenueSectionState;
+    /**
+     * The venue's external menu link (HOS-1854). `menuUrl` belongs to the
+     * `menu` section, so on a `locked` carta it is one more stored datum: the
+     * page shows it read-only and "Vaciar" clears it with a `PATCH` of the
+     * listing whose body carries only `{ menuUrl: null }`.
+     */
+    readonly menuUrl?: string | null;
 }
 
 const EMPTY_ITEM: MenuItemDraft = {
@@ -282,11 +300,17 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
     return next;
 }
 
-export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): JSX.Element {
+export function VenueMenuManager({
+    listingId,
+    locale,
+    sectionState = 'available',
+    menuUrl = null
+}: VenueMenuManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const [sections, setSections] = useState<MenuSectionDraft[]>([]);
     const [file, setFile] = useState<MenuFile | null>(null);
+    const [currentMenuUrl, setCurrentMenuUrl] = useState<string | null>(menuUrl);
     /**
      * HOS-1763. The name of the file chosen in THIS session. The input is
      * cleared after every pick, so the browser can never show it — and the
@@ -321,6 +345,14 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
     const [refusedGate, setRefusedGate] = useState<Exclude<ListingPlanGate, 'open'> | null>(null);
     const menuGate: ListingPlanGate = refusedGate ?? readGate;
     const isMenuGated = menuGate !== 'open';
+    /**
+     * HOS-1854. Proactive lock: the page already knows the section's resolved
+     * state, so this panel does not spend a 403 to discover it. A pending or
+     * failed entitlement read shows the `plan` wording until it settles; the
+     * pre-trial read replaces it with the publish-to-unlock sentence.
+     */
+    const isSectionLocked = sectionState === 'locked';
+    const lockedGate: Exclude<ListingPlanGate, 'open'> = menuGate === 'open' ? 'plan' : menuGate;
     const planNoticeId = useId();
 
     const basePath = `/api/v1/protected/venues/${listingId}/menu`;
@@ -330,11 +362,19 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
     // the carta is not part of the listing payload the editor is built from, and
     // adding it there would make every editor load pay for a nested document
     // most owners will not open.
+    //
+    // The read is PROTECTED (HOS-1854). The browser origin and the API origin
+    // are different ports — and in production, different hosts — so the default
+    // `credentials: 'same-origin'` drops the session cookie on this request and
+    // the API answers 401. The SSR count above uses `getProtected` with the raw
+    // cookie for exactly the same reason: one anonymous read here rendered the
+    // locked notice ("N cargados") next to "No hay datos cargados" and left the
+    // stored dishes invisible in `locked` and in pre-trial.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<MenuEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<MenuEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }
@@ -731,6 +771,82 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
         );
     }, [basePath, readGate, t]);
 
+    /**
+     * HOS-1854. Empties a locked carta through the API's `delete` intent: an
+     * empty `sections` array classifies the write as a deletion (DEC-FAC-041),
+     * which is authorized even on a locked section. The uploaded file is a
+     * second document with its own delete route, so it is cleared too when
+     * present; the external link is a field of the listing and clears through a
+     * one-key PATCH, which HOS-2038 keeps outside the section declaration. This
+     * is deliberately NOT "Guardar carta" with a filtered list: that path
+     * re-creates every dish and is a `write`.
+     */
+    const clearMenu = useCallback(async (): Promise<boolean> => {
+        setState('saving');
+        setMessage(null);
+
+        const result = await apiClient.put<MenuEnvelope>({
+            path: basePath,
+            body: { sections: [] }
+        });
+
+        if (!result.ok) {
+            setState('idle');
+            setMessage(
+                t('venue.owner.editor.lockedSection.vaciarError', 'No se pudo vaciar la sección.')
+            );
+            return false;
+        }
+
+        if (file) {
+            const removed = await apiClient.delete<{ success: boolean }>({
+                path: `${basePath}-file`
+            });
+            if (!removed.ok) {
+                setState('idle');
+                setMessage(
+                    t(
+                        'venue.owner.editor.lockedSection.vaciarError',
+                        'No se pudo vaciar la sección.'
+                    )
+                );
+                return false;
+            }
+        }
+
+        // `menuUrl` is not part of the carta document: it lives on the listing
+        // itself. HOS-2038 measured that a PATCH whose body only clears fields
+        // declares no section, so `{ menuUrl: null }` is authorized on a locked
+        // `menu` section. The body carries that ONE key — sending the whole form
+        // would declare `write` and answer 403.
+        if (currentMenuUrl) {
+            const cleared = await apiClient.patch<unknown>({
+                path: `/api/v1/protected/venues/${listingId}`,
+                body: { menuUrl: null }
+            });
+            if (!cleared.ok) {
+                setState('idle');
+                setMessage(
+                    t(
+                        'venue.owner.editor.lockedSection.vaciarError',
+                        'No se pudo vaciar la sección.'
+                    )
+                );
+                return false;
+            }
+        }
+
+        setSections([]);
+        setFile(null);
+        setCurrentMenuUrl(null);
+        setPickedFileName(null);
+        setState('idle');
+        setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
+        return true;
+    }, [basePath, currentMenuUrl, file, listingId, t]);
+
+    const vaciar = useSectionVaciar({ clear: clearMenu });
+
     const busy = state !== 'idle';
 
     /*
@@ -754,6 +870,13 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
      * `undefined` means the link is DROPPED, never rendered with the raw value.
      */
     const safeFileHref = resolveSafeExternalUrl(file?.url);
+    const safeMenuHref = resolveSafeExternalUrl(currentMenuUrl);
+
+    // The three things a carta owns (DEC-FAC-062) decide BOTH the empty state
+    // and whether "Vaciar" exists: dishes, the uploaded file, and the link.
+    // Deciding the empty state by `sections` alone called a file-only or
+    // link-only carta "No data", contradicting the link rendered right above.
+    const lockedHasData = sections.length > 0 || file !== null || currentMenuUrl !== null;
 
     return (
         <section
@@ -768,444 +891,598 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 )}
             </p>
 
-            {isMenuGated ? (
-                <VenueMenuPlanNotice
+            {isSectionLocked ? (
+                <VenueSectionLockedPanel
                     id={planNoticeId}
-                    gate={menuGate}
+                    gate={lockedGate}
                     locale={locale}
-                />
-            ) : null}
-
-            {/* ── The uploaded photo / PDF ──────────────────────────────── */}
-            <div className={styles.fileBlock}>
-                <h3 className={styles.subheading}>
-                    {t('venue.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
-                </h3>
-
-                {file ? (
-                    <div className={styles.fileRow}>
-                        {/*
-                         * No link when the scheme is not http(s) — and the
-                         * Remove button below stays, deliberately. A row whose
-                         * URL cannot be linked is exactly the row an owner most
-                         * needs to be able to delete.
-                         */}
-                        {safeFileHref ? (
-                            <a
-                                className={styles.fileLink}
-                                href={safeFileHref}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {file.kind === 'pdf'
-                                    ? t('venue.owner.editor.menuManager.filePdf', 'Ver el PDF')
-                                    : t('venue.owner.editor.menuManager.fileImage', 'Ver la foto')}
-                            </a>
-                        ) : (
-                            <span className={styles.intro}>
-                                {t(
-                                    'venue.owner.editor.menuManager.fileUnavailable',
-                                    'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
-                                )}
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            className={styles.dangerButton}
-                            disabled={busy || isMenuGated}
-                            aria-describedby={isMenuGated ? planNoticeId : undefined}
-                            onClick={() => {
-                                void deleteFile();
-                            }}
-                        >
-                            {t('venue.owner.editor.menuManager.removeFile', 'Eliminar')}
-                        </button>
-                    </div>
-                ) : null}
-
-                <label className={styles.uploadLabel}>
-                    <span className={styles.uploadButton}>
-                        {file
-                            ? t(
-                                  'venue.owner.editor.menuManager.replaceFile',
-                                  'Reemplazar el archivo'
-                              )
-                            : t('venue.owner.editor.menuManager.addFile', 'Subir foto o PDF')}
-                    </span>
-                    <input
-                        type="file"
-                        accept={ACCEPTED_MENU_FILE_TYPES}
-                        disabled={busy || isMenuGated}
-                        aria-describedby={isMenuGated ? planNoticeId : undefined}
-                        onChange={(event) => {
-                            const selected = event.target.files?.[0];
-                            // The input is cleared so choosing the SAME file
-                            // again still fires `change`; without it a failed
-                            // upload could not be retried.
-                            event.target.value = '';
-                            if (selected) {
-                                setPickedFileName(selected.name);
-                                void uploadFile(selected);
-                            }
-                        }}
-                    />
-                    <span
-                        className={styles.intro}
-                        aria-live="polite"
-                    >
-                        {pickedFileName ??
-                            t(
-                                'venue.owner.editor.menuManager.noFileChosen',
-                                'Ningún archivo elegido'
+                    messageKey="venue.owner.editor.menuManager.locked"
+                    messageFallback="Cargar la carta y subir una foto o un PDF del menú está disponible desde el plan Profesional."
+                    preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
+                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar los platos o subir una foto o un PDF del menú."
+                    sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
+                    hasData={lockedHasData}
+                    vaciar={vaciar}
+                >
+                    {file ? (
+                        <div className={styles.fileRow}>
+                            {safeFileHref ? (
+                                <a
+                                    className={styles.fileLink}
+                                    href={safeFileHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {file.kind === 'pdf'
+                                        ? t('venue.owner.editor.menuManager.filePdf', 'Ver el PDF')
+                                        : t(
+                                              'venue.owner.editor.menuManager.fileImage',
+                                              'Ver la foto'
+                                          )}
+                                </a>
+                            ) : (
+                                <span className={styles.intro}>
+                                    {t(
+                                        'venue.owner.editor.lockedSection.fileUnavailable',
+                                        'No se puede abrir este archivo.'
+                                    )}
+                                </span>
                             )}
-                    </span>
-                </label>
-            </div>
-
-            {/* ── The structured carta ──────────────────────────────────── */}
-            <div className={styles.sectionsBlock}>
-                <h3 className={styles.subheading}>
-                    {t('venue.owner.editor.menuManager.sectionsTitle', 'Platos por sección')}
-                </h3>
-
-                {sections.map((section, sectionIndex) => (
-                    <fieldset
-                        // Index-keyed on purpose: a draft row has no id, and the
-                        // whole list is re-submitted as a document.
-                        // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                        key={`section-${sectionIndex}`}
-                        className={styles.sectionCard}
-                    >
-                        <legend className={styles.srOnly}>
-                            {section.name ||
-                                t('venue.owner.editor.menuManager.newSection', 'Nueva sección')}
-                        </legend>
-
-                        <div className={styles.sectionHead}>
-                            <input
-                                className={styles.input}
-                                type="text"
-                                value={section.name}
-                                placeholder={t(
-                                    'venue.owner.editor.menuManager.sectionNamePlaceholder',
-                                    'Entradas, Principales, Postres…'
-                                )}
-                                aria-label={t(
-                                    'venue.owner.editor.menuManager.sectionName',
-                                    'Nombre de la sección'
-                                )}
-                                onChange={(event) => {
-                                    patchSection(sectionIndex, { name: event.target.value });
-                                }}
-                            />
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                aria-label={t(
-                                    'venue.owner.editor.menuManager.moveSectionUp',
-                                    'Subir la sección'
-                                )}
-                                onClick={() => {
-                                    moveSection(sectionIndex, -1);
-                                }}
-                            >
-                                ↑
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.iconButton}
-                                aria-label={t(
-                                    'venue.owner.editor.menuManager.moveSectionDown',
-                                    'Bajar la sección'
-                                )}
-                                onClick={() => {
-                                    moveSection(sectionIndex, 1);
-                                }}
-                            >
-                                ↓
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.dangerButton}
-                                onClick={() => {
-                                    removeSection(sectionIndex);
-                                }}
-                            >
-                                {t('venue.owner.editor.menuManager.removeSection', 'Quitar')}
-                            </button>
                         </div>
+                    ) : null}
 
-                        {/*
-                         * HOS-1043. Name-only: this editor has no field for a
-                         * section's `description` at all (see the load/save
-                         * mapping above), so there is nothing for
-                         * `hasDescription` to translate here.
-                         */}
-                        <VenueMenuTranslationFields
-                            nameEn={section.nameEn}
-                            namePt={section.namePt}
-                            descriptionEn={section.descriptionEn}
-                            descriptionPt={section.descriptionPt}
-                            hasDescription={false}
-                            locked={isTranslationLocked}
-                            locale={locale}
-                            onChange={(patch) => {
-                                patchSection(sectionIndex, patch);
-                            }}
-                        />
+                    {currentMenuUrl ? (
+                        <div className={styles.fileRow}>
+                            {safeMenuHref ? (
+                                <a
+                                    className={styles.fileLink}
+                                    href={safeMenuHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {t('listing.owner.editor.sections.menuUrl', 'Enlace al menú')}
+                                </a>
+                            ) : (
+                                <span className={styles.intro}>
+                                    {t(
+                                        'venue.owner.editor.lockedSection.unavailable',
+                                        'No disponible'
+                                    )}
+                                </span>
+                            )}
+                        </div>
+                    ) : null}
 
-                        {section.items.map((item, itemIndex) => (
+                    {lockedHasData ? (
+                        sections.map((section, sectionIndex) => (
                             <div
                                 // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                                key={`item-${sectionIndex}-${itemIndex}`}
-                                className={styles.itemRow}
+                                key={`locked-section-${sectionIndex}`}
+                                className={styles.sectionCard}
                             >
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    value={item.name}
-                                    placeholder={t(
-                                        'venue.owner.editor.menuManager.itemNamePlaceholder',
-                                        'Nombre del plato'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.menuManager.itemName',
-                                        'Nombre del plato'
-                                    )}
-                                    onChange={(event) => {
-                                        patchItem(sectionIndex, itemIndex, {
-                                            name: event.target.value
-                                        });
-                                    }}
-                                />
-                                <input
-                                    className={styles.input}
-                                    type="text"
-                                    value={item.description}
-                                    placeholder={t(
-                                        'venue.owner.editor.menuManager.itemDescriptionPlaceholder',
-                                        'Ingredientes, porción…'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.menuManager.itemDescription',
-                                        'Descripción del plato'
-                                    )}
-                                    onChange={(event) => {
-                                        patchItem(sectionIndex, itemIndex, {
-                                            description: event.target.value
-                                        });
-                                    }}
-                                />
-                                <VenueMenuTranslationFields
-                                    nameEn={item.nameEn}
-                                    namePt={item.namePt}
-                                    descriptionEn={item.descriptionEn}
-                                    descriptionPt={item.descriptionPt}
-                                    hasDescription={true}
-                                    locked={isTranslationLocked}
-                                    locale={locale}
-                                    onChange={(patch) => {
-                                        patchItem(sectionIndex, itemIndex, patch);
-                                    }}
-                                />
+                                <h3 className={styles.subheading}>{section.name}</h3>
+                                {section.description ? (
+                                    <p className={styles.intro}>{section.description}</p>
+                                ) : null}
+                                {section.items.length > 0 ? (
+                                    <ul className={styles.readOnlyList}>
+                                        {section.items.map((item, itemIndex) => (
+                                            <li
+                                                // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                                                key={`locked-item-${sectionIndex}-${itemIndex}`}
+                                                className={styles.readOnlyItem}
+                                            >
+                                                <span className={styles.readOnlyName}>
+                                                    {item.name}
+                                                </span>
+                                                {item.description ? (
+                                                    <span className={styles.readOnlyDescription}>
+                                                        {item.description}
+                                                    </span>
+                                                ) : null}
+                                                <span className={styles.readOnlyPrice}>
+                                                    {item.priceCents === null
+                                                        ? t(
+                                                              'venue.owner.editor.menuManager.itemPricePlaceholder',
+                                                              'A consultar'
+                                                          )
+                                                        : `$${centsToPesosInputValue({
+                                                              cents: item.priceCents
+                                                          })}`}
+                                                </span>
+                                                {item.isAvailable ? null : (
+                                                    <span className={styles.readOnlyNote}>
+                                                        {t(
+                                                            'venue.owner.editor.lockedSection.unavailable',
+                                                            'No disponible'
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : null}
+                            </div>
+                        ))
+                    ) : (
+                        <p className={styles.intro}>
+                            {t(
+                                'venue.owner.editor.lockedSection.empty',
+                                'No hay datos cargados en esta sección.'
+                            )}
+                        </p>
+                    )}
+                </VenueSectionLockedPanel>
+            ) : (
+                <>
+                    {isMenuGated ? (
+                        <VenueMenuPlanNotice
+                            id={planNoticeId}
+                            gate={menuGate}
+                            locale={locale}
+                        />
+                    ) : null}
+
+                    {/* ── The uploaded photo / PDF ──────────────────────────────── */}
+                    <div className={styles.fileBlock}>
+                        <h3 className={styles.subheading}>
+                            {t('venue.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
+                        </h3>
+
+                        {file ? (
+                            <div className={styles.fileRow}>
                                 {/*
-                                 * The owner types PESOS; the state is CENTAVOS,
-                                 * because that is what the column stores. Both
-                                 * directions come from `@/lib/listing/price-units`
-                                 * — a display that divides without an input that
-                                 * multiplies would multiply the price by 100 on
-                                 * every save (HOS-809).
+                                 * No link when the scheme is not http(s) — and the
+                                 * Remove button below stays, deliberately. A row whose
+                                 * URL cannot be linked is exactly the row an owner most
+                                 * needs to be able to delete.
                                  */}
-                                <input
-                                    className={styles.priceInput}
-                                    type="number"
-                                    min={0}
-                                    step={1}
-                                    value={centsToPesosInputValue({ cents: item.priceCents })}
-                                    placeholder={t(
-                                        'venue.owner.editor.menuManager.itemPricePlaceholder',
-                                        'A consultar'
-                                    )}
-                                    aria-label={t(
-                                        'venue.owner.editor.menuManager.itemPrice',
-                                        'Precio del plato'
-                                    )}
-                                    onChange={(event) => {
-                                        patchItem(sectionIndex, itemIndex, {
-                                            priceCents: parsePesosInputToCents({
-                                                raw: event.target.value
-                                            })
-                                        });
-                                    }}
-                                />
-                                <label className={styles.availableLabel}>
-                                    <input
-                                        type="checkbox"
-                                        checked={item.isAvailable}
-                                        onChange={(event) => {
-                                            patchItem(sectionIndex, itemIndex, {
-                                                isAvailable: event.target.checked
-                                            });
-                                        }}
-                                    />
-                                    {t(
-                                        'venue.owner.editor.menuManager.itemAvailable',
-                                        'Disponible'
-                                    )}
-                                </label>
+                                {safeFileHref ? (
+                                    <a
+                                        className={styles.fileLink}
+                                        href={safeFileHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {file.kind === 'pdf'
+                                            ? t(
+                                                  'venue.owner.editor.menuManager.filePdf',
+                                                  'Ver el PDF'
+                                              )
+                                            : t(
+                                                  'venue.owner.editor.menuManager.fileImage',
+                                                  'Ver la foto'
+                                              )}
+                                    </a>
+                                ) : (
+                                    <span className={styles.intro}>
+                                        {t(
+                                            'venue.owner.editor.menuManager.fileUnavailable',
+                                            'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
+                                        )}
+                                    </span>
+                                )}
                                 <button
                                     type="button"
                                     className={styles.dangerButton}
+                                    disabled={busy || isMenuGated}
+                                    aria-describedby={isMenuGated ? planNoticeId : undefined}
                                     onClick={() => {
-                                        removeItem(sectionIndex, itemIndex);
+                                        void deleteFile();
                                     }}
                                 >
-                                    {t('venue.owner.editor.menuManager.removeItem', 'Quitar')}
+                                    {t('venue.owner.editor.menuManager.removeFile', 'Eliminar')}
                                 </button>
+                            </div>
+                        ) : null}
+
+                        <label className={styles.uploadLabel}>
+                            <span className={styles.uploadButton}>
+                                {file
+                                    ? t(
+                                          'venue.owner.editor.menuManager.replaceFile',
+                                          'Reemplazar el archivo'
+                                      )
+                                    : t(
+                                          'venue.owner.editor.menuManager.addFile',
+                                          'Subir foto o PDF'
+                                      )}
+                            </span>
+                            <input
+                                type="file"
+                                accept={ACCEPTED_MENU_FILE_TYPES}
+                                disabled={busy || isMenuGated}
+                                aria-describedby={isMenuGated ? planNoticeId : undefined}
+                                onChange={(event) => {
+                                    const selected = event.target.files?.[0];
+                                    // The input is cleared so choosing the SAME file
+                                    // again still fires `change`; without it a failed
+                                    // upload could not be retried.
+                                    event.target.value = '';
+                                    if (selected) {
+                                        setPickedFileName(selected.name);
+                                        void uploadFile(selected);
+                                    }
+                                }}
+                            />
+                            <span
+                                className={styles.intro}
+                                aria-live="polite"
+                            >
+                                {pickedFileName ??
+                                    t(
+                                        'venue.owner.editor.menuManager.noFileChosen',
+                                        'Ningún archivo elegido'
+                                    )}
+                            </span>
+                        </label>
+                    </div>
+
+                    {/* ── The structured carta ──────────────────────────────────── */}
+                    <div className={styles.sectionsBlock}>
+                        <h3 className={styles.subheading}>
+                            {t(
+                                'venue.owner.editor.menuManager.sectionsTitle',
+                                'Platos por sección'
+                            )}
+                        </h3>
+
+                        {sections.map((section, sectionIndex) => (
+                            <fieldset
+                                // Index-keyed on purpose: a draft row has no id, and the
+                                // whole list is re-submitted as a document.
+                                // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                                key={`section-${sectionIndex}`}
+                                className={styles.sectionCard}
+                            >
+                                <legend className={styles.srOnly}>
+                                    {section.name ||
+                                        t(
+                                            'venue.owner.editor.menuManager.newSection',
+                                            'Nueva sección'
+                                        )}
+                                </legend>
+
+                                <div className={styles.sectionHead}>
+                                    <input
+                                        className={styles.input}
+                                        type="text"
+                                        value={section.name}
+                                        placeholder={t(
+                                            'venue.owner.editor.menuManager.sectionNamePlaceholder',
+                                            'Entradas, Principales, Postres…'
+                                        )}
+                                        aria-label={t(
+                                            'venue.owner.editor.menuManager.sectionName',
+                                            'Nombre de la sección'
+                                        )}
+                                        onChange={(event) => {
+                                            patchSection(sectionIndex, {
+                                                name: event.target.value
+                                            });
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.iconButton}
+                                        aria-label={t(
+                                            'venue.owner.editor.menuManager.moveSectionUp',
+                                            'Subir la sección'
+                                        )}
+                                        onClick={() => {
+                                            moveSection(sectionIndex, -1);
+                                        }}
+                                    >
+                                        ↑
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.iconButton}
+                                        aria-label={t(
+                                            'venue.owner.editor.menuManager.moveSectionDown',
+                                            'Bajar la sección'
+                                        )}
+                                        onClick={() => {
+                                            moveSection(sectionIndex, 1);
+                                        }}
+                                    >
+                                        ↓
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.dangerButton}
+                                        onClick={() => {
+                                            removeSection(sectionIndex);
+                                        }}
+                                    >
+                                        {t(
+                                            'venue.owner.editor.menuManager.removeSection',
+                                            'Quitar'
+                                        )}
+                                    </button>
+                                </div>
 
                                 {/*
-                                 * The photo (HOS-1045), on the dish's OWN row —
-                                 * that placement is the issue, not a detail.
-                                 * `safePhotoHref` is not needed for the preview
-                                 * because the value came from our own upload
-                                 * route in this same session; the PUBLIC page
-                                 * sanitises it anyway, since a row can have been
-                                 * written by something else.
+                                 * HOS-1043. Name-only: this editor has no field for a
+                                 * section's `description` at all (see the load/save
+                                 * mapping above), so there is nothing for
+                                 * `hasDescription` to translate here.
                                  */}
-                                <div className={styles.itemPhotoRow}>
-                                    {item.photoUrl ? (
-                                        <img
-                                            className={styles.itemPhotoThumb}
-                                            src={item.photoUrl}
-                                            alt={
-                                                item.photoAlt ||
-                                                item.name ||
-                                                t(
-                                                    'venue.owner.editor.menuManager.photoPreview',
-                                                    'Foto del plato'
-                                                )
-                                            }
-                                        />
-                                    ) : null}
+                                <VenueMenuTranslationFields
+                                    nameEn={section.nameEn}
+                                    namePt={section.namePt}
+                                    descriptionEn={section.descriptionEn}
+                                    descriptionPt={section.descriptionPt}
+                                    hasDescription={false}
+                                    locked={isTranslationLocked}
+                                    locale={locale}
+                                    onChange={(patch) => {
+                                        patchSection(sectionIndex, patch);
+                                    }}
+                                />
 
-                                    <label className={styles.itemPhotoLabel}>
-                                        <span>
-                                            {item.photoUrl
-                                                ? t(
-                                                      'venue.owner.editor.menuManager.replacePhoto',
-                                                      'Cambiar la foto'
-                                                  )
-                                                : t(
-                                                      'venue.owner.editor.menuManager.addPhoto',
-                                                      'Agregar foto'
-                                                  )}
-                                        </span>
+                                {section.items.map((item, itemIndex) => (
+                                    <div
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                                        key={`item-${sectionIndex}-${itemIndex}`}
+                                        className={styles.itemRow}
+                                    >
                                         <input
-                                            type="file"
-                                            accept={ACCEPTED_ITEM_PHOTO_TYPES}
-                                            disabled={busy || isPhotoLocked}
+                                            className={styles.input}
+                                            type="text"
+                                            value={item.name}
+                                            placeholder={t(
+                                                'venue.owner.editor.menuManager.itemNamePlaceholder',
+                                                'Nombre del plato'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.menuManager.itemName',
+                                                'Nombre del plato'
+                                            )}
                                             onChange={(event) => {
-                                                const selected = event.target.files?.[0];
-                                                // Cleared so choosing the SAME
-                                                // file again still fires
-                                                // `change`; without it a failed
-                                                // upload could not be retried.
-                                                event.target.value = '';
-                                                if (selected) {
-                                                    void uploadItemPhoto(
-                                                        sectionIndex,
-                                                        itemIndex,
-                                                        selected
-                                                    );
-                                                }
+                                                patchItem(sectionIndex, itemIndex, {
+                                                    name: event.target.value
+                                                });
                                             }}
                                         />
-                                    </label>
-
-                                    {item.photoUrl ? (
-                                        <>
+                                        <input
+                                            className={styles.input}
+                                            type="text"
+                                            value={item.description}
+                                            placeholder={t(
+                                                'venue.owner.editor.menuManager.itemDescriptionPlaceholder',
+                                                'Ingredientes, porción…'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.menuManager.itemDescription',
+                                                'Descripción del plato'
+                                            )}
+                                            onChange={(event) => {
+                                                patchItem(sectionIndex, itemIndex, {
+                                                    description: event.target.value
+                                                });
+                                            }}
+                                        />
+                                        <VenueMenuTranslationFields
+                                            nameEn={item.nameEn}
+                                            namePt={item.namePt}
+                                            descriptionEn={item.descriptionEn}
+                                            descriptionPt={item.descriptionPt}
+                                            hasDescription={true}
+                                            locked={isTranslationLocked}
+                                            locale={locale}
+                                            onChange={(patch) => {
+                                                patchItem(sectionIndex, itemIndex, patch);
+                                            }}
+                                        />
+                                        {/*
+                                         * The owner types PESOS; the state is CENTAVOS,
+                                         * because that is what the column stores. Both
+                                         * directions come from `@/lib/listing/price-units`
+                                         * — a display that divides without an input that
+                                         * multiplies would multiply the price by 100 on
+                                         * every save (HOS-809).
+                                         */}
+                                        <input
+                                            className={styles.priceInput}
+                                            type="number"
+                                            min={0}
+                                            step={1}
+                                            value={centsToPesosInputValue({
+                                                cents: item.priceCents
+                                            })}
+                                            placeholder={t(
+                                                'venue.owner.editor.menuManager.itemPricePlaceholder',
+                                                'A consultar'
+                                            )}
+                                            aria-label={t(
+                                                'venue.owner.editor.menuManager.itemPrice',
+                                                'Precio del plato'
+                                            )}
+                                            onChange={(event) => {
+                                                patchItem(sectionIndex, itemIndex, {
+                                                    priceCents: parsePesosInputToCents({
+                                                        raw: event.target.value
+                                                    })
+                                                });
+                                            }}
+                                        />
+                                        <label className={styles.availableLabel}>
                                             <input
-                                                className={styles.input}
-                                                type="text"
-                                                value={item.photoAlt ?? ''}
-                                                placeholder={t(
-                                                    'venue.owner.editor.menuManager.photoAltPlaceholder',
-                                                    'Describí la foto (opcional)'
-                                                )}
-                                                aria-label={t(
-                                                    'venue.owner.editor.menuManager.photoAlt',
-                                                    'Texto alternativo de la foto'
-                                                )}
+                                                type="checkbox"
+                                                checked={item.isAvailable}
                                                 onChange={(event) => {
                                                     patchItem(sectionIndex, itemIndex, {
-                                                        photoAlt: event.target.value || null
+                                                        isAvailable: event.target.checked
                                                     });
                                                 }}
                                             />
-                                            {/*
-                                             * Stays enabled while
-                                             * `isPhotoLocked`: removing the
-                                             * photo is the way OUT of that
-                                             * state, so it is the one control
-                                             * the lock must not take away.
-                                             */}
-                                            <button
-                                                type="button"
-                                                className={styles.dangerButton}
-                                                onClick={() => {
-                                                    removeItemPhoto(sectionIndex, itemIndex);
-                                                }}
-                                            >
-                                                {t(
-                                                    'venue.owner.editor.menuManager.removePhoto',
-                                                    'Quitar la foto'
-                                                )}
-                                            </button>
-                                        </>
-                                    ) : null}
-                                </div>
-                            </div>
+                                            {t(
+                                                'venue.owner.editor.menuManager.itemAvailable',
+                                                'Disponible'
+                                            )}
+                                        </label>
+                                        <button
+                                            type="button"
+                                            className={styles.dangerButton}
+                                            onClick={() => {
+                                                removeItem(sectionIndex, itemIndex);
+                                            }}
+                                        >
+                                            {t(
+                                                'venue.owner.editor.menuManager.removeItem',
+                                                'Quitar'
+                                            )}
+                                        </button>
+
+                                        {/*
+                                         * The photo (HOS-1045), on the dish's OWN row —
+                                         * that placement is the issue, not a detail.
+                                         * `safePhotoHref` is not needed for the preview
+                                         * because the value came from our own upload
+                                         * route in this same session; the PUBLIC page
+                                         * sanitises it anyway, since a row can have been
+                                         * written by something else.
+                                         */}
+                                        <div className={styles.itemPhotoRow}>
+                                            {item.photoUrl ? (
+                                                <img
+                                                    className={styles.itemPhotoThumb}
+                                                    src={item.photoUrl}
+                                                    alt={
+                                                        item.photoAlt ||
+                                                        item.name ||
+                                                        t(
+                                                            'venue.owner.editor.menuManager.photoPreview',
+                                                            'Foto del plato'
+                                                        )
+                                                    }
+                                                />
+                                            ) : null}
+
+                                            <label className={styles.itemPhotoLabel}>
+                                                <span>
+                                                    {item.photoUrl
+                                                        ? t(
+                                                              'venue.owner.editor.menuManager.replacePhoto',
+                                                              'Cambiar la foto'
+                                                          )
+                                                        : t(
+                                                              'venue.owner.editor.menuManager.addPhoto',
+                                                              'Agregar foto'
+                                                          )}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept={ACCEPTED_ITEM_PHOTO_TYPES}
+                                                    disabled={busy || isPhotoLocked}
+                                                    onChange={(event) => {
+                                                        const selected = event.target.files?.[0];
+                                                        // Cleared so choosing the SAME
+                                                        // file again still fires
+                                                        // `change`; without it a failed
+                                                        // upload could not be retried.
+                                                        event.target.value = '';
+                                                        if (selected) {
+                                                            void uploadItemPhoto(
+                                                                sectionIndex,
+                                                                itemIndex,
+                                                                selected
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+
+                                            {item.photoUrl ? (
+                                                <>
+                                                    <input
+                                                        className={styles.input}
+                                                        type="text"
+                                                        value={item.photoAlt ?? ''}
+                                                        placeholder={t(
+                                                            'venue.owner.editor.menuManager.photoAltPlaceholder',
+                                                            'Describí la foto (opcional)'
+                                                        )}
+                                                        aria-label={t(
+                                                            'venue.owner.editor.menuManager.photoAlt',
+                                                            'Texto alternativo de la foto'
+                                                        )}
+                                                        onChange={(event) => {
+                                                            patchItem(sectionIndex, itemIndex, {
+                                                                photoAlt: event.target.value || null
+                                                            });
+                                                        }}
+                                                    />
+                                                    {/*
+                                                     * Stays enabled while
+                                                     * `isPhotoLocked`: removing the
+                                                     * photo is the way OUT of that
+                                                     * state, so it is the one control
+                                                     * the lock must not take away.
+                                                     */}
+                                                    <button
+                                                        type="button"
+                                                        className={styles.dangerButton}
+                                                        onClick={() => {
+                                                            removeItemPhoto(
+                                                                sectionIndex,
+                                                                itemIndex
+                                                            );
+                                                        }}
+                                                    >
+                                                        {t(
+                                                            'venue.owner.editor.menuManager.removePhoto',
+                                                            'Quitar la foto'
+                                                        )}
+                                                    </button>
+                                                </>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    className={styles.secondaryButton}
+                                    onClick={() => {
+                                        addItem(sectionIndex);
+                                    }}
+                                >
+                                    {t('venue.owner.editor.menuManager.addItem', 'Agregar plato')}
+                                </button>
+                            </fieldset>
                         ))}
 
                         <button
                             type="button"
                             className={styles.secondaryButton}
+                            onClick={addSection}
+                        >
+                            {t('venue.owner.editor.menuManager.addSection', 'Agregar sección')}
+                        </button>
+
+                        {/*
+                         * `type="button"`, like every control here: this panel lives
+                         * INSIDE the editor's <form>, and a submit button would save the
+                         * listing instead of the carta.
+                         */}
+                        <button
+                            type="button"
+                            className={styles.primaryButton}
+                            disabled={busy || isLocked || isMenuGated}
+                            aria-describedby={isMenuGated ? planNoticeId : undefined}
                             onClick={() => {
-                                addItem(sectionIndex);
+                                void saveMenu();
                             }}
                         >
-                            {t('venue.owner.editor.menuManager.addItem', 'Agregar plato')}
+                            {state === 'saving'
+                                ? t('venue.owner.editor.menuManager.saving', 'Guardando…')
+                                : t('venue.owner.editor.menuManager.save', 'Guardar carta')}
                         </button>
-                    </fieldset>
-                ))}
-
-                <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={addSection}
-                >
-                    {t('venue.owner.editor.menuManager.addSection', 'Agregar sección')}
-                </button>
-
-                {/*
-                 * `type="button"`, like every control here: this panel lives
-                 * INSIDE the editor's <form>, and a submit button would save the
-                 * listing instead of the carta.
-                 */}
-                <button
-                    type="button"
-                    className={styles.primaryButton}
-                    disabled={busy || isLocked || isMenuGated}
-                    aria-describedby={isMenuGated ? planNoticeId : undefined}
-                    onClick={() => {
-                        void saveMenu();
-                    }}
-                >
-                    {state === 'saving'
-                        ? t('venue.owner.editor.menuManager.saving', 'Guardando…')
-                        : t('venue.owner.editor.menuManager.save', 'Guardar carta')}
-                </button>
-            </div>
+                    </div>
+                </>
+            )}
 
             {message ? (
                 <p

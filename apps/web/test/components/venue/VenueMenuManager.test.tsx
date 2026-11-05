@@ -40,6 +40,7 @@ vi.mock('../../../src/lib/env', () => ({
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
+        getProtected: vi.fn(),
         put: vi.fn(),
         delete: vi.fn()
     }
@@ -80,7 +81,7 @@ function effectiveSet(keys: readonly string[]): EntitlementsData {
 /** What a Profesional owner's read holds for the menu. */
 const ENTITLED = effectiveSet(['manage_venue_menu']);
 
-const mockGet = vi.mocked(apiClient.get);
+const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
 
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';

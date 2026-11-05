@@ -26,11 +26,13 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
+import SectionUnpublishedNotice from '@/components/listing/SectionUnpublishedNotice.astro';
 import { VenueEventsManager } from '@/components/venue/VenueEventsManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { WEEKDAY_I18N_KEYS } from '@/lib/venue/venue-event-draft';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 
 export const prerender = false;
 
@@ -39,8 +41,24 @@ const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: '
 if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;
 
-const { detail, locale, listingId, sectionId, registry } = resolution;
+const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
+
+// HOS-1854. See `carta.astro` for the same wiring: the state comes from the
+// resolver's map and only a locked section pays for the count read.
+const activeSection = sectionId ? sectionStates[sectionId] : undefined;
+const sectionState = activeSection?.state ?? 'available';
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const lockedCounts =
+	sectionState === 'locked' && sectionId
+		? await readLockedSectionCounts({
+				vertical,
+				listingId,
+				sectionStates: { [sectionId]: activeSection! },
+				cookieHeader,
+			})
+		: {};
+const lockedCount = sectionId ? lockedCounts[sectionId] : null;
 
 /**
  * The weekday picker's seven labels, resolved HERE and passed down.
@@ -70,10 +88,19 @@ const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
 	currentSectionSlug="eventos"
 	title={t('listing.owner.editor.sectionNav.venueEvents', 'Eventos')}
 >
+	{typeof lockedCount === 'number' && lockedCount > 0 && (
+		<SectionUnpublishedNotice
+			locale={locale}
+			count={lockedCount}
+			sectionLabel={t('listing.owner.editor.sectionNav.venueEvents', 'Eventos')}
+		/>
+	)}
+
 	<VenueEventsManager
 		client:load
 		listingId={listingId}
 		locale={locale}
 		weekdayLabels={weekdayLabels}
+		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
 	/>
 </ListingEditorSectionLayout>

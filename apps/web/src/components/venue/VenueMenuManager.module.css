@@ -350,3 +350,51 @@
 .translationsGrid input {
     flex: 1 1 200px;
 }
+
+/* ── Locked (read-only) carta — HOS-1854 ──────────────────────────────── */
+
+.readOnlyList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.readOnlyItem {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) 0;
+    border-top: 1px solid var(--border);
+}
+
+.readOnlyName {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.readOnlyDescription {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    flex: 1 1 12rem;
+}
+
+.readOnlyPrice {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+    white-space: nowrap;
+}
+
+.readOnlyNote {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--brand-accent);
+}

@@ -295,6 +295,7 @@
                 "saved": "Today's menu saved.",
                 "saveError": "Today's menu could not be saved.",
                 "locked": "Today's menu is available from the Professional plan.",
+                "lockedPreTrial": "Today's menu unlocks when you publish your listing.",
                 "expired": "Expired — not being shown.",
                 "scheduled": "Scheduled — not shown yet."
             },
@@ -324,7 +325,22 @@
                 "saving": "Saving…",
                 "saved": "Schedule saved.",
                 "saveError": "The schedule could not be saved.",
-                "locked": "Keeping a venue schedule is available from the Professional plan onwards."
+                "locked": "Keeping a venue schedule is available from the Professional plan onwards.",
+                "lockedPreTrial": "The venue schedule unlocks when you publish your listing."
+            },
+            "lockedSection": {
+                "vaciar": "Empty",
+                "vaciarTitle": "Empty this section",
+                "vaciarMessage": "The saved data in this section will be deleted. This cannot be undone.",
+                "vaciarConfirm": "Empty this section",
+                "vaciarBusy": "Emptying…",
+                "cancel": "Cancel",
+                "empty": "No data saved in this section.",
+                "vaciarError": "The section could not be emptied.",
+                "vaciarSuccess": "The section was emptied.",
+                "inactive": "Not shown",
+                "unavailable": "Unavailable",
+                "fileUnavailable": "This file cannot be opened."
             },
             "acceptsEvents": {
                 "label": "We accept events (birthdays, corporate, weddings)",

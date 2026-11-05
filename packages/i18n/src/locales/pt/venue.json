@@ -295,6 +295,7 @@
                 "saved": "Menu do dia salvo.",
                 "saveError": "Não foi possível salvar o menu do dia.",
                 "locked": "O menu do dia está disponível a partir do plano Profissional.",
+                "lockedPreTrial": "O menu do dia é liberado quando você publicar sua ficha.",
                 "expired": "Já venceu — não está sendo exibido.",
                 "scheduled": "Programado — ainda não é exibido."
             },
@@ -324,7 +325,22 @@
                 "saving": "Salvando…",
                 "saved": "Agenda salva.",
                 "saveError": "Não foi possível salvar a agenda.",
-                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional."
+                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional.",
+                "lockedPreTrial": "A agenda de eventos é liberada quando você publicar sua ficha."
+            },
+            "lockedSection": {
+                "vaciar": "Esvaziar",
+                "vaciarTitle": "Esvaziar a seção",
+                "vaciarMessage": "Os dados salvos desta seção serão apagados. Esta ação não pode ser desfeita.",
+                "vaciarConfirm": "Esvaziar a seção",
+                "vaciarBusy": "Esvaziando…",
+                "cancel": "Cancelar",
+                "empty": "Não há dados salvos nesta seção.",
+                "vaciarError": "Não foi possível esvaziar a seção.",
+                "vaciarSuccess": "A seção foi esvaziada.",
+                "inactive": "Não é exibido",
+                "unavailable": "Indisponível",
+                "fileUnavailable": "Não é possível abrir este arquivo."
             },
             "acceptsEvents": {
                 "label": "Aceito eventos (aniversários, empresas, casamentos)",

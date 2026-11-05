@@ -25,6 +25,7 @@ import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { readListingEditorHubFacts } from '@/lib/listing/listing-editor-detail';
+import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
 
@@ -35,7 +36,7 @@ const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: n
 if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;
 
-const { detail, locale, vertical, listingId, registry } = resolution;
+const { detail, locale, vertical, listingId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
 
 const facts = readListingEditorHubFacts({ detail });
@@ -60,6 +61,23 @@ const [supportEdits, listingNotices] = await Promise.all([
 
 const hasListingNotices =
 	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
+
+// HOS-1854. The hub only pays these reads for sections the plan withholds:
+// `readLockedSectionCounts` filters the map itself, so an all-available listing
+// makes no extra request. A failed read yields `null`, and the model renders
+// the locked line without a number rather than as "0 cargados".
+const lockedCounts = await readLockedSectionCounts({
+	vertical,
+	listingId,
+	sectionStates,
+	cookieHeader,
+});
+const lockedSections = Object.fromEntries(
+	Object.entries(sectionStates)
+		.filter(([, section]) => section.state === 'locked')
+		.map(([sectionId]) => [sectionId, lockedCounts[sectionId] ?? null])
+);
+
 const statuses = resolveListingEditorSectionStatuses({
 	input: {
 		vertical,
@@ -67,6 +85,7 @@ const statuses = resolveListingEditorSectionStatuses({
 		photoCount: facts.photoCount,
 		faqCount: facts.faqCount,
 		selectedCatalogCount: facts.selectedCatalogCount,
+		lockedSections,
 	},
 });
 

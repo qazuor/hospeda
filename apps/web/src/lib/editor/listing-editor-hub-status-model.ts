@@ -77,7 +77,32 @@ export interface ListingEditorStatusInput {
     readonly faqCount: number;
     /** Amenities plus features currently ticked. */
     readonly selectedCatalogCount: number;
+    /**
+     * Sections the plan/market currently withholds, keyed by section id.
+     *
+     * The value is the number of stored items the hub may name, or `null` when
+     * the server could not read them. An empty object means "no locked
+     * section", which is the normal state. The map is built by the page from
+     * the resolver's `sectionStates`; this model never decides which section is
+     * locked, and never compares a section id to a literal (G-FAC-05).
+     */
+    readonly lockedSections?: Readonly<Record<string, number | null>>;
 }
+
+/**
+ * The `ProductDomainEnum` each route vertical maps to.
+ *
+ * A lookup rather than a `vertical === 'venue' ? …` comparison: G-FAC-05 scans
+ * this file for literal vertical comparisons when the section lock work lands,
+ * and the two spellings are already kept apart on purpose everywhere else.
+ */
+const PRODUCT_DOMAIN_BY_VERTICAL: Readonly<Record<VenueOrExperience, VenueOrExperience>> = {
+    // The enum members ARE the two route strings; the cast is only because
+    // TypeScript does not consider the enum member assignable to its own
+    // template-literal union. The values are asserted by the map's key/type.
+    venue: ProductDomainEnum.VENUE as VenueOrExperience,
+    experience: ProductDomainEnum.EXPERIENCE as VenueOrExperience
+};
 
 /**
  * Resolves the status line for every listing section that has one.
@@ -124,7 +149,51 @@ export function resolveListingEditorSectionStatuses({
     // section already had. That precedence is the point (H-101): a calm,
     // complete-looking "6 fotos" must never sit on top of the very field
     // refusing the publish.
-    return { ...statuses, ...resolveBlockingStatuses({ input }) };
+    //
+    // Locked lines sit between the two: they replace a neutral fact (a locked
+    // section must say it is locked) and lose to a blocker, because a section
+    // that cannot publish for a missing field is a to-do, not a plan limit.
+    return {
+        ...statuses,
+        ...resolveLockedStatuses({ input }),
+        ...resolveBlockingStatuses({ input })
+    };
+}
+
+/**
+ * Builds one `locked` status per section the plan withholds (HOS-1854).
+ *
+ * The count is what separates "bloqueada con datos" from "bloqueada vacía": a
+ * downgraded plan keeps the owner's carta, and saying only "Bloqueada por tu
+ * plan" would read the same whether 40 dishes are stored or none. A `null`
+ * count means the server could not read the section, so the line carries no
+ * number — never a fabricated zero.
+ *
+ * @param params - The input, whose `lockedSections` the page built.
+ * @returns Locked statuses keyed by section id.
+ */
+function resolveLockedStatuses({
+    input
+}: {
+    readonly input: ListingEditorStatusInput;
+}): Record<string, EditorSectionStatus> {
+    const statuses: Record<string, EditorSectionStatus> = {};
+
+    for (const [sectionId, count] of Object.entries(input.lockedSections ?? {})) {
+        statuses[sectionId] =
+            typeof count === 'number' && count > 0
+                ? {
+                      labelKey: 'listing.owner.editor.hub.status.lockedWithData',
+                      tone: 'locked',
+                      params: { count }
+                  }
+                : {
+                      labelKey: 'listing.owner.editor.hub.status.lockedEmpty',
+                      tone: 'locked'
+                  };
+    }
+
+    return statuses;
 }
 
 /**
@@ -144,8 +213,7 @@ function resolveBlockingStatuses({
     readonly input: ListingEditorStatusInput;
 }): Record<string, EditorSectionStatus> {
     const { missing } = resolveListingCompleteness({
-        entityType:
-            input.vertical === 'venue' ? ProductDomainEnum.VENUE : ProductDomainEnum.EXPERIENCE,
+        entityType: PRODUCT_DOMAIN_BY_VERTICAL[input.vertical],
         listing: input.listing
     });
     if (missing.length === 0) return {};
