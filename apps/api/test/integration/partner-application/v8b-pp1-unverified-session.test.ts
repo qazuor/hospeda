@@ -57,7 +57,7 @@ function buildApp(actor: Actor) {
     return app;
 }
 
-async function postApplication(actor: Actor, body: unknown) {
+async function postApplication({ actor, body }: { readonly actor: Actor; readonly body: unknown }) {
     const response = await buildApp(actor).request('/', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -85,13 +85,13 @@ afterAll(async () => testDb.teardown());
 describe('AC:V8b:5 TEST:V8b:5 PP1 with an unverified session', () => {
     it('(a) refuses an unverified account before Turnstile and writes no application', async () => {
         const email = rememberEmail();
-        const { response, body } = await postApplication(
-            createAccountActor({ emailVerified: false }),
-            {
+        const { response, body } = await postApplication({
+            actor: createAccountActor({ emailVerified: false }),
+            body: {
                 email,
                 cfTurnstileToken: 'valid-token'
             }
-        );
+        });
 
         expect(response.status).toBe(403);
         expect(body).toEqual({
@@ -113,13 +113,13 @@ describe('AC:V8b:5 TEST:V8b:5 PP1 with an unverified session', () => {
 
     it('(b) creates one pending application for a verified account', async () => {
         const email = rememberEmail();
-        const { response, body } = await postApplication(
-            createAccountActor({ emailVerified: true }),
-            {
+        const { response, body } = await postApplication({
+            actor: createAccountActor({ emailVerified: true }),
+            body: {
                 email,
                 cfTurnstileToken: 'valid-token'
             }
-        );
+        });
 
         expect(response.status).toBe(201);
         expect(body).toEqual({
@@ -134,9 +134,12 @@ describe('AC:V8b:5 TEST:V8b:5 PP1 with an unverified session', () => {
 
     it('(c) continues to create one pending application for a guest', async () => {
         const email = rememberEmail();
-        const { response, body } = await postApplication(createGuestActor(), {
-            email,
-            cfTurnstileToken: 'valid-token'
+        const { response, body } = await postApplication({
+            actor: createGuestActor(),
+            body: {
+                email,
+                cfTurnstileToken: 'valid-token'
+            }
         });
 
         expect(response.status).toBe(201);
@@ -152,12 +155,12 @@ describe('AC:V8b:5 TEST:V8b:5 PP1 with an unverified session', () => {
 
     it('(d) rejects an invalid body before parsing it for an unverified account', async () => {
         const email = rememberEmail();
-        const { response, body } = await postApplication(
-            createAccountActor({ emailVerified: false }),
-            {
+        const { response, body } = await postApplication({
+            actor: createAccountActor({ emailVerified: false }),
+            body: {
                 cfTurnstileToken: 'valid-token'
             }
-        );
+        });
 
         expect(response.status).toBe(403);
         expect(body).toEqual({
