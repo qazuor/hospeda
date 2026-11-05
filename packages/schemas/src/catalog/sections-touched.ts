@@ -5,7 +5,17 @@ import type {
 } from './listing-catalog.base-types.js';
 import type { ListingSectionId } from './listing-catalog.ids.js';
 import { LISTING_SECTIONS } from './listing-sections.js';
-/** Return sections with body fields set to non-null, defined values. */
+/**
+ * Return sections with body fields set to non-null, defined values.
+ *
+ * `null` is skipped on purpose: a body that only clears fields declares no
+ * section, so the section-access step never runs and the owner can always
+ * empty a section that is `locked` by plan or `absent` by business line
+ * (DEC-FAC-025, DEC-FAC-075). The owner "clear" flows depend on this contract
+ * (HOS-2038 characterization tests in
+ * `apps/api/test/routes/venue/protected/patch-null-is-delete.test.ts`).
+ * Do not count `null` as a touch without revisiting that contract.
+ */
 export function sectionsTouchedByBody<V extends ListingVertical>({
     vertical,
     body
