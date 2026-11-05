@@ -750,7 +750,10 @@
         "photos_included": "Fotos incluídas",
         "insurance_included": "Seguro incluído",
         "hotel_pickup": "Transfer do hotel",
-        "lockers_available": "Armários disponíveis"
+        "lockers_available": "Armários disponíveis",
+        "dance_floor": "Pista de dança",
+        "vip_area": "Área VIP",
+        "cloakroom": "Guarda-volumes"
     },
     "featureNames": {
         "river_front": "Frente ao rio",
@@ -858,7 +861,9 @@
         "outdoor_activity": "Atividade ao ar livre",
         "pregnancy_safe": "Seguro para gestantes",
         "private_available": "Disponível em formato privado",
-        "senior_friendly": "Adequado para idosos"
+        "senior_friendly": "Adequado para idosos",
+        "dj_sets": "DJ",
+        "karaoke": "Karaoke"
     },
     "list": {
         "searchContext": {

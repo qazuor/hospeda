@@ -750,7 +750,10 @@
         "photos_included": "Photos included",
         "insurance_included": "Insurance included",
         "hotel_pickup": "Hotel pickup",
-        "lockers_available": "Lockers available"
+        "lockers_available": "Lockers available",
+        "dance_floor": "Dance floor",
+        "vip_area": "VIP area",
+        "cloakroom": "Cloakroom"
     },
     "featureNames": {
         "river_front": "Riverfront",
@@ -858,7 +861,9 @@
         "outdoor_activity": "Outdoor activity",
         "pregnancy_safe": "Pregnancy-safe",
         "private_available": "Available as private session",
-        "senior_friendly": "Senior-friendly"
+        "senior_friendly": "Senior-friendly",
+        "dj_sets": "DJ sets",
+        "karaoke": "Karaoke"
     },
     "list": {
         "searchContext": {

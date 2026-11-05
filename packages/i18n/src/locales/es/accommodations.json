@@ -224,7 +224,10 @@
         "photos_included": "Fotos incluidas",
         "insurance_included": "Seguro incluido",
         "hotel_pickup": "Traslado desde el hotel",
-        "lockers_available": "Casilleros disponibles"
+        "lockers_available": "Casilleros disponibles",
+        "dance_floor": "Pista de baile",
+        "vip_area": "Sector VIP",
+        "cloakroom": "Guardarropa"
     },
     "featureNames": {
         "river_front": "Frente al río",
@@ -332,7 +335,9 @@
         "outdoor_activity": "Actividad al aire libre",
         "pregnancy_safe": "Apto para embarazadas",
         "private_available": "Disponible en formato privado",
-        "senior_friendly": "Apto adultos mayores"
+        "senior_friendly": "Apto adultos mayores",
+        "dj_sets": "DJ",
+        "karaoke": "Karaoke"
     },
     "title": "Alojamientos",
     "tagline": "Encontrá tu lugar ideal",
