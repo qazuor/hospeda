@@ -199,6 +199,20 @@
         }
     },
     "owner": {
+        "businessLines": {
+            "legend": "Rubros",
+            "keepOne": "Dejá al menos un rubro seleccionado.",
+            "food": {
+                "label": "Gastronomía"
+            },
+            "nightlife": {
+                "label": "Noche"
+            },
+            "reason": {
+                "MAX_EXCEEDED": "Ya elegiste el máximo de rubros.",
+                "EXCLUDED_PAIR": "No se puede combinar con el rubro que ya elegiste."
+            }
+        },
         "editor": {
             "menuManager": {
                 "title": "Carta",

@@ -4,7 +4,7 @@
  */
 
 import { DbError } from '@repo/db/utils';
-import { ServiceErrorCode } from '@repo/schemas';
+import { BUSINESS_LINES_INVALID_REASON, ServiceErrorCode } from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
@@ -425,8 +425,15 @@ const logRouteError = (
 };
 
 /**
- * Helper function to handle errors in route handlers
- * Provides consistent error handling across all endpoints
+ * Helper function to handle errors in route handlers.
+ *
+ * Provides consistent error handling across all endpoints. `error.details` is
+ * debug-only except for the narrow public contract cases: the codes in
+ * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` reason, and the
+ * business-lines invalid reason, whose `{ field, reason }` payload the owner
+ * form needs to render the cause of the rejection in production. The
+ * business-line case is gated on the propagated top-level `reason` alone; the
+ * details shape is never treated as proof.
  */
 export const handleRouteError = (error: unknown, c: Context) => {
     // HOS-607: a cross-field refinement rejection raised by `parseRefinedBody`
@@ -599,7 +606,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 details:
                     env.HOSPEDA_API_DEBUG_ERRORS ||
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
-                    error.reason === 'SECTION_ABSENT'
+                    error.reason === 'SECTION_ABSENT' ||
+                    error.reason === BUSINESS_LINES_INVALID_REASON
                         ? error.details
                         : undefined,
                 reason: error.reason

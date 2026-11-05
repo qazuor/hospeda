@@ -26,6 +26,7 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         destinationId: '',
         description: '',
         listingType: '',
+        businessLines: [],
         summary: '',
         richDescription: '',
         contact: { mobilePhone: '', workEmail: '' },

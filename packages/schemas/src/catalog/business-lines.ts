@@ -4,8 +4,20 @@ import { VenueTypeEnum } from '../enums/venue-type.enum.js';
 import type {
     BusinessLineDefinitionBase,
     BusinessLineRules,
+    BusinessLineValue,
     ListingVertical
 } from './listing-catalog.types.js';
+
+/**
+ * Machine-readable reason carried by the `ServiceError` when a listing's
+ * business-line selection fails validation (DEC-FAC-080).
+ *
+ * The service also keeps the specific validation cause in `details.reason`;
+ * this value is what `handleRouteError` gates the public `details` on, so the
+ * owner form can show the cause in production without opening every
+ * `VALIDATION_ERROR`.
+ */
+export const BUSINESS_LINES_INVALID_REASON = 'BUSINESS_LINES_INVALID' as const;
 
 /** Business lines available for listing creation and public collections. */
 export const BUSINESS_LINES = {
@@ -32,10 +44,30 @@ export const BUSINESS_LINES = {
         { vertical: 'experience', value: 'standard', public: false, sections: [] }
     ] as const satisfies readonly BusinessLineDefinitionBase<'experience'>[]
 };
+
+/**
+ * Venue business-line values in catalog order, as the non-empty tuple
+ * `z.enum` requires.
+ *
+ * Derived from {@link BUSINESS_LINES} so a response schema that validates the
+ * persisted column cannot drift from the catalog when a line is added or
+ * removed. `map` yields a plain array, so the cast supplies the non-empty tuple
+ * shape `z.enum` needs; the catalog above is non-empty by construction.
+ */
+export const VENUE_BUSINESS_LINE_VALUES = BUSINESS_LINES.venue.map(
+    (line) => line.value
+) as unknown as readonly [BusinessLineValue<'venue'>, ...BusinessLineValue<'venue'>[]];
+
 const foodNight = { allowed: ['food', 'nightlife'], preselect: ['food', 'nightlife'] } as const;
 const foodNightRestaurant = { allowed: ['food', 'nightlife'], preselect: ['food'] } as const;
 const foodOnly = { allowed: ['food'], preselect: ['food'] } as const;
 const nightOnly = { allowed: ['nightlife'], preselect: ['nightlife'] } as const;
+/**
+ * `nightOnly` plus the field suggestion the owner editor pre-fills on create
+ * (DEC-FAC-050; owner decision 2026-11-04: the +18 suggestion belongs to the
+ * editor, not to the nightInfo section). `minAge` is editable and clearable.
+ */
+const boliche = { ...nightOnly, fieldDefaults: { minAge: 18 } } as const;
 /** Type-specific rules for assigning business lines. */
 export const BUSINESS_LINE_RULES = {
     venue: {
@@ -51,7 +83,7 @@ export const BUSINESS_LINE_RULES = {
             [VenueTypeEnum.BAR]: foodNight,
             [VenueTypeEnum.CERVECERIA]: foodNight,
             [VenueTypeEnum.PUB]: foodNight,
-            [VenueTypeEnum.BOLICHE]: nightOnly
+            [VenueTypeEnum.BOLICHE]: boliche
         }
     } as const satisfies BusinessLineRules<'venue'>,
     accommodation: {

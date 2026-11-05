@@ -167,6 +167,48 @@
             "count": 1,
             "category": "review-validation",
             "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "apps/web/src/lib/forms/field-errors.ts",
+            "symbol": "apiErrorToFieldErrors",
+            "count": 1,
+            "category": "error-mapping",
+            "spec": ".hoja/notas.md:6"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "symbol": "error",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "symbol": "ListingCreateForm",
+            "count": 1,
+            "category": "create-form",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "symbol": "handleSubmit",
+            "count": 1,
+            "category": "create-form",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BasicInfoSection.client.tsx",
+            "symbol": "BasicInfoSection",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "buildPatchPayload",
+            "count": 4,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
         }
     ],
     "imports": [

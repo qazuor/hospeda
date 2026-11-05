@@ -184,6 +184,23 @@ export function apiErrorToFieldErrors(
     const details = apiError?.details;
 
     if (!Array.isArray(details)) {
+        // The business-line service rejects a selection with a single
+        // `{ field, reason }` object instead of the route factory's `details[]`
+        // array (VALIDATION_ERROR from `BaseListingService`). Map it to the
+        // catalog's reason key so the selector can print the cause
+        // (DEC-FAC-080) instead of only the generic banner.
+        if (details && typeof details === 'object') {
+            const detail = details as { readonly field?: unknown; readonly reason?: unknown };
+            if (detail.field === 'businessLines' && typeof detail.reason === 'string') {
+                const key = `zodError.venue.businessLines.${detail.reason}`;
+                errors.businessLines = t
+                    ? resolveValidationMessage({
+                          key,
+                          t: (k, p) => t(k, undefined, p)
+                      })
+                    : key;
+            }
+        }
         return errors;
     }
 

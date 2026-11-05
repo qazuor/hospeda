@@ -199,6 +199,20 @@
         }
     },
     "owner": {
+        "businessLines": {
+            "legend": "Segmentos",
+            "keepOne": "Deixe pelo menos um segmento selecionado.",
+            "food": {
+                "label": "Gastronomia"
+            },
+            "nightlife": {
+                "label": "Vida noturna"
+            },
+            "reason": {
+                "MAX_EXCEEDED": "Você já escolheu o máximo de segmentos.",
+                "EXCLUDED_PAIR": "Não pode ser combinado com o segmento que você já escolheu."
+            }
+        },
         "editor": {
             "menuManager": {
                 "title": "Cardápio",

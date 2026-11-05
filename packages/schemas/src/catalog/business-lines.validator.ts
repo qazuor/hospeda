@@ -1,5 +1,5 @@
 import { BUSINESS_LINE_RULES, BUSINESS_LINES } from './business-lines.js';
-import type { BusinessLineValue, ListingVertical } from './listing-catalog.types.js';
+import type { BusinessLineValue, ListingVertical, UpdateInputOf } from './listing-catalog.types.js';
 
 /** Stable reason codes returned when a listing's selected business lines fail validation. */
 export const BUSINESS_LINE_VALIDATION_REASONS = {
@@ -100,6 +100,7 @@ export function resolveBusinessLineOptions<V extends ListingVertical>({
 }): {
     readonly value: BusinessLineValue<V>;
     readonly selectable: boolean;
+    readonly selected: boolean;
     readonly reason?: BusinessLineValidationReason;
 }[] {
     const typeRule = rules.typeRules[type as keyof typeof rules.typeRules];
@@ -124,7 +125,51 @@ export function resolveBusinessLineOptions<V extends ListingVertical>({
         return {
             value: value as BusinessLineValue<V>,
             selectable: reason === undefined,
+            selected: selected.includes(value),
             ...(reason ? { reason } : {})
         };
     });
+}
+
+/**
+ * Resolves the defaults a listing type brings to the create form.
+ *
+ * The owner editor must not read the catalog rules directly (G-FAC-03): it asks
+ * this helper for the preselected business lines and the suggested field
+ * values, and renders both as ordinary, editable form state.
+ *
+ * @param input - Listing vertical and the selected listing type.
+ * @param input.vertical - Vertical whose catalog is being resolved.
+ * @param input.type - Listing type; an unknown type yields empty defaults.
+ * @returns The type's preselected business lines and suggested field values.
+ */
+export function resolveBusinessLineDefaults<V extends ListingVertical>({
+    vertical,
+    type
+}: {
+    readonly vertical: V;
+    readonly type: string;
+}): {
+    readonly preselect: readonly BusinessLineValue<V>[];
+    readonly fieldDefaults: Partial<UpdateInputOf<V>>;
+} {
+    const rules = BUSINESS_LINE_RULES[vertical] as unknown as {
+        readonly typeRules: Readonly<
+            Record<
+                string,
+                {
+                    readonly preselect: readonly BusinessLineValue<V>[];
+                    readonly fieldDefaults?: Partial<UpdateInputOf<V>>;
+                }
+            >
+        >;
+    };
+    const typeRule = rules.typeRules[type];
+
+    if (!typeRule) return { preselect: [], fieldDefaults: {} };
+
+    return {
+        preselect: [...typeRule.preselect],
+        fieldDefaults: typeRule.fieldDefaults ?? {}
+    };
 }
