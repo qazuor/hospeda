@@ -339,6 +339,11 @@ jobs:
       # section list is frozen and equal to the catalog until child 8 migrates it.
       - name: Check the accommodation editor section list is frozen (GUARD:G-FAC-08)
         run: pnpm check:accommodation-editor-frozen
+      # GUARD:G-FAC-05 (HOS-1860, leaf 5.8). The closed list of files the
+      # catalog-derived editor replaces carries no dispatch by vertical, section
+      # id, listing type or review dimension.
+      - name: Check no dispatch by vertical or section in the listing editor (GUARD:G-FAC-05)
+        run: pnpm check:no-listing-dispatch
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.

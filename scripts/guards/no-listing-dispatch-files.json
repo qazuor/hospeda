@@ -1,0 +1,89 @@
+{
+    "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05",
+    "files": [
+        {
+            "file": "apps/web/src/lib/editor/listing-editor-registry.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/editor/listing-editor-sections.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/editor/listing-section-presentation.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/editor/listing-editor-hub-status-model.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/editor/resolve-listing-editor-page.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/index.astro",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueMenuManager.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueDailySpecialsManager.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueEventsManager.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueSectionLockedPanel.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/hooks/useSectionVaciar.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/listing/locked-section-counts.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/listing/listing-editor-detail.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/listing/listing-vertical-form-config.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/listing/owner-listings.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/PriceSection.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BasicInfoSection.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/section-renderers.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        }
+    ]
+}
