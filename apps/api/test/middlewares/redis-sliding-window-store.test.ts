@@ -20,6 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Minimal subset of ioredis methods used by RedisSlidingWindowStore */
 interface MockRedis {
+    eval: ReturnType<typeof vi.fn>;
     zremrangebyscore: ReturnType<typeof vi.fn>;
     zadd: ReturnType<typeof vi.fn>;
     zcard: ReturnType<typeof vi.fn>;
@@ -30,6 +31,7 @@ interface MockRedis {
 /** Factory that creates a fresh mock Redis with default pass-through behaviour */
 function createMockRedis(): MockRedis {
     return {
+        eval: vi.fn().mockResolvedValue(1),
         zremrangebyscore: vi.fn().mockResolvedValue(0),
         zadd: vi.fn().mockResolvedValue(1),
         zcard: vi.fn().mockResolvedValue(1),
@@ -109,6 +111,15 @@ describe('RedisSlidingWindowStore', () => {
     afterEach(() => {
         clearSlidingWindowStore();
         resetRedisSlidingWindowStore();
+    });
+
+    it('uses one Redis script to atomically enforce conditional consumption', async () => {
+        const store = new RedisSlidingWindowStore();
+        await expect(store.consumeIfBelow('cap:user-1', 86_400_000, 5)).resolves.toBe(true);
+        expect(mockRedis?.eval).toHaveBeenCalledOnce();
+        expect(mockRedis?.eval.mock.calls[0]?.[0]).toContain('ZCARD');
+        expect(mockRedis?.eval.mock.calls[0]?.[0]).toContain('ZADD');
+        expect(mockRedis?.eval.mock.calls[0]?.[2]).toBe('rl:slide:cap:user-1');
     });
 
     // ── record ────────────────────────────────────────────────────────────────
@@ -420,7 +431,8 @@ describe('createSlidingWindowPerUserRateLimit backend selection', () => {
         const spyStore = {
             record: vi.fn().mockResolvedValue(1),
             count: vi.fn().mockResolvedValue(0),
-            oldestInWindow: vi.fn().mockResolvedValue(undefined)
+            oldestInWindow: vi.fn().mockResolvedValue(undefined),
+            consumeIfBelow: vi.fn().mockResolvedValue(true)
         };
 
         const app = new Hono<AppBindings>();

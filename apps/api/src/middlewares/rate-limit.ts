@@ -1214,9 +1214,17 @@ export interface SlidingWindowStore {
 
     /** Returns the timestamp (ms) of the oldest request inside the window, or undefined. */
     oldestInWindow(key: string, windowMs: number): Promise<number | undefined>;
+
+    /** Atomically records only while the active request count is below max. */
+    consumeIfBelow(key: string, windowMs: number, max: number): Promise<boolean>;
 }
 
-/** Conditional per-identity consumer backed by the API's sliding-window store. */
+/**
+ * Conditional per-identity consumer backed by the API's sliding-window store.
+ * The configured store enforces the cap atomically. Memory mode is per process;
+ * multi-instance deployments must use Redis. Redis failure follows the existing
+ * fail-open policy and falls back to a per-process cap until Redis recovers.
+ */
 export function createConditionalSlidingWindowConsumer(opts: {
     readonly windowMs: number;
     readonly max: number;
@@ -1233,9 +1241,7 @@ export function createConditionalSlidingWindowConsumer(opts: {
         },
         async consume(identity) {
             const key = keyFor(identity);
-            if ((await store().count(key, opts.windowMs)) >= opts.max) return false;
-            await store().record(key, opts.windowMs);
-            return true;
+            return store().consumeIfBelow(key, opts.windowMs, opts.max);
         }
     };
 }
@@ -1269,6 +1275,36 @@ const REDIS_SW_NAMESPACE = 'rl:slide:';
  * the API request is NEVER blocked solely because of a Redis failure.
  */
 export class RedisSlidingWindowStore implements SlidingWindowStore {
+    /** Atomically prunes, checks the cap, records and refreshes TTL in Redis. */
+    async consumeIfBelow(key: string, windowMs: number, max: number): Promise<boolean> {
+        const redisKey = `${REDIS_SW_NAMESPACE}${key}`;
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        const member = `${now}-${Math.random().toString(36).slice(2, 8)}`;
+        const ttlSeconds = Math.ceil(windowMs / 1000) + 10;
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return inMemorySlidingWindowStore.consumeIfBelow(key, windowMs, max);
+            const result = await redis.eval(
+                "redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1]); local n = redis.call('ZCARD', KEYS[1]); if n >= tonumber(ARGV[2]) then return 0 end; redis.call('ZADD', KEYS[1], ARGV[3], ARGV[4]); redis.call('EXPIRE', KEYS[1], ARGV[5]); return 1",
+                1,
+                redisKey,
+                String(cutoff),
+                String(max),
+                String(now),
+                member,
+                String(ttlSeconds)
+            );
+            return Number(result) === 1;
+        } catch (error) {
+            apiLogger.warn(
+                { error, key },
+                'RedisSlidingWindowStore.consumeIfBelow: Redis unavailable, using in-memory fallback'
+            );
+            return inMemorySlidingWindowStore.consumeIfBelow(key, windowMs, max);
+        }
+    }
+
     /**
      * Records a new request and returns the count within the window.
      * Uses sequential ZREMRANGEBYSCORE -> ZADD -> ZCARD -> EXPIRE commands.
@@ -1416,6 +1452,19 @@ export function resetRedisSlidingWindowStore(): void {
 
 /** In-memory implementation of {@link SlidingWindowStore}. */
 const inMemorySlidingWindowStore: SlidingWindowStore = {
+    async consumeIfBelow(key: string, windowMs: number, max: number): Promise<boolean> {
+        const now = Date.now();
+        const cutoff = now - windowMs;
+        const existing = slidingWindowMemoryStore.get(key) ?? [];
+        const pruned = existing.filter((ts) => ts > cutoff);
+        if (pruned.length >= max) {
+            slidingWindowMemoryStore.set(key, pruned);
+            return false;
+        }
+        pruned.push(now);
+        slidingWindowMemoryStore.set(key, pruned);
+        return true;
+    },
     async record(key: string, windowMs: number): Promise<number> {
         const now = Date.now();
         const cutoff = now - windowMs;

@@ -118,10 +118,22 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
 
     useEffect(() => {
         let active = true;
-        void accommodationsImportApi.getAccess().then((result) => {
-            if (!active || !result.ok) return;
-            setAccess(result.data);
-        });
+        async function loadAccess(): Promise<void> {
+            try {
+                const result = await accommodationsImportApi.getAccess();
+                if (active && result.ok) setAccess(result.data);
+                else if (active) setAccess({ allowed: true });
+            } catch (cause) {
+                webLogger.warn(
+                    'ImportFromUrl: access precheck failed; server will enforce access on submit',
+                    {
+                        error: cause
+                    }
+                );
+                if (active) setAccess({ allowed: true });
+            }
+        }
+        void loadAccess();
         return () => {
             active = false;
         };
@@ -337,8 +349,8 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                               'Tu plan no incluye esta función. Actualizalo para continuar.'
                           )
                         : t(
-                              'host.importFromUrl.errors.rateLimit',
-                              'Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.'
+                              'host.importFromUrl.errors.newUserCap',
+                              'Alcanzaste el límite de importaciones de las últimas 24 horas. Probá de nuevo más tarde.'
                           )}
                     {entitlementDenied ? (
                         <a
@@ -351,6 +363,22 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                             {t('host.importFromUrl.errors.entitlementCta', 'Ver planes')}
                         </a>
                     ) : null}
+                </div>
+            </section>
+        );
+    }
+
+    if (access === null) {
+        return (
+            <section
+                className={styles.importFromUrl}
+                aria-busy="true"
+            >
+                <div role="status">
+                    {t(
+                        'host.importFromUrl.actions.checkingAccess',
+                        'Verificando disponibilidad de importación…'
+                    )}
                 </div>
             </section>
         );

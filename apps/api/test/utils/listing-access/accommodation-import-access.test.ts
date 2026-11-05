@@ -39,27 +39,29 @@ describe('accommodation import access', () => {
     });
 
     it('allows a new user without a plan', async () => {
-        await expect(getAccommodationImportAccess('user-1')).resolves.toMatchObject({
+        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: true,
             isNewUser: true
         });
-        await expect(requireAccommodationImportAccess('user-1')).resolves.toMatchObject({
-            allowed: true,
-            isNewUser: true
-        });
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject(
+            {
+                allowed: true,
+                isNewUser: true
+            }
+        );
         expect(state.used).toBe(1);
     });
 
     it('denies a returning user without the entitlement', async () => {
         state.trial = true;
-        await expect(requireAccommodationImportAccess('user-1')).rejects.toMatchObject({
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).rejects.toMatchObject({
             code: 'ENTITLEMENT_REQUIRED'
         });
     });
 
     it('allows an entitled user without consuming the new-user cap', async () => {
         state.hasEntitlement = true;
-        await expect(getAccommodationImportAccess('user-1')).resolves.toMatchObject({
+        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: true,
             isNewUser: false
         });
@@ -68,10 +70,10 @@ describe('accommodation import access', () => {
 
     it('denies a new user after five imports in the rolling window', async () => {
         state.used = 5;
-        await expect(requireAccommodationImportAccess('user-1')).rejects.toMatchObject({
+        await expect(requireAccommodationImportAccess({ userId: 'user-1' })).rejects.toMatchObject({
             status: 429
         });
-        await expect(getAccommodationImportAccess('user-1')).resolves.toMatchObject({
+        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: false,
             reason: 'new_user_cap'
         });
@@ -82,7 +84,7 @@ describe('accommodation import access', () => {
         ['a published accommodation', 'published']
     ] as const)('does not classify a user with %s as new', async (_label, kind) => {
         state[kind === 'subscription' ? 'subscription' : 'published'] = true;
-        await expect(getAccommodationImportAccess('user-1')).resolves.toMatchObject({
+        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: false,
             isNewUser: false,
             reason: 'entitlement'
@@ -90,7 +92,7 @@ describe('accommodation import access', () => {
     });
 
     it('reports the same server decision for the UI without consuming usage', async () => {
-        await expect(getAccommodationImportAccess('user-1')).resolves.toMatchObject({
+        await expect(getAccommodationImportAccess({ userId: 'user-1' })).resolves.toMatchObject({
             allowed: true,
             isNewUser: true,
             remainingNewUserImports: 5

@@ -73,6 +73,10 @@ import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { requireAccommodationImportAccess } from '../../../utils/listing-access/accommodation-import-access';
+import {
+    AI_ENTITLEMENT_KEY_BY_FEATURE,
+    AI_LIMIT_KEY_BY_FEATURE
+} from '../../../utils/listing-access/ai-quota-catalog';
 import { type AiQuotaDecision, evaluateAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -331,11 +335,11 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             userId: actor.id,
             vertical: VerticalEnum.ACCOMMODATION,
             feature: FEATURE,
-            entitlementKey: 'ai_accommodation_import',
-            limitKey: 'max_ai_accommodation_import_per_month'
+            entitlementKey: AI_ENTITLEMENT_KEY_BY_FEATURE.accommodation_import,
+            limitKey: AI_LIMIT_KEY_BY_FEATURE.accommodation_import
         });
         if (!quota.allowed && quota.reason === 'entitlement') {
-            await requireAccommodationImportAccess(actor.id);
+            await requireAccommodationImportAccess({ userId: actor.id });
         } else {
             gate.blockedReason = getImportAiBlockedReason(quota);
         }

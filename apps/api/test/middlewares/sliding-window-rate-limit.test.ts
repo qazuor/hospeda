@@ -368,7 +368,8 @@ describe('createSlidingWindowPerUserRateLimit', () => {
             const spyStore: SlidingWindowStore = {
                 record: vi.fn().mockResolvedValue(1),
                 count: vi.fn().mockResolvedValue(0),
-                oldestInWindow: vi.fn().mockResolvedValue(undefined)
+                oldestInWindow: vi.fn().mockResolvedValue(undefined),
+                consumeIfBelow: vi.fn().mockResolvedValue(true)
             };
 
             const app = buildApp({

@@ -217,7 +217,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         });
     });
 
-    it('returns 402 for a returning user without entitlement', async () => {
+    it('returns 403 for a returning user without entitlement', async () => {
         gateState.entitlement = false;
         accessState.isNewUser = false;
         const res = await app.request(ENDPOINT, {

@@ -1,32 +1,25 @@
-import { ServiceErrorCode } from '@repo/schemas';
+import { type AccommodationImportAccessResponse, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import {
     ACCOMMODATION_IMPORT_NEW_USER_MAX,
     getAccommodationImportAccessPorts
 } from './accommodation-import-access-ports';
-
-export interface AccommodationImportAccess {
-    readonly allowed: boolean;
-    readonly isNewUser: boolean;
-    readonly hasEntitlement: boolean;
-    readonly remainingNewUserImports: number | null;
-    readonly reason?: 'entitlement' | 'new_user_cap';
-}
+import { AI_ENTITLEMENT_KEY_BY_FEATURE } from './ai-quota-catalog';
 
 /** Resolve the authoritative importer permission state for the API and create-flow UI. */
-export async function getAccommodationImportAccess(
-    userId: string
-): Promise<AccommodationImportAccess> {
+export async function getAccommodationImportAccess(input: {
+    readonly userId: string;
+}): Promise<AccommodationImportAccessResponse> {
     const ports = getAccommodationImportAccessPorts();
-    const hasEntitlement = await ports.hasImportEntitlement(userId);
+    const hasEntitlement = await ports.hasImportEntitlement(input);
     if (hasEntitlement) {
         return { allowed: true, isNewUser: false, hasEntitlement, remainingNewUserImports: null };
     }
     const [hadTrial, hadSubscription, hasPublishedAccommodation] = await Promise.all([
-        ports.hasHadTrial(userId),
-        ports.hasHadSubscription(userId),
-        ports.hasPublishedAccommodation(userId)
+        ports.hasHadTrial(input),
+        ports.hasHadSubscription(input),
+        ports.hasPublishedAccommodation(input)
     ]);
     const isNewUser = !hadTrial && !hadSubscription && !hasPublishedAccommodation;
     if (!isNewUser) {
@@ -38,7 +31,7 @@ export async function getAccommodationImportAccess(
             reason: 'entitlement'
         };
     }
-    const used = await ports.countNewUserImports(userId);
+    const used = await ports.countNewUserImports(input);
     return {
         allowed: used < ACCOMMODATION_IMPORT_NEW_USER_MAX,
         isNewUser,
@@ -49,17 +42,17 @@ export async function getAccommodationImportAccess(
 }
 
 /** Enforce import access; new users consume one of their rolling-window slots. */
-export async function requireAccommodationImportAccess(
-    userId: string
-): Promise<AccommodationImportAccess> {
-    const access = await getAccommodationImportAccess(userId);
+export async function requireAccommodationImportAccess(input: {
+    readonly userId: string;
+}): Promise<AccommodationImportAccessResponse> {
+    const access = await getAccommodationImportAccess(input);
     if (access.hasEntitlement) return access;
     if (!access.isNewUser) {
         throw new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {
-            entitlementKey: 'ai_accommodation_import'
+            entitlementKey: AI_ENTITLEMENT_KEY_BY_FEATURE.accommodation_import
         });
     }
-    if (!(await getAccommodationImportAccessPorts().consumeNewUserImport(userId))) {
+    if (!(await getAccommodationImportAccessPorts().consumeNewUserImport(input))) {
         throw new HTTPException(429, { message: 'New-user import limit reached.' });
     }
     return access;

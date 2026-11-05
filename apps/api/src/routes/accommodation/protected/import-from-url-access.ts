@@ -16,6 +16,6 @@ export const protectedImportFromUrlAccessRoute = createProtectedRoute({
     responseSchema: AccommodationImportAccessResponseSchema,
     handler: async (ctx): Promise<AccommodationImportAccessResponse> => {
         const actor = getActorFromContext(ctx);
-        return getAccommodationImportAccess(actor.id);
+        return getAccommodationImportAccess({ userId: actor.id });
     }
 });

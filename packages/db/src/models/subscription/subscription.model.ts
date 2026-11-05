@@ -61,6 +61,13 @@ export interface FindLiveCommitmentInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input for checking whether a user has ever had a subscription in a vertical. */
+export interface ExistsAnyForUserInput {
+    readonly userId: string;
+    readonly vertical: string;
+    readonly tx?: DrizzleClient;
+}
+
 /** Input for copying the provider's next payment date onto an active subscription. */
 export interface SyncNextChargeAtInput {
     readonly subscriptionId: string;
@@ -147,6 +154,25 @@ export interface AbandonPendingAuthorizationResult {
 
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
+    /**
+     * Checks subscription history for a user and vertical, including lapsed and
+     * superseded rows. Used where eligibility depends on ever having subscribed.
+     */
+    async existsAnyForUser(input: ExistsAnyForUserInput): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(
+                and(
+                    eq(subscriptions.userId, input.userId),
+                    eq(subscriptions.vertical, input.vertical)
+                )
+            )
+            .limit(1);
+        return row !== undefined;
+    }
+
     /** Completes the exact creation key once, without creating a provider link. */
     async recordCreationRejected(input: RecordCreationRejectedInput): Promise<boolean> {
         const db = input.tx ?? getDb();
