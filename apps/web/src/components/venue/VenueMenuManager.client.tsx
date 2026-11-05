@@ -900,9 +900,9 @@ export function VenueMenuManager({
                     gate={lockedGate}
                     locale={locale}
                     messageKey="venue.owner.editor.menuManager.locked"
-                    messageFallback="Tu carta completa, con platos y archivo, está disponible desde el plan Profesional."
+                    messageFallback="Tu carta completa está disponible desde el plan Profesional."
                     preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
-                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar tus platos y el archivo."
+                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha."
                     sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
                     hasData={lockedHasData}
                     vaciar={vaciar}

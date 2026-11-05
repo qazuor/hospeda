@@ -34,16 +34,18 @@ const UPSELL_KEYS = ['locked', 'lockedPreTrial'] as const;
 
 /**
  * Forbidden promises per language: a single deliverable (file type, image,
- * document) or the act of sending one, plus the link as a feature of its own.
+ * document) or the act of sending one, the link as a feature of its own, and
+ * any enumeration of what the carta contains.
  *
- * The bare noun for the carta's uploaded file ("archivo"/"file"/"arquivo") is
- * deliberately absent: the approved copy names the carta's contents as a whole
- * and uses that noun, so it is not a promise of a separate deliverable.
+ * Owner decision 2026-11-05: the upsell names the carta and nothing else. It
+ * must not promise the uploaded file ("archivo"/"file"/"arquivo") nor list the
+ * dishes ("platos"/"dishes"/"pratos"), because enumerating the contents turns
+ * one of them back into the advertised feature.
  */
 const FORBIDDEN_TERMS_BY_LOCALE: Readonly<Record<'es' | 'en' | 'pt', readonly string[]>> = {
-    es: ['pdf', 'foto', 'enlace', 'imagen', 'documento', 'subir'],
-    en: ['pdf', 'photo', 'link', 'image', 'document', 'upload'],
-    pt: ['pdf', 'foto', 'link', 'imagem', 'documento', 'enviar']
+    es: ['pdf', 'foto', 'enlace', 'imagen', 'documento', 'subir', 'archivo', 'platos'],
+    en: ['pdf', 'photo', 'link', 'image', 'document', 'upload', 'file', 'dishes'],
+    pt: ['pdf', 'foto', 'link', 'imagem', 'documento', 'enviar', 'arquivo', 'pratos']
 };
 
 /** The word that names the section in each language. */
