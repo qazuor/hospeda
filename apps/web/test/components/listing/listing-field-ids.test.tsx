@@ -174,7 +174,11 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // renamed (HOS-784 stage 2), carries no validation of its own, and is never
     // persisted. There is no invalid state to focus, and the control does not
     // exist at all in the state this suite renders.
-    refreshSlugFromName: 'conditional opt-in, carries no error of its own'
+    refreshSlugFromName: 'conditional opt-in, carries no error of its own',
+    // HOS-1787 leaf 5.3 / DEC-FAC-062 — the menu link moved out of `price` into
+    // the carta. `VenueMenuLinkField` still renders the same `ce-menuUrl` id,
+    // but it is mounted by the carta route, not by `ListingEditor`.
+    menuUrl: 'edited by the carta section, not the price form'
 };
 
 /**

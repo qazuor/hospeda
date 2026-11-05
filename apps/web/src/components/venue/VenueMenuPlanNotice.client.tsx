@@ -48,12 +48,12 @@ export function VenueMenuPlanNotice({ id, gate, locale }: VenueMenuPlanNoticePro
         preTrial: () =>
             t(
                 'venue.owner.editor.menuManager.lockedPreTrial',
-                'La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar los platos o subir una foto o un PDF del menú.'
+                'La carta se habilita cuando publiques tu ficha: desde ese momento vas a poder cargar tus platos y el archivo.'
             ),
         plan: () =>
             t(
                 'venue.owner.editor.menuManager.locked',
-                'Cargar la carta y subir una foto o un PDF del menú está disponible desde el plan Profesional.'
+                'Tu carta completa, con platos y archivo, está disponible desde el plan Profesional.'
             )
     };
     const showPlansLink: Readonly<Record<VenueMenuPlanNoticeProps['gate'], boolean>> = {

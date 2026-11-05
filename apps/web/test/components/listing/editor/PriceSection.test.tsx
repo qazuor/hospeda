@@ -37,14 +37,22 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof PriceSecti
 
 describe('PriceSection', () => {
     describe('venue branch', () => {
-        it('renders the tier and menu fields, and none of the experience ones', () => {
+        it('renders the tier only, and none of the experience ones (DEC-FAC-062)', () => {
             renderSection();
 
             expect(screen.getByLabelText('Rango de precios')).toBeInTheDocument();
-            expect(screen.getByLabelText('Enlace al menú')).toBeInTheDocument();
             expect(screen.queryByLabelText('Precio a consultar')).toBeNull();
             expect(screen.queryByLabelText(/Precio desde/)).toBeNull();
             expect(screen.queryByLabelText('Unidad de precio')).toBeNull();
+        });
+
+        it('does not render the menu link (TEST:5.3:1, DEC-FAC-062)', () => {
+            // The link moved to the carta. `precio` is the page the e2e used to
+            // open for it, so its absence here is the regression this pins.
+            renderSection();
+
+            expect(screen.queryByLabelText('Enlace al menú')).toBeNull();
+            expect(document.getElementById('ce-menuUrl')).toBeNull();
         });
 
         it('reports a tier change through onFieldChange', () => {
@@ -55,23 +63,6 @@ describe('PriceSection', () => {
             fireEvent.change(select, { target: { value: tier } });
 
             expect(onFieldChange).toHaveBeenCalledWith('priceRange', tier);
-        });
-
-        it('reports a menu link change through onFieldChange', () => {
-            const { onFieldChange } = renderSection();
-
-            fireEvent.change(screen.getByLabelText('Enlace al menú'), {
-                target: { value: 'https://menu.test/carta' }
-            });
-
-            expect(onFieldChange).toHaveBeenCalledWith('menuUrl', 'https://menu.test/carta');
-        });
-
-        it('surfaces the menuUrl error', () => {
-            renderSection({ errors: { menuUrl: 'URL inválida' } });
-
-            expect(screen.getByText('URL inválida')).toBeInTheDocument();
-            expect(screen.getByLabelText('Enlace al menú')).toHaveAttribute('aria-invalid', 'true');
         });
     });
 

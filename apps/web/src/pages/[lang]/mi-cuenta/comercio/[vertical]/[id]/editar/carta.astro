@@ -9,10 +9,12 @@
  * `punto-de-encuentro` to a restaurant, pointing the other way.
  *
  * `VenueMenuManager` owns its own endpoints — `GET`/`PUT .../menu` for the
- * carta and `POST`/`DELETE .../menu-file` for the uploaded photo/PDF — so this
- * page mounts it directly, with no form and no save button, exactly as
- * `preguntas.astro` mounts the FAQ manager. Nothing here reaches the listing
- * PATCH or its dirty tracking.
+ * structured carta and `POST`/`DELETE .../menu-file` for the uploaded file — so
+ * this page mounts it directly, with no form and no save button, exactly as
+ * `preguntas.astro` mounts the FAQ manager. The external link is the third part
+ * of the section (DEC-FAC-062): `VenueMenuLinkField` saves it with its own
+ * one-key `PATCH` of the listing, so nothing here reaches the listing form or
+ * its dirty tracking.
  *
  * ## Why the carta is NOT preloaded server-side, unlike the FAQs
  *

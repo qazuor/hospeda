@@ -35,7 +35,8 @@
  *   T-013 simple fields (contactInfo — no website per AC-4)
  *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
  *   T-014 structured fields (openingHours)
- *   T-014 price group (venue: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   T-014 price group (venue: priceRange | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   menuUrl lives in the carta section, not the price group (DEC-FAC-062)
  *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
  *   T-015 media gallery
  *   T-016 amenities / features
@@ -279,12 +280,15 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    text as if the owner had typed it, permanently overwriting the i18n
  *    column with content the plain `name`/`summary`/`description`/
  *    `richDescription` column held instead.
- *  - Venue's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
- *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
+ *  - Venue's `priceRange` is `.nullish()` on the domain schema
+ *    and clears to an explicit `null`. `priceUnit` now joins it (H-156 made the
  *    column nullable), so clearing it sends `null` rather than omitting the key
  *    — the old omit-instead-of-null rule (T-021) meant the owner could never
  *    actually clear a unit once set. Experience's `priceFrom` is still NOT
  *    nullable and keeps omitting the key.
+ *  - `menuUrl` is NOT part of this diff any more (DEC-FAC-062): it belongs to
+ *    the carta section and is saved by `VenueMenuLinkField` with its own
+ *    one-key PATCH, never by the price page.
  *  - Experience's three `meetingPoint*` fields (HOS-1048) follow the `priceUnit`
  *    rule, not the `priceFrom` one: all three are `.nullish()`, so clearing one
  *    sends an explicit `null`. They ship only on the experience branch, because
@@ -390,9 +394,6 @@ function buildPatchPayload({
     if (vertical === 'venue') {
         if (current.priceRange !== baseline.priceRange) {
             payload.priceRange = current.priceRange || null;
-        }
-        if (current.menuUrl !== baseline.menuUrl) {
-            payload.menuUrl = current.menuUrl || null;
         }
         // HOS-1787 leaf 5.1 — nightInfo. Every writable field clears to `null`;
         // `entryPriceUpdatedAt` is server-managed and never appears here.
@@ -539,7 +540,7 @@ export function ListingEditor({
     // validates the request body against (`apps/api/src/routes/.../protected/patch.ts`).
     // Validating the full dirty-field payload against it (instead of the two ad
     // hoc summary/priceFrom checks this editor had) closes contact
-    // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
+    // (mobilePhone/workEmail), social networks, opening hours, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
     const schema =
         vertical === 'venue' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
@@ -605,7 +606,6 @@ export function ListingEditor({
         },
         openingHours: (data.openingHours as OpeningHours | null | undefined) ?? null,
         priceRange: strField(data, 'priceRange'),
-        menuUrl: strField(data, 'menuUrl'),
         isPriceOnRequest: data.isPriceOnRequest === true,
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,

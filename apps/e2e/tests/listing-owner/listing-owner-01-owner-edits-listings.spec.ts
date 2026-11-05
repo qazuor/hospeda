@@ -24,8 +24,9 @@
  *  2. The listing index shows ONLY her own entries (both verticals)
  *     and no listing owned by another VENUE_OWNER (rodrigo, valentina).
  *  3. She opens the venue editor for "la-parrilla-del-puerto",
- *     changes the menuUrl field, saves; the new value is reflected on the
- *     public venue ficha (/.../comer-y-salir/la-parrilla-del-puerto/).
+ *     changes the menuUrl field in the CARTA (DEC-FAC-062), saves; the new
+ *     value is reflected on the public venue ficha
+ *     (/.../comer-y-salir/la-parrilla-del-puerto/).
  *  4. She opens the experience editor for "excursion-rio-uruguay-concepcion",
  *     edits the richDescription field, saves; the updated text is reflected
  *     on the public experience ficha (/.../experiencias/excursion-...).
@@ -226,9 +227,11 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // the SSR middleware returns a 404 page (not a redirect) pointing to the
         // slash version. `listingEditorUrl` always emits one.
         //
-        // HOS-1080: `menuUrl` is a PRICE field, and the editor is one page per
-        // section now — `…/editar/` is the hub, which lists the sections and
-        // renders no form. Opening `precio` is what puts `#ce-menuUrl` on screen.
+        // DEC-FAC-062: `menuUrl` is part of the CARTA (dishes, file and link),
+        // not a price field, so it is edited at `…/editar/carta/`. `precio` is
+        // still a real section (it edits `priceRange`), and it must NOT carry
+        // the link field any more — this is the regression the move could
+        // reintroduce.
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
@@ -238,18 +241,31 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
             }),
             { waitUntil: 'load' }
         );
-
-        // Wait for React hydration to complete.
-        //
-        // HOS-371: `toBeEditable()` on a server-rendered control is NOT a
-        // hydration gate — #ce-menuUrl is in the SSR HTML and is already
-        // "editable" before React attaches a single handler. This only ever
-        // passed because hydration won the race; once the island started
-        // shipping TipTap it stopped winning, and the fill below landed on a
-        // node React was not listening to (dirty stays empty → Save disabled).
-        // `waitForListingEditorHydration` gates on something that cannot exist
-        // before hydration.
         await waitForListingEditorHydration({ page });
+
+        // The price page is alive (it renders its own field) and the link is gone.
+        await expect(page.locator('#ce-priceRange')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#ce-menuUrl')).toHaveCount(0);
+
+        await page.goto(
+            listingEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'venue',
+                listingId: venueId,
+                section: 'carta'
+            }),
+            { waitUntil: 'load' }
+        );
+
+        // The carta is a `client:load` island, so `#ce-menuUrl` exists in the
+        // SSR HTML before React attaches a handler. `toBeEditable()` is NOT a
+        // hydration gate (HOS-371 did it once: the fill landed on a node React
+        // was not listening to). `VenueMenuLinkField` marks itself
+        // `data-hydrated="true"` from a mount effect, and nothing can set that
+        // before hydration.
+        await expect(
+            page.locator('[data-testid="venue-menu-link-field"][data-hydrated="true"]')
+        ).toBeVisible({ timeout: 20_000 });
 
         const menuUrlInput = page.locator('#ce-menuUrl');
         await expect(menuUrlInput).toBeVisible({ timeout: 15_000 });
@@ -258,24 +274,24 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // React 19 controlled inputs track mutations through the native prototype
         // setter (patched by React). Playwright's fill() bypasses that setter on
         // some Chromium builds under CI load, so React's synthetic onChange never
-        // fires and markDirty('menuUrl') is never called → dirty stays empty →
-        // save button stays disabled → PATCH never fires.
+        // fires and the field never updates.
         //
         // Fix: use the shared setReactInputValue helper (SPEC-253) which calls
         // the native HTMLInputElement.prototype setter and dispatches a proper
         // InputEvent with inputType:'insertText' so React 19's onChange fires.
         await setReactInputValue(menuUrlInput, newMenuUrl);
 
-        // `saveListingEditor` waits for the PATCH rather than the transient
-        // <output> success element, which can appear and vanish before
-        // Playwright's assertion polls it. It also races that wait against the
-        // "no hay cambios" toast, which is what now reports a form that never
-        // went dirty — the diagnostic the disabled Save button used to give for
-        // free, before the editor moved onto the shared ActionBar.
-        const gastroSaved = await saveListingEditor({
-            page,
-            pathPattern: /\/protected\/venues\//
-        });
+        // The link saves independently of the carta document: its button sends
+        // the one-key PATCH of the listing. Waiting on the response (rather than
+        // on a transient message) is what makes the assertion about the wire.
+        const menuPatch = page.waitForResponse(
+            (response) =>
+                response.url().includes(`/protected/venues/${venueId}`) &&
+                response.request().method() === 'PATCH',
+            { timeout: 15_000 }
+        );
+        await page.getByTestId('venue-menu-link-save').click();
+        const gastroSaved = await menuPatch;
         expect(gastroSaved.ok()).toBe(true);
 
         // ── Step 3 assertion: public venue ficha reflects new menuUrl ─────

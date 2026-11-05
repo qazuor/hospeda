@@ -3,10 +3,11 @@
  * @file precio.astro
  * @description Price section of the venue/experience editor (HOS-1080).
  *
- * The field set differs by vertical — venue carries `priceRange` and
- * `menuUrl`, experience carries `isPriceOnRequest`/`priceFrom`/`priceUnit` —
- * and so do their clearing semantics; `PriceSection` and `buildPatchPayload`
- * own that split between them.
+ * The field set differs by vertical — venue carries `priceRange`, experience
+ * carries `isPriceOnRequest`/`priceFrom`/`priceUnit` — and so do their clearing
+ * semantics; `PriceSection` and `buildPatchPayload` own that split between
+ * them. The venue's menu link is NOT here any more (DEC-FAC-062): it is edited
+ * inside the carta.
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/precio/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
