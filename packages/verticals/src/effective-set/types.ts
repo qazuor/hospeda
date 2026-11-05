@@ -30,7 +30,7 @@ export interface FoldableSource {
     /**
      * `true` only for a source injected from ANOTHER vertical than the one being
      * resolved (the Tourist VIP inheritance, whose title is an accommodation or
-     * commerce subscription). Coverage sources carry no vertical of their own, so
+     * venue/experience subscription). Coverage sources carry no vertical of their own, so
      * the resolver marks the one it brings in; such a source never supersedes a
      * TRIAL (HOS-2027).
      */
