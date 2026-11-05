@@ -108,6 +108,30 @@ const CLAUSE_TESTS: Readonly<Record<number, readonly number[]>> = {
 };
 
 // AC-to-TEST mapping transcribed from the TEST:V7 coverage declarations in V7.md §3 / .hoja/contexto.md §3.
+// V6 owns the structural half of clauses 7 and 8; D-6 cites these existing cases.
+const BASE_CLAUSE_FILES = [
+    {
+        clause: 7,
+        file: 'packages/db/test/integration/partners-v7-schema-from-empty.test.ts',
+        id: 'TEST:V6:29'
+    },
+    {
+        clause: 7,
+        file: 'packages/db/test/integration/partners-v7-schema-over-data.test.ts',
+        id: 'TEST:V6:30'
+    },
+    {
+        clause: 7,
+        file: 'scripts/__tests__/check-partner-no-tier-and-dates.test.ts',
+        id: 'TEST:V6:31'
+    },
+    {
+        clause: 8,
+        file: 'packages/db/test/integration/partners-v7-schema-from-empty.test.ts',
+        id: 'TEST:V6:29'
+    }
+] as const;
+
 const AC_TESTS: Readonly<Record<number, readonly number[]>> = {
     1: [1],
     2: [2],
@@ -214,6 +238,15 @@ describe('AC:V7:19 — LISTA:V7 evidence in the tree', () => {
             ).toBe(true);
         }
         expect(titles.some((title) => namesId(title, 'TEST:V7:21'))).toBe(true);
+    });
+
+    it('clause 7 and 8 structural evidence remains in the V6 migration tests and guard', () => {
+        for (const evidence of BASE_CLAUSE_FILES) {
+            const source = read(evidence.file);
+            expect(source, `clause ${evidence.clause} evidence title ${evidence.id}`).toMatch(
+                new RegExp(`${evidence.id}(?![0-9])`)
+            );
+        }
     });
 
     it('the ten clause and twenty AC maps close over TEST:V7:1..23 and AC:V7:1..20', () => {
