@@ -40,15 +40,86 @@ beforeEach(() => {
     readMock.mockReset();
     startMock.mockReset();
     window.sessionStorage.clear();
+    const sections = document.createElement('div');
+    sections.dataset.subscriptionSections = '';
+    document.body.append(sections);
 });
 afterEach(() => {
     cleanup();
+    document.querySelector('[data-subscription-sections]')?.remove();
     window.sessionStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
 describe('SubscriptionReturn polling', () => {
+    it('hides subscription sections while processing and keeps them hidden when refresh fires', async () => {
+        const reload = vi.fn();
+        const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        expect(sections?.hidden).toBe(true);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(reload).toHaveBeenCalledTimes(1);
+        expect(sections?.hidden).toBe(true);
+    });
+
+    it('shows sections for terminal and unknown views, and confirmed without refresh', () => {
+        const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
+        const reload = vi.fn();
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="CHARGE_DECLINED"
+                refreshPage={reload}
+            />
+        );
+        expect(sections?.hidden).toBe(false);
+
+        cleanup();
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus={null}
+                refreshPage={reload}
+            />
+        );
+        expect(sections?.hidden).toBe(false);
+
+        cleanup();
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="ACTIVE"
+                refreshPage={reload}
+            />
+        );
+        expect(sections?.hidden).toBe(false);
+    });
+
+    it('clears hidden sections on unmount', () => {
+        const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
+        const { unmount } = render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+            />
+        );
+        expect(sections?.hidden).toBe(true);
+        unmount();
+        expect(sections?.hidden).toBe(false);
+    });
+
     it('refreshes the page exactly once when polling confirms a pending subscription', async () => {
         const reload = vi.fn();
         readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });

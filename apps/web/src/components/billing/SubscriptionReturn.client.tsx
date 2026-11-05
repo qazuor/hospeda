@@ -59,6 +59,7 @@ export function SubscriptionReturn({
     const [attempt, setAttempt] = useState(0);
     const [retryMessageKey, setRetryMessageKey] = useState<string | null>(null);
     const [retrying, setRetrying] = useState(false);
+    const [refreshFired, setRefreshFired] = useState(false);
     const [typedEmail, setTypedEmail] = useState(declaredPayerEmail ?? accountEmail);
     const [emailError, setEmailError] = useState(false);
     const retryingRef = useRef(false);
@@ -101,7 +102,17 @@ export function SubscriptionReturn({
             return;
         }
         refreshPage();
+        setRefreshFired(true);
     }, [refreshPage, subscriptionId, view]);
+
+    useEffect(() => {
+        const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
+        if (!sections) return;
+
+        const busy = view === 'processing' || (view === 'confirmed' && refreshFired);
+        sections.toggleAttribute('hidden', busy);
+        return () => sections.removeAttribute('hidden');
+    }, [refreshFired, view]);
 
     useEffect(() => {
         if (!shouldPollAgain({ view, attempt })) return;
