@@ -49,7 +49,12 @@ vi.mock('@/hooks/use-translations', () => ({
 }));
 vi.mock('../../hooks/usePartnerBillingSetup', () => ({
     usePartnerBillingSetupPreview: () => preview,
-    usePartnerBillingSetupMutation: () => ({ mutateAsync: mocks.mutateAsync, isPending: false })
+    usePartnerBillingSetupMutation: () => ({ mutateAsync: mocks.mutateAsync, isPending: false }),
+    partnerBillingSetupErrorKey: () => 'admin-entities.partnerBillingSetup.errors.commitmentTaken',
+    formatPartnerBillingSetupAmount: (option: { amountMinor: number; currency: string }) =>
+        `${option.amountMinor} ${option.currency}`,
+    partnerBillingSetupCycleKey: (cycle: string) =>
+        `admin-entities.partnerBillingSetup.cycle.${cycle}`
 }));
 
 describe('PartnerBillingSetupCard', () => {
