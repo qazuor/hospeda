@@ -308,6 +308,11 @@ describe('HOS-2037 migration 0133 (real database)', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, stuck.row.id));
         expect(stuckAfter?.planVersionId).toBe(dearer.id);
+        // Not a fixture for later tests: a live row on an incompatible version blocks 0133.
+        await db
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, stuck.row.id));
 
         // Same price, retired and non-sellable: moved, cycle preserved.
         const retired = await twinOf(current, 0);
@@ -325,7 +330,7 @@ describe('HOS-2037 migration 0133 (real database)', () => {
         );
     });
 
-    it('re-anchors subscribers pinned to ANY older version and skips an incompatible one', async () => {
+    it('re-anchors subscribers pinned to ANY older version and ignores an empty incompatible one', async () => {
         const { version: current } = await currentVersion('owner-basico');
         const currentOptions = await db
             .select()
@@ -333,23 +338,17 @@ describe('HOS-2037 migration 0133 (real database)', () => {
             .where(eq(billingOptions.planVersionId, current.id));
         const olderA = await twinOf(current, 0);
         const olderB = await twinOf(current, 0);
-        const incompatible = await twinOf(current, 2);
+        await twinOf(current, 3); // incompatible, but nobody is pinned to it
         const a = await anchor({ versionId: olderA.id, cycle: 'monthly', status: 'ACTIVE' });
         const b = await anchor({ versionId: olderB.id, cycle: 'annual', status: 'GRACE_PERIOD' });
-        const c = await anchor({
-            versionId: incompatible.id,
-            cycle: 'monthly',
-            status: 'ACTIVE'
-        });
 
         // Act: 0133 sees the current version already grants the entitlement and only sweeps.
-        const outcome = await run();
+        await run();
 
-        // Assert: both compatible sources moved by cycle; the incompatible one untouched and reported
         const rows = await db
             .select()
             .from(subscriptions)
-            .where(inArray(subscriptions.id, [a.row.id, b.row.id, c.row.id]));
+            .where(inArray(subscriptions.id, [a.row.id, b.row.id]));
         const byId = new Map(rows.map((r) => [r.id, r]));
         const cycleOf = (optionId: string | null | undefined) =>
             currentOptions.find((o) => o.id === optionId)?.cycle;
@@ -357,14 +356,49 @@ describe('HOS-2037 migration 0133 (real database)', () => {
         expect(cycleOf(byId.get(a.row.id)?.billingOptionId)).toBe('monthly');
         expect(byId.get(b.row.id)?.planVersionId).toBe(current.id);
         expect(cycleOf(byId.get(b.row.id)?.billingOptionId)).toBe('annual');
-        expect(byId.get(c.row.id)?.planVersionId).toBe(incompatible.id);
-        expect(outcome.summary).toContain(`owner-basico:${incompatible.id}`);
 
-        // Second run: nothing left to move for the compatible ones.
+        // Second run: nothing left to move, still no error.
         const again = await db.transaction(async (tx) =>
             reanchorOlderVersions({ db: tx, planId: current.planId, toVersionId: current.id })
         );
         expect(again.movedCount).toBe(0);
-        expect(again.skipped.map((s) => s.versionId)).toContain(incompatible.id);
+        expect(again.skipped).toEqual([]);
+    });
+
+    it('throws, naming version and counts, and rolls everything back when a live subscriber cannot move', async () => {
+        const { version: current } = await currentVersion('owner-basico');
+        const compatible = await twinOf(current, 0);
+        const incompatible = await twinOf(current, 2);
+        const ok = await anchor({ versionId: compatible.id, cycle: 'monthly', status: 'ACTIVE' });
+        const blocked = await anchor({
+            versionId: incompatible.id,
+            cycle: 'monthly',
+            status: 'ACTIVE'
+        });
+
+        await expect(run()).rejects.toThrow(
+            new RegExp(`owner-basico version ${incompatible.id} \\(1 live, 0 queued\\)`)
+        );
+
+        // The compatible subscriber was NOT moved: the whole transaction rolled back.
+        const rows = await db
+            .select()
+            .from(subscriptions)
+            .where(inArray(subscriptions.id, [ok.row.id, blocked.row.id]));
+        const byId = new Map(rows.map((r) => [r.id, r]));
+        expect(byId.get(ok.row.id)?.planVersionId).toBe(compatible.id);
+        expect(byId.get(blocked.row.id)?.planVersionId).toBe(incompatible.id);
+
+        // Once the blocker is gone the same migration completes and moves the other one.
+        await db
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, blocked.row.id));
+        await run();
+        const [okAfter] = await db
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, ok.row.id));
+        expect(okAfter?.planVersionId).toBe(current.id);
     });
 });

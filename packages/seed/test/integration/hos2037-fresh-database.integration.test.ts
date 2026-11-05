@@ -1,6 +1,7 @@
 /**
- * HOS-2037: the fresh-database path (what `db:fresh` and the worktree template run:
- * versioned migrate, then `seed --required`, then `seed --data-migrate`) must end with
+ * HOS-2037: the fresh-database path (what `db:fresh` runs:
+ * versioned migrate, `db:apply-extras`, `seed --required --poi-catalog`, then
+ * `seed --data-migrate --baseline-stamp`) must end with
  * `owner-basico` granting `can_embed_video`, a trial version with zero entitlement
  * rows, and the baseline Pro/Premium grants, all through the REAL runner (so a
  * `contentOnly` regression, i.e. baseline-stamping 0133, fails here).
@@ -55,8 +56,21 @@ beforeAll(async () => {
         ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'],
         180_000
     );
+    // db:apply-extras, then the db:fresh seed steps (minus --example, which cannot affect the
+    // plan catalog), then the db:fresh data-migration step: stamp the historical migrations,
+    // run the `contentOnly` ones for real.
+    execFileSync('node', ['packages/db/scripts/apply-postgres-extras.mjs', scratchUrl.toString()], {
+        cwd: repoRoot,
+        stdio: 'pipe',
+        timeout: 120_000,
+        maxBuffer: 256 * 1024 * 1024
+    });
     run(repoRoot, ['--filter', '@repo/seed', 'seed', '--required', '--poi-catalog'], 300_000);
-    run(repoRoot, ['--filter', '@repo/seed', 'seed', '--data-migrate'], 300_000);
+    run(
+        repoRoot,
+        ['--filter', '@repo/seed', 'seed', '--data-migrate', '--baseline-stamp'],
+        300_000
+    );
     scratch = new Pool({ connectionString: scratchUrl.toString() });
 }, 900_000);
 
