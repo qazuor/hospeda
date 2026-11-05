@@ -24,6 +24,7 @@ import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
+import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -355,6 +356,13 @@ const breadcrumbItems = [
                 locale={locale}
             />
         )}
+
+        <!-- Night info (HOS-1849 / 4.5): entry, dress code and age badge. The
+             component self-hides when the API removed the section's fields, and
+             never inspects business lines — see its frontmatter. Placed after
+             the hours block because this page does not follow the catalog's
+             section order yet; the catalog-wide ordering is sub-spec 6. -->
+        <VenueNightInfo nightInfo={venue.nightInfo} locale={locale} />
 
         <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
              deal. NOT the same as the "accepts events" CTA below — see

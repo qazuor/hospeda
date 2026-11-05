@@ -94,6 +94,27 @@
             "weekly": "Toda {{weekday}}",
             "range": "{{when}}, das {{start}} às {{end}}",
             "fromOnly": "{{when}}, a partir das {{start}}"
+        },
+        "nightInfo": {
+            "headingMultiLine": "À noite",
+            "heading": "Info para sair",
+            "entryLabel": "Entrada",
+            "entryKind": {
+                "free": "Entrada gratuita",
+                "paid": "Entrada paga",
+                "varies": "Entrada variável"
+            },
+            "priceFrom": "A partir de {{price}}",
+            "approxUpdated": "aprox., atualizado em {{month}}",
+            "dressCodeLabel": "Código de vestimenta",
+            "dressCode": {
+                "casual": "Casual",
+                "smart_casual": "Esporte fino",
+                "elegant": "Social",
+                "no_restrictions": "Sem restrições"
+            },
+            "minAgeLabel": "Idade mínima",
+            "legalAge": "Proibida a venda de bebidas alcoólicas a menores de 18 anos (Lei argentina 24.788)."
         }
     },
     "types": {

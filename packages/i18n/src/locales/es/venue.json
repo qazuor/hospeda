@@ -94,6 +94,27 @@
             "weekly": "Todos los {{weekday}}",
             "range": "{{when}}, {{start}} a {{end}}",
             "fromOnly": "{{when}}, desde las {{start}}"
+        },
+        "nightInfo": {
+            "headingMultiLine": "De noche",
+            "heading": "Info para salir",
+            "entryLabel": "Entrada",
+            "entryKind": {
+                "free": "Entrada libre",
+                "paid": "Entrada paga",
+                "varies": "Entrada variable"
+            },
+            "priceFrom": "Desde {{price}}",
+            "approxUpdated": "aprox., actualizado {{month}}",
+            "dressCodeLabel": "Código de vestimenta",
+            "dressCode": {
+                "casual": "Informal (sin ojotas ni musculosa)",
+                "smart_casual": "Sport elegante",
+                "elegant": "Elegante",
+                "no_restrictions": "Sin restricciones"
+            },
+            "minAgeLabel": "Edad mínima",
+            "legalAge": "Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788)."
         }
     },
     "types": {
