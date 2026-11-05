@@ -13,14 +13,60 @@ export const TimeRegExp = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // while still accepting spaced local formats like "+54 11 1234 5678".
 export const InternationalPhoneRegex = /^\+[1-9](?:\s?\d){6,14}$/;
 
-/** Shared write validator for Argentine phones in common human-entered formats. */
+/** Characters a human may type in a phone field (digits, optional leading `+`, separators). */
 export const ArgentinePhoneRegex = /^\+?[0-9().\s-]+$/;
 
+/**
+ * Result of {@link parsePhoneNumber}.
+ *
+ * - `argentina`: ten national digits (area code + subscriber number) plus
+ *   whether the number is a mobile line.
+ * - `international`: an E.164 value kept exactly as typed (digits only), either
+ *   because the country is not Argentina or because it is a legacy `+54` value
+ *   that does not fit the ten-digit national shape.
+ */
 export type ParsedPhone =
     | { kind: 'argentina'; digits: string; mobile: boolean }
     | { kind: 'international'; value: string };
 
-/** Shared parser for validation and storage normalization of phone input. */
+const NATIONAL_DIGITS = 10;
+const MOBILE_MARKER = '15';
+
+/**
+ * Removes the domestic mobile marker (`15`) from a national-format number that
+ * carries it (12 digits once the trunk `0` is gone).
+ *
+ * The marker sits right after the area code: `11` (2 digits) or a 3-4 digit
+ * code. Only called for national-format input, never for `+54`/`54` numbers.
+ */
+const stripMobileMarker = (national: string): string | undefined => {
+    const candidates = national.startsWith('11') ? [2, 3, 4] : [3, 4];
+    const index = candidates.find((i) => national.slice(i, i + 2) === MOBILE_MARKER);
+    return index === undefined ? undefined : national.slice(0, index) + national.slice(index + 2);
+};
+
+/**
+ * Single source of truth for phone rules, shared by the validators and the
+ * service-core normalizer (so the normalizer can never emit a value the
+ * validator rejects).
+ *
+ * Rules, in order:
+ * 1. Only digits, one leading `+` and `( ) . - space` are allowed.
+ * 2. `+<country>` with a country other than 54 is kept as E.164 (7-15 digits).
+ * 3. `+54` / `54` followed by an optional mobile `9` and exactly ten national
+ *    digits is Argentine; the `9` marks a mobile. `15` and `0` are NOT
+ *    stripped here, they belong to national-format input only.
+ * 4. Any other `+54...` value that the historical {@link InternationalPhoneRegex}
+ *    accepted stays valid and is kept as E.164 (never tightened).
+ * 5. National format: an optional trunk `0`, then ten digits, or twelve digits
+ *    when the `15` mobile marker follows the area code (which is dropped and
+ *    marks a mobile).
+ *
+ * @param phone - Raw human input
+ * @param mobileByMeaning - `true` when the field is mobile by meaning
+ *   (`mobilePhone`, `whatsapp`)
+ * @returns The parsed phone, or `undefined` when the input is not accepted
+ */
 export const parsePhoneNumber = (
     phone: string,
     mobileByMeaning = false
@@ -28,39 +74,36 @@ export const parsePhoneNumber = (
     const trimmed = phone.trim();
     if (!ArgentinePhoneRegex.test(trimmed)) return undefined;
     const digits = trimmed.replace(/\D/g, '');
-    // Preserve every previously accepted E.164 value, including legacy Argentine
-    // numbers that do not fit the current ten-digit national representation.
-    if (InternationalPhoneRegex.test(trimmed)) {
-        const nationalDigits = digits.startsWith('549')
-            ? digits.slice(3)
-            : digits.startsWith('54')
-              ? digits.slice(2)
-              : '';
-        if (nationalDigits.length !== 10) {
-            return { kind: 'international', value: `+${digits}` };
-        }
+    const hasPlus = trimmed.startsWith('+');
+
+    if (hasPlus && !digits.startsWith('54')) {
+        const valid = digits.length >= 7 && digits.length <= 15 && !digits.startsWith('0');
+        return valid ? { kind: 'international', value: `+${digits}` } : undefined;
     }
-    if (trimmed.startsWith('+') && !trimmed.startsWith('+54')) {
-        return InternationalPhoneRegex.test(trimmed)
+
+    if (digits.startsWith('54')) {
+        const rest = digits.slice(2);
+        const marked = rest.startsWith('9');
+        const national = marked ? rest.slice(1) : rest;
+        if (national.length === NATIONAL_DIGITS) {
+            return { kind: 'argentina', digits: national, mobile: mobileByMeaning || marked };
+        }
+        // Historical E.164 values (any length 7-15) stay valid, untouched.
+        return hasPlus && InternationalPhoneRegex.test(trimmed)
             ? { kind: 'international', value: `+${digits}` }
             : undefined;
     }
+    if (hasPlus) return undefined;
 
-    let national = digits;
-    const explicitInternationalMobile = national.startsWith('549');
-    if (national.startsWith('549')) national = national.slice(3);
-    else if (national.startsWith('54')) national = national.slice(2);
-    if (national.startsWith('0')) national = national.slice(1);
-    const mobileMarkerIndex = [2, 3, 4].find((index) => national.slice(index, index + 2) === '15');
-    if (mobileMarkerIndex !== undefined) {
-        national = national.slice(0, mobileMarkerIndex) + national.slice(mobileMarkerIndex + 2);
+    const national = digits.startsWith('0') ? digits.slice(1) : digits;
+    if (national.length === NATIONAL_DIGITS) {
+        return { kind: 'argentina', digits: national, mobile: mobileByMeaning };
     }
-    if (national.length !== 10) return undefined;
-    return {
-        kind: 'argentina',
-        digits: national,
-        mobile: mobileByMeaning || explicitInternationalMobile || mobileMarkerIndex !== undefined
-    };
+    if (national.length === NATIONAL_DIGITS + MOBILE_MARKER.length) {
+        const stripped = stripMobileMarker(national);
+        if (stripped) return { kind: 'argentina', digits: stripped, mobile: true };
+    }
+    return undefined;
 };
 
 /** Accepts valid Argentine input and well-formed international E.164 numbers. */

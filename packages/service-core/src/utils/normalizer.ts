@@ -7,60 +7,37 @@ import { normalizeArgentinePhone, parsePhoneNumber } from '@repo/schemas';
  */
 
 /**
- * Normalizes phone numbers to international format.
- * Ensures they start with + and follow the E.164 standard.
+ * Normalizes a phone number to its canonical international form.
+ *
+ * Parsing is delegated to the shared `@repo/schemas` parser, which is the same
+ * one the validators use, so every accepted input normalizes to a value the
+ * validators also accept. Canonical forms:
+ * - mobile (by meaning or by marker): `+549` + 10 national digits
+ * - landline: `+54` + 10 national digits
+ * - any other country, and legacy E.164 values: `+<digits>` untouched
+ *
+ * Input the parser does not accept (never produced by a validated payload)
+ * keeps the historic best-effort cleanup.
  *
  * @param phone - The phone number to normalize
+ * @param mobileByMeaning - `true` (default) for fields that mean a mobile line
+ *   (`mobilePhone`, `whatsapp`), `false` for general/landline fields
  * @returns The normalized phone number
  *
  * @example
  * ```typescript
- * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+541155550002'
- * normalizePhoneNumber('11 5555-0002') // Returns: '+541155550002'
- * normalizePhoneNumber('155550002') // Returns: '+54155550002'
+ * normalizePhoneNumber('3442 45-2345') // '+5493442452345'
+ * normalizePhoneNumber('3442 45-2345', false) // '+543442452345'
+ * normalizePhoneNumber('3442 15 45-2345', false) // '+5493442452345'
+ * normalizePhoneNumber('155550002') // '+54155550002' (unparseable, legacy cleanup)
  * ```
  */
 export const normalizePhoneNumber = (phone: string, mobileByMeaning = true): string => {
     if (parsePhoneNumber(phone, mobileByMeaning)) {
         return normalizeArgentinePhone(phone, mobileByMeaning);
     }
-    let cleaned = phone.replace(/[^\d+]/g, '');
-
-    // Legacy values outside the current Argentine parser retain the historic
-    // cleanup behavior. Parsed Argentine formats use the shared +54 canonical.
-    // Drop the domestic trunk prefix, optional mobile marker (15), and the
-    // international mobile marker (9) before prefixing +54.
-    const hadInternationalPrefix = cleaned.startsWith('+');
-    let digits = cleaned.replace(/\D/g, '');
-    // Preserve the already-deployed HOS-1027 WhatsApp canonical, including
-    // older nine-digit local payloads that the current write schema rejects.
-    if (hadInternationalPrefix && digits.startsWith('549')) return `+${digits}`;
-    if (digits.startsWith('549') && (hadInternationalPrefix || digits.length === 13)) {
-        digits = digits.slice(3);
-        return `+54${digits}`;
-    }
-    if (digits.startsWith('54') && digits.length === 12) digits = digits.slice(2);
-    if (digits.startsWith('0') && digits.length === 11) digits = digits.slice(1);
-    const mobilePrefixIndex = [2, 3, 4].find((index) => digits.slice(index, index + 2) === '15');
-    if (mobilePrefixIndex !== undefined) {
-        digits = digits.slice(0, mobilePrefixIndex) + digits.slice(mobilePrefixIndex + 2);
-    }
-    if (digits.length === 10) return `+54${digits}`;
-
-    if (!cleaned.startsWith('+')) {
-        // Assume it's an Argentine number if no country code
-        if (cleaned.startsWith('54')) {
-            cleaned = `+${cleaned}`;
-        } else if (cleaned.startsWith('11') || cleaned.startsWith('15')) {
-            // Argentine mobile numbers
-            cleaned = `+54${cleaned}`;
-        } else {
-            // Default to +54 for Argentine numbers
-            cleaned = `+54${cleaned}`;
-        }
-    }
-
-    return cleaned;
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    return cleaned.startsWith('+') ? cleaned : `+${cleaned.startsWith('54') ? '' : '54'}${cleaned}`;
 };
 
 /**
