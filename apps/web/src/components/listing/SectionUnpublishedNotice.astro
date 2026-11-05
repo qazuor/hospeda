@@ -1,0 +1,58 @@
+---
+/**
+ * @file SectionUnpublishedNotice.astro
+ * @description Server-rendered notice above a `locked` listing section with
+ * stored data (HOS-1854, DEC-FAC-025).
+ *
+ * A downgraded plan does not delete what the owner already typed: the section
+ * stays locked, its data stays stored, and nothing of it is published. Saying
+ * "bloqueada" alone would leave the owner wondering whether their carta is
+ * still there — the whole point of this line is the number.
+ *
+ * The `rubro` reason (`absent` sections) and its hub summary belong to leaf
+ * 5.7; this component renders the `plan` reason only.
+ *
+ * The number comes from the server (`readLockedSectionCounts`), never from a
+ * client fetch, and the caller renders nothing when the read failed: a failed
+ * read is not "0 cargados".
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** How many stored items the locked section holds. Always > 0 here. */
+    readonly count: number;
+    /** Localized name of the section ("Carta", "Menú del día", "Agenda del local"). */
+    readonly sectionLabel: string;
+}
+
+const { locale, count, sectionLabel } = Astro.props;
+const { tPlural } = createTranslations(locale);
+---
+
+<p
+    class="section-unpublished-notice"
+    role="note"
+    data-testid="listing-section-unpublished-notice"
+>
+    {tPlural('listing.owner.editor.lockedNotice.plan', count, {
+        count,
+        section: sectionLabel,
+    })}
+</p>
+
+<style>
+    .section-unpublished-notice {
+        margin: 0 0 var(--space-4, 1.25rem);
+        padding: var(--space-3, 0.75rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 10px);
+        background: var(--surface-warm);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--core-foreground);
+    }
+</style>

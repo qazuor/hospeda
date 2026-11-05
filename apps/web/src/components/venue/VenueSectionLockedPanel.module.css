@@ -1,0 +1,75 @@
+/* VenueSectionLockedPanel.module.css — HOS-1854 */
+
+.locked {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.25rem);
+}
+
+/*
+ * Same boxed lock-plus-sentence treatment the menu's own plan notice uses
+ * (`VenueMenuManager.module.css` `.planNotice`), so the proactive upsell reads
+ * exactly like the one a 403 produced before this leaf.
+ */
+.notice {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-warm);
+}
+
+.icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--core-muted-foreground);
+}
+
+.text {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+}
+
+.link {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.readOnly {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.vaciarButton {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.5rem 0.875rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background-color: var(--core-background);
+    color: var(--destructive);
+}
+
+.vaciarButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.vaciarButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

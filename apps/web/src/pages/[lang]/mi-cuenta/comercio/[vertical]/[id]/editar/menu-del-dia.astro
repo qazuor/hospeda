@@ -25,10 +25,12 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
+import SectionUnpublishedNotice from '@/components/listing/SectionUnpublishedNotice.astro';
 import { VenueDailySpecialsManager } from '@/components/venue/VenueDailySpecialsManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 
 export const prerender = false;
 
@@ -40,8 +42,24 @@ const resolution = await resolveListingEditorPage({
 if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;
 
-const { detail, locale, listingId, sectionId, registry } = resolution;
+const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
+
+// HOS-1854. See `carta.astro` for the same wiring: the state comes from the
+// resolver's map and only a locked section pays for the count read.
+const activeSection = sectionId ? sectionStates[sectionId] : undefined;
+const sectionState = activeSection?.state ?? 'available';
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const lockedCounts =
+	sectionState === 'locked' && sectionId
+		? await readLockedSectionCounts({
+				vertical,
+				listingId,
+				sectionStates: { [sectionId]: activeSection! },
+				cookieHeader,
+			})
+		: {};
+const lockedCount = sectionId ? lockedCounts[sectionId] : null;
 ---
 
 <ListingEditorSectionLayout
@@ -53,9 +71,18 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="menu-del-dia"
 	title={t('listing.owner.editor.sectionNav.dailySpecials', 'Menú del día')}
 >
+	{typeof lockedCount === 'number' && lockedCount > 0 && (
+		<SectionUnpublishedNotice
+			locale={locale}
+			count={lockedCount}
+			sectionLabel={t('listing.owner.editor.sectionNav.dailySpecials', 'Menú del día')}
+		/>
+	)}
+
 	<VenueDailySpecialsManager
 		client:load
 		listingId={listingId}
 		locale={locale}
+		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
 	/>
 </ListingEditorSectionLayout>
