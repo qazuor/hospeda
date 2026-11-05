@@ -18,7 +18,7 @@ import {
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
-    SUBSCRIPTION_STATUSES,
+    type SUBSCRIPTION_STATUSES,
     subscriptions
 } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -61,6 +61,17 @@ export interface FindLiveCommitmentInput {
     readonly vertical: string;
     readonly tx?: DrizzleClient;
 }
+
+/**
+ * Statuses of a checkout that never produced a paying subscription: authorization
+ * never completed, was abandoned, or the first charge was declined (S16,
+ * record-charge-fact.service.ts). They do not count as subscription history.
+ */
+const NEVER_COMPLETED_CHECKOUT_STATUSES = [
+    'PENDING_AUTHORIZATION',
+    'ABANDONED',
+    'CHARGE_DECLINED'
+] as const satisfies readonly (typeof SUBSCRIPTION_STATUSES)[number][];
 
 /** Input for checking whether a user has ever had a subscription in a vertical. */
 export interface ExistsAnyForUserInput {
@@ -169,15 +180,7 @@ export class SubscriptionModel {
                 and(
                     eq(subscriptions.userId, input.userId),
                     eq(subscriptions.vertical, input.vertical),
-                    notInArray(
-                        subscriptions.status,
-                        SUBSCRIPTION_STATUSES.filter(
-                            (status) =>
-                                status !== 'PENDING_AUTHORIZATION' &&
-                                status !== 'ABANDONED' &&
-                                status !== 'CHARGE_DECLINED'
-                        )
-                    )
+                    notInArray(subscriptions.status, [...NEVER_COMPLETED_CHECKOUT_STATUSES])
                 )
             )
             .limit(1);
