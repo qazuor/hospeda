@@ -109,6 +109,7 @@ app.route('/', protectedImportFromUrlRoute);
 // GET /import-from-url/status - Poll an async Apify import run (HOS-50 T-011)
 // Two path segments — never collides with GET /:id (single segment) above.
 app.route('/', protectedImportFromUrlStatusRoute);
+// GET /import-from-url/access - Server-resolved importer state for create flow.
 app.route('/', protectedImportFromUrlAccessRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)

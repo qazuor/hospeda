@@ -20,6 +20,7 @@
             "forbidden": "You don't have permission to import from a URL. Check that your plan includes it.",
             "rateLimit": "You've made too many imports in a row. Please wait a moment and try again.",
             "newUserCap": "You've reached the import limit for the last 24 hours. Please try again later.",
+            "entitlement": "Your plan does not include AI data extraction when importing from a URL.",
             "entitlementCta": "View plans",
             "pastDueCta": "Update payment method",
             "failure": {

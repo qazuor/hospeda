@@ -32,8 +32,10 @@
  *
  * Strategy B only runs for sparse generic pages. Entitled users keep the
  * existing monthly quota; a new user without prior accommodation trial,
- * subscription, or published listing may import five times per rolling 24h.
- * Returning users without the entitlement are denied before scraping.
+ * subscription, or published listing may start five imports per rolling 24h.
+ * The attempt is claimed before scrape work; once exhausted, the request gets 429.
+ * Returning users without the entitlement keep the structured scrape and receive
+ * a notice when AI enrichment would otherwise have run.
  *
  * @module apps/api/routes/accommodation/protected/import-from-url
  */
@@ -343,11 +345,16 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
                 userId: actor.id,
                 hasEntitlement: false
             });
-            if (!access.aiExtractionAllowed) {
-                // Returning users and capped new users retain structured import;
-                // the entitlement gate only disables AI extraction.
-                gate.blockedReason =
-                    access.reason === 'new_user_cap' ? 'new_user_cap' : 'entitlement';
+            if (access.isNewUser && access.reason === 'new_user_cap') {
+                throw new ServiceError(
+                    ServiceErrorCode.QUOTA_EXCEEDED,
+                    'New users may start five accommodation imports per rolling 24 hours.'
+                );
+            }
+            if (!access.isNewUser) {
+                // Preserve the existing structured scrape for returning users;
+                // only AI extraction is unavailable without the entitlement.
+                gate.blockedReason = 'entitlement';
             }
         } else {
             gate.blockedReason = getImportAiBlockedReason(quota);

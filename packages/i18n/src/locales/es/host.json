@@ -20,6 +20,7 @@
             "forbidden": "No tenés permiso para importar desde una URL. Verificá que tu plan lo incluya.",
             "rateLimit": "Hiciste demasiadas importaciones seguidas. Esperá un momento y probá de nuevo.",
             "newUserCap": "Alcanzaste el límite de importaciones de las últimas 24 horas. Probá de nuevo más tarde.",
+            "entitlement": "Tu plan no incluye la extracción de datos con IA para importar desde una URL.",
             "entitlementCta": "Ver planes",
             "pastDueCta": "Actualizar medio de pago",
             "failure": {

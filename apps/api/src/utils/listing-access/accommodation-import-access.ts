@@ -11,23 +11,23 @@ export async function getAccommodationImportAccess(input: {
 }): Promise<AccommodationImportAccessResponse> {
     const ports = getAccommodationImportAccessPorts();
     const hasEntitlement = input.hasEntitlement ?? (await ports.hasImportEntitlement(input));
+    if (hasEntitlement) {
+        return {
+            aiEntitlementAllowed: true,
+            isNewUser: false,
+            hasEntitlement: true,
+            remainingNewUserImports: null
+        };
+    }
     const [hadTrial, hadSubscription, hasPublishedAccommodation] = await Promise.all([
         ports.hasHadTrial(input),
         ports.hasHadSubscription(input),
         ports.hasPublishedAccommodation(input)
     ]);
     const isNewUser = !hadTrial && !hadSubscription && !hasPublishedAccommodation;
-    if (hasEntitlement) {
-        return {
-            aiExtractionAllowed: true,
-            isNewUser,
-            hasEntitlement,
-            remainingNewUserImports: null
-        };
-    }
     if (!isNewUser) {
         return {
-            aiExtractionAllowed: false,
+            aiEntitlementAllowed: false,
             isNewUser,
             hasEntitlement,
             remainingNewUserImports: null,
@@ -36,7 +36,7 @@ export async function getAccommodationImportAccess(input: {
     }
     const used = await ports.countNewUserImports(input);
     return {
-        aiExtractionAllowed: used < ACCOMMODATION_IMPORT_NEW_USER_MAX,
+        aiEntitlementAllowed: used < ACCOMMODATION_IMPORT_NEW_USER_MAX,
         isNewUser,
         hasEntitlement,
         remainingNewUserImports: Math.max(0, ACCOMMODATION_IMPORT_NEW_USER_MAX - used),
@@ -50,7 +50,7 @@ export async function requireAccommodationImportAccess(input: {
     readonly hasEntitlement?: boolean;
 }): Promise<AccommodationImportAccessResponse> {
     const access = await getAccommodationImportAccess(input);
-    if (access.hasEntitlement || !access.isNewUser || !access.aiExtractionAllowed) return access;
+    if (access.hasEntitlement || !access.isNewUser || !access.aiEntitlementAllowed) return access;
     const consumed = await getAccommodationImportAccessPorts().consumeNewUserImport(input);
     if (consumed)
         return {
@@ -59,7 +59,7 @@ export async function requireAccommodationImportAccess(input: {
         };
     return {
         ...access,
-        aiExtractionAllowed: false,
+        aiEntitlementAllowed: false,
         remainingNewUserImports: 0,
         reason: 'new_user_cap'
     };

@@ -120,6 +120,13 @@ describe('RedisSlidingWindowStore', () => {
         expect(mockRedis?.eval.mock.calls[0]?.[0]).toContain('ZCARD');
         expect(mockRedis?.eval.mock.calls[0]?.[0]).toContain('ZADD');
         expect(mockRedis?.eval.mock.calls[0]?.[2]).toBe('rl:slide:cap:user-1');
+        expect(mockRedis?.eval.mock.calls[0]?.[4]).toBe('5');
+    });
+
+    it('denies conditional consumption when Redis reports the cap was reached', async () => {
+        const store = new RedisSlidingWindowStore();
+        mockRedis?.eval.mockResolvedValue(0);
+        await expect(store.consumeIfBelow('cap:user-2', 86_400_000, 5)).resolves.toBe(false);
     });
 
     // ── record ────────────────────────────────────────────────────────────────

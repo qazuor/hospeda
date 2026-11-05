@@ -107,7 +107,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     // HOS-50 T-013: non-null while an async Apify run is being polled.
     const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
     const [access, setAccess] = useState<{
-        readonly aiExtractionAllowed: boolean;
+        readonly aiEntitlementAllowed: boolean;
         readonly reason?: 'entitlement' | 'new_user_cap';
     } | null>(null);
     // Guards against re-handling a settle outcome on unrelated re-renders
@@ -122,7 +122,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             try {
                 const result = await accommodationsImportApi.getAccess();
                 if (active && result.ok) setAccess(result.data);
-                else if (active) setAccess({ aiExtractionAllowed: true });
+                else if (active) setAccess({ aiEntitlementAllowed: true });
             } catch (cause) {
                 webLogger.warn(
                     'ImportFromUrl: access precheck failed; server will enforce access on submit',
@@ -130,7 +130,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         error: cause
                     }
                 );
-                if (active) setAccess({ aiExtractionAllowed: true });
+                if (active) setAccess({ aiEntitlementAllowed: true });
             }
         }
         void loadAccess();
@@ -139,7 +139,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         };
     }, []);
 
-    const submitDisabled = isSubmitting || !legalConfirmed;
+    const submitDisabled = isSubmitting || !legalConfirmed || access?.reason === 'new_user_cap';
 
     async function handleSubmit(): Promise<void> {
         setError(null);
@@ -202,8 +202,8 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                             error: result.error,
                             t,
                             fallback: t(
-                                'common.apiError.ENTITLEMENT_REQUIRED',
-                                'Tu plan no incluye esta función. Actualizalo para continuar.'
+                                'host.importFromUrl.errors.entitlement',
+                                'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
                             )
                         })
                     );
@@ -335,26 +335,11 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         }
     }, [pollResult, onError, onImported, t]);
 
-    if (access === null) {
-        return (
-            <section
-                className={styles.importFromUrl}
-                aria-busy="true"
-            >
-                <div role="status">
-                    {t(
-                        'host.importFromUrl.actions.checkingAccess',
-                        'Verificando disponibilidad de importación…'
-                    )}
-                </div>
-            </section>
-        );
-    }
-    const entitlementDenied = access.reason === 'entitlement';
-    const capReached = access.reason === 'new_user_cap';
+    const entitlementDenied = access?.reason === 'entitlement';
+    const capReached = access?.reason === 'new_user_cap';
     return (
         <section className={styles.importFromUrl}>
-            {access.aiExtractionAllowed === false ? (
+            {access?.aiEntitlementAllowed === false ? (
                 <div
                     className="form-error-banner"
                     role="alert"

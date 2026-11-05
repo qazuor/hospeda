@@ -848,6 +848,11 @@ blocking, and the client polls a separate status route until the run settles
 — the same 202+poll primitive introduced by SPEC-250 for external-reputation
 refresh (see "External Reputation Routes" above).
 
+`GET /api/v1/protected/accommodations/import-from-url/access` returns the
+server-resolved AI entitlement/new-user decision used by the create flow. It
+does not gate the structured scrape: returning users without the entitlement
+still receive structured import data and a notice if AI extraction is needed.
+
 ### Why stateless
 
 Nothing about an in-flight run is persisted server-side. The `202` response

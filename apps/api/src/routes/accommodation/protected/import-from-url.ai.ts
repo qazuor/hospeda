@@ -175,10 +175,6 @@ export const MSG_AI_ENTITLEMENT =
 export const MSG_AI_QUOTA =
     'Alcanzaste el límite mensual de extracción con IA, así que solo completamos los datos disponibles sin IA. Revisá y completá los campos faltantes.';
 
-/** Notice appended when a new user has used the rolling 24-hour AI attempt cap. */
-export const MSG_AI_NEW_USER_CAP =
-    'Alcanzaste el límite de importaciones asistidas por IA de las últimas 24 horas, así que solo completamos los datos disponibles sin IA. Revisá y completá los campos faltantes.';
-
 /**
  * Mutable flag set by the route's `aiExtract` port when Strategy B was needed
  * but the host's plan/quota blocked it. Read by the handler after the pipeline
@@ -186,7 +182,7 @@ export const MSG_AI_NEW_USER_CAP =
  * AI was never needed or it ran (or failed for a non-plan reason).
  */
 export interface AiGateState {
-    blockedReason: 'entitlement' | 'quota' | 'new_user_cap' | null;
+    blockedReason: 'entitlement' | 'quota' | null;
 }
 
 /**
@@ -219,12 +215,7 @@ export function applyAiGateNotice(
     if (gate.blockedReason === null || response.failureCode !== undefined) {
         return response;
     }
-    const note =
-        gate.blockedReason === 'quota'
-            ? MSG_AI_QUOTA
-            : gate.blockedReason === 'new_user_cap'
-              ? MSG_AI_NEW_USER_CAP
-              : MSG_AI_ENTITLEMENT;
+    const note = gate.blockedReason === 'quota' ? MSG_AI_QUOTA : MSG_AI_ENTITLEMENT;
     const message = [response.message, note].filter(Boolean).join(' ');
     return { ...response, message };
 }

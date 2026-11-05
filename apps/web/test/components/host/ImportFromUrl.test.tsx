@@ -76,7 +76,7 @@ describe('ImportFromUrl', () => {
         mockGetAccess.mockResolvedValue({
             ok: true,
             data: {
-                aiExtractionAllowed: true,
+                aiEntitlementAllowed: true,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 5
@@ -89,6 +89,12 @@ describe('ImportFromUrl', () => {
         await renderAndWait(<ImportFromUrl locale="es" />);
         expect(mockGetAccess).toHaveBeenCalledTimes(1);
         expect(await screen.findByRole('button', { name: /Importar/i })).toBeInTheDocument();
+    });
+
+    it('keeps the URL input available while the server access decision is pending', () => {
+        mockGetAccess.mockReturnValue(new Promise(() => {}));
+        render(<ImportFromUrl locale="es" />);
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
     });
 
     it('keeps the importer neutral until the server access decision arrives', async () => {
@@ -104,7 +110,7 @@ describe('ImportFromUrl', () => {
         resolveAccess({
             ok: true,
             data: {
-                aiExtractionAllowed: true,
+                aiEntitlementAllowed: true,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 5
@@ -117,7 +123,7 @@ describe('ImportFromUrl', () => {
         mockGetAccess.mockResolvedValueOnce({
             ok: true,
             data: {
-                aiExtractionAllowed: false,
+                aiEntitlementAllowed: false,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 0,
@@ -126,13 +132,14 @@ describe('ImportFromUrl', () => {
         });
         await renderAndWait(<ImportFromUrl locale="es" />);
         expect(await screen.findByRole('alert')).toHaveTextContent('últimas 24 horas');
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeDisabled();
     });
 
     it('shows the plan message when the server denies a returning user', async () => {
         mockGetAccess.mockResolvedValueOnce({
             ok: true,
             data: {
-                aiExtractionAllowed: false,
+                aiEntitlementAllowed: false,
                 isNewUser: false,
                 hasEntitlement: false,
                 remainingNewUserImports: null,

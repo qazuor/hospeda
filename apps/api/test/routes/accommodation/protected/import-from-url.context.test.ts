@@ -13,6 +13,7 @@ import type { AccommodationImportResponse } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { AccommodationImportService, type ImportContext } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSlidingWindowStore } from '../../../../src/middlewares/rate-limit';
 
 const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken, gateState, accessState } =
     vi.hoisted(() => ({
@@ -108,6 +109,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
     let app: AppOpenAPI;
 
     beforeEach(() => {
+        clearSlidingWindowStore();
         vi.clearAllMocks();
         mockDispatchImportFromUrl.mockResolvedValue({ kind: 'sync', response: MINIMAL_RESPONSE });
         mockGetValidMercadoLibreToken.mockResolvedValue('mock-ml-access-token');
@@ -171,7 +173,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
-    it('allows a new user without entitlement and applies no monthly quota', async () => {
+    it('allows a new user without entitlement without consulting monthly AI usage', async () => {
         gateState.entitlement = false;
         gateState.count = 999;
         mockDispatchImportFromUrl.mockImplementation(
@@ -190,6 +192,8 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             ((await res.json()) as { data: AccommodationImportResponse }).data.message
         ).toBeUndefined();
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
+        const { getMonthlyCallCount } = await import('@repo/ai-core');
+        expect(getMonthlyCallCount).not.toHaveBeenCalled();
     });
 
     it('allows an entitled user to use AI without consuming the new-user cap', async () => {
@@ -224,7 +228,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         });
         expect(res.status).toBe(200);
         expect((await res.json()).data).toEqual({
-            aiExtractionAllowed: true,
+            aiEntitlementAllowed: true,
             isNewUser: true,
             hasEntitlement: false,
             remainingNewUserImports: 5
@@ -246,7 +250,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
-    it('allows five new-user AI imports, then falls back to structured import on the sixth', async () => {
+    it('allows five new-user imports, then rejects the sixth before scraping', async () => {
         gateState.entitlement = false;
         const userId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
         mockDispatchImportFromUrl.mockImplementation(
@@ -255,7 +259,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
                 return { kind: 'sync', response: MINIMAL_RESPONSE };
             }
         );
-        for (let index = 0; index < 6; index += 1) {
+        for (let index = 0; index < 5; index += 1) {
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
                 headers: authHeaders(userId),
@@ -263,10 +267,15 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             });
             expect(res.status).toBe(200);
             const data = ((await res.json()) as { data: AccommodationImportResponse }).data;
-            if (index < 5) expect(data.message).toBeUndefined();
-            else expect(data.message).toContain('límite de importaciones asistidas por IA');
+            expect(data.message).toBeUndefined();
         }
-        expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(6);
+        const rejected = await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: authHeaders(userId),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+        expect(rejected.status).toBe(429);
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(5);
     });
 
     it('constructs AccommodationImportService with exchange-rate deps wired (BETA-181)', async () => {

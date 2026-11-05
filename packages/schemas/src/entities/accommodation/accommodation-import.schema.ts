@@ -729,7 +729,7 @@ export type AccommodationImportStatusResponse = z.infer<
 
 /** Server-resolved permission state used to render the importer in the create flow. */
 export const AccommodationImportAccessResponseSchema = z.object({
-    aiExtractionAllowed: z.boolean(),
+    aiEntitlementAllowed: z.boolean(),
     isNewUser: z.boolean(),
     hasEntitlement: z.boolean(),
     remainingNewUserImports: z.number().int().nonnegative().nullable(),
