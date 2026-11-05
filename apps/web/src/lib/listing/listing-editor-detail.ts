@@ -94,11 +94,7 @@ export function readListingMedia({ detail }: { readonly detail: ListingDetail })
  * @param params - The loaded listing detail.
  * @returns The link, or `null` when the listing does not carry one.
  */
-export function readListingMenuUrl({
-    detail
-}: {
-    readonly detail: ListingDetail;
-}): string | null {
+export function readListingMenuUrl({ detail }: { readonly detail: ListingDetail }): string | null {
     const raw = asRecord(detail).menuUrl;
     return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
 }
