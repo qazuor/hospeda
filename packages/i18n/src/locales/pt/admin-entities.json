@@ -1040,6 +1040,38 @@
         "errorTitle": "Não foi possível encerrar a conta",
         "stateChanged": "A conta mudou desde que você abriu esta confirmação e não foi encerrada. Verificamos de novo o que ainda resta."
     },
+    "partnerBillingSetup": {
+        "title": "Plano e pagamento do Partner",
+        "state": "Nenhuma assinatura manual está configurada.",
+        "configure": "Configurar plano e pagamento",
+        "planLabel": "Plano",
+        "reasonLabel": "Motivo",
+        "review": "Revisar",
+        "confirmationTitle": "Isso criará uma assinatura de pagamento manual aguardando autorização e sua primeira parcela.",
+        "partner": "Partner",
+        "owner": "Responsável",
+        "amount": "Valor",
+        "method": "Método",
+        "manual": "Manual",
+        "confirm": "Confirmar",
+        "back": "Voltar",
+        "cancel": "Cancelar",
+        "previewError": "Não foi possível carregar as opções de plano.",
+        "loading": "Carregando opções de plano…",
+        "cycle": {
+            "monthly": "mensal",
+            "quarterly": "trimestral",
+            "semiannual": "semestral",
+            "annual": "anual"
+        },
+        "errors": {
+            "forbidden": "Você não tem permissão para configurar o plano e o pagamento.",
+            "partnerWithoutOwner": "Este Partner ainda não tem responsável.",
+            "commitmentTaken": "O responsável já tem uma assinatura incompatível.",
+            "planNotForSale": "Este plano não está mais disponível para venda.",
+            "generic": "Não foi possível configurar o plano e o pagamento."
+        }
+    },
     "partnerPresenceModeration": {
         "title": "Presença pública",
         "state": {

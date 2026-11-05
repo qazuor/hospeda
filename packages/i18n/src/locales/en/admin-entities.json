@@ -1040,6 +1040,38 @@
         "errorTitle": "The account could not be closed",
         "stateChanged": "The account changed since you opened this confirmation and was not closed. We checked again what it still has."
     },
+    "partnerBillingSetup": {
+        "title": "Partner plan and payment",
+        "state": "No manual subscription is configured.",
+        "configure": "Configure plan and payment",
+        "planLabel": "Plan",
+        "reasonLabel": "Reason",
+        "review": "Review",
+        "confirmationTitle": "This will create a manual payment subscription pending authorization and its first installment.",
+        "partner": "Partner",
+        "owner": "Owner",
+        "amount": "Amount",
+        "method": "Method",
+        "manual": "Manual",
+        "confirm": "Confirm",
+        "back": "Back",
+        "cancel": "Cancel",
+        "previewError": "Plan options could not be loaded.",
+        "loading": "Loading plan options…",
+        "cycle": {
+            "monthly": "monthly",
+            "quarterly": "quarterly",
+            "semiannual": "semiannual",
+            "annual": "annual"
+        },
+        "errors": {
+            "forbidden": "You do not have permission to configure the plan and payment.",
+            "partnerWithoutOwner": "This Partner does not have an owner yet.",
+            "commitmentTaken": "The owner already has an incompatible subscription.",
+            "planNotForSale": "This plan is no longer available for sale.",
+            "generic": "The plan and payment could not be configured."
+        }
+    },
     "partnerPresenceModeration": {
         "title": "Public presence",
         "state": {
