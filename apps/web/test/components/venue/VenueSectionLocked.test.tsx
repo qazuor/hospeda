@@ -156,6 +156,11 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
             />
         );
 
+        // FIRST render: the upsell is already there, without waiting for the
+        // document load and without any refusal (no PUT has run).
+        expect(screen.getByTestId('venue-section-locked-notice')).toBeInTheDocument();
+        expect(mockPut).not.toHaveBeenCalled();
+
         // The data is still visible — this is a lock, not a delete.
         expect(await screen.findByText('Empanadas')).toBeInTheDocument();
         expect(screen.getByText('Ver el PDF')).toBeInTheDocument();
@@ -205,6 +210,10 @@ describe('VenueDailySpecialsManager — a locked section is read-only and can be
             />
         );
 
+        // FIRST render: the upsell does not wait for the load or a refusal.
+        expect(screen.getByTestId('venue-section-locked-notice')).toBeInTheDocument();
+        expect(mockPut).not.toHaveBeenCalled();
+
         expect(await screen.findByText('Milanesa a la napolitana')).toBeInTheDocument();
 
         expect(screen.queryAllByRole('textbox')).toHaveLength(0);
@@ -245,6 +254,10 @@ describe('VenueEventsManager — a locked section is read-only and can be emptie
                 sectionState="locked"
             />
         );
+
+        // FIRST render: the upsell does not wait for the load or a refusal.
+        expect(screen.getByTestId('venue-section-locked-notice')).toBeInTheDocument();
+        expect(mockPut).not.toHaveBeenCalled();
 
         expect(await screen.findByText('Música en vivo')).toBeInTheDocument();
 
