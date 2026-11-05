@@ -7,7 +7,12 @@
         "sending": "Submitting application…",
         "success": "Thank you. We received your email and will contact you with an answer.",
         "error": "We could not submit your application. Please try again later.",
-        "unavailable": "The form is unavailable right now. Please try again later."
+        "unavailable": "The form is unavailable right now. Please try again later.",
+        "verifyEmailFirst": "To apply as a Partner you first need to verify your account email. We have not registered your application yet.",
+        "resendVerification": "Resend verification",
+        "resendingVerification": "Resending…",
+        "verificationResent": "Done: we resent the verification email. Check your inbox and, once verified, come back to this page to apply.",
+        "resendVerificationError": "We could not resend the verification. Please try again in a few minutes."
     },
     "form": {
         "fields": {
