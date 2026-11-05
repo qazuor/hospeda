@@ -35,7 +35,8 @@
  *   T-013 simple fields (contactInfo — no website per AC-4)
  *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
  *   T-014 structured fields (openingHours)
- *   T-014 price group (venue: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   T-014 price group (venue: priceRange | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   menuUrl lives in the carta section, not the price group (DEC-FAC-062)
  *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
  *   T-015 media gallery
  *   T-016 amenities / features
