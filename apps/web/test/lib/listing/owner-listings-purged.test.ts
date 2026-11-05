@@ -89,9 +89,11 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
     });
 
     it('keeps a purged listing out of the menu QR widget', () => {
-        expect(source).toContain(
-            ".filter((listing) => listing.vertical === 'venue' && !isPurged(listing))"
-        );
+        // HOS-1856 moved the vertical check out of the page (G-FAC-05): the
+        // filter now uses `isVenueListing` and the widget receives the result.
+        expect(source).toContain('const venueListings = listings.filter(');
+        expect(source).toContain('isVenueListing(listing) && !isPurged(listing)');
+        expect(source).toContain('listings={venueListings.map(');
     });
 
     it('still renders the notices for every listing (row 20 is how a purged one is explained)', () => {
