@@ -7,7 +7,11 @@ export interface QuotaGrant {
     readonly anchor: Date;
 }
 
-/** Folds the current quota, then chooses the oldest contributing title's start. */
+/**
+ * Folds the current quota, then chooses the start of the oldest live title.
+ * A TRIAL superseded by a subscription (HOS-2027) is discarded from the quota
+ * fold but still anchors: the window keeps the trial's start (V3:10 g).
+ */
 export function selectQuotaGrant(input: {
     readonly key: string;
     readonly sources: readonly FoldableSource[];
