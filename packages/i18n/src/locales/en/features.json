@@ -235,7 +235,10 @@
                     "label": "Active promotions"
                 },
                 "richDescription": {
-                    "label": "Rich description and video"
+                    "label": "Rich description"
+                },
+                "videoLink": {
+                    "label": "YouTube, Vimeo or Dailymotion video link"
                 },
                 "advancedStats": {
                     "label": "Advanced stats"

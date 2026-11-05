@@ -801,7 +801,7 @@
         "fieldPremium": "{field} - Premium",
         "fieldPremiumDescription": "This feature is available on higher plans",
         "richDescriptionNudge": "Your plan does not include rich descriptions. You can edit the description as plain text.",
-        "videoNudge": "Video embedding is available on higher plans.",
+        "videoNudge": "Video links are available on every accommodation plan.",
         "upgradeLink": "Upgrade plan"
     },
     "limitGate": {
