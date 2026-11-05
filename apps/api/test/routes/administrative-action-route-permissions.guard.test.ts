@@ -59,12 +59,17 @@ type ActionRow = {
     readonly permissions: readonly PermissionEnum[];
     readonly pendingOwnPermission: string | null;
 };
-
 type Binding =
     | { readonly kind: 'required'; readonly file: string; readonly route: string }
     | { readonly kind: 'anyOf'; readonly file: string; readonly route: string }
     | { readonly kind: 'ownershipBypass'; readonly file: string; readonly route: string }
     | { readonly kind: 'tableGate'; readonly file: string; readonly markers: readonly string[] };
+const action6File = 'apps/api/src/routes/partners/admin/billing-setup.ts';
+const action6Binding = (route: string): Binding => ({ kind: 'required', file: action6File, route });
+const action6Bindings: readonly Binding[] = [
+    'adminPreviewPartnerBillingSetupRoute',
+    'adminConfigurePartnerBillingRoute'
+].map(action6Binding);
 
 const manualBinding = (route: string, late = false): Binding => ({
     kind: 'required',
@@ -187,7 +192,7 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             partnerApplicationResolutionBinding('reject')
         ]
     },
-    ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
+    ACC_6: { bindings: action6Bindings },
     ACC_7: {
         bindings: [
             {
@@ -463,11 +468,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-
-    it('b. checks exactly 50 bindings across 17 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(17);
+    it('b. checks exactly 52 bindings across 18 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(18);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(50);
+        expect(total).toBe(52);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
@@ -479,7 +483,6 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
     )('d. %s is still misaligned — remove its KNOWN_MISALIGNED entry only once it agrees', (action) => {
         expect(collectDifferences(action).length).toBeGreaterThan(0);
     });
-
     it('e. every unbound row names a reason and is not silently known-misaligned', () => {
         expect(UNBOUND_ROWS.length).toBeGreaterThan(0);
         for (const { action, reason } of UNBOUND_ROWS) {
@@ -487,7 +490,6 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
             expect(action in KNOWN_MISALIGNED).toBe(false);
         }
     });
-
     it('f. sees the ACC_11 bug it was written for, with a false row, never touching the table', () => {
         const staleRow: ActionRow = { permissions: [], pendingOwnPermission: 'x' };
         const differences = bindingsOf('ACC_11')

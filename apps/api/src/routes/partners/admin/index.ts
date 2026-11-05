@@ -1,3 +1,7 @@
+export {
+    adminConfigurePartnerBillingRoute,
+    adminPreviewPartnerBillingSetupRoute
+} from './billing-setup.js';
 export { adminCreatePartnerRoute } from './create.js';
 export { adminDeletePartnerRoute } from './delete.js';
 export { adminGetPartnerRoute } from './get.js';
