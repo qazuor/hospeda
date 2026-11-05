@@ -15,8 +15,8 @@ import { normalizeArgentinePhone, parsePhoneNumber } from '@repo/schemas';
  *
  * @example
  * ```typescript
- * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+5491155550002'
- * normalizePhoneNumber('11 5555-0002') // Returns: '+5491155550002'
+ * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+541155550002'
+ * normalizePhoneNumber('11 5555-0002') // Returns: '+541155550002'
  * normalizePhoneNumber('155550002') // Returns: '+54155550002'
  * ```
  */
@@ -26,7 +26,8 @@ export const normalizePhoneNumber = (phone: string, mobileByMeaning = true): str
     }
     let cleaned = phone.replace(/[^\d+]/g, '');
 
-    // Argentine landline/mobile formats normalize to the existing +54 format.
+    // Legacy values outside the current Argentine parser retain the historic
+    // cleanup behavior. Parsed Argentine formats use the shared +54 canonical.
     // Drop the domestic trunk prefix, optional mobile marker (15), and the
     // international mobile marker (9) before prefixing +54.
     const hadInternationalPrefix = cleaned.startsWith('+');

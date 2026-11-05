@@ -16,7 +16,7 @@ export const InternationalPhoneRegex = /^\+[1-9](?:\s?\d){6,14}$/;
 /** Shared write validator for Argentine phones in common human-entered formats. */
 export const ArgentinePhoneRegex = /^\+?[0-9().\s-]+$/;
 
-type ParsedPhone =
+export type ParsedPhone =
     | { kind: 'argentina'; digits: string; mobile: boolean }
     | { kind: 'international'; value: string };
 
@@ -28,6 +28,18 @@ export const parsePhoneNumber = (
     const trimmed = phone.trim();
     if (!ArgentinePhoneRegex.test(trimmed)) return undefined;
     const digits = trimmed.replace(/\D/g, '');
+    // Preserve every previously accepted E.164 value, including legacy Argentine
+    // numbers that do not fit the current ten-digit national representation.
+    if (InternationalPhoneRegex.test(trimmed)) {
+        const nationalDigits = digits.startsWith('549')
+            ? digits.slice(3)
+            : digits.startsWith('54')
+              ? digits.slice(2)
+              : '';
+        if (nationalDigits.length !== 10) {
+            return { kind: 'international', value: `+${digits}` };
+        }
+    }
     if (trimmed.startsWith('+') && !trimmed.startsWith('+54')) {
         return InternationalPhoneRegex.test(trimmed)
             ? { kind: 'international', value: `+${digits}` }
@@ -54,23 +66,21 @@ export const parsePhoneNumber = (
 /** Accepts valid Argentine input and well-formed international E.164 numbers. */
 export const isValidPhoneNumber = (phone: string): boolean => parsePhoneNumber(phone) !== undefined;
 
-/** @deprecated Use isValidPhoneNumber; this validator also accepts international E.164 numbers. */
+/** Compatibility alias for isValidPhoneNumber. */
 export const isValidArgentinePhone = isValidPhoneNumber;
 
 /** Normalizes an accepted phone to its canonical international representation. */
 export const normalizeArgentinePhone = (phone: string, mobileByMeaning = false): string => {
     const parsed = parsePhoneNumber(phone, mobileByMeaning);
     if (!parsed) return phone;
-    return parsed.kind === 'international'
-        ? parsed.value
-        : `+${parsed.mobile ? '549' : '54'}${parsed.digits}`;
+    return parsed.kind === 'international' ? parsed.value : `+54${parsed.digits}`;
 };
 
 /** Builds the shared Zod phone validator with a caller-specific translation key. */
 export const phoneNumberSchema = (message: string) =>
     z.string().refine(isValidPhoneNumber, { message });
 
-/** @deprecated Use phoneNumberSchema; this schema also accepts international E.164 numbers. */
+/** Compatibility alias for phoneNumberSchema. */
 export const argentinePhoneSchema = phoneNumberSchema;
 
 // Regex for social network URLs

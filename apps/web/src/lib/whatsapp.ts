@@ -44,11 +44,10 @@
  * Minimum digit count accepted.
  *
  * ITU-T E.164 fixes only the 15-digit MAXIMUM; it defines no minimum. The 7
- * here is not the standard's — it is the floor of `InternationalPhoneRegex`
- * (`packages/schemas/src/utils/utils.ts`, `/^\+[1-9](?:\s?\d){6,14}$/`, i.e.
- * exactly 7..15 digits), the regex every WRITE to `contactInfo.whatsapp` must
- * pass. Mirroring the write bound is the point: anything the write path accepts
- * must render, and anything it rejects has no business minting a live link.
+ * here is not the standard's — it is the floor of the historical
+ * `InternationalPhoneRegex` bound (`packages/schemas/src/utils/utils.ts`,
+ * 7..15 digits). The shared contact write schema also accepts Argentine human
+ * formats; this link builder only needs a safe digit-count bound.
  *
  * Kept as a local literal (not imported from `@repo/schemas`, a browser-bundle
  * hazard in web client code) and pinned to the write regex by a test in
@@ -58,8 +57,8 @@
 export const E164_MIN_DIGITS = 7;
 
 /**
- * Maximum digit count accepted: the ceiling of the same
- * `InternationalPhoneRegex` write bound, which coincides with the 15-digit cap
+ * Maximum digit count accepted: the ceiling of the historical
+ * `InternationalPhoneRegex` bound, which coincides with the 15-digit cap
  * ITU-T E.164 places on the whole number, country code included.
  */
 export const E164_MAX_DIGITS = 15;

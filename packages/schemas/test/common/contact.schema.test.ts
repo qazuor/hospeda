@@ -18,6 +18,7 @@ import {
 } from '../../src/entities/accommodation/accommodation.http.schema.js';
 import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
 import { VenueOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
+import { normalizeArgentinePhone } from '../../src/utils/utils.js';
 
 describe('ContactInfoSchema', () => {
     it.each([
@@ -39,6 +40,19 @@ describe('ContactInfoSchema', () => {
         expect(result.success).toBe(true);
     });
 
+    it.each([
+        '3442 45-2345',
+        '3442452345',
+        '(3442) 45-2345',
+        '03442 452345',
+        '3442 15 45-2345',
+        '+54 9 3442 45-2345',
+        '+5493442452345',
+        '54 3442 452345'
+    ])('normalizes %s to the shared canonical Argentine form', (phone) => {
+        expect(normalizeArgentinePhone(phone, true)).toBe('+543442452345');
+    });
+
     it('allows a cleared accommodation phone in the HTTP update contract', () => {
         expect(AccommodationUpdateHttpSchema.safeParse({ phone: '' }).success).toBe(true);
         expect(httpToDomainAccommodationUpdate({ phone: '' }).contactInfo).toEqual({
@@ -57,6 +71,26 @@ describe('ContactInfoSchema', () => {
         if (!result.success) {
             expect(result.error.issues[0]?.message).toBe('zodError.common.contact.phone.argentina');
         }
+    });
+
+    it.each([
+        '+54115550002',
+        '+549345704627',
+        '+54934515732848'
+    ])('keeps previously accepted international phone %s valid on writes', (phone) => {
+        expect(ContactInfoSchema.safeParse({ mobilePhone: phone }).success).toBe(true);
+    });
+
+    it('allows a legacy phone on create and whole contact update contracts', () => {
+        const legacy = '+549345704627';
+        expect(ContactInfoSchema.safeParse({ mobilePhone: legacy }).success).toBe(true);
+        expect(
+            VenueOwnerUpdateInputSchema.safeParse({ contactInfo: { mobilePhone: legacy } }).success
+        ).toBe(true);
+        expect(
+            ExperienceOwnerUpdateInputSchema.safeParse({ contactInfo: { mobilePhone: legacy } })
+                .success
+        ).toBe(true);
     });
 
     it.each([

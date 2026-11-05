@@ -199,7 +199,7 @@ function sameStringList(a: readonly string[], b: readonly string[]): boolean {
  *
  * `null` is the clear. Every field of the shared `ContactInfoSchema` and
  * `SocialNetworkSchema` is `.nullish()` for exactly this reason, so `null`
- * validates while `''` does NOT (`zodError.common.contact.mobilePhone.international`,
+ * validates while an invalid non-empty phone reports `zodError.common.contact.phone.argentina`,
  * `zodError.common.social.*.invalid`) — the empty string is not an option here.
  */
 function nullWhenEmpty(value: string): string | null {
