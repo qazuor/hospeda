@@ -138,6 +138,12 @@ describe('SubscriptionReturn retry', () => {
             />
         );
         const input = screen.getByTestId('subscription-return-payer-email') as HTMLInputElement;
+        const hint = input.parentElement?.querySelector('p[id$="-hint"]');
+        expect(hint).not.toBeNull();
+        expect(
+            hint!.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(input.getAttribute('aria-describedby')?.split(/\s+/)).toContain(hint!.id);
         expect(input.value).toBe('account@example.test');
 
         fireEvent.change(input, { target: { value: 'not-an-email' } });
@@ -147,6 +153,8 @@ describe('SubscriptionReturn retry', () => {
 
         expect(startMock).not.toHaveBeenCalled();
         expect(input.getAttribute('aria-invalid')).toBe('true');
+        const error = screen.getByRole('alert');
+        expect(input.getAttribute('aria-describedby')?.split(/\s+/)).toContain(error.id);
     });
 
     it('unlocks the button when the page is restored from the bfcache', async () => {
