@@ -53,8 +53,8 @@ export type ContactInfo = z.infer<typeof ContactInfoSchema>;
  * (`apps/api/src/utils/response-helpers.ts`), which FAIL-CLOSES to HTTP 500 when
  * a stored row does not satisfy the schema. `contact_info` is an unbounded JSONB
  * column shallow-merged at the DB layer (`jsonb-merge.ts`), so a legacy/imported/
- * partially-edited row can legitimately hold a phone in a format the strict WRITE
- * regex rejects (an AR local `0223-155-1234`, a bare `+54`, embedded spaces) — or
+ * partially-edited row can legitimately hold a phone in a format the shared WRITE
+ * validator rejects (a bare `+54`, a too-short number, free text) — or
  * omit `mobilePhone` entirely. Reading such a row must NEVER 500, so response
  * schemas assert TYPE + PRESENCE only for the free-form contact fields; the phone
  * format stays enforced on the WRITE path via {@link ContactInfoSchema}.

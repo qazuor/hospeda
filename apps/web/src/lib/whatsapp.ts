@@ -115,9 +115,9 @@ export interface BuildWhatsAppLinkResult {
  * probabilistic; the shape gate is structural.
  *
  * Why an unusable value can reach here at all: the WRITE path is guarded by
- * `InternationalPhoneRegex`, but `ContactInfoReadSchema` is deliberately
+ * the shared phone validator, but `ContactInfoReadSchema` is deliberately
  * lenient (HOS-190) so legacy and imported rows can still hold formats the
- * write regex rejects, and this builder runs at RENDER time on read data.
+ * write validator rejects, and this builder runs at RENDER time on read data.
  * (The `wa.me/message/...` literal above is the SHAPE operators actually type,
  * observed in this repo's seed data at
  * `packages/seed/src/data/accommodation/uruguay/103-*.json` — but under
