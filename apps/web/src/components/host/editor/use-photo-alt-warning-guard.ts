@@ -111,11 +111,10 @@ function clearFocusTimers(): void {
  * Opens and focuses the alt field of the first photo whose required alt text
  * is incomplete.
  *
- * Polls instead of focusing once: the toggle is disabled while an operation is
- * in flight, and the textarea stays disabled while its own save is pending. A
- * save-triggered dialog is answered while `isSaving` is still true, so a single
- * `focus()` call on a disabled element would silently do nothing. Gives up
- * after ~5 seconds.
+ * Polls instead of focusing once because the section toggle or textarea may
+ * still be disabled while the incomplete-photo panel opens or its own save is
+ * pending. A single `focus()` call on a disabled element would silently do
+ * nothing. Gives up after ~5 seconds.
  */
 function focusFirstIncompletePhoto(): void {
     clearFocusTimers();
