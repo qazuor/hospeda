@@ -213,8 +213,7 @@ export function buildCatalogComparisonGroup<V extends CatalogComparisonVertical>
     readonly vertical: V;
     readonly sections?: readonly CatalogSectionLike[] | undefined;
 }): GroupConfig {
-    const catalog =
-        sections ?? (LISTING_SECTIONS[vertical] as unknown as readonly CatalogSectionLike[]);
+    const catalog: readonly CatalogSectionLike[] = sections ?? LISTING_SECTIONS[vertical];
     const presentation = CATALOG_PRESENTATION[vertical];
     const emittedKeys = new Set<string>();
     const rows: RowConfig[] = [];
