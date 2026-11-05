@@ -113,7 +113,7 @@ describe('RedisSlidingWindowStore', () => {
         resetRedisSlidingWindowStore();
     });
 
-    it('uses one Redis script to atomically enforce conditional consumption', async () => {
+    it('wires conditional consumption to one atomic Redis script', async () => {
         const store = new RedisSlidingWindowStore();
         await expect(store.consumeIfBelow('cap:user-1', 86_400_000, 5)).resolves.toBe(true);
         expect(mockRedis?.eval).toHaveBeenCalledOnce();

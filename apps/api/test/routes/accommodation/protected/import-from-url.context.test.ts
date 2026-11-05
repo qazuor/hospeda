@@ -19,7 +19,7 @@ const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken, gateState, acc
         mockDispatchImportFromUrl: vi.fn(),
         mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token'),
         gateState: { entitlement: true, limit: 10, count: 0 },
-        accessState: { isNewUser: true, capReached: false }
+        accessState: { isNewUser: true }
     }));
 
 vi.mock(
@@ -115,7 +115,6 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         gateState.limit = 10;
         gateState.count = 0;
         accessState.isNewUser = true;
-        accessState.capReached = false;
         app = initApp();
     });
 
@@ -183,13 +182,36 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         );
         const res = await app.request(ENDPOINT, {
             method: 'POST',
-            headers: authHeaders(),
+            headers: authHeaders('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'),
             body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
         });
         expect(res.status).toBe(200);
         expect(
             ((await res.json()) as { data: AccommodationImportResponse }).data.message
         ).toBeUndefined();
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
+    });
+
+    it('allows an entitled user to use AI without consuming the new-user cap', async () => {
+        gateState.entitlement = true;
+        accessState.isNewUser = false;
+        mockDispatchImportFromUrl.mockImplementation(
+            async ({ context }: { context: ImportContext }) => {
+                await context.aiExtract?.({ text: 'page', locale: 'es' });
+                return { kind: 'sync', response: MINIMAL_RESPONSE };
+            }
+        );
+
+        const res = await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { data: AccommodationImportResponse };
+        expect(body.data.message).toBeUndefined();
+        expect(gateState.count).toBe(0);
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
@@ -201,8 +223,11 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             headers: authHeaders()
         });
         expect(res.status).toBe(200);
-        expect(await res.json()).toMatchObject({
-            data: { allowed: true, isNewUser: true, hasEntitlement: false }
+        expect((await res.json()).data).toEqual({
+            aiExtractionAllowed: true,
+            isNewUser: true,
+            hasEntitlement: false,
+            remainingNewUserImports: 5
         });
     });
 
@@ -239,7 +264,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             expect(res.status).toBe(200);
             const data = ((await res.json()) as { data: AccommodationImportResponse }).data;
             if (index < 5) expect(data.message).toBeUndefined();
-            else expect(data.message).toContain('no está incluida');
+            else expect(data.message).toContain('límite de importaciones asistidas por IA');
         }
         expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(6);
     });

@@ -155,9 +155,9 @@ export interface AbandonPendingAuthorizationResult {
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
     /**
-     * Checks completed subscription history for a user and vertical, including
-     * lapsed and superseded rows. Pending checkout and abandoned attempts do not
-     * count as subscription history for new-user eligibility.
+     * Checks subscription history for a user and vertical, including lapsed and
+     * superseded rows. Pending checkout, abandoned attempts, and a declined
+     * first charge do not count as subscription history for new-user eligibility.
      */
     async existsAnyForUser(input: ExistsAnyForUserInput): Promise<boolean> {
         const db = input.tx ?? getDb();
@@ -168,7 +168,11 @@ export class SubscriptionModel {
                 and(
                     eq(subscriptions.userId, input.userId),
                     eq(subscriptions.vertical, input.vertical),
-                    notInArray(subscriptions.status, ['PENDING_AUTHORIZATION', 'ABANDONED'])
+                    notInArray(subscriptions.status, [
+                        'PENDING_AUTHORIZATION',
+                        'ABANDONED',
+                        'CHARGE_DECLINED'
+                    ])
                 )
             )
             .limit(1);

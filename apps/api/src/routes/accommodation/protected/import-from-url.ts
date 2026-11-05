@@ -343,10 +343,11 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
                 userId: actor.id,
                 hasEntitlement: false
             });
-            if (!access.allowed) {
+            if (!access.aiExtractionAllowed) {
                 // Returning users and capped new users retain structured import;
                 // the entitlement gate only disables AI extraction.
-                gate.blockedReason = 'entitlement';
+                gate.blockedReason =
+                    access.reason === 'new_user_cap' ? 'new_user_cap' : 'entitlement';
             }
         } else {
             gate.blockedReason = getImportAiBlockedReason(quota);

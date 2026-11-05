@@ -76,7 +76,7 @@ describe('ImportFromUrl', () => {
         mockGetAccess.mockResolvedValue({
             ok: true,
             data: {
-                allowed: true,
+                aiExtractionAllowed: true,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 5
@@ -104,7 +104,7 @@ describe('ImportFromUrl', () => {
         resolveAccess({
             ok: true,
             data: {
-                allowed: true,
+                aiExtractionAllowed: true,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 5
@@ -117,7 +117,7 @@ describe('ImportFromUrl', () => {
         mockGetAccess.mockResolvedValueOnce({
             ok: true,
             data: {
-                allowed: false,
+                aiExtractionAllowed: false,
                 isNewUser: true,
                 hasEntitlement: false,
                 remainingNewUserImports: 0,
@@ -132,7 +132,7 @@ describe('ImportFromUrl', () => {
         mockGetAccess.mockResolvedValueOnce({
             ok: true,
             data: {
-                allowed: false,
+                aiExtractionAllowed: false,
                 isNewUser: false,
                 hasEntitlement: false,
                 remainingNewUserImports: null,
@@ -143,7 +143,7 @@ describe('ImportFromUrl', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent(
             'Tu plan no incluye esta función. Actualizalo para continuar.'
         );
-        expect(screen.queryByLabelText('URL del alojamiento')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
     });
 
     it('keeps the Importar button disabled until the legal checkbox is ticked', async () => {

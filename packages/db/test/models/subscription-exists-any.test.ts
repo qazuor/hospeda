@@ -34,6 +34,27 @@ describe('SubscriptionModel.existsAnyForUser', () => {
         expect(columnNames).toContain('user_id');
         expect(columnNames).toContain('vertical');
         expect(columnNames).toContain('status');
+        const fragments: string[] = [];
+        const visited = new WeakSet<object>();
+        const collectSql = (part: unknown): void => {
+            if (typeof part === 'string') {
+                fragments.push(part);
+                return;
+            }
+            if (!part || typeof part !== 'object' || visited.has(part)) return;
+            visited.add(part);
+            if (Array.isArray(part)) {
+                part.forEach(collectSql);
+                return;
+            }
+            if ('value' in part) collectSql(part.value);
+            if ('queryChunks' in part) collectSql(part.queryChunks);
+        };
+        collectSql(condition);
+        expect(fragments.join(' ')).toContain('not in');
+        expect(fragments.join(' ')).toContain('PENDING_AUTHORIZATION');
+        expect(fragments.join(' ')).toContain('ABANDONED');
+        expect(fragments.join(' ')).toContain('CHARGE_DECLINED');
         expect(limit).toHaveBeenCalledWith(1);
     });
 

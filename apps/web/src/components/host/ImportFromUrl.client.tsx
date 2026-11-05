@@ -107,7 +107,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     // HOS-50 T-013: non-null while an async Apify run is being polled.
     const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
     const [access, setAccess] = useState<{
-        readonly allowed: boolean;
+        readonly aiExtractionAllowed: boolean;
         readonly reason?: 'entitlement' | 'new_user_cap';
     } | null>(null);
     // Guards against re-handling a settle outcome on unrelated re-renders
@@ -122,7 +122,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             try {
                 const result = await accommodationsImportApi.getAccess();
                 if (active && result.ok) setAccess(result.data);
-                else if (active) setAccess({ allowed: true });
+                else if (active) setAccess({ aiExtractionAllowed: true });
             } catch (cause) {
                 webLogger.warn(
                     'ImportFromUrl: access precheck failed; server will enforce access on submit',
@@ -130,7 +130,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         error: cause
                     }
                 );
-                if (active) setAccess({ allowed: true });
+                if (active) setAccess({ aiExtractionAllowed: true });
             }
         }
         void loadAccess();
@@ -335,39 +335,6 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         }
     }, [pollResult, onError, onImported, t]);
 
-    if (access?.allowed === false) {
-        const entitlementDenied = access.reason === 'entitlement';
-        return (
-            <section className={styles.importFromUrl}>
-                <div
-                    className="form-error-banner"
-                    role="alert"
-                >
-                    {entitlementDenied
-                        ? t(
-                              'common.apiError.ENTITLEMENT_REQUIRED',
-                              'Tu plan no incluye esta función. Actualizalo para continuar.'
-                          )
-                        : t(
-                              'host.importFromUrl.errors.newUserCap',
-                              'Alcanzaste el límite de importaciones de las últimas 24 horas. Probá de nuevo más tarde.'
-                          )}
-                    {entitlementDenied ? (
-                        <a
-                            className={styles.errorAction}
-                            href={buildUrl({
-                                locale,
-                                path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
-                            })}
-                        >
-                            {t('host.importFromUrl.errors.entitlementCta', 'Ver planes')}
-                        </a>
-                    ) : null}
-                </div>
-            </section>
-        );
-    }
-
     if (access === null) {
         return (
             <section
@@ -383,9 +350,39 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
             </section>
         );
     }
-
+    const entitlementDenied = access.reason === 'entitlement';
+    const capReached = access.reason === 'new_user_cap';
     return (
         <section className={styles.importFromUrl}>
+            {access.aiExtractionAllowed === false ? (
+                <div
+                    className="form-error-banner"
+                    role="alert"
+                >
+                    {capReached
+                        ? t(
+                              'host.importFromUrl.errors.newUserCap',
+                              'Alcanzaste el límite de importaciones de las últimas 24 horas. Probá de nuevo más tarde.'
+                          )
+                        : entitlementDenied
+                          ? t(
+                                'common.apiError.ENTITLEMENT_REQUIRED',
+                                'Tu plan no incluye esta función. Actualizalo para continuar.'
+                            )
+                          : null}
+                    {entitlementDenied ? (
+                        <a
+                            className={styles.errorAction}
+                            href={buildUrl({
+                                locale,
+                                path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
+                            })}
+                        >
+                            {t('host.importFromUrl.errors.entitlementCta', 'Ver planes')}
+                        </a>
+                    ) : null}
+                </div>
+            ) : null}
             {/*
              * NOT a <form>: this island is embedded inside the parent
              * CreatePropertyMiniForm's <form>, and nested forms are invalid HTML

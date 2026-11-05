@@ -18,11 +18,16 @@ export async function getAccommodationImportAccess(input: {
     ]);
     const isNewUser = !hadTrial && !hadSubscription && !hasPublishedAccommodation;
     if (hasEntitlement) {
-        return { allowed: true, isNewUser, hasEntitlement, remainingNewUserImports: null };
+        return {
+            aiExtractionAllowed: true,
+            isNewUser,
+            hasEntitlement,
+            remainingNewUserImports: null
+        };
     }
     if (!isNewUser) {
         return {
-            allowed: false,
+            aiExtractionAllowed: false,
             isNewUser,
             hasEntitlement,
             remainingNewUserImports: null,
@@ -31,7 +36,7 @@ export async function getAccommodationImportAccess(input: {
     }
     const used = await ports.countNewUserImports(input);
     return {
-        allowed: used < ACCOMMODATION_IMPORT_NEW_USER_MAX,
+        aiExtractionAllowed: used < ACCOMMODATION_IMPORT_NEW_USER_MAX,
         isNewUser,
         hasEntitlement,
         remainingNewUserImports: Math.max(0, ACCOMMODATION_IMPORT_NEW_USER_MAX - used),
@@ -45,8 +50,17 @@ export async function requireAccommodationImportAccess(input: {
     readonly hasEntitlement?: boolean;
 }): Promise<AccommodationImportAccessResponse> {
     const access = await getAccommodationImportAccess(input);
-    if (access.hasEntitlement || !access.isNewUser || !access.allowed) return access;
+    if (access.hasEntitlement || !access.isNewUser || !access.aiExtractionAllowed) return access;
     const consumed = await getAccommodationImportAccessPorts().consumeNewUserImport(input);
-    if (consumed) return access;
-    return { ...access, allowed: false, remainingNewUserImports: 0, reason: 'new_user_cap' };
+    if (consumed)
+        return {
+            ...access,
+            remainingNewUserImports: Math.max(0, (access.remainingNewUserImports ?? 1) - 1)
+        };
+    return {
+        ...access,
+        aiExtractionAllowed: false,
+        remainingNewUserImports: 0,
+        reason: 'new_user_cap'
+    };
 }
