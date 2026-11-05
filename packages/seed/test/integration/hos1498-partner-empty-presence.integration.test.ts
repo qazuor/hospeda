@@ -55,8 +55,8 @@ describe('AC:V8b:6 ACC:25 seed migration integration', () => {
                 sql`SELECT role, permission FROM role_permission WHERE permission = ${PermissionEnum.PARTNER_EMPTY_PRESENCE}::permission_enum AND role IN (${RoleEnum.SUPER_ADMIN}, ${RoleEnum.ADMIN}) ORDER BY role`
             );
             expect(rows.rows).toEqual([
-                { role: RoleEnum.ADMIN, permission: PermissionEnum.PARTNER_EMPTY_PRESENCE },
-                { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.PARTNER_EMPTY_PRESENCE }
+                { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.PARTNER_EMPTY_PRESENCE },
+                { role: RoleEnum.ADMIN, permission: PermissionEnum.PARTNER_EMPTY_PRESENCE }
             ]);
             expect((await migration.up(context(tx))).counts).toEqual({
                 granted: 0,
