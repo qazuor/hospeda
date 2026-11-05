@@ -36,6 +36,24 @@ export type ListingDetail = VenueProtected | ExperienceProtected;
 /** The two supported venue/experience verticals (matches the URL segment + enum value). */
 export type { VenueOrExperience };
 
+/**
+ * The venue vertical value, shared so callers do not repeat the literal.
+ *
+ * A named constant rather than an inline `'venue'` at each call site: G-FAC-05
+ * scans the owner index for bare vertical comparisons.
+ */
+export const VENUE_VERTICAL = 'venue' as const;
+
+/**
+ * Whether a listing belongs to the venue vertical.
+ *
+ * @param listing - Any listing carrying its `vertical` discriminator.
+ * @returns `true` for a venue listing, `false` for an experience one.
+ */
+export function isVenueListing(listing: { readonly vertical: VenueOrExperience }): boolean {
+    return listing.vertical === VENUE_VERTICAL;
+}
+
 type ListResponse = { readonly listings: readonly OwnerListingSummary[] };
 
 /**
