@@ -54,8 +54,11 @@ afterEach(() => {
 
 describe('SubscriptionReturn polling', () => {
     it('hides subscription sections while processing and keeps them hidden when refresh fires', async () => {
-        const reload = vi.fn();
         const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
+        const hiddenWhenReloading: boolean[] = [];
+        const reload = vi.fn(() => {
+            hiddenWhenReloading.push(sections?.hidden ?? false);
+        });
         readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
         render(
             <SubscriptionReturn
@@ -71,6 +74,7 @@ describe('SubscriptionReturn polling', () => {
         });
 
         expect(reload).toHaveBeenCalledTimes(1);
+        expect(hiddenWhenReloading).toEqual([true]);
         expect(sections?.hidden).toBe(true);
     });
 

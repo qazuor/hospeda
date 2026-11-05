@@ -59,7 +59,7 @@ export function SubscriptionReturn({
     const [attempt, setAttempt] = useState(0);
     const [retryMessageKey, setRetryMessageKey] = useState<string | null>(null);
     const [retrying, setRetrying] = useState(false);
-    const [refreshFired, setRefreshFired] = useState(false);
+    const refreshFiredRef = useRef(false);
     const [typedEmail, setTypedEmail] = useState(declaredPayerEmail ?? accountEmail);
     const [emailError, setEmailError] = useState(false);
     const retryingRef = useRef(false);
@@ -101,18 +101,24 @@ export function SubscriptionReturn({
         } catch {
             return;
         }
+        // Hide the pre-payment sections BEFORE navigating, so the stale snapshot is
+        // never painted while the reload starts (HOS-2054). The ref keeps the
+        // effect below from un-hiding them in this same commit.
+        refreshFiredRef.current = true;
+        document
+            .querySelector<HTMLElement>('[data-subscription-sections]')
+            ?.setAttribute('hidden', '');
         refreshPage();
-        setRefreshFired(true);
     }, [refreshPage, subscriptionId, view]);
 
     useEffect(() => {
         const sections = document.querySelector<HTMLElement>('[data-subscription-sections]');
         if (!sections) return;
 
-        const busy = view === 'processing' || (view === 'confirmed' && refreshFired);
+        const busy = view === 'processing' || (view === 'confirmed' && refreshFiredRef.current);
         sections.toggleAttribute('hidden', busy);
         return () => sections.removeAttribute('hidden');
-    }, [refreshFired, view]);
+    }, [view]);
 
     useEffect(() => {
         if (!shouldPollAgain({ view, attempt })) return;
