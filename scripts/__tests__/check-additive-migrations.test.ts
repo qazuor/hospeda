@@ -116,12 +116,11 @@ describe('TEST:V8b:8 AC:V8b:7 check-additive-migrations destructive SQL guard', 
                 line: 2,
                 rule,
                 statement: sql
-                    .replaceAll('"x"', '_')
-                    .replaceAll('"y"', '_')
-                    .replaceAll('"z"', '_')
-                    .replaceAll('"a"', '_')
-                    .replaceAll('"b"', '_')
-                    .replaceAll('"', '')
+                    .replaceAll('"x"', '"_"')
+                    .replaceAll('"y"', '"_"')
+                    .replaceAll('"z"', '"_"')
+                    .replaceAll('"a"', '"_"')
+                    .replaceAll('"b"', '"_"')
                     .toUpperCase()
                     .replace(/;$/, '')
             }
@@ -178,7 +177,7 @@ describe('TEST:V8b:8 AC:V8b:7 check-additive-migrations destructive SQL guard', 
                 file: 'inline-comment.sql',
                 line: 1,
                 rule: 'DROP_COLUMN',
-                statement: 'ALTER TABLE _ DROP COLUMN _'
+                statement: 'ALTER TABLE "_" DROP COLUMN "_"'
             }
         ]);
     });

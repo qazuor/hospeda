@@ -98,7 +98,7 @@ function sanitizeSql(sql: string): string {
             continue;
         }
         if (current === '"') {
-            out += '_';
+            out += '"_"';
             i++;
             while (i < sql.length) {
                 if (sql[i] === '"' && sql[i + 1] === '"') {
@@ -177,7 +177,7 @@ export function findDestructiveStatements(params: {
                 statement: statement.slice(0, 180)
             });
         };
-        const identifier = '(?:_|[A-Z_][A-Z0-9_$]*)(?:\\.(?:_|[A-Z_][A-Z0-9_$]*))*';
+        const identifier = '(?:"_"|[A-Z_][A-Z0-9_$]*)(?:\\.(?:"_"|[A-Z_][A-Z0-9_$]*))*';
         if (new RegExp(`^DROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?${identifier}`).test(statement))
             add('DROP_TABLE');
         const alterTable = new RegExp(`^ALTER\\s+TABLE\\s+${identifier}\\s+`);
