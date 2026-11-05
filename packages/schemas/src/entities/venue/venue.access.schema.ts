@@ -396,7 +396,25 @@ export const VenueAdminSchema = VenueSchema.extend({
      */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
-    contactInfo: ContactInfoReadSchema.nullish()
+    contactInfo: ContactInfoReadSchema.nullish(),
+    /**
+     * HOS-1787 leaf 7.1 — the business lines the venue is assigned to.
+     *
+     * Declared here (and inherited by {@link VenueAdminListItemSchema}) so the
+     * admin read paths do NOT strip the column: the response projection drops
+     * every field the response schema does not declare, which made the admin
+     * editor open empty and a save send `[]`. Optional for the same reason as
+     * {@link VenueProtectedSchema.businessLines}: a partial projection must
+     * still parse; the DB column itself is NOT NULL.
+     */
+    businessLines: z
+        .array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+        .optional()
 });
 
 /** TypeScript type for {@link VenueAdminSchema}. */
