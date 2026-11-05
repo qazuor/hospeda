@@ -5159,6 +5159,34 @@ export const listingMediaApi = {
         });
     },
 
+    /** Register a new cover atomically without consuming a gallery slot. */
+    addFeaturedMedia({
+        vertical,
+        id,
+        body
+    }: {
+        readonly vertical: ListingMediaVertical;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<
+        ApiResult<{
+            readonly media: ListingMediaRow;
+            readonly previousFeatured: { readonly id: string } | null;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/featured`,
+            body
+        });
+    },
+
     /**
      * Delete a media row by its DB UUID (soft-delete + resequence).
      *
