@@ -19,6 +19,11 @@
             "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
             "count": 1,
             "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/components/entity-form/fields/BusinessLinesField.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
         }
     ],
     "resolveBusinessLineOptions": [
@@ -29,6 +34,16 @@
         },
         {
             "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/components/entity-form/fields/BusinessLinesField.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue-business-lines.ts",
             "count": 1,
             "spec": ".hoja/notas.md:5"
         }

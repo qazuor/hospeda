@@ -166,7 +166,8 @@
         "columns": {
             "priceRange": "Faixa de Preço",
             "type": "Tipo",
-            "menuUrl": "Cardápio Online"
+            "menuUrl": "Cardápio Online",
+            "businessLines": "Segmentos"
         },
         "types": {
             "RESTAURANT": "Restaurante",

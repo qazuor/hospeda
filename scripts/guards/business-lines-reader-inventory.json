@@ -251,6 +251,13 @@
             "count": 1,
             "category": "list-filter",
             "spec": ".hoja/notas.md:54"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue.columns.ts",
+            "symbol": "lines",
+            "count": 1,
+            "category": "list-column",
+            "spec": ".hoja/notas.md:5"
         }
     ],
     "imports": [
