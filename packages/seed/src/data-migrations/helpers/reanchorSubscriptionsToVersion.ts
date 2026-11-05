@@ -269,6 +269,10 @@ export interface SkippedReanchor {
     readonly versionId: string;
     /** The refusal message. */
     readonly reason: string;
+    /** Live principal subscriptions still pinned to that version. */
+    readonly liveCount: number;
+    /** Queued plan changes still targeting that version. */
+    readonly queuedCount: number;
 }
 
 /** Outcome of {@link reanchorOlderVersions}. */
@@ -282,10 +286,10 @@ export interface ReanchorOlderResult extends ReanchorResult {
  * `planId` onto `toVersionId`. Each source runs in its own savepoint with the full guard
  * rails of {@link reanchorSubscriptionsToVersion}; a source that fails them (different
  * price, shrunk entitlement, missing option) is rolled back, logged and returned in
- * `skipped`, and the remaining sources still move. Skipping instead of aborting is
- * deliberate: an old, incompatible version must not block the deploy nor strand the
- * compatible ones, and the caller surfaces the skipped ids. Versions with nothing
- * anchored to them are not evaluated at all.
+ * `skipped`, and the remaining sources are still attempted. This helper never decides
+ * that a skip is acceptable: the caller must treat a skipped source with `liveCount > 0`
+ * as fatal (0133 does, rolling back everything) so no live subscriber is silently left
+ * behind. Versions with nothing anchored to them are not evaluated at all.
  *
  * @param input - Receive-object.
  * @param input.db - Transaction-scoped client.
@@ -306,7 +310,7 @@ export async function reanchorOlderVersions(input: {
     const skipped: SkippedReanchor[] = [];
     for (const version of versions) {
         if (version.id === toVersionId) continue;
-        const [live] = await db
+        const live = await db
             .select({ id: subscriptions.id })
             .from(subscriptions)
             .where(
@@ -315,14 +319,12 @@ export async function reanchorOlderVersions(input: {
                     eq(subscriptions.class, 'PRINCIPAL'),
                     inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
                 )
-            )
-            .limit(1);
-        const [queued] = await db
+            );
+        const queued = await db
             .select({ id: subscriptionScheduledChanges.id })
             .from(subscriptionScheduledChanges)
-            .where(eq(subscriptionScheduledChanges.targetPlanVersionId, version.id))
-            .limit(1);
-        if (!live && !queued) continue;
+            .where(eq(subscriptionScheduledChanges.targetPlanVersionId, version.id));
+        if (live.length === 0 && queued.length === 0) continue;
         try {
             const result = await db.transaction(async (savepoint) =>
                 reanchorSubscriptionsToVersion({
@@ -337,7 +339,12 @@ export async function reanchorOlderVersions(input: {
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
             logger.warn(`Skipped re-anchor of version ${version.id}: ${reason}`);
-            skipped.push({ versionId: version.id, reason });
+            skipped.push({
+                versionId: version.id,
+                reason,
+                liveCount: live.length,
+                queuedCount: queued.length
+            });
         }
     }
     return { movedCount, remappedScheduledChanges, userIds: [...userIds], skipped };
