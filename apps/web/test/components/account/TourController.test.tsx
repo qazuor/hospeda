@@ -73,6 +73,7 @@ describe('TourController — steps without a destination (HOS-1856)', () => {
             <TourController
                 locale="es"
                 userRoles={['VENUE_OWNER']}
+                page="comercio"
             />
         );
 
@@ -92,6 +93,7 @@ describe('TourController — steps without a destination (HOS-1856)', () => {
             <TourController
                 locale="es"
                 userRoles={['VENUE_OWNER']}
+                page="comercio"
             />
         );
 
@@ -107,6 +109,7 @@ describe('TourController — steps without a destination (HOS-1856)', () => {
             <TourController
                 locale="es"
                 userRoles={['SPONSOR']}
+                page="dashboard"
             />
         );
 

@@ -61,6 +61,7 @@ describe('TourController — no step has a destination (HOS-1856)', () => {
             <TourController
                 locale="es"
                 userRoles={['VENUE_OWNER']}
+                page="comercio"
             />
         );
 

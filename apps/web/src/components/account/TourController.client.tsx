@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getNextPendingWelcomeTour } from '@/config/tours';
+import { getNextPendingWelcomeTour, type TourPage } from '@/config/tours';
 import { useTourState } from '@/hooks/use-tour-state';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 
@@ -7,6 +7,8 @@ interface TourControllerProps {
     readonly locale: SupportedLocale;
     /** Every role the user holds (`Astro.locals.user.roles`) — HOS-296. */
     readonly userRoles: readonly string[];
+    /** The account page this controller is mounted on (HOS-1856). */
+    readonly page: TourPage;
 }
 
 type DriverInstance = {
@@ -15,7 +17,7 @@ type DriverInstance = {
     hasNextStep: () => boolean;
 };
 
-export function TourController({ locale, userRoles }: TourControllerProps) {
+export function TourController({ locale, userRoles, page }: TourControllerProps) {
     const { t } = createTranslations(locale);
     const { isLoading, hasSeen, markSeen } = useTourState();
     // HOS-1856: "is running" lives in a ref, not in state. As state it was a
@@ -30,7 +32,7 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
     // Recomputed every render, so once `markSeen` (below) flips `hasSeen`'s
     // identity, this naturally advances to the NEXT pending tour, chaining
     // them one at a time instead of requiring a fresh page load.
-    const tour = getNextPendingWelcomeTour({ roles: userRoles, hasSeen });
+    const tour = getNextPendingWelcomeTour({ roles: userRoles, hasSeen, page });
 
     useEffect(() => {
         if (isLoading || !tour) return;

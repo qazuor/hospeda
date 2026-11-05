@@ -60,9 +60,13 @@ describe('web tours config', () => {
         it('returns the tourist tour for a plain USER (HOS-788 — the bug this fixes)', () => {
             // Before HOS-788, no tour listed 'USER' at all, so a brand-new
             // signup matched nothing and never saw a first-run tour.
-            expect(getNextPendingWelcomeTour({ roles: ['USER'], hasSeen: NEVER_SEEN })?.id).toBe(
-                'web.tourist.welcome'
-            );
+            expect(
+                getNextPendingWelcomeTour({
+                    roles: ['USER'],
+                    hasSeen: NEVER_SEEN,
+                    page: 'dashboard'
+                })?.id
+            ).toBe('web.tourist.welcome');
         });
 
         it('surfaces the host tour once the tourist tour is seen and HOST is granted (HOS-788 core case)', () => {
@@ -72,21 +76,32 @@ describe('web tours config', () => {
             // them the host tour, because the tourist tour (once it existed)
             // would have "claimed" them on the very first match.
             const hasSeen = seenTours(['web.tourist.welcome']);
-            expect(getNextPendingWelcomeTour({ roles: ['USER', 'HOST'], hasSeen })?.id).toBe(
-                'web.host.welcome'
-            );
+            expect(
+                getNextPendingWelcomeTour({ roles: ['USER', 'HOST'], hasSeen, page: 'dashboard' })
+                    ?.id
+            ).toBe('web.host.welcome');
         });
 
         it('returns undefined once every matching tour has been seen', () => {
             const hasSeen = seenTours(['web.tourist.welcome', 'web.host.welcome']);
-            expect(getNextPendingWelcomeTour({ roles: ['USER', 'HOST'], hasSeen })).toBeUndefined();
+            expect(
+                getNextPendingWelcomeTour({ roles: ['USER', 'HOST'], hasSeen, page: 'dashboard' })
+            ).toBeUndefined();
         });
 
         it('returns undefined for a guest, an empty role set, or a role with no tour', () => {
-            expect(getNextPendingWelcomeTour({ roles: null, hasSeen: NEVER_SEEN })).toBeUndefined();
-            expect(getNextPendingWelcomeTour({ roles: [], hasSeen: NEVER_SEEN })).toBeUndefined();
             expect(
-                getNextPendingWelcomeTour({ roles: ['GUEST'], hasSeen: NEVER_SEEN })
+                getNextPendingWelcomeTour({ roles: null, hasSeen: NEVER_SEEN, page: 'dashboard' })
+            ).toBeUndefined();
+            expect(
+                getNextPendingWelcomeTour({ roles: [], hasSeen: NEVER_SEEN, page: 'dashboard' })
+            ).toBeUndefined();
+            expect(
+                getNextPendingWelcomeTour({
+                    roles: ['GUEST'],
+                    hasSeen: NEVER_SEEN,
+                    page: 'dashboard'
+                })
             ).toBeUndefined();
         });
 
@@ -99,26 +114,74 @@ describe('web tours config', () => {
             // single run.
             const roles = ['USER', 'HOST', 'VENUE_OWNER'];
 
-            const first = getNextPendingWelcomeTour({ roles, hasSeen: NEVER_SEEN });
+            // The dashboard page chains its own tours (tourist -> host) and
+            // stops: the venue tour belongs to `/mi-cuenta/comercio/`.
+            const first = getNextPendingWelcomeTour({
+                roles,
+                hasSeen: NEVER_SEEN,
+                page: 'dashboard'
+            });
             expect(first?.id).toBe('web.tourist.welcome');
 
             const second = getNextPendingWelcomeTour({
                 roles,
-                hasSeen: seenTours(['web.tourist.welcome'])
+                hasSeen: seenTours(['web.tourist.welcome']),
+                page: 'dashboard'
             });
             expect(second?.id).toBe('web.host.welcome');
 
-            const third = getNextPendingWelcomeTour({
+            const dashboardDone = getNextPendingWelcomeTour({
                 roles,
-                hasSeen: seenTours(['web.tourist.welcome', 'web.host.welcome'])
+                hasSeen: seenTours(['web.tourist.welcome', 'web.host.welcome']),
+                page: 'dashboard'
             });
-            expect(third?.id).toBe('web.venue.welcome');
+            expect(dashboardDone).toBeUndefined();
+
+            // The comercio page only ever offers the venue tour, regardless of
+            // how many dashboard tours are still pending.
+            const venue = getNextPendingWelcomeTour({
+                roles,
+                hasSeen: NEVER_SEEN,
+                page: 'comercio'
+            });
+            expect(venue?.id).toBe('web.venue.welcome');
 
             const none = getNextPendingWelcomeTour({
                 roles,
-                hasSeen: seenTours(['web.tourist.welcome', 'web.host.welcome', 'web.venue.welcome'])
+                hasSeen: seenTours([
+                    'web.tourist.welcome',
+                    'web.host.welcome',
+                    'web.venue.welcome'
+                ]),
+                page: 'comercio'
             });
             expect(none).toBeUndefined();
+        });
+
+        it('never offers a venue tour on the dashboard page (HOS-1856)', () => {
+            // The dashboard has only `greeting` + `comercio-listings`; starting
+            // the venue tour there consumed it before the QR/listing steps.
+            const hasSeen = seenTours(['web.tourist.welcome']);
+            const dashboard = getNextPendingWelcomeTour({
+                roles: ['USER', 'VENUE_OWNER'],
+                hasSeen,
+                page: 'dashboard'
+            });
+            expect(dashboard).toBeUndefined();
+
+            const comercio = getNextPendingWelcomeTour({
+                roles: ['USER', 'VENUE_OWNER'],
+                hasSeen,
+                page: 'comercio'
+            });
+            expect(comercio?.id).toBe('web.venue.welcome');
+        });
+
+        it('never offers a dashboard tour on the comercio page (HOS-1856)', () => {
+            const hasSeen = seenTours(['web.tourist.welcome']);
+            expect(
+                getNextPendingWelcomeTour({ roles: ['USER', 'HOST'], hasSeen, page: 'comercio' })
+            ).toBeUndefined();
         });
     });
 

@@ -58,6 +58,7 @@ describe('TourController — driver lifecycle (HOS-1856)', () => {
             <TourController
                 locale="es"
                 userRoles={['VENUE_OWNER']}
+                page="comercio"
             />
         );
 
