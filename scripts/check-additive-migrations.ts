@@ -48,6 +48,16 @@ function sanitizeSql(sql: string): string {
     while (i < sql.length) {
         const current = sql[i] ?? '';
         const next = sql[i + 1] ?? '';
+        if (
+            current === '-' &&
+            next === '-' &&
+            /^-->\s*statement-breakpoint\b/i.test(sql.slice(i))
+        ) {
+            out += '\u0000';
+            i += 2;
+            while (i < sql.length && sql[i] !== '\n') i++;
+            continue;
+        }
         if (current === '-' && next === '-') {
             i += 2;
             while (i < sql.length && sql[i] !== '\n') i++;
@@ -167,14 +177,27 @@ export function findDestructiveStatements(params: {
                 statement: statement.slice(0, 180)
             });
         };
-        if (/^DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?_/.test(statement)) add('DROP_TABLE');
-        if (!/^ALTER\s+TABLE\s+_/.test(statement)) continue;
-        const actions = statement.replace(/^ALTER\s+TABLE\s+_\s*/, '').split(/\s*,\s*/);
+        const identifier = '(?:_|[A-Z_][A-Z0-9_$]*)(?:\\.(?:_|[A-Z_][A-Z0-9_$]*))*';
+        if (new RegExp(`^DROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?${identifier}`).test(statement))
+            add('DROP_TABLE');
+        const alterTable = new RegExp(`^ALTER\\s+TABLE\\s+${identifier}\\s+`);
+        if (!alterTable.test(statement)) continue;
+        const actions = statement.replace(alterTable, '').split(/\s*,\s*/);
         for (const action of actions) {
-            if (/^DROP\s+COLUMN\s+(?:IF\s+EXISTS\s+)?_/.test(action)) add('DROP_COLUMN');
-            if (/^RENAME\s+TO\s+_/.test(action)) add('RENAME_TABLE');
-            if (/^RENAME\s+(?:COLUMN\s+)?_\s+TO\s+_/.test(action)) add('RENAME_COLUMN');
-            if (/^ALTER\s+COLUMN\s+_\s+(?:SET\s+DATA\s+)?TYPE\b/.test(action))
+            if (new RegExp(`^DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?${identifier}`).test(action))
+                add('DROP_COLUMN');
+            if (new RegExp(`^RENAME\\s+TO\\s+${identifier}`).test(action)) add('RENAME_TABLE');
+            if (
+                new RegExp(`^RENAME\\s+(?:COLUMN\\s+)?${identifier}\\s+TO\\s+${identifier}`).test(
+                    action
+                )
+            )
+                add('RENAME_COLUMN');
+            if (
+                new RegExp(`^ALTER\\s+COLUMN\\s+${identifier}\\s+(?:SET\\s+DATA\\s+)?TYPE\\b`).test(
+                    action
+                )
+            )
                 add('CHANGE_COLUMN_TYPE');
         }
     }
@@ -191,7 +214,7 @@ export function isPhaseBranchContext(params: {
         params.env.GITHUB_HEAD_REF,
         params.env.GITHUB_REF_NAME
     ];
-    if (refs.some((ref) => ref !== undefined)) return refs.some((ref) => ref?.startsWith('epic/'));
+    if (refs.some((ref) => Boolean(ref))) return refs.some((ref) => ref?.startsWith('epic/'));
     return params.currentBranch.startsWith('epic/');
 }
 
