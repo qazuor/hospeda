@@ -201,6 +201,8 @@ export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';
 export * from './billing/subscription/admit-succession-predecessor.js';
 export * from './billing/subscription/after-activation-commit.js';
+export * from './billing/subscription/apply-due-scheduled-changes.service.js';
+export * from './billing/subscription/apply-scheduled-change.service.js';
 export * from './billing/subscription/arrears-suspension-notice.js';
 export * from './billing/subscription/before-cancel-notice-kinds.js';
 export * from './billing/subscription/billing-period-end.js';

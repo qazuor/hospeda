@@ -49,6 +49,9 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   (S30 in B9b; S37 in B12 and S10 in B8b later) decided to change the
  *   authorization amount; the sweep retries the mutation for 3 days from it
  *   (MOT:5, AC:B9b:5).
+ * - `subscription.scheduled_change_applied`: S38 applied a queued plan version
+ *   and billing option (`entity_type = 'subscription'`, `entity_id` = its id,
+ *   `reason = 'S38'`, and `changes` records both old/new pairs; actor `job`).
  * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
  *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
  *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).
@@ -83,6 +86,7 @@ export const DOMAIN_EVENT_TYPES = [
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
+    'subscription.scheduled_change_applied',
     'manual_payment.reimputed',
     /** An open reconciliation mark passed deadline 17; written by the sweep. */
     'reconciliation.mark_escalated',
