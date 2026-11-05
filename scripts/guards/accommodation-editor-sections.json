@@ -1,0 +1,17 @@
+{
+    "spec": "docs/06-guards.md#g-fac-08",
+    "count": 11,
+    "sections": [
+        { "id": "basicInfo", "slug": "datos", "group": "property" },
+        { "id": "capacityPricing", "slug": "capacidad-precio", "group": "property" },
+        { "id": "location", "slug": "ubicacion", "group": "property" },
+        { "id": "amenities", "slug": "servicios", "group": "property" },
+        { "id": "photos", "slug": "fotos", "group": "content" },
+        { "id": "faqs", "slug": "preguntas", "group": "content" },
+        { "id": "contact", "slug": "contacto", "group": "content" },
+        { "id": "seo", "slug": "seo", "group": "content" },
+        { "id": "calendar", "slug": "calendario", "group": "management" },
+        { "id": "translations", "slug": "traducciones", "group": "management" },
+        { "id": "externalReputation", "slug": "reputacion", "group": "management" }
+    ]
+}
