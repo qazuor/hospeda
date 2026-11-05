@@ -151,8 +151,8 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
         await page.getByLabel('Categoría').selectOption('BAR');
 
-        await expect(page.getByRole('checkbox', { name: /Gastronomía/i })).toBeChecked();
-        await expect(page.getByRole('checkbox', { name: /Noche/i })).toBeChecked();
+        await expect(page.getByTestId('business-line-food')).toBeChecked();
+        await expect(page.getByTestId('business-line-nightlife')).toBeChecked();
 
         const barId = await createVenue(page, {
             name: `Bar de prueba ${Date.now()}`,
@@ -170,8 +170,8 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
         await page.getByLabel('Categoría').selectOption('HELADERIA');
 
-        await expect(page.getByRole('checkbox', { name: /Noche/i })).toHaveCount(0);
-        await expect(page.getByRole('checkbox', { name: /Gastronomía/i })).toBeChecked();
+        await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);
+        await expect(page.getByTestId('business-line-food')).toBeChecked();
 
         const heladeriaId = await createVenue(page, {
             name: `Heladería de prueba ${Date.now()}`,
