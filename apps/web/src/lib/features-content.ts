@@ -389,6 +389,10 @@ export const ANFITRIONES_TABLE_ROWS: readonly PlanTableRow[] = [
         cells: [{ kind: 'no' }, { kind: 'yes' }, { kind: 'yes' }]
     },
     {
+        labelKey: 'features.anfitriones.table.rows.videoLink.label',
+        cells: [{ kind: 'yes' }, { kind: 'yes' }, { kind: 'yes' }]
+    },
+    {
         labelKey: 'features.anfitriones.table.rows.advancedStats.label',
         cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
     },

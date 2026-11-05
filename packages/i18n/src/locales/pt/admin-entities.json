@@ -801,7 +801,7 @@
         "fieldPremium": "{field} - Premium",
         "fieldPremiumDescription": "Este recurso está disponível em planos superiores",
         "richDescriptionNudge": "Seu plano não inclui descrições enriquecidas. Você pode editar a descrição como texto simples.",
-        "videoNudge": "A incorporação de vídeos está disponível em planos superiores.",
+        "videoNudge": "Links de vídeo estão disponíveis em todos os planos de hospedagem.",
         "upgradeLink": "Atualizar plano"
     },
     "limitGate": {

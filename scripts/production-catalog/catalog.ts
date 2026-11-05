@@ -1827,8 +1827,7 @@ export const PRODUCTION_PLAN_CATALOG = [
  * the versions generated into migration 0144.
  */
 export const PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS = [
-    { vertical: 'accommodation', slug: 'owner-basico', key: 'can_embed_video' },
-    { vertical: 'accommodation', slug: 'trial', key: 'can_embed_video' }
+    { vertical: 'accommodation', slug: 'owner-basico', key: 'can_embed_video' }
 ] as const;
 
 /** V2.4a fixture retained for the mechanism tests. */

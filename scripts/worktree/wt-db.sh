@@ -180,6 +180,9 @@ do_full_provision() {
   echo "  -> pnpm db:seed"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed ) \
     || { echo "ERROR: pnpm db:seed failed — aborting auto-heal"; exit 1; }
+  echo "  -> pnpm db:seed:migrate"
+  ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed:migrate ) \
+    || { echo "ERROR: pnpm db:seed:migrate failed — aborting auto-heal"; exit 1; }
   echo "  -> pnpm db:seed:test-users"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:seed:test-users ) \
     || { echo "ERROR: pnpm db:seed:test-users failed — aborting auto-heal"; exit 1; }
