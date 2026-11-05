@@ -92,6 +92,11 @@
         "noReviewsDescription": "Be the first to leave a review",
         "verified": "Verified"
     },
+    "dimensionAverages": {
+        "title": "By aspect",
+        "votes_one": "{{count}} vote",
+        "votes_other": "{{count}} votes"
+    },
     "dimensions": {
         "food": "Food",
         "service": "Service",

@@ -92,6 +92,11 @@
         "noReviewsDescription": "Sé el primero en dejar una reseña",
         "verified": "Verificado"
     },
+    "dimensionAverages": {
+        "title": "Por aspecto",
+        "votes_one": "{{count}} voto",
+        "votes_other": "{{count}} votos"
+    },
     "dimensions": {
         "food": "Comida",
         "service": "Servicio",
