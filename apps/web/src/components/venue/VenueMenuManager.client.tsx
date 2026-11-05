@@ -362,11 +362,19 @@ export function VenueMenuManager({
     // the carta is not part of the listing payload the editor is built from, and
     // adding it there would make every editor load pay for a nested document
     // most owners will not open.
+    //
+    // The read is PROTECTED (HOS-1854). The browser origin and the API origin
+    // are different ports — and in production, different hosts — so the default
+    // `credentials: 'same-origin'` drops the session cookie on this request and
+    // the API answers 401. The SSR count above uses `getProtected` with the raw
+    // cookie for exactly the same reason: one anonymous read here rendered the
+    // locked notice ("N cargados") next to "No hay datos cargados" and left the
+    // stored dishes invisible in `locked` and in pre-trial.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<MenuEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<MenuEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }

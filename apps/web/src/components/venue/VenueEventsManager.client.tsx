@@ -141,11 +141,14 @@ export function VenueEventsManager({
     // The panel reads its own state rather than receiving it from the SSR
     // page, for the same reason `VenueMenuManager` does: the agenda is not
     // part of the listing payload the editor is built from.
+    //
+    // Protected read, same reason as `VenueMenuManager` (HOS-1854): without the
+    // session cookie the API answers 401 and a locked section renders empty.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<EventsEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<EventsEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }

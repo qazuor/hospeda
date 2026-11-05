@@ -39,6 +39,7 @@ vi.mock('@/lib/env', () => ({
 vi.mock('@/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
+        getProtected: vi.fn(),
         put: vi.fn(),
         delete: vi.fn()
     }
@@ -51,7 +52,7 @@ vi.mock('@/lib/entitlements-cache', () => ({
     fetchEntitlementsUncached: mockFreshEntitlements
 }));
 
-const mockGet = vi.mocked(apiClient.get);
+const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
 const mockDelete = vi.mocked(apiClient.delete);
 const mockEntitlements = vi.mocked(getEntitlementsCached);

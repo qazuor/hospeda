@@ -36,13 +36,14 @@ vi.mock('../../../src/lib/i18n', () => ({
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
+        getProtected: vi.fn(),
         put: vi.fn()
     }
 }));
 
 import { apiClient } from '../../../src/lib/api/client';
 
-const mockGet = vi.mocked(apiClient.get);
+const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
 
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';

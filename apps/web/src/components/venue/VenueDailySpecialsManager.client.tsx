@@ -167,11 +167,14 @@ export function VenueDailySpecialsManager({
     // for the reason the carta's editor gives: the specials are not part of the
     // listing payload, and adding them there would make every editor load pay
     // for a document most owners will not open.
+    //
+    // Protected read, same reason as `VenueMenuManager` (HOS-1854): without the
+    // session cookie the API answers 401 and a locked section renders empty.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<DailySpecialsEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<DailySpecialsEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }
