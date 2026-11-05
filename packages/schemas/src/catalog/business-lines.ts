@@ -4,6 +4,7 @@ import { VenueTypeEnum } from '../enums/venue-type.enum.js';
 import type {
     BusinessLineDefinitionBase,
     BusinessLineRules,
+    BusinessLineValue,
     ListingVertical
 } from './listing-catalog.types.js';
 
@@ -43,6 +44,19 @@ export const BUSINESS_LINES = {
         { vertical: 'experience', value: 'standard', public: false, sections: [] }
     ] as const satisfies readonly BusinessLineDefinitionBase<'experience'>[]
 };
+
+/**
+ * Venue business-line values in catalog order, as the non-empty tuple
+ * `z.enum` requires.
+ *
+ * Derived from {@link BUSINESS_LINES} so a response schema that validates the
+ * persisted column cannot drift from the catalog when a line is added or
+ * removed. `map` yields a plain array, so the cast supplies the non-empty tuple
+ * shape `z.enum` needs; the catalog above is non-empty by construction.
+ */
+export const VENUE_BUSINESS_LINE_VALUES = BUSINESS_LINES.venue.map(
+    (line) => line.value
+) as unknown as readonly [BusinessLineValue<'venue'>, ...BusinessLineValue<'venue'>[]];
 
 const foodNight = { allowed: ['food', 'nightlife'], preselect: ['food', 'nightlife'] } as const;
 const foodNightRestaurant = { allowed: ['food', 'nightlife'], preselect: ['food'] } as const;

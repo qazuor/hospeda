@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import {
     ListingAmenityPublicSchema,
     ListingFeaturePublicSchema
@@ -359,9 +360,12 @@ export const VenueProtectedSchema = VenueSchema.pick({
      * itself is NOT NULL.
      */
     businessLines: z
-        .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
-            error: 'zodError.venue.businessLines.invalidType'
-        })
+        .array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
         .optional()
 });
 
