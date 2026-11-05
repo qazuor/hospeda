@@ -42,6 +42,7 @@ import { ExperiencePriceUnitEnum, resolveBusinessLineOptions } from '@repo/schem
 import { type FormEvent, type JSX, useState } from 'react';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
+import { MinAgeField } from '@/components/listing/editor/MinAgeField.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -303,32 +304,12 @@ export function ListingCreateForm({
             ) : null}
 
             {config.showsBusinessLines && showMinAge ? (
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="cc-minAge"
-                    >
-                        {t('venue.detail.nightInfo.minAgeLabel', 'Edad mínima')}
-                    </label>
-                    <input
-                        id="cc-minAge"
-                        type="number"
-                        min={13}
-                        max={30}
-                        className={styles.input}
-                        value={minAge ?? ''}
-                        onChange={(event) => {
-                            const next = Number.parseInt(event.target.value, 10);
-                            setMinAge(Number.isNaN(next) ? null : next);
-                        }}
-                        aria-invalid={fieldErrors.minAge ? 'true' : 'false'}
-                        aria-describedby={fieldErrors.minAge ? fieldErrorId('minAge') : undefined}
-                    />
-                    <FieldError
-                        id={fieldErrorId('minAge')}
-                        message={fieldErrors.minAge}
-                    />
-                </div>
+                <MinAgeField
+                    locale={locale}
+                    value={minAge}
+                    onChange={setMinAge}
+                    error={fieldErrors.minAge}
+                />
             ) : null}
 
             <div className={styles.field}>
