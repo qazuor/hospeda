@@ -62,7 +62,7 @@ en fases aditivas sobre el sistema nuevo**. Una pieza va al corte si sin ella no
 se ejecuta el corte; si sin ella el sistema nuevo cobra mal o regala; si escribe un dato que no se
 reconstruye; si cambia la forma de una tabla que tiene filas el día del corte; o si la exige el grafo.
 Lo que se difiere llega sin tocar nada de lo construido. **Todo el esquema de las 25 unidades nace en
-las migraciones de la rama antes del corte**; una fase posterior no trae migración estructural.
+las migraciones de la rama antes del corte**; una fase posterior trae sólo migraciones aditivas ([decisión del owner 2026-11-05](01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)).
 
 **Al corte (22), en `10-corte/`** — enteras (17) y las mitades *a* de las cinco partidas (5):
 

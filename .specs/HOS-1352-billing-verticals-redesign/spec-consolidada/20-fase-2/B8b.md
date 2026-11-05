@@ -9,7 +9,7 @@ la dirección de `direcciónDeCambio`; abre la ruta de la sucesión de `S1` y sa
 de toda fase posterior ([GATE:FP](../30-el-corte.md#gate-fp)): el momento 2 aplicado a la rama de la
 fase ([GATE:FP.1](../30-el-corte.md#gate-fp-1)), el checklist de smoke del sistema nuevo extendido
 con lo de la fase —`staging` antes del merge y un 5c propio en producción—
-([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard en verde, sin migración estructural
+([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard en verde, con sólo migraciones aditivas
 ([GATE:FP.3](../30-el-corte.md#gate-fp-3)); y, pieza por pieza, el momento 1
 ([GATE:M1](../30-el-corte.md#gate-m1)).
 
@@ -892,8 +892,8 @@ filas: `B8b` es el cierre de la sucesión y `B9b` las cortesías; la tabla de la
 
 ## Modelo de datos y migraciones
 
-**Sin migración estructural**: una fase posterior no la trae (AD), y el drift guard sobre la rama de
-la fase lo hace cumplir ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Lo que esta pieza escribe nace
+**Sólo migraciones aditivas**: una fase posterior no trae migración destructiva (AD, redefinida: [decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)), y el
+drift guard y el guard de migraciones destructivas sobre la rama de la fase lo hacen cumplir ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Lo que esta pieza escribe nace
 al corte en `B3`: la cola de cambios programados ([ESQ:3](../10-corte/B3.md#esq-3)) y las columnas de
 la sucesión, `sucede_a` y `sucedida_por` ([ESQ:4](../10-corte/B3.md#esq-4)), además de
 `subscription_pause` con su motivo, cortesías y marcas. **Sólo agrega lo que crea filas** (AS).
@@ -1335,7 +1335,7 @@ Sin permiso, pausar, reanudar y cambiar de plan reciben el rechazo de permiso; c
 deja su registro de auditoría.
 
 <a id="test-b8b-23"></a>
-**TEST:B8b:23** — la rama de la fase sin migración estructural
+**TEST:B8b:23** — la rama de la fase sin migración destructiva
 
 Tipo: migración desde cero
 
@@ -1344,7 +1344,7 @@ Cubre: [AC:B8b:23](#ac-b8b-23)
 Fuente: [FILA:B8b](#fila-b8b) · [GATE:FP.3](../30-el-corte.md#gate-fp-3)
 
 Sobre una base vacía migrada con las migraciones del corte, las columnas de la sucesión, la cola y la
-marca con su motivo ya existen; la rama de la fase no agrega ninguna migración estructural y la suite
+marca con su motivo ya existen; la rama de la fase no agrega ninguna migración destructiva y la suite
 de la pieza corre completa.
 
 <a id="test-b8b-24"></a>

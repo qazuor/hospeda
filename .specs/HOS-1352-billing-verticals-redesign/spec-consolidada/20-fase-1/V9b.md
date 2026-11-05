@@ -17,7 +17,7 @@ los mismos gates por unidad (el momento 1, [GATE:M1](../30-el-corte.md#gate-m1))
 Su gate propio es el de toda fase posterior: el momento 2 aplicado a la rama de la fase
 ([GATE:FP.1](../30-el-corte.md#gate-fp-1)), el checklist de smoke del sistema nuevo extendido con lo de la fase —la parte de
 `staging` antes del merge y la de producción como un 5c propio— ([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y el drift guard
-sobre la rama en verde, sin ninguna migración estructural ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Es **aditiva**: no
+sobre la rama en verde, con sólo migraciones aditivas ([GATE:FP.3](../30-el-corte.md#gate-fp-3)). Es **aditiva**: no
 reescribe filas ni código del corte ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) puntos 2 y 7).
 
 **La fecha límite de la Fase 1** (corte del MVP, owner 2026-10-02, [BV](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bv)): **límite = el instante del
@@ -254,14 +254,14 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notif
 Fuente: [LISTA:V9b](#lista-v9b), [FILA:V9b](#fila-v9b), [PLAZO:4](../02-nucleo.md#plazo-4), [BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)
 
 <a id="ac-v9b-11"></a>
-**AC:V9b:11** — Sólo lee los plazos, y no trae migración estructural.
+**AC:V9b:11** — Sólo lee los plazos, y no trae migración destructiva.
 
 - **Dado** una base armada desde cero con las migraciones de la rama de la Fase 1 (la versión 1 de
   los plazos de verticales y `plazos_version`/`borrado_anunciado` creadas por `V6`)
 - **Cuando** corren `PB9` y los avisos
 - **Entonces** leen la tabla de plazos y la versión guardada en la ficha sin escribirlas; `trial` y
   las tablas de sólo agregar no tienen `deleted_at`; y la rama de la fase no contiene ninguna
-  migración estructural nueva.
+  migración destructiva (`DROP` o `RENAME` de tabla o columna, cambio de tipo).
 Fuente: [FILA:V9b](#fila-v9b), [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005), [PLAZO:2](../02-nucleo.md#plazo-2)
 
 <a id="ac-v9b-12"></a>
@@ -303,7 +303,7 @@ Fuente: [LISTA:V9b](#lista-v9b)
   previos y su job, y el *«al archivar»* lo encola `V6` en el acto de `PB4`/`PB5`, con su plantilla
   ([BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl): la pieza anterior escribe su rama entera y la posterior trae lo suyo sin tocar código
   anterior).
-- **Aditiva** ([GATE:FP](../30-el-corte.md#gate-fp)): ninguna migración estructural, ningún cambio de filas del corte.
+- **Aditiva** ([GATE:FP](../30-el-corte.md#gate-fp); [decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)): ninguna migración destructiva, ningún cambio de filas del corte.
 
 ## Diseño de origen: retención y la corrección legal (`V/02` §4, `V/22` §3)
 
@@ -606,7 +606,7 @@ Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.m
 
 ## Modelo de datos y migraciones
 
-- **Sin migración estructural** ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7; [GATE:FP.3](../30-el-corte.md#gate-fp-3)). Lee, sin escribir: la
+- **Sin migración destructiva** ([DEC-ARCH-017](../01-decisiones-vigentes.md#dec-arch-017) punto 7; [GATE:FP.3](../30-el-corte.md#gate-fp-3)). Lee, sin escribir: la
   tabla versionada de plazos de verticales y su versión 1, y `listing.plazos_version` y
   `listing.borrado_anunciado` (de `V6`, BD); escribe `listing.inactiva_desde` sólo donde un hecho lo
   pide y por los ejecutores que [GUARD:G-R6-B](../04-catalogos.md#guard-g-r6-b) admite (el reinicio por cobertura de `PB9`).
@@ -733,7 +733,7 @@ Fuente: [PLAZO:4](../02-nucleo.md#plazo-4), [FILA:V9b](#fila-v9b)
 <a id="test-v9b-11"></a>
 **TEST:V9b:11** — Migración desde cero: base armada con las migraciones de la rama de la fase;
 `PB9` y los avisos leen la versión 1 de los plazos sin escribirla; `trial` y las tablas de sólo
-agregar sin `deleted_at`; la rama no agrega migración estructural.
+agregar sin `deleted_at`; la rama no agrega migración destructiva.
 Tipo: migración desde cero
 Cubre: [AC:V9b:11](#ac-v9b-11), [AC:V9b:13](#ac-v9b-13)
 Fuente: [FILA:V9b](#fila-v9b), [LISTA:V9b](#lista-v9b), [DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)
@@ -777,8 +777,8 @@ Mutación: agregar en la rama de la fase una línea al servicio de `PB4`; el che
   (`V/descomposicion.md` §3). **La espera**: `B10` ([GATE:FP.F1](../30-el-corte.md#gate-fp-f1), [DEP:11](../03-contrato-de-cobertura.md#dep-11)).
 - **Despliegue**: rama épica propia de la Fase 1 (`epic/**`), que entra a `staging` entera con el gate
   de fase ([GATE:FP](../30-el-corte.md#gate-fp), [GATE:FP.1](../30-el-corte.md#gate-fp-1), [GATE:FP.2](../30-el-corte.md#gate-fp-2), [GATE:FP.3](../30-el-corte.md#gate-fp-3)); el merge lo decide el owner.
-- **Rollback**: al ser aditiva y sin migración estructural, revertir la rama de la fase no toca el
-  esquema; lo que `PB9` borró no vuelve (es irreversible por diseño).
+- **Rollback**: al ser aditiva y sin migración destructiva, revertir la rama de la fase no toca el
+  esquema (si trajera una migración aditiva, el revert no la deshace: un `ADD VALUE` de enum no se quita); lo que `PB9` borró no vuelve (es irreversible por diseño).
 
 ## Labels de Linear
 
