@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
-import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import {
     ListingAmenityPublicSchema,
     ListingFeaturePublicSchema
