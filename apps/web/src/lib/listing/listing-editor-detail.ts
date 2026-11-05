@@ -83,6 +83,26 @@ export function readListingMedia({ detail }: { readonly detail: ListingDetail })
     };
 }
 
+/**
+ * Reads the venue's external menu link (`menuUrl`).
+ *
+ * HOS-1854: on a `locked` carta the link is stored data like the dishes and the
+ * upload, so the section page renders it read-only instead of pretending the
+ * section is empty. A missing or non-string value reads as `null`; an
+ * experience has no such field and also reads as `null`.
+ *
+ * @param params - The loaded listing detail.
+ * @returns The link, or `null` when the listing does not carry one.
+ */
+export function readListingMenuUrl({
+    detail
+}: {
+    readonly detail: ListingDetail;
+}): string | null {
+    const raw = asRecord(detail).menuUrl;
+    return typeof raw === 'string' && raw.trim() !== '' ? raw : null;
+}
+
 /** What the venue/experience editor hub needs to describe each section. */
 export interface ListingEditorHubFacts {
     /** The listing in the shape `resolveListingCompleteness` evaluates. */

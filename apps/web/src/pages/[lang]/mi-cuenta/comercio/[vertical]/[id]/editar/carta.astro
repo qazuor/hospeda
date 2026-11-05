@@ -33,6 +33,7 @@ import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.ast
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
+import { readListingMenuUrl } from '@/lib/listing/listing-editor-detail';
 
 export const prerender = false;
 
@@ -59,6 +60,7 @@ const lockedCounts =
 			})
 		: {};
 const lockedCount = sectionId ? lockedCounts[sectionId] : null;
+const menuUrl = readListingMenuUrl({ detail });
 ---
 
 <ListingEditorSectionLayout
@@ -83,5 +85,6 @@ const lockedCount = sectionId ? lockedCounts[sectionId] : null;
 		listingId={listingId}
 		locale={locale}
 		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
+		menuUrl={menuUrl}
 	/>
 </ListingEditorSectionLayout>

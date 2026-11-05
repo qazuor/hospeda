@@ -183,6 +183,13 @@ export interface VenueMenuManagerProps {
      * write that stays available (DEC-FAC-025 / DEC-FAC-041).
      */
     readonly sectionState?: VenueSectionState;
+    /**
+     * The venue's external menu link (HOS-1854). `menuUrl` belongs to the
+     * `menu` section, so on a `locked` carta it is one more stored datum: the
+     * page shows it read-only and "Vaciar" clears it with a `PATCH` of the
+     * listing whose body carries only `{ menuUrl: null }`.
+     */
+    readonly menuUrl?: string | null;
 }
 
 const EMPTY_ITEM: MenuItemDraft = {
@@ -296,12 +303,14 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
 export function VenueMenuManager({
     listingId,
     locale,
-    sectionState = 'available'
+    sectionState = 'available',
+    menuUrl = null
 }: VenueMenuManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const [sections, setSections] = useState<MenuSectionDraft[]>([]);
     const [file, setFile] = useState<MenuFile | null>(null);
+    const [currentMenuUrl, setCurrentMenuUrl] = useState<string | null>(menuUrl);
     /**
      * HOS-1763. The name of the file chosen in THIS session. The input is
      * cleared after every pick, so the browser can never show it — and the
@@ -759,8 +768,10 @@ export function VenueMenuManager({
      * empty `sections` array classifies the write as a deletion (DEC-FAC-041),
      * which is authorized even on a locked section. The uploaded file is a
      * second document with its own delete route, so it is cleared too when
-     * present. This is deliberately NOT "Guardar carta" with a filtered list:
-     * that path re-creates every dish and is a `write`.
+     * present; the external link is a field of the listing and clears through a
+     * one-key PATCH, which HOS-2038 keeps outside the section declaration. This
+     * is deliberately NOT "Guardar carta" with a filtered list: that path
+     * re-creates every dish and is a `write`.
      */
     const clearMenu = useCallback(async (): Promise<boolean> => {
         setState('saving');
@@ -795,13 +806,36 @@ export function VenueMenuManager({
             }
         }
 
+        // `menuUrl` is not part of the carta document: it lives on the listing
+        // itself. HOS-2038 measured that a PATCH whose body only clears fields
+        // declares no section, so `{ menuUrl: null }` is authorized on a locked
+        // `menu` section. The body carries that ONE key — sending the whole form
+        // would declare `write` and answer 403.
+        if (currentMenuUrl) {
+            const cleared = await apiClient.patch<unknown>({
+                path: `/api/v1/protected/venues/${listingId}`,
+                body: { menuUrl: null }
+            });
+            if (!cleared.ok) {
+                setState('idle');
+                setMessage(
+                    t(
+                        'venue.owner.editor.lockedSection.vaciarError',
+                        'No se pudo vaciar la sección.'
+                    )
+                );
+                return false;
+            }
+        }
+
         setSections([]);
         setFile(null);
+        setCurrentMenuUrl(null);
         setPickedFileName(null);
         setState('idle');
         setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
         return true;
-    }, [basePath, file, t]);
+    }, [basePath, currentMenuUrl, file, listingId, t]);
 
     const vaciar = useSectionVaciar({ clear: clearMenu });
 
@@ -828,6 +862,7 @@ export function VenueMenuManager({
      * `undefined` means the link is DROPPED, never rendered with the raw value.
      */
     const safeFileHref = resolveSafeExternalUrl(file?.url);
+    const safeMenuHref = resolveSafeExternalUrl(currentMenuUrl);
 
     return (
         <section
@@ -876,6 +911,31 @@ export function VenueMenuManager({
                                     {t(
                                         'venue.owner.editor.menuManager.fileUnavailable',
                                         'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
+                                    )}
+                                </span>
+                            )}
+                        </div>
+                    ) : null}
+
+                    {currentMenuUrl ? (
+                        <div className={styles.fileRow}>
+                            {safeMenuHref ? (
+                                <a
+                                    className={styles.fileLink}
+                                    href={safeMenuHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {t(
+                                        'listing.owner.editor.sections.menuUrl',
+                                        'Enlace al menú'
+                                    )}
+                                </a>
+                            ) : (
+                                <span className={styles.intro}>
+                                    {t(
+                                        'venue.owner.editor.lockedSection.unavailable',
+                                        'No disponible'
                                     )}
                                 </span>
                             )}
