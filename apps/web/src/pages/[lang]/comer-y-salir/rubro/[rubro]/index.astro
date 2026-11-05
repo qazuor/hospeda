@@ -1,0 +1,454 @@
+---
+/**
+ * @file comer-y-salir/rubro/[rubro]/index.astro
+ * @description Business-line collection of the venue vertical (HOS-1787 leaf
+ * 6.8): the full listing UI of `/comer-y-salir/` scoped to one catalog line.
+ *
+ * The route segment is the public Spanish slug of a business line. It is
+ * resolved through the catalog map (`resolveVenueBusinessLineCollection`), which
+ * also re-derives the canonical slug from the internal value; an unknown
+ * segment answers 404 before any fetch or cache header is written.
+ *
+ * Filters, sort, sidebar, type chips and pagination are deliberately identical
+ * to the general listing: narrowing them per line is HOS-1869/1870's scope, not
+ * this page's.
+ *
+ * Structured data: `CollectionPage` (this collection) + `ItemList` (the visible
+ * page) + `BreadcrumbList` (Inicio / Comer y salir / {line}), the same
+ * three-node pattern as `alojamientos/tipo/[type]/`.
+ *
+ * @route /{lang}/comer-y-salir/rubro/{rubro}/
+ * @rendering SSR (on-demand)
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import VenueCard from '@/components/venue/VenueCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
+import {
+    buildVenueListingSummary,
+    DEFAULT_VENUE_TYPES,
+    DEFAULT_PRICE_RANGES
+} from '@/lib/listing-summary';
+import { venueApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { toVenueCardProps } from '@/lib/api/transforms';
+import { getVenueTypeIcon } from '@/lib/venue-type-icons';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { hasActiveVenueListingFilters } from '@/lib/listing-empty-state-filters';
+import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
+import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
+import {
+    buildVenueBusinessLineCollectionPath,
+    resolveVenueBusinessLineCollection
+} from '@/lib/venue/business-line-collection';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
+import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// --- Business line resolution (before any fetch or cache header) ---
+const collection = resolveVenueBusinessLineCollection({ urlSlug: Astro.params.rubro });
+if (!collection) {
+    return new Response(null, { status: 404 });
+}
+
+// The path is rebuilt from the catalog value, never echoed from the raw param,
+// so the canonical URL is exact for the resolved collection.
+const baseUrl = buildVenueBusinessLineCollectionPath({
+    locale,
+    businessLine: collection.businessLine
+});
+const listBaseUrl = buildUrl({ locale, path: 'comer-y-salir' });
+const businessLineLabel = t(`venue.owner.businessLines.${collection.businessLine}.label`);
+const pageTitle = `${businessLineLabel} · ${t('venue.listing.title')}`;
+const pageDescription = t('venue.listing.subtitle');
+
+// --- Edge cacheability ---
+// This is a listing: every venue write must evict it. Same gate as the general
+// listing — anything beyond pagination makes the render an arbitrary slice.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+    cacheClass: 'catalog',
+    tags: [CACHE_TAG_COLLECTIONS.venue]
+});
+
+const url = Astro.url;
+
+// --- Pagination ---
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+// --- Filter params (identical to the general listing) ---
+const q = url.searchParams.get('q') ?? undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const priceRange = url.searchParams.get('priceRange') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
+const featuresParam = url.searchParams.get('features') ?? undefined;
+
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
+    newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+    nameAsc: { sortBy: 'name', sortOrder: 'asc' }
+};
+const DEFAULT_SORT_KEY = 'featured';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+
+// --- Fetch destinations, the venue feature catalog, and the collection ---
+const [destinationsResult, featuresResult, result] = await Promise.all([
+    destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+    featuresApi.list({
+        pageSize: 100,
+        applicableVertical: 'venue',
+        sortBy: 'displayWeight',
+        sortOrder: 'desc',
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    }),
+    venueApi.list({
+        page,
+        pageSize,
+        q,
+        destinationId,
+        type,
+        priceRange,
+        isFeatured,
+        minRating,
+        features: featuresParam,
+        sortBy: sortResolved.sortBy,
+        sortOrder: sortResolved.sortOrder,
+        businessLine: collection.businessLine
+    })
+]);
+
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
+    return new Response(null, { status: 404 });
+}
+
+const cards = items.map((item) =>
+    toVenueCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+const hasActiveFilters = hasActiveVenueListingFilters({
+    q,
+    destinationId,
+    type,
+    priceRange,
+    isFeatured,
+    minRating,
+    features: featuresParam
+});
+
+// --- Filter groups and chips (same catalog as the general listing) ---
+const VENUE_TYPES = VENUE_TYPE_OPTIONS;
+const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
+
+const filterGroups: FilterGroup[] = [
+    {
+        id: 'q',
+        label: t('venue.listing.search'),
+        type: 'search',
+        placeholder: t('venue.listing.searchPlaceholder')
+    },
+    {
+        id: 'destinationId',
+        label: t('venue.listing.destination'),
+        type: 'select-search',
+        options: destinations.map((d) => ({
+            value: d.id,
+            label: d.name,
+            featured: Boolean(d.isFeatured)
+        })),
+        maxVisible: 8
+    },
+    {
+        id: 'type',
+        label: t('venue.listing.type'),
+        type: 'checkbox',
+        options: VENUE_TYPES.map((value) => ({
+            value,
+            label: t(`venue.types.${value}`, value)
+        }))
+    },
+    {
+        id: 'priceRange',
+        label: t('venue.listing.priceRange'),
+        type: 'checkbox',
+        options: PRICE_RANGES.map((value) => ({
+            value,
+            label: t(`venue.card.priceRange.${value}`, value)
+        }))
+    },
+    {
+        id: 'isFeatured',
+        label: t('venue.listing.featured'),
+        type: 'toggle'
+    },
+    ...(featureCatalog.length > 0
+        ? ([
+              {
+                  id: 'features',
+                  label: t('venue.listing.features'),
+                  type: 'icon-chips',
+                  options: featureCatalog.map((f) => ({
+                      value: f.id,
+                      label: t(
+                          `accommodations.featureNames.${f.slug ?? ''}`,
+                          f.slug ?? undefined
+                      ),
+                      icon: f.icon ?? undefined
+                  })),
+                  maxVisible: 10
+              }
+          ] satisfies FilterGroup[])
+        : []),
+    {
+        id: 'minRating',
+        label: t('venue.listing.minRating'),
+        type: 'stars'
+    }
+];
+
+const sortOptions = [
+    { value: 'featured', label: t('venue.listing.sort.featured') },
+    { value: 'ratingDesc', label: t('venue.listing.sort.ratingDesc') },
+    { value: 'newest', label: t('venue.listing.sort.newest') },
+    { value: 'nameAsc', label: t('venue.listing.sort.nameAsc') }
+];
+
+// --- Sidebar initial state (avoids hydration flash) ---
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (destinationId) initialParams.destinationId = destinationId;
+if (type) initialParams.type = type;
+if (priceRange) initialParams.priceRange = priceRange;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (featuresParam) initialParams.features = featuresParam;
+initialParams.sortBy = sortKey;
+
+const destinationCatalog = destinations.map((d) => ({
+    key: d.id,
+    label: { es: d.name, en: d.name, pt: d.name } as const
+}));
+const filterSummary = buildVenueListingSummary({
+    locale,
+    filters: {
+        text: q,
+        type,
+        destinationId,
+        priceRange,
+        isFeatured,
+        minRating
+    },
+    counts: { shown: cards.length, total },
+    sort: { sortKey },
+    catalogs: {
+        destinations: destinationCatalog,
+        types: DEFAULT_VENUE_TYPES,
+        priceRanges: DEFAULT_PRICE_RANGES
+    }
+});
+
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+    basePath: baseUrl,
+    page,
+    totalPages
+});
+
+const typeChips = VENUE_TYPES.map((value) => {
+    const isActive = type === value;
+    return {
+        label: t(`venue.types.${value}`, value),
+        href: buildToggleParamHref({
+            baseUrl,
+            searchParams: url.searchParams,
+            key: 'type',
+            value,
+            isActive
+        }),
+        active: isActive,
+        icon: getVenueTypeIcon({ type: value })
+    };
+});
+
+// --- Structured data ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
+const itemListEntries = cards.map((card) => ({
+    url: new URL(buildUrl({ locale, path: `comer-y-salir/${card.slug}` }), Astro.site ?? Astro.url.origin)
+        .href,
+    name: card.name
+}));
+const breadcrumbJsonLdItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    { name: t('venue.listing.title'), url: `${siteOrigin}${listBaseUrl}` },
+    { name: businessLineLabel, url: `${siteOrigin}${baseUrl}` }
+];
+---
+
+<ListingLayout
+    locale={locale}
+    title={pageTitle}
+    description={pageDescription}
+    canonicalPath={canonicalPath}
+    prevPath={prevPath}
+    nextPath={nextPath}
+    showFilters={true}
+    filterPosition="left"
+    ogTagline={pageDescription}
+    totalCount={total}
+    filterSummary={filterSummary}
+>
+    <CollectionPageJsonLd
+        slot="head-extra"
+        name={pageTitle}
+        description={pageDescription}
+        url={collectionPageUrl}
+    />
+
+    <ItemListJsonLd
+        slot="head-extra"
+        name={pageTitle}
+        items={itemListEntries}
+        numberOfItems={total}
+        startPosition={(page - 1) * pageSize + 1}
+    />
+
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: t('venue.listing.title'), path: 'comer-y-salir' },
+            { label: businessLineLabel }
+        ]}
+    />
+
+    <ListingPageHeader
+        slot="page-header"
+        locale={locale}
+        tagline={t('venue.listing.title')}
+        title={businessLineLabel}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        sortOptions={sortOptions}
+        initialParams={initialParams}
+    />
+
+    <FilterChips
+        chips={typeChips}
+        ariaLabel={t('venue.typeChips.ariaLabel', 'Filtrar por tipo de establecimiento')}
+        showScrollButtons
+        prevLabel={t('common.prev', 'Anterior')}
+        nextLabel={t('common.next', 'Siguiente')}
+    />
+
+    {hasError && !result.ok && (
+        <ErrorBanner
+            locale={locale}
+            error={result.error}
+            entityName={businessLineLabel}
+        />
+    )}
+
+    {!hasError && cards.length === 0 && hasActiveFilters && (
+        <EmptyState
+            locale={locale}
+            variant="no-results"
+            actionUrl={baseUrl}
+            message={t(
+                'venue.listing.emptyState',
+                'No se encontraron locales con los filtros seleccionados.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length === 0 && !hasActiveFilters && (
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={t(
+                'venue.listing.emptyCatalog',
+                'Todavía no hay locales publicados.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length > 0 && (
+        <div class="venue-grid">
+            {cards.map((card, i) => (
+                <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+                    <VenueCard
+                        data={card}
+                        locale={locale}
+                        eager={i < 3}
+                    />
+                </div>
+            ))}
+        </div>
+    )}
+
+    {totalPages > 1 && (
+        <Pagination
+            slot="pagination"
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl={baseUrl.slice(0, -1)}
+            locale={locale}
+            searchParams={(() => {
+                const sp = new URLSearchParams(url.searchParams);
+                sp.delete('page');
+                return sp;
+            })()}
+        />
+    )}
+</ListingLayout>
+
+<style>
+    .venue-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-card-gap);
+    }
+
+    @media (max-width: 480px) {
+        .venue-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
