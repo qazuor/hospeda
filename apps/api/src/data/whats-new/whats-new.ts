@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4110
+    {
+        id: '2026-11-05-cover-photo-outside-the-cap',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'La foto principal ya no ocupa un lugar de tu galería',
+            en: 'Your main photo no longer takes a gallery slot',
+            pt: 'A foto principal não ocupa mais um lugar da sua galeria'
+        },
+        body: {
+            es: 'El tope de fotos de tu plan cuenta sólo la galería. Con un tope de 15, podés tener la foto principal y 15 fotos más, y el contador de **Fotos** muestra ese mismo número.',
+            en: 'Your plan’s photo cap now counts the gallery only. With a cap of 15, you can have your main photo plus 15 more, and the **Photos** counter shows that same number.',
+            pt: 'O limite de fotos do seu plano conta só a galeria. Com um limite de 15, você pode ter a foto principal e mais 15, e o contador de **Fotos** mostra esse mesmo número.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4113
     {
         id: '2026-11-05-photo-texts-panel-and-reminder',
