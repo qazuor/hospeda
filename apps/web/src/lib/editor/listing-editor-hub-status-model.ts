@@ -47,6 +47,8 @@ export const LISTING_MISSING_FIELD_SECTION: Readonly<Record<string, string>> = {
     description: 'basicInfo',
     destinationId: 'basicInfo',
     type: 'basicInfo',
+    // HOS-1787 leaf 5.7: the business-line selector lives in basic info.
+    businessLines: 'basicInfo',
     'media.featuredImage': 'media',
     contactInfo: 'contact',
     openingHours: 'openingHours',

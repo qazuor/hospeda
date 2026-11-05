@@ -211,6 +211,15 @@
             "reason": {
                 "MAX_EXCEEDED": "Ya elegiste el máximo de rubros.",
                 "EXCLUDED_PAIR": "No se puede combinar con el rubro que ya elegiste."
+            },
+            "useSuggested": "Usar los rubros sugeridos para este tipo",
+            "notice": {
+                "title": "Al quitar {{lines}} se ocultan: {{sections}}.",
+                "sectionWithCount_one": "{{section}} ({{count}} cargado)",
+                "sectionWithCount_other": "{{section}} ({{count}} cargados)",
+                "keep": "No se borra nada: si lo volvés a agregar, vuelve todo.",
+                "qr": "Tu QR de mesa tuvo {{count}} escaneos en los últimos 90 días.",
+                "dismiss": "Entendido"
             }
         },
         "editor": {

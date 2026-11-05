@@ -60,7 +60,9 @@ const NON_FACET_JOINS: Readonly<Record<string, string>> = Object.freeze({
     'components/account/ProfileEditAvatarSection.tsx': "the <input> `accept` attribute's MIME list",
     'components/destination/DestinationPOISection.astro':
         'a `data-poi-categories` attribute read as a SET by the client filter',
-    'components/shared/navigation/UserMenu.client.tsx': 'a pre-sorted useMemo cache key'
+    'components/shared/navigation/UserMenu.client.tsx': 'a pre-sorted useMemo cache key',
+    'lib/api/endpoints-protected.ts':
+        'the hypothetical businessLines selection for section-state resolution, ordered by the catalog and not a filter facet'
 });
 
 /**

@@ -47,6 +47,7 @@ import { ExperienceOwnerUpdateInputSchema, VenueOwnerUpdateInputSchema } from '@
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { resolveBusinessLinesFieldError } from '@/components/listing/editor/BusinessLinesField.client';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
@@ -750,6 +751,20 @@ export function ListingEditor({
         [formData, baseline, vertical, currentPublicationStatus, sectionId]
     );
 
+    // HOS-1787 leaf 5.7: a type change revalidates the business lines. An
+    // invalid selection must block the save and show the catalog's reason, never
+    // silently drop a line (removing one hides the content it owns). The helper
+    // is the web's only `validateBusinessLines` caller (G-FAC-09/G-FAC-03).
+    const businessLinesError =
+        vertical === 'venue'
+            ? resolveBusinessLinesFieldError({
+                  vertical,
+                  type: formData.listingType,
+                  selected: formData.businessLines,
+                  t
+              })
+            : undefined;
+
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
         currentPublicationStatus,
         initialName: baseline.name,
@@ -788,6 +803,15 @@ export function ListingEditor({
                     type: 'info',
                     message: t('listing.owner.editor.noChanges', 'No hay cambios para guardar')
                 });
+                return;
+            }
+
+            // A selection the new type does not admit blocks the save before it
+            // reaches the API. The field already renders the same reason; this
+            // keeps the form from sending a write the server would reject and
+            // whose section effects the owner has not seen.
+            if (businessLinesError) {
+                setFormError(businessLinesError);
                 return;
             }
 
@@ -846,7 +870,17 @@ export function ListingEditor({
                 setStatus({ kind: 'error' });
             }
         },
-        [patchPayload, formData, vertical, listingId, validate, handleApiError, setFormError, t]
+        [
+            patchPayload,
+            formData,
+            vertical,
+            listingId,
+            businessLinesError,
+            validate,
+            handleApiError,
+            setFormError,
+            t
+        ]
     );
 
     const isSaving = status.kind === 'saving';
@@ -925,7 +959,12 @@ export function ListingEditor({
                 locale,
                 vertical,
                 data: formData,
-                errors: fieldErrors,
+                errors: businessLinesError
+                    ? {
+                          ...fieldErrors,
+                          businessLines: fieldErrors.businessLines ?? businessLinesError
+                      }
+                    : fieldErrors,
                 destinations,
                 destinationsLoadFailed,
                 amenities,
@@ -936,7 +975,8 @@ export function ListingEditor({
                 onToggleAmenity: toggleAmenity,
                 onToggleFeature: toggleFeature,
                 onI18nChange: handleI18nChange,
-                shouldOfferSlugRefresh
+                shouldOfferSlugRefresh,
+                listingId
             })}
 
             {formError && (

@@ -64,6 +64,8 @@ export interface BasicInfoSectionProps {
     }>;
     readonly onFieldChange: ListingFieldChange;
     readonly shouldOfferSlugRefresh?: boolean;
+    /** UUID of the listing; the business-line removal notice reads its sections. */
+    readonly listingId?: string;
 }
 
 export function BasicInfoSection({
@@ -74,7 +76,8 @@ export function BasicInfoSection({
     destinationsLoadFailed,
     errors,
     onFieldChange,
-    shouldOfferSlugRefresh = false
+    shouldOfferSlugRefresh = false,
+    listingId
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
     const config = LISTING_VERTICAL_FORM_CONFIG[vertical];
@@ -249,6 +252,7 @@ export function BasicInfoSection({
                             onFieldChange('businessLines', next);
                         }}
                         errors={errors}
+                        listingId={listingId}
                     />
                 </section>
             ) : null}

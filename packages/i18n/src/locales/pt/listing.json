@@ -281,6 +281,12 @@
                     "lockedWithData_one": "Bloqueada pelo seu plano · {{count}} item salvo (não é publicado)",
                     "lockedWithData_other": "Bloqueada pelo seu plano · {{count}} itens salvos (não são publicados)",
                     "lockedEmpty": "Bloqueada pelo seu plano"
+                },
+                "hidden": {
+                    "title": "Salvo e oculto pelos seus segmentos",
+                    "intro": "Estas seções não são exibidas porque seus segmentos atuais não as incluem. Os dados continuam salvos: se você adicionar o segmento novamente, eles voltam.",
+                    "count_one": "{{count}} salvo",
+                    "count_other": "{{count}} salvos"
                 }
             },
             "lockedNotice": {
@@ -315,6 +321,7 @@
                 "destinationId": "Cidade / Destino",
                 "ownerId": "Proprietário",
                 "type": "Categoria",
+                "businessLines": "Segmentos",
                 "featuredImage": "Foto principal",
                 "contactInfo": "Um dado de contato (telefone ou email)",
                 "openingHours": "Horários de funcionamento",

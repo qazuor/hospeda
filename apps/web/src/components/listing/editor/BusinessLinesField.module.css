@@ -84,3 +84,13 @@
     font-size: var(--text-body-xs, 0.8125rem);
     color: var(--core-muted-foreground);
 }
+
+.suggested {
+    margin-top: var(--space-2, 0.5rem);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}

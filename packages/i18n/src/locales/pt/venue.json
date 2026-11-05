@@ -211,6 +211,15 @@
             "reason": {
                 "MAX_EXCEEDED": "Você já escolheu o máximo de segmentos.",
                 "EXCLUDED_PAIR": "Não pode ser combinado com o segmento que você já escolheu."
+            },
+            "useSuggested": "Usar os segmentos sugeridos para este tipo",
+            "notice": {
+                "title": "Ao remover {{lines}}, ficam ocultos: {{sections}}.",
+                "sectionWithCount_one": "{{section}} ({{count}} salvo)",
+                "sectionWithCount_other": "{{section}} ({{count}} salvos)",
+                "keep": "Nada é excluído: se você adicionar novamente, tudo volta.",
+                "qr": "Seu QR de mesa teve {{count}} leituras nos últimos 90 dias.",
+                "dismiss": "Entendi"
             }
         },
         "editor": {

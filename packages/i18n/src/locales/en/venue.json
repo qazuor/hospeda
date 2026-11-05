@@ -211,6 +211,15 @@
             "reason": {
                 "MAX_EXCEEDED": "You already picked the maximum number of business lines.",
                 "EXCLUDED_PAIR": "It cannot be combined with the business line you already picked."
+            },
+            "useSuggested": "Use the suggested business lines for this type",
+            "notice": {
+                "title": "Removing {{lines}} hides: {{sections}}.",
+                "sectionWithCount_one": "{{section}} ({{count}} saved item)",
+                "sectionWithCount_other": "{{section}} ({{count}} saved items)",
+                "keep": "Nothing is deleted: if you add it back, everything returns.",
+                "qr": "Your table QR had {{count}} scans in the last 90 days.",
+                "dismiss": "Got it"
             }
         },
         "editor": {
