@@ -67,7 +67,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { listOptionsSchema, ServiceError } from '../../types';
-import { entityNotFoundError, serviceLogger } from '../../utils';
+import { entityNotFoundError, normalizePhoneNumber, serviceLogger } from '../../utils';
 import { checkCanFindOptions, hasPermission } from '../../utils/permission';
 import { USER_ENTITY_NAME } from '../entity-names';
 import { grantRole } from '../user-role/user-role.service.js';
@@ -1255,7 +1255,7 @@ export class UserService extends BaseCrudService<
                 // Merge phone into existing contactInfo (shallow merge).
                 const existingContactInfo = (existing.contactInfo as Record<string, unknown>) ?? {};
                 const contactInfo = phone
-                    ? { ...existingContactInfo, mobilePhone: phone }
+                    ? { ...existingContactInfo, mobilePhone: normalizePhoneNumber(phone, true) }
                     : existingContactInfo;
 
                 // Merge locale/theme into existing settings (shallow merge).

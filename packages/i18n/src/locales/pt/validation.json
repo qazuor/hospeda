@@ -57,7 +57,7 @@
                 "invalid": "El email no es válido"
             },
             "phone": {
-                "international": "El número no es válido"
+                "argentina": "Digite um telefone argentino válido, por exemplo 3442 45-2345 ou +54 9 3442 45-2345."
             }
         },
         "delete": {
@@ -1599,6 +1599,9 @@
             },
             "workPhone": {
                 "international": "El work phone no es válido"
+            },
+            "phone": {
+                "argentina": "Digite um telefone argentino válido, por exemplo 3442 45-2345 ou +54 9 3442 45-2345."
             }
         },
         "contentMedia": {

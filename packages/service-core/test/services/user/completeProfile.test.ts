@@ -195,6 +195,28 @@ describe('UserService.completeProfile', () => {
         expect(updateCall?.contactInfo?.mobilePhone).toBe('+5493415551234');
     });
 
+    it.each([
+        ['3442 45-2345', '+5493442452345'],
+        ['03442 15 45-2345', '+5493442452345'],
+        ['+54 3442 45-2345', '+5493442452345']
+    ])('normalizes the human phone %s to %s before storing (HOS-2034)', async (phone, stored) => {
+        const user = getUser({ id: userId });
+        asMock(userModelMock.findById).mockResolvedValue(user);
+        asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
+        mockAccountQuery([{ providerId: 'credential' }]);
+
+        await service.completeProfile(actor, {
+            userId,
+            firstName: 'Test',
+            lastName: 'User',
+            phone,
+            acceptedTerms: true
+        });
+
+        const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
+        expect(updateCall?.contactInfo?.mobilePhone).toBe(stored);
+    });
+
     it('should persist locale into settings.languageWeb', async () => {
         // Arrange
         const user = getUser({ id: userId });

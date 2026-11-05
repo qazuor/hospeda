@@ -479,6 +479,18 @@ describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
 // ---------------------------------------------------------------------------
 
 describe('validation blocks the save', () => {
+    it('submits a common Argentine phone format from the contact editor', async () => {
+        const user = userEvent.setup();
+        render(<ContactForm {...COMMON} />);
+        const phone = document.getElementById('acc-phone-number') as HTMLInputElement;
+        await user.clear(phone);
+        await user.type(phone, '3442 45-2345');
+        expect(phone).toHaveValue('3442 45-2345');
+        submitFrom(phone);
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(firstPatchBody()).toHaveProperty('phone', '+54 3442 45-2345');
+    });
+
     it('should not call the API when the name is cleared', async () => {
         const user = userEvent.setup();
         render(
