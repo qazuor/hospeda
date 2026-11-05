@@ -381,6 +381,50 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
     });
 });
 
+describe('TEST:4.3:3 action 15 edits a BOLICHE nightInfo note (AC:4:10)', () => {
+    it('persists the note, records one admin event without its content and emails the owner', async () => {
+        // Arrange: a venue owned by somebody else, carrying the nightlife section.
+        const vertical = VerticalEnum.VENUE;
+        await ensurePublicationCatalog(vertical);
+        const owner = await seedOwner();
+        const admin = await seedOwner();
+        const id = await seedListing(vertical, owner);
+        await getDb().execute(
+            sql`UPDATE venues SET type = 'BOLICHE', business_lines = ARRAY['nightlife']::text[] WHERE id = ${id}::uuid`
+        );
+        const note = { es: 'Gratis hasta la 1', en: 'Free until 1am', pt: 'Grátis até 1h' };
+
+        // Act
+        const response = await readResponse(
+            await app.request(`/api/v1/admin/venues/${id}`, {
+                method: 'PATCH',
+                headers: adminHeaders({
+                    id: admin,
+                    permissions: [
+                        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+                        PermissionEnum.VENUE_VIEW_ALL
+                    ],
+                    reason: encodeURIComponent(REASON)
+                }),
+                body: JSON.stringify({ entryNoteI18n: note })
+            })
+        );
+
+        // Assert: applied, persisted, audited by name only, and the owner is told.
+        expect(response.status).toBe(200);
+        const stored = await getDb().execute(
+            sql`SELECT entry_note_i18n AS note FROM venues WHERE id = ${id}::uuid`
+        );
+        expect(stored.rows[0]).toMatchObject({ note });
+        const events = await adminEditedEvents(id);
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({ actorId: admin, reason: REASON });
+        expect(events[0]?.changes).toEqual([{ field: 'entryNoteI18n' }]);
+        expect(JSON.stringify(events[0])).not.toContain('Gratis hasta la 1');
+        expect(await supportEmails(owner)).toHaveLength(1);
+    });
+});
+
 describe('TEST:V8a:9 action 15 reaches an accommodation sub-entity route', () => {
     it('adds a FAQ to her listing: admin event with the reason and an email to her', async () => {
         // Arrange
