@@ -29,13 +29,21 @@ export interface SubscriptionReturnProps {
     readonly refreshPage?: () => void;
 }
 
+/** Session marker preventing a confirmed return from reloading after navigation. */
+function refreshedStorageKey(subscriptionId: string): string {
+    return `hospeda:subscriptionReturn:refreshed:${subscriptionId}`;
+}
+
 /**
  * Result screen shown after the payer returns from Mercado Pago.
  *
  * Reads the real status; while the webhook has not arrived it re-reads on a
  * bounded cadence. A rejected first charge offers ONE explicit button that
  * starts a new checkout for the same option, reusing the declared payer email
- * (or asking for it). There are no automatic retries.
+ * (or asking for it). There are no automatic retries. The confirmed refresh
+ * marker lives in sessionStorage because SSR and the browser read status via
+ * different API URLs; a lagging SSR read after reload must never start a reload
+ * loop. The in-memory ref remains the fallback when browser storage is blocked.
  */
 export function SubscriptionReturn({
     locale,
@@ -67,12 +75,26 @@ export function SubscriptionReturn({
     useEffect(() => {
         if (view !== 'confirmed' || refreshedAfterConfirmationRef.current) return;
 
-        // Refresh once after a newly confirmed return so Astro re-renders the
-        // subscription and trial sections; the return query remains, and SSR
-        // initializes the next island as confirmed so it cannot refresh again.
+        const storageKey = refreshedStorageKey(subscriptionId);
+        try {
+            if (window.sessionStorage.getItem(storageKey) !== null) {
+                refreshedAfterConfirmationRef.current = true;
+                return;
+            }
+        } catch {
+            // Storage may be unavailable; the ref still limits this mount to one refresh.
+        }
+
+        // Persist before navigating: SSR may still report a lagging status after
+        // reload even though the browser API confirmed the subscription.
         refreshedAfterConfirmationRef.current = true;
+        try {
+            window.sessionStorage.setItem(storageKey, '1');
+        } catch {
+            // Keep the in-memory guard when storage is unavailable.
+        }
         refreshPage();
-    }, [refreshPage, view]);
+    }, [refreshPage, subscriptionId, view]);
 
     useEffect(() => {
         if (!shouldPollAgain({ view, attempt })) return;

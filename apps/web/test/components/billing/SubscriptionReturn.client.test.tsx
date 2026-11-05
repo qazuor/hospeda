@@ -39,15 +39,66 @@ beforeEach(() => {
     vi.useFakeTimers();
     readMock.mockReset();
     startMock.mockReset();
+    window.sessionStorage.clear();
 });
 afterEach(() => {
     cleanup();
+    window.sessionStorage.clear();
+    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
 describe('SubscriptionReturn polling', () => {
     it('refreshes the page exactly once when polling confirms a pending subscription', async () => {
         const reload = vi.fn();
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).toHaveBeenCalledTimes(1);
+        expect(window.sessionStorage.getItem(`hospeda:subscriptionReturn:refreshed:${SUB}`)).toBe(
+            '1'
+        );
+    });
+
+    it('does not refresh after a processing-to-confirmed transition when the session marker exists', async () => {
+        const reload = vi.fn();
+        window.sessionStorage.setItem(`hospeda:subscriptionReturn:refreshed:${SUB}`, '1');
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('falls back to one refresh per mount when sessionStorage throws', async () => {
+        const reload = vi.fn();
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new Error('storage unavailable');
+        });
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('storage unavailable');
+        });
         readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
         render(
             <SubscriptionReturn
