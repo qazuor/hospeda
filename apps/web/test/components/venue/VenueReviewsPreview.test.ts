@@ -17,7 +17,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('VenueReviewsPreview.astro — dimension averages (AC:6:10)', () => {
+describe('VenueReviewsPreview.astro — dimension averages (TEST:6.6:3, AC:6:10)', () => {
     it('consumes the dimensionRatings prop', () => {
         expect(src).toContain('dimensionRatings: readonly ResolvedDimensionAverage[]');
         expect(src).toContain('dimensionRatings.map((dimension) =>');
