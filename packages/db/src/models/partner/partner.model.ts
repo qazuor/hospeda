@@ -183,6 +183,28 @@ export class PartnerModel extends BaseModelImpl<Partner> {
     }
 
     /**
+     * The sole ACC:25 write (D-2): empties exactly the presence-content and review-delivery columns
+     * that align with `partnerPresenceHasContent`, without changing unrelated Partner state.
+     */
+    async emptyPresenceContent(args: { tx: DrizzleClient; partnerId: string }): Promise<void> {
+        await args.tx
+            .update(partners)
+            .set({
+                logoUrl: null,
+                websiteUrl: null,
+                description: null,
+                contactInfo: null,
+                socialNetworks: null,
+                pendingLogoUrl: null,
+                pendingDescription: null,
+                pendingWebsiteUrl: null,
+                contentReviewState: null,
+                contentReviewNote: null
+            })
+            .where(and(eq(partners.id, args.partnerId), isNull(partners.deletedAt)));
+    }
+
+    /**
      * Find one live, owned and unmoderated public presence candidate by slug.
      * AC:V7:13; V7 §1.6 (V/18 §1.6).
      */
