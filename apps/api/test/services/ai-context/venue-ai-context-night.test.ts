@@ -112,6 +112,30 @@ function expectMarkersAlternate(block: string): void {
     expect(markers).toBe('SE'.repeat(markers.length / 2));
 }
 
+/**
+ * Returns everything OUTSIDE the owner-data fences.
+ *
+ * Alternation alone is not enough: removing one fence keeps the remaining
+ * markers alternating, so a payload that lost its fence would still pass. This
+ * helper is what proves a given text is actually inside a fence.
+ */
+function textOutsideFences(block: string): string {
+    let outside = '';
+    let cursor = 0;
+    while (cursor < block.length) {
+        const start = block.indexOf(OWNER_DATA_DELIMITER_START, cursor);
+        if (start === -1) {
+            outside += block.slice(cursor);
+            break;
+        }
+        outside += block.slice(cursor, start);
+        const end = block.indexOf(OWNER_DATA_DELIMITER_END, start);
+        if (end === -1) break;
+        cursor = end + OWNER_DATA_DELIMITER_END.length;
+    }
+    return outside;
+}
+
 // ---------------------------------------------------------------------------
 // toVenueNightContext
 // ---------------------------------------------------------------------------
@@ -242,8 +266,7 @@ describe('buildVenueMarkdownContext — nightInfo', () => {
         });
 
         expectMarkersAlternate(block);
-        const unfenced = block.split(OWNER_DATA_DELIMITER_START)[0];
-        expect(unfenced).not.toContain(INJECTION);
+        expect(textOutsideFences(block)).not.toContain(INJECTION);
     });
 });
 
