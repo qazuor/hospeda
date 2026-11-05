@@ -209,7 +209,6 @@
                 "label": "Noche"
             },
             "reason": {
-                "NOT_ALLOWED_FOR_TYPE": "Este tipo de local no ofrece este rubro.",
                 "MAX_EXCEEDED": "Ya elegiste el máximo de rubros.",
                 "EXCLUDED_PAIR": "No se puede combinar con el rubro que ya elegiste."
             }

@@ -209,7 +209,6 @@
                 "label": "Vida noturna"
             },
             "reason": {
-                "NOT_ALLOWED_FOR_TYPE": "Este tipo de estabelecimento não oferece este segmento.",
                 "MAX_EXCEEDED": "Você já escolheu o máximo de segmentos.",
                 "EXCLUDED_PAIR": "Não pode ser combinado com o segmento que você já escolheu."
             }
