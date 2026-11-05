@@ -366,6 +366,44 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         );
     });
 
+    it('AC:V8b:6 assigns ACC_25 only its own empty-presence permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_25).toEqual({
+            permissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_EMPTY_PRESENCE)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_EMPTY_PRESENCE)
+        ).toBe(true);
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_MANAGE)).toBe(false);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_MANAGE)).toBe(true);
+    });
+
+    it('AC:V8b:6 opens only ACC_25 with its own permission', () => {
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_25',
+                actorPermissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE]
+            })
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_25',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        for (const action of ['ACC_6', 'ACC_12', 'ACC_24'] as const) {
+            expect(
+                isAdministrativeActionPermitted({
+                    action,
+                    actorPermissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE]
+                })
+            ).toBe(false);
+        }
+    });
+
     it('TEST:V8a:15 opens ACC_24 only with its own permission, and never another action', () => {
         expect(
             isAdministrativeActionPermitted({
@@ -387,7 +425,7 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(false);
     });
 
-    it('TEST:V8a:10 TEST:V8a:15 keeps the seven retiring administrative permissions forbidden to a system actor', () => {
+    it('TEST:V8a:10 TEST:V8a:15 keeps the eight retiring administrative permissions forbidden to a system actor', () => {
         const retiring = [
             { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
             { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
@@ -395,7 +433,8 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
             { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
             { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
-            { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
+            { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' },
+            { permission: PermissionEnum.PARTNER_MANAGE, formerAction: 'ACC_25' }
         ];
         expect(RETIRING_ADMINISTRATIVE_PERMISSIONS).toEqual(retiring);
         for (const { permission } of retiring) {

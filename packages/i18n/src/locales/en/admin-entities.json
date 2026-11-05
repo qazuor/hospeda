@@ -1078,7 +1078,10 @@
             "visible": "Visible if the partner's plan includes it",
             "moderated": "Moderated: the page and carousel do not show it"
         },
-        "actions": { "moderate": "Moderate presence", "lift": "Lift moderation" },
+        "actions": {
+            "moderate": "Moderate presence",
+            "lift": "Lift moderation"
+        },
         "dialog": {
             "reasonLabel": "Reason",
             "reasonHelp": "Recorded under your user. It does not affect the partner's billing.",
@@ -1257,6 +1260,31 @@
             "business": "Business",
             "ngo": "Nonprofit organization",
             "institution": "Institution"
+        }
+    },
+    "partnerEmptyPresence": {
+        "title": "Empty the Partner presence",
+        "description": "At its owner's request, as part of the manual account closure. This is not moderation.",
+        "action": "Empty presence",
+        "dialog": {
+            "title": "Empty the presence of {name}",
+            "deletes": "The presence content of {name} is deleted: the logo, the description, the website, the social links and the contact details, and the logo files stored in our external storage. This content is deleted and does not come back.",
+            "pending": "Anything the Partner had submitted and was still awaiting review is deleted too.",
+            "untouched": "The Partner, its billing and its application are not touched.",
+            "reasonLabel": "Why",
+            "reasonHelp": "It is recorded, together with who emptied it and which Partner it was.",
+            "cancel": "Cancel",
+            "confirm": "Empty the presence",
+            "confirming": "Emptying…"
+        },
+        "successTitle": "Presence emptied",
+        "successMessage": "The content of {name} was deleted and does not come back.",
+        "errors": {
+            "title": "The presence could not be emptied",
+            "alreadyEmpty": "The presence no longer has content. Reload the page.",
+            "stateChanged": "The content changed since you opened this confirmation and nothing was emptied. Close it and open it again.",
+            "storage": "We could not delete the files from external storage. Nothing was emptied: try again in a few minutes.",
+            "forbidden": "You cannot empty the presence of a Partner that is yours: another team account with the permission does it."
         }
     }
 }

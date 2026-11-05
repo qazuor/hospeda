@@ -1078,7 +1078,10 @@
             "visible": "Visível se o plano do parceiro incluir",
             "moderated": "Moderada: a página e o carrossel não a exibem"
         },
-        "actions": { "moderate": "Moderar presença", "lift": "Suspender moderação" },
+        "actions": {
+            "moderate": "Moderar presença",
+            "lift": "Suspender moderação"
+        },
         "dialog": {
             "reasonLabel": "Motivo",
             "reasonHelp": "Fica registrado com seu usuário. Não altera a cobrança do parceiro.",
@@ -1257,6 +1260,31 @@
             "business": "Empresa",
             "ngo": "Organização sem fins lucrativos",
             "institution": "Instituição"
+        }
+    },
+    "partnerEmptyPresence": {
+        "title": "Esvaziar a presença do Partner",
+        "description": "A pedido do dono, como parte do encerramento manual da conta. Não é uma moderação.",
+        "action": "Esvaziar presença",
+        "dialog": {
+            "title": "Esvaziar a presença de {name}",
+            "deletes": "O conteúdo da presença de {name} é apagado: o logo, a descrição, o site, as redes e os dados de contato, e os arquivos do logo guardados no nosso armazenamento externo. Este conteúdo é apagado e não volta.",
+            "pending": "Também é apagado o que o Partner havia enviado e ainda aguardava revisão.",
+            "untouched": "O Partner, a cobrança e a candidatura não são alterados.",
+            "reasonLabel": "Por quê",
+            "reasonHelp": "Fica registrado, junto com quem esvaziou e de qual Partner se trata.",
+            "cancel": "Cancelar",
+            "confirm": "Esvaziar a presença",
+            "confirming": "Esvaziando…"
+        },
+        "successTitle": "Presença esvaziada",
+        "successMessage": "O conteúdo de {name} foi apagado e não volta.",
+        "errors": {
+            "title": "Não foi possível esvaziar a presença",
+            "alreadyEmpty": "A presença já não tem conteúdo. Recarregue a página.",
+            "stateChanged": "O conteúdo mudou desde que você abriu esta confirmação e nada foi esvaziado. Feche e abra de novo.",
+            "storage": "Não foi possível apagar os arquivos do armazenamento externo. Nada foi esvaziado: tente de novo em alguns minutos.",
+            "forbidden": "Você não pode esvaziar a presença de um Partner que é seu: outra conta da equipe com a permissão faz isso."
         }
     }
 }

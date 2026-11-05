@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PartnerBillingSetupCard } from '@/features/partners/components/PartnerBillingSetupCard';
+import { PartnerEmptyPresenceCard } from '@/features/partners/components/PartnerEmptyPresenceCard';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import { PartnerPresenceModerationCard } from '@/features/partners/components/PartnerPresenceModerationCard';
 import {
@@ -93,6 +94,11 @@ function PartnerViewPage() {
                 <PartnerPresenceModerationCard
                     partnerId={partner.id}
                     presenceModerated={partner.presenceModerated}
+                />
+
+                <PartnerEmptyPresenceCard
+                    partnerId={partner.id}
+                    partnerName={partner.name}
                 />
 
                 <PartnerBillingSetupCard partnerId={partner.id} />

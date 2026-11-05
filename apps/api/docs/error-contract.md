@@ -46,6 +46,8 @@ check answers 403 to someone the server never identified.
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
 
+ACC:25 Partner presence emptying uses these typed rejections: missing Partner → 404 `NOT_FOUND`; forbidden actor → 403 `FORBIDDEN`; already empty or changed presence → 409 `ALREADY_EXISTS`; missing remote provider or failed remote deletion → 503 `SERVICE_UNAVAILABLE`.
+
 ### Step 2 — the person's state
 
 After authentication and before route permissions, an account with an unverified
