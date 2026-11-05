@@ -64,6 +64,7 @@ function sanitizeSql(sql: string): string {
             continue;
         }
         if (current === '/' && next === '*') {
+            out += ' ';
             i += 2;
             let depth = 1;
             while (i < sql.length && depth > 0) {

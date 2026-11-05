@@ -170,7 +170,7 @@ describe('TEST:V8b:8 AC:V8b:7 check-additive-migrations destructive SQL guard', 
         expect(
             findDestructiveStatements({
                 file: 'inline-comment.sql',
-                sql: 'ALTER TABLE "x" DROP /* this comment separates the tokens */ COLUMN "y";'
+                sql: 'ALTER TABLE "x" DROP/* this comment separates the tokens */COLUMN "y";'
             })
         ).toEqual([
             {
