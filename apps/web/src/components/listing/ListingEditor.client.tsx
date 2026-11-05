@@ -315,6 +315,11 @@ function buildPatchPayload({
     if (current.listingType !== baseline.listingType) {
         payload.type = current.listingType || undefined;
     }
+    if (!sameStringList(current.businessLines, baseline.businessLines)) {
+        // `[]` is not a legitimate state (the selector keeps one minimum), so
+        // an empty diff can only be the initial load of a row with no column.
+        payload.businessLines = [...current.businessLines];
+    }
     if (current.summary !== baseline.summary) {
         payload.summary = current.summary || undefined;
     }
@@ -577,6 +582,9 @@ export function ListingEditor({
         description: strField(data, 'description'),
         // T-020: type select state (per-vertical enum value)
         listingType: strField(data, 'type'),
+        // HOS-1787 leaf 5.6 — the venue's current business lines, read from the
+        // protected detail (VenueProtectedSchema) so the selector opens seeded.
+        businessLines: strArrayField(data, 'businessLines'),
         // T-020: summary (min 10 / max 300) — validated by `schema` through
         // `fieldErrors.summary`; no local ad hoc check.
         summary: strField(data, 'summary'),
@@ -813,6 +821,20 @@ export function ListingEditor({
                     message: t('listing.owner.editor.success', 'Cambios guardados.')
                 });
             } else {
+                // A section the listing's business lines no longer own (409
+                // SECTION_ABSENT) has its own copy: "no longer applies to your
+                // venue's business lines" names the cause, while the generic
+                // save-failed banner would hide it.
+                if (result.error?.status === 409 && result.error.reason === 'SECTION_ABSENT') {
+                    setFormError(
+                        t(
+                            'listing.owner.editor.errors.sectionAbsent',
+                            'Esa sección ya no aplica a los rubros de tu local.'
+                        )
+                    );
+                    setStatus({ kind: 'error' });
+                    return;
+                }
                 // Previously discarded `result.error` entirely and always showed
                 // a fixed banner string. `handleApiError` maps per-field details
                 // when the API sent them, falling back to a real (translated)

@@ -199,6 +199,20 @@
         }
     },
     "owner": {
+        "businessLines": {
+            "legend": "Business lines",
+            "keepOne": "Keep at least one business line selected.",
+            "food": {
+                "label": "Food & drink"
+            },
+            "nightlife": {
+                "label": "Nightlife"
+            },
+            "reason": {
+                "MAX_EXCEEDED": "You already picked the maximum number of business lines.",
+                "EXCLUDED_PAIR": "It cannot be combined with the business line you already picked."
+            }
+        },
         "editor": {
             "menuManager": {
                 "title": "Menu",

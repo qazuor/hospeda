@@ -3,6 +3,7 @@ import {
     type BusinessLineRules,
     type BusinessLineValidationReason,
     normalizeBusinessLines,
+    resolveBusinessLineDefaults,
     resolveBusinessLineOptions,
     validateBusinessLines
 } from '../../src/catalog/index.js';
@@ -80,6 +81,69 @@ describe('TEST:2.4:1 resolveBusinessLineOptions', () => {
             value: 'food',
             selectable: false,
             reason: 'EXCLUDED_PAIR'
+        });
+    });
+});
+
+describe('TEST:5.6:1 resolveBusinessLineOptions selected flag', () => {
+    it('marks the selected options and only those', () => {
+        const options = resolveBusinessLineOptions({
+            vertical: 'venue',
+            type: 'BAR',
+            selected: ['food']
+        });
+
+        expect(options.map(({ value, selected }) => ({ value, selected }))).toEqual([
+            { value: 'food', selected: true },
+            { value: 'nightlife', selected: false }
+        ]);
+    });
+
+    it('marks nothing when the selection is empty', () => {
+        expect(
+            resolveBusinessLineOptions({ vertical: 'venue', type: 'BAR', selected: [] }).map(
+                ({ selected }) => selected
+            )
+        ).toEqual([false, false]);
+    });
+
+    it('keeps a selected option flagged even when the type does not allow it', () => {
+        const nightlife = resolveBusinessLineOptions({
+            vertical: 'venue',
+            type: 'HELADERIA',
+            selected: ['nightlife']
+        }).find(({ value }) => value === 'nightlife');
+
+        expect(nightlife).toMatchObject({ selected: true, selectable: false });
+    });
+});
+
+describe('TEST:5.6:1 resolveBusinessLineDefaults', () => {
+    it('returns the BAR defaults', () => {
+        expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'BAR' })).toEqual({
+            preselect: ['food', 'nightlife'],
+            fieldDefaults: {}
+        });
+    });
+
+    it('returns the RESTAURANT defaults', () => {
+        expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'RESTAURANT' })).toEqual({
+            preselect: ['food'],
+            fieldDefaults: {}
+        });
+    });
+
+    it('returns the BOLICHE preselection and its minAge suggestion (DEC-FAC-050)', () => {
+        expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'BOLICHE' })).toEqual({
+            preselect: ['nightlife'],
+            fieldDefaults: { minAge: 18 }
+        });
+    });
+
+    it('returns empty defaults for an unknown type', () => {
+        expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'NOT_A_TYPE' })).toEqual({
+            preselect: [],
+            fieldDefaults: {}
         });
     });
 });

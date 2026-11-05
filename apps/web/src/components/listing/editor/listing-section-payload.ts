@@ -73,6 +73,11 @@ export const LISTING_SECTION_PAYLOAD_KEYS: Readonly<
         'summary',
         'description',
         'richDescription',
+        // HOS-1787 leaf 5.6 — the catalog's `basicInfo` section does not name
+        // `businessLines` (it is assigned by the business-line rules, not by a
+        // section), so it is owned explicitly here: the selector lives in the
+        // basic-info page and this is the page whose save may persist it.
+        'businessLines',
         // Not a field of its own: the opt-in checkbox that rides along with a
         // name change on a published listing (HOS-784), rendered by
         // `BasicInfoSection`.

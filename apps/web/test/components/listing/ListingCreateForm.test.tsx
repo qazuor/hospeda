@@ -21,11 +21,17 @@ vi.mock('../../../src/lib/i18n', () => ({
                 ? 'Nightclub description'
                 : key === 'venue.typeDescriptions.PUB'
                   ? 'Pub description'
-                  : (fallback ?? key)
+                  : key === 'validation.venue.businessLines.NOT_ALLOWED_FOR_TYPE'
+                    ? 'Este tipo de comercio no admite ese rubro'
+                    : (fallback ?? key)
     })
 }));
 
 vi.mock('../../../src/components/listing/ListingCreateForm.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('../../../src/components/listing/editor/BusinessLinesField.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
@@ -109,6 +115,110 @@ describe('ListingCreateForm', () => {
             fireEvent.change(input, { target: { value: 'La Parrilla de Juan' } });
 
             expect(input).toHaveValue('La Parrilla de Juan');
+        });
+    });
+
+    describe('business lines (HOS-1787 leaf 5.6)', () => {
+        it('preselects the type lines and sends the BOLICHE minAge (TEST:5.6:5)', async () => {
+            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-bl') });
+
+            render(
+                <ListingCreateForm
+                    vertical="venue"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'BAR' }
+            });
+
+            expect(screen.getByRole('checkbox', { name: /food/ })).toBeChecked();
+            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
+
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'BOLICHE' }
+            });
+
+            expect(screen.queryByRole('checkbox', { name: /food/ })).toBeNull();
+            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
+            expect(screen.getByLabelText('Edad mínima')).toHaveValue(18);
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Boliche del Puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Noche y música en el puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Un boliche con música en vivo todos los fines de semana.' }
+            });
+
+            fireEvent.click(screen.getByTestId('listing-create-submit'));
+
+            await waitFor(() => {
+                expect(mockCreate).toHaveBeenCalledTimes(1);
+            });
+
+            const call = mockCreate.mock.calls[0]?.[0];
+            expect(call?.data).toMatchObject({
+                businessLines: ['nightlife'],
+                minAge: 18
+            });
+        });
+
+        it('shows the 400 business-line reason inside the selector (TEST:5.6:4)', async () => {
+            mockCreate.mockResolvedValue({
+                ok: false,
+                error: {
+                    status: 400,
+                    code: 'VALIDATION_ERROR',
+                    message: 'Invalid business lines',
+                    details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+                }
+            } as unknown as Awaited<ReturnType<typeof createOwnerListing>>);
+
+            render(
+                <ListingCreateForm
+                    vertical="venue"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Heladería del Puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'HELADERIA' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Helados artesanales del puerto' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Una heladería artesanal con sabores de la región.' }
+            });
+
+            fireEvent.click(screen.getByTestId('listing-create-submit'));
+
+            const messages = await screen.findAllByRole('alert');
+            expect(messages.map((element) => element.textContent ?? '')).toContain(
+                'Este tipo de comercio no admite ese rubro'
+            );
+        });
+
+        it('does not render the business-line fieldset for an experience (AC:5:9)', () => {
+            render(
+                <ListingCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            expect(document.getElementById('ce-businessLines')).toBeNull();
+            expect(screen.queryByRole('checkbox', { name: 'food' })).toBeNull();
         });
     });
 

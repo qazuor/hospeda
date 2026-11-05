@@ -228,6 +228,9 @@
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",
             "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "errors": {
+                "sectionAbsent": "Essa seção não se aplica mais aos segmentos do seu estabelecimento."
+            },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "media": {
                 "featured": "Imagem principal",

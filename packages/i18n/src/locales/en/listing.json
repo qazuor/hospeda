@@ -228,6 +228,9 @@
             "noChanges": "No changes to save",
             "success": "Changes saved.",
             "error": "Changes could not be saved. Please try again.",
+            "errors": {
+                "sectionAbsent": "That section no longer applies to your venue's business lines."
+            },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
                 "featured": "Featured image",

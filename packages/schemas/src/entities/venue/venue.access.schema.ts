@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import {
@@ -349,7 +350,23 @@ export const VenueProtectedSchema = VenueSchema.pick({
      */
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
-    featureIds: z.array(z.string().uuid()).optional()
+    featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * HOS-1787 leaf 5.6 — the business lines this venue is assigned to.
+     *
+     * Read by the owner editor's basic-info section so the selector opens with
+     * the listing's current state. Optional because not every protected read
+     * loads the column (a partial projection must still parse); the DB column
+     * itself is NOT NULL.
+     */
+    businessLines: z
+        .array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+        .optional()
 });
 
 /** TypeScript type for {@link VenueProtectedSchema}. */

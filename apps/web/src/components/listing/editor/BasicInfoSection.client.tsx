@@ -10,18 +10,17 @@
  * children, so an extra wrapper would change the rendered spacing.
  */
 
-import { ExperienceTypeEnum, VenueTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
-import { resolveExperienceTypeLabel } from '@/lib/experience/type-labels';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import { resolveVenueTypeLabel } from '@/lib/venue/type-labels';
 import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
@@ -50,12 +49,6 @@ const RICH_DESCRIPTION_ID = buildFieldId({
     name: 'richDescription'
 });
 
-/** Venue type options in display order. */
-const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
-
-/** Experience type options in display order. */
-const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
-
 export interface BasicInfoSectionProps {
     readonly locale: SupportedLocale;
     readonly vertical: VenueOrExperience;
@@ -67,6 +60,7 @@ export interface BasicInfoSectionProps {
         destinationId?: string;
         summary?: string;
         description?: string;
+        businessLines?: string;
     }>;
     readonly onFieldChange: ListingFieldChange;
     readonly shouldOfferSlugRefresh?: boolean;
@@ -83,7 +77,8 @@ export function BasicInfoSection({
     shouldOfferSlugRefresh = false
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const typeOptions = vertical === 'venue' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const config = LISTING_VERTICAL_FORM_CONFIG[vertical];
+    const typeOptions = config.typeOptions;
 
     return (
         <>
@@ -225,13 +220,11 @@ export function BasicInfoSection({
                             key={opt}
                             value={opt}
                         >
-                            {vertical === 'experience'
-                                ? resolveExperienceTypeLabel({ t, type: opt })
-                                : resolveVenueTypeLabel({ t, type: opt })}
+                            {config.resolveTypeLabel({ t, type: opt })}
                         </option>
                     ))}
                 </TextField>
-                {vertical === 'venue' && data.listingType ? (
+                {config.showsTypeDescription && data.listingType ? (
                     <p
                         className={styles.hint}
                         aria-live="polite"
@@ -240,6 +233,25 @@ export function BasicInfoSection({
                     </p>
                 ) : null}
             </section>
+
+            {/* HOS-1787 leaf 5.6 — business lines belong to the venue's basic
+                info. The component renders nothing for a vertical with a single
+                catalog line (AC:5:9) and hides the type-incompatible options
+                (AC:5:1); the catalog function decides both. */}
+            {config.showsBusinessLines ? (
+                <section className={styles.section}>
+                    <BusinessLinesField
+                        locale={locale}
+                        vertical={vertical}
+                        type={data.listingType}
+                        selected={data.businessLines}
+                        onChange={(next) => {
+                            onFieldChange('businessLines', next);
+                        }}
+                        errors={errors}
+                    />
+                </section>
+            ) : null}
 
             {/* T-020: summary textarea (min 10 / max 300) */}
             <section className={styles.section}>

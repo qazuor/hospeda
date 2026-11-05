@@ -228,6 +228,9 @@
             "noChanges": "No hay cambios para guardar",
             "success": "Cambios guardados.",
             "error": "No se pudieron guardar los cambios. Probá de nuevo.",
+            "errors": {
+                "sectionAbsent": "Esa sección ya no aplica a los rubros de tu local."
+            },
             "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
             "media": {
                 "featured": "Imagen principal",
