@@ -56,7 +56,7 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await expect(page.getByRole('button', { name: /sum|enviar|postul/i })).toBeEnabled();
         await page.getByRole('button', { name: /sum|enviar|postul/i }).click();
         const pp1 = await submitResponse;
-        expect(pp1.status()).toBe(200);
+        expect(pp1.status()).toBe(201);
         await expect(page.getByRole('status')).toBeVisible();
 
         const [application] = await execSQL<{
@@ -167,7 +167,7 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
                 cfTurnstileToken: '1x0000000000000000000000000000000AA'
             })
         });
-        expect(silverSubmission.status).toBe(200);
+        expect(silverSubmission.status).toBe(201);
         const [silverApplication] = await execSQL<{ id: string; status: string }>(
             'SELECT id, status FROM partner_application WHERE email = $1',
             [silverEmail]
