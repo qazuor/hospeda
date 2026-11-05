@@ -410,6 +410,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_VIEW_ALL,
         PermissionEnum.PARTNER_MANAGE,
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
+        PermissionEnum.PARTNER_EMPTY_PRESENCE,
 
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
@@ -782,6 +783,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_VIEW_ALL,
         PermissionEnum.PARTNER_MANAGE,
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
+        PermissionEnum.PARTNER_EMPTY_PRESENCE,
 
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
