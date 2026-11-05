@@ -244,6 +244,13 @@
             "count": 1,
             "category": "editor",
             "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "packages/db/src/models/venue/venue-business-line-filter.ts",
+            "symbol": "buildVenueBusinessLineCondition",
+            "count": 1,
+            "category": "list-filter",
+            "spec": ".hoja/notas.md:54"
         }
     ],
     "imports": [
