@@ -106,8 +106,8 @@ describe('features-content — plan table row counts', () => {
         expect(VIAJEROS_TABLE_ROWS).toHaveLength(11);
     });
 
-    it('has 13 rows in the Anfitriones plan table', () => {
-        expect(ANFITRIONES_TABLE_ROWS).toHaveLength(13);
+    it('has 14 rows in the Anfitriones plan table', () => {
+        expect(ANFITRIONES_TABLE_ROWS).toHaveLength(14);
     });
 
     it('every row has exactly 3 cells (Gratis/Plus/VIP or Básico/Pro/Premium)', () => {

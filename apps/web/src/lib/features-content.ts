@@ -360,7 +360,7 @@ export const VIAJEROS_TABLE_ROWS: readonly PlanTableRow[] = [
     }
 ] as const;
 
-/** Anfitriones plan table: Básico / Pro (popular) / Premium — 13 rows, no prices. */
+/** Anfitriones plan table: Básico / Pro (popular) / Premium — 14 rows, no prices. */
 export const ANFITRIONES_TABLE_ROWS: readonly PlanTableRow[] = [
     {
         labelKey: 'features.anfitriones.table.rows.listings.label',
