@@ -166,7 +166,8 @@
         "columns": {
             "priceRange": "Rango de Precios",
             "type": "Tipo",
-            "menuUrl": "Menú Online"
+            "menuUrl": "Menú Online",
+            "businessLines": "Rubros"
         },
         "types": {
             "RESTAURANT": "Restaurante",

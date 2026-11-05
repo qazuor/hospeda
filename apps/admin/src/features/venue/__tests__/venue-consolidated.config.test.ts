@@ -14,8 +14,10 @@
  *  - priceRange field is optional
  */
 
-import { VenueTypeEnum } from '@repo/schemas';
+import { PermissionEnum, VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
 import { createVenueConsolidatedConfig } from '../config/venue-consolidated.config';
 
 // ---------------------------------------------------------------------------
@@ -122,5 +124,45 @@ describe('createVenueConsolidatedConfig', () => {
         expect(values).toContain('MID');
         expect(values).toContain('HIGH');
         expect(values).toContain('PREMIUM');
+    });
+});
+
+describe('createVenueConsolidatedConfig — business lines (HOS-1873)', () => {
+    const venueSpecific = () =>
+        createVenueConsolidatedConfig(t).sections.find((s) => s.id === 'venue-specific');
+
+    it('declares the businessLines field in the venue-specific section', () => {
+        const field = venueSpecific()?.fields.find((f) => f.id === 'businessLines');
+        expect(field).toBeDefined();
+        expect(field?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+        expect(field?.required).toBe(true);
+        expect(field?.typeConfig).toEqual({ vertical: 'venue', typeFieldId: 'type' });
+    });
+
+    it('renders BUSINESS_LINES in edit and create, and SELECT_MULTIPLE in view', () => {
+        const config = createVenueConsolidatedConfig(t);
+
+        const editField = filterSectionsByMode(config.sections, 'edit')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(editField?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+
+        const createField = filterSectionsByMode(config.sections, 'create')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(createField?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+
+        const viewField = filterSectionsByMode(config.sections, 'view')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(viewField?.type).toBe(FieldTypeEnum.SELECT_MULTIPLE);
+        const options =
+            (viewField?.typeConfig as { options?: { value: string }[] } | undefined)?.options ?? [];
+        expect(options).toHaveLength(2);
+    });
+
+    it('gates editing on VENUE_EDIT_ALL, like the type field', () => {
+        const field = venueSpecific()?.fields.find((f) => f.id === 'businessLines');
+        expect(field?.permissions?.edit).toEqual([PermissionEnum.VENUE_EDIT_ALL]);
     });
 });

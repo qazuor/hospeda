@@ -239,6 +239,9 @@
         "rotiseria": "Rotisería",
         "foodTruck": "Food Truck"
     },
+    "businessLine": {
+        "label": "Rubro"
+    },
     "priceRange": {
         "label": "Rango de precio",
         "budget": "Económico",

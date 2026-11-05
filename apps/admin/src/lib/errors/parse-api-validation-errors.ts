@@ -28,6 +28,7 @@
 
 import { resolveValidationMessage } from '@repo/i18n';
 import { z } from 'zod';
+import { parseBusinessLinesError } from './parse-business-lines-error';
 
 // ---------------------------------------------------------------------------
 // Zod schema for the standardized API validation error envelope
@@ -181,23 +182,21 @@ export function parseApiValidationErrors({
 }: ParseApiValidationErrorsInput): Record<string, string> {
     const parsed = ApiValidationErrorSchema.safeParse(error);
 
-    if (!parsed.success) {
-        return {};
+    // The array envelope is the canonical validation shape. When `details` is
+    // not an array (the business-line 400 publishes an object with a single
+    // reason), the array path does not apply and the specific parser takes over.
+    if (parsed.success && parsed.data.error.details.length > 0) {
+        const { details } = parsed.data.error;
+        const fieldErrors: Record<string, string> = {};
+
+        for (const detail of details) {
+            // Last detail for a field wins (consistent with Zod behaviour where
+            // only one error per field is surfaced in most cases).
+            fieldErrors[detail.field] = resolveDetailMessage(detail, t);
+        }
+
+        return fieldErrors;
     }
 
-    const { details } = parsed.data.error;
-
-    if (details.length === 0) {
-        return {};
-    }
-
-    const fieldErrors: Record<string, string> = {};
-
-    for (const detail of details) {
-        // Last detail for a field wins (consistent with Zod behaviour where
-        // only one error per field is surfaced in most cases).
-        fieldErrors[detail.field] = resolveDetailMessage(detail, t);
-    }
-
-    return fieldErrors;
+    return parseBusinessLinesError({ error, t });
 }

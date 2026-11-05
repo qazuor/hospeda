@@ -17,9 +17,11 @@ import { PermissionEnum, PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     ConsolidatedEntityConfig,
+    ConsolidatedFieldConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
 import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
+import { getVenueBusinessLineOptions, hasBusinessLineChoice } from './venue-business-lines';
 
 // ---------------------------------------------------------------------------
 // Venue-specific field options
@@ -57,6 +59,37 @@ const PRICE_RANGE_OPTIONS = [
 function createVenueSpecificSection(
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig {
+    const businessLineOptions = getVenueBusinessLineOptions({ t });
+    // The catalog decides whether the venue vertical offers a choice at all.
+    const businessLinesFields: ConsolidatedFieldConfig[] = hasBusinessLineChoice({
+        options: businessLineOptions
+    })
+        ? [
+              {
+                  id: 'businessLines',
+                  type: FieldTypeEnum.BUSINESS_LINES,
+                  required: true,
+                  modes: ['view', 'edit', 'create'],
+                  label: t('venue.owner.businessLines.legend'),
+                  permissions: {
+                      view: [PermissionEnum.VENUE_VIEW_ALL],
+                      edit: [PermissionEnum.VENUE_EDIT_ALL]
+                  },
+                  typeConfig: {
+                      vertical: 'venue',
+                      typeFieldId: 'type'
+                  },
+                  // View mode reuses the generic multi-select renderer, which
+                  // joins the selected labels; the catalog options carry them.
+                  modeConfig: {
+                      view: {
+                          type: FieldTypeEnum.SELECT_MULTIPLE,
+                          typeConfig: { options: businessLineOptions }
+                      }
+                  }
+              }
+          ]
+        : [];
     return {
         id: 'venue-specific',
         title: 'Detalles de Gastronomía',
@@ -92,6 +125,7 @@ function createVenueSpecificSection(
                     }))
                 }
             },
+            ...businessLinesFields,
             {
                 id: 'priceRange',
                 type: FieldTypeEnum.SELECT,

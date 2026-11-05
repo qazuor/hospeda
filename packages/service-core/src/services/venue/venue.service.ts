@@ -30,6 +30,7 @@
 
 import {
     AmenityModel,
+    buildVenueBusinessLineCondition,
     buildVenueCatalogConditions,
     FeatureModel,
     rVenueAmenityModel,
@@ -549,13 +550,33 @@ export class VenueService extends BaseListingService<
      * `ownerId`) are plain scalars that the generic admin search
      * builder handles natively via the where-clause builder.
      *
+     * `businessLine` is the exception (HOS-1787 leaf 7.1): the column is
+     * `text[]`, so the generic builder would emit `eq(text[], 'food')` — a
+     * runtime error or an empty page. It is pulled out of `entityFilters` and
+     * composed as an `additionalCondition` by `@repo/db`'s
+     * {@link buildVenueBusinessLineCondition}, which uses `@>` and the GIN
+     * index. The service never compares the value itself (G-FAC-03): the
+     * schema already constrained it to the catalog.
+     *
      * @param params - Admin search parameters assembled by `adminList()`.
      * @returns Paginated list with owner-scoping and public projections applied.
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<Record<string, unknown>>
     ): Promise<PaginatedListOutput<Venue>> {
-        return super._executeAdminSearch(params);
+        const { businessLine, ...entityFilters } = params.entityFilters;
+        const extraConditions = [...(params.extraConditions ?? [])];
+
+        if (typeof businessLine === 'string') {
+            const condition = buildVenueBusinessLineCondition({ businessLine });
+            if (condition) extraConditions.push(condition);
+        }
+
+        return super._executeAdminSearch({
+            ...params,
+            entityFilters,
+            extraConditions
+        });
     }
 
     // -----------------------------------------------------------------------

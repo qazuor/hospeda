@@ -5,6 +5,9 @@
  * Each component handles a specific field type from FieldConfig.
  */
 
+export type { BusinessLinesFieldProps } from './BusinessLinesField';
+// Catalog-driven fields
+export { BusinessLinesField } from './BusinessLinesField';
 export type { CheckboxFieldProps } from './CheckboxField';
 // Boolean Fields
 export { CheckboxField } from './CheckboxField';

@@ -153,3 +153,27 @@ describe('createVenueColumns — column details', () => {
         expect(values).toContain('PREMIUM');
     });
 });
+
+describe('createVenueColumns — business lines (HOS-1873)', () => {
+    it('includes a businessLines WIDGET column after type', () => {
+        const columns = createVenueColumns(t);
+        const ids = columns.map((c) => c.id);
+        expect(ids).toContain('businessLines');
+        expect(ids.indexOf('businessLines')).toBe(ids.indexOf('type') + 1);
+
+        const column = columns.find((c) => c.id === 'businessLines');
+        expect(column?.columnType).toBe(ColumnType.WIDGET);
+    });
+
+    it('renders the line labels separated by a comma', () => {
+        const columns = createVenueColumns(t);
+        const column = columns.find((c) => c.id === 'businessLines');
+        const rendered = column?.widgetRenderer?.({
+            businessLines: ['food', 'nightlife']
+        } as never);
+
+        expect(rendered).toBe(
+            'venue.owner.businessLines.food.label, venue.owner.businessLines.nightlife.label'
+        );
+    });
+});

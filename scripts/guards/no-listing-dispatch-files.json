@@ -84,6 +84,14 @@
         {
             "file": "apps/web/src/components/listing/editor/section-renderers.tsx",
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue-consolidated.config.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue-business-lines.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
         }
     ]
 }

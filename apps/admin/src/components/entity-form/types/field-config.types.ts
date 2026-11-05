@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/schemas';
+import type { ListingVertical, PermissionEnum } from '@repo/schemas';
 import type { ZodSchema } from 'zod';
 import type {
     EntityTypeEnum,
@@ -76,6 +76,7 @@ export type FieldTypeConfig =
     | TextFieldConfig
     | TextareaFieldConfig
     | SelectFieldConfig
+    | BusinessLinesFieldConfig
     | EntitySelectFieldConfig
     | CurrencyFieldConfig
     | RichTextFieldConfig
@@ -132,6 +133,17 @@ export type SelectFieldConfig = {
     searchable?: boolean;
     clearable?: boolean;
     multiple?: boolean;
+};
+
+/**
+ * Business-line checkbox group configuration.
+ *
+ * The options are resolved from the catalog at render time, driven by the
+ * listing type held in the sibling `typeFieldId` field.
+ */
+export type BusinessLinesFieldConfig = {
+    vertical: ListingVertical;
+    typeFieldId: string;
 };
 
 /**
