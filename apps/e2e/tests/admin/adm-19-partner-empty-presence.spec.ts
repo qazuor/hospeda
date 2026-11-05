@@ -40,7 +40,7 @@ test.describe('TEST:V8b:7 AC:V8b:6 the action 25 confirmation names the Partner,
             ) VALUES (
                 $1, $2, 'business', 'https://images.example.test/logo.png',
                 'Current description', 'https://example.test',
-                '{"instagram":"https://instagram.example.test/x"}'::jsonb,
+                '{"instagram":"https://www.instagram.com/hospeda-e2e-adm19"}'::jsonb,
                 'pending', 'Pending description'
             ) RETURNING id`,
             [partnerSlug, partnerName]
