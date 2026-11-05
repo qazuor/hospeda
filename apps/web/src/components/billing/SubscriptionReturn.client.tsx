@@ -82,7 +82,9 @@ export function SubscriptionReturn({
                 return;
             }
         } catch {
-            // Unreadable storage is handled by the write below, which fails too.
+            // An unreadable marker cannot stop the next load either: never refresh.
+            refreshedAfterConfirmationRef.current = true;
+            return;
         }
 
         // Persist before navigating: SSR may still report a lagging status after

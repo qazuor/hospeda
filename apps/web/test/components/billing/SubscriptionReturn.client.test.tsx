@@ -116,6 +116,28 @@ describe('SubscriptionReturn polling', () => {
         expect(reload).not.toHaveBeenCalled();
     });
 
+    it('never refreshes when only reading sessionStorage throws', async () => {
+        const reload = vi.fn();
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new Error('storage unavailable');
+        });
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
     it('does not refresh when the server already rendered a confirmed subscription', () => {
         const reload = vi.fn();
         render(
