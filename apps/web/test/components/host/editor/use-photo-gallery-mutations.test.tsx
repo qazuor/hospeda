@@ -109,4 +109,54 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         expect(showConfirmationDialogMock).not.toHaveBeenCalled();
         expect(updateMediaMock).toHaveBeenCalledTimes(1);
     });
+
+    it('merges the server text into the gallery row after a successful save', async () => {
+        updateMediaMock.mockResolvedValue({
+            ok: true,
+            data: {
+                media: {
+                    id: photo.id,
+                    url: photo.url,
+                    publicId: photo.publicId,
+                    alt: 'Updated alt',
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'approved'
+                }
+            }
+        });
+        let currentGallery: readonly AccommodationMediaItem[] = [photo];
+        const setGalleryItems = vi.fn(
+            (
+                update: (
+                    items: readonly AccommodationMediaItem[]
+                ) => readonly AccommodationMediaItem[]
+            ) => {
+                currentGallery = update(currentGallery);
+            }
+        );
+        const { result } = renderHook(() =>
+            usePhotoGalleryMutations({
+                accommodationId: 'accommodation-1',
+                t: (_key, fallback) => fallback ?? '',
+                featuredItem: null,
+                galleryItems: [photo],
+                isHydrated: true,
+                setFeaturedItem: vi.fn(),
+                setGalleryItems,
+                setError: vi.fn(),
+                setOpLoading: vi.fn(),
+                reportUploadError: vi.fn()
+            })
+        );
+
+        await act(async () => {
+            expect(await result.current.handleUpdateMediaText(photo, { alt: 'Updated alt' })).toBe(
+                true
+            );
+        });
+
+        expect(currentGallery[0]?.alt).toBe('Updated alt');
+    });
 });
