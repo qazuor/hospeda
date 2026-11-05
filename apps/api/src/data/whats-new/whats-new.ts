@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4143
+    {
+        id: '2026-11-05-choose-a-plan-from-your-trial',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Elegí tu plan desde tu prueba gratis',
+            en: 'Choose your plan from your free trial',
+            pt: 'Escolha seu plano a partir do seu teste grátis'
+        },
+        body: {
+            es: 'En **Mi cuenta → Suscripción**, la tarjeta de tu prueba gratis ahora tiene el botón «Elegí tu plan», que te lleva directo a los planes de esa ficha, también cuando la prueba ya terminó.',
+            en: 'In **My account → Subscription**, your free trial card now has a "Choose your plan" button that takes you straight to the plans for that listing, even after the trial has ended.',
+            pt: 'Em **Minha conta → Assinatura**, o cartão do seu teste grátis agora tem o botão «Escolha seu plano», que leva direto aos planos desse anúncio, inclusive quando o teste já terminou.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4144
+    {
+        id: '2026-11-05-why-checkout-asks-for-your-email',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Ahora queda claro por qué el pago te pide el email de Mercado Pago',
+            en: 'The checkout now explains why it asks for your Mercado Pago email',
+            pt: 'O pagamento agora explica por que pede o email do Mercado Pago'
+        },
+        body: {
+            es: 'Al suscribirte, el campo de email explica que Mercado Pago sólo acepta el pago desde la cuenta con ese email. Viene con el de tu cuenta de Hospeda: cambialo sólo si en Mercado Pago usás otro.',
+            en: 'When you subscribe, the email field explains that Mercado Pago only accepts payment from the account with that email. It comes filled in with your Hospeda email: change it only if you use a different one in Mercado Pago.',
+            pt: 'Ao assinar, o campo de email explica que o Mercado Pago só aceita o pagamento da conta com esse email. Ele já vem com o email da sua conta Hospeda: altere apenas se você usa outro no Mercado Pago.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4109
     {
         id: '2026-11-05-paying-keeps-your-published-listings',
