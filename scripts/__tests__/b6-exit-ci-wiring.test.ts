@@ -380,7 +380,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
             for (const contract of DEFERRED_FUNCTIONS) {
                 const source = read(contract.file);
                 expect(
-                    new RegExp(`export async function ${contract.name}\\b`).test(source),
+                    new RegExp(`^\\s*export async function ${contract.name}\\b`, 'm').test(source),
                     `${contract.file} does not export ${contract.name}`
                 ).toBe(true);
                 expect(
