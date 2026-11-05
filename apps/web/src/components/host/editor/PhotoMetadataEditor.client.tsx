@@ -43,12 +43,13 @@
  * `validatePhotoMetadataFields`).
  */
 
-import { type KeyboardEvent, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
 import {
     buildPhotoMetadataUpdateBody,
+    isPhotoAltIncomplete,
     type PhotoMetadataEditableItem,
     type PhotoMetadataFieldErrors,
     type PhotoMetadataUpdateBody,
@@ -64,6 +65,8 @@ export interface PhotoMetadataEditorProps<
     readonly disabled: boolean;
     /** Gallery thumbnails need a wider floating panel than their own narrow column. */
     readonly compactLayout?: boolean;
+    /** Close after a successful save (enabled for accommodation photos only). */
+    readonly closeOnSuccessfulSave?: boolean;
     /** Accessible label for the toggle button while the panel is closed. */
     readonly toggleAriaLabel: string;
     /** Accessible label for the toggle button while the panel is open. */
@@ -74,7 +77,7 @@ export interface PhotoMetadataEditorProps<
 /**
  * Expandable per-photo panel to write/correct `alt`, `caption`, and
  * `description`. Render-only aside from its own form-local state (open/closed,
- * field values, validation errors, saving/saved status) — persistence is
+ * field values and validation errors) — persistence is
  * fully owned by the `onSave` callback passed in.
  */
 export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
@@ -82,6 +85,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     item,
     disabled,
     compactLayout = false,
+    closeOnSuccessfulSave = false,
     toggleAriaLabel,
     closeAriaLabel,
     onSave
@@ -98,6 +102,15 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     const [fieldErrors, setFieldErrors] = useState<PhotoMetadataFieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
+    const toggleRef = useRef<HTMLButtonElement>(null);
+    const restoreToggleFocusRef = useRef(false);
+
+    useEffect(() => {
+        if (!isOpen && !isSaving && restoreToggleFocusRef.current) {
+            restoreToggleFocusRef.current = false;
+            toggleRef.current?.focus();
+        }
+    }, [isOpen, isSaving]);
 
     const handleToggle = () => {
         if (!isOpen) {
@@ -111,9 +124,9 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             setPhotographer(item.attribution?.photographer ?? '');
             setCreditUrl(item.attribution?.sourceUrl ?? '');
             setFieldErrors({});
-            setJustSaved(false);
         }
         setIsOpen((prev) => !prev);
+        setJustSaved(false);
     };
 
     const handleSave = async () => {
@@ -134,7 +147,12 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         );
         setIsSaving(false);
         if (ok) {
-            setJustSaved(true);
+            if (closeOnSuccessfulSave) {
+                restoreToggleFocusRef.current = true;
+                setIsOpen(false);
+            } else {
+                setJustSaved(true);
+            }
         }
     };
 
@@ -155,8 +173,11 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     return (
         <div
             className={`${styles.metadataBlock} ${compactLayout ? styles.metadataBlockCompact : ''}`}
+            data-photo-metadata-id={item.id}
+            data-photo-metadata-missing={isPhotoAltIncomplete(item) ? 'true' : undefined}
         >
             <button
+                ref={toggleRef}
                 type="button"
                 className={`${styles.metadataToggle} ${compactLayout ? styles.metadataToggleCompact : ''}`}
                 onClick={handleToggle}
@@ -336,6 +357,17 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                                 ? t('host.properties.editor.action.saving', 'Guardando...')
                                 : t('host.properties.editor.action.save', 'Guardar')}
                         </button>
+                        {justSaved && (
+                            <span
+                                className={styles.metadataSavedBadge}
+                                role="status"
+                            >
+                                {t(
+                                    'host.properties.editor.photo.metadataSavedConfirmation',
+                                    'Guardado'
+                                )}
+                            </span>
+                        )}
                         <button
                             type="button"
                             className={styles.metadataCancelButton}
@@ -344,14 +376,6 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                         >
                             {t('host.properties.editor.action.cancel', 'Cancelar')}
                         </button>
-                        {justSaved && (
-                            <span className={styles.metadataSavedBadge}>
-                                {t(
-                                    'host.properties.editor.photo.metadataSavedConfirmation',
-                                    'Guardado'
-                                )}
-                            </span>
-                        )}
                     </div>
                 </div>
             )}

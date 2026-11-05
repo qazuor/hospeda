@@ -374,7 +374,6 @@
                 "galleryLoading": "Galería de fotos",
                 "invalidType": "Solo se permiten archivos JPG, PNG, WebP o HEIC",
                 "metadataSaveFailed": "No se pudieron guardar los datos de la foto",
-                "metadataSavedConfirmation": "Guardado",
                 "moveDownAria": "Mover foto {{index}} hacia abajo",
                 "moveUpAria": "Mover foto {{index}} hacia arriba",
                 "persistFailed": "No se pudo guardar la imagen",
@@ -402,8 +401,9 @@
                 "altWarningMessage": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
                 "altWarningMessage_one": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
                 "altWarningMessage_other": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} fotos sin ese texto completado.",
-                "altWarningGoBack": "Volver y completarlos",
-                "altWarningContinue": "Continuar sin completarlos"
+                "altWarningGoBack": "Completar ahora",
+                "altWarningContinue": "Seguir igual",
+                "metadataSavedConfirmation": "Guardado"
             },
             "video": {
                 "sectionTitle": "Videos",

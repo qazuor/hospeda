@@ -374,7 +374,6 @@
                 "galleryLoading": "Photo gallery",
                 "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "metadataSaveFailed": "Couldn't save the photo's details",
-                "metadataSavedConfirmation": "Saved",
                 "moveDownAria": "Move photo {{index}} down",
                 "moveUpAria": "Move photo {{index}} up",
                 "persistFailed": "The photo could not be saved",
@@ -402,8 +401,9 @@
                 "altWarningMessage": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_one": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
-                "altWarningGoBack": "Go back and fill them in",
-                "altWarningContinue": "Continue without filling them in"
+                "altWarningGoBack": "Complete now",
+                "altWarningContinue": "Continue anyway",
+                "metadataSavedConfirmation": "Saved"
             },
             "video": {
                 "sectionTitle": "Videos",

@@ -57,6 +57,11 @@ const {
     mockAddToast: vi.fn()
 }));
 
+vi.mock('@/lib/forms/leave-warning-registry', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/forms/leave-warning-registry')>()),
+    requestLeaveWarning: vi.fn().mockResolvedValue(true)
+}));
+
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -1096,6 +1101,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             await waitFor(() => {
                 expect(screen.getByAltText('Living con sofá')).toBeInTheDocument();
             });
+            expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
         });
 
         it('correcting an existing alt replaces it, and leaves the other gallery photo untouched', async () => {

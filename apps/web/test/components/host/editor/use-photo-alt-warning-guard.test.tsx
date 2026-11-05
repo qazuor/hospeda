@@ -9,11 +9,15 @@
  * navigation (which does not exist).
  */
 
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
 import type { AccommodationMediaItem } from '@/lib/api/types';
-import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
+import {
+    __resetLeaveWarningRegistry,
+    requestLeaveWarning
+} from '@/lib/forms/leave-warning-registry';
 import { __setNavigateImpl } from '../../../stubs/astro-transitions-client';
 
 const ACCOMMODATION_ID = 'acc-hos-1018-a';
@@ -55,6 +59,10 @@ vi.mock('@/lib/i18n', () => ({
             );
         }
     })
+}));
+
+vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_target, key) => String(key) })
 }));
 
 /** Builds a minimal `AccommodationMediaItem` fixture. */
@@ -113,6 +121,188 @@ describe('usePhotoAltWarningGuard', () => {
     });
 
     describe('with photos missing alt text', () => {
+        it('does not ask again for a save in the same mounted session after continuing', async () => {
+            showConfirmationDialogMock.mockResolvedValue(true);
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [buildItem({ id: 'g1', alt: '' })]
+                })
+            );
+
+            await act(async () => {
+                expect(await requestLeaveWarning('photo-alt')).toBe(true);
+            });
+            await flushRouterImport();
+            await act(async () => Promise.resolve());
+            expect(await requestLeaveWarning('photo-alt')).toBe(true);
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('focuses the first incomplete photo when the host chooses to complete its text', async () => {
+            const galleryItems = [buildItem({ id: 'g1', alt: '' })];
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const { container } = render(
+                <PhotoMetadataEditor
+                    locale="es"
+                    item={galleryItems[0]!}
+                    disabled={false}
+                    toggleAriaLabel="Editar textos"
+                    closeAriaLabel="Cerrar textos"
+                    onSave={vi.fn().mockResolvedValue(true)}
+                />
+            );
+            const field = () => container.querySelector<HTMLTextAreaElement>('#photo-alt-g1');
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems
+                })
+            );
+            await flushRouterImport();
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+            clickAnchor(anchor);
+            await flushRouterImport();
+
+            await waitFor(() => expect(document.activeElement).toBe(field()));
+        });
+
+        it('waits for an in-flight operation to enable the toggle before focusing', async () => {
+            let resolveDialog!: (confirmed: boolean) => void;
+            showConfirmationDialogMock.mockImplementation(
+                () =>
+                    new Promise<boolean>((resolve) => {
+                        resolveDialog = resolve;
+                    })
+            );
+            const photo = buildItem({ id: 'busy-photo', alt: '' });
+            const editorProps = (disabled: boolean) => ({
+                locale: 'es' as const,
+                item: photo,
+                disabled,
+                toggleAriaLabel: 'Editar textos',
+                closeAriaLabel: 'Cerrar textos',
+                onSave: vi.fn().mockResolvedValue(true)
+            });
+            const editor = render(<PhotoMetadataEditor {...editorProps(true)} />);
+            const field = () =>
+                editor.container.querySelector<HTMLTextAreaElement>('#photo-alt-busy-photo');
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [photo]
+                })
+            );
+            await flushRouterImport();
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await act(async () => resolveDialog(false));
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 60)));
+            editor.rerender(<PhotoMetadataEditor {...editorProps(false)} />);
+            await waitFor(() => expect(document.activeElement).toBe(field()));
+        });
+
+        it('focuses the alt field when the first incomplete photo panel is already open', async () => {
+            const galleryItems = [buildItem({ id: 'g1', alt: '' })];
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const { container } = render(
+                <PhotoMetadataEditor
+                    locale="es"
+                    item={galleryItems[0]!}
+                    disabled={false}
+                    toggleAriaLabel="Editar textos"
+                    closeAriaLabel="Cerrar textos"
+                    onSave={vi.fn().mockResolvedValue(true)}
+                />
+            );
+            fireEvent.click(container.querySelector('button')!);
+            const field = container.querySelector<HTMLTextAreaElement>('#photo-alt-g1');
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems
+                })
+            );
+            await flushRouterImport();
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+
+            await waitFor(() => expect(document.activeElement).toBe(field));
+        });
+
+        it('waits for a pending save to re-enable the alt field before focusing it', async () => {
+            // The dialog is answered while the editor's own save is still
+            // awaiting it, so the textarea is disabled at the moment the guard
+            // asks for focus (HOS-2032 review round 7).
+            let resolveDialog!: (confirmed: boolean) => void;
+            showConfirmationDialogMock.mockImplementation(
+                () =>
+                    new Promise<boolean>((resolve) => {
+                        resolveDialog = resolve;
+                    })
+            );
+            const photo = buildItem({ id: 'saving-photo', alt: '' });
+            const { container, getByText } = render(
+                <PhotoMetadataEditor
+                    locale="es"
+                    item={photo}
+                    disabled={false}
+                    toggleAriaLabel="Editar textos"
+                    closeAriaLabel="Cerrar textos"
+                    onSave={() => requestLeaveWarning('photo-alt')}
+                />
+            );
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [photo]
+                })
+            );
+            await flushRouterImport();
+            fireEvent.click(container.querySelector('button')!);
+            const field = () =>
+                container.querySelector<HTMLTextAreaElement>('#photo-alt-saving-photo')!;
+            fireEvent.click(getByText('Guardar'));
+            await waitFor(() => expect(field().disabled).toBe(true));
+
+            await act(async () => resolveDialog(false));
+
+            await waitFor(() => expect(field().disabled).toBe(false));
+            await waitFor(() => expect(document.activeElement).toBe(field()));
+        });
+
+        it('does not warn about SSR placeholders before media hydration', async () => {
+            const galleryItems = [buildItem({ id: '', alt: undefined })];
+            const { rerender } = renderHook(
+                ({ mediaReady }: { mediaReady: boolean }) =>
+                    usePhotoAltWarningGuard({
+                        locale: 'es',
+                        accommodationId: ACCOMMODATION_ID,
+                        featuredItem: null,
+                        galleryItems,
+                        mediaReady
+                    }),
+                { initialProps: { mediaReady: false } }
+            );
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+            expect(clickAnchor(anchor).defaultPrevented).toBe(false);
+            expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+
+            rerender({ mediaReady: true });
+            expect(clickAnchor(anchor).defaultPrevented).toBe(true);
+        });
+
         it('shows the dialog with the correct missing-alt count on leave', async () => {
             const featuredItem = buildItem({ id: 'featured', alt: undefined, isFeatured: true });
             const galleryItems = [
@@ -141,8 +331,8 @@ describe('usePhotoAltWarningGuard', () => {
             const call = showConfirmationDialogMock.mock.calls[0]?.[0];
             expect(call?.message).toBe('host.properties.editor.photo.altWarningMessage::count=3');
             expect(call?.title).toBe('Fotos sin texto alternativo');
-            expect(call?.confirmLabel).toBe('Continuar sin completarlos');
-            expect(call?.cancelLabel).toBe('Volver y completarlos');
+            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.cancelLabel).toBe('Completar ahora');
         });
 
         it('proceeds with navigation when the host chooses "continue"', async () => {

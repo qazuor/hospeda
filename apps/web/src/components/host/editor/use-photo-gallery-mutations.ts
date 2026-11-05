@@ -15,8 +15,10 @@
 import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
+import { requestLeaveWarning } from '@/lib/forms/leave-warning-registry';
 import {
     buildReorderPayload,
+    isPhotoAltIncomplete,
     mediaRowToItem,
     moveArrayItem,
     type PhotoMetadataUpdateBody,
@@ -67,6 +69,9 @@ export function usePhotoGalleryMutations({
     setOpLoading,
     reportUploadError
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
+    const incompleteAltCount = [...(featuredItem ? [featuredItem] : []), ...galleryItems].filter(
+        isPhotoAltIncomplete
+    ).length;
     /**
      * Delete the current featured (portada) row.
      * There is no "unfeature" endpoint — removing is the clear action.
@@ -249,12 +254,23 @@ export function usePhotoGalleryMutations({
      * save on one photo never touches any other photo's fields — and merges
      * the server's authoritative row back into whichever slot the item lives
      * in (portada or gallery), without disturbing the rest of that slot's
-     * state. Returns `true` on success so the calling form can show a
-     * "saved" confirmation and stay open for further edits.
+     * state. It also runs the existing HOS-1018 warning before a photo-text
+     * save when other photos still have incomplete alt text.
      */
     const handleUpdateMediaText = useCallback(
         async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
             if (!item.id) return false;
+            const currentIsIncomplete = isPhotoAltIncomplete(item);
+            const submittedAltIsComplete = Boolean(body.alt?.trim());
+            const maySave = await requestLeaveWarning('photo-alt', {
+                count: Math.max(
+                    0,
+                    incompleteAltCount +
+                        Number(!currentIsIncomplete && !submittedAltIsComplete) -
+                        Number(currentIsIncomplete && submittedAltIsComplete)
+                )
+            });
+            if (!maySave) return false;
             setError(null);
             setOpLoading(true);
 
@@ -292,7 +308,8 @@ export function usePhotoGalleryMutations({
             setError,
             setOpLoading,
             setFeaturedItem,
-            setGalleryItems
+            setGalleryItems,
+            incompleteAltCount
         ]
     );
 
