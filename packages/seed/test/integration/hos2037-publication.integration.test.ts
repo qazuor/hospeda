@@ -1,6 +1,7 @@
 /**
- * HOS-2037 data migration against a real, migrated PostgreSQL database (the
- * integration carril's ephemeral database; 0144/0176 already loaded the catalog).
+ * HOS-2037 data migration against a real, migrated PostgreSQL database. It builds its own
+ * scratch database (`hospeda_it_hos2037_pub`, dropped afterwards) so the shared global-setup
+ * database stays empty for the other seed integration tests; 0144/0176 already load the catalog.
  *
  * Scenario: a monthly and an annual Basic subscriber, a Pro subscriber with a queued
  * downgrade to Basic, and a cancelled Basic row. After migration 0133 the live rows are
@@ -30,19 +31,24 @@ import {
     reanchorOlderVersions,
     reanchorSubscriptionsToVersion
 } from '../../src/data-migrations/helpers/reanchorSubscriptionsToVersion.js';
+import { scratchDatabase } from './support/scratch-database.js';
 
-const connectionString = process.env.HOSPEDA_DATABASE_URL;
+// Own scratch database: this test commits users, versions and subscriptions, and the shared
+// global-setup database must stay empty for the other seed integration tests.
+const database = scratchDatabase({ name: 'hospeda_it_hos2037_pub' });
 let pool: Pool;
 let db: DrizzleClient;
 
-beforeAll(() => {
-    if (!connectionString) throw new Error('HOSPEDA_DATABASE_URL is not set by the global setup');
-    pool = new Pool({ connectionString });
+beforeAll(async () => {
+    await database.create();
+    await database.migrate();
+    pool = new Pool({ connectionString: database.url });
     db = drizzle(pool) as unknown as DrizzleClient;
-});
+}, 600_000);
 
 afterAll(async () => {
     await pool?.end();
+    await database.drop();
 });
 
 const run = () => db.transaction(async (tx) => up({ db: tx } as Parameters<typeof up>[0]));

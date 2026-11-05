@@ -9,75 +9,35 @@
  * Builds its own scratch database (`hospeda_it_hos2037_fresh`, dropped afterwards) so
  * that the shared integration database stays untouched by the runner.
  */
-import { execFileSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { repoRoot, scratchDatabase } from './support/scratch-database.js';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, '../../../..');
-const baseUrl =
-    process.env.HOSPEDA_TEST_DATABASE_URL ||
-    'postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres';
-const database = 'hospeda_it_hos2037_fresh';
-const adminUrl = new URL(baseUrl);
-adminUrl.pathname = '/postgres';
-const scratchUrl = new URL(baseUrl);
-scratchUrl.pathname = `/${database}`;
-const admin = new Pool({ connectionString: adminUrl.toString() });
+const database = scratchDatabase({ name: 'hospeda_it_hos2037_fresh' });
 let scratch: Pool | undefined;
 
-const run = (cwd: string, args: readonly string[], timeout: number) =>
-    execFileSync('pnpm', [...args], {
-        cwd,
-        stdio: 'pipe',
-        timeout,
-        maxBuffer: 256 * 1024 * 1024,
-        env: {
-            ...process.env,
-            CI: 'true',
-            HOSPEDA_DATABASE_URL: scratchUrl.toString(),
-            HOSPEDA_CLOUDINARY_CLOUD_NAME: '',
-            HOSPEDA_CLOUDINARY_API_KEY: '',
-            HOSPEDA_CLOUDINARY_API_SECRET: ''
-        }
-    });
-
 beforeAll(async () => {
-    await admin.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
-    await admin.query(`CREATE DATABASE "${database}"`);
-    const bootstrap = new Pool({ connectionString: scratchUrl.toString() });
-    for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent'])
-        await bootstrap.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
-    await bootstrap.end();
-    run(
-        resolve(repoRoot, 'packages/db'),
-        ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'],
-        180_000
-    );
-    // db:apply-extras, then the db:fresh seed steps (minus --example, which cannot affect the
-    // plan catalog), then the db:fresh data-migration step: stamp the historical migrations,
-    // run the `contentOnly` ones for real.
-    execFileSync('node', ['packages/db/scripts/apply-postgres-extras.mjs', scratchUrl.toString()], {
+    await database.create();
+    // migrate + db:apply-extras, then the db:fresh seed steps (minus --example, which cannot
+    // affect the plan catalog), then the db:fresh data-migration step: stamp the historical
+    // migrations, run the `contentOnly` ones for real.
+    await database.migrate();
+    database.pnpm({
         cwd: repoRoot,
-        stdio: 'pipe',
-        timeout: 120_000,
-        maxBuffer: 256 * 1024 * 1024
+        args: ['--filter', '@repo/seed', 'seed', '--required', '--poi-catalog'],
+        timeout: 300_000
     });
-    run(repoRoot, ['--filter', '@repo/seed', 'seed', '--required', '--poi-catalog'], 300_000);
-    run(
-        repoRoot,
-        ['--filter', '@repo/seed', 'seed', '--data-migrate', '--baseline-stamp'],
-        300_000
-    );
-    scratch = new Pool({ connectionString: scratchUrl.toString() });
+    database.pnpm({
+        cwd: repoRoot,
+        args: ['--filter', '@repo/seed', 'seed', '--data-migrate', '--baseline-stamp'],
+        timeout: 300_000
+    });
+    scratch = new Pool({ connectionString: database.url });
 }, 900_000);
 
 afterAll(async () => {
     await scratch?.end();
-    await admin.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
-    await admin.end();
+    await database.drop();
 });
 
 describe('HOS-2037 fresh database (migrate, seed, data-migrate)', () => {
