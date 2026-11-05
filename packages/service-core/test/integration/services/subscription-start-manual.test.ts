@@ -227,6 +227,72 @@ describe('manual S1 signup', () => {
         expect(cancel).toHaveBeenCalledTimes(0);
     });
 
+    it('AC:V7:17 closes a declined card attempt and its live provider authorization before manual S1', async () => {
+        const { user, version, option } = await seedChoice();
+        const { ports, cancel } = makePorts();
+        const prior = await subscriptionModel.createPendingAuthorization({
+            userId: user.id,
+            vertical: 'partner',
+            planVersionId: version.id,
+            billingOptionId: option.id,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(openedAt.getTime() + 72 * 60 * 60 * 1000)
+        });
+        const authorization = await ports.provider.authorize({
+            reference: prior.subscription.id,
+            amount: { amountMinor: 3000000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Manual signup plan',
+            returnUrl: 'https://example.test'
+        });
+        await subscriptionModel.recordAuthorizationResult({
+            idempotencyKey: prior.idempotencyKey,
+            subscriptionId: prior.subscription.id,
+            provider: 'MERCADO_PAGO',
+            providerId: authorization.authorizationId,
+            result: { authorizationId: authorization.authorizationId },
+            completedAt: openedAt
+        });
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'CHARGE_DECLINED' })
+            .where(eq(subscriptions.id, prior.subscription.id));
+
+        await expect(
+            startManualSubscription({ userId: user.id, billingOptionId: option.id }, ports)
+        ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_CLOSING' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(cancel).toHaveBeenCalledWith({ authorizationId: authorization.authorizationId });
+        expect(
+            (
+                await ports.provider.readAuthorization({
+                    authorizationId: authorization.authorizationId
+                })
+            ).snapshot.status
+        ).toBe('cancelled');
+        const result = await startManualSubscription(
+            { userId: user.id, billingOptionId: option.id },
+            ports
+        );
+        const [closedAttempt] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, prior.subscription.id));
+        const rows = await ownRows(user.id);
+        expect(rows.subscriptions).toHaveLength(2);
+        expect(
+            rows.subscriptions.find(({ id }) => id === result.subscriptionId)?.paymentMethod
+        ).toBe('MANUAL');
+        expect(closedAttempt?.status).toBe('CHARGE_DECLINED');
+        expect(
+            (
+                await ports.provider.readAuthorization({
+                    authorizationId: authorization.authorizationId
+                })
+            ).snapshot.status
+        ).toBe('cancelled');
+    });
+
     it('retries the same option by returning the same subscription and installment', async () => {
         const { user, option } = await seedChoice();
         const { ports } = makePorts();
