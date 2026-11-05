@@ -1,0 +1,62 @@
+---
+/**
+ * @file VenueJsonLd.astro
+ * @description Venue JSON-LD component for venue detail pages.
+ * Generates the schema.org object for the listing, with its `@type` derived
+ * from the venue's own type (HOS-1787 leaf 6.1, F-V1-040).
+ *
+ * The shape lives in `buildVenueStructuredData`, a pure function that can be
+ * unit-tested directly; this component only forwards its props to it.
+ *
+ * SPEC-268 F1: new component for venue detail pages (renamed from
+ * `RestaurantJsonLd` once it stopped always emitting `Restaurant`).
+ */
+
+import JsonLd from './JsonLd.astro';
+import {
+    type VenueAggregateRating,
+    buildVenueStructuredData
+} from '@/lib/seo/venue-jsonld';
+
+interface Props {
+    readonly name: string;
+    readonly description: string;
+    readonly url: string;
+    /** Venue type from the public payload (`VenueCardData.type`). */
+    readonly type: string;
+    readonly image?: string;
+    readonly priceRange?: string;
+    readonly servesCuisine?: string;
+    readonly telephone?: string;
+    readonly hasMenu?: string;
+    readonly aggregateRating?: VenueAggregateRating;
+}
+
+const {
+    name,
+    description,
+    url,
+    type,
+    image,
+    priceRange,
+    servesCuisine,
+    telephone,
+    hasMenu,
+    aggregateRating
+} = Astro.props;
+
+const structuredData = buildVenueStructuredData({
+    name,
+    description,
+    url,
+    type,
+    image,
+    priceRange,
+    servesCuisine,
+    telephone,
+    hasMenu,
+    aggregateRating
+});
+---
+
+<JsonLd data={structuredData} />
