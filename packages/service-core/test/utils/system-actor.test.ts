@@ -86,6 +86,24 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
         expect(() => makeActor([PermissionEnum.PARTNER_CONFIGURE_BILLING])).toThrow(/ACC_6$/);
     });
 
+    it('AC:V8b:6 ACC:25 rejects the own Partner empty-presence permission for system actors', () => {
+        expectDefinitionError(
+            () => makeActor([PermissionEnum.PARTNER_EMPTY_PRESENCE]),
+            'ADMINISTRATIVE_PERMISSION',
+            PermissionEnum.PARTNER_EMPTY_PRESENCE
+        );
+        expect(() => makeActor([PermissionEnum.PARTNER_EMPTY_PRESENCE])).toThrow(/ACC_25$/);
+    });
+
+    it('AC:V8b:6 still rejects retiring partner.manage as former ACC_25', () => {
+        expectDefinitionError(
+            () => makeActor([PermissionEnum.PARTNER_MANAGE]),
+            'ADMINISTRATIVE_PERMISSION',
+            PermissionEnum.PARTNER_MANAGE
+        );
+        expect(() => makeActor([PermissionEnum.PARTNER_MANAGE])).toThrow(/ACC_25$/);
+    });
+
     it.each([
         PermissionEnum.USER_DELETE,
         PermissionEnum.USER_HARD_DELETE

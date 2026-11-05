@@ -110,8 +110,8 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         pendingOwnPermission: null
     },
     ACC_25: {
-        permissions: [PermissionEnum.PARTNER_MANAGE],
-        pendingOwnPermission: 'V8b (HOS-1498)'
+        permissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE],
+        pendingOwnPermission: null
     },
     ACC_26: {
         permissions: [PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE],
@@ -132,8 +132,9 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
  * to staff roles, so they stay administrative: a system actor must keep being
  * refused them even though no action row lists them any more. Three actions
  * left entries here: action 23 moved to `LISTING_PURGE_ON_REQUEST` (V8a.2,
- * HOS-1493), action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494), and
- * action 26 moved to `USER_MANAGE_SUPER_ADMIN_ROLE` (V5.6, HOS-1460); ADMIN
+ * HOS-1493), action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494),
+ * action 25 moved to `PARTNER_EMPTY_PRESENCE` (V8b.3, HOS-1498), and action 26
+ * moved to `USER_MANAGE_SUPER_ADMIN_ROLE` (V5.6, HOS-1460); ADMIN
  * retains the old permission for managing roles other than SUPER_ADMIN.
  * An entry leaves this list only once no role is granted its permission.
  */
@@ -147,7 +148,8 @@ export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
     { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
     { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
     { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
-    { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
+    { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' },
+    { permission: PermissionEnum.PARTNER_MANAGE, formerAction: 'ACC_25' }
 ];
 
 /**
