@@ -327,7 +327,9 @@
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.GASTRONOMY.description": 0,
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.GASTRONOMY.pageTitle": 1,
                 "packages/i18n/src/locales/pt/event.json#listPage.gastronomy": 1,
-                "packages/i18n/src/locales/pt/footer.json#categoryGastronomy": 1
+                "packages/i18n/src/locales/pt/footer.json#categoryGastronomy": 1,
+                "packages/i18n/src/locales/es/venue.json#owner.businessLines.food.label": 1,
+                "packages/i18n/src/locales/pt/venue.json#owner.businessLines.food.label": 1
             }
         },
         "b": {
@@ -413,5 +415,5 @@
     },
     "historyCount": 87,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "40d6ee32fd61dfc170cd36f12716e6af115ae539547bd78e19307fa761a2bf45"
+    "ledgerFingerprint": "85496b7e1f3a12dbb7105e692c34ae7f71bffbd14bc98b826520817c1d8a1b61"
 }
