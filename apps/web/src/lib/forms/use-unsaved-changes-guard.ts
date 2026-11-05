@@ -108,6 +108,12 @@ export interface UseUnsavedChangesGuardOptions {
      * already carries its own count in that case.
      */
     readonly count?: number;
+    /**
+     * Also intercept `data-astro-reload` links. Defaults to
+     * `!includeBeforeUnload`: a guard with no native prompt must catch full
+     * loads itself, one with the native prompt is already covered.
+     */
+    readonly interceptReloadLinks?: boolean;
     /** Rebuilds this warning's copy when a save changes its count. */
     readonly copyForCount?: (count: number) => LeaveWarningCopy;
     /**
@@ -151,6 +157,7 @@ export function useUnsavedChangesGuard({
     kind = 'unsaved-changes',
     count,
     copyForCount,
+    interceptReloadLinks = !includeBeforeUnload,
     locale
 }: UseUnsavedChangesGuardOptions): void {
     useEffect(() => {
@@ -180,6 +187,7 @@ export function useUnsavedChangesGuard({
             locale,
             copy: { message, title, confirmLabel, cancelLabel },
             copyForCount,
+            interceptReloadLinks,
             onConfirm,
             onCancel
         });
@@ -202,6 +210,7 @@ export function useUnsavedChangesGuard({
         kind,
         count,
         copyForCount,
+        interceptReloadLinks,
         locale
     ]);
 }

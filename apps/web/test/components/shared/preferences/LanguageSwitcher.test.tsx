@@ -3,9 +3,19 @@
  * @description Tests the segmented locale switcher.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
+import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
 import { LanguageSwitcher } from '../../../../src/components/shared/preferences/LanguageSwitcher.client';
+
+const { showConfirmationDialogMock } = vi.hoisted(() => ({
+    showConfirmationDialogMock: vi.fn<(options: unknown) => Promise<boolean>>()
+}));
+
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: showConfirmationDialogMock
+}));
 
 describe('LanguageSwitcher', () => {
     beforeEach(() => {
@@ -67,8 +77,12 @@ describe('LanguageSwitcher', () => {
         );
         // Prevent navigation
         const link = screen.getByRole('link', { name: 'English' });
-        link.addEventListener('click', (event) => event.preventDefault());
+        // On document (bubble) so it runs after React's root listener; a listener on
+        // the link itself would mark the event prevented before the component sees it.
+        const preventNavigation = (event: Event): void => event.preventDefault();
+        document.addEventListener('click', preventNavigation);
         fireEvent.click(link);
+        document.removeEventListener('click', preventNavigation);
         expect(localStorage.getItem('preferredLocale')).toBe('en');
     });
 
@@ -83,8 +97,10 @@ describe('LanguageSwitcher', () => {
             />
         );
         const link = screen.getByRole('link', { name: 'English' });
-        link.addEventListener('click', (event) => event.preventDefault());
+        const preventNavigation = (event: Event): void => event.preventDefault();
+        document.addEventListener('click', preventNavigation);
         fireEvent.click(link);
+        document.removeEventListener('click', preventNavigation);
 
         expect(listener).toHaveBeenCalledTimes(1);
         const event = listener.mock.calls[0]?.[0] as CustomEvent;
@@ -109,5 +125,76 @@ describe('LanguageSwitcher', () => {
 
         expect(listener).not.toHaveBeenCalled();
         window.removeEventListener('preferences:change', listener);
+    });
+
+    describe('on the Fotos page with photos missing alt text (HOS-2032)', () => {
+        const mountGuard = (): void => {
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: 'acc-language-switch',
+                    featuredItem: null,
+                    galleryItems: [
+                        {
+                            id: 'g1',
+                            url: 'https://example.com/g1.jpg',
+                            publicId: 'g1',
+                            isFeatured: false,
+                            alt: ''
+                        }
+                    ]
+                })
+            );
+        };
+
+        beforeEach(() => {
+            showConfirmationDialogMock.mockReset();
+            window.sessionStorage.clear();
+            __resetLeaveWarningRegistry();
+            // jsdom cannot navigate; swallow the default action of the replayed click.
+            document.addEventListener('click', swallowNavigation);
+        });
+
+        afterEach(() => {
+            document.removeEventListener('click', swallowNavigation);
+            __resetLeaveWarningRegistry();
+            window.sessionStorage.clear();
+        });
+
+        function swallowNavigation(event: Event): void {
+            if (!event.defaultPrevented) event.preventDefault();
+        }
+
+        it('asks before switching language and changes nothing when the host stays', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            mountGuard();
+            render(
+                <LanguageSwitcher
+                    locale="es"
+                    currentPath="/es/"
+                />
+            );
+
+            fireEvent.click(screen.getByRole('link', { name: 'English' }));
+            await waitFor(() => expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1));
+
+            expect(localStorage.getItem('preferredLocale')).toBeNull();
+        });
+
+        it('persists the locale once the host confirms leaving', async () => {
+            showConfirmationDialogMock.mockResolvedValue(true);
+            mountGuard();
+            render(
+                <LanguageSwitcher
+                    locale="es"
+                    currentPath="/es/"
+                />
+            );
+
+            fireEvent.click(screen.getByRole('link', { name: 'English' }));
+
+            await waitFor(() => expect(localStorage.getItem('preferredLocale')).toBe('en'));
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
     });
 });

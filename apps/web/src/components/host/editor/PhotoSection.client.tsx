@@ -166,6 +166,7 @@ export function PhotoSection({
         isGalleryFull,
         capUpsell,
         opsReady,
+        mediaLoadSucceeded,
         anyOpInFlight,
         featuredInputRef,
         galleryInputRef,
@@ -193,7 +194,13 @@ export function PhotoSection({
 
     // HOS-1018: ask before leaving or saving while required photo alt text is
     // incomplete. The host can continue, or stay and focus the first photo.
-    usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems, opsReady });
+    usePhotoAltWarningGuard({
+        locale,
+        accommodationId,
+        featuredItem,
+        galleryItems,
+        mediaReady: mediaLoadSucceeded
+    });
 
     // HOS-1183: the main photo is a blocking publish requirement, and this is
     // the realistic last one — hosts fill text first and upload photos last. So
@@ -208,7 +215,7 @@ export function PhotoSection({
     const hasHydratedRef = useRef(false);
 
     useEffect(() => {
-        // `opsReady` means persisted media loaded successfully. Before it flips, a null →
+        // `opsReady` is the hook's hydration flag. Before it flips, a null →
         // non-null change is the API answering, not the host uploading — firing
         // there would open the dialog on page load for a listing that already
         // had its cover.

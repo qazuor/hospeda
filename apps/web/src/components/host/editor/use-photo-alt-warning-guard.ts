@@ -40,8 +40,8 @@ export interface UsePhotoAltWarningGuardParams {
     readonly accommodationId: string;
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
-    /** False until listMedia replaces SSR placeholders with persisted rows. */
-    readonly opsReady?: boolean;
+    /** False until listMedia succeeded and replaced SSR placeholders with persisted rows. */
+    readonly mediaReady?: boolean;
 }
 
 /** Counts featured + gallery items whose `alt` is empty or whitespace-only. */
@@ -98,35 +98,48 @@ function writeDismissed(accommodationId: string): void {
     }
 }
 
-/** Opens and focuses the first photo whose required alt text is incomplete. */
-let focusRetryTimer: number | undefined;
-let focusFieldTimer: number | undefined;
+/** Pending retry for {@link focusFirstIncompletePhoto}; module-level so a new request replaces it. */
+let focusTimer: number | undefined;
 
 function clearFocusTimers(): void {
-    if (focusRetryTimer !== undefined) window.clearTimeout(focusRetryTimer);
-    if (focusFieldTimer !== undefined) window.clearTimeout(focusFieldTimer);
-    focusRetryTimer = undefined;
-    focusFieldTimer = undefined;
+    if (focusTimer !== undefined) window.clearTimeout(focusTimer);
+    focusTimer = undefined;
 }
 
+/**
+ * Opens and focuses the alt field of the first photo whose required alt text
+ * is incomplete.
+ *
+ * Polls instead of focusing once: the toggle is disabled while an operation is
+ * in flight, and the textarea stays disabled while its own save is pending. A
+ * save-triggered dialog is answered while `isSaving` is still true, so a single
+ * `focus()` call on a disabled element would silently do nothing. Gives up
+ * after ~5 seconds.
+ */
 function focusFirstIncompletePhoto(): void {
     clearFocusTimers();
     let attempts = 0;
-    const openAndFocus = (): void => {
+    const retry = (): void => {
+        if (attempts++ < 100) focusTimer = window.setTimeout(attempt, 50);
+    };
+    const attempt = (): void => {
+        focusTimer = undefined;
         const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
         const toggle = first?.querySelector<HTMLButtonElement>('button[aria-expanded]');
         if (!first || !toggle?.isConnected) return;
-        if (toggle.disabled) {
-            if (attempts++ < 100) focusRetryTimer = window.setTimeout(openAndFocus, 50);
+        if (toggle.getAttribute('aria-expanded') !== 'true') {
+            if (!toggle.disabled) toggle.click();
+            retry();
             return;
         }
-        if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
-        focusFieldTimer = window.setTimeout(() => {
-            first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
-            focusFieldTimer = undefined;
-        }, 0);
+        const field = first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]');
+        if (!field || field.disabled) {
+            retry();
+            return;
+        }
+        field.focus();
     };
-    openAndFocus();
+    attempt();
 }
 
 /**
@@ -147,14 +160,14 @@ export function usePhotoAltWarningGuard({
     accommodationId,
     featuredItem,
     galleryItems,
-    opsReady = true
+    mediaReady = true
 }: UsePhotoAltWarningGuardParams): void {
     useEffect(() => clearFocusTimers, []);
     const { t, tPlural } = createTranslations(locale);
 
     const missingAltCount = useMemo(
-        () => (opsReady ? countMissingAlt(featuredItem, galleryItems) : 0),
-        [featuredItem, galleryItems, opsReady]
+        () => (mediaReady ? countMissingAlt(featuredItem, galleryItems) : 0),
+        [featuredItem, galleryItems, mediaReady]
     );
 
     // Re-read only when the listing id changes. Confirmation updates local

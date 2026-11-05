@@ -168,9 +168,8 @@ describe('usePhotoAltWarningGuard', () => {
             const anchor = addAnchor('/es/mi-cuenta/propiedades/');
             clickAnchor(anchor);
             await flushRouterImport();
-            await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
-            expect(document.activeElement).toBe(field());
+            await waitFor(() => expect(document.activeElement).toBe(field()));
         });
 
         it('waits for an in-flight operation to enable the toggle before focusing', async () => {
@@ -236,29 +235,71 @@ describe('usePhotoAltWarningGuard', () => {
             await flushRouterImport();
             clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
             await flushRouterImport();
-            await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
-            expect(document.activeElement).toBe(field);
+            await waitFor(() => expect(document.activeElement).toBe(field));
+        });
+
+        it('waits for a pending save to re-enable the alt field before focusing it', async () => {
+            // The dialog is answered while the editor's own save is still
+            // awaiting it, so the textarea is disabled at the moment the guard
+            // asks for focus (HOS-2032 review round 7).
+            let resolveDialog!: (confirmed: boolean) => void;
+            showConfirmationDialogMock.mockImplementation(
+                () =>
+                    new Promise<boolean>((resolve) => {
+                        resolveDialog = resolve;
+                    })
+            );
+            const photo = buildItem({ id: 'saving-photo', alt: '' });
+            const { container, getByText } = render(
+                <PhotoMetadataEditor
+                    locale="es"
+                    item={photo}
+                    disabled={false}
+                    toggleAriaLabel="Editar textos"
+                    closeAriaLabel="Cerrar textos"
+                    onSave={() => requestLeaveWarning('photo-alt')}
+                />
+            );
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [photo]
+                })
+            );
+            await flushRouterImport();
+            fireEvent.click(container.querySelector('button')!);
+            const field = () =>
+                container.querySelector<HTMLTextAreaElement>('#photo-alt-saving-photo')!;
+            fireEvent.click(getByText('Guardar'));
+            await waitFor(() => expect(field().disabled).toBe(true));
+
+            await act(async () => resolveDialog(false));
+
+            await waitFor(() => expect(field().disabled).toBe(false));
+            await waitFor(() => expect(document.activeElement).toBe(field()));
         });
 
         it('does not warn about SSR placeholders before media hydration', async () => {
             const galleryItems = [buildItem({ id: '', alt: undefined })];
             const { rerender } = renderHook(
-                ({ opsReady }: { opsReady: boolean }) =>
+                ({ mediaReady }: { mediaReady: boolean }) =>
                     usePhotoAltWarningGuard({
                         locale: 'es',
                         accommodationId: ACCOMMODATION_ID,
                         featuredItem: null,
                         galleryItems,
-                        opsReady
+                        mediaReady
                     }),
-                { initialProps: { opsReady: false } }
+                { initialProps: { mediaReady: false } }
             );
             const anchor = addAnchor('/es/mi-cuenta/propiedades/');
             expect(clickAnchor(anchor).defaultPrevented).toBe(false);
             expect(showConfirmationDialogMock).not.toHaveBeenCalled();
 
-            rerender({ opsReady: true });
+            rerender({ mediaReady: true });
             expect(clickAnchor(anchor).defaultPrevented).toBe(true);
         });
 

@@ -245,6 +245,53 @@ describe('leave warnings on a page that mounts two guards', () => {
         });
     });
 
+    describe('cancelling', () => {
+        /** A closed incomplete-photo panel whose toggle records being opened. */
+        function addIncompletePhotoPanel(): ReturnType<typeof vi.fn> {
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('data-photo-metadata-missing', 'true');
+            const toggle = document.createElement('button');
+            toggle.setAttribute('aria-expanded', 'false');
+            const clicked = vi.fn();
+            toggle.addEventListener('click', () => {
+                toggle.setAttribute('aria-expanded', 'true');
+                clicked();
+            });
+            wrapper.appendChild(toggle);
+            document.body.appendChild(wrapper);
+            return clicked;
+        }
+
+        it('does NOT jump to a photo from the combined dialog (neutral "keep editing")', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const toggleClicked = addIncompletePhotoPanel();
+            renderBothGuards({ videoIsDirty: true, galleryItems: photosWithoutAlt(2) });
+            await flushRouterImport();
+
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 120)));
+
+            expect(showConfirmationDialogMock.mock.calls[0]?.[0].cancelLabel).toBe(
+                'Seguir editando'
+            );
+            expect(toggleClicked).not.toHaveBeenCalled();
+        });
+
+        it('jumps to the first photo from the photo-only dialog ("Completar ahora")', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const toggleClicked = addIncompletePhotoPanel();
+            renderBothGuards({ videoIsDirty: false, galleryItems: photosWithoutAlt(2) });
+            await flushRouterImport();
+
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 120)));
+
+            expect(toggleClicked).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('when only ONE condition holds', () => {
         it('shows the plain unsaved-changes dialog, with no mention of photos', async () => {
             showConfirmationDialogMock.mockResolvedValue(false);

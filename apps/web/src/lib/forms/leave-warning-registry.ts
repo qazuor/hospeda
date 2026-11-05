@@ -96,8 +96,22 @@ export interface LeaveWarningEntry {
      * one whose copy happened to be displayed.
      */
     readonly onConfirm?: () => void;
-    /** Run when the host dismisses the dialog and stays on the current page. */
+    /**
+     * Run when the host dismisses the dialog and stays on the current page.
+     * Only runs when this entry's own copy was the one shown: in a combined
+     * dialog the cancel label is neutral ("keep editing") and must not trigger
+     * an entry-specific action such as jumping to a photo.
+     */
     readonly onCancel?: () => void;
+    /**
+     * Also intercept links marked `data-astro-reload` (full page loads such as
+     * the language switcher or the Fotos "back" links). Only meaningful for
+     * entries that do NOT raise the native `beforeunload` prompt: for those, a
+     * full load would otherwise leave with no warning at all. Entries that do
+     * use `beforeunload` already get the browser's prompt there, so they leave
+     * this unset to avoid asking twice.
+     */
+    readonly interceptReloadLinks?: boolean;
 }
 
 /**
@@ -114,7 +128,17 @@ const registrations = new Map<symbol, LeaveWarningEntry>();
 
 let listenerInstalled = false;
 let dialogOpen = false;
+/** True while a confirmed full-load link click is replayed; see `handleClickCapture`. */
+let replayingConfirmedClick = false;
 let navigate: NavigateFn | null = null;
+
+/** True when at least one active entry opted in to intercepting full-load links. */
+function wantsReloadLinks(): boolean {
+    for (const entry of registrations.values()) {
+        if (entry.interceptReloadLinks) return true;
+    }
+    return false;
+}
 
 /**
  * Returns true when a click should be left alone: anything the router itself
@@ -130,7 +154,10 @@ function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolea
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return true;
     if (anchor.hasAttribute('download')) return true;
     if (anchor.target && anchor.target !== '_self') return true;
-    if (anchor.dataset.astroReload !== undefined) return true;
+    // A forced full load leaves the page just like a soft navigation does. It is
+    // only ignored when no active entry opted in to covering it (see
+    // `interceptReloadLinks`), because `beforeunload` already covers the others.
+    if (anchor.dataset.astroReload !== undefined && !wantsReloadLinks()) return true;
 
     const href = anchor.getAttribute('href');
     if (!href) return true;
@@ -227,7 +254,7 @@ function warmRouter(): void {
 
 /** The one and only capture-phase click listener. */
 function handleClickCapture(event: MouseEvent): void {
-    if (registrations.size === 0) return;
+    if (registrations.size === 0 || replayingConfirmedClick) return;
 
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -242,13 +269,25 @@ function handleClickCapture(event: MouseEvent): void {
 
     const entries = activeEntries();
     const href = anchor.href;
+    const reload = anchor.dataset.astroReload !== undefined;
 
     void requestEntriesConfirmation(entries).then((confirmed) => {
         if (!confirmed) {
             return;
         }
 
-        if (navigate) {
+        // A forced full load must stay a full load, and the anchor's own click
+        // handlers (the language switcher persists the chosen locale) must run
+        // only now that the host confirmed. Replaying the click lets both
+        // happen natively; the flag keeps the replay from being intercepted.
+        if (reload) {
+            replayingConfirmedClick = true;
+            try {
+                anchor.click();
+            } finally {
+                replayingConfirmedClick = false;
+            }
+        } else if (navigate) {
             navigate(href);
         } else {
             window.location.href = href;
@@ -264,7 +303,9 @@ async function requestEntriesConfirmation(entries: readonly LeaveWarningEntry[])
         const confirmed = await showConfirmationDialog(resolveCopy(entries));
         for (const entry of entries) {
             if (confirmed) entry.onConfirm?.();
-            else entry.onCancel?.();
+            // A combined dialog carries a neutral cancel label, so entry-specific
+            // cancel actions only run when that entry's own copy was shown.
+            else if (entries.length === 1) entry.onCancel?.();
         }
         return confirmed;
     } finally {
@@ -324,5 +365,6 @@ export function __resetLeaveWarningRegistry(): void {
         listenerInstalled = false;
     }
     dialogOpen = false;
+    replayingConfirmedClick = false;
     navigate = null;
 }
