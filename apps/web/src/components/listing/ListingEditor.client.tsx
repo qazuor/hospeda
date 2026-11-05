@@ -44,13 +44,12 @@
 import type { OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, VenueOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MeetingPointSection } from '@/components/experience/MeetingPointSection.client';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
-import { buildListingEditorRegistry } from '@/lib/editor/listing-editor-registry';
+import { createListingEditorRegistry } from '@/lib/editor/listing-editor-sections';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -61,13 +60,10 @@ import {
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
 import { addToast } from '@/store/toast-store';
-import { AmenitiesSection } from './editor/AmenitiesSection.client';
-import { BasicInfoSection } from './editor/BasicInfoSection.client';
-import { ContactSection } from './editor/ContactSection.client';
 import {
+    LISTING_AGGREGATE_FIELDS,
     LISTING_FIELD_ID_SUFFIXES,
-    LISTING_FIELD_PREFIX,
-    OPENING_HOURS_AGGREGATE_FIELDS
+    LISTING_FIELD_PREFIX
 } from './editor/field-ids';
 import {
     type ContactValues,
@@ -79,20 +75,10 @@ import {
     type ListingEditorFormSectionId,
     restrictPayloadToSection
 } from './editor/listing-section-payload';
-import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
-import {
-    joinDuration,
-    PracticalInfoSection,
-    splitDuration
-} from './editor/PracticalInfoSection.client';
-import { PriceSection } from './editor/PriceSection.client';
-import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
+import { joinDuration, splitDuration } from './editor/PracticalInfoSection.client';
+import { LISTING_SECTION_RENDERERS } from './editor/section-renderers';
 import styles from './ListingEditor.module.css';
-import {
-    type ListingI18nValues,
-    ListingTranslationPanel,
-    parseListingI18nValues
-} from './ListingTranslationPanel.client';
+import { type ListingI18nValues, parseListingI18nValues } from './ListingTranslationPanel.client';
 
 export interface ListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
@@ -178,6 +164,31 @@ function strArrayField(source: Record<string, unknown>, key: string): readonly s
     const value = source[key];
     if (!Array.isArray(value)) return [];
     return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/** Read one `{ es, en, pt }` JSONB field as three form-friendly strings. */
+function i18nTextField(
+    source: Record<string, unknown>,
+    key: string
+): { readonly es: string; readonly en: string; readonly pt: string } {
+    const value = source[key];
+    const record =
+        typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+
+    return {
+        es: strField(record, 'es'),
+        en: strField(record, 'en'),
+        pt: strField(record, 'pt')
+    };
+}
+
+/** Whether every locale of a localized note is empty. */
+function isEmptyI18nText(value: {
+    readonly es: string;
+    readonly en: string;
+    readonly pt: string;
+}): boolean {
+    return value.es.trim() === '' && value.en.trim() === '' && value.pt.trim() === '';
 }
 
 /** Shallow equality for the two checklist arrays, used by the PATCH diff. */
@@ -378,6 +389,33 @@ function buildPatchPayload({
         if (current.menuUrl !== baseline.menuUrl) {
             payload.menuUrl = current.menuUrl || null;
         }
+        // HOS-1787 leaf 5.1 — nightInfo. Every writable field clears to `null`;
+        // `entryPriceUpdatedAt` is server-managed and never appears here.
+        // Changing `entryKind` to `null` is what makes the server drop both the
+        // price and its timestamp (4.2), so the price is not forcibly cleared
+        // alongside it.
+        if (current.entryKind !== baseline.entryKind) {
+            payload.entryKind = current.entryKind || null;
+        }
+        if (current.entryPriceFrom !== baseline.entryPriceFrom) {
+            payload.entryPriceFrom = current.entryPriceFrom;
+        }
+        if (current.minAge !== baseline.minAge) {
+            payload.minAge = current.minAge;
+        }
+        if (current.dressCode !== baseline.dressCode) {
+            payload.dressCode = current.dressCode || null;
+        }
+        if (!sameValue(current.entryNoteI18n, baseline.entryNoteI18n)) {
+            payload.entryNoteI18n = isEmptyI18nText(current.entryNoteI18n)
+                ? null
+                : current.entryNoteI18n;
+        }
+        if (!sameValue(current.dressCodeNoteI18n, baseline.dressCodeNoteI18n)) {
+            payload.dressCodeNoteI18n = isEmptyI18nText(current.dressCodeNoteI18n)
+                ? null
+                : current.dressCodeNoteI18n;
+        }
     } else {
         if (current.isPriceOnRequest !== baseline.isPriceOnRequest) {
             payload.isPriceOnRequest = current.isPriceOnRequest;
@@ -513,7 +551,7 @@ export function ListingEditor({
         // every rejection arrives at a nested path and nothing read the bare
         // key — the section's <FieldError> and the focus move were both dead.
         // Rolling the first nested message up revives both.
-        aggregateFields: OPENING_HOURS_AGGREGATE_FIELDS
+        aggregateFields: LISTING_AGGREGATE_FIELDS
     });
 
     // TYPE-WORKAROUND: the detail is a venue|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
@@ -564,6 +602,21 @@ export function ListingEditor({
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
         priceUnit: strField(data, 'priceUnit'),
+        // HOS-1787 leaf 5.1: nightlife fields. The two notes are always all
+        // three locales as strings; clearing every locale is a `null` in the
+        // PATCH, so `buildPatchPayload` decides that, not this loader.
+        entryKind: strField(data, 'entryKind'),
+        entryNoteI18n: i18nTextField(data, 'entryNoteI18n'),
+        entryPriceFrom: numField(data, 'entryPriceFrom'),
+        entryPriceUpdatedAt:
+            typeof data.entryPriceUpdatedAt === 'string'
+                ? data.entryPriceUpdatedAt
+                : data.entryPriceUpdatedAt instanceof Date
+                  ? data.entryPriceUpdatedAt.toISOString()
+                  : null,
+        minAge: numField(data, 'minAge'),
+        dressCode: strField(data, 'dressCode'),
+        dressCodeNoteI18n: i18nTextField(data, 'dressCodeNoteI18n'),
         // HOS-1048: experience-only; a venue listing simply reads them as
         // empty/null and `buildPatchPayload` never emits them for that vertical.
         meetingPoint: strField(data, 'meetingPoint'),
@@ -604,9 +657,6 @@ export function ListingEditor({
     // the change without a full page reload.
     const [baseline, setBaseline] = useState<ListingEditData>(buildInitialEditData);
 
-    // Only the values still read by the orchestrator's own JSX. Everything else
-    // reaches its section component through the `data` prop (HOS-258 PR 2).
-    const { openingHours, amenityIds, featureIds, i18nValues } = formData;
     const currentPublicationStatus = String(data.publicationStatus ?? 'DRAFT');
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
@@ -823,7 +873,7 @@ export function ListingEditor({
     const handleCancel = useCallback(() => {
         window.location.href = buildEditorHubUrl({
             locale,
-            registry: buildListingEditorRegistry({ vertical }),
+            registry: createListingEditorRegistry({ vertical, sections: [] }),
             entityId: listingId
         });
     }, [locale, vertical, listingId]);
@@ -849,133 +899,23 @@ export function ListingEditor({
             aria-busy={isSaving}
             noValidate
         >
-            {sectionId === 'basicInfo' && (
-                <BasicInfoSection
-                    locale={locale}
-                    vertical={vertical}
-                    data={formData}
-                    destinations={destinations}
-                    destinationsLoadFailed={destinationsLoadFailed}
-                    errors={fieldErrors}
-                    onFieldChange={onFieldChange}
-                    shouldOfferSlugRefresh={shouldOfferSlugRefresh}
-                />
-            )}
-
-            {/*
-             * HOS-1048: experience-only. The gate is the SHAPE of the schema,
-             * not an entitlement — `meetingPoint` exists on
-             * `ExperienceOwnerUpdateInputSchema` and not on the venue one,
-             * so rendering it for a restaurant would offer a field every save
-             * silently strips. Since HOS-1080 the vertical gate lives one level
-             * up as well: `buildListingEditorSections` leaves this section out
-             * of a venue registry entirely, so the route redirects instead
-             * of rendering an empty page. The check stays here too because this
-             * island is what decides what to send. The meeting point itself is
-             * free from the basic tier; only the map that draws it is paid
-             * (HOS-1049).
-             */}
-            {sectionId === 'meetingPoint' && vertical === 'experience' && (
-                <MeetingPointSection
-                    locale={locale}
-                    data={formData}
-                    errors={fieldErrors}
-                    onFieldChange={onFieldChange}
-                />
-            )}
-
-            {/*
-             * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only on the
-             * same SHAPE gate as the meeting point above — the keys live on
-             * `ExperienceOwnerUpdateInputSchema` and not on the venue one.
-             * NOT an entitlement gate: all four ship from the basic tier by
-             * owner decision (2026-09-01), so there is no plan check here and
-             * there must not be one.
-             */}
-            {sectionId === 'practicalInfo' && vertical === 'experience' && (
-                <PracticalInfoSection
-                    locale={locale}
-                    data={formData}
-                    errors={fieldErrors}
-                    onFieldChange={onFieldChange}
-                />
-            )}
-
-            {/*
-             * Contact and social networks share one page, exactly as the
-             * accommodation editor's `contacto` route does — they are the same
-             * question ("how does someone reach you?") and splitting them would
-             * have made two nav items out of one errand.
-             */}
-            {sectionId === 'contact' && (
-                <>
-                    <ContactSection
-                        locale={locale}
-                        contact={formData.contact}
-                        errors={fieldErrors}
-                        onContactChange={updateContact}
-                    />
-
-                    <SocialNetworksSection
-                        locale={locale}
-                        social={formData.social}
-                        errors={fieldErrors}
-                        onSocialChange={updateSocial}
-                    />
-                </>
-            )}
-
-            {sectionId === 'openingHours' && (
-                <OpeningHoursSection
-                    locale={locale}
-                    value={openingHours}
-                    errors={fieldErrors}
-                    onChange={(next) => {
-                        onFieldChange('openingHours', next);
-                    }}
-                />
-            )}
-
-            {sectionId === 'translations' && (
-                <ListingTranslationPanel
-                    locale={locale}
-                    initialValues={i18nValues}
-                    // HOS-902: display-only ES fallback. Sourced from the SAME
-                    // `formData` the rest of this form edits, but this section
-                    // never renders BasicInfoSection (one-section-per-route,
-                    // HOS-1080), so these four are always the load-time values
-                    // — never live-changing under the translations page.
-                    plainTextValues={{
-                        name: formData.name,
-                        summary: formData.summary,
-                        description: formData.description,
-                        richDescription: formData.richDescription
-                    }}
-                    onChange={handleI18nChange}
-                />
-            )}
-
-            {sectionId === 'amenities' && (
-                <AmenitiesSection
-                    locale={locale}
-                    amenities={amenities}
-                    features={features}
-                    selectedAmenityIds={amenityIds}
-                    selectedFeatureIds={featureIds}
-                    onToggleAmenity={toggleAmenity}
-                    onToggleFeature={toggleFeature}
-                />
-            )}
-
-            {sectionId === 'price' && (
-                <PriceSection
-                    locale={locale}
-                    vertical={vertical}
-                    data={formData}
-                    errors={fieldErrors}
-                    onFieldChange={onFieldChange}
-                />
-            )}
+            {LISTING_SECTION_RENDERERS[sectionId]({
+                locale,
+                vertical,
+                data: formData,
+                errors: fieldErrors,
+                destinations,
+                destinationsLoadFailed,
+                amenities,
+                features,
+                onFieldChange,
+                onContactChange: updateContact,
+                onSocialChange: updateSocial,
+                onToggleAmenity: toggleAmenity,
+                onToggleFeature: toggleFeature,
+                onI18nChange: handleI18nChange,
+                shouldOfferSlugRefresh
+            })}
 
             {formError && (
                 <p

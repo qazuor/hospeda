@@ -8,7 +8,7 @@
  * graph read backwards and trips the repo's circular-dependency guard.
  */
 
-import type { OpeningHours } from '@repo/schemas';
+import type { I18nText, OpeningHours } from '@repo/schemas';
 import type { ListingI18nValues } from '../ListingTranslationPanel.client';
 
 /**
@@ -72,6 +72,27 @@ export interface ListingEditData {
     readonly isPriceOnRequest: boolean;
     readonly priceFrom: number | null;
     readonly priceUnit: string;
+    /**
+     * Nightlife entry kind (`nightInfo`, HOS-1787 leaf 5.1): `''` when the
+     * owner has not said, otherwise one of `VenueEntryKindEnum`.
+     */
+    readonly entryKind: string;
+    /**
+     * Localized note about the entry. Always all three locales as strings —
+     * a half-written note ships with empty strings for the missing ones, and
+     * clearing every locale sends `null` (see `buildPatchPayload`).
+     */
+    readonly entryNoteI18n: I18nText;
+    /** Cover-charge floor in CENTAVOS, or `null` when not informed. */
+    readonly entryPriceFrom: number | null;
+    /** When the server last changed the price; read-only, never sent. */
+    readonly entryPriceUpdatedAt: string | null;
+    /** Lowest applicable entry age (13..30), or `null` when not informed. */
+    readonly minAge: number | null;
+    /** `''` when the owner has not said, otherwise one of `VenueDressCodeEnum`. */
+    readonly dressCode: string;
+    /** Localized note about the dress code; same shape as {@link entryNoteI18n}. */
+    readonly dressCodeNoteI18n: I18nText;
     /**
      * Where the experience starts (HOS-1048) — experience vertical only, since
      * `meetingPoint` is on `ExperienceOwnerUpdateInputSchema` and not on the

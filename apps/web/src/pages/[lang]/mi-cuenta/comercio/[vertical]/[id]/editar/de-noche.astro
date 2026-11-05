@@ -1,0 +1,51 @@
+---
+/**
+ * @file de-noche.astro
+ * @description Nightlife (`nightInfo`) section of the venue editor
+ * (HOS-1787 leaf 5.1).
+ *
+ * The catalog declares the section for venue only; an experience request for
+ * this slug never finds a match in its registry and the shared resolver sends
+ * it to the hub, exactly as it does for the other venue-only sections.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/de-noche/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveListingEditorPage({
+	astro: Astro,
+	sectionSlug: 'de-noche',
+});
+
+if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<ListingEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="de-noche"
+	title={t('listing.owner.editor.sectionNav.nightInfo', 'Info para salir')}
+>
+	<ListingEditor
+		client:load
+		sectionId="nightInfo"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</ListingEditorSectionLayout>

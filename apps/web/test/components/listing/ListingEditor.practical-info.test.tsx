@@ -204,10 +204,12 @@ describe('ListingEditor — practical details', () => {
             // HOS-1080: a section entry, not an in-page anchor. The ordering
             // still matters — it is the order the nav and the hub both render.
             const experienceIds = buildListingEditorSections({
-                vertical: 'experience'
+                vertical: 'experience',
+                sectionStates: {}
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'venue'
+                vertical: 'venue',
+                sectionStates: {}
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('practicalInfo');
