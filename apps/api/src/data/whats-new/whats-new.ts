@@ -152,6 +152,78 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4112
+    {
+        id: '2026-11-05-phone-numbers-as-you-write-them',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Escribí tu teléfono como siempre: nosotros lo ordenamos',
+            en: 'Type your phone number however you like: we tidy it up',
+            pt: 'Digite seu telefone como de costume: nós organizamos'
+        },
+        body: {
+            es: 'En **Contacto y redes** podés cargar el teléfono y el WhatsApp con espacios, guiones, paréntesis, el 0 o el 15, por ejemplo `3442 45-2345` o `+54 9 3442 45-2345`. Lo guardamos en un único formato. Si el número no es válido, te decimos cómo escribirlo.',
+            en: 'In **Contact and social**, you can enter your phone and WhatsApp with spaces, dashes, brackets, the leading 0 or the 15, for example `3442 45-2345` or `+54 9 3442 45-2345`. We save it in a single format. If the number is not valid, we tell you how to write it.',
+            pt: 'Em **Contato e redes**, você pode informar o telefone e o WhatsApp com espaços, hífens, parênteses, o 0 ou o 15, por exemplo `3442 45-2345` ou `+54 9 3442 45-2345`. Guardamos tudo em um único formato. Se o número não for válido, dizemos como escrevê-lo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4110
+    {
+        id: '2026-11-05-cover-photo-outside-the-cap',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'La foto principal ya no ocupa un lugar de tu galería',
+            en: 'Your main photo no longer takes a gallery slot',
+            pt: 'A foto principal não ocupa mais um lugar da sua galeria'
+        },
+        body: {
+            es: 'El tope de fotos de tu plan cuenta sólo la galería. Con un tope de 15, podés tener la foto principal y 15 fotos más, y el contador de **Fotos** muestra ese mismo número.',
+            en: 'Your plan’s photo cap now counts the gallery only. With a cap of 15, you can have your main photo plus 15 more, and the **Photos** counter shows that same number.',
+            pt: 'O limite de fotos do seu plano conta só a galeria. Com um limite de 15, você pode ter a foto principal e mais 15, e o contador de **Fotos** mostra esse mesmo número.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4113
+    {
+        id: '2026-11-05-photo-texts-panel-and-reminder',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los textos de tus fotos ahora se guardan y se cierran solos',
+            en: 'Your photo texts now save and close on their own',
+            pt: 'Os textos das suas fotos agora são salvos e fecham sozinhos'
+        },
+        body: {
+            es: 'En **Fotos**, al guardar los textos de una foto el panel se cierra solo. Y si salís de la sección con fotos sin descripción, te avisamos y podés completarlas en el momento o seguir igual.',
+            en: 'In **Photos**, saving a photo’s texts now closes the panel on its own. And if you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
+            pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho. E se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4114
+    {
+        id: '2026-11-05-video-link-in-every-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ahora podés sumar un video a tu alojamiento desde el plan Básico',
+            en: 'You can now add a video to your listing from the Basic plan',
+            pt: 'Agora você pode adicionar um vídeo à sua hospedagem a partir do plano Básico'
+        },
+        body: {
+            es: 'En **Fotos**, la sección **Videos** acepta enlaces de YouTube, Vimeo o Dailymotion en todos los planes, incluida la prueba gratis. El video se ve en tu ficha pública.',
+            en: 'In **Photos**, the **Videos** section takes YouTube, Vimeo or Dailymotion links on every plan, including the free trial. The video shows on your public listing.',
+            pt: 'Em **Fotos**, a seção **Vídeos** aceita links do YouTube, Vimeo ou Dailymotion em todos os planos, incluído o teste grátis. O vídeo aparece no seu anúncio público.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4009, #4097
     {
         id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
