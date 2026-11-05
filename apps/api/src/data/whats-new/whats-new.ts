@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4111, #4132
+    {
+        id: '2026-11-05-price-on-request-cards',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los alojamientos sin precio ahora dicen «Precio a consultar»',
+            en: 'Properties without a price now say “Price on request”',
+            pt: 'Hospedagens sem preço agora dizem “Preço sob consulta”'
+        },
+        body: {
+            es: 'En los listados, en la home y en el mapa, las tarjetas de alojamientos sin precio cargado muestran «Precio a consultar» y un botón **Consultar disponibilidad** que lleva a la ficha. Todas las tarjetas tienen el precio y el botón a la misma altura.',
+            en: 'In listings, on the home page and on the map, cards for properties with no price show “Price on request” and a **Check availability** button that takes you to the listing. Every card shows the price and the button at the same height.',
+            pt: 'Nas listagens, na página inicial e no mapa, os cartões de hospedagens sem preço mostram “Preço sob consulta” e um botão **Consultar disponibilidade** que leva ao anúncio. Todos os cartões mostram o preço e o botão na mesma altura.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4116
     {
         id: '2026-11-05-import-your-first-listing-without-a-plan',
@@ -206,7 +223,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #4113
+    // origin: #4113, #4133
     {
         id: '2026-11-05-photo-texts-panel-and-reminder',
         publishedAt: 'on-promotion',
@@ -218,9 +235,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Os textos das suas fotos agora são salvos e fecham sozinhos'
         },
         body: {
-            es: 'En **Fotos**, al guardar los textos de una foto el panel se cierra solo. Y si salís de la sección con fotos sin descripción, te avisamos y podés completarlas en el momento o seguir igual.',
-            en: 'In **Photos**, saving a photo’s texts now closes the panel on its own. And if you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
-            pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho. E se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
+            es: 'En **Fotos**, al guardar los textos de una foto el panel se cierra solo, sin avisos en el medio, así podés completarlas una tras otra. Si salís de la sección con fotos sin descripción, te avisamos y podés completarlas en el momento o seguir igual.',
+            en: 'In **Photos**, saving a photo’s texts now closes the panel on its own, with no prompts in between, so you can fill them in one after another. If you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
+            pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho, sem avisos no meio, para você completá-las uma após a outra. Se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
