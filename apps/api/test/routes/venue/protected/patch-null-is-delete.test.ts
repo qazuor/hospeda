@@ -227,9 +227,14 @@ async function expectStatus(response: Response, status: number): Promise<ApiEnve
 describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () => {
     let app: AppOpenAPI;
 
+    // HOS-2048: importing the whole app costs ~7s cold and crossed the 30s hookTimeout under CI contention; the venue router alone is ~5s.
     beforeAll(async () => {
-        const { initApp } = await import('../../../../src/app.js');
-        app = initApp();
+        const [{ createApp }, { protectedVenueRoutes }] = await Promise.all([
+            import('../../../../src/utils/create-app.js'),
+            import('../../../../src/routes/venue/index.js')
+        ]);
+        app = createApp();
+        app.route(BASE, protectedVenueRoutes);
     });
 
     beforeEach(() => {
