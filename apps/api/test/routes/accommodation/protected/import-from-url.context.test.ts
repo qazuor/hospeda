@@ -26,7 +26,10 @@ const {
     mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token'),
     gateState: { entitlement: true, limit: 10, count: 0 },
     accessState: { isNewUser: true },
-    capState: { consumeCalls: 0 }
+    capState: {
+        consumeCalls: 0,
+        count: async (_userId: string): Promise<number> => -1
+    }
 }));
 
 vi.mock(
@@ -43,6 +46,7 @@ vi.mock(
             windowMs: 24 * 60 * 60 * 1000,
             max: 5
         });
+        capState.count = (userId: string) => consumer.count(userId);
         return {
             ...actual,
             ACCOMMODATION_IMPORT_NEW_USER_MAX: 5,
@@ -208,7 +212,9 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
 
     it('allows an entitled user to use AI without consuming the new-user cap', async () => {
         gateState.entitlement = true;
-        accessState.isNewUser = false;
+        // Still a "new user" by history: the entitlement must win and leave the cap untouched.
+        accessState.isNewUser = true;
+        const userId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
         mockDispatchImportFromUrl.mockImplementation(
             async ({ context }: { context: ImportContext }) => {
                 await context.aiExtract?.({ text: 'page', locale: 'es' });
@@ -218,7 +224,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
 
         const res = await app.request(ENDPOINT, {
             method: 'POST',
-            headers: authHeaders(),
+            headers: authHeaders(userId),
             body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
         });
 
@@ -226,6 +232,7 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
         const body = (await res.json()) as { data: AccommodationImportResponse };
         expect(body.data.message).toBeUndefined();
         expect(capState.consumeCalls).toBe(0);
+        await expect(capState.count(userId)).resolves.toBe(0);
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
@@ -258,9 +265,10 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
             ((await res.json()) as { data: AccommodationImportResponse }).data.message
         ).toContain('no está incluida');
         expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
+        expect(capState.consumeCalls).toBe(0);
     });
 
-    it('allows five new-user imports, then rejects the sixth before scraping', async () => {
+    it('allows five new-user AI imports, then degrades the sixth to structured with the notice', async () => {
         gateState.entitlement = false;
         const userId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
         mockDispatchImportFromUrl.mockImplementation(
@@ -269,23 +277,24 @@ describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () =>
                 return { kind: 'sync', response: MINIMAL_RESPONSE };
             }
         );
-        for (let index = 0; index < 5; index += 1) {
-            const res = await app.request(ENDPOINT, {
+        const post = () =>
+            app.request(ENDPOINT, {
                 method: 'POST',
                 headers: authHeaders(userId),
                 body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
             });
+        for (let index = 0; index < 5; index += 1) {
+            const res = await post();
             expect(res.status).toBe(200);
             const data = ((await res.json()) as { data: AccommodationImportResponse }).data;
             expect(data.message).toBeUndefined();
         }
-        const rejected = await app.request(ENDPOINT, {
-            method: 'POST',
-            headers: authHeaders(userId),
-            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
-        });
-        expect(rejected.status).toBe(429);
-        expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(5);
+        const capped = await post();
+        expect(capped.status).toBe(200);
+        const body = ((await capped.json()) as { data: AccommodationImportResponse }).data;
+        expect(body.message).toContain('no está incluida');
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledTimes(6);
+        await expect(capState.count(userId)).resolves.toBe(5);
     });
 
     it('constructs AccommodationImportService with exchange-rate deps wired (BETA-181)', async () => {
