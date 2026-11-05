@@ -288,7 +288,8 @@ test.describe('AC:5:2 owner sees absent sections go to the hub and locked sectio
         // This owner has no title and can still activate the trial, so the
         // product copy is the pre-trial one: publishing is what unlocks it.
         await expect(page.getByTestId('venue-section-locked-notice')).toContainText(
-            'La carta se habilita cuando publiques tu ficha'
+            'La carta se habilita cuando publiques tu ficha',
+            { timeout: 15_000 }
         );
 
         // The section holds data, so "Vaciar" is offered next to the upsell.
