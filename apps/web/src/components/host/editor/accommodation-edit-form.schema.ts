@@ -22,6 +22,7 @@ import {
     phoneNumberSchema
 } from '@repo/schemas';
 import { z } from 'zod';
+import { isStrictEditorPhone } from '@/lib/phone-editor-validation';
 
 // ---------------------------------------------------------------------------
 // Field overrides
@@ -129,7 +130,13 @@ const basePriceField = z
 const currencyField = PriceCurrencyEnumSchema.nullable().optional();
 
 const phoneField = z
-    .union([z.literal(''), phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')])
+    .union([
+        z.literal(''),
+        phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina').refine(
+            isStrictEditorPhone,
+            { message: 'zodError.accommodation.contactInfo.phone.argentina' }
+        )
+    ])
     .optional();
 
 /**
@@ -143,7 +150,12 @@ const emailField = z
     .optional();
 
 const whatsappField = z
-    .union([z.literal(''), phoneNumberSchema('zodError.common.contact.phone.argentina')])
+    .union([
+        z.literal(''),
+        phoneNumberSchema('zodError.common.contact.phone.argentina').refine(isStrictEditorPhone, {
+            message: 'zodError.common.contact.phone.argentina'
+        })
+    ])
     .optional();
 
 /**

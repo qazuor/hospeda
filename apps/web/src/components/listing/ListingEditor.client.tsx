@@ -60,6 +60,7 @@ import {
     buildSlugRefreshPayload,
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
+import { refineStrictContactPhone } from '@/lib/phone-editor-validation';
 import { addToast } from '@/store/toast-store';
 import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
@@ -473,6 +474,15 @@ function buildPatchPayload({
 }
 
 /**
+ * Client-side validation schemas: the real owner-update schemas plus the strict
+ * Argentine phone rule (HOS-2034). The shared schema stays permissive so stored
+ * legacy phones keep validating; only the editor refuses a too-short `+54` value.
+ */
+const VENUE_EDITOR_SCHEMA = VenueOwnerUpdateInputSchema.superRefine(refineStrictContactPhone);
+const EXPERIENCE_EDITOR_SCHEMA =
+    ExperienceOwnerUpdateInputSchema.superRefine(refineStrictContactPhone);
+
+/**
  * Owner editor for ONE section. Tracks which field groups changed and PATCHes
  * only the dirty subset of the keys this section owns, so a save here can never
  * re-submit — let alone clobber — another section's data.
@@ -498,8 +508,7 @@ export function ListingEditor({
     // hoc summary/priceFrom checks this editor had) closes contact
     // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
-    const schema =
-        vertical === 'venue' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
+    const schema = vertical === 'venue' ? VENUE_EDITOR_SCHEMA : EXPERIENCE_EDITOR_SCHEMA;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,
