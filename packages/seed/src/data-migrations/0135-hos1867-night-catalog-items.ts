@@ -49,7 +49,7 @@ export const meta = {
  * The amenity fixtures this migration inserts. A FIXED list, not
  * `requiredManifest.amenities`: a later ticket that adds another catalog row
  * ships its own migration rather than being swept into this one (same
- * precedent as `0078-hos-1073-gastronomy-cuisine-features.ts`).
+ * precedent as the earlier cuisine-feature migration (`0078`)).
  */
 const NIGHT_AMENITY_FIXTURE_FILES = [
     '111-amenity-entertainment-dance-floor.json',
