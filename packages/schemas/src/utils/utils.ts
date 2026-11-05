@@ -54,8 +54,10 @@ const stripMobileMarker = (national: string): string | undefined => {
  * 1. Only digits, one leading `+` and `( ) . - space` are allowed.
  * 2. `+<country>` with a country other than 54 is kept as E.164 (7-15 digits).
  * 3. `+54` / `54` followed by an optional mobile `9` and exactly ten national
- *    digits is Argentine; the `9` marks a mobile. `15` and `0` are NOT
- *    stripped here, they belong to national-format input only.
+ *    digits is Argentine; the `9` marks a mobile. A ten-digit rest is never
+ *    touched (a `15` inside it is part of the number). Editors compose
+ *    `+54 <typed>`, so a longer rest is read like national input: a trunk `0`
+ *    is dropped and a 12-digit rest loses its `15` marker.
  * 4. Any other `+54...` value that the historical {@link InternationalPhoneRegex}
  *    accepted stays valid and is kept as E.164 (never tightened).
  * 5. National format: an optional trunk `0`, then ten digits, or twelve digits
@@ -84,9 +86,22 @@ export const parsePhoneNumber = (
     if (digits.startsWith('54')) {
         const rest = digits.slice(2);
         const marked = rest.startsWith('9');
-        const national = marked ? rest.slice(1) : rest;
-        if (national.length === NATIONAL_DIGITS) {
-            return { kind: 'argentina', digits: national, mobile: mobileByMeaning || marked };
+        const afterMarker = marked ? rest.slice(1) : rest;
+        if (afterMarker.length === NATIONAL_DIGITS) {
+            return { kind: 'argentina', digits: afterMarker, mobile: mobileByMeaning || marked };
+        }
+        // Editors compose "+54 <typed>", so the national part may still carry the
+        // domestic trunk 0 and/or the 15 marker. A bare 9 prefix never does (area
+        // codes do not start with 9), which also keeps legacy +549... values intact.
+        if (!marked) {
+            const national = rest.startsWith('0') ? rest.slice(1) : rest;
+            if (national.length === NATIONAL_DIGITS) {
+                return { kind: 'argentina', digits: national, mobile: mobileByMeaning };
+            }
+            if (national.length === NATIONAL_DIGITS + MOBILE_MARKER.length) {
+                const stripped = stripMobileMarker(national);
+                if (stripped) return { kind: 'argentina', digits: stripped, mobile: true };
+            }
         }
         // Historical E.164 values (any length 7-15) stay valid, untouched.
         return hasPlus && InternationalPhoneRegex.test(trimmed)
