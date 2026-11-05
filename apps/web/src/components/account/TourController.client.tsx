@@ -57,6 +57,21 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
         async function startTour(): Promise<void> {
             if (cancelled) return;
 
+            // HOS-1856: a step whose destination is not on THIS page has no
+            // target to point at. driver.js does not fail on a missing element —
+            // it silently floats the popover in the centre — so the step would
+            // be shown anyway. Drop it before the tour starts.
+            const visibleSteps = activeTour.steps.filter(
+                (step) => step.target === 'center' || document.querySelector(step.target) !== null
+            );
+
+            // Nothing left to show: do not start, and do not mark the tour as
+            // seen — it stays pending for a page where its targets exist.
+            if (visibleSteps.length === 0) {
+                setShouldStart(false);
+                return;
+            }
+
             // `@/lib/load-driver` re-exports driver.js and pulls in its
             // stylesheet, so both land in the same async chunk (HOS-369 W3-4).
             const { driver } = await import('@/lib/load-driver');
@@ -85,7 +100,7 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
                 prevBtnText: t('account.welcomeTour.prev', 'Anterior'),
                 doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
                 onDestroyStarted: handleDestroy,
-                steps: activeTour.steps.map((step) => {
+                steps: visibleSteps.map((step) => {
                     const stepDef: Record<string, unknown> = {
                         popover: {
                             title: t(step.title, step.title),
