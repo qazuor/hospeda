@@ -59,12 +59,26 @@ export interface ListingSectionRenderContext {
 }
 
 /**
- * The renderers, one per form section id.
+ * Whether the two experience-only form sections render for each vertical.
  *
  * `meetingPoint` and `practicalInfo` keep their vertical guard: their keys live
  * on `ExperienceOwnerUpdateInputSchema`, so rendering them for a venue would
  * offer fields the API strips. The registry already makes those routes
  * unreachable for a venue; this stays as the second, form-level gate.
+ *
+ * A record rather than `context.vertical === 'experience'`: G-FAC-05 (leaf 5.8)
+ * forbids the editor from deciding by a vertical literal.
+ */
+const RENDERS_EXPERIENCE_ONLY_FORM: Readonly<Record<VenueOrExperience, boolean>> = {
+    venue: false,
+    experience: true
+};
+
+/**
+ * The renderers, one per form section id.
+ *
+ * Keeping the map exhaustive by type means a new form section cannot be added
+ * without deciding what it draws.
  */
 export const LISTING_SECTION_RENDERERS: Readonly<
     Record<ListingEditorFormSectionId, (context: ListingSectionRenderContext) => JSX.Element>
@@ -83,7 +97,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
         />
     ),
     meetingPoint: (context) =>
-        context.vertical === 'experience' ? (
+        RENDERS_EXPERIENCE_ONLY_FORM[context.vertical] ? (
             <MeetingPointSection
                 locale={context.locale}
                 data={context.data}
@@ -94,7 +108,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
             <></>
         ),
     practicalInfo: (context) =>
-        context.vertical === 'experience' ? (
+        RENDERS_EXPERIENCE_ONLY_FORM[context.vertical] ? (
             <PracticalInfoSection
                 locale={context.locale}
                 data={context.data}
