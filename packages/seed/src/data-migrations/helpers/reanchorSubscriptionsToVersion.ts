@@ -9,27 +9,44 @@ import {
     planVersionEntitlements,
     planVersionLimits,
     planVersions,
+    subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
 import { logger } from '../../utils/logger.js';
 
+/**
+ * Immutable view of one plan version, as compared by {@link assertReanchorCompatible}.
+ */
 export interface ReanchorVersionSnapshot {
+    /** Stable plan identifier shared by both versions. */
     readonly planId: string;
+    /** Vertical both versions belong to. */
     readonly vertical: string;
+    /** Billing options (one per cycle) of the version. */
     readonly options: readonly {
         readonly id: string;
         readonly cycle: string;
         readonly amount: number;
         readonly currency: string;
     }[];
+    /** Entitlement rows of the version, with their quotas. */
     readonly entitlements: readonly {
         readonly key: string;
         readonly planQuota: number | null;
         readonly trialQuota: number | null;
     }[];
+    /** Limit rows of the version. */
     readonly limits: readonly { readonly key: string; readonly value: number }[];
 }
 
+/**
+ * Throws unless `to` can safely replace `from` under live subscriptions: same
+ * plan, same vertical, identical price per cycle, and a superset of
+ * entitlements (no quota shrunk) and limits (no value reduced).
+ *
+ * @param input - The two version snapshots.
+ * @throws Error naming the first violated rule.
+ */
 export function assertReanchorCompatible(input: {
     readonly from: ReanchorVersionSnapshot;
     readonly to: ReanchorVersionSnapshot;
@@ -66,6 +83,13 @@ export function assertReanchorCompatible(input: {
         throw new Error('Target version removes or reduces a limit');
 }
 
+/**
+ * Maps an old billing option id to the target version's option of the same cycle.
+ *
+ * @param input - The old option id and both versions' options.
+ * @returns The target option id.
+ * @throws Error when the target has no option for the old option's cycle.
+ */
 export function remapBillingOptionId(input: {
     readonly oldOptionId: string;
     readonly fromOptions: ReanchorVersionSnapshot['options'];
@@ -77,20 +101,48 @@ export function remapBillingOptionId(input: {
     return next.id;
 }
 
+/** Outcome of {@link reanchorSubscriptionsToVersion}. */
+export interface ReanchorResult {
+    /** Live principal subscriptions moved to the target version. */
+    readonly movedCount: number;
+    /** Scheduled changes whose destination was remapped to the target version. */
+    readonly remappedScheduledChanges: number;
+    /**
+     * Users whose effective set may be cached. The effective-set cache must be
+     * invalidated for each one AFTER the surrounding transaction commits (the
+     * cache port forbids doing it inside); this helper has no cache access.
+     */
+    readonly userIds: readonly string[];
+}
+
 /**
- * Re-anchor all live principal subscriptions to an additive, price-neutral plan
- * version. It never calls MercadoPago or changes provider preapprovals: equal
- * per-cycle prices leave the existing authorization valid. `db` must be the
- * migration's transaction-scoped client, making all moves atomic with publication.
+ * Re-anchor all live principal subscriptions (and scheduled changes whose
+ * destination is the old version) to an additive, price-neutral plan version.
+ *
+ * Refuses (see {@link assertReanchorCompatible}) a different plan or vertical, a
+ * per-cycle price difference, and a target that is not a superset of the
+ * source's entitlements/limits. Idempotent: once nothing is anchored to
+ * `fromVersionId` it moves zero rows. It never calls MercadoPago or changes
+ * provider preapprovals: equal per-cycle prices leave the existing authorization
+ * valid. The source may be retired or non-sellable; it only needs its options.
+ * `db` must be the caller's transaction-scoped client, so every move is atomic
+ * with publication.
+ *
+ * @param input - Receive-object.
+ * @param input.db - Transaction-scoped client.
+ * @param input.fromVersionId - Version the subscriptions are anchored to today.
+ * @param input.toVersionId - Version to anchor them to.
+ * @returns Counts and affected users.
+ * @throws Error when a refusal rule applies or a live row lacks a billing option.
  */
 export async function reanchorSubscriptionsToVersion(input: {
     readonly db: DrizzleClient;
     readonly fromVersionId: string;
     readonly toVersionId: string;
-    readonly invalidateUser?: (userId: string) => Promise<void>;
-}): Promise<number> {
+}): Promise<ReanchorResult> {
     const { db, fromVersionId, toVersionId } = input;
-    if (fromVersionId === toVersionId) return 0;
+    if (fromVersionId === toVersionId)
+        return { movedCount: 0, remappedScheduledChanges: 0, userIds: [] };
     const [from] = await db
         .select()
         .from(planVersions)
@@ -182,10 +234,31 @@ export async function reanchorSubscriptionsToVersion(input: {
             .update(subscriptions)
             .set({ planVersionId: toVersionId, billingOptionId: nextOptionId })
             .where(eq(subscriptions.id, row.id));
-        if (row.userId && input.invalidateUser) await input.invalidateUser(row.userId);
     }
+
+    // A queued change that still targets the old version would re-anchor its
+    // subscription BACK onto it when it fires, silently dropping the new grant.
+    const queued = await db
+        .select()
+        .from(subscriptionScheduledChanges)
+        .where(eq(subscriptionScheduledChanges.targetPlanVersionId, fromVersionId));
+    for (const change of queued) {
+        const nextOptionId = remapBillingOptionId({
+            oldOptionId: change.targetBillingOptionId,
+            fromOptions,
+            toOptions
+        });
+        await db
+            .update(subscriptionScheduledChanges)
+            .set({ targetPlanVersionId: toVersionId, targetBillingOptionId: nextOptionId })
+            .where(eq(subscriptionScheduledChanges.id, change.id));
+    }
+
+    const userIds = [
+        ...new Set(live.map((row) => row.userId).filter((id): id is string => id !== null))
+    ];
     logger.info(
-        `Re-anchored ${live.length} subscription(s) from ${fromVersionId} to ${toVersionId}.`
+        `Re-anchored ${live.length} subscription(s) and ${queued.length} scheduled change(s) from ${fromVersionId} to ${toVersionId}.`
     );
-    return live.length;
+    return { movedCount: live.length, remappedScheduledChanges: queued.length, userIds };
 }

@@ -1,7 +1,8 @@
 /**
  * Publishes a new immutable version of each accommodation plan with the video
  * link entitlement. The production catalog source declares this delta in
- * `nextVersionEntitlements`; this migration applies it to existing catalogs.
+ * `PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS`; this migration applies it to existing catalogs
+ * and re-anchors every live Basic subscription (and queued plan change) to the new version.
  *
  * `contentOnly` is deliberate: a fresh database applies 0144 first, then this
  * migration runs for real instead of baseline-stamping an incomplete catalog.
@@ -15,14 +16,15 @@ import {
     planVersionLimits,
     planVersions
 } from '@repo/db';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { buildPublicationContext, validatePublication } from '@repo/service-core';
 import { logger } from '../utils/logger.js';
 import { reanchorSubscriptionsToVersion } from './helpers/reanchorSubscriptionsToVersion.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
-// Package-owned publication input; scripts/ is intentionally not a runtime dependency.
-const NEXT_VERSION_ENTITLEMENTS = [{ vertical: 'accommodation', slug: 'owner-basico' }] as const;
+const VIDEO_PLAN_SLUGS = ['owner-basico'] as const;
 
+/** Ledger identity of this migration; `contentOnly` so fresh databases run it for real. */
 export const meta = {
     name: '0133-hos-2037-video-link-all-plans',
     group: 'required',
@@ -30,10 +32,17 @@ export const meta = {
     contentOnly: true
 } as const satisfies SeedMigrationModule['meta'];
 
+/**
+ * Publishes the next version of each plan in {@link VIDEO_PLAN_SLUGS} with `can_embed_video`
+ * and re-anchors its live subscriptions. Idempotent: skips a plan whose current version
+ * already grants it.
+ *
+ * @param ctx - Transaction-scoped migration context.
+ * @returns Summary of how many plan versions were published.
+ */
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     let published = 0;
-    const videoPlanSlugs = NEXT_VERSION_ENTITLEMENTS.map((entry) => entry.slug);
-    for (const slug of videoPlanSlugs) {
+    for (const slug of VIDEO_PLAN_SLUGS) {
         const [plan] = await ctx.db
             .select()
             .from(plans)
@@ -54,7 +63,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             .where(
                 and(
                     eq(planVersionEntitlements.planVersionId, current.id),
-                    eq(planVersionEntitlements.key, 'can_embed_video')
+                    eq(planVersionEntitlements.key, EntitlementKeyEnum.CAN_EMBED_VIDEO)
                 )
             )
             .limit(1);
@@ -85,7 +94,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                     planQuota,
                     trialQuota
                 })),
-                { key: 'can_embed_video' }
+                { key: EntitlementKeyEnum.CAN_EMBED_VIDEO }
             ],
             limits: oldLimits.map(({ key, value }) => ({ key, value })),
             cycles: oldOptions.map(
@@ -130,7 +139,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 planQuota,
                 trialQuota
             })),
-            { planVersionId: newVersionId, key: 'can_embed_video' }
+            { planVersionId: newVersionId, key: EntitlementKeyEnum.CAN_EMBED_VIDEO }
         ]);
 
         if (oldLimits.length > 0) {
@@ -155,12 +164,17 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 );
             }
         }
+        // The seed process has no effective-set cache client; entries expire on
+        // their own within 15 minutes (ENTRY_MAX_AGE_MS) and the change is
+        // additive, so no user loses a grant meanwhile.
         const moved = await reanchorSubscriptionsToVersion({
             db: ctx.db,
             fromVersionId: current.id,
             toVersionId: newVersionId
         });
-        logger.info(`HOS-2037 re-anchored ${moved} live subscription(s) for ${slug}.`);
+        logger.info(
+            `HOS-2037 re-anchored ${moved.movedCount} live subscription(s) and remapped ${moved.remappedScheduledChanges} scheduled change(s) for ${slug}.`
+        );
         published += 1;
     }
 
