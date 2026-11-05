@@ -78,6 +78,38 @@ function createAstro({ sectionSlug = null }: { readonly sectionSlug?: string | n
     };
 }
 
+describe('resolveListingEditorPage — an absent section slug fails to the hub', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        fetchOwnerListingDetail.mockResolvedValue({
+            id: 'listing-1',
+            ownerId: 'user-1',
+            name: 'Boliche sin cocina'
+        });
+        // A BOLICHE: the two food sections are absent from the resolved map.
+        getListingSectionStates.mockResolvedValue({
+            ok: true,
+            data: { sections: { menu: { state: 'absent' } } }
+        });
+        buildListingEditorRegistry.mockReturnValue({ sections: [], buildHubPath: '/hub' });
+        buildEditorHubUrl.mockReturnValue('/es/mi-cuenta/comercio/venue/listing-1/editar/');
+        findEditorSectionBySlug.mockReturnValue(undefined);
+    });
+
+    it('redirects the absent slug to the hub and renders no section', async () => {
+        const result = await resolveListingEditorPage({
+            astro: createAstro({ sectionSlug: 'carta' }) as never,
+            sectionSlug: 'carta'
+        });
+
+        expect(result.redirect?.status).toBe(302);
+        expect(result.redirect?.headers.get('Location')).toBe(
+            '/es/mi-cuenta/comercio/venue/listing-1/editar/'
+        );
+        expect(result.detail).toBeUndefined();
+    });
+});
+
 describe('resolveListingEditorPage — a failed section-state read fails closed', () => {
     beforeEach(() => {
         vi.clearAllMocks();
