@@ -910,6 +910,46 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(urls).toContain(FEATURED_ROW.url);
             });
         });
+
+        it('promotes at the gallery cap and keeps the demoted cover in the gallery', async () => {
+            const galleryAtCap = Array.from({ length: 50 }, (_, index) => ({
+                ...GALLERY_ROW_1,
+                id: `gallery-${index}`,
+                url: `https://cdn.example.com/gallery-${index}.jpg`,
+                sortOrder: index
+            }));
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, ...galleryAtCap]));
+            const promotedRow = { ...galleryAtCap[0]!, isFeatured: true };
+            mockSetFeaturedMedia.mockResolvedValue({
+                ok: true as const,
+                data: { media: promotedRow }
+            });
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(51));
+
+            fireEvent.click(screen.getByLabelText('Usar foto 1 como portada'));
+
+            await waitFor(() =>
+                expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: 'gallery-0'
+                })
+            );
+            await waitFor(() => {
+                expect(screen.getAllByRole('img')).toHaveLength(51);
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
+                    'src',
+                    promotedRow.url
+                );
+                expect(
+                    screen
+                        .getAllByRole('img')
+                        .some((image) => image.getAttribute('src') === FEATURED_ROW.url)
+                ).toBe(true);
+            });
+            expect(mockAddToast).not.toHaveBeenCalled();
+        });
     });
 
     // ── 9. Manual reordering (HOS-122) ──────────────────────────────────────

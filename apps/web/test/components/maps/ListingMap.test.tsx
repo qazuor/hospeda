@@ -83,7 +83,10 @@ beforeAll(async () => {
 
 const i18n = {
     attribution: '© OSM',
-    approximateDisclaimer: 'Ubicación aproximada.'
+    approximateDisclaimer: 'Ubicación aproximada.',
+    viewDetails: 'Ver más',
+    priceConsult: 'Precio a consultar',
+    consultAvailability: 'Consultar disponibilidad'
 };
 
 describe('ListingMap', () => {

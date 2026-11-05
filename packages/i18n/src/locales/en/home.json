@@ -48,7 +48,8 @@
         "price": {
             "from": "From",
             "perNight": "/night",
-            "consult": "Inquire"
+            "consult": "Price on request",
+            "consultAvailability": "Check availability"
         },
         "amenities": {
             "label": "Amenities"

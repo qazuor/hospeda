@@ -295,12 +295,13 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
    `HOPS_STAGING_ADMIN_COOKIE`).
 5. Invalidar la generación global del cache del conjunto efectivo (Mecánica 7). Es lo mismo que hace
    `invalidateAll()` (`packages/verticals/src/effective-set-cache/cache.ts:173-179`): `INCR` de
-   `vset:v1:gen:all` y `PEXPIRE` de 30 min (`GENERATION_TTL_MS`, `cache.ts:5`). El campo de la vertical vieja de
-   los hashes queda huérfano. Con la base anotada en V0:
+   `vset:v2:gen:all` y `PEXPIRE` de 30 min (`GENERATION_TTL_MS`, `cache.ts:5`). El campo de la vertical vieja de
+   los hashes queda huérfano. **Desde el 2026-11-04 (HOS-2027, PR #4109) el prefijo es `vset:v2:`**
+   (antes `vset:v1:`); si el entorno corre un build anterior, usar `vset:v1:`. Con la base anotada en V0:
 
    ```sh
-   hops --target=staging exec redis -- redis-cli -n <base de V0> INCR vset:v1:gen:all
-   hops --target=staging exec redis -- redis-cli -n <base de V0> PEXPIRE vset:v1:gen:all 1800000
+   hops --target=staging exec redis -- redis-cli -n <base de V0> INCR vset:v2:gen:all
+   hops --target=staging exec redis -- redis-cli -n <base de V0> PEXPIRE vset:v2:gen:all 1800000
    ```
 
    (`-n` es el `SELECT` de la base.) Redis se resuelve por la etiqueta con el UUID de `HOPS_STAGING_REDIS_UUID`;
@@ -444,7 +445,7 @@ Cloudflare); el resto sale del código y de la spec:
 | **Cache de Cloudflare**: páginas bajo `/comer-y-salir/` y tags `<env>:list-venue`, `<env>:venue-<slug>`/`<id>` | borde | no lo toca ni un deploy ni un restore | purga a mano, con `<env>:all` |
 | **Reglas de Cloudflare editadas a mano** | panel de Cloudflare | el revert del repo no las cambia | devolverlas a la copia guardada en V6.2 |
 | **Índices de buscadores e IndexNow**: URLs `/comer-y-salir/` ya enviadas y rastreadas, sitemap | Google/Bing | lo indexado no se des-indexa por un revert | aceptado; las URLs viejas siguen respondiendo |
-| **Generación del cache del conjunto efectivo** (`vset:v1:gen:all`) y los campos por vertical de los hashes | Redis (no es la base) | un restore de Postgres no toca Redis | `INCR` + `PEXPIRE` de `vset:v1:gen:all` también en la vuelta |
+| **Generación del cache del conjunto efectivo** (`vset:v2:gen:all`) y los campos por vertical de los hashes | Redis (no es la base) | un restore de Postgres no toca Redis | `INCR` + `PEXPIRE` de `vset:v2:gen:all` también en la vuelta |
 | **Ids de What's New y clave del tour** (`web.venue.welcome`) que reescribe la data-migration `0131-hos1822-venue-whats-new-and-tour-ids` | `users.settings.onboarding` | en staging el reset borra todos los usuarios igual (todos vuelven a ver todo: no hay nada que recuperar); en prod **sí vuelven** con el restore del 2b. No vuelven si alguien «vuelve atrás» sólo el código sin la base (no permitido) | ninguno, salvo no separar código y base |
 | **`domain_event` con `entity_type` nuevo** escritos en el soak | Postgres, append-only (`extras/056`) | no se pueden actualizar | staging: los borra el reset; prod: los borra el restore |
 | **Sesiones abiertas**: cookie cache de Better Auth (`session.user.role`, hasta 5 min) y `sessionStorage.authMeSnapshot` con `roles: ['VENUE_OWNER']` en pestañas abiertas (`apps/web/src/lib/auth-cache.ts:29`) | navegador | sobreviven a un deploy y a un restore | transitorio: 5 min la cookie, y el snapshot vence a los 60 s (`AUTH_ME_CACHE_TTL_MS`, `auth-cache.ts:32`); la ventana dura más |

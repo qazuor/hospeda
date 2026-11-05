@@ -12,6 +12,14 @@ const src = readFileSync(
     resolve(__dirname, '../../../../src/components/shared/cards/AccommodationCard.astro'),
     'utf8'
 );
+const sidebarStyles = readFileSync(
+    resolve(__dirname, '../../../../src/components/maps/MapCardsSidebar.module.css'),
+    'utf8'
+);
+const popupStyles = readFileSync(
+    resolve(__dirname, '../../../../src/components/maps/ListingMap.module.css'),
+    'utf8'
+);
 
 describe('AccommodationCard.astro', () => {
     describe('imports', () => {
@@ -331,8 +339,33 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('data.cityName ?? data.location.city');
         });
 
-        it('should conditionally render price when formattedPrice exists', () => {
-            expect(src).toContain('formattedPrice');
+        it('keeps the price slot and CTA in both priced and no-price variants', () => {
+            const priceRow = src.split('<!-- Price + CTA row -->')[1] ?? '';
+
+            expect(src).toContain('formattedPrice ? (');
+            expect(src).toContain("home.accommodations.price.consult', 'Precio a consultar'");
+            expect(priceRow).toContain("!formattedPrice && 'acc-card__cta-btn--compact'");
+            expect(priceRow).toContain(
+                "home.accommodations.price.consultAvailability', 'Consultar disponibilidad'"
+            );
+        });
+
+        it('allows the consult label to wrap in narrow cards without widening the CTA row', () => {
+            expect(src).toMatch(/\.acc-card__price-value--consult\s*\{[^}]*white-space:\s*normal/);
+            expect(src).toMatch(/\.acc-card__price-block\s*\{[^}]*min-width:\s*0/);
+        });
+
+        it('styles the map sidebar consult label like the accommodation card', () => {
+            expect(sidebarStyles).toMatch(
+                /\.cardPriceValueConsult\s*\{[^}]*font-family:\s*var\(--font-sans\)[^}]*line-height:\s*17\.6px/
+            );
+            expect(sidebarStyles).toMatch(/\.cardPriceValueConsult\s*\{[^}]*white-space:\s*normal/);
+        });
+
+        it('lets the fixed-width map popup consult label shrink beside its CTA', () => {
+            expect(popupStyles).toMatch(
+                /\.popupPriceConsult\s*\{[^}]*min-width:\s*0[^}]*white-space:\s*normal/
+            );
         });
 
         it('should render star rating icons', () => {
