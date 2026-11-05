@@ -230,6 +230,21 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:V7:14; TEST:V7:14.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
+### S13 — Partner screens for row 33 and row 34 (HOS-1497)
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; account A that already owns a Partner; a second approved Partner B with an unspent claim link (from the S10 setup); account C with an UNVERIFIED email (sign up and do not follow the verification link) and a second browser profile for C; the web and the API on the same deployment.
+- **Steps:**
+  1. Signed in as A, open B's claim link and press the claim button.
+  2. Confirm the page and the database (read-only) show B is still unclaimed; sign out, sign in as another verified account and claim B with the same link.
+  3. Signed in as C (unverified), open `/es/sumate/partner/`, complete the form and submit.
+  4. On the row-34 screen, press the resend button; open the new verification email and follow its link; confirm it returns to `/es/sumate/partner/`.
+  5. Submit the form again as C.
+  6. Repeat step 3 right after verifying, in the same browser, and note whether the first submit still answers with the row-34 screen (session-cache window, R-1).
+- **Expected:** A sees «Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.» with the support link, and B's claim link still works for another account; C sees «Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.» and the resend button, no application exists for the typed email after step 3, the resend sends a verification email whose link comes back to the application page, and after verifying the submit is accepted (a short delay of up to 5 minutes from the session cache is acceptable and must be noted).
+- **Evidence:** `hops psql --target=staging`, read-only: B's `owner_user_id` and `claim_secret_hash` before and after step 1 (unchanged) and after step 2 (`owner_user_id` = the second account); `SELECT count(*) FROM partner_application WHERE lower(email) = lower('<typed email>')` = 0 after step 3 and 1 after step 5; the `email_outbox`/Better Auth verification email for C. No secrets in the sign-off.
+- **Covers:** AC:V8b:4, AC:V8b:5; TEST:V8b:4, TEST:V8b:5.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |

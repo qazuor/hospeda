@@ -1763,9 +1763,12 @@ export type PartnerApplicationSubmitBody = (typeof PartnerApplicationSubmitSchem
 
 /** Public Partner application API (AC:V7:15). */
 export const partnerApplicationApi = {
-    /** Submit a Partner application without writing an alliance lead (AC:V7:15). */
+    /**
+     * Submit a Partner application with session credentials so an unverified account is rejected
+     * before an application is created (AC:V8b:5).
+     */
     submit(body: PartnerApplicationSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.post({ path: `${BASE}/partner-applications`, body });
+        return apiClient.postProtected({ path: `${BASE}/partner-applications`, body });
     }
 };
 

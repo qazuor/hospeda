@@ -7,7 +7,12 @@
         "sending": "Enviando postulación…",
         "success": "Gracias. Recibimos tu correo y te escribiremos con una respuesta.",
         "error": "No pudimos enviar la postulación. Intentá de nuevo más tarde.",
-        "unavailable": "El formulario no está disponible en este momento. Probá de nuevo más tarde."
+        "unavailable": "El formulario no está disponible en este momento. Probá de nuevo más tarde.",
+        "verifyEmailFirst": "Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.",
+        "resendVerification": "Reenviar verificación",
+        "resendingVerification": "Reenviando…",
+        "verificationResent": "Listo: te reenviamos el correo de verificación. Revisalo y, cuando lo hayas verificado, volvé a esta página para postular.",
+        "resendVerificationError": "No pudimos reenviar la verificación. Probá de nuevo en unos minutos."
     },
     "form": {
         "fields": {
