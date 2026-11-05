@@ -1,6 +1,7 @@
 import { AccommodationTypeEnum } from '../enums/accommodation-type.enum.js';
 import { ExperienceTypeEnum } from '../enums/experience-type.enum.js';
 import { VenueTypeEnum } from '../enums/venue-type.enum.js';
+import type { ListingSectionId } from './listing-catalog.ids.js';
 import type {
     BusinessLineDefinitionBase,
     BusinessLineRules,
@@ -182,4 +183,45 @@ export function urlSlugToBusinessLine({ urlSlug }: { readonly urlSlug: string })
     readonly value: PublicBusinessLine | undefined;
 } {
     return { value: PUBLIC_BUSINESS_LINES.find((entry) => entry.urlSlug === urlSlug)?.value };
+}
+
+/** A public business line that declares ownership of a listing section. */
+export interface SectionBusinessLine<V extends ListingVertical = ListingVertical> {
+    /** Internal business-line value. */
+    readonly value: BusinessLineValue<V>;
+    /** Public URL slug of that business line's collection. */
+    readonly urlSlug: string;
+}
+
+/**
+ * Resolves which public business lines own a listing section.
+ *
+ * The ownership lives in `BUSINESS_LINES[vertical][].sections`. Consumers that
+ * only have a section id (the plan comparison table, for one) need this
+ * translation without importing the catalog value itself, which G-FAC-03
+ * restricts to a closed allowlist.
+ *
+ * @param input - The listing vertical and the section to look up.
+ * @param input.vertical - Vertical the section belongs to.
+ * @param input.sectionId - Catalog section id.
+ * @returns Every public business line that declares the section, in catalog
+ *   order. Empty for a common section or one no public line owns.
+ */
+export function resolveSectionBusinessLines<V extends ListingVertical>({
+    vertical,
+    sectionId
+}: {
+    readonly vertical: V;
+    readonly sectionId: ListingSectionId<V>;
+}): readonly SectionBusinessLine<V>[] {
+    const lines = BUSINESS_LINES[vertical] as unknown as readonly BusinessLineDefinitionBase<V>[];
+    return lines
+        .filter(
+            (line): line is BusinessLineDefinitionBase<V> & { readonly urlSlug: string } =>
+                line.public && typeof line.urlSlug === 'string' && line.sections.includes(sectionId)
+        )
+        .map((line) => ({
+            value: line.value as BusinessLineValue<V>,
+            urlSlug: line.urlSlug
+        }));
 }
