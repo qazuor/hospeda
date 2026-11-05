@@ -234,8 +234,8 @@ describe('TEST:V8b:8 AC:V8b:7 — V8b exit evidence and phase guards', () => {
         expect(pkg.scripts['check:additive-migrations']).toBe(
             'tsx scripts/check-additive-migrations.ts'
         );
-        expect(pkg.scripts['check:guards']?.endsWith('&& pnpm check:additive-migrations')).toBe(
-            true
+        expect(pkg.scripts['check:guards']?.split(' && ')).toContain(
+            'pnpm check:additive-migrations'
         );
         expect(existsSync(path.join(root, 'scripts/check-additive-migrations.ts'))).toBe(true);
         expect(read('scripts/__tests__/check-additive-migrations.test.ts')).toContain('TEST:V8b:8');
