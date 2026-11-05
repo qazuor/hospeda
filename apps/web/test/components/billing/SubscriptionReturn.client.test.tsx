@@ -19,7 +19,10 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
 }));
 
 import { SubscriptionReturn } from '../../../src/components/billing/SubscriptionReturn.client';
-import { RETURN_POLL_INTERVAL_MS } from '../../../src/lib/billing/subscription-return';
+import {
+    RETURN_POLL_INTERVAL_MS,
+    RETURN_POLL_MAX_ATTEMPTS
+} from '../../../src/lib/billing/subscription-return';
 
 const SUB = '123e4567-e89b-42d3-a456-426614174000';
 const OPTION = '223e4567-e89b-42d3-a456-426614174000';
@@ -43,12 +46,78 @@ afterEach(() => {
 });
 
 describe('SubscriptionReturn polling', () => {
-    it('re-reads the status while pending and stops once confirmed', async () => {
+    it('refreshes the page exactly once when polling confirms a pending subscription', async () => {
+        const reload = vi.fn();
         readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
         render(
             <SubscriptionReturn
                 {...baseProps}
                 initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+        });
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not refresh when the server already rendered a confirmed subscription', () => {
+        const reload = vi.fn();
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="ACTIVE"
+                refreshPage={reload}
+            />
+        );
+
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('confirmed');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('does not refresh when the return remains pending or is rejected', async () => {
+        const reload = vi.fn();
+        readMock.mockResolvedValue({ ok: true, data: { status: 'PENDING_AUTHORIZATION' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={reload}
+            />
+        );
+
+        for (let poll = 0; poll < RETURN_POLL_MAX_ATTEMPTS; poll += 1) {
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(RETURN_POLL_INTERVAL_MS);
+            });
+        }
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('stillProcessing');
+        expect(reload).not.toHaveBeenCalled();
+
+        cleanup();
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="CHARGE_DECLINED"
+                refreshPage={reload}
+            />
+        );
+        expect(screen.getByTestId('subscription-return').dataset.view).toBe('rejected');
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('re-reads the status while pending and stops once confirmed', async () => {
+        const refreshPage = vi.fn();
+        readMock.mockResolvedValue({ ok: true, data: { status: 'ACTIVE' } });
+        render(
+            <SubscriptionReturn
+                {...baseProps}
+                initialStatus="PENDING_AUTHORIZATION"
+                refreshPage={refreshPage}
             />
         );
         expect(screen.getByTestId('subscription-return').dataset.view).toBe('processing');

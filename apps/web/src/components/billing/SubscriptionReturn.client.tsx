@@ -25,6 +25,8 @@ export interface SubscriptionReturnProps {
     readonly accountEmail: string;
     /** Email the payer declared on the rejected attempt (HOS-1890), when stored. */
     readonly declaredPayerEmail: string | null;
+    /** Page refresh callback; defaults to reloading the current URL. */
+    readonly refreshPage?: () => void;
 }
 
 /**
@@ -41,7 +43,8 @@ export function SubscriptionReturn({
     initialStatus,
     billingOptionId,
     accountEmail,
-    declaredPayerEmail
+    declaredPayerEmail,
+    refreshPage = () => window.location.reload()
 }: SubscriptionReturnProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
     const [status, setStatus] = useState<string | null>(initialStatus);
@@ -51,12 +54,25 @@ export function SubscriptionReturn({
     const [typedEmail, setTypedEmail] = useState(declaredPayerEmail ?? accountEmail);
     const [emailError, setEmailError] = useState(false);
     const retryingRef = useRef(false);
+    const refreshedAfterConfirmationRef = useRef(
+        resolveReturnView({ status: initialStatus, pollsExhausted: false }) === 'confirmed'
+    );
     const emailInputId = useId();
     const needsEmailField = retryNeedsEmailField({ declaredPayerEmail });
     const view: ReturnView = resolveReturnView({
         status,
         pollsExhausted: attempt >= RETURN_POLL_MAX_ATTEMPTS
     });
+
+    useEffect(() => {
+        if (view !== 'confirmed' || refreshedAfterConfirmationRef.current) return;
+
+        // Refresh once after a newly confirmed return so Astro re-renders the
+        // subscription and trial sections; the return query remains, and SSR
+        // initializes the next island as confirmed so it cannot refresh again.
+        refreshedAfterConfirmationRef.current = true;
+        refreshPage();
+    }, [refreshPage, view]);
 
     useEffect(() => {
         if (!shouldPollAgain({ view, attempt })) return;
