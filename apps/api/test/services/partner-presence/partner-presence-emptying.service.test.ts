@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     calls: [] as string[],
     invalidations: [] as unknown[],
     schedules: [] as unknown[],
+    events: [] as unknown[],
     failSchedule: false,
     systemActor: false
 }));
@@ -27,7 +28,11 @@ vi.mock('@repo/db', async (importOriginal) => {
                 mocks.calls.push('empty');
             };
         },
-        domainEventModel: { insert: async () => undefined }
+        domainEventModel: {
+            insert: async (value: unknown) => {
+                mocks.events.push(value);
+            }
+        }
     };
 });
 vi.mock('../../../src/middlewares/cache', () => ({
@@ -93,6 +98,7 @@ describe('emptyPartnerPresence', () => {
         mocks.calls = [];
         mocks.invalidations = [];
         mocks.schedules = [];
+        mocks.events = [];
         mocks.failSchedule = false;
         mocks.systemActor = false;
         deps.mediaProvider.delete.mockClear();
@@ -114,6 +120,8 @@ describe('emptyPartnerPresence', () => {
         expect(mocks.schedules).toEqual([
             { entityType: 'partner', id: mocks.row?.id, slug: 'partner-test' }
         ]);
+        expect(mocks.events).toHaveLength(1);
+        expect(mocks.events[0]).toMatchObject({ reason: 'reason' });
     });
 
     it('does not call the provider when authorization fails or presence is already empty', async () => {
