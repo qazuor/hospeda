@@ -196,14 +196,23 @@ describe('VenueService.updateOwn', () => {
         const service = makeService(makeVenueEntity());
         const result = await service.updateOwn(
             ENTITY_ID,
-            { contactInfo: { mobilePhone: '3442 45-2345', whatsapp: '3442 45-2345' } },
+            {
+                contactInfo: {
+                    mobilePhone: '3442 45-2345',
+                    whatsapp: '03442 15 45-2345',
+                    homePhone: '3442 45-2345',
+                    workPhone: '+65 6123 4567'
+                }
+            },
             ownerActor
         );
 
         expect(result.error).toBeUndefined();
         expect(result.data?.contactInfo).toMatchObject({
-            mobilePhone: '+543442452345',
-            whatsapp: '+543442452345'
+            mobilePhone: '+5493442452345',
+            whatsapp: '+5493442452345',
+            homePhone: '+543442452345',
+            workPhone: '+6561234567'
         });
     });
 

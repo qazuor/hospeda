@@ -4,6 +4,7 @@
  * Covers normalizePhoneNumber, normalizeContactInfo, normalizeAdminInfo.
  */
 
+import { ContactInfoSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeAdminInfo,
@@ -69,6 +70,40 @@ describe('normalizePhoneNumber()', () => {
     it('uses the field meaning for an ambiguous bare number', () => {
         expect(normalizePhoneNumber('3442452345', false)).toBe('+543442452345');
         expect(normalizePhoneNumber('3442452345', true)).toBe('+5493442452345');
+    });
+});
+
+describe('normalizePhoneNumber() output always passes the validator (HOS-2034)', () => {
+    const inputs = [
+        '3442 45-2345',
+        '3442452345',
+        '(3442) 45-2345',
+        '03442 452345',
+        '3442 15 45-2345',
+        '+54 9 3442 45-2345',
+        '+5493442452345',
+        '54 3442 452345',
+        '3415123456',
+        '+54 3415 123456',
+        '+54115550002',
+        '+549345704627',
+        '+54934515732848',
+        '+65 6123 4567',
+        '+1 5551234567'
+    ];
+
+    it.each(inputs)('%s', (input) => {
+        for (const field of ['mobilePhone', 'homePhone', 'workPhone', 'whatsapp'] as const) {
+            const out = normalizeContactInfo({ [field]: input }) as Record<string, string>;
+            expect(ContactInfoSchema.safeParse({ [field]: input }).success).toBe(true);
+            expect(ContactInfoSchema.safeParse({ [field]: out[field] }).success).toBe(true);
+            expect((normalizeContactInfo(out) as Record<string, string>)[field]).toBe(out[field]);
+        }
+    });
+
+    it('does not strip a 15 from an international number of the right length', () => {
+        expect(normalizePhoneNumber('+54 3415 123456', false)).toBe('+543415123456');
+        expect(normalizePhoneNumber('+54 3415 123456', true)).toBe('+5493415123456');
     });
 });
 
