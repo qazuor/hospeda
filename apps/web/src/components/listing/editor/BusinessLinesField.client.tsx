@@ -219,7 +219,7 @@ export function BusinessLinesField({
                     })}
                 </div>
             </fieldset>
-            {selectionError && suggested.length > 0 && !errors.businessLines ? (
+            {selectionError && suggested.length > 0 ? (
                 <button
                     type="button"
                     className={styles.suggested}
