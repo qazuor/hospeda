@@ -86,6 +86,15 @@ export type ImportFromUrlProps = {
     readonly onError?: (failureCodeOrUnknown: string) => void;
 };
 
+/** Access decision shown to the host; `null` while it is still loading. */
+interface ImportAccess {
+    readonly aiEntitlementAllowed: boolean;
+    readonly reason?: 'entitlement' | 'new_user_cap';
+}
+
+/** Used when the precheck cannot be read: render the importer, banner-free. */
+const UNKNOWN_ACCESS: ImportAccess = { aiEntitlementAllowed: true };
+
 /**
  * Renders the import-from-URL form: a URL input, a required legal-confirmation
  * checkbox, and a submit button gated on that checkbox.
@@ -106,10 +115,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     const [showHelp, setShowHelp] = useState(false);
     // HOS-50 T-013: non-null while an async Apify run is being polled.
     const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
-    const [access, setAccess] = useState<{
-        readonly aiEntitlementAllowed: boolean;
-        readonly reason?: 'entitlement' | 'new_user_cap';
-    } | null>(null);
+    const [access, setAccess] = useState<ImportAccess | null>(null);
     // Guards against re-handling a settle outcome on unrelated re-renders
     // while `runHandle` is unchanged, and is reset whenever a NEW run starts.
     const handledSettleRef = useRef(false);
@@ -121,14 +127,16 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         async function loadAccess(): Promise<void> {
             try {
                 const result = await accommodationsImportApi.getAccess();
-                if (active && result.ok) setAccess(result.data);
+                if (!active) return;
+                // The server stays the enforcement authority and never refuses an
+                // import here, so an unreadable precheck shows the importer
+                // without a banner instead of hiding the URL input.
+                setAccess(result.ok ? result.data : UNKNOWN_ACCESS);
             } catch (cause) {
-                webLogger.warn(
-                    'ImportFromUrl: access precheck failed; keeping importer unavailable',
-                    {
-                        error: cause
-                    }
-                );
+                webLogger.warn('ImportFromUrl: access precheck failed; showing importer', {
+                    error: cause
+                });
+                if (active) setAccess(UNKNOWN_ACCESS);
             }
         }
         void loadAccess();
@@ -137,7 +145,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         };
     }, []);
 
-    const submitDisabled = isSubmitting || !legalConfirmed || access?.reason === 'new_user_cap';
+    const submitDisabled = isSubmitting || !legalConfirmed;
 
     async function handleSubmit(): Promise<void> {
         setError(null);
@@ -357,7 +365,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                     {capReached
                         ? t(
                               'host.importFromUrl.errors.newUserCap',
-                              'Alcanzaste el límite de importaciones de las últimas 24 horas. Probá de nuevo más tarde.'
+                              'Usaste tus importaciones con IA de las últimas 24 horas. Igual podés importar: completamos lo que se pueda sin IA.'
                           )
                         : entitlementDenied
                           ? t(

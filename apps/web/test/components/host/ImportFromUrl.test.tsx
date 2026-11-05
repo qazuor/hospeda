@@ -98,26 +98,20 @@ describe('ImportFromUrl', () => {
         expect(screen.queryByRole('button', { name: /Importar/i })).not.toBeInTheDocument();
     });
 
-    it('keeps the importer neutral until the server access decision arrives', async () => {
-        let resolveAccess!: (value: unknown) => void;
-        mockGetAccess.mockReturnValueOnce(
-            new Promise((resolve) => {
-                resolveAccess = resolve;
-            })
-        );
-        render(<ImportFromUrl locale="es" />);
-        expect(screen.getByRole('status')).toHaveTextContent('Verificando disponibilidad');
-        expect(screen.queryByRole('button', { name: /Importar/i })).not.toBeInTheDocument();
-        resolveAccess({
-            ok: true,
-            data: {
-                aiEntitlementAllowed: true,
-                isNewUser: true,
-                hasEntitlement: false,
-                remainingNewUserImports: 5
-            }
-        });
-        expect(await screen.findByRole('button', { name: /Importar/i })).toBeInTheDocument();
+    it('shows the importer with no banner when the access precheck cannot be read', async () => {
+        mockGetAccess.mockRejectedValueOnce(new Error('network'));
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
+    });
+
+    it('shows the importer with no banner when the access endpoint answers not-ok', async () => {
+        mockGetAccess.mockResolvedValueOnce({ ok: false });
+        await renderAndWait(<ImportFromUrl locale="es" />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
     });
 
     it('shows dedicated copy when a new user has reached the 24-hour cap', async () => {
@@ -133,7 +127,11 @@ describe('ImportFromUrl', () => {
         });
         await renderAndWait(<ImportFromUrl locale="es" />);
         expect(await screen.findByRole('alert')).toHaveTextContent('últimas 24 horas');
-        expect(screen.getByRole('button', { name: /Importar/i })).toBeDisabled();
+        // The server still serves the structured import to a capped user.
+        expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
+        expect(screen.queryByRole('link', { name: /Ver planes/i })).not.toBeInTheDocument();
     });
 
     it('shows the plan message when the server denies a returning user', async () => {
@@ -152,6 +150,9 @@ describe('ImportFromUrl', () => {
             'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
         );
         expect(screen.getByLabelText('URL del alojamiento')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Ver planes/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        expect(screen.getByRole('button', { name: /Importar/i })).toBeEnabled();
     });
 
     it('keeps the Importar button disabled until the legal checkbox is ticked', async () => {
