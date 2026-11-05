@@ -230,7 +230,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
         expect(JSON.stringify(event.changes)).not.toContain('Presence description');
         expect(JSON.stringify(event.changes)).not.toContain(fixture.partner.logoUrl);
     });
-
     it('rejects missing dedicated permission and invalid confirmation input', async () => {
         const fixture = await seedEmptyablePartner();
         expect(inMemoryProvider().has(fixture.logoPublicId)).toBe(true);
@@ -276,7 +275,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
         );
         expect(events.rows).toEqual([]);
     });
-
     it('returns typed conflicts for an empty Partner and 404 for a deleted or missing Partner', async () => {
         const fixture = await seedEmptyablePartner();
         const eventCount = await db().execute(
@@ -331,7 +329,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
         );
         expect(missing.status).toBe(404);
     });
-
     it('skips foreign cloud and non-Hospeda assets, and works without a provider when no owned asset remains', async () => {
         const fixture = await seedEmptyablePartner();
         const provider = inMemoryProvider();
@@ -387,7 +384,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
             remoteAssetsSkipped: 1
         });
     });
-
     it('uses the closed entitlement key for the 404 and leaves that subscription state untouched', async () => {
         const fixture = await seedEmptyablePartner();
         const publicPath = `/api/v1/public/partners/${fixture.partner.slug}`;
@@ -439,7 +435,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
             )[0]
         ).toEqual(afterStepOne);
     });
-
     it('documents that emptying alone leaves a still-entitled page available', async () => {
         // If the owner selects option 2 of Q-2, this expectation changes to 404.
         const fixture = await seedEmptyablePartner();
@@ -466,7 +461,6 @@ describe('TEST:V8b:6 AC:V8b:6 — Partner presence emptying', () => {
             ).status
         ).toBe(200);
     });
-
     it('unblocks the action 24 preview after presence content is emptied', async () => {
         const fixture = await seedEmptyablePartner();
         const ownerId = fixture.owner!.id;
