@@ -8,6 +8,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ENTITY_PUBLIC_PATHS } from '../../../src/lib/seo/entity-public-urls';
+import { buildUrl } from '../../../src/lib/urls';
 
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/venue/VenueCard.astro'),
@@ -25,9 +27,15 @@ describe('VenueCard.astro', () => {
     });
 
     describe('routing', () => {
-        it('builds the detail link with buildUrl and gastronomia path', () => {
+        it('TEST:6.1:6 links the card to the canonical /<lang>/comer-y-salir/<slug>/ page', () => {
+            // The card composes the public path from the shared entity registry
+            // and prefixes the locale; the retired `/gastronomia/` route is gone.
+            expect(buildUrl({ locale: 'es', path: ENTITY_PUBLIC_PATHS.venue('la-parrilla') })).toBe(
+                '/es/comer-y-salir/la-parrilla/'
+            );
+            expect(src).toContain('ENTITY_PUBLIC_PATHS.venue(data.slug)');
             expect(src).toContain('buildUrl');
-            expect(src).toContain('gastronomia/');
+            expect(src).not.toContain('gastronomia/');
         });
 
         it('uses the slug from data.slug for the detail URL', () => {

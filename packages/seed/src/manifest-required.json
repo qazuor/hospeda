@@ -1120,7 +1120,10 @@
         "107-amenity-services-photos-included.json",
         "108-amenity-safety-insurance-included.json",
         "109-amenity-services-hotel-pickup.json",
-        "110-amenity-safety-lockers-available.json"
+        "110-amenity-safety-lockers-available.json",
+        "111-amenity-entertainment-dance-floor.json",
+        "112-amenity-services-vip-area.json",
+        "113-amenity-services-cloakroom.json"
     ],
     "features": [
         "001-feature-river_front.json",
@@ -1228,7 +1231,9 @@
         "103-feature-international_cuisine.json",
         "104-feature-asian_cuisine.json",
         "105-feature-mediterranean_cuisine.json",
-        "106-feature-fusion_cuisine.json"
+        "106-feature-fusion_cuisine.json",
+        "107-feature-dj_sets.json",
+        "108-feature-karaoke.json"
     ],
     "sponsorshipLevels": [
         "001-level-event-bronze.json",

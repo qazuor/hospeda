@@ -285,7 +285,7 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(88);
+        expect(history.length).toBe(90);
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(
@@ -295,6 +295,10 @@ describe('G-FAC-R1 retired venue word', () => {
             'packages/seed/test/data-migrations/0134-hos1864-chat-venue-neutral-prompt.test.ts'
         );
         expect(history).toContain('packages/seed/test/venue-cuisine-features.test.ts');
+        expect(history).toContain('packages/seed/test/venue-night-catalog-items.test.ts');
+        expect(history).toContain(
+            'packages/seed/test/data-migrations/hos1867-night-catalog-items.integration.test.ts'
+        );
         expect(history).toContain(
             'packages/seed/test/data-migrations/hos1943-price-on-request-null.integration.test.ts'
         );
