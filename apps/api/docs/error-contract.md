@@ -160,18 +160,26 @@ There is also a narrow exception for `ALREADY_EXISTS` when
 client can identify which section is unavailable. Other `ALREADY_EXISTS`
 errors keep the debug-only behavior.
 
+`VALIDATION_ERROR` gets the same narrow treatment for business-line
+rejections: the response publishes `details: { field: 'businessLines', reason }`
+so the owner form can show which rule rejected the selection. The gate accepts
+only that exact payload (the service tags the error with
+`reason: 'BUSINESS_LINES_INVALID'`); every other `VALIDATION_ERROR` keeps its
+`details` debug-only — this is not an opening of the whole code.
+
 | `error.code` | `details` shape | Why the client needs it |
 |---|---|---|
 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
 | `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
+| `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
 comment) because widening it changes the public contract of every route that
-passes through `handleRouteError`. The `ALREADY_EXISTS` exception is gated by
-its machine-readable reason; other errors with that code keep debug-only
-details. Adding another public details case is a contract change: update
+passes through `handleRouteError`. The `ALREADY_EXISTS` and `VALIDATION_ERROR`
+exceptions are gated by an exact, machine-readable shape; other errors with
+those codes keep debug-only details. Adding another public details case is a contract change: update
 `PUBLIC_DETAILS_ERROR_CODES` in `utils/response-helpers.ts` **and** this table
 in the same PR — do not fall back to "make it match the global handler" for
 every code.

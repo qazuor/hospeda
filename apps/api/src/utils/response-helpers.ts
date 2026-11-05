@@ -4,7 +4,7 @@
  */
 
 import { DbError } from '@repo/db/utils';
-import { ServiceErrorCode } from '@repo/schemas';
+import { BUSINESS_LINES_INVALID_REASON, ServiceErrorCode } from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
@@ -389,6 +389,23 @@ const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
 ]);
 
 /**
+ * Recognizes the exact business-line validation detail the owner form reads.
+ *
+ * The venue create/patch handlers rebuild the thrown `ServiceError` from the
+ * service envelope (`result.error.code/message/details`), so the top-level
+ * `reason` is not preserved on that path. Gating on the exact shape — only a
+ * `VALIDATION_ERROR` whose details carry `field: 'businessLines'` and a string
+ * `reason` — keeps every other validation detail debug-only.
+ */
+const isBusinessLinesInvalidDetails = (
+    details: unknown
+): details is { readonly field: 'businessLines'; readonly reason: string } => {
+    if (details === null || typeof details !== 'object') return false;
+    const candidate = details as Record<string, unknown>;
+    return candidate.field === 'businessLines' && typeof candidate.reason === 'string';
+};
+
+/**
  * Logs a route error at the level appropriate to its severity (HOS-622).
  *
  * A 404/410-shaped `ServiceError`, or a raw 401/403 `HTTPException`, is a
@@ -425,8 +442,13 @@ const logRouteError = (
 };
 
 /**
- * Helper function to handle errors in route handlers
- * Provides consistent error handling across all endpoints
+ * Helper function to handle errors in route handlers.
+ *
+ * Provides consistent error handling across all endpoints. `error.details` is
+ * debug-only except for the narrow public contract cases: the codes in
+ * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` reason, and the
+ * business-lines validation reason, whose `{ field, reason }` payload the owner
+ * form needs to render the cause of the rejection in production.
  */
 export const handleRouteError = (error: unknown, c: Context) => {
     // HOS-607: a cross-field refinement rejection raised by `parseRefinedBody`
@@ -599,7 +621,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 details:
                     env.HOSPEDA_API_DEBUG_ERRORS ||
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
-                    error.reason === 'SECTION_ABSENT'
+                    error.reason === 'SECTION_ABSENT' ||
+                    error.reason === BUSINESS_LINES_INVALID_REASON ||
+                    (error.code === ServiceErrorCode.VALIDATION_ERROR &&
+                        isBusinessLinesInvalidDetails(error.details))
                         ? error.details
                         : undefined,
                 reason: error.reason

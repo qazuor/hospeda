@@ -26,6 +26,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    BUSINESS_LINES_INVALID_REASON,
     BUSINESS_LINE_RULES,
     DestinationTypeEnum,
     normalizeBusinessLines,
@@ -614,7 +615,8 @@ export abstract class BaseListingService<
                     {
                         field: 'businessLines',
                         reason: validation.reason
-                    }
+                    },
+                    BUSINESS_LINES_INVALID_REASON
                 );
             }
             businessLines = normalizeBusinessLines({
@@ -818,7 +820,8 @@ export abstract class BaseListingService<
                     {
                         field: 'businessLines',
                         reason: validation.reason
-                    }
+                    },
+                    BUSINESS_LINES_INVALID_REASON
                 );
             }
             payload.businessLines = normalizeBusinessLines({

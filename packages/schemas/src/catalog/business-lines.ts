@@ -7,6 +7,17 @@ import type {
     ListingVertical
 } from './listing-catalog.types.js';
 
+/**
+ * Machine-readable reason carried by the `ServiceError` when a listing's
+ * business-line selection fails validation (DEC-FAC-080).
+ *
+ * The service also keeps the specific validation cause in `details.reason`;
+ * this value is what `handleRouteError` gates the public `details` on, so the
+ * owner form can show the cause in production without opening every
+ * `VALIDATION_ERROR`.
+ */
+export const BUSINESS_LINES_INVALID_REASON = 'BUSINESS_LINES_INVALID' as const;
+
 /** Business lines available for listing creation and public collections. */
 export const BUSINESS_LINES = {
     venue: [
@@ -32,6 +43,7 @@ export const BUSINESS_LINES = {
         { vertical: 'experience', value: 'standard', public: false, sections: [] }
     ] as const satisfies readonly BusinessLineDefinitionBase<'experience'>[]
 };
+
 const foodNight = { allowed: ['food', 'nightlife'], preselect: ['food', 'nightlife'] } as const;
 const foodNightRestaurant = { allowed: ['food', 'nightlife'], preselect: ['food'] } as const;
 const foodOnly = { allowed: ['food'], preselect: ['food'] } as const;
