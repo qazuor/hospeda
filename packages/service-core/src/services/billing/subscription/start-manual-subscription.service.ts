@@ -16,6 +16,7 @@ import { commitmentTaken } from './resolve-live-commitment';
 import {
     assertPlanForSale,
     assertTouristVipPurchaseAllowed,
+    closeDeclinedAttempts,
     readBillingChoice,
     type StartSubscriptionPorts
 } from './start-subscription.service';
@@ -72,6 +73,8 @@ export async function startManualSubscription(
         userId: parsed.userId,
         touristVipInheritance: ports.touristVipInheritance
     });
+    await closeDeclinedAttempts({ userId: parsed.userId, vertical: choice.vertical }, ports);
+
     const reuse = async (): Promise<StartManualSubscriptionResult | null> => {
         const existing = await subscriptionModel.findLiveCommitment({
             userId: parsed.userId,
