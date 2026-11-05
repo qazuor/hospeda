@@ -1,4 +1,14 @@
 {
+    "partnerApplication": {
+        "title": "Postulate como partner",
+        "emailLabel": "Correo electrónico",
+        "emailHelp": "Te vamos a escribir a esta dirección para responderte sobre la postulación.",
+        "submit": "Enviar postulación",
+        "sending": "Enviando postulación…",
+        "success": "Gracias. Recibimos tu correo y te escribiremos con una respuesta.",
+        "error": "No pudimos enviar la postulación. Intentá de nuevo más tarde.",
+        "unavailable": "El formulario no está disponible en este momento. Probá de nuevo más tarde."
+    },
     "form": {
         "fields": {
             "contactName": "Tu nombre",
