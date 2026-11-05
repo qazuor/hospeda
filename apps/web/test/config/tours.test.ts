@@ -243,5 +243,20 @@ describe('web tours config', () => {
                 expect(tour.steps.length).toBeGreaterThan(0);
             }
         });
+
+        it('declares the account page each tour runs on (HOS-1856)', () => {
+            const pageById: Record<string, string> = {
+                'web.tourist.welcome': 'dashboard',
+                'web.host.welcome': 'dashboard',
+                'web.venue.welcome': 'comercio',
+                'web.experience.welcome': 'comercio',
+                'web.editor.welcome': 'dashboard',
+                'web.sponsor.welcome': 'dashboard'
+            };
+
+            for (const tour of WEB_TOURS) {
+                expect(tour.page).toBe(pageById[tour.id]);
+            }
+        });
     });
 });
