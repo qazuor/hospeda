@@ -26,7 +26,10 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { up } from '../../src/data-migrations/0133-hos-2037-video-link-all-plans.js';
-import { reanchorSubscriptionsToVersion } from '../../src/data-migrations/helpers/reanchorSubscriptionsToVersion.js';
+import {
+    reanchorOlderVersions,
+    reanchorSubscriptionsToVersion
+} from '../../src/data-migrations/helpers/reanchorSubscriptionsToVersion.js';
 
 const connectionString = process.env.HOSPEDA_DATABASE_URL;
 let pool: Pool;
@@ -110,6 +113,62 @@ async function anchor(input: {
         .returning();
     if (!row) throw new Error('subscription insert failed');
     return { row, option };
+}
+
+/**
+ * Inserts a retired, non-sellable twin of `current` (same entitlements and limits, prices
+ * shifted by `priceShift`). Catalog triggers only accept children inside the version's
+ * own transaction.
+ */
+async function twinOf(current: typeof planVersions.$inferSelect, priceShift: number) {
+    const [entitlements, limits, options] = await Promise.all([
+        db
+            .select()
+            .from(planVersionEntitlements)
+            .where(eq(planVersionEntitlements.planVersionId, current.id)),
+        db.select().from(planVersionLimits).where(eq(planVersionLimits.planVersionId, current.id)),
+        db.select().from(billingOptions).where(eq(billingOptions.planVersionId, current.id))
+    ]);
+    return db.transaction(async (tx) => {
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: current.planId,
+                vertical: current.vertical,
+                rank: current.rank,
+                sellable: false,
+                current: false,
+                graceDays: current.graceDays,
+                trialDays: current.trialDays,
+                allowsPause: current.allowsPause,
+                inheritsTouristVip: current.inheritsTouristVip
+            })
+            .returning();
+        if (!version) throw new Error('twin version insert failed');
+        await tx.insert(planVersionEntitlements).values(
+            entitlements.map(({ key, planQuota, trialQuota }) => ({
+                planVersionId: version.id,
+                key,
+                planQuota,
+                trialQuota
+            }))
+        );
+        if (limits.length > 0)
+            await tx
+                .insert(planVersionLimits)
+                .values(
+                    limits.map(({ key, value }) => ({ planVersionId: version.id, key, value }))
+                );
+        await tx.insert(billingOptions).values(
+            options.map(({ cycle, amount, currency }) => ({
+                planVersionId: version.id,
+                cycle,
+                amount: amount + priceShift,
+                currency
+            }))
+        );
+        return version;
+    });
 }
 
 describe('HOS-2037 migration 0133 (real database)', () => {
@@ -235,65 +294,13 @@ describe('HOS-2037 migration 0133 (real database)', () => {
 
     it('accepts a retired, non-sellable source and refuses a price-different one', async () => {
         const { version: current } = await currentVersion('owner-basico');
-        const [currentEntitlements, currentLimits, currentOptions] = await Promise.all([
-            db
-                .select()
-                .from(planVersionEntitlements)
-                .where(eq(planVersionEntitlements.planVersionId, current.id)),
-            db
-                .select()
-                .from(planVersionLimits)
-                .where(eq(planVersionLimits.planVersionId, current.id)),
-            db.select().from(billingOptions).where(eq(billingOptions.planVersionId, current.id))
-        ]);
-
-        const retire = (priceShift: number) =>
-            // The catalog triggers only accept children inside the version's own transaction.
-            db.transaction(async (tx) => {
-                const [version] = await tx
-                    .insert(planVersions)
-                    .values({
-                        planId: current.planId,
-                        vertical: current.vertical,
-                        rank: current.rank,
-                        sellable: false,
-                        current: false,
-                        graceDays: current.graceDays,
-                        trialDays: current.trialDays,
-                        allowsPause: current.allowsPause,
-                        inheritsTouristVip: current.inheritsTouristVip
-                    })
-                    .returning();
-                if (!version) throw new Error('retired version insert failed');
-                await tx.insert(planVersionEntitlements).values(
-                    currentEntitlements.map(({ key, planQuota, trialQuota }) => ({
-                        planVersionId: version.id,
-                        key,
-                        planQuota,
-                        trialQuota
-                    }))
-                );
-                if (currentLimits.length > 0)
-                    await tx.insert(planVersionLimits).values(
-                        currentLimits.map(({ key, value }) => ({
-                            planVersionId: version.id,
-                            key,
-                            value
-                        }))
-                    );
-                await tx.insert(billingOptions).values(
-                    currentOptions.map(({ cycle, amount, currency }) => ({
-                        planVersionId: version.id,
-                        cycle,
-                        amount: amount + priceShift,
-                        currency
-                    }))
-                );
-                return version;
-            });
+        const currentOptions = await db
+            .select()
+            .from(billingOptions)
+            .where(eq(billingOptions.planVersionId, current.id));
 
         // Different price: refused even with a live subscriber, and nothing moves.
-        const dearer = await retire(1);
+        const dearer = await twinOf(current, 1);
         const stuck = await anchor({ versionId: dearer.id, cycle: 'monthly', status: 'ACTIVE' });
         await expect(reanchor(dearer.id, current.id)).rejects.toThrow('prices differ');
         const [stuckAfter] = await db
@@ -303,7 +310,7 @@ describe('HOS-2037 migration 0133 (real database)', () => {
         expect(stuckAfter?.planVersionId).toBe(dearer.id);
 
         // Same price, retired and non-sellable: moved, cycle preserved.
-        const retired = await retire(0);
+        const retired = await twinOf(current, 0);
         const moved = await anchor({ versionId: retired.id, cycle: 'annual', status: 'ACTIVE' });
         const result = await reanchor(retired.id, current.id);
         expect(result.movedCount).toBe(1);
@@ -316,5 +323,48 @@ describe('HOS-2037 migration 0133 (real database)', () => {
         expect(currentOptions.find((o) => o.id === movedAfter?.billingOptionId)?.cycle).toBe(
             'annual'
         );
+    });
+
+    it('re-anchors subscribers pinned to ANY older version and skips an incompatible one', async () => {
+        const { version: current } = await currentVersion('owner-basico');
+        const currentOptions = await db
+            .select()
+            .from(billingOptions)
+            .where(eq(billingOptions.planVersionId, current.id));
+        const olderA = await twinOf(current, 0);
+        const olderB = await twinOf(current, 0);
+        const incompatible = await twinOf(current, 2);
+        const a = await anchor({ versionId: olderA.id, cycle: 'monthly', status: 'ACTIVE' });
+        const b = await anchor({ versionId: olderB.id, cycle: 'annual', status: 'GRACE_PERIOD' });
+        const c = await anchor({
+            versionId: incompatible.id,
+            cycle: 'monthly',
+            status: 'ACTIVE'
+        });
+
+        // Act: 0133 sees the current version already grants the entitlement and only sweeps.
+        const outcome = await run();
+
+        // Assert: both compatible sources moved by cycle; the incompatible one untouched and reported
+        const rows = await db
+            .select()
+            .from(subscriptions)
+            .where(inArray(subscriptions.id, [a.row.id, b.row.id, c.row.id]));
+        const byId = new Map(rows.map((r) => [r.id, r]));
+        const cycleOf = (optionId: string | null | undefined) =>
+            currentOptions.find((o) => o.id === optionId)?.cycle;
+        expect(byId.get(a.row.id)?.planVersionId).toBe(current.id);
+        expect(cycleOf(byId.get(a.row.id)?.billingOptionId)).toBe('monthly');
+        expect(byId.get(b.row.id)?.planVersionId).toBe(current.id);
+        expect(cycleOf(byId.get(b.row.id)?.billingOptionId)).toBe('annual');
+        expect(byId.get(c.row.id)?.planVersionId).toBe(incompatible.id);
+        expect(outcome.summary).toContain(`owner-basico:${incompatible.id}`);
+
+        // Second run: nothing left to move for the compatible ones.
+        const again = await db.transaction(async (tx) =>
+            reanchorOlderVersions({ db: tx, planId: current.planId, toVersionId: current.id })
+        );
+        expect(again.movedCount).toBe(0);
+        expect(again.skipped.map((s) => s.versionId)).toContain(incompatible.id);
     });
 });
