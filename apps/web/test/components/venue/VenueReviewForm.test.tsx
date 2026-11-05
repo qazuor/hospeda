@@ -6,7 +6,7 @@
  * return per-field errors in production, so this validation is the only gate.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
@@ -91,7 +91,10 @@ function openDialog() {
 }
 
 function rateFiveStars() {
-    fireEvent.click(screen.getByRole('radio', { name: '5' }));
+    // HOS-1866: the dialog now also renders the optional dimension star rows,
+    // so "5" is no longer unique — scope the click to the overall rating group.
+    const overallGroup = screen.getByRole('radiogroup', { name: /calificación general/i });
+    fireEvent.click(within(overallGroup).getByRole('radio', { name: '5' }));
 }
 
 // ---------------------------------------------------------------------------

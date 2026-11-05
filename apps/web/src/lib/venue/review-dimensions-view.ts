@@ -23,6 +23,9 @@ export type PublicReviewSectionStates = Readonly<
     Record<string, { readonly state: PublicReviewSectionState }>
 >;
 
+/** Votes collected by the review form, keyed by dimension id (1–5). */
+export type ReviewDimensionVotes = Readonly<Record<string, number>>;
+
 /** One dimension's public aggregate. A missing key means zero votes. */
 export interface PublicDimensionRating {
     readonly average: number;
@@ -108,6 +111,31 @@ export function resolveDimensionAverages({
         });
     }
     return resolved;
+}
+
+/**
+ * Builds the `rating` object of the review POST from the optional votes.
+ *
+ * The server schema derives the breakdown from the catalog: each dimension is
+ * optional and an integer 1–5, and "did not vote" is the ABSENT key, never `0`
+ * or `null` (DEC-FAC-071). An unvoted dimension is therefore left out, and with
+ * no votes at all the result is `undefined` so `JSON.stringify` drops the key
+ * and the body stays byte-identical to the form's pre-dimension shape.
+ *
+ * @param args.votes - Votes keyed by dimension id.
+ * @returns Only the voted dimensions, or `undefined` when there are none.
+ */
+export function buildReviewRatingPayload({
+    votes
+}: {
+    readonly votes: ReviewDimensionVotes;
+}): Partial<Record<string, number>> | undefined {
+    const rating: Record<string, number> = {};
+    for (const [dimensionId, value] of Object.entries(votes)) {
+        if (!Number.isInteger(value) || value < 1 || value > 5) continue;
+        rating[dimensionId] = value;
+    }
+    return Object.keys(rating).length > 0 ? rating : undefined;
 }
 
 /**

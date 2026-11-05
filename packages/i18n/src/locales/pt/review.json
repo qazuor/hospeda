@@ -45,6 +45,11 @@
         "venue": {
             "pendingNotice": "Sua avaliação está pendente de aprovação e ficará visível após a revisão.",
             "alreadyReviewed": "Você já enviou uma avaliação para este lugar."
+        },
+        "dimensions": {
+            "title": "Avalie por aspecto",
+            "optional": "Opcional",
+            "removeHint": "Toque novamente a estrela escolhida para remover seu voto"
         }
     },
     "locked": {
