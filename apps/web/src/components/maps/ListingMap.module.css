@@ -295,9 +295,11 @@
 }
 
 .popupPriceConsult {
+    min-width: 0;
     font-size: 0.6875rem;
     font-weight: 500;
     color: var(--core-muted-foreground);
+    white-space: normal;
 }
 
 /* CTA matches `AccommodationCard.astro` (.acc-card__cta-btn) so the popup
