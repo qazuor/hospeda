@@ -274,8 +274,15 @@
                     "faqs_other": "{{count}} questions",
                     "selected_one": "{{count}} selected",
                     "selected_other": "{{count}} selected",
-                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}",
+                    "lockedWithData_one": "Locked by your plan · {{count}} item saved (not published)",
+                    "lockedWithData_other": "Locked by your plan · {{count}} items saved (not published)",
+                    "lockedEmpty": "Locked by your plan"
                 }
+            },
+            "lockedNotice": {
+                "plan_one": "You have {{count}} saved item that is not published: your plan does not include {{section}}.",
+                "plan_other": "You have {{count}} saved items that are not published: your plan does not include {{section}}."
             },
             "amenities": {
                 "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
