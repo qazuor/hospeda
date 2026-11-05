@@ -132,20 +132,28 @@ async function runTourAndCollectTitles(page: Page): Promise<readonly string[]> {
 
     const titles: string[] = [];
     const title = page.locator('.driver-popover-title');
+    const nextButton = page.locator('.driver-popover-next-btn');
+    // On the last step driver.js does not hide the next button: it adds this
+    // class to it (driver.js 1.8 `.driver-popover-done-btn`). Clicking it ends
+    // the tour and destroys the popover, so the loop has to stop there instead
+    // of waiting for a title that no longer exists on the next iteration.
+    const doneButton = page.locator('.driver-popover-done-btn');
 
     for (let step = 0; step < 12; step += 1) {
         await title.waitFor({ state: 'visible' });
         titles.push((await title.innerText()).trim());
 
-        const nextButton = page.locator('.driver-popover-next-btn');
-        if (!(await nextButton.isVisible())) {
-            await page.locator('.driver-popover-done-btn').click();
+        if ((await doneButton.count()) > 0) {
+            await doneButton.click();
             break;
         }
 
         await nextButton.click();
         await page.waitForTimeout(400);
     }
+
+    // "Finalizar" tears the tour down: the popover must be gone afterwards.
+    await expect(page.locator('.driver-popover')).toHaveCount(0);
 
     return titles;
 }
