@@ -6,35 +6,45 @@
  * canonical form per field meaning.
  */
 
-import { normalizeArgentinePhone } from '@repo/schemas';
+import {
+    AccommodationUpdateHttpSchema,
+    ContactInfoSchema,
+    httpToDomainAccommodationUpdate,
+    normalizeArgentinePhone
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { AccommodationContactSchema } from '@/components/host/editor/accommodation-edit-form.schema';
 import { composePhoneValue, DEFAULT_PHONE_COUNTRY, parsePhoneValue } from '@/lib/phone-countries';
 
 const compose = (number: string) => composePhoneValue({ country: DEFAULT_PHONE_COUNTRY, number });
 
-describe('editor composition -> validator -> canonical (HOS-2034)', () => {
+describe('editor composition -> HTTP schema -> contactInfo (HOS-2034)', () => {
+    // The editor's flat `phone` and `whatsapp` fields both map to
+    // contactInfo.mobilePhone / contactInfo.whatsapp, which are stored as
+    // mobile numbers (+549...). The service normalizer applies the same
+    // parser (see packages/service-core normalizer.editor-chain test).
     it.each([
-        // typed, canonical phone (landline field), canonical whatsapp (mobile field)
-        ['3442 45-2345', '+543442452345', '+5493442452345'],
-        ['3442452345', '+543442452345', '+5493442452345'],
-        ['(3442) 45-2345', '+543442452345', '+5493442452345'],
-        ['03442 452345', '+543442452345', '+5493442452345'],
-        ['3442 15 45-2345', '+5493442452345', '+5493442452345'],
-        ['+54 9 3442 45-2345', '+5493442452345', '+5493442452345'],
-        ['+5493442452345', '+5493442452345', '+5493442452345'],
-        ['54 3442 452345', '+543442452345', '+5493442452345'],
-        ['0223-155-1234', '+542231551234', '+5492231551234'],
-        ['3415123456', '+543415123456', '+5493415123456']
-    ])('%s saves and normalizes per field', (typed, phone, whatsapp) => {
+        ['3442 45-2345', '+5493442452345'],
+        ['3442452345', '+5493442452345'],
+        ['(3442) 45-2345', '+5493442452345'],
+        ['03442 452345', '+5493442452345'],
+        ['3442 15 45-2345', '+5493442452345'],
+        ['+54 9 3442 45-2345', '+5493442452345'],
+        ['+5493442452345', '+5493442452345'],
+        ['54 3442 452345', '+5493442452345'],
+        ['0223-155-1234', '+5492231551234'],
+        ['3415123456', '+5493415123456']
+    ])('%s saves and is stored as %s', (typed, stored) => {
         const composed = compose(typed);
-        const parsed = AccommodationContactSchema.safeParse({
-            phone: composed,
-            whatsapp: composed
-        });
-        expect(parsed.success).toBe(true);
-        expect(normalizeArgentinePhone(composed, false)).toBe(phone);
-        expect(normalizeArgentinePhone(composed, true)).toBe(whatsapp);
+        expect(
+            AccommodationContactSchema.safeParse({ phone: composed, whatsapp: composed }).success
+        ).toBe(true);
+
+        const http = AccommodationUpdateHttpSchema.parse({ phone: composed, whatsapp: composed });
+        const contactInfo = httpToDomainAccommodationUpdate(http).contactInfo;
+        expect(ContactInfoSchema.safeParse(contactInfo).success).toBe(true);
+        expect(normalizeArgentinePhone(contactInfo?.mobilePhone ?? '', true)).toBe(stored);
+        expect(normalizeArgentinePhone(contactInfo?.whatsapp ?? '', true)).toBe(stored);
     });
 
     it.each([
