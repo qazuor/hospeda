@@ -17,7 +17,15 @@ import {
     httpToDomainAccommodationUpdate
 } from '../../src/entities/accommodation/accommodation.http.schema.js';
 import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
+import {
+    ExperienceUpdateHttpSchema,
+    httpToDomainExperienceUpdate
+} from '../../src/entities/experience/experience.http.schema.js';
 import { VenueOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
+import {
+    httpToDomainVenueUpdate,
+    VenueUpdateHttpSchema
+} from '../../src/entities/venue/venue.http.schema.js';
 import { normalizeArgentinePhone } from '../../src/utils/utils.js';
 
 describe('ContactInfoSchema', () => {
@@ -58,6 +66,19 @@ describe('ContactInfoSchema', () => {
         expect(httpToDomainAccommodationUpdate({ phone: '' }).contactInfo).toEqual({
             mobilePhone: null
         });
+    });
+
+    it('lets a venue editor clear an optional phone (empty -> null)', () => {
+        const parsed = VenueUpdateHttpSchema.parse({ phone: '', website: 'https://example.com' });
+        expect(httpToDomainVenueUpdate(parsed).contactInfo?.mobilePhone).toBeNull();
+    });
+
+    it('lets an experience editor clear an optional phone (empty -> null)', () => {
+        const parsed = ExperienceUpdateHttpSchema.parse({
+            phone: '',
+            website: 'https://example.com'
+        });
+        expect(httpToDomainExperienceUpdate(parsed).contactInfo?.mobilePhone).toBeNull();
     });
 
     it.each([

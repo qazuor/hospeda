@@ -96,7 +96,7 @@ describe('ContactInfoSchema (WRITE) — the bounds are NOT relaxed by the null',
     });
 
     it('still rejects a malformed homePhone and workPhone', () => {
-        expect(ContactInfoSchema.safeParse({ homePhone: '0223-155-1234' }).success).toBe(false);
+        expect(ContactInfoSchema.safeParse({ homePhone: '0223-155-123' }).success).toBe(false);
         expect(ContactInfoSchema.safeParse({ workPhone: 'abc' }).success).toBe(false);
     });
 

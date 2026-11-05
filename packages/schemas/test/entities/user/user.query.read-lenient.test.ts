@@ -131,8 +131,8 @@ const OVER_MAX_OCCUPATION = 'E'.repeat(
  * off the read base would go entirely undetected.
  */
 
-/** Legacy AR local mobile format; fails the write `InternationalPhoneRegex`. */
-const LEGACY_AR_MOBILE_PHONE = '0223-155-1234';
+/** Legacy local mobile text that is not a valid phone; fails the shared write validator. */
+const LEGACY_AR_MOBILE_PHONE = '0223-155-123';
 
 /** Non-canonical Facebook URL; fails both the write `.url()` and `FacebookUrlRegex`. */
 const NON_CANONICAL_FACEBOOK_URL = 'm.facebook.com/x';
