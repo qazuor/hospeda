@@ -30,6 +30,18 @@ const EXPERIENCE_MINE_PATH = '/api/v1/protected/experiences/mine';
 const VENUE_PATH = '/api/v1/protected/venues';
 const EXPERIENCE_PATH = '/api/v1/protected/experiences';
 
+/**
+ * Protected collection path of each vertical, read as data.
+ *
+ * A record keyed by vertical rather than `vertical === 'venue' ? … : …` at each
+ * call site: G-FAC-05 (leaf 5.8) scans this file for comparisons against a
+ * vertical literal.
+ */
+const PROTECTED_COLLECTION_PATH: Readonly<Record<VenueOrExperience, string>> = {
+    venue: VENUE_PATH,
+    experience: EXPERIENCE_PATH
+};
+
 /** Owner-tier detail of a single listing, one of the two verticals. */
 export type ListingDetail = VenueProtected | ExperienceProtected;
 
@@ -105,7 +117,7 @@ export async function fetchOwnerListingDetail({
     id: string;
     cookieHeader?: string;
 }): Promise<ListingDetail | null> {
-    const path = vertical === 'venue' ? `${VENUE_PATH}/${id}` : `${EXPERIENCE_PATH}/${id}`;
+    const path = `${PROTECTED_COLLECTION_PATH[vertical]}/${id}`;
 
     const result = await apiClient.getProtected<ListingDetail | null>({
         path,
@@ -216,7 +228,7 @@ export function createOwnerListing(
     params: CreateOwnerListingPayload
 ): Promise<ApiResult<ListingDetail>> {
     return apiClient.postProtected<ListingDetail>({
-        path: params.vertical === 'venue' ? VENUE_PATH : EXPERIENCE_PATH,
+        path: PROTECTED_COLLECTION_PATH[params.vertical],
         body: params.data
     });
 }

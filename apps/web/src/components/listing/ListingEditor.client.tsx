@@ -43,7 +43,6 @@
  */
 
 import type { OpeningHours } from '@repo/schemas';
-import { ExperienceOwnerUpdateInputSchema, VenueOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
@@ -56,6 +55,7 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
 import {
     buildSlugRefreshPayload,
@@ -122,19 +122,6 @@ type SaveStatus =
     | { readonly kind: 'saving' }
     | { readonly kind: 'success' }
     | { readonly kind: 'error' };
-
-/** Resolve the owner PATCH endpoint for the given vertical. */
-function patchPathFor({
-    vertical,
-    listingId
-}: {
-    vertical: VenueOrExperience;
-    listingId: string;
-}): string {
-    return vertical === 'venue'
-        ? `/api/v1/protected/venues/${listingId}`
-        : `/api/v1/protected/experiences/${listingId}`;
-}
 
 /** Read a nullable string field from an unknown record as a form-friendly string. */
 function strField(source: Record<string, unknown>, key: string): string {
@@ -392,130 +379,176 @@ function buildPatchPayload({
         payload.featureIds = [...current.featureIds];
     }
 
-    if (vertical === 'venue') {
-        if (current.priceRange !== baseline.priceRange) {
-            payload.priceRange = current.priceRange || null;
-        }
-        // HOS-1787 leaf 5.1 — nightInfo. Every writable field clears to `null`;
-        // `entryPriceUpdatedAt` is server-managed and never appears here.
-        // Changing `entryKind` to `null` is what makes the server drop both the
-        // price and its timestamp (4.2), so the price is not forcibly cleared
-        // alongside it.
-        if (current.entryKind !== baseline.entryKind) {
-            payload.entryKind = current.entryKind || null;
-        }
-        if (current.entryPriceFrom !== baseline.entryPriceFrom) {
-            payload.entryPriceFrom = current.entryPriceFrom;
-        }
-        if (current.minAge !== baseline.minAge) {
-            payload.minAge = current.minAge;
-        }
-        if (current.dressCode !== baseline.dressCode) {
-            payload.dressCode = current.dressCode || null;
-        }
-        if (!sameValue(current.entryNoteI18n, baseline.entryNoteI18n)) {
-            payload.entryNoteI18n = isEmptyI18nText(current.entryNoteI18n)
-                ? null
-                : current.entryNoteI18n;
-        }
-        if (!sameValue(current.dressCodeNoteI18n, baseline.dressCodeNoteI18n)) {
-            payload.dressCodeNoteI18n = isEmptyI18nText(current.dressCodeNoteI18n)
-                ? null
-                : current.dressCodeNoteI18n;
-        }
-    } else {
-        if (current.isPriceOnRequest !== baseline.isPriceOnRequest) {
-            payload.isPriceOnRequest = current.isPriceOnRequest;
-        }
-        if (current.priceFrom !== baseline.priceFrom) {
-            payload.priceFrom = current.priceFrom ?? undefined;
-        }
-        if (current.priceUnit !== baseline.priceUnit) {
-            // H-156: `priceUnit` is nullable now, so clearing it sends an
-            // explicit `null` (the venue `priceRange` pattern) instead of
-            // omitting the key. Omitting used to be the only option — a `null`
-            // failed validation — but it also meant the owner could never
-            // actually clear the unit after ticking "price on request": the PATCH
-            // silently dropped the change and the stale unit stayed on the row.
-            payload.priceUnit = current.priceUnit || null;
-        }
-        // HOS-1048: the meeting point clears to an explicit `null`, like the
-        // venue price fields and unlike `priceFrom`. The column is nullable
-        // and the schema is `.nullish()`, so `null` is the only way to say "I
-        // removed the address I had" — omitting the key would mean "no change"
-        // and the stale meeting point would survive the save silently, which is
-        // exactly the bug H-156 had to fix for `priceUnit`.
-        if (current.meetingPoint !== baseline.meetingPoint) {
-            payload.meetingPoint = current.meetingPoint || null;
-        }
-        if (current.meetingPointLat !== baseline.meetingPointLat) {
-            payload.meetingPointLat = current.meetingPointLat;
-        }
-        if (current.meetingPointLong !== baseline.meetingPointLong) {
-            payload.meetingPointLong = current.meetingPointLong;
-        }
-        // HOS-1049: `[]` is a meaningful value, not an absence — it is how the
-        // owner removes every instruction, exactly as with `whatToBring`. The
-        // key ships whenever the list differs, empty or not.
-        //
-        // Deliberately NOT also guarded on `meetingPointDirectionsEnabled`. A
-        // first draft was, and the guard turned out to be unreachable: current
-        // and baseline are seeded from the same payload, so they can only differ
-        // after an edit, and an unentitled provider's control is `disabled` and
-        // cannot be edited. An unreachable branch that no test can kill is worse
-        // than no branch — it reads as protection and provides none. The
-        // affordance is `disabled`; the ENFORCEMENT is the API's field gate,
-        // which refuses this key with a 403 regardless of what any client sends.
-        if (!sameStringList(current.meetingPointDirections, baseline.meetingPointDirections)) {
-            payload.meetingPointDirections = [...current.meetingPointDirections];
-        }
+    Object.assign(payload, VERTICAL_PATCH_FIELDS[vertical]({ current, baseline }));
 
-        // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
-        // value, not on the two halves — a change from 90 minutes to 1 h 30 min
-        // moves both boxes and changes nothing the row can tell apart, and
-        // emitting it would mark the form dirty and trip the unsaved-changes
-        // guard over a no-op.
-        const currentDuration = joinDuration({
-            hours: current.durationHours,
-            minutes: current.durationMinutesPart
-        });
-        const baselineDuration = joinDuration({
-            hours: baseline.durationHours,
-            minutes: baseline.durationMinutesPart
-        });
-        if (currentDuration !== baselineDuration) {
-            // Explicit `null` when both boxes are emptied, for the same reason
-            // as the meeting point: omitting the key means "no change" and the
-            // stale duration would survive the save in silence.
-            payload.durationMinutes = currentDuration;
-        }
+    return payload;
+}
 
-        // HOS-1046: `[]` is a meaningful value here, not an absence — it is how
-        // the owner removes every item. So the key ships whenever the list
-        // differs, empty or not; only an UNCHANGED list is omitted.
-        if (!sameStringList(current.whatToBring, baseline.whatToBring)) {
-            payload.whatToBring = [...current.whatToBring];
-        }
-        if (!sameStringList(current.requirements, baseline.requirements)) {
-            payload.requirements = [...current.requirements];
-        }
+/** The two form snapshots one vertical's own field diff reads. */
+interface VerticalPatchFieldsArgs {
+    readonly current: ListingEditData;
+    readonly baseline: ListingEditData;
+}
 
-        // HOS-1047: nullable free text, so it clears to `null` like the meeting
-        // point rather than to `''` — the column and the schema both say "not
-        // declared" with null, and `''` would be a declared empty policy.
-        if (current.cancellationPolicy !== baseline.cancellationPolicy) {
-            payload.cancellationPolicy = current.cancellationPolicy || null;
-        }
+/**
+ * Fields only the venue update schema owns: the price tier and nightInfo.
+ *
+ * Per-vertical payload rules live in a record of builders rather than in an
+ * `if (vertical === 'venue')` branch: G-FAC-05 (leaf 5.8) forbids the editor
+ * from deciding by a vertical literal. Behaviour is unchanged.
+ *
+ * Every writable nightInfo field clears to `null`; `entryPriceUpdatedAt` is
+ * server-managed and never appears here. Changing `entryKind` to `null` is what
+ * makes the server drop both the price and its timestamp (4.2), so the price is
+ * not forcibly cleared alongside it.
+ */
+function buildVenuePatchFields({
+    current,
+    baseline
+}: VerticalPatchFieldsArgs): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
 
-        // HOS-1056: NOT NULL with a false default, so it never sends null —
-        // turning the toggle off is `false`, a real value, not an absence.
-        if (current.acceptsPrivateGroups !== baseline.acceptsPrivateGroups) {
-            payload.acceptsPrivateGroups = current.acceptsPrivateGroups;
-        }
+    if (current.priceRange !== baseline.priceRange) {
+        payload.priceRange = current.priceRange || null;
+    }
+    if (current.entryKind !== baseline.entryKind) {
+        payload.entryKind = current.entryKind || null;
+    }
+    if (current.entryPriceFrom !== baseline.entryPriceFrom) {
+        payload.entryPriceFrom = current.entryPriceFrom;
+    }
+    if (current.minAge !== baseline.minAge) {
+        payload.minAge = current.minAge;
+    }
+    if (current.dressCode !== baseline.dressCode) {
+        payload.dressCode = current.dressCode || null;
+    }
+    if (!sameValue(current.entryNoteI18n, baseline.entryNoteI18n)) {
+        payload.entryNoteI18n = isEmptyI18nText(current.entryNoteI18n)
+            ? null
+            : current.entryNoteI18n;
+    }
+    if (!sameValue(current.dressCodeNoteI18n, baseline.dressCodeNoteI18n)) {
+        payload.dressCodeNoteI18n = isEmptyI18nText(current.dressCodeNoteI18n)
+            ? null
+            : current.dressCodeNoteI18n;
     }
 
     return payload;
 }
+
+/**
+ * Fields only the experience update schema owns: price-on-request, the starting
+ * price and unit, the meeting point and the practical info.
+ *
+ * See {@link buildVenuePatchFields} for why this is a record entry rather than
+ * an `else` branch.
+ */
+function buildExperiencePatchFields({
+    current,
+    baseline
+}: VerticalPatchFieldsArgs): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+
+    if (current.isPriceOnRequest !== baseline.isPriceOnRequest) {
+        payload.isPriceOnRequest = current.isPriceOnRequest;
+    }
+    if (current.priceFrom !== baseline.priceFrom) {
+        payload.priceFrom = current.priceFrom ?? undefined;
+    }
+    if (current.priceUnit !== baseline.priceUnit) {
+        // H-156: `priceUnit` is nullable now, so clearing it sends an
+        // explicit `null` (the venue `priceRange` pattern) instead of
+        // omitting the key. Omitting used to be the only option — a `null`
+        // failed validation — but it also meant the owner could never
+        // actually clear the unit after ticking "price on request": the PATCH
+        // silently dropped the change and the stale unit stayed on the row.
+        payload.priceUnit = current.priceUnit || null;
+    }
+    // HOS-1048: the meeting point clears to an explicit `null`, like the
+    // venue price fields and unlike `priceFrom`. The column is nullable
+    // and the schema is `.nullish()`, so `null` is the only way to say "I
+    // removed the address I had" — omitting the key would mean "no change"
+    // and the stale meeting point would survive the save silently, which is
+    // exactly the bug H-156 had to fix for `priceUnit`.
+    if (current.meetingPoint !== baseline.meetingPoint) {
+        payload.meetingPoint = current.meetingPoint || null;
+    }
+    if (current.meetingPointLat !== baseline.meetingPointLat) {
+        payload.meetingPointLat = current.meetingPointLat;
+    }
+    if (current.meetingPointLong !== baseline.meetingPointLong) {
+        payload.meetingPointLong = current.meetingPointLong;
+    }
+    // HOS-1049: `[]` is a meaningful value, not an absence — it is how the
+    // owner removes every instruction, exactly as with `whatToBring`. The
+    // key ships whenever the list differs, empty or not.
+    //
+    // Deliberately NOT also guarded on `meetingPointDirectionsEnabled`. A
+    // first draft was, and the guard turned out to be unreachable: current
+    // and baseline are seeded from the same payload, so they can only differ
+    // after an edit, and an unentitled provider's control is `disabled` and
+    // cannot be edited. An unreachable branch that no test can kill is worse
+    // than no branch — it reads as protection and provides none. The
+    // affordance is `disabled`; the ENFORCEMENT is the API's field gate,
+    // which refuses this key with a 403 regardless of what any client sends.
+    if (!sameStringList(current.meetingPointDirections, baseline.meetingPointDirections)) {
+        payload.meetingPointDirections = [...current.meetingPointDirections];
+    }
+
+    // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
+    // value, not on the two halves — a change from 90 minutes to 1 h 30 min
+    // moves both boxes and changes nothing the row can tell apart, and
+    // emitting it would mark the form dirty and trip the unsaved-changes
+    // guard over a no-op.
+    const currentDuration = joinDuration({
+        hours: current.durationHours,
+        minutes: current.durationMinutesPart
+    });
+    const baselineDuration = joinDuration({
+        hours: baseline.durationHours,
+        minutes: baseline.durationMinutesPart
+    });
+    if (currentDuration !== baselineDuration) {
+        // Explicit `null` when both boxes are emptied, for the same reason
+        // as the meeting point: omitting the key means "no change" and the
+        // stale duration would survive the save in silence.
+        payload.durationMinutes = currentDuration;
+    }
+
+    // HOS-1046: `[]` is a meaningful value here, not an absence — it is how
+    // the owner removes every item. So the key ships whenever the list
+    // differs, empty or not; only an UNCHANGED list is omitted.
+    if (!sameStringList(current.whatToBring, baseline.whatToBring)) {
+        payload.whatToBring = [...current.whatToBring];
+    }
+    if (!sameStringList(current.requirements, baseline.requirements)) {
+        payload.requirements = [...current.requirements];
+    }
+
+    // HOS-1047: nullable free text, so it clears to `null` like the meeting
+    // point rather than to `''` — the column and the schema both say "not
+    // declared" with null, and `''` would be a declared empty policy.
+    if (current.cancellationPolicy !== baseline.cancellationPolicy) {
+        payload.cancellationPolicy = current.cancellationPolicy || null;
+    }
+
+    // HOS-1056: NOT NULL with a false default, so it never sends null —
+    // turning the toggle off is `false`, a real value, not an absence.
+    if (current.acceptsPrivateGroups !== baseline.acceptsPrivateGroups) {
+        payload.acceptsPrivateGroups = current.acceptsPrivateGroups;
+    }
+
+    return payload;
+}
+
+/** The extra per-vertical field diff each vertical's update schema accepts. */
+const VERTICAL_PATCH_FIELDS: Readonly<
+    Record<VenueOrExperience, (args: VerticalPatchFieldsArgs) => Record<string, unknown>>
+> = {
+    venue: buildVenuePatchFields,
+    experience: buildExperiencePatchFields
+};
 
 /**
  * Owner editor for ONE section. Tracks which field groups changed and PATCHes
@@ -534,6 +567,9 @@ export function ListingEditor({
     destinationsLoadFailed = false
 }: ListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
+    // Per-vertical data (update schema, PATCH endpoint, business-line presence)
+    // read from the shared record instead of compared against a literal.
+    const { updateSchema, patchPath, showsBusinessLines } = LISTING_VERTICAL_FORM_CONFIG[vertical];
 
     // Field-level validation is delegated to the shared `useZodForm` primitive
     // (HOS-190 slice 3) against the REAL per-vertical owner-update schema — the
@@ -543,8 +579,7 @@ export function ListingEditor({
     // hoc summary/priceFrom checks this editor had) closes contact
     // (mobilePhone/workEmail), social networks, opening hours, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
-    const schema =
-        vertical === 'venue' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
+    const schema = updateSchema;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,
@@ -755,15 +790,14 @@ export function ListingEditor({
     // invalid selection must block the save and show the catalog's reason, never
     // silently drop a line (removing one hides the content it owns). The helper
     // is the web's only `validateBusinessLines` caller (G-FAC-09/G-FAC-03).
-    const businessLinesError =
-        vertical === 'venue'
-            ? resolveBusinessLinesFieldError({
-                  vertical,
-                  type: formData.listingType,
-                  selected: formData.businessLines,
-                  t
-              })
-            : undefined;
+    const businessLinesError = showsBusinessLines
+        ? resolveBusinessLinesFieldError({
+              vertical,
+              type: formData.listingType,
+              selected: formData.businessLines,
+              t
+          })
+        : undefined;
 
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
         currentPublicationStatus,
@@ -832,7 +866,7 @@ export function ListingEditor({
             setStatus({ kind: 'saving' });
 
             const result = await apiClient.patch<unknown>({
-                path: patchPathFor({ vertical, listingId }),
+                path: patchPath(listingId),
                 body: payload
             });
 
@@ -873,7 +907,7 @@ export function ListingEditor({
         [
             patchPayload,
             formData,
-            vertical,
+            patchPath,
             listingId,
             businessLinesError,
             validate,

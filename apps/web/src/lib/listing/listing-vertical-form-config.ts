@@ -1,13 +1,14 @@
 /**
  * @file listing-vertical-form-config.ts
- * @description Per-vertical configuration for the owner create form
- * (HOS-1787 leaf 5.6).
+ * @description Per-vertical configuration for the owner create and edit forms
+ * (HOS-1787 leaves 5.6 and 5.8).
  *
- * `ListingCreateForm` and `BasicInfoSection` used to branch on
- * `vertical === 'venue'` for the type options, the form schema and the price
- * fields. G-FAC-05 (leaf 5.8) scans those files for comparisons against a
- * vertical literal, so the three decisions live here instead: one record keyed
- * by vertical, read as data by both components. Behaviour is unchanged.
+ * `ListingCreateForm`, `BasicInfoSection` and `ListingEditor` used to branch on
+ * `vertical === 'venue'` for the type options, the form schema, the price
+ * fields, the PATCH endpoint and the update schema. G-FAC-05 (leaf 5.8) scans
+ * those files for comparisons against a vertical literal, so the decisions live
+ * here instead: one record keyed by vertical, read as data by all three
+ * components. Behaviour is unchanged.
  *
  * @module lib/listing/listing-vertical-form-config
  */
@@ -15,10 +16,12 @@
 import type { ExperienceOwnerCreateInput, VenueOwnerCreateInput } from '@repo/schemas';
 import {
     ExperienceOwnerCreateInputSchema,
+    ExperienceOwnerUpdateInputSchema,
     ExperienceTypeEnum,
     requirePricingUnlessOnRequest,
     resolveBusinessLineDefaults as resolveDefaults,
     VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
     VenueTypeEnum
 } from '@repo/schemas';
 import type { ZodTypeAny } from 'zod';
@@ -47,12 +50,16 @@ export interface ListingVerticalFormLabels {
     readonly createErrorFallback: string;
 }
 
-/** One vertical's create-form decision surface. */
+/** One vertical's create/edit-form decision surface. */
 export interface ListingVerticalFormConfig {
     /** Listing-type enum values, in display order. */
     readonly typeOptions: readonly string[];
     /** The subset of the real create schema this form collects. */
     readonly formSchema: ZodTypeAny;
+    /** The real owner-update schema the section editor validates against. */
+    readonly updateSchema: ZodTypeAny;
+    /** PATCH endpoint of one existing listing of this vertical. */
+    readonly patchPath: (listingId: string) => string;
     /** Whether this vertical has a business-line selector and sends the field. */
     readonly showsBusinessLines: boolean;
     /** Whether this vertical shows the experience price fields. */
@@ -108,6 +115,8 @@ export const LISTING_VERTICAL_FORM_CONFIG: Readonly<
     venue: {
         typeOptions: Object.values(VenueTypeEnum),
         formSchema: VENUE_FORM_SCHEMA,
+        updateSchema: VenueOwnerUpdateInputSchema,
+        patchPath: (listingId) => `/api/v1/protected/venues/${listingId}`,
         showsBusinessLines: true,
         showsPriceFields: false,
         showsTypeDescription: true,
@@ -135,6 +144,8 @@ export const LISTING_VERTICAL_FORM_CONFIG: Readonly<
     experience: {
         typeOptions: Object.values(ExperienceTypeEnum),
         formSchema: EXPERIENCE_FORM_SCHEMA,
+        updateSchema: ExperienceOwnerUpdateInputSchema,
+        patchPath: (listingId) => `/api/v1/protected/experiences/${listingId}`,
         showsBusinessLines: false,
         showsPriceFields: true,
         showsTypeDescription: false,

@@ -31,6 +31,31 @@ import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 export const LISTING_EDITOR_SECTION_GROUPS = ['property', 'content', 'management'] as const;
 
 /**
+ * The two verticals the shared listing editor serves, as a lookup.
+ *
+ * Accommodation keeps its own editor (`resolve-editor-page.ts`) until child 8.
+ * A record rather than `vertical === 'venue' || vertical === 'experience'`:
+ * G-FAC-05 (leaf 5.8) forbids the editor from deciding by a vertical literal.
+ */
+export const LISTING_EDITOR_VERTICALS: Readonly<Record<VenueOrExperience, true>> = {
+    venue: true,
+    experience: true
+};
+
+/**
+ * Whether a route's `vertical` segment is one the shared listing editor knows.
+ *
+ * The route param arrives as a plain string, so this is also the type guard that
+ * narrows it to `VenueOrExperience` without comparing against a literal.
+ *
+ * @param value - The raw `[vertical]` route segment, possibly absent.
+ * @returns `true` when the editor serves that vertical.
+ */
+export function isListingEditorVertical(value: string | undefined): value is VenueOrExperience {
+    return value !== undefined && Object.hasOwn(LISTING_EDITOR_VERTICALS, value);
+}
+
+/**
  * i18n key for each group heading.
  *
  * The bucket ids are shared with the accommodation editor (see

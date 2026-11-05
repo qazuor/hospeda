@@ -33,6 +33,7 @@ import {
     buildListingEditorRegistry,
     type ListingSectionStates
 } from '@/lib/editor/listing-editor-registry';
+import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
@@ -109,8 +110,7 @@ export async function resolveListingEditorPage({
 
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
-    const isVertical = verticalParam === 'venue' || verticalParam === 'experience';
-    if (!isVertical || !listingId) {
+    if (!isListingEditorVertical(verticalParam) || !listingId) {
         return { redirect: new Response(null, { status: 404 }) };
     }
     const vertical = verticalParam;
