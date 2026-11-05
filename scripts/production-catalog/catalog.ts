@@ -1827,7 +1827,7 @@ export const PRODUCTION_PLAN_CATALOG = [
  * catalog source stays the one place to read the whole catalog. Not part of the
  * generated SQL on purpose: see the constant's own docblock (GUARD:G18).
  */
-export { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../packages/seed/src/data-migrations/helpers/next-version-entitlements.js';
+export { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../packages/seed/src/catalog/next-version-entitlements.js';
 
 /** V2.4a fixture retained for the mechanism tests. */
 export const PLACEHOLDER_CATALOG = [

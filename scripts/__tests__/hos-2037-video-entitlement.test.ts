@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS as SEED_OWNED } from '../../packages/seed/src/data-migrations/helpers/next-version-entitlements.js';
+import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS as SEED_OWNED } from '../../packages/seed/src/catalog/next-version-entitlements.js';
 import {
     PRODUCTION_PLAN_CATALOG,
     PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS

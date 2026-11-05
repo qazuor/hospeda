@@ -1,6 +1,6 @@
 /**
  * Publishes a new immutable version of each plan listed in
- * `PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS` (read from `./helpers/next-version-entitlements`,
+ * `PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS` (read from `../catalog/next-version-entitlements`,
  * which the production catalog source re-exports) with the listed entitlement, and re-anchors
  * every live subscription (and queued plan change) pinned to ANY older version of that plan.
  *
@@ -17,8 +17,8 @@ import {
     planVersions
 } from '@repo/db';
 import { buildPublicationContext, validatePublication } from '@repo/service-core';
+import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../catalog/next-version-entitlements.js';
 import { logger } from '../utils/logger.js';
-import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from './helpers/next-version-entitlements.js';
 import { reanchorOlderVersions } from './helpers/reanchorSubscriptionsToVersion.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
