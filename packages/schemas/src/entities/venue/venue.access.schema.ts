@@ -125,6 +125,19 @@ export const VenuePublicSchema = VenueSchema.pick({
      */
     multiLine: z.boolean().optional(),
     /**
+     * Server-resolved state of the sections a review dimension is bound to
+     * (DEC-FAC-072, HOS-1866 / 6.6). Only the bound sections are published, and
+     * only `absent` or `available`: a `locked` section is published as
+     * `available` so the public, cacheable page never reveals the owner's plan.
+     * The web offers a bound dimension unless its section is `absent` and never
+     * compares business lines (G-FAC-03). Optional because a payload cached
+     * before this field shipped, or a list read of another vertical, never
+     * derives it; absent means "unknown", not "all sections available".
+     */
+    reviewSectionStates: z
+        .record(z.string(), z.object({ state: z.enum(['absent', 'available']) }))
+        .optional(),
+    /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich
      * and plain rendering. The entitlement-by-omission gate runs BEFORE
