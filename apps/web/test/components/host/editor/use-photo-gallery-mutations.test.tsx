@@ -78,4 +78,35 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         );
         expect(updateMediaMock).not.toHaveBeenCalled();
     });
+
+    it('does not warn about the photo being completed with the submitted alt value', async () => {
+        const incompletePhoto = { ...photo, alt: '' };
+        const { result } = renderHook(() => {
+            usePhotoAltWarningGuard({
+                locale: 'es',
+                accommodationId: 'accommodation-1',
+                featuredItem: null,
+                galleryItems: [incompletePhoto]
+            });
+            return usePhotoGalleryMutations({
+                accommodationId: 'accommodation-1',
+                t: (_key, fallback) => fallback ?? '',
+                featuredItem: null,
+                galleryItems: [incompletePhoto],
+                isHydrated: true,
+                setFeaturedItem: vi.fn(),
+                setGalleryItems: vi.fn(),
+                setError: vi.fn(),
+                setOpLoading: vi.fn(),
+                reportUploadError: vi.fn()
+            });
+        });
+
+        await act(async () => {
+            await result.current.handleUpdateMediaText(incompletePhoto, { alt: 'Completed alt' });
+        });
+
+        expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        expect(updateMediaMock).toHaveBeenCalledTimes(1);
+    });
 });

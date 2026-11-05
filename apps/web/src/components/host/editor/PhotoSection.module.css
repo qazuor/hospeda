@@ -472,6 +472,13 @@
     cursor: not-allowed;
 }
 
+.metadataSavedBadge {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: oklch(0.5 0.15 145);
+}
+
 .videoRow {
     display: flex;
     flex-direction: column;

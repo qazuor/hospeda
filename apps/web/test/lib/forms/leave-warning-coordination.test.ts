@@ -185,8 +185,8 @@ describe('leave warnings on a page that mounts two guards', () => {
             expect(call?.message).toContain('3 fotos siguen sin texto alternativo');
             // And it is neither standalone message wearing the other's hat.
             expect(call?.message).not.toBe(VIDEO_COPY.message);
-            expect(call?.confirmLabel).toBe('Salir y descartar los cambios');
-            expect(call?.cancelLabel).toBe('Seguir editando');
+            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.cancelLabel).toBe('Completar ahora');
         });
 
         it('pluralizes the photo count in the singular', async () => {
@@ -306,19 +306,19 @@ describe('leave warnings on a page that mounts two guards', () => {
                 locale: 'es',
                 title: 'Cambios sin guardar y fotos sin texto alternativo',
                 needle: '5 fotos siguen sin texto alternativo',
-                confirmLabel: 'Salir y descartar los cambios'
+                confirmLabel: 'Seguir igual'
             },
             {
                 locale: 'en',
                 title: 'Unsaved changes and photos without alt text',
                 needle: '5 photos still have no alt text',
-                confirmLabel: 'Leave and discard the changes'
+                confirmLabel: 'Continue anyway'
             },
             {
                 locale: 'pt',
                 title: 'Alterações não salvas e fotos sem texto alternativo',
                 needle: '5 fotos continuam sem texto alternativo',
-                confirmLabel: 'Sair e descartar as alterações'
+                confirmLabel: 'Continuar assim mesmo'
             }
         ];
 
@@ -333,6 +333,7 @@ describe('leave warnings on a page that mounts two guards', () => {
                 expect(copy?.title).toBe(title);
                 expect(copy?.message).toContain(needle);
                 expect(copy?.confirmLabel).toBe(confirmLabel);
+                expect(copy?.cancelLabel).toMatch(/Completar ahora|Complete now|Completar agora/);
                 // A missing key degrades to the raw dotted key; a real
                 // translation never contains one.
                 expect(copy?.message).not.toContain('common.confirmations');

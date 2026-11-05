@@ -143,6 +143,7 @@ describe('PhotoMetadataEditor', () => {
 
         await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
         expect(screen.getByLabelText('¿Qué muestra la foto?')).toBeInTheDocument();
+        expect(screen.getByText('Guardado')).toBeInTheDocument();
     });
 
     it('keeps the typed text panel open when saving fails', async () => {

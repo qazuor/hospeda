@@ -1,7 +1,7 @@
 /**
  * @file leave-warning-registry.ts
  * @description The single place that decides what to ask before an internal
- * link click leaves the current page (HOS-1018).
+ * link click leaves the page or a guarded action saves (HOS-1018).
  *
  * ## Why this exists at all
  *
@@ -189,10 +189,18 @@ function resolveCopy(entries: readonly LeaveWarningEntry[]): LeaveWarningCopy {
  * Shows a registered warning before a non-navigation action such as saving.
  * Returns true when the action may continue; missing registrations are a no-op.
  */
-export async function requestPhotoTextWarning(kind: LeaveWarningKind): Promise<boolean> {
+export async function requestPhotoTextWarning(
+    kind: LeaveWarningKind,
+    options?: { readonly count?: number }
+): Promise<boolean> {
     const entries = activeEntries().filter((entry) => entry.kind === kind);
     if (entries.length === 0) return true;
-    return requestEntriesConfirmation(entries);
+    const adjustedEntries =
+        options?.count === undefined
+            ? entries
+            : entries.map((entry) => ({ ...entry, count: options.count }));
+    if (options?.count === 0) return true;
+    return requestEntriesConfirmation(adjustedEntries);
 }
 
 /**

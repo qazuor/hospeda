@@ -9,7 +9,7 @@
  * navigation (which does not exist).
  */
 
-import { act, render, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
@@ -171,6 +171,59 @@ describe('usePhotoAltWarningGuard', () => {
             await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
             expect(document.activeElement).toBe(field());
+        });
+
+        it('focuses the alt field when the first incomplete photo panel is already open', async () => {
+            const galleryItems = [buildItem({ id: 'g1', alt: '' })];
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const { container } = render(
+                <PhotoMetadataEditor
+                    locale="es"
+                    item={galleryItems[0]!}
+                    disabled={false}
+                    toggleAriaLabel="Editar textos"
+                    closeAriaLabel="Cerrar textos"
+                    onSave={vi.fn().mockResolvedValue(true)}
+                />
+            );
+            fireEvent.click(container.querySelector('button')!);
+            const field = container.querySelector<HTMLTextAreaElement>('#photo-alt-g1');
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems
+                })
+            );
+            await flushRouterImport();
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+
+            expect(document.activeElement).toBe(field);
+        });
+
+        it('does not warn about SSR placeholders before media hydration', async () => {
+            const galleryItems = [buildItem({ id: '', alt: undefined })];
+            const { rerender } = renderHook(
+                ({ opsReady }: { opsReady: boolean }) =>
+                    usePhotoAltWarningGuard({
+                        locale: 'es',
+                        accommodationId: ACCOMMODATION_ID,
+                        featuredItem: null,
+                        galleryItems,
+                        opsReady
+                    }),
+                { initialProps: { opsReady: false } }
+            );
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+            expect(clickAnchor(anchor).defaultPrevented).toBe(false);
+            expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+
+            rerender({ opsReady: true });
+            expect(clickAnchor(anchor).defaultPrevented).toBe(true);
         });
 
         it('shows the dialog with the correct missing-alt count on leave', async () => {

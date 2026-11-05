@@ -18,6 +18,7 @@ import type { AccommodationMediaItem } from '@/lib/api/types';
 import { requestPhotoTextWarning } from '@/lib/forms/leave-warning-registry';
 import {
     buildReorderPayload,
+    isPhotoAltIncomplete,
     mediaRowToItem,
     moveArrayItem,
     type PhotoMetadataUpdateBody,
@@ -68,6 +69,9 @@ export function usePhotoGalleryMutations({
     setOpLoading,
     reportUploadError
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
+    const incompleteAltCount = [...(featuredItem ? [featuredItem] : []), ...galleryItems].filter(
+        isPhotoAltIncomplete
+    ).length;
     /**
      * Delete the current featured (portada) row.
      * There is no "unfeature" endpoint — removing is the clear action.
@@ -256,7 +260,14 @@ export function usePhotoGalleryMutations({
     const handleUpdateMediaText = useCallback(
         async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
             if (!item.id) return false;
-            const maySave = await requestPhotoTextWarning('photo-alt');
+            const currentIsIncomplete = isPhotoAltIncomplete(item);
+            const submittedAltIsComplete = Boolean(body.alt?.trim());
+            const maySave = await requestPhotoTextWarning('photo-alt', {
+                count: Math.max(
+                    0,
+                    incompleteAltCount - Number(currentIsIncomplete && submittedAltIsComplete)
+                )
+            });
             if (!maySave) return false;
             setError(null);
             setOpLoading(true);
@@ -295,7 +306,8 @@ export function usePhotoGalleryMutations({
             setError,
             setOpLoading,
             setFeaturedItem,
-            setGalleryItems
+            setGalleryItems,
+            incompleteAltCount
         ]
     );
 

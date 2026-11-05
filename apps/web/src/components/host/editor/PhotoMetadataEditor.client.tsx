@@ -43,7 +43,7 @@
  * `validatePhotoMetadataFields`).
  */
 
-import { type KeyboardEvent, useState } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
@@ -101,6 +101,8 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     const [creditUrl, setCreditUrl] = useState(item.attribution?.sourceUrl ?? '');
     const [fieldErrors, setFieldErrors] = useState<PhotoMetadataFieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
+    const toggleRef = useRef<HTMLButtonElement>(null);
 
     const handleToggle = () => {
         if (!isOpen) {
@@ -116,6 +118,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             setFieldErrors({});
         }
         setIsOpen((prev) => !prev);
+        setJustSaved(false);
     };
 
     const handleSave = async () => {
@@ -127,6 +130,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
         }
 
         setIsSaving(true);
+        setJustSaved(false);
         // The row's existing credit is passed along so a stock import keeps its
         // provider and licence when the host only corrects the photographer.
         const ok = await onSave(
@@ -134,7 +138,14 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             buildPhotoMetadataUpdateBody(values, item.attribution ?? undefined)
         );
         setIsSaving(false);
-        if (ok && closeOnSuccessfulSave) setIsOpen(false);
+        if (ok) {
+            if (closeOnSuccessfulSave) {
+                setIsOpen(false);
+                toggleRef.current?.focus();
+            } else {
+                setJustSaved(true);
+            }
+        }
     };
 
     // Enter inside a single-line input would otherwise submit the enclosing
@@ -158,6 +169,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             data-photo-metadata-missing={isPhotoAltIncomplete(item) ? 'true' : undefined}
         >
             <button
+                ref={toggleRef}
                 type="button"
                 className={`${styles.metadataToggle} ${compactLayout ? styles.metadataToggleCompact : ''}`}
                 onClick={handleToggle}
@@ -337,6 +349,17 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                                 ? t('host.properties.editor.action.saving', 'Guardando...')
                                 : t('host.properties.editor.action.save', 'Guardar')}
                         </button>
+                        {justSaved && (
+                            <span
+                                className={styles.metadataSavedBadge}
+                                role="status"
+                            >
+                                {t(
+                                    'host.properties.editor.photo.metadataSavedConfirmation',
+                                    'Guardado'
+                                )}
+                            </span>
+                        )}
                         <button
                             type="button"
                             className={styles.metadataCancelButton}

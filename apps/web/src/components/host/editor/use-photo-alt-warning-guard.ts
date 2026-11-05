@@ -1,7 +1,7 @@
 /**
  * @file use-photo-alt-warning-guard.ts
- * @description Warns the host before they leave the Fotos section while some
- * photos still have an empty `alt` text (HOS-1018).
+ * @description Registers the HOS-1018 photo-alt warning for internal links and
+ * guarded saves while persisted photos still have an empty `alt` text.
  *
  * On the sample listing that motivated this, all fifteen photos had an empty
  * `alt`, caption, and description — nothing on the page asks for or explains
@@ -42,6 +42,8 @@ export interface UsePhotoAltWarningGuardParams {
     readonly accommodationId: string;
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
+    /** False until listMedia replaces SSR placeholders with persisted rows. */
+    readonly opsReady?: boolean;
 }
 
 /** Counts featured + gallery items whose `alt` is empty or whitespace-only. */
@@ -103,9 +105,9 @@ function focusFirstIncompletePhoto(): void {
     const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
     if (!first) return;
 
-    const toggle = first.querySelector<HTMLButtonElement>('button[aria-expanded="false"]');
+    const toggle = first.querySelector<HTMLButtonElement>('button[aria-expanded]');
     if (!toggle) return;
-    toggle.click();
+    if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
 
     window.setTimeout(() => {
         first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]')?.focus();
@@ -129,13 +131,14 @@ export function usePhotoAltWarningGuard({
     locale,
     accommodationId,
     featuredItem,
-    galleryItems
+    galleryItems,
+    opsReady = true
 }: UsePhotoAltWarningGuardParams): void {
     const { t, tPlural } = createTranslations(locale);
 
     const missingAltCount = useMemo(
-        () => countMissingAlt(featuredItem, galleryItems),
-        [featuredItem, galleryItems]
+        () => (opsReady ? countMissingAlt(featuredItem, galleryItems) : 0),
+        [featuredItem, galleryItems, opsReady]
     );
 
     // Re-read only when the listing id changes. Confirmation updates local

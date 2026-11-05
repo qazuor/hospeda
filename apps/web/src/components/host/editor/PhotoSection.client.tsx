@@ -195,7 +195,7 @@ export function PhotoSection({
     // leaving the section — see the hook's file header for why this is a
     // separate, narrower guard than `useUnsavedChangesGuard`'s usual "unsaved
     // changes" wiring.
-    usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems });
+    usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems, opsReady });
 
     // HOS-1183: the main photo is a blocking publish requirement, and this is
     // the realistic last one — hosts fill text first and upload photos last. So
