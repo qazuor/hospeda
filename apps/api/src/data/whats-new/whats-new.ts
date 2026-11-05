@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4116
+    {
+        id: '2026-11-05-import-your-first-listing-without-a-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER', 'HOST'],
+        title: {
+            es: 'Importá tu primer alojamiento desde un link, aunque todavía no tengas plan',
+            en: 'Import your first property from a link, even before you have a plan',
+            pt: 'Importe sua primeira hospedagem a partir de um link, mesmo sem ter um plano'
+        },
+        body: {
+            es: 'Si estás por publicar tu primer alojamiento, en **Publicar** podés pegar el link de tu ficha en otro sitio y te armamos el alta con esos datos para que la revises. Ya no te pedimos un plan para eso.',
+            en: 'If you are about to list your first property, in **Publish** you can paste the link to your listing on another site and we fill in the form with that information for you to review. You no longer need a plan for that.',
+            pt: 'Se você está prestes a publicar sua primeira hospedagem, em **Publicar** você pode colar o link do seu anúncio em outro site e preenchemos o cadastro com esses dados para você revisar. Não pedimos mais um plano para isso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4112
     {
         id: '2026-11-05-phone-numbers-as-you-write-them',
