@@ -67,7 +67,7 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION],
         pendingOwnPermission: null
     },
-    ACC_6: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1489)' },
+    ACC_6: { permissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING], pendingOwnPermission: null },
     ACC_7: {
         permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],
         pendingOwnPermission: null

@@ -77,6 +77,15 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
         );
     });
 
+    it('AC:V7:17 ACC:6 rejects the own Partner billing permission for system actors', () => {
+        expectDefinitionError(
+            () => makeActor([PermissionEnum.PARTNER_CONFIGURE_BILLING]),
+            'ADMINISTRATIVE_PERMISSION',
+            PermissionEnum.PARTNER_CONFIGURE_BILLING
+        );
+        expect(() => makeActor([PermissionEnum.PARTNER_CONFIGURE_BILLING])).toThrow(/ACC_6$/);
+    });
+
     it.each([
         PermissionEnum.USER_DELETE,
         PermissionEnum.USER_HARD_DELETE

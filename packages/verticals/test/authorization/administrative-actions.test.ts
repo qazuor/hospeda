@@ -331,6 +331,31 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('AC:V7:17 ACC:6 assigns billing configuration only its own permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_6).toEqual({
+            permissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_CONFIGURE_BILLING)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_CONFIGURE_BILLING)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_6',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_6',
+                actorPermissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
             permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],
