@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "111-amenity-entertainment-dance-floor",
+    "slug": "dance_floor",
+    "description": {
+        "es": "Pista de baile con música para bailar hasta la madrugada",
+        "en": "Dance floor with music to keep dancing until late",
+        "pt": "Pista de dança com música para dançar até tarde"
+    },
+    "applicableVerticals": ["venue"],
+    "type": "ENTERTAINMENT",
+    "icon": "SparkleIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 58
+}
