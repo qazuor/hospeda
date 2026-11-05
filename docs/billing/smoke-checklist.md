@@ -245,6 +245,20 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:V8b:4, AC:V8b:5; TEST:V8b:4, TEST:V8b:5.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
+### S14 — Empty a Partner presence on request (HOS-1498)
+
+- **Preconditions:** `staging` with Cloudinary configured; a claimed test Partner with a live billing subscription; a SUPER_ADMIN or ADMIN with `partner.emptyPresence`; the owner's account has completed step 1 of the manual account closure and no longer holds the Partner page key.
+- **Steps:**
+  1. Upload a test logo manually to the real Cloudinary account under `hospeda/…`, then set that URL as the test Partner's `logo_url`. Record the URL privately for the asset check.
+  2. Open the Partner detail in the admin and choose **Vaciar presencia**. Confirm the dialog names the Partner and says its content is deleted and does not come back; enter the owner's request as the reason and confirm.
+  3. Check the recorded Cloudinary URL and confirm it now returns 404.
+  4. Open the Partner's public page through the public site and confirm it returns 404 past the edge. Use the cache handling from S5; the owner has already lost the page key, so do not infer this result from an account that still has it.
+  5. With read-only `hops psql --target=staging`, inspect the Partner's `domain_event`: confirm type `partner.presence_emptied`, actor and reason. Do not select or include the logo URL in the evidence.
+  6. Confirm the owner's subscription and payment state are unchanged. Continue the manual account closure with action 24 and confirm the Partner presence no longer blocks it.
+- **Expected:** The real Cloudinary asset is gone; the public Partner page is 404 after edge revalidation; the event records actor and reason without exposing the URL; billing remains unchanged; and action 24 can proceed.
+- **Evidence:** Cloudinary's 404 response; public page response after the S5 cache procedure; read-only Partner, `domain_event` and billing queries with no logo URL; action 24 preview and result.
+- **Covers:** AC:V8b:6; TEST:V8b:6 (real provider through this staging smoke).
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
