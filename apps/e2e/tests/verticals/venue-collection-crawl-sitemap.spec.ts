@@ -242,7 +242,9 @@ test.describe('AC:6:2 venue collections: sitemap, noindex when empty, 404 and cr
         await expect(page.locator('body')).toContainText(
             'No se encontraron locales con los filtros seleccionados.'
         );
-        await expect(page.locator('body')).not.toContainText('Publicá tu local');
+        // Scoped to <main>: the footer carries its own "Publicá tu local" link
+        // on every page, so a body-wide check can never pass.
+        await expect(page.locator('main#main-content')).not.toContainText('Publicá tu local');
 
         // ── 5. robots.txt blocks the businessLine query param ────────────────
         const robots = await request.get(`${WEB_URL}/robots.txt`);
