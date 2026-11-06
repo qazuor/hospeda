@@ -221,6 +221,7 @@ export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/cancellation-crossing-charge.js';
 export * from './billing/subscription/cancellation-crossing-rule.js';
 export * from './billing/subscription/cancellation-preview.js';
+export * from './billing/subscription/chargeback-suspension-notice.js';
 export * from './billing/subscription/complement-pause-s32.js';
 export * from './billing/subscription/complement-ports.js';
 export * from './billing/subscription/complement-resume-s33.js';
@@ -301,6 +302,7 @@ export {
     unimplementedSuccessorCutter
 } from './billing/subscription/successor-cutter.js';
 export * from './billing/subscription/suspend-for-arrears.service.js';
+export * from './billing/subscription/suspend-for-chargeback.service.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';

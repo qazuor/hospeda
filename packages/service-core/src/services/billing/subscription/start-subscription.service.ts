@@ -33,6 +33,7 @@ import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice
 import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
+import type { ChargebackSuspensionNoticeContent } from './chargeback-suspension-notice';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
 import {
     appliedAuthorizationResult,
@@ -64,10 +65,10 @@ export interface BeforeCancelNotice {
         /** The occurrence of the fact that decided the cancellation; defaults to the subscription id. */
         readonly occurrenceId?: string;
         /**
-         * What the notice says. Only `ARREARS_SUSPENSION` carries it (AC:B7:30):
-         * the tourist losses, one-time addon days, how to come back and the promo line.
+         * S6 notice facts: arrears (AC:B7:30) or chargeback (AC:B7:10),
+         * including the tourist and one-time addon losses relevant to each kind.
          */
-        readonly content?: ArrearsSuspensionNoticeContent;
+        readonly content?: ArrearsSuspensionNoticeContent | ChargebackSuspensionNoticeContent;
     }): Promise<BeforeCancelNoticeStatus>;
 }
 
