@@ -181,7 +181,7 @@ export function matchAmenityTerms(text: string, locale: 'es' | 'en' | 'pt'): rea
  * - `smoking_area` — INVERSE framing of the `smoke_free` amenity. "se puede
  *   fumar" / "smoking allowed" describes a property FEATURE (a designated
  *   smoking area exists), not a boolean amenity toggle.
- * - `spa_front` — "Frente al balneario" (river/beach-front via a thermal spa
+ * - `balneario_front` (was `spa_front` until HOS-2059) — "Frente al balneario" (river/beach-front via a thermal spa
  *   or balneario), sibling of `river_front` for the river/beach-front NL
  *   coverage requirement (spec §5, §6 Phase 1 G-10).
  * - `pet_friendly_area` / `pet_suitable` — more specific pet-related
@@ -250,9 +250,9 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'área para fumar': 'smoking_area',
         // HOS-111 T-009: river/beach-front via balneario (thermal spa /
         // riverside bathing area) — sibling of `river_front`.
-        'frente al balneario': 'spa_front',
-        'cerca del balneario': 'spa_front',
-        'sobre el balneario': 'spa_front',
+        'frente al balneario': 'balneario_front',
+        'cerca del balneario': 'balneario_front',
+        'sobre el balneario': 'balneario_front',
         // HOS-111 T-009: specific pet-related environment descriptors
         // (distinct from the generic `pet_friendly` amenity).
         'área para mascotas': 'pet_friendly_area',
@@ -310,9 +310,9 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'smoking permitted': 'smoking_area',
         'smoking area': 'smoking_area',
         // HOS-111 T-009: river/beach-front via balneario/spa.
-        'spa front': 'spa_front',
-        'near the spa': 'spa_front',
-        'thermal spa front': 'spa_front',
+        'spa front': 'balneario_front',
+        'near the spa': 'balneario_front',
+        'thermal spa front': 'balneario_front',
         // HOS-111 T-009: specific pet-related environment descriptors.
         'pet area': 'pet_friendly_area',
         'pet-friendly area': 'pet_friendly_area',
@@ -366,8 +366,8 @@ export const FEATURE_ALLOWLIST: Readonly<Record<string, Readonly<Record<string, 
         'área para fumantes': 'smoking_area',
         'zona para fumantes': 'smoking_area',
         // HOS-111 T-009: river/beach-front via balneario/spa.
-        'frente ao balneário': 'spa_front',
-        'perto do balneário': 'spa_front',
+        'frente ao balneário': 'balneario_front',
+        'perto do balneário': 'balneario_front',
         // HOS-111 T-009: specific pet-related environment descriptors.
         'área para animais': 'pet_friendly_area',
         'apto para animais': 'pet_suitable'

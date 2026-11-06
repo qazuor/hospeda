@@ -10,7 +10,7 @@
  *
  * Three assertions validated here:
  *  1. GET ?applicableVertical=experience → includes `kid_friendly` and
- *     `disability_accessible` (shared-core); excludes `river_front` and
+ *     `bilingual_services` (shared-core); excludes `river_front` and
  *     `adults_only_area` (accommodation-only).
  *  2. GET (no filter) → response items must NOT have a `name` field
  *     (T-001 dropped the `name` column; only `slug` must be present).
@@ -56,7 +56,7 @@ interface FeatureItem {
 const SEED_ROWS: (typeof features.$inferInsert)[] = [
     { slug: 'kid_friendly', applicableVerticals: ['experience'] },
     {
-        slug: 'disability_accessible',
+        slug: 'bilingual_services',
         applicableVerticals: ['accommodation', 'venue', 'experience']
     },
     { slug: 'river_front', applicableVerticals: ['accommodation'] },
@@ -87,7 +87,7 @@ describe('GET /api/v1/public/features — vertical filter content assertions (SP
         await closeDatabase();
     });
 
-    it('(1) experience filter — includes kid_friendly and disability_accessible', async () => {
+    it('(1) experience filter — includes kid_friendly and bilingual_services', async () => {
         const res = await app.request(`${BASE}?applicableVertical=experience&pageSize=100`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
@@ -103,7 +103,7 @@ describe('GET /api/v1/public/features — vertical filter content assertions (SP
         // Experience-only feature — must be present
         expect(slugs).toContain('kid_friendly');
         // Shared-core feature (all three verticals) — must be present
-        expect(slugs).toContain('disability_accessible');
+        expect(slugs).toContain('bilingual_services');
     });
 
     it('(1) experience filter — excludes accommodation-only features', async () => {
