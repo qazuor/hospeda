@@ -120,6 +120,20 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
                 promoLost: true
             };
+        if (template === 'billing.chargeback-suspension')
+            return {
+                subscriptionId,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                touristVipLost: true,
+                oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
+                chargedBackPayment: {
+                    amountMinor: 1800000,
+                    currency: 'ARS',
+                    chargedOn: '2026-11-06'
+                },
+                courtesyEnded: false
+            };
         if (template === 'billing.scheduled-cancellation')
             return { subscriptionId, serviceEndsAt: '2026-10-12T12:00:00.000Z' };
         return { subscriptionId };
@@ -143,6 +157,10 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 'Turista VIP',
                 'a «Destacado» le quedan 10 días.'
             ]
+        ],
+        [
+            'billing.chargeback-suspension',
+            ['Desconociste el cargo', '18.000', '6 de noviembre de 2026', 'suspendimos el servicio']
         ],
         [
             'billing.tourist-vip-inherited-cancel',
@@ -222,8 +240,24 @@ describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the
         oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
         promoLost: true
     };
-    const payloadOf = (kind: string) =>
-        kind === 'ARREARS_SUSPENSION' ? arrearsPayload : { subscriptionId };
+    const payloadOf = (kind: string) => {
+        if (kind === 'ARREARS_SUSPENSION') return arrearsPayload;
+        if (kind === 'CHARGEBACK_SUSPENSION')
+            return {
+                subscriptionId,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                touristVipLost: true,
+                oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
+                chargedBackPayment: {
+                    amountMinor: 1800000,
+                    currency: 'ARS',
+                    chargedOn: '2026-11-06'
+                },
+                courtesyEnded: false
+            };
+        return { subscriptionId };
+    };
 
     it.each(
         Object.entries(BEFORE_CANCEL_TEMPLATE_BY_KIND)
