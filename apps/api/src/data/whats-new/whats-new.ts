@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4161
+    {
+        id: '2026-11-06-amenity-details-and-feature-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Contá si cada comodidad es privada o compartida, y si está todo el año',
+            en: 'Say whether each amenity is private or shared, and whether it is available year-round',
+            pt: 'Informe se cada comodidade é privativa ou compartilhada, e se está disponível o ano todo'
+        },
+        body: {
+            es: 'En **Servicios y comodidades**, cada comodidad marcada tiene **Detalles**: podés indicar si es de uso privado o compartido y si está todo el año o es de temporada. Los huéspedes lo ven en la ficha. Además, las características ahora están ordenadas por categoría y hay grupos nuevos de comodidades, como Estacionamiento, Lavandería y Bienestar.',
+            en: 'In **Services and amenities**, each checked amenity has **Details**: you can say whether it is private or shared, and whether it is available year-round or seasonal. Guests see it on your listing. Features are now grouped by category, and there are new amenity groups such as Parking, Laundry and Wellness.',
+            pt: 'Em **Serviços e comodidades**, cada comodidade marcada tem **Detalhes**: você pode informar se é de uso privativo ou compartilhado e se está disponível o ano todo ou na temporada. Os hóspedes veem isso no anúncio. Além disso, as características agora estão organizadas por categoria e há novos grupos de comodidades, como Estacionamento, Lavanderia e Bem-estar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4157
+    {
+        id: '2026-11-06-complete-amenity-filter-in-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El filtro de comodidades de alojamientos ahora muestra todas',
+            en: 'The accommodation amenity filter now lists them all',
+            pt: 'O filtro de comodidades das hospedagens agora mostra todas'
+        },
+        body: {
+            es: 'En el listado de alojamientos, el filtro de **Servicios** muestra todas las comodidades de alojamiento, y solo esas: ya no faltan opciones ni aparecen las de restaurantes o experiencias.',
+            en: 'In the accommodation listing, the **Services** filter shows every accommodation amenity, and only those: no options are missing and restaurant or experience amenities no longer appear.',
+            pt: 'Na listagem de hospedagens, o filtro de **Serviços** mostra todas as comodidades de hospedagem, e só elas: não faltam opções e as de restaurantes ou experiências não aparecem mais.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4143
     {
         id: '2026-11-05-choose-a-plan-from-your-trial',
