@@ -312,4 +312,75 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
         expect(application).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'WAITS_PAUSED' });
         expect(await scheduledChangesOf(principal.subscriptionId)).toEqual(before);
     });
+
+    it('(h) serializes regret with S38 applying the same queued change', async () => {
+        const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
+        const queued = await seedScheduledChange({
+            subscriptionId: seeded.predecessor.id,
+            effectiveAt: seeded.nextChargeAt,
+            targetPlanVersionId: seeded.targetPlanVersionId,
+            targetBillingOptionId: seeded.targetBillingOptionId
+        });
+        let releaseApplication: () => void = () => undefined;
+        let applicationLocked: () => void = () => undefined;
+        const applicationHasLock = new Promise<void>((resolve) => {
+            applicationLocked = resolve;
+        });
+        const holdApplication = new Promise<void>((resolve) => {
+            releaseApplication = resolve;
+        });
+        const application = getServiceTestDb().transaction(async (tx) => {
+            await tx
+                .select({ id: subscriptions.id })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, seeded.predecessor.id))
+                .for('update');
+            await applyScheduledChangeInTx({
+                subscriptionId: seeded.predecessor.id,
+                now: new Date(seeded.nextChargeAt.getTime() + 1),
+                tx
+            });
+            applicationLocked();
+            await holdApplication;
+        });
+        await applicationHasLock;
+
+        let regretStarted: () => void = () => undefined;
+        const regretHasStarted = new Promise<void>((resolve) => {
+            regretStarted = resolve;
+        });
+        const provider = new Proxy(seeded.ports.provider, {
+            get(target, property, receiver) {
+                if (property === 'changeAmount')
+                    return async (input: Parameters<typeof target.changeAmount>[0]) => {
+                        const result = await target.changeAmount(input);
+                        regretStarted();
+                        return result;
+                    };
+                const method = Reflect.get(target, property, receiver);
+                return typeof method === 'function' ? method.bind(target) : method;
+            }
+        });
+        const regret = requestPlanChange(
+            { ...seeded.input, billingOptionId: seeded.predecessorBillingOptionId },
+            { ...seeded.ports, provider }
+        ).then(
+            (value) => ({ value }),
+            (error: unknown) => ({ error })
+        );
+        await regretHasStarted;
+        releaseApplication();
+        await application;
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.predecessor.id));
+        const queue = await scheduledChangesOf(seeded.predecessor.id);
+        expect(row?.planVersionId).toBe(seeded.targetPlanVersionId);
+        expect(queue).toHaveLength(0);
+        await expect(regret).resolves.toMatchObject({
+            error: { reason: 'PLAN_CHANGE_STATE_CHANGED' }
+        });
+        expect(queued.subscriptionId).toBe(seeded.predecessor.id);
+    });
 });

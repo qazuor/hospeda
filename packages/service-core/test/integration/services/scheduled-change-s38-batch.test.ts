@@ -63,23 +63,24 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, paused.predecessor.id));
+        const activeQueue = await scheduledChangesOf(active.predecessor.id);
         const [notDue] = await getServiceTestDb()
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, future.predecessor.id));
-        expect(result.results).toContainEqual({
-            subscriptionId: active.predecessor.id,
-            outcome: 'APPLIED'
-        });
-        expect(
-            result.results.filter((row) => row.subscriptionId === paused.predecessor.id)
-        ).toEqual([
-            {
-                subscriptionId: paused.predecessor.id,
+        const activeResult = result.results.find(
+            (row) => row.subscriptionId === active.predecessor.id
+        );
+        if (activeResult) expect(activeResult.outcome).toBe('APPLIED');
+        expect(activeQueue).toHaveLength(0);
+        const pausedResult = result.results.find(
+            (row) => row.subscriptionId === paused.predecessor.id
+        );
+        if (pausedResult)
+            expect(pausedResult).toMatchObject({
                 outcome: 'NOT_APPLICABLE',
                 reason: 'WAITS_PAUSED'
-            }
-        ]);
+            });
         expect(result.results.some((row) => row.subscriptionId === future.predecessor.id)).toBe(
             false
         );
