@@ -76,6 +76,8 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
         expect(typeof ports.complements.listing).toBe('function');
         expect(ports.complements.liveAnchors).toBeDefined();
         expect(delegateInputs.at(-1)).toMatchObject({ complements: ports.complements });
+        expect(delegateInputs.at(-1)).toMatchObject({ successionCloser: ports.successionCloser });
+        expect(typeof ports.successionCloser.closeSuccession).toBe('function');
         expect(Object.keys(ports).sort()).toEqual(
             [
                 'beforeCancelNotice',
@@ -93,6 +95,7 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'provider',
                 'promoCharges',
                 'promoExhaustion',
+                'successionCloser',
                 'touristVipInheritance'
             ].sort()
         );

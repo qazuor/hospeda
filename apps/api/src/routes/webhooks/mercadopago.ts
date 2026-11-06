@@ -9,6 +9,7 @@
  */
 import { deliveryChannelFromUrl, receiveProviderDelivery } from '@repo/service-core';
 import { createSuccessResponse } from '../../middlewares/response';
+import { createScheduledChangeCollector } from '../../utils/billing-succession-ports';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -49,10 +50,18 @@ mercadoPagoWebhookRoutes.post('/', async (c) => {
 
     const body = await c.req.text();
     const headers = Object.fromEntries(c.req.raw.headers.entries());
-    const result = await receiveProviderDelivery(
-        { url, delivery: { headers, body } },
-        buildMercadoPagoNoticePorts()
-    );
+    const collector = createScheduledChangeCollector();
+    let result: Awaited<ReturnType<typeof receiveProviderDelivery>>;
+    try {
+        result = await receiveProviderDelivery(
+            { url, delivery: { headers, body } },
+            buildMercadoPagoNoticePorts({ scheduledChangeApplier: collector.applier })
+        );
+    } catch (error) {
+        collector.discard();
+        throw error;
+    }
+    await collector.finish();
     apiLogger.info({ channel, outcome: result.outcome }, 'Mercado Pago delivery received');
     if (result.ack === 'OK') return c.json(createSuccessResponse({ received: true }), 200);
     // HOS-1968: a record the provider is still writing is a deliberate "ask again", not a fault.
