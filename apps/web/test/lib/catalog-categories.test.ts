@@ -95,15 +95,20 @@ describe('catalog category tables mirror the enums (HOS-2058)', () => {
             [...Object.values(AmenitiesTypeEnum)].sort()
         );
         expect(new Set(AMENITY_CATEGORY_ORDER).size).toBe(AMENITY_CATEGORY_ORDER.length);
+        expect(AMENITY_CATEGORY_ORDER.at(-1)).toBe(AmenitiesTypeEnum.GENERAL_APPLIANCES);
+        // Named categories keep the enum's declaration order.
+        expect(AMENITY_CATEGORY_ORDER.slice(0, -1)).toEqual(
+            Object.values(AmenitiesTypeEnum).filter(
+                (value) => value !== AmenitiesTypeEnum.GENERAL_APPLIANCES
+            )
+        );
         expect(Object.keys(AMENITY_CATEGORY_LABELS).sort()).toEqual(
             [...AMENITY_CATEGORY_ORDER].sort()
         );
     });
 
     it('lists every FeatureCategoryEnum value exactly once', () => {
-        expect([...FEATURE_CATEGORY_ORDER].sort()).toEqual(
-            [...Object.values(FeatureCategoryEnum)].sort()
-        );
+        expect(FEATURE_CATEGORY_ORDER).toEqual(Object.values(FeatureCategoryEnum));
         expect(Object.keys(FEATURE_CATEGORY_LABELS).sort()).toEqual(
             [...FEATURE_CATEGORY_ORDER].sort()
         );

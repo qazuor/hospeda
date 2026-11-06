@@ -3,7 +3,9 @@
  * @description Shared amenity-category and feature-category grouping for the
  * owner-facing editors and the public detail grids.
  *
- * The canonical order + label mapping mirrors the admin panel's
+ * The order lists are derived from the `@repo/schemas` enums; the label
+ * tables are typed against them (`satisfies`), so a missing or unknown
+ * category is a compile error. The canonical order + label mapping mirrors the admin panel's
  * `AmenityTypeBadge` (`admin-entities.types.amenity.*`) so the same category
  * reads identically in both apps even when a translation is missing.
  *
@@ -19,34 +21,29 @@
  * @module lib/catalog-categories
  */
 
+import { AmenitiesTypeEnum, FeatureCategoryEnum } from '@repo/schemas';
 import type { AmenityData } from '@/lib/api/types';
 
 /** Translator function shape (matches `createTranslations().t`). */
 type Translate = (key: string, fallback?: string) => string;
 
+/** Label entry for one category: i18n key suffix plus a Spanish fallback. */
+interface CategoryLabel {
+    readonly i18nKey: string;
+    readonly fallback: string;
+}
+
 /**
- * Canonical display order for amenity categories (`AmenitiesTypeEnum` values
- * in `@repo/schemas`).
+ * Canonical display order for amenity categories, DERIVED from
+ * `AmenitiesTypeEnum` (`@repo/schemas`) so a new enum value can never be
+ * missing here: enum declaration order, with the `GENERAL_APPLIANCES`
+ * catch-all moved last, after every named category.
  */
 export const AMENITY_CATEGORY_ORDER: readonly string[] = [
-    'CLIMATE_CONTROL',
-    'CONNECTIVITY',
-    'ENTERTAINMENT',
-    'KITCHEN',
-    'BED_AND_BATH',
-    'OUTDOORS',
-    'ACCESSIBILITY',
-    'SERVICES',
-    'SAFETY',
-    'FAMILY_FRIENDLY',
-    'WORK_FRIENDLY',
-    'PARKING',
-    'LAUNDRY',
-    'WATER_ACTIVITIES',
-    'WELLNESS',
-    'DINING',
-    // The catch-all stays last, after every named category.
-    'GENERAL_APPLIANCES'
+    ...Object.values(AmenitiesTypeEnum).filter(
+        (value) => value !== AmenitiesTypeEnum.GENERAL_APPLIANCES
+    ),
+    AmenitiesTypeEnum.GENERAL_APPLIANCES
 ];
 
 /** Catch-all bucket key for amenities with a null/unrecognized category. */
@@ -66,9 +63,7 @@ export const OTHER_CATEGORY_KEY = '__other__';
  * string serves both verticals -- a per-vertical key would add a layer for a
  * naming problem, which is why it was rejected.
  */
-export const AMENITY_CATEGORY_LABELS: Readonly<
-    Record<string, { readonly i18nKey: string; readonly fallback: string }>
-> = {
+export const AMENITY_CATEGORY_LABELS: Readonly<Record<string, CategoryLabel>> = {
     CLIMATE_CONTROL: { i18nKey: 'climateControl', fallback: 'Climatización' },
     CONNECTIVITY: { i18nKey: 'connectivity', fallback: 'Conectividad' },
     ENTERTAINMENT: { i18nKey: 'entertainment', fallback: 'Entretenimiento' },
@@ -86,34 +81,21 @@ export const AMENITY_CATEGORY_LABELS: Readonly<
     WELLNESS: { i18nKey: 'wellness', fallback: 'Bienestar' },
     DINING: { i18nKey: 'dining', fallback: 'Comidas y bebidas' },
     GENERAL_APPLIANCES: { i18nKey: 'generalAppliances', fallback: 'Equipamiento' }
-};
+} satisfies Record<`${AmenitiesTypeEnum}`, CategoryLabel>;
 
 /**
- * Canonical display order for feature categories (`FeatureCategoryEnum` values
- * in `@repo/schemas`, HOS-2058). Features with a NULL category (not yet
- * classified) fall into the trailing "Otras" bucket.
+ * Canonical display order for feature categories, DERIVED from
+ * `FeatureCategoryEnum` (`@repo/schemas`, HOS-2058) in declaration order.
+ * Features with a NULL category (not yet classified) fall into the trailing
+ * "Otras" bucket.
  */
-export const FEATURE_CATEGORY_ORDER: readonly string[] = [
-    'LOCATION',
-    'VIEW',
-    'ACCESS',
-    'STYLE',
-    'AUDIENCE',
-    'OFFER_PROFILE',
-    'SUSTAINABILITY',
-    'ACTIVITIES',
-    'CUISINE',
-    'DIETARY',
-    'LANGUAGE'
-];
+export const FEATURE_CATEGORY_ORDER: readonly string[] = Object.values(FeatureCategoryEnum);
 
 /**
  * Maps a `FeatureCategoryEnum` value to its i18n key suffix under
  * `accommodations.featureCategories` and a Spanish fallback label.
  */
-export const FEATURE_CATEGORY_LABELS: Readonly<
-    Record<string, { readonly i18nKey: string; readonly fallback: string }>
-> = {
+export const FEATURE_CATEGORY_LABELS: Readonly<Record<string, CategoryLabel>> = {
     LOCATION: { i18nKey: 'location', fallback: 'Ubicación' },
     VIEW: { i18nKey: 'view', fallback: 'Vistas' },
     ACCESS: { i18nKey: 'access', fallback: 'Acceso' },
@@ -125,7 +107,7 @@ export const FEATURE_CATEGORY_LABELS: Readonly<
     CUISINE: { i18nKey: 'cuisine', fallback: 'Cocina' },
     DIETARY: { i18nKey: 'dietary', fallback: 'Opciones alimentarias' },
     LANGUAGE: { i18nKey: 'language', fallback: 'Idiomas' }
-};
+} satisfies Record<`${FeatureCategoryEnum}`, CategoryLabel>;
 
 /** A single category group, ready to render as a collapsible section. */
 export interface CategoryGroup<T> {
