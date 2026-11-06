@@ -461,6 +461,15 @@
             "draftIsYours": "Publicá-lo é decisão sua.",
             "fixRequestOpen": "O pedido de correção continua aberto."
         },
-        "surplusTitle": "Anúncio despublicado pelo limite do seu plano"
+        "surplusTitle": "Anúncio despublicado pelo limite do seu plano",
+        "businessLinesChanged": {
+            "title": "O suporte alterou os rubros deste anúncio",
+            "added": "Adicionou: {{lines}}.",
+            "removed": "Removeu: {{lines}}.",
+            "shownSections": "Agora aparecem: {{sections}}.",
+            "hiddenSections": "Deixam de aparecer: {{sections}}.",
+            "nothingDeleted": "Nada foi apagado: o que você carregou em uma seção oculta volta se recuperar o rubro.",
+            "changedAt": "Mudança de {{date}}."
+        }
     }
 }

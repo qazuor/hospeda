@@ -19,6 +19,7 @@ expect.extend(jestDomMatchers);
 // Setting them here prevents "Environment validation failed" errors in tests
 // that indirectly import components which access env (e.g. EntityCreateContent).
 Object.assign(import.meta.env, {
+    VITE_ADMIN_URL: 'http://localhost:3000',
     VITE_API_URL: 'http://localhost:3001',
     VITE_SITE_URL: 'http://localhost:4321',
     HOSPEDA_API_URL: 'http://localhost:3001',

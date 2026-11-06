@@ -19,6 +19,7 @@ import { adminAddVenueFeaturedMediaRoute } from './addFeaturedMedia';
 import { adminAddVenueMediaRoute } from './addMedia';
 import { adminAssignVenueOwnerRoute } from './assignOwner';
 import { adminBatchVenuesRoute } from './batch';
+import { adminChangeVenueBusinessLinesRoute } from './changeBusinessLines';
 import { adminCreateVenueRoute } from './create';
 import { adminGetVenueByIdRoute } from './getById';
 import { adminGetVenueFaqsRoute } from './getFaqs';
@@ -75,6 +76,9 @@ app.route('/', adminModerateVenueRoute);
 
 // GET /:id/moderation - current publication and fix-request state
 app.route('/', adminGetVenueModerationStateRoute);
+
+// PATCH /:id/business-lines - ACC:27 change the business lines of another owner's listing.
+app.route('/', adminChangeVenueBusinessLinesRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
 app.route('/', adminPurgeOnRequestVenueRoute);

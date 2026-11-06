@@ -258,6 +258,27 @@
             "count": 1,
             "category": "list-column",
             "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/changeBusinessLines.ts",
+            "symbol": "adminChangeVenueBusinessLinesRoute",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
+        },
+        {
+            "file": "apps/admin/src/features/venue/hooks/useChangeVenueBusinessLinesMutation.ts",
+            "symbol": "useChangeVenueBusinessLinesMutation",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
+        },
+        {
+            "file": "apps/admin/src/features/venue/hooks/useVenuePage.ts",
+            "symbol": "useVenuePage",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
         }
     ],
     "imports": [
@@ -300,6 +321,11 @@
             "file": "packages/verticals/src/listing-sections/resolve-listing-sections.ts",
             "category": "resolver",
             "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/verticals/src/listing-sections/business-lines-change.ts",
+            "category": "resolver",
+            "spec": ".hoja/contexto.md:250-255"
         },
         {
             "file": "packages/seed/src/example/venues.seed.ts",

@@ -1,19 +1,23 @@
 /**
  * Explicit, scoped signal that an administrative action authorized a service
- * call (ACC:15, HOS-1493).
+ * call (ACC:15, HOS-1493; ACC:27, HOS-1875).
  *
- * Action 15 ("edit the content of somebody else's listing") is authorized by
+ * Action 15 ("edit the content of somebody else's listing") and action 27
+ * ("change the business lines of somebody else's listing") are authorized by
  * the API's listing-access chain (V5 step 3, the subject being the listing's
  * owner) — NEVER inferred from the actor's permissions in the service. Holding
- * `LISTING_FOREIGN_CONTENT_EDIT` alone opens nothing here: the route that ran
- * step 3 wraps its service call in {@link runWithAdministrativeAuthorization},
- * naming the action and the subject it authorized, and only calls inside that
- * scope see it.
+ * an action's permission alone opens nothing here: the route that ran step 3
+ * wraps its service call in {@link runWithAdministrativeAuthorization}, naming
+ * the action and the subject it authorized, and only calls inside that scope
+ * see it.
  *
  * The permission hooks do not receive the service context, so the signal
  * travels through an `AsyncLocalStorage` scope rather than `ctx`. The scope is
  * bound to the SUBJECT (the owner) step 3 resolved: a write on a listing of a
  * different owner is not covered.
+ *
+ * `isAction15AuthorizedFor` still demands the `ACC_15` action literally: an
+ * `ACC_27` scope never authorizes content.
  *
  * @module utils/administrative-authorization
  */
@@ -25,8 +29,11 @@ import { hasPermission } from './permission';
 
 /** An administrative action a route authorized, bound to its subject. */
 export interface AdministrativeAuthorization {
-    /** The catalog action step 3 permitted. Only action 15 exists here today. */
-    readonly action: 'ACC_15';
+    /**
+     * The catalog action step 3 permitted: action 15 (edit somebody else's
+     * content) or action 27 (change somebody else's business lines).
+     */
+    readonly action: 'ACC_15' | 'ACC_27';
     /** The subject step 3 resolved: the owner of the listing. */
     readonly subjectId: string;
 }

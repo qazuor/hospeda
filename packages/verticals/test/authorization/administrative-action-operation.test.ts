@@ -69,10 +69,11 @@ function resolve(args: {
 }
 
 describe('TEST:V8a:9 the administrative action decides the operation it admits', () => {
-    it('declares EDIT, CREATE, READ_OWN for action 15 and DELETE for action 23', () => {
+    it('declares the operations action 15, 23 and 27 admit', () => {
         expect(ADMINISTRATIVE_ACTION_LISTING_OPERATIONS).toEqual({
             ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
-            ACC_23: ['DELETE']
+            ACC_23: ['DELETE'],
+            ACC_27: ['EDIT']
         });
     });
 

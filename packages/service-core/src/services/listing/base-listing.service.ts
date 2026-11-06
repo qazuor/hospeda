@@ -63,6 +63,7 @@ import {
     verticalPermission
 } from './listing.permissions';
 import type { ListingHookState } from './listing.types';
+import { assertBusinessLinesChangeOnly } from './listing-business-lines-change';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
 import {
@@ -774,6 +775,8 @@ export abstract class BaseListingService<
         const payload = data as Record<string, unknown>;
         // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
         assertSupportEditContentOnly({ data: payload });
+        // ACC:27 (HOS-1875): an action-27 update writes business lines and nothing else.
+        assertBusinessLinesChangeOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
         const listingVertical = this.entityName as VerticalValue;

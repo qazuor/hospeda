@@ -18,6 +18,7 @@ import {
     TrialStatusEnum,
     type TrialSummaryResponse
 } from '@repo/schemas';
+import { resolveBusinessLinesChange } from '@repo/verticals';
 
 const DAY_MS = 86_400_000;
 
@@ -147,6 +148,52 @@ export function buildStatusNotice(input: {
     }
 }
 
+/** The listing verticals a business-lines change can belong to. */
+type ListingNoticeVertical = 'accommodation' | 'venue' | 'experience';
+
+/** The verticals whose listings carry business lines (the catalog is empty elsewhere). */
+const BUSINESS_LINES_CHANGE_VERTICALS: ReadonlySet<string> = new Set(['venue', 'experience']);
+
+/** Narrows the vertical to the ones the business-lines catalog resolves. */
+function isBusinessLinesChangeVertical(
+    vertical: ListingNoticeVertical | undefined
+): vertical is 'venue' | 'experience' {
+    return vertical !== undefined && BUSINESS_LINES_CHANGE_VERTICALS.has(vertical);
+}
+
+/**
+ * The `BUSINESS_LINES_CHANGED` notice of one listing (HOS-1875, DEC-FAC-056).
+ * It exists only while the LAST change is a third party's, inside the lift
+ * window, on a listing that was not purged, and only when the change actually
+ * added or removed a line. Which lines and sections changed is decided by the
+ * catalog (`resolveBusinessLinesChange`), never here.
+ */
+function businessLinesChangeNotice(input: {
+    readonly row: ListingNoticeRow;
+    readonly vertical: ListingNoticeVertical | undefined;
+    readonly windowStart: number;
+}): ListingNotice | null {
+    const change = input.row.lastBusinessLinesChange;
+    if (!change || change.actorType !== 'admin') return null;
+    if (change.at.getTime() < input.windowStart) return null;
+    if (input.row.publicationStatus === PublicationStatusEnum.PURGED) return null;
+    if (!isBusinessLinesChangeVertical(input.vertical)) return null;
+    const { addedLines, removedLines, shownSections, hiddenSections } = resolveBusinessLinesChange({
+        vertical: input.vertical,
+        before: change.before,
+        after: change.after
+    });
+    if (addedLines.length === 0 && removedLines.length === 0) return null;
+    return {
+        kind: 'BUSINESS_LINES_CHANGED',
+        at: change.at.toISOString(),
+        addedLines: [...addedLines],
+        removedLines: [...removedLines],
+        shownSections: [...shownSections],
+        hiddenSections: [...hiddenSections]
+    };
+}
+
 /**
  * Builds the notices of every listing of the owner (H2).
  *
@@ -155,6 +202,8 @@ export function buildStatusNotice(input: {
  * @param input.now - The clock's instant.
  * @param input.publishLimit - The owner's publication quota (`null` = none declared);
  *   omit it to leave the «why unpublished» of a lift unresolved.
+ * @param input.vertical - The listing vertical; without it (or for a vertical
+ *   whose catalog has no business lines) no `BUSINESS_LINES_CHANGED` is built.
  * @returns One item per listing, in the rows' order.
  */
 export function buildListingNoticeItems(input: {
@@ -162,6 +211,7 @@ export function buildListingNoticeItems(input: {
     readonly coverage: CoverageResponse;
     readonly now: Date;
     readonly publishLimit?: number | null;
+    readonly vertical?: ListingNoticeVertical;
 }): readonly ListingNoticesItem[] {
     const published = input.rows.filter(
         (row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED
@@ -197,6 +247,12 @@ export function buildListingNoticeItems(input: {
                 ownerReportedFixedAt: fix.ownerReportedFixedAt?.toISOString() ?? null
             });
         }
+        const businessLines = businessLinesChangeNotice({
+            row,
+            vertical: input.vertical,
+            windowStart
+        });
+        if (businessLines) notices.push(businessLines);
         if (liftShown && lift) {
             notices.push({
                 kind: 'MODERATION_LIFTED',

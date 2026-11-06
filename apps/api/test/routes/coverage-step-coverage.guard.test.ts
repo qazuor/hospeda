@@ -151,6 +151,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'venue/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
+    'venue/admin/changeBusinessLines.ts': { operation: 'EDIT' },
     'venue/admin/patch.ts': { operation: 'EDIT' },
     'venue/admin/purge.ts': { operation: 'DELETE' },
     'venue/admin/removeFaq.ts': { operation: 'EDIT' },
@@ -231,9 +232,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 137 route files', () => {
+    it('discovers exactly the frozen 138 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(137);
+        expect(Object.keys(EXPECTED)).toHaveLength(138);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

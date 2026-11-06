@@ -38,6 +38,15 @@ export interface ListingLiftFact {
     readonly returnedTo: PublicationStatusEnum;
 }
 
+/** The most recent `businessLines` change of a listing (HOS-1875, DEC-FAC-056). */
+export interface ListingBusinessLinesChangeFact {
+    readonly at: Date;
+    /** `admin` for a third party's edit, `owner` for the owner's own. */
+    readonly actorType: string;
+    readonly before: readonly string[];
+    readonly after: readonly string[];
+}
+
 /** One listing of an owner with the facts its notices are built from (H2). */
 export interface ListingNoticeRow {
     readonly id: string;
@@ -49,6 +58,11 @@ export interface ListingNoticeRow {
     readonly lastLift: ListingLiftFact | null;
     /** The open fix request, if any. */
     readonly openFixRequest: OpenListingFixRequest | null;
+    /**
+     * The most recent `businessLines` change of any actor (HOS-1875). Optional
+     * so every pre-existing row shape keeps compiling; the read always sets it.
+     */
+    readonly lastBusinessLinesChange?: ListingBusinessLinesChangeFact | null;
 }
 
 /** A listing row as the notices query reads it. */
@@ -71,6 +85,14 @@ export interface ListingStatusChangedEventRow {
 /** An open fix request row keyed by its listing. */
 export interface ListingOpenFixRequestRow extends OpenListingFixRequest {
     readonly listingId: string;
+}
+
+/** A `listing.edited` row carrying a `businessLines` change, as the read sees it. */
+export interface ListingBusinessLinesChangedEventRow {
+    readonly entityId: string;
+    readonly actorType: string;
+    readonly occurredAt: Date;
+    readonly changes: readonly DomainEventChange[];
 }
 
 function asStatus(value: unknown): PublicationStatusEnum | null {
@@ -99,11 +121,43 @@ export function toStatusChangeFact(
     };
 }
 
+/** The stored `old`/`new` values of a change, strings only. */
+function storedLineValues(value: unknown): readonly string[] {
+    return Array.isArray(value)
+        ? value.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+}
+
+/** Flattens one `listing.edited` row; null when it carries no `businessLines` change. */
+function toBusinessLinesChangeFact(
+    event: ListingBusinessLinesChangedEventRow
+): ListingBusinessLinesChangeFact | null {
+    const change = event.changes.find((candidate) => candidate.field === 'businessLines');
+    if (!change) return null;
+    return {
+        at: event.occurredAt,
+        actorType: event.actorType,
+        before: storedLineValues(change.old),
+        after: storedLineValues(change.new)
+    };
+}
+
 /** Latest first; same instant keeps the later array position (insertion order). */
 function latest<T extends { readonly occurredAt: Date }>(items: readonly T[]): T | null {
     let found: T | null = null;
     for (const item of items) {
         if (!found || item.occurredAt.getTime() >= found.occurredAt.getTime()) found = item;
+    }
+    return found;
+}
+
+/** Latest first for the business-lines facts, which carry their instant as `at`. */
+function latestChange(
+    items: readonly ListingBusinessLinesChangeFact[]
+): ListingBusinessLinesChangeFact | null {
+    let found: ListingBusinessLinesChangeFact | null = null;
+    for (const item of items) {
+        if (!found || item.at.getTime() >= found.at.getTime()) found = item;
     }
     return found;
 }
@@ -144,19 +198,22 @@ function resolveLastLift(facts: readonly ListingStatusChangeFact[]): ListingLift
 }
 
 /**
- * Pure assembly of the notice rows of one owner's listings from the three
- * reads (listings, their status events, their open fix requests). Exported for
- * the unit test.
+ * Pure assembly of the notice rows of one owner's listings from the four
+ * reads (listings, their status events, their open fix requests and their
+ * `businessLines` changes). Exported for the unit test.
  *
  * @param input.listings - The owner's listings, in display order.
  * @param input.events - Their `listing.status_changed` events, oldest first.
  * @param input.fixRequests - Their open fix requests.
+ * @param input.businessLinesChanges - Their `listing.edited` events carrying a
+ *   `businessLines` change, oldest first.
  * @returns One row per listing, in the same order.
  */
 export function assembleListingNoticeRows(input: {
     readonly listings: readonly ListingNoticeListing[];
     readonly events: readonly ListingStatusChangedEventRow[];
     readonly fixRequests: readonly ListingOpenFixRequestRow[];
+    readonly businessLinesChanges: readonly ListingBusinessLinesChangedEventRow[];
 }): readonly ListingNoticeRow[] {
     const factsByListing = new Map<string, ListingStatusChangeFact[]>();
     for (const event of input.events) {
@@ -165,6 +222,14 @@ export function assembleListingNoticeRows(input: {
         const list = factsByListing.get(fact.listingId) ?? [];
         list.push(fact);
         factsByListing.set(fact.listingId, list);
+    }
+    const changesByListing = new Map<string, ListingBusinessLinesChangeFact[]>();
+    for (const event of input.businessLinesChanges) {
+        const change = toBusinessLinesChangeFact(event);
+        if (!change) continue;
+        const list = changesByListing.get(event.entityId) ?? [];
+        list.push(change);
+        changesByListing.set(event.entityId, list);
     }
     const fixByListing = new Map(input.fixRequests.map((row) => [row.listingId, row]));
     return input.listings.map((listing) => {
@@ -187,7 +252,8 @@ export function assembleListingNoticeRows(input: {
                       openedById: fix.openedById,
                       ownerReportedFixedAt: fix.ownerReportedFixedAt
                   }
-                : null
+                : null,
+            lastBusinessLinesChange: latestChange(changesByListing.get(listing.id) ?? [])
         };
     });
 }
@@ -195,8 +261,9 @@ export function assembleListingNoticeRows(input: {
 /**
  * Composition read of Mi Cuenta (HOS-1492, V8a.1b, H2): every listing of one
  * owner in one vertical — `PURGED` ones included, they keep `deleted_at` NULL —
- * with the facts its notices are built from. Three queries per call (listings,
- * their status events, their open fix requests), never one per listing.
+ * with the facts its notices are built from. Four queries per call (listings,
+ * their status events, their open fix requests and their `businessLines`
+ * changes), never one per listing.
  */
 export const listingNoticesModel = {
     /**
@@ -261,6 +328,23 @@ export const listingNoticesModel = {
                     isNull(fixRequests.closedAt)
                 )
             );
+        const businessLinesChanges = await client
+            .select({
+                entityId: domainEvent.entityId,
+                actorType: domainEvent.actorType,
+                occurredAt: domainEvent.occurredAt,
+                changes: domainEvent.changes
+            })
+            .from(domainEvent)
+            .where(
+                and(
+                    eq(domainEvent.eventType, 'listing.edited'),
+                    eq(domainEvent.entityType, args.vertical),
+                    inArray(domainEvent.entityId, ids),
+                    sql`${domainEvent.changes} @> ${JSON.stringify([{ field: 'businessLines' }])}::jsonb`
+                )
+            )
+            .orderBy(asc(domainEvent.occurredAt));
         return assembleListingNoticeRows({
             listings,
             events,
@@ -272,7 +356,8 @@ export const listingNoticesModel = {
                 openedAt: row.openedAt,
                 openedById: row.openedById,
                 ownerReportedFixedAt: row.ownerReportedFixedAt
-            }))
+            })),
+            businessLinesChanges
         });
     }
 };

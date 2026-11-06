@@ -96,6 +96,29 @@ describe('TEST:V8a:8 row 26 lists the support edits of a listing', () => {
         ]);
     });
 
+    it('TEST:7.3:6 drops business-line-only events before the cut (ACC:27 has its own notice)', async () => {
+        // Arrange: a content edit followed by three business-line changes. The
+        // line changes carry no content field, so row 26 must not render them as
+        // "support edited the content", and they must not eat the shown slots.
+        mocks.findByEntity.mockResolvedValue([
+            event({ minute: 1, actorType: 'admin', fields: ['description'] }),
+            event({ minute: 2, actorType: 'admin', fields: ['businessLines'] }),
+            event({ minute: 3, actorType: 'admin', fields: ['businessLines'] }),
+            event({ minute: 4, actorType: 'admin', fields: ['businessLines'] })
+        ]);
+
+        // Act
+        const result = await listSupportEdits({
+            vertical: VerticalEnum.VENUE,
+            listingId: LISTING
+        });
+
+        // Assert
+        expect(result).toEqual({
+            items: [{ occurredAt: '2026-10-12T15:01:00.000Z', parts: ['texts'] }]
+        });
+    });
+
     it('is empty when only the owner edited', async () => {
         // Arrange
         mocks.findByEntity.mockResolvedValue([

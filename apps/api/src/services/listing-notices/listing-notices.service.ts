@@ -137,6 +137,7 @@ export async function listListingNotices(input: {
                 rows,
                 coverage,
                 now,
+                vertical: input.vertical,
                 ...(publishLimit === undefined ? {} : { publishLimit })
             })
         ]
