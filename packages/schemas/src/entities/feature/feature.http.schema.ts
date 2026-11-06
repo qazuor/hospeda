@@ -13,6 +13,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 
 /**
  * HTTP-compatible feature search schema with automatic coercion
@@ -25,7 +26,7 @@ export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
-    applicableVertical: z.enum(['accommodation', 'venue', 'experience']).optional(),
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Boolean filters with HTTP coercion
     isAvailable: createBooleanQueryParam('Filter by feature availability status'),
@@ -65,10 +66,7 @@ export const FeatureCreateHttpSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.feature.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
     /** Verticals this feature is applicable to (SPEC-266). */
-    applicableVerticals: z
-        .array(z.enum(['accommodation', 'venue', 'experience']))
-        .min(1)
-        .default(['accommodation']),
+    applicableVerticals: z.array(ApplicableVerticalSchema).min(1).default(['accommodation']),
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),

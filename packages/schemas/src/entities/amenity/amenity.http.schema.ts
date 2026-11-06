@@ -71,10 +71,7 @@ export type AmenitySearchHttp = z.infer<typeof AmenitySearchHttpSchema>;
 export const AmenityCreateHttpSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
-    applicableVerticals: z
-        .array(z.enum(['accommodation', 'venue', 'experience']))
-        .min(1)
-        .default(['accommodation']),
+    applicableVerticals: z.array(ApplicableVerticalSchema).min(1).default(['accommodation']),
     type: AmenitiesTypeEnumSchema,
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
