@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "063-feature-rural_activities_stay",
     "slug": "rural_activities_stay",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
         "en": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",

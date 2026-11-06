@@ -204,7 +204,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
-        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -212,6 +212,8 @@ export class FeatureService extends BaseCrudRelatedService<
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
+        if (category) where.category = category;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         // buildWhereClause cannot handle text[] containment, so we build the
@@ -229,7 +231,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ count: number }> {
-        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -237,6 +239,8 @@ export class FeatureService extends BaseCrudRelatedService<
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
+        if (category) where.category = category;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         const additionalConditions = applicableVertical

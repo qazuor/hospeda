@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "040-feature-quiet_zone",
     "slug": "quiet_zone",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
         "en": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",

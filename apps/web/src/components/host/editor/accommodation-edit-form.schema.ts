@@ -226,9 +226,13 @@ export const AccommodationSeoSchema = z.object({
     seoDescription: inherited.seoDescription
 });
 
-/** `…/editar/servicios/` — amenity and feature selections. */
+/**
+ * `…/editar/servicios/` — amenity and feature selections, plus the per-amenity
+ * scope/availability declarations (HOS-2058, write-only `amenityAttributes`).
+ */
 export const AccommodationServicesSchema = z.object({
     amenityIds: inherited.amenityIds,
+    amenityAttributes: inherited.amenityAttributes,
     featureIds: inherited.featureIds
 });
 

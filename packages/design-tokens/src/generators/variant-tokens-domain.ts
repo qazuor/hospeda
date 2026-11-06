@@ -60,7 +60,7 @@ const ACCOMMODATION_TYPE_BASES = [
     'accommodation-type-resort'
 ] as const;
 
-/** 12 amenity-type token base names. */
+/** 17 amenity-type token base names. */
 const AMENITY_TYPE_BASES = [
     'amenity-type-climate-control',
     'amenity-type-connectivity',
@@ -73,7 +73,12 @@ const AMENITY_TYPE_BASES = [
     'amenity-type-safety',
     'amenity-type-family-friendly',
     'amenity-type-work-friendly',
-    'amenity-type-general-appliances'
+    'amenity-type-general-appliances',
+    'amenity-type-parking',
+    'amenity-type-laundry',
+    'amenity-type-water-activities',
+    'amenity-type-wellness',
+    'amenity-type-dining'
 ] as const;
 
 /** 5 auth-provider token base names. */

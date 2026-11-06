@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "106-feature-fusion_cuisine",
     "slug": "fusion_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina de fusión: combina técnicas y sabores de distintas tradiciones",
         "en": "Fusion cuisine: combines techniques and flavors from different traditions",

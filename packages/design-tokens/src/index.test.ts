@@ -175,13 +175,16 @@ describe('theme exports', () => {
         // bucket tokens + their 6 -on companions, then to 238 after HOS-314 added
         // the 5 --channel-whatsapp* tokens (only 1 of which is dark-overridden).
         // HOS-1942 added destructive-text (light = destructive, dark lifted) → 239 / 71.
-        expect(Object.keys(webLight)).toHaveLength(239);
+        // HOS-2058 added 5 amenity-type tokens (parking, laundry, water-activities,
+        // wellness, dining; light only) → 244 / 71.
+        expect(Object.keys(webLight)).toHaveLength(244);
         expect(Object.keys(webDark)).toHaveLength(71);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light,
-        // then to 104 after HOS-182's 6 poi-category bucket tokens + 6 -on companions.
-        expect(Object.keys(adminLight)).toHaveLength(104); // post-SSOT sponsors/amenities/auth/post-categories
+        // then to 104 after HOS-182's 6 poi-category bucket tokens + 6 -on companions,
+        // then to 109 after HOS-2058's 5 amenity-type tokens.
+        expect(Object.keys(adminLight)).toHaveLength(109); // post-SSOT sponsors/amenities/auth/post-categories
         // Admin dark: 14 core color-* overrides + 8 web brand dark overrides.
         // Per-type tokens are NOT redeclared in dark — they inherit via cascade.
         expect(Object.keys(adminDark)).toHaveLength(22);

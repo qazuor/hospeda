@@ -8,7 +8,7 @@
         "pt": "Equipo de playa"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WATER_ACTIVITIES",
     "icon": "BeachEquipmentIcon",
     "isBuiltin": false,
     "isFeatured": false,

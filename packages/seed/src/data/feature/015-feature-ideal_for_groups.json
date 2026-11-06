@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "015-feature-ideal_for_groups",
     "slug": "ideal_for_groups",
+    "category": "AUDIENCE",
     "description": {
         "es": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
         "en": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",

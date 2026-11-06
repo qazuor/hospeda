@@ -8,7 +8,7 @@
         "pt": "Servicio de entrega a domicilio disponible"
     },
     "applicableVerticals": ["venue"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "TransferServiceIcon",
     "isBuiltin": false,
     "isFeatured": true,

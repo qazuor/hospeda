@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "005-feature-rural_area",
     "slug": "rural_area",
+    "category": "LOCATION",
     "description": {
         "es": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",
         "en": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",

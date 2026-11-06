@@ -20,6 +20,23 @@
             "type": "object",
             "description": "Feature description (i18n text object)"
         },
+        "category": {
+            "type": "string",
+            "enum": [
+                "LOCATION",
+                "VIEW",
+                "ACCESS",
+                "STYLE",
+                "AUDIENCE",
+                "OFFER_PROFILE",
+                "SUSTAINABILITY",
+                "ACTIVITIES",
+                "CUISINE",
+                "DIETARY",
+                "LANGUAGE"
+            ],
+            "description": "Feature category (HOS-2058). Optional while features.category is nullable"
+        },
         "applicableVerticals": {
             "type": "array",
             "items": {

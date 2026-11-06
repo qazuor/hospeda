@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "030-feature-full_rental",
     "slug": "full_rental",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",
         "en": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",

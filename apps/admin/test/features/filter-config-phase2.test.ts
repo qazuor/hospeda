@@ -8,6 +8,7 @@
  * not require jsdom or a mock router.
  */
 
+import { AmenitiesTypeEnum, FeatureCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type {
     FilterBarConfig,
@@ -21,6 +22,7 @@ import { eventLocationsConfig } from '../../src/features/event-locations/config/
 import { eventOrganizersConfig } from '../../src/features/event-organizers/config/event-organizers.config';
 import { eventsConfig } from '../../src/features/events/config/events.config';
 import { featuresConfig } from '../../src/features/features/config/features.config';
+import { FEATURE_CATEGORY_OPTIONS } from '../../src/features/features/config/sections/basic-info.consolidated';
 import { sponsorsConfig } from '../../src/features/sponsors/config/sponsors.config';
 
 // ---------------------------------------------------------------------------
@@ -204,7 +206,7 @@ describe('T-006 — filter bars on previously-unfiltered entity lists', () => {
             expect(filter.type).toBe('select');
         });
 
-        it('type select covers all 12 AmenitiesTypeEnum values', () => {
+        it('type select covers all 17 AmenitiesTypeEnum values (HOS-2058 added five)', () => {
             const filter = findFilter(amenitiesConfig, 'type') as {
                 options: ReadonlyArray<{ value: string }>;
             };
@@ -221,6 +223,13 @@ describe('T-006 — filter bars on previously-unfiltered entity lists', () => {
             expect(values).toContain('FAMILY_FRIENDLY');
             expect(values).toContain('WORK_FRIENDLY');
             expect(values).toContain('GENERAL_APPLIANCES');
+            // HOS-2058
+            expect(values).toContain('PARKING');
+            expect(values).toContain('LAUNDRY');
+            expect(values).toContain('WATER_ACTIVITIES');
+            expect(values).toContain('WELLNESS');
+            expect(values).toContain('DINING');
+            expect([...values].sort()).toEqual([...Object.values(AmenitiesTypeEnum)].sort());
         });
 
         it('includes a boolean filter for isBuiltin', () => {
@@ -296,6 +305,11 @@ describe('T-006 — filter bars on previously-unfiltered entity lists', () => {
             const filter = findFilter(featuresConfig, 'includeDeleted');
             expect(filter.type).toBe('boolean');
         });
+
+        it('offers every FeatureCategoryEnum value in the form category select (HOS-2058)', () => {
+            const values = FEATURE_CATEGORY_OPTIONS.map((option) => option.value);
+            expect([...values].sort()).toEqual([...Object.values(FeatureCategoryEnum)].sort());
+        });
     });
 });
 
@@ -319,7 +333,7 @@ describe('ghost filters — verified absent per spec §T-006', () => {
         expect(filters.find((f) => f.paramKey === 'category')).toBeUndefined();
     });
 
-    it('features has no category filter (column does not exist)', () => {
+    it('features has no category filter (the column exists since HOS-2058, but the admin search has no category param yet)', () => {
         const filters = featuresConfig.filterBarConfig?.filters ?? [];
         expect(filters.find((f) => f.paramKey === 'category')).toBeUndefined();
     });

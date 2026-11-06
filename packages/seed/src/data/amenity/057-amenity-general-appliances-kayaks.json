@@ -8,7 +8,7 @@
         "pt": "Kayaks disponibles"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WATER_ACTIVITIES",
     "icon": "KayakRentalIcon",
     "isBuiltin": false,
     "isFeatured": true,

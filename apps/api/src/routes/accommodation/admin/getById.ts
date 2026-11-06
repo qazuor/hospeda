@@ -28,7 +28,8 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * This matches the approach already used by the public `getBySlug` route.
  *
  * @param accommodationId - The accommodation UUID to fetch amenities for.
- * @returns Array of amenity objects with full catalog fields.
+ * @returns Array of amenity objects with full catalog fields plus the
+ *   relation's `scope`/`availability` (HOS-2058).
  */
 async function fetchAdminAmenities(accommodationId: string) {
     const db = getDb();
@@ -50,7 +51,10 @@ async function fetchAdminAmenities(accommodationId: string) {
             createdById: amenities.createdById,
             updatedById: amenities.updatedById,
             deletedAt: amenities.deletedAt,
-            deletedById: amenities.deletedById
+            deletedById: amenities.deletedById,
+            // HOS-2058: relation attributes; NULL = not declared.
+            scope: rAccommodationAmenity.scope,
+            availability: rAccommodationAmenity.availability
         })
         .from(rAccommodationAmenity)
         .innerJoin(amenities, eq(rAccommodationAmenity.amenityId, amenities.id))
@@ -78,6 +82,8 @@ async function fetchAdminFeatures(accommodationId: string) {
             isBuiltin: features.isBuiltin,
             isFeatured: features.isFeatured,
             displayWeight: features.displayWeight,
+            // HOS-2058: catalog category (nullable in release N).
+            category: features.category,
             applicableVerticals: features.applicableVerticals,
             lifecycleState: features.lifecycleState,
             adminInfo: features.adminInfo,

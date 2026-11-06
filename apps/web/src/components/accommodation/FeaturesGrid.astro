@@ -3,8 +3,14 @@
  * @file FeaturesGrid.astro
  * @description Features grid with icons and optional smoking allowed synthetic item.
  * Hidden if empty and no smoking.
+ *
+ * HOS-2058: when any feature carries a `category`, the grid renders one
+ * sub-heading + grid per category (canonical order, unclassified ones under
+ * "Otras"). With no classified feature — venue and experience today — it stays
+ * the flat grid it always was (`groupFeaturesForDisplay` returns null).
  */
 import type { AccommodationFeatureItem } from '@/data/types';
+import { groupFeaturesForDisplay } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { SmokingAllowedIcon } from '@repo/icons';
@@ -43,45 +49,57 @@ function getIcon(iconName: string | null) {
   if (!iconName) return null;
   return resolveIcon({ iconName });
 }
+
+const featureGroups = groupFeaturesForDisplay({ features, t });
+const sections: readonly { readonly key: string; readonly label: string | null; readonly items: readonly AccommodationFeatureItem[] }[] =
+  featureGroups === null
+    ? [{ key: 'all', label: null, items: features }]
+    : featureGroups.map((group) => ({ key: group.key, label: group.label, items: group.items }));
 ---
 
 <section class="features-section">
   <h2 class="features-section__title">{t('accommodations.detail.features.title')}</h2>
 
-  <div class="features-grid">
-    {features.map((feature) => {
-      const Icon = getIcon(feature.icon);
-      // hostReWriteName is a host-customized label (takes priority over i18n).
-      // Fall back to i18n lookup by slug (SPEC-266: feature.name holds the slug).
-      const displayName = feature.hostReWriteName ?? translateFeature(feature.name);
-      return (
-        <div class="feature-item">
-          {Icon ? (
-            <Icon size="sm" weight="duotone" aria-hidden="true" />
-          ) : (
-            <span class="feature-item__dot" aria-hidden="true">&#8226;</span>
-          )}
-          <div class="feature-item__content">
-            <span class="feature-item__name">{displayName}</span>
-            {feature.comments && (
-              <span class="feature-item__comments">{feature.comments}</span>
-            )}
+  {sections.map((section, index) => (
+    <div class="features-group">
+      {section.label && <h3 class="features-group__title">{section.label}</h3>}
+      <div class="features-grid">
+        {section.items.map((feature) => {
+          const Icon = getIcon(feature.icon);
+          // hostReWriteName is a host-customized label (takes priority over i18n).
+          // Fall back to i18n lookup by slug (SPEC-266: feature.name holds the slug).
+          const displayName = feature.hostReWriteName ?? translateFeature(feature.name);
+          return (
+            <div class="feature-item">
+              {Icon ? (
+                <Icon size="sm" weight="duotone" aria-hidden="true" />
+              ) : (
+                <span class="feature-item__dot" aria-hidden="true">&#8226;</span>
+              )}
+              <div class="feature-item__content">
+                <span class="feature-item__name">{displayName}</span>
+                {feature.comments && (
+                  <span class="feature-item__comments">{feature.comments}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {/* The synthetic smoking item closes the last grid, as it always did. */}
+        {index === sections.length - 1 && hasSmoking && (
+          <div class="feature-item">
+            <SmokingAllowedIcon size="sm" weight="duotone" aria-hidden="true" />
+            <div class="feature-item__content">
+              <span class="feature-item__name">
+                {t('accommodations.detail.features.smokingAllowed')}
+              </span>
+            </div>
           </div>
-        </div>
-      );
-    })}
-
-    {hasSmoking && (
-      <div class="feature-item">
-        <SmokingAllowedIcon size="sm" weight="duotone" aria-hidden="true" />
-        <div class="feature-item__content">
-          <span class="feature-item__name">
-            {t('accommodations.detail.features.smokingAllowed')}
-          </span>
-        </div>
+        )}
       </div>
-    )}
-  </div>
+    </div>
+  ))}
+
 </section>
 
 <style>
@@ -91,6 +109,16 @@ function getIcon(iconName: string | null) {
     font-weight: 600;
     color: var(--core-foreground);
     margin-bottom: var(--space-4, 16px);
+  }
+  .features-group + .features-group {
+    margin-top: var(--space-4, 16px);
+  }
+  .features-group__title {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 8px);
   }
   .features-grid {
     display: grid;

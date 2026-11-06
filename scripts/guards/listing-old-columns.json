@@ -134,6 +134,20 @@
             "reason": "Amenity/feature mock rows and the featured image keep their own state."
         },
         {
+            "file": "apps/api/test/routes/accommodation/admin/getById.catalog-attributes.test.ts",
+            "name": "lifecycleState",
+            "count": 4,
+            "table": "amenities, features",
+            "reason": "HOS-2058 copy of the applicableVerticals harness: amenity/feature mock rows keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/admin/getById.catalog-attributes.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "HOS-2058 copy of the applicableVerticals harness: the featured image keeps its own state."
+        },
+        {
             "file": "apps/api/test/routes/accommodation/admin/list-moderation-filter.test.ts",
             "name": "moderationState",
             "count": 32,
@@ -174,6 +188,20 @@
             "count": 1,
             "table": "accommodation_media",
             "reason": "Featured image fixture keeps its own moderationState."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/getBySlug.catalog-attributes.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_faqs",
+            "reason": "HOS-2058 copy of the contact-info harness: the FAQ column mock keeps its own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/getBySlug.catalog-attributes.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "HOS-2058 copy of the contact-info harness: the featured image keeps its own state."
         },
         {
             "file": "apps/api/test/routes/accommodation/public/getBySlug.contact-info.test.ts",

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "037-feature-24h_security",
     "slug": "24h_security",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",
         "en": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",

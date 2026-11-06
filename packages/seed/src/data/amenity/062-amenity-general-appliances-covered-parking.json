@@ -8,7 +8,7 @@
         "pt": "Estacionamiento techado"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "PARKING",
     "icon": "CoveredParkingIcon",
     "isBuiltin": false,
     "isFeatured": true,

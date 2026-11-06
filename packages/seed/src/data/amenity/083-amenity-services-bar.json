@@ -8,7 +8,7 @@
         "pt": "Bar en el hotel"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "BarServiceIcon",
     "isBuiltin": false,
     "isFeatured": true,
