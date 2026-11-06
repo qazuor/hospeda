@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
     addonInstances,
     courtesyGrants,
@@ -44,6 +46,16 @@ const db = getServiceTestDb;
 describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B9a:7 — revoking keeps the reason and repairs nothing (AC:B9a:7)',
     () => {
+        it('wires the grant-specific A5 clause and S21 cause', () => {
+            const source = readFileSync(
+                resolve(
+                    import.meta.dirname,
+                    '../../../src/services/billing/grant/permanent-grant-revoke.ts'
+                ),
+                'utf8'
+            );
+            expect(source).toMatch(/clause:\s*'GRANT_REVOKED',[\s\S]*?s21Cause:\s*'GRANT_REVOKED'/);
+        });
         it('a,c,d,e,f,i — writes all audit fields, retains rows, and does not repair billing or addons', async () => {
             const s = await createRevokeScenario({ withPrincipal: true });
             if (!s.addon || !s.principalId) throw new Error('fixture missing');
