@@ -8,7 +8,7 @@
         "pt": "Secador de pelo"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "CLIMATE_CONTROL",
+    "type": "BED_AND_BATH",
     "icon": "HairDryerIcon",
     "isBuiltin": false,
     "isFeatured": false,

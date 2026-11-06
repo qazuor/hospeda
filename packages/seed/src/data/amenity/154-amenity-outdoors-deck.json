@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "154-amenity-outdoors-deck",
+    "slug": "deck",
+    "description": {
+        "es": "Deck de madera al aire libre",
+        "en": "Outdoor wooden deck",
+        "pt": "Deck de madeira ao ar livre"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "TerraceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

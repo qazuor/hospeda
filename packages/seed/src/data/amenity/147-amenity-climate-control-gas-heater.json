@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "147-amenity-climate-control-gas-heater",
+    "slug": "gas_heater",
+    "description": {
+        "es": "Estufa a gas o de tiro balanceado",
+        "en": "Gas or balanced-flue heater",
+        "pt": "Aquecedor a gás ou de tiragem balanceada"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "CLIMATE_CONTROL",
+    "icon": "HeatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

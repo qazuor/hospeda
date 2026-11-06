@@ -122,7 +122,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                     { value: AmenitiesTypeEnum.WATER_ACTIVITIES, label: 'Actividades acuáticas' },
                     { value: AmenitiesTypeEnum.WELLNESS, label: 'Bienestar' },
                     { value: AmenitiesTypeEnum.DINING, label: 'Comidas y bebidas' },
-                    { value: AmenitiesTypeEnum.GENERAL_APPLIANCES, label: 'Electrodomésticos' }
+                    { value: AmenitiesTypeEnum.GENERAL_APPLIANCES, label: 'Equipamiento' }
                 ]
             }
         },

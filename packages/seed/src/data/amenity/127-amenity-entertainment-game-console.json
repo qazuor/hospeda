@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "127-amenity-entertainment-game-console",
+    "slug": "game_console",
+    "description": {
+        "es": "Consola de videojuegos con juegos",
+        "en": "Video game console with games",
+        "pt": "Console de videogame com jogos"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "TvIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

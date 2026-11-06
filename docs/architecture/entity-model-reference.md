@@ -711,14 +711,25 @@ Attraction:
 
 ## Amenity
 
+Something the guest **uses** (HOS-2059, decision D-1). A feature is what the
+place **is**, and a policy is a rule of the place; a concept lives in exactly
+one of the three catalogs, and `pnpm check:catalog-slug-single-table` fails CI
+when a slug is seeded as both an amenity and a feature. A variant of an amenity
+(shared, private, seasonal) is not a separate row: it is an attribute of the
+relation (see `AccommodationAmenityRelation`).
+
 ```
 Amenity:
  - id (uuid)
- - slug (string) -> 3-100, nullable, regex
- - name (string) -> 2-100
- - description (string) -> 10-500, nullable
- - icon (string) -> 2-100, nullable
- - type (enum: KITCHEN, BEDROOMS, BATHROOMS, ENTERTAINMENT, OUTDOOR, UTILITIES, SERVICES, BUSINESS, SAFETY)
+ - slug (string) -> unique, regex ^[a-z0-9]+(?:[-_][a-z0-9]+)*$ (also the i18n key
+   accommodations.amenityNames.<slug>; there is no name column since SPEC-266)
+ - description (string) -> nullable
+ - icon (string) -> nullable
+ - type (enum AmenitiesTypeEnum: CLIMATE_CONTROL, CONNECTIVITY, ENTERTAINMENT,
+   KITCHEN, BED_AND_BATH, OUTDOORS, ACCESSIBILITY, SERVICES, SAFETY,
+   FAMILY_FRIENDLY, WORK_FRIENDLY, GENERAL_APPLIANCES ("Equipamiento"), PARKING,
+   LAUNDRY, WATER_ACTIVITIES, WELLNESS, DINING)
+ - applicableVerticals (text[]) -> accommodation | venue | experience
  - isBuiltin (boolean) -> default false
  - isFeatured (boolean) -> default false
  - displayWeight (number) -> 1-100, default 50
@@ -751,19 +762,26 @@ AccommodationAmenityRelation:
    - price (number) -> positive, optional
    - currency (enum) -> optional
  - additionalCostPercent (number) -> 0-100, optional
+ - scope (enum: private, shared) -> nullable; null means "not declared"
+ - availability (enum: year_round, seasonal) -> nullable; null means "not declared"
 ```
 
 ---
 
 ## Feature
 
+What the place **is** (HOS-2059, decision D-1; see `Amenity`).
+
 ```
 Feature:
  - id (uuid)
- - slug (string) -> 3-100, regex
- - name (string) -> 2-100
- - description (string) -> 10-500, nullable
- - icon (string) -> 1-100, nullable
+ - slug (string) -> unique, regex (also the i18n key accommodations.featureNames.<slug>;
+   there is no name column since SPEC-266)
+ - description (string) -> nullable
+ - icon (string) -> nullable
+ - category (enum FeatureCategoryEnum: LOCATION, VIEW, ACCESS, STYLE, AUDIENCE,
+   OFFER_PROFILE, SUSTAINABILITY, ACTIVITIES, CUISINE, DIETARY, LANGUAGE) -> nullable
+ - applicableVerticals (text[]) -> accommodation | venue | experience
  - isBuiltin (boolean) -> default false
  - isFeatured (boolean) -> default false
  - displayWeight (number) -> 1-100, default 50

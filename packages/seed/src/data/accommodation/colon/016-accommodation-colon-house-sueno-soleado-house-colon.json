@@ -176,10 +176,8 @@
     },
     "featureIds": [
         "030-feature-full_rental",
-        "035-feature-private_grill",
         "012-feature-family_suitable",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -199,7 +197,8 @@
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
         "043-amenity-safety-fire-extinguisher",
-        "077-amenity-kitchen-gas-electric-stove"
+        "077-amenity-kitchen-gas-electric-stove",
+        "014-amenity-outdoors-bbq-grill"
     ],
     "faqs": [],
     "iaData": [

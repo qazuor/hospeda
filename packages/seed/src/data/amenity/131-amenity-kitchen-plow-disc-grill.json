@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "131-amenity-kitchen-plow-disc-grill",
+    "slug": "plow_disc_grill",
+    "description": {
+        "es": "Disco de arado para cocinar al fuego",
+        "en": "Plow disc for cooking over a fire",
+        "pt": "Disco de arado para cozinhar no fogo"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "BbqGrillIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

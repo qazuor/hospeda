@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "142-amenity-bed-and-bath-pool-towels",
+    "slug": "pool_towels",
+    "description": {
+        "es": "Toallones para usar en la pileta",
+        "en": "Towels for the pool",
+        "pt": "Toalhas para usar na piscina"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "BED_AND_BATH",
+    "icon": "TowelsIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

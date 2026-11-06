@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "143-amenity-bed-and-bath-bidet",
+    "slug": "bidet",
+    "description": {
+        "es": "Bidet en el baño",
+        "en": "Bidet in the bathroom",
+        "pt": "Bidê no banheiro"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "BED_AND_BATH",
+    "icon": "SoapDispenserIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}
