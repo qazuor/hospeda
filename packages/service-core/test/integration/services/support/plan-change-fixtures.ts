@@ -14,6 +14,7 @@ import {
     users
 } from '@repo/db';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
+import { seedCoveragePlanVersion } from './coverage-fixtures.js';
 import {
     seedPredecessor,
     seedSuccessionChoice,
@@ -111,6 +112,56 @@ export async function seedPlanChange(input: {
     };
 }
 
+/** Adds another higher-rank destination to exercise a queued downgrade replacement. */
+export async function seedAdditionalPlanChangeTarget(input: {
+    readonly planVersionId: string;
+    readonly rankOffset?: number;
+    readonly amountMinor?: number;
+}) {
+    const source = await getServiceTestPool().query<{ rank: number; plan_id: string }>(
+        'SELECT rank, plan_id FROM plan_version WHERE id = $1',
+        [input.planVersionId]
+    );
+    const row = source.rows[0];
+    if (!row) throw new Error('Source plan version missing');
+    const version = await getServiceTestPool().query<{ id: string }>(
+        'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, true, false, 0, false) RETURNING id',
+        [row.plan_id, 'accommodation', row.rank + (input.rankOffset ?? 2)]
+    );
+    const planVersionId = version.rows[0]?.id;
+    if (!planVersionId) throw new Error('Destination plan version missing');
+    const option = await getServiceTestPool().query<{ id: string }>(
+        "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'monthly', $2, 'ARS') RETURNING id",
+        [planVersionId, input.amountMinor ?? 600000]
+    );
+    const billingOptionId = option.rows[0]?.id;
+    if (!billingOptionId) throw new Error('Destination billing option missing');
+    return { planVersionId, billingOptionId, amountMinor: input.amountMinor ?? 600000 };
+}
+
+/** Adds a second principal for one user so row-scoped promotion effects can be checked. */
+export async function seedSiblingPlanChangeSubscription(input: { readonly userId: string }) {
+    const row = await getServiceTestDb().transaction(async (tx) => {
+        const plan = await seedCoveragePlanVersion(tx, 'experience');
+        const [subscription] = await tx
+            .insert(subscriptions)
+            .values({
+                userId: input.userId,
+                vertical: 'experience',
+                planVersionId: plan.planVersionId,
+                billingOptionId: plan.billingOptionId,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning({ id: subscriptions.id });
+        return subscription;
+    });
+    if (!row) throw new Error('Sibling plan-change subscription missing');
+    owned.push({ userId: '', predecessorId: row.id, promoCodeIds: [] });
+    return row;
+}
+
 /** Credits a paid monthly period covering the frozen clock. */
 export async function seedCoveredPayment(input: {
     readonly subscriptionId: string;
@@ -180,7 +231,8 @@ export async function seedPlanChangePromo(input: {
 /** Removes only mutable rows seeded by this fixture after each case. */
 export async function retirePlanChanges(): Promise<void> {
     const db = getServiceTestDb();
-    for (const item of owned.splice(0)) {
+    const fixtures = owned.splice(0);
+    for (const item of fixtures) {
         const successorRows = await db
             .select({ id: subscriptions.id })
             .from(subscriptions)
@@ -204,6 +256,7 @@ export async function retirePlanChanges(): Promise<void> {
         for (const successor of successorRows)
             await db.delete(subscriptions).where(eq(subscriptions.id, successor.id));
         await db.delete(subscriptions).where(eq(subscriptions.id, item.predecessorId));
-        await db.delete(users).where(eq(users.id, item.userId));
     }
+    const userIds = [...new Set(fixtures.map((item) => item.userId).filter(Boolean))];
+    for (const userId of userIds) await db.delete(users).where(eq(users.id, userId));
 }

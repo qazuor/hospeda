@@ -27,6 +27,7 @@ import {
 } from './cancel-active-subscription.service.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
 import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close.js';
+import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -165,12 +166,14 @@ async function writeDirectCancellation(input: {
             and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, input.origin))
         )
         .returning({ id: subscriptions.id });
-    if (row)
+    if (row) {
+        await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
         await closeAwaitingManualInstallmentsInTx({
             tx: input.tx,
             subscriptionId: input.subscriptionId,
             now: input.now
         });
+    }
     return row !== undefined;
 }
 

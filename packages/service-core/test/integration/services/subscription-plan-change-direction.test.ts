@@ -4,6 +4,7 @@ import { requestPlanChange } from '../../../src/services/billing/subscription/re
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     retirePlanChanges,
+    seedAdditionalPlanChangeTarget,
     seedCoveredPayment,
     seedPlanChange,
     seedPlanChangePromo
@@ -68,6 +69,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
             toPlanVersionId: seeded.targetPlanVersionId,
             direction: 'UP'
         });
+        const oldQueue = await seedScheduledChange({
+            subscriptionId: seeded.predecessor.id,
+            effectiveAt: seeded.nextChargeAt
+        });
         await seedCoveredPayment({ subscriptionId: seeded.predecessor.id, amountMinor: 250000 });
         const mutate = vi.spyOn(seeded.fake, 'changeAmount');
 
@@ -103,6 +108,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
             successor?.authorizationWindowEndsAt?.getTime() ?? Infinity
         );
         expect(result.firstChargeAt).toEqual(expected);
+        expect(await scheduledChangesOf(result.subscriptionId)).toHaveLength(0);
+        expect(await scheduledChangesOf(seeded.predecessor.id)).toEqual([oldQueue]);
         expect(authorization.snapshot.firstChargeAt).toBe(expected.toISOString());
         expect(predecessor?.status).toBe('ACTIVE');
         expect(mutate).toHaveBeenCalledTimes(0);
@@ -139,22 +146,77 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
         expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
     });
 
-    it('(e) preserves an existing queue and does not mutate the amount', async () => {
+    it('(e) replaces an existing downgrade and asks again per AC:B8b:16', async () => {
         const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
         seeded.verticals.setChangeDirection({
             fromPlanVersionId: seeded.planVersionId,
             toPlanVersionId: seeded.targetPlanVersionId,
             direction: 'DOWN'
         });
-        const existing = await seedScheduledChange({
+        await seedScheduledChange({
             subscriptionId: seeded.predecessor.id,
-            effectiveAt: seeded.nextChargeAt
+            effectiveAt: seeded.nextChargeAt,
+            keepSelection: { accommodation_ids: ['old-choice'] }
+        });
+        const promo = await seedPlanChangePromo({
+            subscriptionId: seeded.predecessor.id,
+            userId: seeded.user.id
+        });
+        const second = await seedAdditionalPlanChangeTarget({
+            planVersionId: seeded.planVersionId
+        });
+        seeded.verticals.setPlanPolicy({
+            planVersionId: second.planVersionId,
+            policy: { graceDays: 10, allowsPause: false, current: true, sellable: true }
+        });
+        seeded.verticals.setChangeDirection({
+            fromPlanVersionId: seeded.planVersionId,
+            toPlanVersionId: second.planVersionId,
+            direction: 'DOWN'
         });
         const mutate = vi.spyOn(seeded.fake, 'changeAmount');
-        const result = await requestPlanChange(seeded.input, seeded.ports);
-        expect(result).toEqual({ path: 'REJECTED', reason: 'SCHEDULED_CHANGE_EXISTS' });
-        expect(mutate).toHaveBeenCalledTimes(0);
-        expect(await scheduledChangesOf(seeded.predecessor.id)).toEqual([existing]);
+        const result = await requestPlanChange(
+            { ...seeded.input, billingOptionId: second.billingOptionId },
+            seeded.ports
+        );
+        const queue = await scheduledChangesOf(seeded.predecessor.id);
+        const authorization = await seeded.fake.readAuthorization({
+            authorizationId: seeded.started.authorizationId
+        });
+        const [redemption] = await getServiceTestDb()
+            .select()
+            .from(promoRedemptions)
+            .where(eq(promoRedemptions.id, promo.id));
+        expect(result).toEqual({
+            path: 'DOWNGRADE',
+            effectiveAt: seeded.nextChargeAt,
+            amountMinor: second.amountMinor,
+            replaced: true
+        });
+        expect(mutate).toHaveBeenCalledTimes(1);
+        expect(authorization.snapshot.amount).toEqual({
+            amountMinor: second.amountMinor,
+            currency: 'ARS'
+        });
+        expect(queue).toHaveLength(1);
+        expect(queue[0]).toMatchObject({
+            targetPlanVersionId: second.planVersionId,
+            targetBillingOptionId: second.billingOptionId,
+            keepSelection: null
+        });
+        expect(redemption?.remainingCharges).toBe(0);
+        const selected = { accommodation_ids: ['keep-this-one'] };
+        const selectedResult = await requestPlanChange(
+            {
+                ...seeded.input,
+                keepSelection: selected
+            },
+            seeded.ports
+        );
+        expect(selectedResult).toMatchObject({ path: 'DOWNGRADE', replaced: true });
+        expect((await scheduledChangesOf(seeded.predecessor.id))[0]?.keepSelection).toEqual(
+            selected
+        );
     });
 
     it('(f) rejects a DOWN request while paused', async () => {

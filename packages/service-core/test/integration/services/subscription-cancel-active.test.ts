@@ -12,11 +12,20 @@ import {
     unusedComplementPolicy
 } from './support/cancel-active-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import {
+    deleteScheduledChanges,
+    scheduledChangesOf,
+    seedScheduledChange
+} from './support/scheduled-change-fixtures.js';
 
 const owner = (id: string): Actor => ({ id, roles: [], permissions: [] });
 const fakeProvider = (fake: FakePaymentProvider) => fake;
 const clock = { now: () => cancelActiveNow };
-afterEach(retireCancelActiveRows);
+const queuedSubscriptions: string[] = [];
+afterEach(async () => {
+    await deleteScheduledChanges(queuedSubscriptions.splice(0));
+    await retireCancelActiveRows();
+});
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())(
@@ -30,6 +39,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 payment: 'payment',
                 nextChargeAt: new Date('2028-10-01T00:00:00.000Z')
             });
+            await seedScheduledChange({
+                subscriptionId: seeded.subscriptionId,
+                effectiveAt: new Date('2028-10-01T00:00:00.000Z')
+            });
+            queuedSubscriptions.push(seeded.subscriptionId);
             const originalCancel = fake.cancel.bind(fake);
             const cancel = vi
                 .spyOn(fake, 'cancel')
@@ -58,6 +72,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 cancelCall: 'SENT'
             });
             expect(cancel).toHaveBeenCalledTimes(1);
+            expect(await scheduledChangesOf(seeded.subscriptionId)).toHaveLength(0);
             expect(coverage).toHaveBeenCalledWith({
                 userId: seeded.userId,
                 vertical: 'accommodation',

@@ -17,6 +17,7 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { CancelActiveCall } from './cancel-active-subscription.service.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import type { DecidedComplementCancellationCall } from './complement-s11-rule.js';
+import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -127,6 +128,7 @@ export async function writePausedCancellation(input: {
         })
         .where(and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, 'PAUSED')))
         .returning({ id: subscriptions.id });
+    if (row) await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
     return row !== undefined;
 }
 
@@ -148,6 +150,7 @@ export async function writePausedScheduledCancellation(input: {
         })
         .where(and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, 'PAUSED')))
         .returning({ id: subscriptions.id });
+    if (row) await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
     return row !== undefined;
 }
 

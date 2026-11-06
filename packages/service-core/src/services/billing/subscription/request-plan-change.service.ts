@@ -1,16 +1,18 @@
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { eq, getDb, subscriptions } from '@repo/db';
-import { actStartInstant, assertFreshForAct, confirmAuthorizationMutation } from '@repo/payments';
 import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
 import { extractPostgresErrorCause } from '../../../utils/index.js';
 import {
-    hasScheduledPlanChange,
+    mutatePlanChangeAmount,
     queueDowngrade,
     readPlanChangeOrigin,
     readPlanChangeTarget,
-    readSuccessorCredit
+    readScheduledPlanChange,
+    readSuccessorCredit,
+    removeQueuedDowngrade,
+    replaceQueuedDowngrade
 } from './request-plan-change-support.js';
 import { type StartSuccessionPorts, startSuccession } from './start-succession.service.js';
 import { scheduleSuccessorFirstChargeWithCredit } from './successor-credit.js';
@@ -20,7 +22,8 @@ const inputSchema = z.strictObject({
     subscriptionId: z.uuid(),
     billingOptionId: z.uuid(),
     payerEmail: z.email().optional(),
-    returnUrl: z.url()
+    returnUrl: z.url(),
+    keepSelection: z.record(z.string(), z.array(z.string())).optional()
 });
 
 /** AC:B8b:7 request input. */
@@ -35,10 +38,20 @@ export type RequestPlanChangeResult =
           readonly firstChargeAt: Date;
           readonly creditDays: number;
       }
-    | { readonly path: 'DOWNGRADE'; readonly effectiveAt: Date; readonly amountMinor: number }
+    | {
+          readonly path: 'DOWNGRADE';
+          readonly effectiveAt: Date;
+          readonly amountMinor: number;
+          readonly replaced?: true;
+      }
+    | { readonly path: 'REGRET'; readonly amountMinor: number }
     | {
           readonly path: 'REJECTED';
-          readonly reason: 'NO_CHANGE' | 'SCHEDULED_CHANGE_EXISTS' | 'NOT_ACTIVE';
+          readonly reason:
+              | 'NO_CHANGE'
+              | 'SCHEDULED_CHANGE_EXISTS'
+              | 'NOT_ACTIVE'
+              | 'MIGRATION_CHANGE_QUEUED';
       };
 
 /** Ports for AC:B8b:7 and the contract's DEC-ARCH-008 direction verdict. */
@@ -61,6 +74,31 @@ export async function requestPlanChange(
         userId: value.actor.id
     });
     const target = await readPlanChangeTarget({ billingOptionId: value.billingOptionId });
+    const queued = await readScheduledPlanChange({ subscriptionId: value.subscriptionId });
+    if (origin.subscription.billingOptionId === target.id && queued) {
+        if (origin.subscription.status !== 'ACTIVE')
+            return { path: 'REJECTED', reason: 'NOT_ACTIVE' };
+        if (!origin.providerId)
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Subscription has no provider authorization',
+                undefined,
+                'PLAN_CHANGE_NO_AUTHORIZATION'
+            );
+        await mutatePlanChangeAmount({
+            authorizationId: origin.providerId,
+            amount: { amountMinor: target.amount, currency: target.currency },
+            clock: ports.clock,
+            provider: ports.provider
+        });
+        await removeQueuedDowngrade({
+            subscriptionId: value.subscriptionId,
+            expectedQueueId: queued.id,
+            sourcePlanVersionId: origin.subscription.planVersionId ?? '',
+            sourceBillingOptionId: origin.subscription.billingOptionId ?? ''
+        });
+        return { path: 'REGRET', amountMinor: target.amount };
+    }
     if (origin.subscription.billingOptionId === target.id)
         return { path: 'REJECTED', reason: 'NO_CHANGE' };
     if (!origin.subscription.planVersionId || !origin.subscription.billingOptionId)
@@ -83,8 +121,9 @@ export async function requestPlanChange(
     if (direction === 'DOWN') {
         if (origin.subscription.status !== 'ACTIVE')
             return { path: 'REJECTED', reason: 'NOT_ACTIVE' };
-        if (await hasScheduledPlanChange({ subscriptionId: value.subscriptionId }))
-            return { path: 'REJECTED', reason: 'SCHEDULED_CHANGE_EXISTS' };
+        const existingQueue = queued;
+        if (existingQueue?.planMigrationSubscriptionId)
+            return { path: 'REJECTED', reason: 'MIGRATION_CHANGE_QUEUED' };
         const effectiveAt = origin.subscription.nextChargeAt;
         if (!effectiveAt)
             throw new ServiceError(
@@ -101,26 +140,31 @@ export async function requestPlanChange(
                 'PLAN_CHANGE_NO_AUTHORIZATION'
             );
         const amount = { amountMinor: target.amount, currency: target.currency };
-        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-        actStartInstant({ act });
-        const acknowledgement = await ports.provider.changeAmount({
+        await mutatePlanChangeAmount({
             authorizationId: origin.providerId,
-            amount
+            amount,
+            clock: ports.clock,
+            provider: ports.provider
         });
-        const confirmation = await confirmAuthorizationMutation({
-            provider: ports.provider,
-            acknowledgement,
-            sent: { amount }
-        });
-        assertFreshForAct({ read: confirmation.read, act }).snapshot;
-        if (confirmation.outcome !== 'applied')
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Provider did not apply plan amount',
-                undefined,
-                'PLAN_CHANGE_MUTATION_NOT_APPLIED'
-            );
         try {
+            if (existingQueue) {
+                await replaceQueuedDowngrade({
+                    subscriptionId: value.subscriptionId,
+                    expectedQueueId: existingQueue.id,
+                    sourcePlanVersionId: origin.subscription.planVersionId,
+                    sourceBillingOptionId: origin.subscription.billingOptionId,
+                    targetPlanVersionId: target.planVersionId,
+                    targetBillingOptionId: target.id,
+                    effectiveAt,
+                    keepSelection: value.keepSelection
+                });
+                return {
+                    path: 'DOWNGRADE',
+                    effectiveAt,
+                    amountMinor: target.amount,
+                    replaced: true
+                };
+            }
             await queueDowngrade({
                 subscriptionId: value.subscriptionId,
                 targetPlanVersionId: target.planVersionId,
@@ -133,7 +177,12 @@ export async function requestPlanChange(
                 cause?.code === '23505' &&
                 cause.constraint === 'uq_subscription_scheduled_change_subscription'
             )
-                return { path: 'REJECTED', reason: 'SCHEDULED_CHANGE_EXISTS' };
+                throw new ServiceError(
+                    ServiceErrorCode.ALREADY_EXISTS,
+                    'Plan change state changed',
+                    undefined,
+                    'PLAN_CHANGE_STATE_CHANGED'
+                );
             throw error;
         }
         return { path: 'DOWNGRADE', effectiveAt, amountMinor: target.amount };

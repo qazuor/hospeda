@@ -1,3 +1,4 @@
+import type { Clock } from '@repo/billing-verticals-contract';
 import {
     and,
     billingOptions,
@@ -13,6 +14,12 @@ import {
     subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
+import {
+    actStartInstant,
+    assertFreshForAct,
+    confirmAuthorizationMutation,
+    type PaymentProvider
+} from '@repo/payments';
 import {
     BILLING_CYCLE_MONTHS,
     type BillingCycle,
@@ -123,16 +130,14 @@ export async function readSuccessorCredit(input: {
     return { creditDays: 0, unusedMinor: 0 };
 }
 
-/** Checks whether the subscription already owns a queued entitlement change. */
-export async function hasScheduledPlanChange(input: {
-    readonly subscriptionId: string;
-}): Promise<boolean> {
+/** Reads the complete queued change for collision handling. */
+export async function readScheduledPlanChange(input: { readonly subscriptionId: string }) {
     const [row] = await getDb()
-        .select({ id: subscriptionScheduledChanges.id })
+        .select()
         .from(subscriptionScheduledChanges)
         .where(eq(subscriptionScheduledChanges.subscriptionId, input.subscriptionId))
         .limit(1);
-    return Boolean(row);
+    return row ?? null;
 }
 
 /** Writes the downgrade's queue and ends its promo in one local transaction. */
@@ -148,5 +153,135 @@ export async function queueDowngrade(input: {
             .update(promoRedemptions)
             .set({ remainingCharges: 0 })
             .where(eq(promoRedemptions.subscriptionId, input.subscriptionId));
+    });
+}
+
+/** Mutates a provider authorization to a persisted list price and confirms the result. */
+export async function mutatePlanChangeAmount(input: {
+    readonly authorizationId: string;
+    readonly amount: { readonly amountMinor: number; readonly currency: string };
+    readonly clock: Clock;
+    readonly provider: PaymentProvider;
+}): Promise<void> {
+    const act = { kind: 'decision' as const, startedAt: input.clock.now() };
+    actStartInstant({ act });
+    const acknowledgement = await input.provider.changeAmount({
+        authorizationId: input.authorizationId,
+        amount: input.amount
+    });
+    const confirmation = await confirmAuthorizationMutation({
+        provider: input.provider,
+        acknowledgement,
+        sent: { amount: input.amount }
+    });
+    assertFreshForAct({ read: confirmation.read, act }).snapshot;
+    if (confirmation.outcome !== 'applied')
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Provider did not apply plan amount',
+            undefined,
+            'PLAN_CHANGE_MUTATION_NOT_APPLIED'
+        );
+}
+
+/** Replaces a customer downgrade only while its source row and old queue remain current. */
+export async function replaceQueuedDowngrade(input: {
+    readonly subscriptionId: string;
+    readonly expectedQueueId: string;
+    readonly sourcePlanVersionId: string;
+    readonly sourceBillingOptionId: string;
+    readonly targetPlanVersionId: string;
+    readonly targetBillingOptionId: string;
+    readonly effectiveAt: Date;
+    readonly keepSelection?: Record<string, string[]>;
+}): Promise<void> {
+    await getDb().transaction(async (tx) => {
+        const [subscription] = await tx
+            .select({
+                status: subscriptions.status,
+                planVersionId: subscriptions.planVersionId,
+                billingOptionId: subscriptions.billingOptionId
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, input.subscriptionId))
+            .limit(1)
+            .for('update');
+        const [queued] = await tx
+            .select({
+                id: subscriptionScheduledChanges.id,
+                planMigrationSubscriptionId:
+                    subscriptionScheduledChanges.planMigrationSubscriptionId
+            })
+            .from(subscriptionScheduledChanges)
+            .where(eq(subscriptionScheduledChanges.subscriptionId, input.subscriptionId))
+            .limit(1);
+        if (
+            subscription?.status !== 'ACTIVE' ||
+            subscription.planVersionId !== input.sourcePlanVersionId ||
+            subscription.billingOptionId !== input.sourceBillingOptionId ||
+            queued?.id !== input.expectedQueueId ||
+            queued.planMigrationSubscriptionId
+        )
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Plan change state changed',
+                undefined,
+                'PLAN_CHANGE_STATE_CHANGED'
+            );
+        await tx
+            .delete(subscriptionScheduledChanges)
+            .where(eq(subscriptionScheduledChanges.id, queued.id));
+        await tx.insert(subscriptionScheduledChanges).values({
+            subscriptionId: input.subscriptionId,
+            targetPlanVersionId: input.targetPlanVersionId,
+            targetBillingOptionId: input.targetBillingOptionId,
+            effectiveAt: input.effectiveAt,
+            keepSelection: input.keepSelection ?? null
+        });
+        await tx
+            .update(promoRedemptions)
+            .set({ remainingCharges: 0 })
+            .where(eq(promoRedemptions.subscriptionId, input.subscriptionId));
+    });
+}
+
+/** Cancels a customer's queued downgrade only while its source row and queue remain current. */
+export async function removeQueuedDowngrade(input: {
+    readonly subscriptionId: string;
+    readonly expectedQueueId: string;
+    readonly sourcePlanVersionId: string;
+    readonly sourceBillingOptionId: string;
+}): Promise<void> {
+    await getDb().transaction(async (tx) => {
+        const [subscription] = await tx
+            .select({
+                status: subscriptions.status,
+                planVersionId: subscriptions.planVersionId,
+                billingOptionId: subscriptions.billingOptionId
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, input.subscriptionId))
+            .limit(1)
+            .for('update');
+        const [queued] = await tx
+            .select({ id: subscriptionScheduledChanges.id })
+            .from(subscriptionScheduledChanges)
+            .where(eq(subscriptionScheduledChanges.subscriptionId, input.subscriptionId))
+            .limit(1);
+        if (
+            subscription?.status !== 'ACTIVE' ||
+            subscription.planVersionId !== input.sourcePlanVersionId ||
+            subscription.billingOptionId !== input.sourceBillingOptionId ||
+            queued?.id !== input.expectedQueueId
+        )
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Plan change state changed',
+                undefined,
+                'PLAN_CHANGE_STATE_CHANGED'
+            );
+        await tx
+            .delete(subscriptionScheduledChanges)
+            .where(eq(subscriptionScheduledChanges.id, queued.id));
     });
 }

@@ -264,6 +264,7 @@ export * from './billing/subscription/resume-subscription.service.js';
 export * from './billing/subscription/revocation-payment.js';
 export * from './billing/subscription/revoke-subscription.service.js';
 export * from './billing/subscription/s11-service-end.js';
+export * from './billing/subscription/scheduled-change-discard.js';
 export * from './billing/subscription/scheduled-change-on-return.js';
 export * from './billing/subscription/send-grace-reminders.service.js';
 export * from './billing/subscription/send-renewal-notices.service.js';
