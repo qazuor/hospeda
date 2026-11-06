@@ -74,12 +74,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
     });
 
     it('TEST:B8b:17 applies the same DOWN request when the source is ACTIVE', async () => {
-        const seeded = await seedPlanChange({ status: 'ACTIVE', rankRelation: 'HIGHER' });
+        const seeded = await seedPlanChange({ status: 'GRACE_PERIOD', rankRelation: 'HIGHER' });
         seeded.verticals.setChangeDirection({
             fromPlanVersionId: seeded.planVersionId,
             toPlanVersionId: seeded.targetPlanVersionId,
             direction: 'DOWN'
         });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'ACTIVE' })
+            .where(eq(subscriptions.id, seeded.predecessor.id));
         const result = await requestPlanChange(seeded.input, seeded.ports);
         expect(result.path).toBe('DOWNGRADE');
     });
