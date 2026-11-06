@@ -14,6 +14,7 @@ import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
+import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
     assertCardCheckoutVertical,
     assertPlanForSale,
@@ -24,6 +25,7 @@ import {
     type StartSubscriptionPorts,
     type StartSubscriptionResult
 } from './start-subscription.service.js';
+import { resolveSuccessorWindow } from './successor-window.js';
 
 const logger = createLogger('subscription-succession');
 
@@ -89,9 +91,27 @@ export async function startSuccession(
     }
 
     const deadlines = await getCurrentBillingDeadlines();
-    const authorizationWindowEndsAt = new Date(
-        ports.clock.now().getTime() + deadlines.values['10'].cardHours * 60 * 60 * 1000
+    const cycleDeadlines = await getDb().transaction((tx) =>
+        readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId })
     );
+    const window = resolveSuccessorWindow({
+        now: ports.clock.now(),
+        cardHours: deadlines.values['10'].cardHours,
+        minimumRemainingHours: cycleDeadlines.values['15'].hoursRemaining,
+        predecessor: {
+            status: admitted.predecessor.status,
+            paymentMethod: admitted.predecessor.paymentMethod,
+            nextChargeAt: admitted.predecessor.nextChargeAt
+        }
+    });
+    if (window.kind === 'NOT_OFFERED')
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Successor authorization window is too short',
+            undefined,
+            'SUCCESSION_WINDOW_TOO_SHORT'
+        );
+    const authorizationWindowEndsAt = window.endsAt;
     const bornAt = ports.clock.now();
     let providerFirstChargeAt: string | undefined;
     let values: typeof subscriptions.$inferInsert;
