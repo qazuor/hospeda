@@ -1,4 +1,9 @@
-import { PermissionEnum, PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import {
+    EntitlementKeyEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    type VerticalEnum
+} from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -155,6 +160,97 @@ describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () 
         businessLines = ['food', 'nightlife'];
         const multi = await (await app().request(`/${VENUE}/sections`)).json();
         expect(multi.data.multiLine).toBe(true);
+    });
+});
+
+/**
+ * TEST:7.4:2 (AC:7:5, the read half). The map a support member gets is the
+ * OWNER's plan map: even when the support member's own plan is Premium, the
+ * route evaluates the owner's effective set, so `menu` stays `locked` exactly
+ * where the owner sees it locked. The engines compare the whole `data` object,
+ * not just `menu`, so an ambient key leaking into any other section fails too.
+ */
+const BASIC_VENUE_KEYS = [EntitlementKeyEnum.EDIT_VENUE_INFO] as const;
+const PREMIUM_VENUE_KEYS = [
+    EntitlementKeyEnum.EDIT_VENUE_INFO,
+    EntitlementKeyEnum.MANAGE_VENUE_MENU,
+    EntitlementKeyEnum.MENU_ITEM_PHOTOS,
+    EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU,
+    EntitlementKeyEnum.MENU_QR_SCAN_METRICS,
+    EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL,
+    EntitlementKeyEnum.MANAGE_VENUE_EVENTS
+] as const;
+
+function planKeysFor(userId: string): readonly string[] {
+    return userId === SUPPORT ? PREMIUM_VENUE_KEYS : BASIC_VENUE_KEYS;
+}
+
+describe('TEST:7.4:2 AC:7:5 the support map equals the owner plan map', () => {
+    beforeEach(() => {
+        effectiveRead.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: planKeysFor(userId).map((key) => ({
+                        key,
+                        value: 1,
+                        strategy: 'MAX'
+                    }))
+                })
+        );
+    });
+
+    async function ownerAndSupportMaps() {
+        actorId = OWNER;
+        actorPermissions = [];
+        const own = await app().request(`/${VENUE}/sections`);
+        actorId = SUPPORT;
+        actorPermissions = [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT];
+        const support = await app().request(`/${VENUE}/sections`);
+        return {
+            own: { status: own.status, body: await own.json() },
+            support: { status: support.status, body: await support.json() }
+        };
+    }
+
+    it('with businessLines [food]: support sees exactly the owner map and every menu trait locked', async () => {
+        const { own, support } = await ownerAndSupportMaps();
+
+        expect(own.status).toBe(200);
+        expect(support.status).toBe(200);
+        expect(support.body.data).toEqual(own.body.data);
+        expect(support.body.data.sections.menu).toEqual({
+            state: 'locked',
+            traits: {
+                itemPhotos: 'locked',
+                translations: 'locked',
+                qr: 'locked',
+                qrMetrics: 'locked'
+            }
+        });
+        expect(effectiveRead).not.toHaveBeenCalledWith({
+            userId: SUPPORT,
+            vertical: 'venue'
+        });
+    });
+
+    it('with businessLines [food, nightlife]: the two whole maps still match', async () => {
+        businessLines = ['food', 'nightlife'];
+        const { own, support } = await ownerAndSupportMaps();
+
+        expect(own.status).toBe(200);
+        expect(support.status).toBe(200);
+        expect(own.body.data.multiLine).toBe(true);
+        expect(support.body.data).toEqual(own.body.data);
+        expect(support.body.data.sections.menu.state).toBe('locked');
+        expect(effectiveRead).not.toHaveBeenCalledWith({
+            userId: SUPPORT,
+            vertical: 'venue'
+        });
     });
 });
 

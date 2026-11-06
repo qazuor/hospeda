@@ -13,7 +13,7 @@
  * write path stays in-memory; the foreign-owner case lives in the integration
  * suite (TEST:7.2:2), where the action-15 audit and email have a database.
  */
-import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import { EntitlementKeyEnum, PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -27,6 +27,23 @@ const BASE = '/api/v1/admin/venues';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_ID = '22222222-2222-4222-8222-222222222222';
 const VENUE_ID = '33333333-3333-4333-8333-333333333333';
+
+/** The Basic plan's only venue key: step 4b passes, step 6 gates the paid menu. */
+const BASIC_VENUE_KEYS = [EntitlementKeyEnum.EDIT_VENUE_INFO] as const;
+/** The support member's own Premium plan; the owner plan, not this, must decide. */
+const PREMIUM_VENUE_KEYS = [
+    EntitlementKeyEnum.EDIT_VENUE_INFO,
+    EntitlementKeyEnum.MANAGE_VENUE_MENU,
+    EntitlementKeyEnum.MENU_ITEM_PHOTOS,
+    EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU,
+    EntitlementKeyEnum.MENU_QR_SCAN_METRICS,
+    EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL,
+    EntitlementKeyEnum.MANAGE_VENUE_EVENTS
+] as const;
+
+function planKeysFor(userId: string): readonly string[] {
+    return userId === OTHER_ID ? PREMIUM_VENUE_KEYS : BASIC_VENUE_KEYS;
+}
 
 const { fakeModel, store } = vi.hoisted(() => {
     const state = {
@@ -140,6 +157,9 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
             ownerId: store.row.ownerId
         }),
         billing: { coverage: async () => ({ covered: true, sources: [{ type: 'BASE' }] }) },
+        // The plan depends on WHO is evaluated: the owner is Basic, the support
+        // member on the same request is Premium. Existing cases all evaluate the
+        // owner, so they keep receiving exactly `edit_venue_info`.
         effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
                 version: 1,
@@ -147,7 +167,11 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 vertical,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
+                entries: planKeysFor(userId).map((key) => ({
+                    key,
+                    value: 1,
+                    strategy: 'MAX'
+                }))
             }),
         preTrialDraftLimits: async () => ({})
     })
@@ -299,5 +323,52 @@ describe('Admin venue section gates (HOS-1874)', () => {
             details: { reason: 'SECTION_ABSENT', section: 'menu' }
         });
         expect(fakeModel.update).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
+    // TEST:7.4:3 (AC:7:5) — the support write is gated on the OWNER's plan,
+    // never on the support member's own Premium plan.
+    // -----------------------------------------------------------------------
+
+    describe('TEST:7.4:3 AC:7:5 support writes follow the owner plan', () => {
+        const supportHeaders = () =>
+            headers(OTHER_ID, ['access.panelAdmin', 'listing.foreignContent.edit']);
+
+        it('answers 403 ENTITLEMENT_REQUIRED for the paid menu link the owner lacks', async () => {
+            resetStore({ type: 'CAFE', businessLines: ['food'] });
+
+            const response = await patch(
+                { menuUrl: 'https://example.com/carta' },
+                supportHeaders()
+            );
+
+            expect(response.status, await response.clone().text()).toBe(403);
+            expect((await response.json()).error).toMatchObject({
+                code: 'ENTITLEMENT_REQUIRED',
+                details: { entitlementKey: 'manage_venue_menu' }
+            });
+            expect(fakeModel.update).not.toHaveBeenCalled();
+        });
+
+        it('control: the owner gets the same 403 for the same body', async () => {
+            resetStore({ type: 'CAFE', businessLines: ['food'] });
+
+            const response = await patch({ menuUrl: 'https://example.com/carta' });
+
+            expect(response.status, await response.clone().text()).toBe(403);
+            expect((await response.json()).error).toMatchObject({
+                code: 'ENTITLEMENT_REQUIRED',
+                details: { entitlementKey: 'manage_venue_menu' }
+            });
+            expect(fakeModel.update).not.toHaveBeenCalled();
+        });
+
+        it('control: support still edits a common field (action 15 permits it)', async () => {
+            resetStore({ type: 'CAFE', businessLines: ['food'] });
+
+            const response = await patch({ name: 'Nuevo nombre' }, supportHeaders());
+
+            expect(response.status, await response.clone().text()).toBe(200);
+        });
     });
 });
