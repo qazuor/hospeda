@@ -1,9 +1,13 @@
 import { eq, subscriptions } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
+import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { enterManualGraceInTx } from '../../../../../packages/service-core/src/services/billing/subscription/manual-grace-entry';
 import { initApp } from '../../../src/app';
+import { protectedBillingSubscriptionReadRoutes } from '../../../src/routes/billing-subscription';
+import type { AppBindings } from '../../../src/types';
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
@@ -86,6 +90,29 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
                 body: JSON.stringify({ billingOptionId: row.targetOptionId })
             });
             expect(missingSession.status).toBe(401);
+            const unverifiedApp = new Hono<AppBindings>();
+            unverifiedApp.use('*', async (ctx, next) => {
+                ctx.set('actor', {
+                    id: crypto.randomUUID(),
+                    roles: [RoleEnum.USER],
+                    permissions: [],
+                    emailVerified: false
+                });
+                await next();
+            });
+            unverifiedApp.route(
+                '/api/v1/protected/billing-subscription',
+                protectedBillingSubscriptionReadRoutes
+            );
+            const unverified = await unverifiedApp.request(pathOf(row.subscriptionId), {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ billingOptionId: row.targetOptionId })
+            });
+            expect(unverified.status).toBe(403);
+            expect(((await unverified.json()) as { error: { code: string } }).error.code).toBe(
+                ServiceErrorCode.EMAIL_NOT_VERIFIED
+            );
             expect((await post(row.subscriptionId, row.userId, {})).status).toBe(400);
             const foreign = await post(row.subscriptionId, crypto.randomUUID(), {
                 billingOptionId: row.targetOptionId
