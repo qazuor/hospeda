@@ -43,7 +43,11 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
             expect((await page.request.get(new URL(href, WEB_URL).href)).status()).toBe(200);
         }
 
-        const nightSlug = businessLineToUrlSlug({ value: 'nightlife' }).urlSlug;
+        const nightlife = listPublicBusinessLines({ vertical: 'venue' }).find(
+            ({ value }) => value === 'nightlife'
+        );
+        expect(nightlife).toBeDefined();
+        const nightSlug = businessLineToUrlSlug({ value: nightlife!.value }).urlSlug;
         await page.goto(`${WEB_URL}/es/comer-y-salir/rubro/${nightSlug}/`);
         await expect(page).toHaveTitle(/^Boliches, bares y pubs en /);
         const activeVenueLink = page
