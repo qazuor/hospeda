@@ -21,6 +21,7 @@ export const CyclePricePreviewRequestSchema = z
         amount: AmountSchema
     })
     .strict();
+/** Validated request for previewing a cycle price on a plan version. */
 export type CyclePricePreviewRequest = z.infer<typeof CyclePricePreviewRequestSchema>;
 
 /** Confirmation body: the preview plus the previous amount the actor saw. */
@@ -33,6 +34,7 @@ export const SetCyclePriceRequestSchema = z
         confirmed: z.literal(true)
     })
     .strict();
+/** Validated confirmation with the previous amount observed in the preview. */
 export type SetCyclePriceRequest = z.infer<typeof SetCyclePriceRequestSchema>;
 
 /**
@@ -50,6 +52,7 @@ export const CyclePriceConfirmationSchema = z.object({
     effectiveFrom: z.literal('ON_CONFIRMATION'),
     message: z.string().min(1)
 });
+/** Preview result describing the price change and its customer reach. */
 export type CyclePriceConfirmation = z.infer<typeof CyclePriceConfirmationSchema>;
 
 /** What the confirmed action answers: the written option and the audit event id. */
@@ -65,4 +68,5 @@ export const CyclePriceSetResponseSchema = z.object({
     newAmount: AmountSchema,
     domainEventId: z.string().uuid()
 });
+/** Confirmed price change, including the persisted option and domain event ID. */
 export type CyclePriceSetResponse = z.infer<typeof CyclePriceSetResponseSchema>;
