@@ -8,8 +8,9 @@ import {
     successionRetainedPayments
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service';
+import * as authorizationWindows from '../../../src/services/billing/subscription/expire-authorization-windows.service';
 import { completeSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { createSuccessorCutter } from '../../../src/services/billing/subscription/successor-cutter';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
@@ -33,6 +34,7 @@ const seededPaymentIds: string[] = [];
 const cutSuccessors: { readonly id: string; readonly predecessorId: string }[] = [];
 
 afterEach(async () => {
+    vi.restoreAllMocks();
     const db = getServiceTestDb();
     if (seededPaymentIds.length)
         await db
@@ -271,6 +273,32 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 provider half', ()
 
         expect(deferredToSweep.retainedReevaluated).toBe(0);
         expect(openRetention).toMatchObject({ releasedAt: null, releaseReason: null });
+    });
+
+    it('(p) logs a failed retained payment reevaluation without undoing the S31 cut', async () => {
+        const seeded = await seedS17({ successorStatus: 'PENDING_AUTHORIZATION' });
+        const db = getServiceTestDb();
+        const cut = await db.transaction(async (tx) =>
+            createSuccessorCutter(successorCutPorts(tx)).cutSuccessor({
+                predecessorSubscriptionId: seeded.predecessorId,
+                tx
+            })
+        );
+        vi.spyOn(authorizationWindows, 'reevaluateRetainedPayments').mockRejectedValue(
+            new Error('S7 temporarily unavailable')
+        );
+
+        const result = await completeSuccessorCut(
+            cut,
+            s17Ports(seeded.provider, { deliver: true })
+        );
+        const [successor] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.successorId));
+
+        expect(result.retainedReevaluated).toBe(0);
+        expect(successor?.status).toBe('ABANDONED');
     });
 
     it('(n) defers a pending notice, then the real sweep retries S31 with SUCCESSOR_CUT', async () => {
