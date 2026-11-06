@@ -260,6 +260,13 @@ export interface AccommodationEditData {
      */
     readonly featuredByEntitlement: boolean;
     readonly amenityIds: readonly string[];
+    /**
+     * HOS-2058: declared relation attributes per linked amenity, keyed by
+     * amenity id. An amenity with nothing declared has no entry (NULL on the
+     * relation row). Entries for amenities that get unchecked stay here so
+     * re-checking restores them; only checked amenities are ever sent.
+     */
+    readonly amenityAttributes: Readonly<Record<string, AmenityAttributeValue>>;
     readonly featureIds: readonly string[];
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
     readonly phone: string;
@@ -380,6 +387,21 @@ export interface AccommodationMediaItem {
  *
  * `slug` is the canonical identifier for i18n label resolution.
  */
+/** Whether a linked amenity is for the guest only or shared (HOS-2058). */
+export type AmenityScopeValue = 'private' | 'shared';
+
+/** Whether a linked amenity is available all year or only in season (HOS-2058). */
+export type AmenityAvailabilityValue = 'year_round' | 'seasonal';
+
+/**
+ * Relation attributes the owner declared for one linked amenity (HOS-2058).
+ * `null` = not declared; the public page shows no badge for it.
+ */
+export interface AmenityAttributeValue {
+    readonly scope: AmenityScopeValue | null;
+    readonly availability: AmenityAvailabilityValue | null;
+}
+
 export interface AmenityData {
     readonly id: string;
     /** Catalog slug — used as the i18n key for label resolution (SPEC-266). */

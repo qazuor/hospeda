@@ -18,11 +18,15 @@
  * defect, and a structural check would pass on it.
  */
 
+import { AmenitiesTypeEnum, FeatureCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     AMENITY_CATEGORY_LABELS,
     AMENITY_CATEGORY_ORDER,
-    groupAmenitiesByCategory
+    FEATURE_CATEGORY_LABELS,
+    FEATURE_CATEGORY_ORDER,
+    groupAmenitiesByCategory,
+    groupFeaturesByCategory
 } from '../../src/lib/catalog-categories';
 import { createTranslations, type SupportedLocale } from '../../src/lib/i18n';
 
@@ -82,5 +86,94 @@ describe('the catch-all amenity heading (HOS-823)', () => {
     it('still lists the catch-all last, after every named category', () => {
         // The rename is a copy change only — it must not reorder the accordions.
         expect(AMENITY_CATEGORY_ORDER.at(-1)).toBe('GENERAL_APPLIANCES');
+    });
+});
+
+describe('catalog category tables mirror the enums (HOS-2058)', () => {
+    it('lists every AmenitiesTypeEnum value exactly once, catch-all last', () => {
+        expect([...AMENITY_CATEGORY_ORDER].sort()).toEqual(
+            [...Object.values(AmenitiesTypeEnum)].sort()
+        );
+        expect(new Set(AMENITY_CATEGORY_ORDER).size).toBe(AMENITY_CATEGORY_ORDER.length);
+        expect(Object.keys(AMENITY_CATEGORY_LABELS).sort()).toEqual(
+            [...AMENITY_CATEGORY_ORDER].sort()
+        );
+    });
+
+    it('lists every FeatureCategoryEnum value exactly once', () => {
+        expect([...FEATURE_CATEGORY_ORDER].sort()).toEqual(
+            [...Object.values(FeatureCategoryEnum)].sort()
+        );
+        expect(Object.keys(FEATURE_CATEGORY_LABELS).sort()).toEqual(
+            [...FEATURE_CATEGORY_ORDER].sort()
+        );
+    });
+
+    it.each(LOCALES)('resolves every amenity and feature category heading in %s', (locale) => {
+        const { t } = createTranslations(locale);
+        for (const entry of Object.values(AMENITY_CATEGORY_LABELS)) {
+            const key = `accommodations.amenityCategories.${entry.i18nKey}`;
+            expect(t(key)).not.toBe(key);
+        }
+        for (const entry of Object.values(FEATURE_CATEGORY_LABELS)) {
+            const key = `accommodations.featureCategories.${entry.i18nKey}`;
+            expect(t(key)).not.toBe(key);
+        }
+        expect(t('accommodations.featureCategories.other')).not.toBe(
+            'accommodations.featureCategories.other'
+        );
+    });
+
+    it('groups a PARKING amenity under its own heading, not the catch-all', () => {
+        const { t } = createTranslations('es');
+
+        const groups = groupAmenitiesByCategory({
+            amenities: [
+                { id: 'a1', slug: 'parking', category: 'PARKING' },
+                { id: 'a2', slug: 'bicycles', category: 'GENERAL_APPLIANCES' }
+            ] as never,
+            t
+        });
+
+        expect(groups.map((g) => g.key)).toEqual(['PARKING', 'GENERAL_APPLIANCES']);
+        expect(groups[0]?.label).toBe('Estacionamiento');
+    });
+});
+
+describe('groupFeaturesByCategory (HOS-2058)', () => {
+    const { t } = createTranslations('es');
+
+    it('orders groups canonically and keeps item order within a group', () => {
+        const groups = groupFeaturesByCategory({
+            features: [
+                { id: 'f1', slug: 'quiet', category: 'STYLE' },
+                { id: 'f2', slug: 'river_front', category: 'LOCATION' },
+                { id: 'f3', slug: 'rustic', category: 'STYLE' }
+            ],
+            t
+        });
+
+        expect(groups.map((g) => g.key)).toEqual(['LOCATION', 'STYLE']);
+        expect(groups[1]?.items.map((i) => i.id)).toEqual(['f1', 'f3']);
+        expect(groups[0]?.label).toBe('Ubicación');
+    });
+
+    it('puts NULL and unknown categories in a trailing "Otras" bucket', () => {
+        const groups = groupFeaturesByCategory({
+            features: [
+                { id: 'f1', slug: 'dj_sets', category: null },
+                { id: 'f2', slug: 'legacy', category: 'beach' },
+                { id: 'f3', slug: 'vegan', category: 'DIETARY' }
+            ],
+            t
+        });
+
+        expect(groups.map((g) => g.key)).toEqual(['DIETARY', '__other__']);
+        expect(groups[1]?.label).toBe('Otras');
+        expect(groups[1]?.items.map((i) => i.id)).toEqual(['f1', 'f2']);
+    });
+
+    it('returns no groups for an empty list', () => {
+        expect(groupFeaturesByCategory({ features: [], t })).toEqual([]);
     });
 });

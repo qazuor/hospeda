@@ -1169,7 +1169,10 @@ export function toAccommodationDetailPageProps({
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
                     additionalCost: a.additionalCost == null ? null : Number(a.additionalCost),
-                    displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50)
+                    displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50),
+                    // HOS-2058: declared relation attributes; anything else reads as undeclared.
+                    scope: toAmenityScope(a.scope),
+                    availability: toAmenityAvailability(a.availability)
                 };
             })
             .sort((a, b) => b.displayWeight - a.displayWeight),
@@ -1183,7 +1186,14 @@ export function toAccommodationDetailPageProps({
                     icon: f.icon ? String(f.icon) : null,
                     hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
                     comments: f.comments ? String(f.comments) : null,
-                    displayWeight: Number(f.displayWeight ?? nestedFeature?.displayWeight ?? 50)
+                    displayWeight: Number(f.displayWeight ?? nestedFeature?.displayWeight ?? 50),
+                    // HOS-2058: the FeaturesGrid groups by it.
+                    category:
+                        f.category == null
+                            ? nestedFeature?.category == null
+                                ? null
+                                : String(nestedFeature.category)
+                            : String(f.category)
                 };
             })
             .sort((a, b) => b.displayWeight - a.displayWeight),
@@ -1861,7 +1871,10 @@ export function toEventDetailProps({
 import type {
     AccommodationEditData,
     AccommodationVideoEntry,
+    AmenityAttributeValue,
+    AmenityAvailabilityValue,
     AmenityData,
+    AmenityScopeValue,
     DestinationData,
     MediaImage
 } from './types';
@@ -2006,6 +2019,7 @@ export function transformAccommodationEdit({
         featuredByEntitlement:
             item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
+        amenityAttributes: extractAmenityAttributes(amenitiesArr),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
         phone: String(
@@ -2098,6 +2112,42 @@ function extractIdList(
             return String(entry[idKey] ?? nested?.id ?? entry.id ?? '');
         })
         .filter((id) => id.length > 0);
+}
+
+/** Narrows a raw value to a declared amenity scope, or `null`. */
+function toAmenityScope(value: unknown): AmenityScopeValue | null {
+    return value === 'private' || value === 'shared' ? value : null;
+}
+
+/** Narrows a raw value to a declared amenity availability, or `null`. */
+function toAmenityAvailability(value: unknown): AmenityAvailabilityValue | null {
+    return value === 'year_round' || value === 'seasonal' ? value : null;
+}
+
+/**
+ * Reads the HOS-2058 relation attributes off the protected amenity rows into a
+ * map keyed by amenity id. Rows with nothing declared are left out, so the
+ * map only ever holds real declarations.
+ *
+ * @param items - The `amenities` array of the protected accommodation read
+ * @returns Declared scope/availability per amenity id
+ */
+function extractAmenityAttributes(
+    items: readonly (Record<string, unknown> | string)[] | undefined
+): Readonly<Record<string, AmenityAttributeValue>> {
+    const result: Record<string, AmenityAttributeValue> = {};
+    if (!items) return result;
+    for (const entry of items) {
+        if (typeof entry === 'string') continue;
+        const nested = entry.amenity as Record<string, unknown> | undefined;
+        const id = String(entry.amenityId ?? nested?.id ?? entry.id ?? '');
+        if (id.length === 0) continue;
+        const scope = toAmenityScope(entry.scope);
+        const availability = toAmenityAvailability(entry.availability);
+        if (scope === null && availability === null) continue;
+        result[id] = { scope, availability };
+    }
+    return result;
 }
 
 /**

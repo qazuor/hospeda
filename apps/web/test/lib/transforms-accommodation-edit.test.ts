@@ -216,6 +216,29 @@ describe('transformAccommodationEdit', () => {
         expect(result.featureIds).toEqual(['ft-1']);
     });
 
+    it('reads declared scope/availability per amenity and skips undeclared rows (HOS-2058)', () => {
+        const raw = {
+            id: 'a6',
+            amenities: [
+                { id: 'am-1', slug: 'pool', scope: 'shared', availability: 'seasonal' },
+                { id: 'am-2', slug: 'wifi', scope: null, availability: null },
+                { id: 'am-3', slug: 'grill', scope: 'private', availability: 'bogus' }
+            ]
+        };
+
+        const result = transformAccommodationEdit({ item: raw });
+
+        expect(result.amenityIds).toEqual(['am-1', 'am-2', 'am-3']);
+        expect(result.amenityAttributes).toEqual({
+            'am-1': { scope: 'shared', availability: 'seasonal' },
+            'am-3': { scope: 'private', availability: null }
+        });
+    });
+
+    it('yields an empty attribute map when there are no amenities', () => {
+        expect(transformAccommodationEdit({ item: { id: 'a7' } }).amenityAttributes).toEqual({});
+    });
+
     /**
      * HOS-792. The SEO section previews what the PUBLIC page will publish while
      * the override is empty, so these two fields must be computed with the
@@ -357,6 +380,12 @@ describe('transformAmenityList', () => {
         const raw = [{ id: 'am-4', slug: 'pool', type: 'OUTDOORS' }];
         const result = transformAmenityList({ items: raw });
         expect(result[0].category).toBe('OUTDOORS');
+    });
+
+    it('carries a feature catalog `category` through (HOS-2058)', () => {
+        const raw = [{ id: 'ft-1', slug: 'river_front', category: 'LOCATION' }];
+        const result = transformAmenityList({ items: raw });
+        expect(result[0].category).toBe('LOCATION');
     });
 
     it('should prefer `type` over `category` when both are present', () => {
