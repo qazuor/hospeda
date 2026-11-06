@@ -155,8 +155,8 @@
             "subject": "addon_instance"
         },
         {
-            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
-            "symbol": "runAddonWithoutShutdownCheck",
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listLiveAddonInstanceIdsPage",
             "row": 25,
             "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
             "subject": "addon_instance"
