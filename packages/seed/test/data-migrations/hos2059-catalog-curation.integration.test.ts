@@ -406,6 +406,66 @@ describe('HOS-2059: 0147-hos-2059-catalog-curation (integration)', () => {
         });
     });
 
+    it('on a collision, fills the survivor NULL attributes and never overwrites a declared one', async () => {
+        await withRollback(async (tx) => {
+            // Arrange: every listing already links the survivor.
+            await arrangeCatalog(tx);
+            // A: patio with no scope + shared_patio -> patio gains scope=shared.
+            await linkAccommodationAmenity(tx, { accommodationId: ACC_A, slug: 'patio' });
+            await linkAccommodationAmenity(tx, { accommodationId: ACC_A, slug: 'shared_patio' });
+            // A: bbq_grill with no scope + private_grill (feature) -> bbq_grill gains private.
+            await linkAccommodationAmenity(tx, { accommodationId: ACC_A, slug: 'bbq_grill' });
+            await linkAccommodationFeature(tx, { accommodationId: ACC_A, slug: 'private_grill' });
+            // A: camping_area with no note + camping_sector with a note -> note filled.
+            await linkAccommodationFeature(tx, { accommodationId: ACC_A, slug: 'camping_area' });
+            await linkAccommodationFeature(tx, {
+                accommodationId: ACC_A,
+                slug: 'camping_sector',
+                comments: 'Junto al arroyo'
+            });
+            // B: a declared private, seasonal kitchen + shared, year-round shared_kitchen
+            // -> the kitchen keeps private and seasonal.
+            await linkAccommodationAmenity(tx, {
+                accommodationId: ACC_B,
+                slug: 'full_kitchen',
+                scope: 'private',
+                availability: 'seasonal'
+            });
+            await linkAccommodationAmenity(tx, {
+                accommodationId: ACC_B,
+                slug: 'shared_kitchen',
+                availability: 'year_round'
+            });
+
+            // Act
+            const result = await curation.up(buildCtx(tx));
+
+            // Assert: NULLs filled
+            expect((await readAccommodationAmenity(tx, ACC_A, 'patio'))?.scope).toBe('shared');
+            expect((await readAccommodationAmenity(tx, ACC_A, 'bbq_grill'))?.scope).toBe('private');
+            expect(await readAccommodationFeature(tx, ACC_A, 'camping_area')).toEqual({
+                comments: 'Junto al arroyo'
+            });
+            // declared values kept
+            expect(await readAccommodationAmenity(tx, ACC_B, 'full_kitchen')).toEqual({
+                scope: 'private',
+                availability: 'seasonal',
+                is_optional: false
+            });
+            // counters: four collapses, all carrying attributes (forced scope or
+            // a note); three survivor rows changed (B's kitchen had nothing NULL
+            // that the source could fill).
+            expect(result.counts).toMatchObject({
+                relationsOnRetiredRows: 4,
+                relationsMoved: 0,
+                relationsCollapsed: 4,
+                relationsCollapsedWithAttributes: 4,
+                survivorAttributesFilled: 3
+            });
+            expect(await countRelationsOnRetiredRows(tx)).toBe(0);
+        });
+    });
+
     it('keeps the host note on a feature-to-feature merge and counts it on a cross-kind one', async () => {
         await withRollback(async (tx) => {
             // Arrange

@@ -50,12 +50,15 @@ const manifest = readJson<{ amenities: string[]; features: string[] }>(
 );
 
 describe('0147-hos-2059-catalog-curation', () => {
-    it('is a destructive required migration that needs the HOS-2058 scope column', () => {
+    it('is a destructive required migration that needs the HOS-2058 scope and category columns', () => {
         expect(meta).toEqual({
             name: '0147-hos-2059-catalog-curation',
             group: 'required',
             destructive: true,
-            requiresColumns: [{ table: 'r_accommodation_amenity', column: 'scope' }]
+            requiresColumns: [
+                { table: 'r_accommodation_amenity', column: 'scope' },
+                { table: 'features', column: 'category' }
+            ]
         });
     });
 

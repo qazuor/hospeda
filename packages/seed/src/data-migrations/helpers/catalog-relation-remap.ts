@@ -13,10 +13,16 @@
  *   VERIFIED, not assumed: the helper re-counts the owners on the target and
  *   throws when one is missing, so the migration's transaction rolls back
  *   instead of being ledgered with a silent loss.
- * - **An owner that already links the target keeps its own row.** The insert
- *   is `ON CONFLICT DO NOTHING`, so the survivor's existing attributes (scope,
- *   availability, cost) are never overwritten. Those rows are reported as
- *   `collapsed`.
+ * - **An owner that already links the target keeps its own row, and gains
+ *   what the source declared and the survivor did not.** The insert is
+ *   `ON CONFLICT DO NOTHING`; for every row that collided, the survivor's NULL
+ *   attributes (scope, availability, cost, host note) are then filled from the
+ *   source (or from the forced scope). A value the survivor already declared
+ *   is never overwritten. Those rows are reported as `collapsed`; the ones
+ *   whose source carried any attribute as `collapsedWithAttributes`, and the
+ *   survivor rows actually changed as `attributesFilled`. `isOptional` is not
+ *   nullable, so it is never filled: a collapse whose source was optional is
+ *   still counted in `collapsedWithAttributes`.
  * - **Attributes travel when the two rows are of the same kind.** An
  *   amenity-to-amenity move keeps `isOptional`, `additionalCost`,
  *   `additionalCostPercent`, `scope` and `availability` (the caller may force
@@ -79,7 +85,17 @@ interface FeatureLink {
 /** Read/insert/delete/count over one relation table, keyed by catalog row id. */
 interface RelationAdapter<L> {
     readonly read: (db: DrizzleClient, catalogId: string) => Promise<readonly L[]>;
-    readonly insert: (db: DrizzleClient, catalogId: string, links: readonly L[]) => Promise<number>;
+    /** Inserts the links, skipping owners that already link the row; returns the inserted owner ids. */
+    readonly insert: (
+        db: DrizzleClient,
+        catalogId: string,
+        links: readonly L[]
+    ) => Promise<readonly string[]>;
+    /**
+     * Fills the existing rows' NULL attributes from `links` (never overwrites a
+     * declared value). Returns the number of rows changed.
+     */
+    readonly fill: (db: DrizzleClient, catalogId: string, links: readonly L[]) => Promise<number>;
     readonly remove: (db: DrizzleClient, catalogId: string) => Promise<number>;
     readonly countOwners: (
         db: DrizzleClient,
@@ -108,6 +124,39 @@ const bareFeatureLink = (ownerId: string): FeatureLink => ({
 /** Number of rows in a `count()` select result. */
 const firstCount = (rows: readonly { readonly value: number }[]): number => rows[0]?.value ?? 0;
 
+/**
+ * The attributes of `incoming` that `existing` leaves NULL. An empty object
+ * means there is nothing to fill.
+ */
+function nullsToFill<T extends Record<string, unknown>>({
+    existing,
+    incoming,
+    keys
+}: {
+    readonly existing: T;
+    readonly incoming: T;
+    readonly keys: readonly (keyof T)[];
+}): Partial<T> {
+    const patch: Partial<T> = {};
+    for (const key of keys) {
+        if (existing[key] == null && incoming[key] != null) patch[key] = incoming[key];
+    }
+    return patch;
+}
+
+/** Amenity columns a collapse may fill (`isOptional` is NOT NULL, so it is not one). */
+const AMENITY_FILLABLE = [
+    'additionalCost',
+    'additionalCostPercent',
+    'scope',
+    'availability'
+] as const;
+/** Feature columns a collapse may fill. */
+const FEATURE_FILLABLE = ['hostReWriteName', 'comments'] as const;
+
+/** A `fill` for relation tables with no attribute columns. */
+const fillNothing = async (): Promise<number> => 0;
+
 const accommodationAmenity: RelationAdapter<AmenityLink> = {
     read: async (db, catalogId) => {
         const rows = await db
@@ -124,7 +173,7 @@ const accommodationAmenity: RelationAdapter<AmenityLink> = {
         }));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rAccommodationAmenity)
             .values(
@@ -136,7 +185,40 @@ const accommodationAmenity: RelationAdapter<AmenityLink> = {
             )
             .onConflictDoNothing()
             .returning({ ownerId: rAccommodationAmenity.accommodationId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
+    },
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rAccommodationAmenity.amenityId, catalogId),
+                eq(rAccommodationAmenity.accommodationId, link.ownerId)
+            );
+            const [row] = await db.select().from(rAccommodationAmenity).where(where);
+            if (!row) continue;
+            const patch = nullsToFill({
+                existing: {
+                    additionalCost: row.additionalCost ?? null,
+                    additionalCostPercent: row.additionalCostPercent ?? null,
+                    scope: row.scope ?? null,
+                    availability: row.availability ?? null
+                },
+                incoming: {
+                    additionalCost: link.additionalCost,
+                    additionalCostPercent: link.additionalCostPercent,
+                    scope: link.scope,
+                    availability: link.availability
+                },
+                keys: AMENITY_FILLABLE
+            });
+            if (Object.keys(patch).length === 0) continue;
+            await db
+                .update(rAccommodationAmenity)
+                .set(patch as Partial<typeof rAccommodationAmenity.$inferInsert>)
+                .where(where);
+            changed += 1;
+        }
+        return changed;
     },
     remove: async (db, catalogId) => {
         const removed = await db
@@ -174,7 +256,7 @@ const accommodationFeature: RelationAdapter<FeatureLink> = {
         }));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rAccommodationFeature)
             .values(
@@ -187,7 +269,30 @@ const accommodationFeature: RelationAdapter<FeatureLink> = {
             )
             .onConflictDoNothing()
             .returning({ ownerId: rAccommodationFeature.accommodationId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
+    },
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rAccommodationFeature.featureId, catalogId),
+                eq(rAccommodationFeature.accommodationId, link.ownerId)
+            );
+            const [row] = await db.select().from(rAccommodationFeature).where(where);
+            if (!row) continue;
+            const patch = nullsToFill({
+                existing: {
+                    hostReWriteName: row.hostReWriteName ?? null,
+                    comments: row.comments ?? null
+                },
+                incoming: { hostReWriteName: link.hostReWriteName, comments: link.comments },
+                keys: FEATURE_FILLABLE
+            });
+            if (Object.keys(patch).length === 0) continue;
+            await db.update(rAccommodationFeature).set(patch).where(where);
+            changed += 1;
+        }
+        return changed;
     },
     remove: async (db, catalogId) => {
         const removed = await db
@@ -221,14 +326,15 @@ const venueAmenity: RelationAdapter<AmenityLink> = {
         return rows.map((row) => bareAmenityLink(row.venueId));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rVenueAmenity)
             .values(links.map((link) => ({ venueId: link.ownerId, amenityId: catalogId })))
             .onConflictDoNothing()
             .returning({ ownerId: rVenueAmenity.venueId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
     },
+    fill: fillNothing,
     remove: async (db, catalogId) => {
         const removed = await db
             .delete(rVenueAmenity)
@@ -265,7 +371,7 @@ const venueFeature: RelationAdapter<FeatureLink> = {
         }));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rVenueFeature)
             .values(
@@ -278,7 +384,30 @@ const venueFeature: RelationAdapter<FeatureLink> = {
             )
             .onConflictDoNothing()
             .returning({ ownerId: rVenueFeature.venueId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
+    },
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rVenueFeature.featureId, catalogId),
+                eq(rVenueFeature.venueId, link.ownerId)
+            );
+            const [row] = await db.select().from(rVenueFeature).where(where);
+            if (!row) continue;
+            const patch = nullsToFill({
+                existing: {
+                    hostReWriteName: row.hostReWriteName ?? null,
+                    comments: row.comments ?? null
+                },
+                incoming: { hostReWriteName: link.hostReWriteName, comments: link.comments },
+                keys: FEATURE_FILLABLE
+            });
+            if (Object.keys(patch).length === 0) continue;
+            await db.update(rVenueFeature).set(patch).where(where);
+            changed += 1;
+        }
+        return changed;
     },
     remove: async (db, catalogId) => {
         const removed = await db
@@ -312,14 +441,15 @@ const experienceAmenity: RelationAdapter<AmenityLink> = {
         return rows.map((row) => bareAmenityLink(row.experienceId));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rExperienceAmenity)
             .values(links.map((link) => ({ experienceId: link.ownerId, amenityId: catalogId })))
             .onConflictDoNothing()
             .returning({ ownerId: rExperienceAmenity.experienceId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
     },
+    fill: fillNothing,
     remove: async (db, catalogId) => {
         const removed = await db
             .delete(rExperienceAmenity)
@@ -356,7 +486,7 @@ const experienceFeature: RelationAdapter<FeatureLink> = {
         }));
     },
     insert: async (db, catalogId, links) => {
-        if (links.length === 0) return 0;
+        if (links.length === 0) return [];
         const inserted = await db
             .insert(rExperienceFeature)
             .values(
@@ -369,7 +499,30 @@ const experienceFeature: RelationAdapter<FeatureLink> = {
             )
             .onConflictDoNothing()
             .returning({ ownerId: rExperienceFeature.experienceId });
-        return inserted.length;
+        return inserted.map((row) => row.ownerId);
+    },
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rExperienceFeature.featureId, catalogId),
+                eq(rExperienceFeature.experienceId, link.ownerId)
+            );
+            const [row] = await db.select().from(rExperienceFeature).where(where);
+            if (!row) continue;
+            const patch = nullsToFill({
+                existing: {
+                    hostReWriteName: row.hostReWriteName ?? null,
+                    comments: row.comments ?? null
+                },
+                incoming: { hostReWriteName: link.hostReWriteName, comments: link.comments },
+                keys: FEATURE_FILLABLE
+            });
+            if (Object.keys(patch).length === 0) continue;
+            await db.update(rExperienceFeature).set(patch).where(where);
+            changed += 1;
+        }
+        return changed;
     },
     remove: async (db, catalogId) => {
         const removed = await db
@@ -422,8 +575,16 @@ export interface VerticalRemapCounts {
     readonly targetAfter: number;
     /** Source rows inserted as new target rows. */
     readonly moved: number;
-    /** Source rows whose owner already linked the target (target row kept as-is). */
+    /** Source rows whose owner already linked the target (that target row kept). */
     readonly collapsed: number;
+    /**
+     * Collapsed rows whose source carried an attribute (cost, optional, scope,
+     * availability, host note, or a forced scope). Their NULL survivor
+     * attributes were filled; a declared survivor value won.
+     */
+    readonly collapsedWithAttributes: number;
+    /** Survivor rows whose NULL attributes a collapse filled. */
+    readonly attributesFilled: number;
     /** Cross-kind rows whose non-default attributes could not travel. */
     readonly attributesDropped: number;
 }
@@ -472,6 +633,17 @@ export async function remapVerticalRelations({
     let attributesDropped = 0;
     let moved: number;
     let targetBefore: number;
+    let collapsedWithAttributes = 0;
+    let attributesFilled = 0;
+
+    /** The links that did not insert because their owner already linked the target. */
+    const collided = <L extends { readonly ownerId: string }>(
+        links: readonly L[],
+        inserted: readonly string[]
+    ): readonly L[] => {
+        const insertedSet = new Set(inserted);
+        return links.filter((link) => !insertedSet.has(link.ownerId));
+    };
 
     // The four kind combinations, each spelled out so the attribute handling
     // of every one is explicit.
@@ -480,34 +652,46 @@ export async function remapVerticalRelations({
         sourceOwners = ownersOf(links);
         if (target.kind === 'amenity') {
             targetBefore = (await adapters.amenity.read(db, target.id)).length;
-            moved = await adapters.amenity.insert(
-                db,
-                target.id,
-                links.map((link) => (scope ? { ...link, scope } : link))
-            );
+            const incoming = links.map((link) => (scope ? { ...link, scope } : link));
+            const inserted = await adapters.amenity.insert(db, target.id, incoming);
+            moved = inserted.length;
+            const clashes = collided(incoming, inserted);
+            collapsedWithAttributes = clashes.filter(amenityLinkHasAttributes).length;
+            attributesFilled = await adapters.amenity.fill(db, target.id, clashes);
         } else {
             targetBefore = (await adapters.feature.read(db, target.id)).length;
             attributesDropped = links.filter(amenityLinkHasAttributes).length;
-            moved = await adapters.feature.insert(
-                db,
-                target.id,
-                links.map((link) => bareFeatureLink(link.ownerId))
-            );
+            moved = (
+                await adapters.feature.insert(
+                    db,
+                    target.id,
+                    links.map((link) => bareFeatureLink(link.ownerId))
+                )
+            ).length;
         }
     } else {
         const links = await adapters.feature.read(db, source.id);
         sourceOwners = ownersOf(links);
         if (target.kind === 'feature') {
             targetBefore = (await adapters.feature.read(db, target.id)).length;
-            moved = await adapters.feature.insert(db, target.id, links);
+            const inserted = await adapters.feature.insert(db, target.id, links);
+            moved = inserted.length;
+            const clashes = collided(links, inserted);
+            collapsedWithAttributes = clashes.filter(featureLinkHasAttributes).length;
+            attributesFilled = await adapters.feature.fill(db, target.id, clashes);
         } else {
             targetBefore = (await adapters.amenity.read(db, target.id)).length;
             attributesDropped = links.filter(featureLinkHasAttributes).length;
-            moved = await adapters.amenity.insert(
-                db,
-                target.id,
-                links.map((link) => ({ ...bareAmenityLink(link.ownerId), scope: scope ?? null }))
-            );
+            const incoming = links.map((link) => ({
+                ...bareAmenityLink(link.ownerId),
+                scope: scope ?? null
+            }));
+            const inserted = await adapters.amenity.insert(db, target.id, incoming);
+            moved = inserted.length;
+            // Only a forced scope crosses kinds; it is the absorbed attribute.
+            const clashes = collided(incoming, inserted);
+            collapsedWithAttributes = clashes.filter(amenityLinkHasAttributes).length;
+            attributesFilled = await adapters.amenity.fill(db, target.id, clashes);
         }
     }
 
@@ -541,6 +725,8 @@ export async function remapVerticalRelations({
         targetAfter,
         moved,
         collapsed: sourceOwners.length - moved,
+        collapsedWithAttributes,
+        attributesFilled,
         attributesDropped
     };
 }

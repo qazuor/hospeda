@@ -42,9 +42,20 @@
  * ## `destructive` flag decision
  *
  * `true` -- relation rows of the retired catalog rows are deleted after being
- * copied onto the survivor, and a cross-kind move cannot carry the relation's
- * attributes (cost, scope, host notes). The copy is verified before the delete
- * and every dropped attribute is counted, but the change cannot be undone from
+ * copied onto the survivor, and that copy is lossy in two counted ways:
+ *
+ * - A cross-kind move cannot carry the relation's attributes (cost, scope,
+ *   host notes); each such row is counted in `attributesDropped`.
+ * - When the listing already linked the survivor, the survivor row is kept
+ *   and only its NULL attributes are filled from the source (or the forced
+ *   scope). A value the survivor already declared wins over the source's, and
+ *   `isOptional` (NOT NULL) is never filled, so a source attribute can lose to
+ *   the survivor's. Those collapses are counted in `collapsedWithAttributes`,
+ *   and the survivor rows actually changed in `attributesFilled`; the logged
+ *   numbers say how many collapses could have lost something, not exactly
+ *   which value lost.
+ *
+ * The copy is verified before the delete, but the change cannot be undone from
  * the data alone, so production requires the explicit opt-in.
  */
 import { amenities, and, eq, features, isNull } from '@repo/db';
@@ -71,8 +82,12 @@ export const meta = {
     name: '0147-hos-2059-catalog-curation',
     group: 'required',
     destructive: true,
-    // HOS-433: the merges write `r_accommodation_amenity.scope` (HOS-2058).
-    requiresColumns: [{ table: 'r_accommodation_amenity', column: 'scope' }]
+    // HOS-433: the merges write `r_accommodation_amenity.scope` and the new
+    // feature rows write `features.category`; both columns arrive with HOS-2058.
+    requiresColumns: [
+        { table: 'r_accommodation_amenity', column: 'scope' },
+        { table: 'features', column: 'category' }
+    ]
 } as const satisfies SeedMigrationModule['meta'];
 
 /**
@@ -332,6 +347,8 @@ const addCounts = (total: VerticalRemapCounts, next: VerticalRemapCounts): Verti
     targetAfter: total.targetAfter + next.targetAfter,
     moved: total.moved + next.moved,
     collapsed: total.collapsed + next.collapsed,
+    collapsedWithAttributes: total.collapsedWithAttributes + next.collapsedWithAttributes,
+    attributesFilled: total.attributesFilled + next.attributesFilled,
     attributesDropped: total.attributesDropped + next.attributesDropped
 });
 
@@ -341,6 +358,8 @@ const ZERO_COUNTS: VerticalRemapCounts = {
     targetAfter: 0,
     moved: 0,
     collapsed: 0,
+    collapsedWithAttributes: 0,
+    attributesFilled: 0,
     attributesDropped: 0
 };
 
@@ -375,7 +394,9 @@ async function applyMerge(
             logger.info(
                 `HOS-2059 ${merge.source.kind}:${merge.source.slug} -> ${merge.target.kind}:${merge.target.slug} [${vertical}] ` +
                     `source ${counts.sourceBefore} -> 0, target ${counts.targetBefore} -> ${counts.targetAfter} ` +
-                    `(moved ${counts.moved}, collapsed ${counts.collapsed}, attributes dropped ${counts.attributesDropped})`
+                    `(moved ${counts.moved}, collapsed ${counts.collapsed}, ` +
+                    `collapsed with attributes ${counts.collapsedWithAttributes}, survivor attributes filled ${counts.attributesFilled}, ` +
+                    `attributes dropped ${counts.attributesDropped})`
             );
         }
         total = addCounts(total, counts);
@@ -447,7 +468,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             `HOS-2059 catalog curation: ${created.amenities} amenity(ies) and ${created.features} feature(s) created, ` +
             `${amenitiesRetyped} retyped, ${featuresRenamed} renamed, ${rowsRetired} retired ` +
             `(${mergesSkipped} already retired); ${total.sourceBefore} relation(s) on retired rows: ` +
-            `${total.moved} moved, ${total.collapsed} collapsed into an existing link, ` +
+            `${total.moved} moved, ${total.collapsed} collapsed into an existing link ` +
+            `(${total.collapsedWithAttributes} carrying attributes, ${total.attributesFilled} survivor row(s) filled), ` +
             `${total.attributesDropped} cross-kind attribute(s) dropped`,
         counts: {
             amenitiesCreated: created.amenities,
@@ -460,6 +482,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             relationsOnRetiredRows: total.sourceBefore,
             relationsMoved: total.moved,
             relationsCollapsed: total.collapsed,
+            relationsCollapsedWithAttributes: total.collapsedWithAttributes,
+            survivorAttributesFilled: total.attributesFilled,
             attributesDropped: total.attributesDropped,
             survivorRelationsBefore: total.targetBefore,
             survivorRelationsAfter: total.targetAfter
