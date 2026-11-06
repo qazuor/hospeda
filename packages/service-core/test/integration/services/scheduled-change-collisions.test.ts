@@ -5,7 +5,13 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { applyScheduledChangeInTx } from '../../../src/services/billing/subscription/apply-scheduled-change.service.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
 import { requestPlanChange } from '../../../src/services/billing/subscription/request-plan-change.service.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import { removeQueuedDowngrade } from '../../../src/services/billing/subscription/request-plan-change-support.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import {
     adjustablePauseHarness,
     pausePlanPolicy,
@@ -345,32 +351,25 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
         });
         await applicationHasLock;
 
-        let regretStarted: () => void = () => undefined;
-        const regretHasStarted = new Promise<void>((resolve) => {
-            regretStarted = resolve;
-        });
-        const provider = new Proxy(seeded.ports.provider, {
-            get(target, property, receiver) {
-                if (property === 'changeAmount')
-                    return async (input: Parameters<typeof target.changeAmount>[0]) => {
-                        const result = await target.changeAmount(input);
-                        regretStarted();
-                        return result;
-                    };
-                const method = Reflect.get(target, property, receiver);
-                return typeof method === 'function' ? method.bind(target) : method;
-            }
-        });
-        const regret = requestPlanChange(
-            { ...seeded.input, billingOptionId: seeded.predecessorBillingOptionId },
-            { ...seeded.ports, provider }
-        ).then(
-            (value) => ({ value }),
+        const regret = removeQueuedDowngrade({
+            subscriptionId: seeded.predecessor.id,
+            expectedQueueId: queued.id,
+            sourcePlanVersionId: seeded.planVersionId,
+            sourceBillingOptionId: seeded.predecessorBillingOptionId
+        }).then(
+            () => ({ completed: true }),
             (error: unknown) => ({ error })
         );
-        await regretHasStarted;
+        let observedLockWait = false;
+        for (let attempt = 0; attempt < 100 && !observedLockWait; attempt++) {
+            const wait = await getServiceTestPool().query<{ waiting: boolean }>(
+                "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND state = 'active') AS waiting"
+            );
+            observedLockWait = wait.rows[0]?.waiting ?? false;
+        }
         releaseApplication();
         await application;
+        expect(observedLockWait).toBe(true);
         const [row] = await getServiceTestDb()
             .select()
             .from(subscriptions)
@@ -381,6 +380,5 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
         await expect(regret).resolves.toMatchObject({
             error: { reason: 'PLAN_CHANGE_STATE_CHANGED' }
         });
-        expect(queued.subscriptionId).toBe(seeded.predecessor.id);
     });
 });
