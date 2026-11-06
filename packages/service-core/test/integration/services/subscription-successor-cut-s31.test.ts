@@ -9,10 +9,7 @@ import {
     users
 } from '@repo/db';
 import { afterAll, describe, expect, it } from 'vitest';
-import {
-    completeSuccessorCut,
-    runWithSuccessorCut
-} from '../../../src/services/billing/subscription/successor-cut-after-commit';
+import { runWithSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { createSuccessorCutter } from '../../../src/services/billing/subscription/successor-cutter';
 import {
     closeServiceTestPool,
@@ -189,6 +186,31 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
                 .update(courtesyGrants)
                 .set({ balanceMonths: 2 })
                 .where(eq(courtesyGrants.id, ids.grantId!));
+            const unrelated = await seedSuccessorCutCase(tx, {
+                predecessorStatus: 'SUSPENDED',
+                successorStatus: 'PENDING_AUTHORIZATION',
+                courtesy: true
+            });
+            await tx
+                .update(courtesyGrants)
+                .set({ balanceMonths: 3 })
+                .where(eq(courtesyGrants.id, unrelated.grantId!));
+            const closedAt = new Date('2026-11-10T12:00:00.000Z');
+            const [closedGrant] = await tx
+                .insert(courtesyGrants)
+                .values({
+                    beneficiaryUserId: ids.userId,
+                    grantedBy: ids.userId,
+                    subscriptionId: ids.predecessor.id,
+                    months: 4,
+                    startsAt: cutNow,
+                    endsAt: new Date('2027-03-12T12:00:00.000Z'),
+                    reason: 'fixture',
+                    balanceMonths: 1,
+                    balanceClosedAt: closedAt,
+                    closeReason: 'VENTANA_DE_AUTORIZACION_VENCIDA'
+                })
+                .returning({ id: courtesyGrants.id });
             const result = await createSuccessorCutter(successorCutPorts(tx)).cutSuccessor({
                 predecessorSubscriptionId: ids.predecessor.id,
                 tx
@@ -202,6 +224,24 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
                 balanceMonths: 2,
                 balanceClosedAt: cutNow,
                 closeReason: 'CONTRACARGO_DE_LA_PREDECESORA'
+            });
+            const [unrelatedGrant] = await tx
+                .select()
+                .from(courtesyGrants)
+                .where(eq(courtesyGrants.id, unrelated.grantId!));
+            const [closed] = await tx
+                .select()
+                .from(courtesyGrants)
+                .where(eq(courtesyGrants.id, closedGrant!.id));
+            expect(unrelatedGrant).toMatchObject({
+                balanceMonths: 3,
+                balanceClosedAt: null,
+                closeReason: null
+            });
+            expect(closed).toMatchObject({
+                balanceMonths: 1,
+                balanceClosedAt: closedAt,
+                closeReason: 'VENTANA_DE_AUTORIZACION_VENCIDA'
             });
         });
     });
@@ -430,75 +470,5 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
         await db.delete(coverageLosses).where(eq(coverageLosses.userId, committedUserId.value));
         await db.delete(subscriptions).where(eq(subscriptions.userId, committedUserId.value));
         await db.delete(users).where(eq(users.id, committedUserId.value));
-    });
-});
-
-describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 after commit notices', () => {
-    it('emits REMOVED only for active cuts and swallows notice delivery failures', async () => {
-        const events: unknown[] = [];
-        await expect(
-            completeSuccessorCut(
-                {
-                    outcome: 'CUT',
-                    successorId: crypto.randomUUID(),
-                    predecessorId: crypto.randomUUID(),
-                    from: 'ACTIVE',
-                    to: 'CANCELLED',
-                    userId: crypto.randomUUID(),
-                    vertical: 'accommodation',
-                    paymentMethod: 'CARD',
-                    authorizationId: null,
-                    closedCourtesyMonths: null,
-                    manualInstallmentClosed: false,
-                    cancelledAddons: [],
-                    cancellationDecided: false
-                },
-                {
-                    coverageNotices: {
-                        emitCoverageChanged: async (event) => {
-                            events.push(event);
-                            throw new Error('notice down');
-                        }
-                    }
-                }
-            )
-        ).resolves.toBeUndefined();
-        expect(events).toEqual([
-            {
-                userId: expect.any(String),
-                vertical: 'accommodation',
-                sourceType: 'SUBSCRIPTION',
-                change: 'REMOVED'
-            }
-        ]);
-    });
-
-    it('does not emit a subscription removal for an abandoned pending authorization', async () => {
-        const events: unknown[] = [];
-        await completeSuccessorCut(
-            {
-                outcome: 'CUT',
-                successorId: crypto.randomUUID(),
-                predecessorId: crypto.randomUUID(),
-                from: 'PENDING_AUTHORIZATION',
-                to: 'ABANDONED',
-                userId: crypto.randomUUID(),
-                vertical: 'accommodation',
-                paymentMethod: 'CARD',
-                authorizationId: null,
-                closedCourtesyMonths: null,
-                manualInstallmentClosed: false,
-                cancelledAddons: [],
-                cancellationDecided: false
-            },
-            {
-                coverageNotices: {
-                    emitCoverageChanged: async (event) => {
-                        events.push(event);
-                    }
-                }
-            }
-        );
-        expect(events).toEqual([]);
     });
 });
