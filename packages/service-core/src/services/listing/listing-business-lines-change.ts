@@ -29,7 +29,6 @@ import {
     eq,
     users
 } from '@repo/db';
-import { trans } from '@repo/i18n';
 import { createLogger } from '@repo/logger';
 import { type BusinessLine, ServiceErrorCode, type VenueOrExperience } from '@repo/schemas';
 import { resolveBusinessLinesChange } from '@repo/verticals';
@@ -44,6 +43,100 @@ const logger = createLogger('listing-business-lines-change');
 
 /** Template identifier of the "business lines of your listing changed" email. */
 export const LISTING_BUSINESS_LINES_CHANGED_TEMPLATE = 'verticals.listing-business-lines-changed';
+
+/** Locales an owner's `languageWeb` can resolve to for the notice labels. */
+type NoticeLocale = 'es' | 'en' | 'pt';
+
+/** Namespaces the notice reads: the shared listing copy plus the vertical's labels. */
+type NoticeNamespace = 'listing' | VenueOrExperience;
+
+/** A nested locale namespace, as shipped under `@repo/i18n/locales`. */
+type NestedCopy = Readonly<Record<string, unknown>>;
+
+/**
+ * Literal `import()` paths, one per locale × namespace.
+ *
+ * `@repo/i18n` is loaded lazily and by subpath: a static import pulls the whole
+ * locale index (every JSON without an import attribute) into the module graph,
+ * and the Playwright e2e runner strips those attributes, crashing native Node
+ * ESM before the first test. This is the same pattern as
+ * `services/billing/plan-display-name.ts`. The paths stay literal because the
+ * API is bundled with tsup/esbuild, which cannot resolve a computed specifier.
+ */
+const NAMESPACE_LOADERS = {
+    es: {
+        listing: () => import('@repo/i18n/locales/es/listing.json', { with: { type: 'json' } }),
+        venue: () => import('@repo/i18n/locales/es/venue.json', { with: { type: 'json' } }),
+        experience: () =>
+            import('@repo/i18n/locales/es/experience.json', { with: { type: 'json' } })
+    },
+    en: {
+        listing: () => import('@repo/i18n/locales/en/listing.json', { with: { type: 'json' } }),
+        venue: () => import('@repo/i18n/locales/en/venue.json', { with: { type: 'json' } }),
+        experience: () =>
+            import('@repo/i18n/locales/en/experience.json', { with: { type: 'json' } })
+    },
+    pt: {
+        listing: () => import('@repo/i18n/locales/pt/listing.json', { with: { type: 'json' } }),
+        venue: () => import('@repo/i18n/locales/pt/venue.json', { with: { type: 'json' } }),
+        experience: () =>
+            import('@repo/i18n/locales/pt/experience.json', { with: { type: 'json' } })
+    }
+} as const;
+
+/** One promise per locale × namespace, so a hot send path parses each file once. */
+const namespaceCache = new Map<string, Promise<NestedCopy>>();
+
+/**
+ * Loads one locale namespace once. A failed load is logged and evicted from the
+ * cache so a later call can retry; the caller always receives an empty map and
+ * falls back to the stored/raw value, because a cosmetic label must never break
+ * the edit transaction.
+ */
+function loadNamespace(locale: NoticeLocale, namespace: NoticeNamespace): Promise<NestedCopy> {
+    const key = `${locale}:${namespace}`;
+    const cached = namespaceCache.get(key);
+    if (cached) return cached;
+    const loading = NAMESPACE_LOADERS[locale]
+        [namespace]()
+        .then((module) => module.default as NestedCopy)
+        .catch((error: unknown) => {
+            namespaceCache.delete(key);
+            logger.warn(
+                {
+                    locale,
+                    namespace,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'Listing translation could not be loaded; falling back to the raw value'
+            );
+            return {} as NestedCopy;
+        });
+    namespaceCache.set(key, loading);
+    return loading;
+}
+
+/** Reads a nested key path, returning `undefined` when it is absent or empty. */
+function readPath(copy: NestedCopy, path: readonly string[]): string | undefined {
+    let cursor: unknown = copy;
+    for (const segment of path) {
+        if (typeof cursor !== 'object' || cursor === null) return undefined;
+        cursor = (cursor as Record<string, unknown>)[segment];
+    }
+    return typeof cursor === 'string' && cursor.trim() !== '' ? cursor : undefined;
+}
+
+/** Reads `path` in the owner locale, falling back to the Spanish default. */
+async function translate(
+    namespace: NoticeNamespace,
+    path: readonly string[],
+    locale: NoticeLocale
+): Promise<string | undefined> {
+    const primary = readPath(await loadNamespace(locale, namespace), path);
+    if (primary !== undefined) return primary;
+    if (locale === 'es') return undefined;
+    return readPath(await loadNamespace('es', namespace), path);
+}
 
 const isBusinessLinesChangeScope = (): boolean =>
     resolveAdministrativeAuthorization().authorization?.action === 'ACC_27';
@@ -190,19 +283,25 @@ export async function recordListingBusinessLinesChange(
     }
 
     const languageWeb = ownerRow.settings?.languageWeb;
-    const locale = languageWeb === 'en' || languageWeb === 'pt' ? languageWeb : 'es';
-    const label = (key: string, fallback: string): string =>
-        trans[locale]?.[key] ?? trans.es?.[key] ?? fallback;
+    const locale: NoticeLocale = languageWeb === 'en' || languageWeb === 'pt' ? languageWeb : 'es';
 
     const { addedLines, removedLines, shownSections, hiddenSections } = resolveBusinessLinesChange({
         vertical: entityType,
         before: storedValues(businessLinesChange.old),
         after: storedValues(businessLinesChange.new)
     });
-    const lineLabel = (line: BusinessLine): string =>
-        label(`${entityType}.owner.businessLines.${line}.label`, line);
-    const sectionLabel = (sectionId: string): string =>
-        label(`listing.owner.editor.sectionNav.${sectionId}`, sectionId);
+    const lineLabel = async (line: BusinessLine): Promise<string> =>
+        (await translate(entityType, ['owner', 'businessLines', line, 'label'], locale)) ?? line;
+    const sectionLabel = async (sectionId: string): Promise<string> =>
+        (await translate('listing', ['owner', 'editor', 'sectionNav', sectionId], locale)) ??
+        sectionId;
+    const [addedLineLabels, removedLineLabels, shownSectionLabels, hiddenSectionLabels] =
+        await Promise.all([
+            Promise.all(addedLines.map(lineLabel)),
+            Promise.all(removedLines.map(lineLabel)),
+            Promise.all(shownSections.map(sectionLabel)),
+            Promise.all(hiddenSections.map(sectionLabel))
+        ]);
 
     const template = LISTING_BUSINESS_LINES_CHANGED_TEMPLATE;
     await emailOutboxModel.enqueue(
@@ -215,10 +314,10 @@ export async function recordListingBusinessLinesChange(
                 listingId: listing.id,
                 listingName: listing.name ?? null,
                 changedAt: new Date().toISOString(),
-                addedLines: addedLines.map(lineLabel),
-                removedLines: removedLines.map(lineLabel),
-                shownSections: shownSections.map(sectionLabel),
-                hiddenSections: hiddenSections.map(sectionLabel)
+                addedLines: addedLineLabels,
+                removedLines: removedLineLabels,
+                shownSections: shownSectionLabels,
+                hiddenSections: hiddenSectionLabels
             },
             dedupKey: buildEmailDedupKey({
                 recipient: ownerId,
