@@ -375,12 +375,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
         const db = getServiceTestDb();
         const rolledBackPredecessorId = crypto.randomUUID();
         const rolledBackSuccessorId = crypto.randomUUID();
+        const rolledBackObserver = registryWithConsumer({
+            clock: frozenClock(cutNow),
+            subscriptionId: rolledBackSuccessorId
+        });
         const ports = successorCutPorts(db);
         await expect(
             runWithSuccessorCut({
                 db,
                 predecessorSubscriptionId: rolledBackPredecessorId,
-                ports,
+                ports: { ...ports, coverageNotices: rolledBackObserver.registry },
                 work: async (tx) => {
                     const user = await seedCoverageUser(tx);
                     const plan = await seedCoveragePlanVersion(tx, 'accommodation');
@@ -412,6 +416,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
         expect(
             await db.select().from(subscriptions).where(eq(subscriptions.id, rolledBackSuccessorId))
         ).toHaveLength(0);
+        expect(rolledBackObserver.observed).toHaveLength(0);
 
         const predecessorId = crypto.randomUUID();
         const successorId = crypto.randomUUID();
@@ -459,6 +464,14 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             }
         });
         expect(result.cut).toMatchObject({ outcome: 'CUT', from: 'ACTIVE', to: 'CANCELLED' });
+        const committedRows = await db
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, committedUserId.value));
+        expect(committedRows).toEqual([
+            { id: predecessorId, status: 'SUSPENDED' },
+            { id: successorId, status: 'CANCELLED' }
+        ]);
         expect(observer.observed).toHaveLength(1);
         expect(observer.observed[0]?.event).toMatchObject({
             userId: committedUserId.value,
