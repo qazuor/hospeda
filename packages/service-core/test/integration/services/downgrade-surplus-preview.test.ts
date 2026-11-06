@@ -92,6 +92,19 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 downgrade surplus prev
         if (!selected.applicable) throw new Error('Listing vertical preview was not applicable');
         expect(selected.willLower.map(({ id }) => id)).toEqual(expected.map(({ id }) => id));
         expect(selected.willLower).toEqual([{ id: listingIds[1] }]);
+
+        const oneSlotTarget = await seedPlanChangeTargetWithLimit({
+            sourcePlanVersionId: seeded.planVersionId,
+            targetLimit: 1
+        });
+        const ordered = await previewDowngradeSurplus({
+            userId: seeded.user.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            targetPlanVersionId: oneSlotTarget.planVersionId
+        });
+        expect(ordered).toMatchObject({ applicable: true, targetLimit: 1, surplusCount: 2 });
+        if (!ordered.applicable) throw new Error('Listing vertical preview was not applicable');
+        expect(ordered.willLower.map(({ id }) => id)).toEqual([listingIds[2], listingIds[1]]);
     });
 
     it('returns a null target limit without surplus and marks non-listing verticals inapplicable', async () => {
