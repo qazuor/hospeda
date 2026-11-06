@@ -16,6 +16,7 @@ import {
     cancelBranch6,
     hungPaymentIds,
     retainingBranch6Predecessor,
+    retainingSuspendedBranch6Predecessor,
     retireBranch6
 } from './support/branch6-fixtures.js';
 import {
@@ -30,7 +31,8 @@ import {
     openMarksOf,
     refundsOf,
     retainInOwnTransaction,
-    retentionsOf
+    retentionsOf,
+    subscriptionRow
 } from './support/succession-retention-fixtures.js';
 
 const revocationIds: string[] = [];
@@ -66,7 +68,7 @@ async function listedMark(markId: string) {
 }
 
 async function expectClosedBranch6(input: {
-    s: Awaited<ReturnType<typeof retainingBranch6Predecessor>>['s'];
+    s: Parameters<typeof cancelBranch6>[0];
     paymentId: string;
     transition: 'S23' | 'S24';
 }) {
@@ -107,11 +109,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await expectClosedBranch6({ ...seeded, transition: 'S24' });
         });
         it('(b) S23 closes a suspended predecessor with an S19 payment and proposes REFUND', async () => {
-            const seeded = await retainingBranch6Predecessor();
-            await getServiceTestDb()
-                .update(subscriptions)
-                .set({ status: 'SUSPENDED', graceStartedAt: null, graceEndsAt: null })
-                .where(eq(subscriptions.id, seeded.s.subscriptionId));
+            const seeded = await retainingSuspendedBranch6Predecessor();
+            expect((await subscriptionRow(seeded.s.subscriptionId)).status).toBe('SUSPENDED');
+            expect(await retentionsOf(seeded.s.subscriptionId)).toMatchObject([
+                { paymentId: seeded.paymentId, releasedAt: null }
+            ]);
             await expectClosedBranch6({ ...seeded, transition: 'S23' });
         });
         it('(c) S36 opens RF1 and releases retention before the real S18 closer sees it', async () => {
