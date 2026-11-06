@@ -19,7 +19,6 @@ const inputSchema = z.strictObject({
     tx: z.custom<DrizzleClient>()
 });
 const LIVE_APPLY_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'] as const;
-const domainEvents = new DomainEventModel();
 
 /** S38 outcome for one subscription. */
 export type ApplyScheduledChangeResult =
@@ -118,7 +117,7 @@ export async function applyScheduledChangeInTx(input: {
     await tx
         .delete(subscriptionScheduledChanges)
         .where(eq(subscriptionScheduledChanges.id, queued.id));
-    await domainEvents.insert({
+    await new DomainEventModel().insert({
         eventType: 'subscription.scheduled_change_applied',
         entityType: 'subscription',
         entityId: subscriptionId,

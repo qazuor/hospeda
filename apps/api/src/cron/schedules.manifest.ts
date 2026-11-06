@@ -167,6 +167,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Resume due principal pauses (HOS-1573, AC:B8b:3).'
     },
     {
+        name: 'subscription-scheduled-change',
+        displayName: 'Aplicación de cambios programados',
+        category: 'billing',
+        schedule: '53 * * * *',
+        description: 'Apply due scheduled subscription changes (HOS-1577, AC:B8b:15).'
+    },
+    {
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',

@@ -913,6 +913,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
 | `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
 | `subscription-pause-end` | billing | `47 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |
+| `subscription-scheduled-change` | billing | `53 * * * *` | `apps/api/src/cron/jobs/subscription-scheduled-change.job.ts` (HOS-1577, AC:B8b:15) |
 | `subscription-service-end` | billing | `12-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
 | `subscription-window-expiry` | billing | `7-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
 | `trial-machine-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/trial-machine-expiry.job.ts` |
