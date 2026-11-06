@@ -9,6 +9,7 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { ComplementPolicyPorts } from '../../../src/services/billing/subscription/complement-ports.js';
 import { endDuePauses } from '../../../src/services/billing/subscription/end-due-pauses.service.js';
@@ -23,6 +24,7 @@ import {
     retirePauseRows,
     seedPausePrincipal
 } from './support/pause-fixtures.js';
+import { seedScheduledChange } from './support/scheduled-change-fixtures.js';
 
 const db = () => getServiceTestDb();
 const emptyComplements: ComplementPolicyPorts = {
@@ -70,6 +72,45 @@ afterEach(async () => {
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:3 S10 principal return', () => {
+    it('runs S38 surplus selection before its CHANGED notice on the S10 path', async () => {
+        const harness = adjustablePauseHarness();
+        const principal = await seedPausePrincipal({ harness });
+        const pauseResult = await pause(harness, principal.subscriptionId, 1);
+        if (pauseResult.outcome !== 'PAUSED') throw new Error('S8 failed');
+        const keepListingIds = ['keep-s10'];
+        await seedScheduledChange({
+            subscriptionId: principal.subscriptionId,
+            effectiveAt: new Date(pauseResult.expectedEndAt.getTime() - 1),
+            keepSelection: { [PUBLICATION_LIMIT_KEYS.accommodation]: keepListingIds }
+        });
+        harness.clock.set({ at: pauseResult.expectedEndAt });
+        const calls: string[] = [];
+        const result = await endDuePauses(
+            { limit: 10 },
+            {
+                ...ports(harness),
+                coverageNotices: {
+                    async emitCoverageChanged(event) {
+                        calls.push(`notice:${event.change}`);
+                    }
+                },
+                surplusStep: {
+                    async reconcile(input) {
+                        expect(input).toEqual({
+                            userId: principal.userId,
+                            vertical: 'accommodation',
+                            keepListingIds
+                        });
+                        calls.push('step');
+                    }
+                }
+            }
+        );
+        expect(result.resumed).toBe(1);
+        expect(calls.indexOf('step')).toBeGreaterThanOrEqual(0);
+        expect(calls.indexOf('step')).toBeLessThan(calls.indexOf('notice:CHANGED'));
+        expect(calls).toContain('notice:ADDED');
+    });
     it('ends a customer pause at term, closes its row and resumes S33 complements', async () => {
         const harness = adjustablePauseHarness();
         const principal = await seedPausePrincipal({ harness });

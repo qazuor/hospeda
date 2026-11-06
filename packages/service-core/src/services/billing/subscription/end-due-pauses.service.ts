@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { resumeSubscription } from './resume-subscription.service.js';
+import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const inputSchema = z.strictObject({ limit: z.number().int().min(1).max(1000) });
 
@@ -16,6 +17,7 @@ export async function endDuePauses(
         readonly clock: Clock;
         readonly complements: ComplementPolicyPorts;
         readonly coverageNotices?: CoverageNotices;
+        readonly surplusStep?: SurplusStep;
     }
 ): Promise<{
     readonly resumed: number;

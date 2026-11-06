@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockEnd, mockClock, mockProvider, mockPolicy, mockNotices } = vi.hoisted(() => ({
-    mockEnd: vi.fn(),
-    mockClock: { now: vi.fn(() => new Date('2026-10-14T20:00:00.000Z')) },
-    mockProvider: { readAuthorization: vi.fn() },
-    mockPolicy: { addonPolicy: vi.fn(), listing: vi.fn() },
-    mockNotices: { emitCoverageChanged: vi.fn() }
-}));
+const { mockEnd, mockClock, mockProvider, mockPolicy, mockNotices, mockSurplus } = vi.hoisted(
+    () => ({
+        mockEnd: vi.fn(),
+        mockClock: { now: vi.fn(() => new Date('2026-10-14T20:00:00.000Z')) },
+        mockProvider: { readAuthorization: vi.fn() },
+        mockPolicy: { addonPolicy: vi.fn(), listing: vi.fn() },
+        mockNotices: { emitCoverageChanged: vi.fn() },
+        mockSurplus: { reconcile: vi.fn() }
+    })
+);
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     endDuePauses: mockEnd
@@ -19,6 +22,9 @@ vi.mock('../../src/utils/billing-complement-ports.js', () => ({
 }));
 vi.mock('../../src/utils/listing-access/coverage-notices.js', () => ({
     getCoverageNotices: () => mockNotices
+}));
+vi.mock('../../src/utils/listing-publication/scheduled-change-surplus-step.js', () => ({
+    createScheduledChangeSurplusStep: () => mockSurplus
 }));
 
 import { subscriptionPauseEndJob } from '../../src/cron/jobs/subscription-pause-end.job';
@@ -69,7 +75,8 @@ describe('TEST:B8b:3 subscription-pause-end job', () => {
                 provider: mockProvider,
                 clock: mockClock,
                 complements: mockPolicy,
-                coverageNotices: mockNotices
+                coverageNotices: mockNotices,
+                surplusStep: mockSurplus
             }
         );
         expect(result).toMatchObject({

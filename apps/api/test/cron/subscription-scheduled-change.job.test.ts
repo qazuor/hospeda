@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockApply, mockClock, mockNotices } = vi.hoisted(() => ({
+const { mockApply, mockClock, mockNotices, mockSurplus } = vi.hoisted(() => ({
     mockApply: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-14T20:00:00.000Z')) },
-    mockNotices: { emitCoverageChanged: vi.fn() }
+    mockNotices: { emitCoverageChanged: vi.fn() },
+    mockSurplus: { reconcile: vi.fn() }
 }));
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
@@ -13,6 +14,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/listing-access/coverage-notices.js', () => ({
     getCoverageNotices: () => mockNotices
+}));
+vi.mock('../../src/utils/listing-publication/scheduled-change-surplus-step.js', () => ({
+    createScheduledChangeSurplusStep: () => mockSurplus
 }));
 
 import { subscriptionScheduledChangeJob } from '../../src/cron/jobs/subscription-scheduled-change.job';
@@ -56,7 +60,7 @@ describe('TEST:B8b:15 subscription-scheduled-change job', () => {
         const result = await subscriptionScheduledChangeJob.handler(context());
         expect(mockApply).toHaveBeenCalledWith(
             { limit: 100 },
-            { clock: mockClock, coverageNotices: mockNotices }
+            { clock: mockClock, coverageNotices: mockNotices, surplusStep: mockSurplus }
         );
         expect(result).toMatchObject({
             success: true,

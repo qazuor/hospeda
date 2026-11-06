@@ -27,6 +27,7 @@ import {
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
 import { confirmPrincipalResume } from './resume-subscription-provider.js';
+import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const logger = createLogger('resume-subscription-s10');
 const inputSchema = z.strictObject({ subscriptionId: z.uuid(), cause: z.enum(['TERM', 'EARLY']) });
@@ -59,6 +60,7 @@ export async function resumeSubscription(
         readonly complements: ComplementPolicyPorts;
         readonly coverageNotices?: CoverageNotices;
         readonly expectedAmount?: ExpectedAmountPolicy;
+        readonly surplusStep?: SurplusStep;
     }
 ): Promise<ResumeSubscriptionResult> {
     const value = inputSchema.parse(input);
@@ -199,7 +201,10 @@ export async function resumeSubscription(
     if (written.scheduledChange) {
         await finishAppliedScheduledChange({
             applied: written.scheduledChange,
-            ports: { coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices }
+            ports: {
+                coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
+                surplusStep: ports.surplusStep
+            }
         });
     }
     const complements = await resumeComplementsS33(

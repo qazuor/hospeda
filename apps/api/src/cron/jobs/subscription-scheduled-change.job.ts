@@ -1,6 +1,7 @@
 import { applyDueScheduledChanges } from '@repo/service-core';
 import { getClock } from '../../utils/clock.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
+import { createScheduledChangeSurplusStep } from '../../utils/listing-publication/scheduled-change-surplus-step.js';
 import type { CronJobDefinition } from '../types.js';
 
 /** Applies due subscription plan changes without contacting the payment provider. */
@@ -26,7 +27,11 @@ export const subscriptionScheduledChangeJob: CronJobDefinition = {
         try {
             const summary = await applyDueScheduledChanges(
                 { limit: 100 },
-                { clock: getClock().clock, coverageNotices: getCoverageNotices() }
+                {
+                    clock: getClock().clock,
+                    coverageNotices: getCoverageNotices(),
+                    surplusStep: createScheduledChangeSurplusStep()
+                }
             );
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Due scheduled changes completed', { summary, durationMs });

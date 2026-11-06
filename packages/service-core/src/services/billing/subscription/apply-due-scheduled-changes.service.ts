@@ -11,12 +11,14 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { VerticalEnumSchema } from '@repo/schemas';
+import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     type ApplyScheduledChangeResult,
     applyScheduledChangeInTx
 } from './apply-scheduled-change.service.js';
+import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const logger = createLogger('apply-due-scheduled-changes');
 const inputSchema = z.strictObject({ limit: z.number().int().min(1).max(1000) });
@@ -25,9 +27,13 @@ const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'] as const;
 /** Emits the S38 coverage notice after commit; delivery failure is a warning. */
 export async function finishAppliedScheduledChange(input: {
     readonly applied: Extract<ApplyScheduledChangeResult, { outcome: 'APPLIED' }>;
-    readonly ports: { readonly coverageNotices: CoverageNotices };
-}): Promise<{ readonly warnings: readonly 'COVERAGE_NOTICE_FAILED'[] }> {
+    readonly ports: {
+        readonly coverageNotices: CoverageNotices;
+        readonly surplusStep?: SurplusStep;
+    };
+}): Promise<{ readonly warnings: readonly string[] }> {
     const { applied } = input;
+    const warnings: string[] = [];
     const vertical = VerticalEnumSchema.safeParse(applied.vertical);
     if (!vertical.success) {
         logger.error(
@@ -36,6 +42,35 @@ export async function finishAppliedScheduledChange(input: {
         );
         return { warnings: ['COVERAGE_NOTICE_FAILED'] };
     }
+    const publicationVertical = Object.hasOwn(PUBLICATION_LIMIT_KEYS, vertical.data)
+        ? (vertical.data as keyof typeof PUBLICATION_LIMIT_KEYS)
+        : undefined;
+    const keepListingIds = publicationVertical
+        ? applied.keepSelection?.[PUBLICATION_LIMIT_KEYS[publicationVertical]]
+        : undefined;
+    if (keepListingIds && keepListingIds.length > 0) {
+        if (input.ports.surplusStep) {
+            try {
+                await input.ports.surplusStep.reconcile({
+                    userId: applied.userId,
+                    vertical: vertical.data,
+                    keepListingIds
+                });
+            } catch (error) {
+                logger.error(
+                    { subscriptionId: applied.subscriptionId, error },
+                    'Scheduled change surplus step failed'
+                );
+                warnings.push('SURPLUS_STEP_FAILED');
+            }
+        } else {
+            logger.error(
+                { subscriptionId: applied.subscriptionId },
+                'Scheduled change surplus step is not registered'
+            );
+            warnings.push('SURPLUS_STEP_NOT_REGISTERED');
+        }
+    }
     try {
         await input.ports.coverageNotices.emitCoverageChanged({
             userId: applied.userId,
@@ -43,20 +78,25 @@ export async function finishAppliedScheduledChange(input: {
             sourceType: 'SUBSCRIPTION',
             change: 'CHANGED'
         });
-        return { warnings: [] };
+        return { warnings };
     } catch (error) {
         logger.error(
             { subscriptionId: applied.subscriptionId, error },
             'Coverage changed notice failed after scheduled change commit'
         );
-        return { warnings: ['COVERAGE_NOTICE_FAILED'] };
+        warnings.push('COVERAGE_NOTICE_FAILED');
+        return { warnings };
     }
 }
 
 /** Applies due S38 queue entries, committing each subscription independently. */
 export async function applyDueScheduledChanges(
     input: { readonly limit: number },
-    ports: { readonly clock: Clock; readonly coverageNotices: CoverageNotices }
+    ports: {
+        readonly clock: Clock;
+        readonly coverageNotices: CoverageNotices;
+        readonly surplusStep?: SurplusStep;
+    }
 ): Promise<{
     readonly applied: number;
     readonly waiting: number;
