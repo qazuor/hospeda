@@ -194,6 +194,37 @@ export interface SectionBusinessLine<V extends ListingVertical = ListingVertical
 }
 
 /**
+ * Lists the public business lines of a vertical, in catalog order.
+ *
+ * Consumers that must enumerate the public collections (the sitemap, for one)
+ * need this translation without importing `BUSINESS_LINES`, which G-FAC-03
+ * restricts to a closed allowlist. The returned entries carry the internal value
+ * and its canonical URL slug, the two halves a collection URL and its API filter
+ * need.
+ *
+ * @param input - The vertical to list.
+ * @param input.vertical - Listing vertical.
+ * @returns Every line of that vertical that has a public collection, in catalog
+ *   order. Empty for a vertical whose lines are all internal.
+ */
+export function listPublicBusinessLines<V extends ListingVertical>({
+    vertical
+}: {
+    readonly vertical: V;
+}): readonly SectionBusinessLine<V>[] {
+    const lines = BUSINESS_LINES[vertical] as unknown as readonly BusinessLineDefinitionBase<V>[];
+    return lines
+        .filter(
+            (line): line is BusinessLineDefinitionBase<V> & { readonly urlSlug: string } =>
+                line.public && typeof line.urlSlug === 'string'
+        )
+        .map((line) => ({
+            value: line.value as BusinessLineValue<V>,
+            urlSlug: line.urlSlug
+        }));
+}
+
+/**
  * Resolves which public business lines own a listing section.
  *
  * The ownership lives in `BUSINESS_LINES[vertical][].sections`. Consumers that

@@ -9,10 +9,13 @@
  * matching, `null` for anything that is not a public slug, and a canonical path
  * built from the catalog rather than from the passed segment.
  */
-import { businessLineToUrlSlug } from '@repo/schemas';
+import { businessLineToUrlSlug, listPublicBusinessLines } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     buildVenueBusinessLineCollectionPath,
+    buildVenueBusinessLineCollectionSitemapPath,
+    isVenueCollectionEmpty,
+    listVenueBusinessLineCollections,
     resolveVenueBusinessLineCollection
 } from '../../../src/lib/venue/business-line-collection';
 
@@ -49,8 +52,42 @@ describe('resolveVenueBusinessLineCollection', () => {
 
 describe('buildVenueBusinessLineCollectionPath', () => {
     it('builds the locale-prefixed collection path with a trailing slash', () => {
+        const { urlSlug } = businessLineToUrlSlug({ value: 'nightlife' });
+
         expect(
             buildVenueBusinessLineCollectionPath({ locale: 'en', businessLine: 'nightlife' })
-        ).toBe('/en/comer-y-salir/rubro/noche/');
+        ).toBe(`/en/comer-y-salir/rubro/${urlSlug}/`);
+    });
+});
+
+describe('listVenueBusinessLineCollections', () => {
+    it('returns the catalog public collections in order', () => {
+        const expected = listPublicBusinessLines({ vertical: 'venue' }).map(
+            ({ value, urlSlug }) => ({ businessLine: value, urlSlug })
+        );
+
+        expect(listVenueBusinessLineCollections()).toEqual(expected);
+        expect(listVenueBusinessLineCollections().length).toBeGreaterThan(0);
+    });
+});
+
+describe('buildVenueBusinessLineCollectionSitemapPath', () => {
+    it('builds the locale-agnostic path from the catalog slug with both slashes', () => {
+        for (const { value, urlSlug } of listPublicBusinessLines({ vertical: 'venue' })) {
+            const path = buildVenueBusinessLineCollectionSitemapPath({ businessLine: value });
+
+            expect(path).toBe(`/comer-y-salir/rubro/${urlSlug}/`);
+            expect(path).not.toMatch(/^\/(es|en|pt)\//);
+        }
+    });
+});
+
+describe('isVenueCollectionEmpty', () => {
+    it('is empty only when the fetch succeeded and reported zero results', () => {
+        expect(isVenueCollectionEmpty({ fetchOk: true, total: 0 })).toBe(true);
+        expect(isVenueCollectionEmpty({ fetchOk: true, total: 3 })).toBe(false);
+        // A failed request is not an empty collection: a 503 must never noindex
+        // a page that simply could not be counted.
+        expect(isVenueCollectionEmpty({ fetchOk: false, total: 0 })).toBe(false);
     });
 });
