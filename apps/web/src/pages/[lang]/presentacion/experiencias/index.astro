@@ -46,8 +46,8 @@
  *    `resolveListingCompleteness`, so the claim cannot pass by being merely well-worded. They moved
  *    section (they used to own "Cómo te van a contactar") but not a character.
  *  - THE "LO QUE CAMBIÁS SOLO Y LO QUE NO" TABLE: `test/pages/listing-amenities-render.test.ts`
- *    asserts its first row verbatim, ending `qué incluye, contacto y redes</td><td><strong>Vos,
- *    cuando quieras</strong>`. It is a PRODUCT guard (HOS-1071): every vertical presentation must
+ *    asserts its first row, ending `qué incluye, contacto y redes</td><td …><strong>Vos,
+ *    cuando quieras</strong>` (the cells may carry attributes such as `data-label`). It is a PRODUCT guard (HOS-1071): every vertical presentation must
  *    tell the owner what they change alone, and gastronomía keeps the twin table. Dissolving this
  *    section into the others is what broke it. The original's THIRD row was wrong and is now two:
  *    the owner CAN change the slug (`listing/editor/BasicInfoSection.client.tsx` — opt-in checkbox

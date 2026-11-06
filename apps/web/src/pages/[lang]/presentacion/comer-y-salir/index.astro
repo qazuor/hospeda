@@ -36,8 +36,8 @@
  *
  * THREE STRINGS HERE ARE FROZEN BY A TEST. `test/pages/listing-amenities-render.test.ts` (HOS-1071/1072) asserts this page
  * contains "Lo que ofrece el local" and "delivery o take away", and that the FIRST row of "Quién manda sobre qué" carries this
- * markup VERBATIM, on one line:
- *     lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>
+ * markup on one line (the cells may carry attributes such as `data-label`):
+ *     lo que ofrece el local, contacto y redes</td><td …><strong>Vos, cuando quieras</strong>
  * The suite also asserts this page never names `AmenitiesGrid`. Reword any of the three and it fails; that is the point.
  * The rest of that table is verified permissions: name, type and city ARE owner-editable (`VenueOwnerUpdateInputSchema`);
  * restoring the old team-owned row reintroduces a bug fixed twice already (see the experiences page).
