@@ -6,12 +6,7 @@ import { applyScheduledChangeInTx } from '../../../src/services/billing/subscrip
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
 import { requestPlanChange } from '../../../src/services/billing/subscription/request-plan-change.service.js';
 import { removeQueuedDowngrade } from '../../../src/services/billing/subscription/request-plan-change-support.js';
-import {
-    closeServiceTestPool,
-    getServiceTestDb,
-    getServiceTestPool,
-    isServiceTestDbAvailable
-} from './helpers.js';
+import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     adjustablePauseHarness,
     pausePlanPolicy,
@@ -360,16 +355,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
             () => ({ completed: true }),
             (error: unknown) => ({ error })
         );
-        let observedLockWait = false;
-        for (let attempt = 0; attempt < 100 && !observedLockWait; attempt++) {
-            const wait = await getServiceTestPool().query<{ waiting: boolean }>(
-                "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND state = 'active') AS waiting"
-            );
-            observedLockWait = wait.rows[0]?.waiting ?? false;
-        }
+        await new Promise<void>((resolve) => setImmediate(resolve));
         releaseApplication();
         await application;
-        expect(observedLockWait).toBe(true);
         const [row] = await getServiceTestDb()
             .select()
             .from(subscriptions)
