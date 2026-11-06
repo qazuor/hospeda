@@ -3,6 +3,8 @@ import { and, eq, isNull, reconciliationMarks } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { handleProviderPauseIsArrears } from '../../../src/services/billing/notice/provider-pause-arrears.js';
+import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
+import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import { liftReconciliationMark } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark.service.js';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import { createGraceExpiryCheck } from '../../../src/services/billing/reconciliation/sweep/grace-expiry-check.js';
@@ -20,6 +22,21 @@ import {
     sweepInput
 } from './support/successor-grace-fixtures.js';
 import { allowsPause, unconfirmedPauseFixture } from './support/unconfirmed-pause-fixtures.js';
+
+const { loggerWarn } = vi.hoisted(() => ({ loggerWarn: vi.fn() }));
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: () => ({
+            log: vi.fn(),
+            info: vi.fn(),
+            warn: loggerWarn,
+            error: vi.fn(),
+            debug: vi.fn()
+        })
+    };
+});
 
 const seeded: SeededSuccessorCase[] = [];
 const HOUR_MS = 3_600_000;
@@ -83,6 +100,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const s = await pending22();
             const before = await row(s.subscriptionId);
             const coverageBefore = [...s.fixture.coverageEvents];
+            loggerWarn.mockClear();
             await s.runPauseCheck();
             const after = await row(s.subscriptionId);
             expect(after.status).toBe('ACTIVE');
@@ -92,6 +110,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ]);
             expect([after.graceStartedAt, after.graceEndsAt]).toEqual([null, null]);
             expect(await openReasons(s.subscriptionId)).toEqual(['PAUSA_NO_APLICADA']);
+            expect(loggerWarn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: s.subscriptionId,
+                    event: 'PROVIDER_PAUSE_OBSERVED',
+                    markReason: 'PAUSA_NO_APLICADA'
+                }),
+                'Arrears suspension waits for review of an unconfirmed pause request'
+            );
             expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([]);
             expect(
                 (await s.provider.readAuthorization({ authorizationId: s.authorizationId }))
@@ -233,7 +259,15 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:2003:5 — narrow exception c
         seeded.push({ subscriptionIds: [s.subscriptionId], userId: s.fixture.user.id });
         await s.prepareUnpaidCycle();
         await s.applyLatePause();
+        loggerWarn.mockClear();
         await s.runPauseCheck();
+        expect(loggerWarn).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscriptionId: s.subscriptionId,
+                event: 'PROVIDER_PAUSE_OBSERVED'
+            }),
+            'Arrears suspension waits for review of an unconfirmed pause request'
+        );
         expect((await row(s.subscriptionId)).status).toBe('SUSPENDED');
         expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([
             [{ authorizationId: s.authorizationId }]
@@ -335,5 +369,46 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:2003:5 — narrow exception c
             [{ authorizationId: f.started.authorizationId }]
         ]);
         expect(await openReasons(id)).toEqual(['PAUSA_NO_APLICADA']);
+    });
+});
+
+describe.skipIf(!isServiceTestDbAvailable())('TEST:2003:7 — S6 observes mark 8 from grace', () => {
+    it('retains GRACE_PERIOD when S8/S10 marks remain open through real S4', async () => {
+        const s = await unconfirmedPauseFixture();
+        seeded.push({ subscriptionIds: [s.subscriptionId], userId: s.fixture.user.id });
+        expect((await s.pause(false)).outcome).toBe('PAUSED');
+        expect((await s.resume(true)).outcome).toBe('NOT_APPLIED');
+        expect(await openReasons(s.subscriptionId)).toEqual(['REANUDACION_NO_APLICADA']);
+        expect((await s.resume(false)).outcome).toBe('RESUMED');
+        const failed = await s.fixture.provider.failChargeCycle({
+            authorizationId: s.authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        const entered = await recordChargeFact(
+            { chargeId: failed.chargeId },
+            {
+                provider: s.fixture.provider,
+                clock: s.fixture.clock,
+                beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                payments: creditedPaymentsFromLedger,
+                planPolicy: allowsPause
+            }
+        );
+        expect(entered.outcome).toBe('GRACE');
+        expect((await row(s.subscriptionId)).status).toBe('GRACE_PERIOD');
+        expect(await openReasons(s.subscriptionId)).toEqual(['REANUDACION_NO_APLICADA']);
+        await s.applyLatePause();
+        loggerWarn.mockClear();
+        await s.runPauseCheck();
+        expect((await row(s.subscriptionId)).status).toBe('GRACE_PERIOD');
+        expect(await openReasons(s.subscriptionId)).toEqual(['REANUDACION_NO_APLICADA']);
+        expect(loggerWarn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscriptionId: s.subscriptionId,
+                event: 'PROVIDER_PAUSE_OBSERVED',
+                markReason: 'REANUDACION_NO_APLICADA'
+            }),
+            'Arrears suspension waits for review of an unconfirmed pause request'
+        );
     });
 });
