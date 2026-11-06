@@ -269,6 +269,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 on S7 return', () 
             amountMinor: targetOption?.amount
         });
         expect(oldAmount).toMatchObject({ kind: 'COMPARABLE', amountMinor: 250000 });
-        expect(onApplied).toHaveBeenCalledTimes(1);
+        // The MP5 sweep may also apply S38 to rows seeded by parallel files.
+        const ownApplications = onApplied.mock.calls.filter(
+            ([applied]) => applied.subscriptionId === subscriptionId
+        );
+        expect(ownApplications).toHaveLength(1);
     });
 });
