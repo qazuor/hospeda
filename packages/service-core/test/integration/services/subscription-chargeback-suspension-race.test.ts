@@ -1,4 +1,4 @@
-import { and, emailOutbox, eq, subscriptions } from '@repo/db';
+import { and, emailOutbox, eq, idempotencyKeys, providerLinks, subscriptions } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import type { PoolClient } from 'pg';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
@@ -7,6 +7,7 @@ import {
     createChargebackDetection,
     createChargebackSuspension
 } from '../../../src/services/billing/reconciliation/chargeback/chargeback-detection.js';
+import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service.js';
 import {
     closeServiceTestPool,
     getServiceTestDb,
@@ -23,8 +24,27 @@ import {
     retireChargebackFixtures
 } from './support/chargeback-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import { successionPorts, successionReturnUrl } from './support/succession-fixtures.js';
 
-afterEach(retireChargebackFixtures);
+const successors: {
+    readonly id: string;
+    readonly predecessorId: string;
+    readonly userId: string;
+}[] = [];
+afterEach(async () => {
+    const db = getServiceTestDb();
+    for (const successor of successors.splice(0)) {
+        await db.delete(emailOutbox).where(eq(emailOutbox.recipientUserId, successor.userId));
+        await db.delete(providerLinks).where(eq(providerLinks.subscriptionId, successor.id));
+        await db
+            .update(subscriptions)
+            .set({ succeededById: null })
+            .where(eq(subscriptions.id, successor.predecessorId));
+        await db.delete(idempotencyKeys).where(eq(idempotencyKeys.subjectId, successor.id));
+        await db.delete(subscriptions).where(eq(subscriptions.id, successor.id));
+    }
+    await retireChargebackFixtures();
+});
 afterAll(closeServiceTestPool);
 
 async function waitForUpdateLockWaiters({ count }: { readonly count: number }): Promise<void> {
@@ -158,6 +178,78 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     )
                 );
             expect(mails).toHaveLength(1);
+        });
+
+        it('TEST:B7:16 does not cut a live S1 successor when the S6 UPDATE moves no row', async () => {
+            const fixture = await chargebackFixture();
+            const chargeId = await approvedCharge(fixture);
+            expect((await recordCharge(fixture, chargeId)).outcome).toBe('CREDITED');
+            const [predecessor] = await getServiceTestDb()
+                .select({ billingOptionId: subscriptions.billingOptionId })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            if (!predecessor?.billingOptionId)
+                throw new Error('Predecessor billing option missing');
+            const successor = await startSuccession(
+                {
+                    predecessorSubscriptionId: fixture.started.subscriptionId,
+                    userId: fixture.user.id,
+                    billingOptionId: predecessor.billingOptionId,
+                    returnUrl: successionReturnUrl
+                },
+                { ...successionPorts(fixture.provider), clock: fixture.clock }
+            );
+            successors.push({
+                id: successor.subscriptionId,
+                predecessorId: fixture.started.subscriptionId,
+                userId: fixture.user.id
+            });
+            await fixture.provider.chargeBack({ chargeId });
+            const pool = getServiceTestPool();
+            await pool.query(`
+                CREATE FUNCTION test_skip_chargeback_suspension_update()
+                RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN
+                    IF NEW.status = 'SUSPENDED' THEN RETURN NULL; END IF;
+                    RETURN NEW;
+                END
+                $$
+            `);
+            await pool.query(`
+                CREATE TRIGGER test_skip_chargeback_suspension_update
+                BEFORE UPDATE OF status ON subscription
+                FOR EACH ROW EXECUTE FUNCTION test_skip_chargeback_suspension_update()
+            `);
+            try {
+                const result = await createChargebackDetection({
+                    markPayments: createPaymentReconciliationMarkPayments(fixture.clock),
+                    suspension: createChargebackSuspension({
+                        provider: fixture.provider,
+                        clock: fixture.clock,
+                        beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                        coverageNotices: fixture.coverageNotices,
+                        orphanhood: orphanPorts(getServiceTestDb()).ports
+                    })
+                }).detect({
+                    payment: await paymentOfCharge(chargeId),
+                    actor: 'provider',
+                    correlationId: crypto.randomUUID()
+                });
+                expect(result.suspension).toMatchObject({
+                    outcome: 'NOT_APPLICABLE',
+                    reason: 'LOST_RACE'
+                });
+                const [row] = await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, successor.subscriptionId));
+                expect(row?.status).toBe('PENDING_AUTHORIZATION');
+            } finally {
+                await pool.query(
+                    'DROP TRIGGER test_skip_chargeback_suspension_update ON subscription'
+                );
+                await pool.query('DROP FUNCTION test_skip_chargeback_suspension_update()');
+            }
         });
     }
 );
