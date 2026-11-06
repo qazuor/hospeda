@@ -218,6 +218,19 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
             })
             .returning({ id: payments.id });
         if (!payment) throw new Error('S9 payment fixture missing');
+        const [secondPayment] = await getServiceTestDb()
+            .insert(payments)
+            .values({
+                subscriptionId: fixture.ids.successor.id,
+                amount: 250000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'fake',
+                providerFactId: `s9-second-${crypto.randomUUID()}`,
+                factAt: fixture.clock.now()
+            })
+            .returning({ id: payments.id });
+        if (!secondPayment) throw new Error('S9 second payment fixture missing');
         const [failedPayment] = await getServiceTestDb()
             .insert(payments)
             .values({
@@ -262,10 +275,12 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
             vertical: VerticalSchema.parse('accommodation'),
             ports: { clock: fixture.clock }
         });
-        expect(result).toMatchObject({ outcome: 'REISSUED', chargeMarksOpened: 1 });
+        expect(result).toMatchObject({ outcome: 'REISSUED', chargeMarksOpened: 2 });
         expect(marks).toHaveLength(1);
-        expect(hung).toHaveLength(1);
-        expect(hung[0]?.paymentId).toBe(payment.id);
+        expect(hung).toHaveLength(2);
+        expect(hung.map((row) => row.paymentId).sort()).toEqual(
+            [payment.id, secondPayment.id].sort()
+        );
         expect(events).toEqual([
             {
                 userId: fixture.ids.userId,
