@@ -10,6 +10,7 @@
  * Console. Both directions are covered.
  */
 
+import { businessLineToUrlSlug } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { FACET_CONFIGS } from '../../../src/lib/filters/facet-config';
 import {
@@ -41,6 +42,10 @@ describe('FACET_QUERY_PARAM_KEYS', () => {
         }
     });
 
+    it('covers the venue business-line filter (HOS-1869, AC:6:2)', () => {
+        expect(FACET_QUERY_PARAM_KEYS).toContain('businessLine');
+    });
+
     it('does NOT include `page` — pagination is legitimate discovery surface', () => {
         expect(FACET_QUERY_PARAM_KEYS).not.toContain('page');
     });
@@ -65,6 +70,8 @@ describe('shouldNofollowFacetHref', () => {
             ['?categories=termas', 'query-only href (island SSR shape)'],
             ['/es/destinos/?attractions=a,b#dest-filter-top', 'destinos attractions + fragment'],
             ['/es/comer-y-salir/?type=RESTAURANT', 'venue type'],
+            ['/es/comer-y-salir/?businessLine=food', 'venue business-line filter'],
+            ['/es/comer-y-salir/?businessLine=food,nightlife', 'multi-value business line'],
             ['/es/alojamientos/?sortBy=price&checkIn=2026-08-01', 'date param in 2nd position'],
             ['/es/alojamientos/?q=cabana', 'internal search results']
         ])('nofollows %s (%s)', (href) => {
@@ -83,6 +90,17 @@ describe('shouldNofollowFacetHref', () => {
             '/es/destinos/concepcion-del-uruguay/'
         ])('does not nofollow %s', (href) => {
             expect(shouldNofollowFacetHref({ href })).toBe(false);
+        });
+
+        it('does not nofollow a business-line collection path (HOS-1869)', () => {
+            const { urlSlug } = businessLineToUrlSlug({ value: 'food' });
+
+            expect(shouldNofollowFacetHref({ href: `/es/comer-y-salir/rubro/${urlSlug}/` })).toBe(
+                false
+            );
+            expect(
+                shouldNofollowFacetHref({ href: `/es/comer-y-salir/rubro/${urlSlug}/page/2/` })
+            ).toBe(false);
         });
 
         it('does not nofollow a non-facet query param', () => {
@@ -116,6 +134,10 @@ describe('buildFacetDisallowDirectives', () => {
         const directives = buildFacetDisallowDirectives();
         expect(directives).toHaveLength(FACET_QUERY_PARAM_KEYS.length);
         expect(directives[0]).toBe(`Disallow: /*?*${FACET_QUERY_PARAM_KEYS[0]}=`);
+    });
+
+    it('includes the venue business-line filter directive (HOS-1869)', () => {
+        expect(buildFacetDisallowDirectives()).toContain('Disallow: /*?*businessLine=');
     });
 
     it('uses the `/*?*<key>=` shape so the param matches in any position', () => {

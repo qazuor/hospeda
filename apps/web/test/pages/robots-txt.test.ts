@@ -16,6 +16,7 @@
  *  - Existing Disallow entries unrelated to the sitemap are preserved.
  */
 
+import { businessLineToUrlSlug } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { FACET_QUERY_PARAM_KEYS } from '../../src/lib/filters/facet-crawl-policy';
 import { SITEMAP_EXCLUDED_PATHS } from '../../src/lib/seo-config';
@@ -508,6 +509,49 @@ describe('robots.txt — GET handler', () => {
             for (const key of FACET_QUERY_PARAM_KEYS) {
                 expect(body, `missing Disallow for "${key}"`).toContain(`Disallow: /*?*${key}=`);
             }
+        });
+
+        // HOS-1869 (AC:6:2): written out explicitly instead of derived from
+        // FACET_QUERY_PARAM_KEYS, so removing the key from the policy turns both
+        // this test and the unit one red independently.
+        it('disallows the business-line filter in the * block and every named allow block', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            const starBlock = blocks.find((b) => b.startsWith('User-agent: *'));
+            expect(starBlock, 'no * block found').toBeDefined();
+            expect(starBlock).toContain('Disallow: /*?*businessLine=');
+
+            for (const bot of [
+                'OAI-SearchBot',
+                'ChatGPT-User',
+                'Claude-SearchBot',
+                'PerplexityBot'
+            ]) {
+                const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                expect(block, `${bot} missing the business-line rule`).toContain(
+                    'Disallow: /*?*businessLine='
+                );
+            }
+        });
+
+        it('keeps the venue collection path crawlable (HOS-1869, AC:6:2)', async () => {
+            const body = await getPermissiveBody();
+            const { urlSlug } = businessLineToUrlSlug({ value: 'nightlife' });
+
+            expect(
+                isDisallowedForAllAgents({
+                    body,
+                    pathAndQuery: `/es/comer-y-salir/rubro/${urlSlug}/`
+                })
+            ).toBe(false);
+            expect(
+                isDisallowedForAllAgents({
+                    body,
+                    pathAndQuery: `/es/comer-y-salir/rubro/${urlSlug}/page/2/`
+                })
+            ).toBe(false);
         });
 
         it('repeats the facet Disallow rules in every named allow block', async () => {
