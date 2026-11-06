@@ -1,20 +1,27 @@
-import { eq, subscriptions } from '@repo/db';
+import { eq, subscriptionPauses, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { cancelDirectSubscription } from '../../../src/services/billing/subscription/cancel-direct-subscription.service.js';
+import { cancelPausedSubscription } from '../../../src/services/billing/subscription/cancel-paused-subscription.service.js';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { createSuccessionCloser } from '../../../src/services/billing/subscription/succession-closer.service.js';
+import type { Actor } from '../../../src/types/index.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import { unusedComplementPolicy } from './support/cancel-active-fixtures.js';
+import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { closePorts } from './support/succession-close-fixtures.js';
 import {
     retireDiesAloneCase,
     seedDiesAloneCase
 } from './support/succession-dies-alone-fixtures.js';
+import { retireS17, s17Now, seedS17 } from './support/succession-s17-fixtures.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 const owned: Awaited<ReturnType<typeof seedDiesAloneCase>>[] = [];
 afterEach(async () => {
     for (const ids of owned.splice(0)) await retireDiesAloneCase(ids);
 });
+afterEach(retireS17);
 afterAll(closeServiceTestPool);
 
 function postgresConstraint(error: unknown): { code?: string; constraint?: string } | undefined {
@@ -33,7 +40,7 @@ function postgresConstraint(error: unknown): { code?: string; constraint?: strin
     return undefined;
 }
 
-async function rejectNewOrigin(ids: Awaited<ReturnType<typeof seedDiesAloneCase>>) {
+async function rejectNewOrigin(ids: { readonly userId: string; readonly successorId: string }) {
     let result: unknown;
     try {
         await getServiceTestDb().transaction(async (tx) =>
@@ -146,5 +153,107 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:11 first-charge predecess
         expect(predecessor?.status).toBe('ACTIVE');
         expect(predecessor?.succeededById).toBe(ids.successorId);
         expect(successor?.succeedsId).toBe(ids.predecessorId);
+    });
+
+    it('(d) closes an S22 paused predecessor into the unique successor origin', async () => {
+        const ids = await seedS17({});
+        await ids.fake.pause({ authorizationId: ids.predecessorAuthorizationId });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'PAUSED' })
+            .where(eq(subscriptions.id, ids.predecessorId));
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'PENDING_AUTHORIZATION' })
+            .where(eq(subscriptions.id, ids.successorId));
+        await getServiceTestDb()
+            .insert(subscriptionPauses)
+            .values({
+                subscriptionId: ids.predecessorId,
+                reason: 'CUSTOMER_REQUEST',
+                requestedMonths: 2,
+                startsAt: new Date('2026-11-12T12:00:00.000Z'),
+                expectedEndAt: new Date('2027-01-12T12:00:00.000Z')
+            });
+        const actor: Actor = { id: ids.userId, roles: [], permissions: [] };
+        const result = await cancelPausedSubscription(
+            { actor, subscriptionId: ids.predecessorId },
+            {
+                provider: ids.provider,
+                clock: { now: () => s17Now },
+                beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                coverageNotices: { emitCoverageChanged: async () => undefined },
+                orphanhood: {
+                    addonPolicy: async () => {
+                        throw new Error('unexpected addon policy read');
+                    },
+                    listing: async () => {
+                        throw new Error('unexpected addon listing read');
+                    }
+                },
+                complements: unusedComplementPolicy,
+                successionCloser: createSuccessionCloser(closePorts)
+            }
+        );
+        expect(result).toMatchObject({ outcome: 'CANCELLED', successionClosed: true });
+        const [predecessor] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, ids.predecessorId));
+        const [successor] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, ids.successorId));
+        expect(predecessor).toMatchObject({ status: 'CANCELLED', succeededById: ids.successorId });
+        expect(successor).toMatchObject({ status: 'PENDING_AUTHORIZATION', succeedsId: null });
+        await rejectNewOrigin(ids);
+    });
+
+    it('(d) closes an S23 suspended predecessor into the unique successor origin', async () => {
+        const ids = await seedS17({});
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'SUSPENDED' })
+            .where(eq(subscriptions.id, ids.predecessorId));
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'PENDING_AUTHORIZATION' })
+            .where(eq(subscriptions.id, ids.successorId));
+        const actor: Actor = { id: ids.userId, roles: [], permissions: [] };
+        const result = await cancelDirectSubscription(
+            { actor, subscriptionId: ids.predecessorId },
+            {
+                provider: ids.provider,
+                clock: { now: () => s17Now },
+                beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                coverageNotices: { emitCoverageChanged: async () => undefined },
+                orphanhood: {
+                    addonPolicy: async () => {
+                        throw new Error('unexpected addon policy read');
+                    },
+                    listing: async () => {
+                        throw new Error('unexpected addon listing read');
+                    }
+                },
+                successionCloser: createSuccessionCloser(closePorts)
+            }
+        );
+        expect(result).toMatchObject({
+            outcome: 'CANCELLED',
+            origin: 'SUSPENDED',
+            transition: 'S23',
+            successionClosed: true
+        });
+        const [predecessor] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, ids.predecessorId));
+        const [successor] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, ids.successorId));
+        expect(predecessor).toMatchObject({ status: 'CANCELLED', succeededById: ids.successorId });
+        expect(successor).toMatchObject({ status: 'PENDING_AUTHORIZATION', succeedsId: null });
+        await rejectNewOrigin(ids);
     });
 });
