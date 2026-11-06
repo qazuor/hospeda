@@ -6,11 +6,12 @@ import {
     inArray,
     permanentGrants,
     permanentGrantVerticals,
+    reconciliationInventoryModel,
     reconciliationMarks,
     reconciliationZeroCallModel,
     subscriptions
 } from '@repo/db';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runZeroCallChecks } from '../../../src/services/billing/reconciliation/sweep/zero-call-checks.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import { createReconciliationFake } from './reconciliation-sweep-fixtures.js';
@@ -49,6 +50,23 @@ function isolateUnrelatedChecks(): void {
 }
 
 afterAll(closeServiceTestPool);
+beforeEach(() => {
+    const original = reconciliationInventoryModel.listLiveAddonInstanceIdsPage.bind(
+        reconciliationInventoryModel
+    );
+    vi.spyOn(reconciliationInventoryModel, 'listLiveAddonInstanceIdsPage').mockImplementation(
+        async (input) => {
+            const rows = await original({ ...input, limit: 10_000 });
+            const ownIds = new Set(seeded.map(({ instanceId }) => instanceId));
+            return rows
+                .filter(({ id }) => ownIds.has(id))
+                .filter(
+                    ({ id }) => input.afterInstanceId === undefined || id > input.afterInstanceId
+                )
+                .slice(0, input.limit);
+        }
+    );
+});
 afterEach(async () => {
     const instanceIds = seeded.map(({ instanceId }) => instanceId);
     for (const { complementId } of seeded)
