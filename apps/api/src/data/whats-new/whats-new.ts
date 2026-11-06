@@ -486,7 +486,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The section for restaurants, bars and venues has a new name: **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
             pt: 'A seção de restaurantes, bares e locais tem um nome novo: **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3824
     {
@@ -504,7 +504,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the panel, the social settings list and search now show secret-type values as "***", like the rest of the panel, never in plain text.',
             pt: 'No painel, a lista e a busca das configurações de redes sociais agora mostram os valores do tipo secreto como «***», como no resto do painel, e nunca em texto claro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3811
     {
@@ -521,7 +521,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in Food & nightlife and experiences no longer appears in Spanish.',
             pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em Comer e sair e em experiências não aparece mais em espanhol.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3833
     {
@@ -538,7 +538,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you confirm your subscription you go straight to pay on Mercado Pago, with no intermediate screen or second button. If you left the payment halfway, choosing the same plan again takes you back to that same payment instead of creating another one.',
             pt: 'Ao confirmar sua assinatura, você vai direto pagar no Mercado Pago, sem uma tela intermediária nem um segundo botão. Se deixou o pagamento pela metade, escolher o mesmo plano de novo leva você ao mesmo pagamento, sem criar outro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3800
     {
@@ -555,7 +555,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If a charge on your subscription fails and you enter the grace period, we now email you a reminder a few days before it ends and another the day before, once each.',
             pt: 'Se uma cobrança da sua assinatura não passar e você entrar no período de carência, agora enviamos um lembrete por e-mail alguns dias antes do vencimento e outro no dia anterior, uma única vez cada.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3805
     {
@@ -573,7 +573,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the panel, the newsletter subscribers list failed and showed nothing. It now loads with its filters by status, channel, language and email search, and includes people who subscribed without an account.',
             pt: 'No painel, a lista de assinantes da newsletter dava erro e não mostrava nada. Agora carrega com seus filtros por status, canal, idioma e busca por email, e inclui quem se inscreveu sem ter conta.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3726
     {
@@ -590,7 +590,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'You can now list your restaurant or your experience, as well as your accommodation, each with its own plans. You start with a 30-day free trial, with no card required, and only then choose whether to pay. Every publishing plan includes the Tourist VIP benefits.',
             pt: 'Agora você pode publicar seu restaurante ou sua experiência, além da sua hospedagem, cada um com seus próprios planos. Você começa com 30 dias de teste grátis, sem cadastrar cartão, e só depois escolhe se quer pagar. Todos os planos para publicar incluem os benefícios do Turista VIP.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3743
     {
@@ -607,7 +607,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Previously, a password with a hyphen or another uncommon symbol could show as valid and then be rejected. Now any symbol is accepted, and what you see while typing it is exactly what is checked when you sign up or change it.',
             pt: 'Antes, uma senha com hífen ou outro símbolo pouco comum podia aparecer como válida e depois ser rejeitada. Agora qualquer símbolo é aceito, e o que você vê ao digitá-la é exatamente o que é validado ao se cadastrar ou alterá-la.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3774
     {
@@ -624,7 +624,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The location map makes it clear when you have not placed the spot yet and that the pin can be dragged. «My enquiries» reads well on mobile, and if you open the event pages without access we explain how to become an editor instead of sending you back to your account without a word.',
             pt: 'O mapa da localização deixa claro quando você ainda não marcou o lugar e que o pino pode ser arrastado. «Minhas consultas» fica legível no celular, e se você abrir as páginas de eventos sem permissão explicamos como virar editor em vez de mandar você para a sua conta sem aviso.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3759
     {
@@ -641,7 +641,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'On the withdrawal page, «Request revocation» now has good contrast in both themes. Previously, in the dark theme, the button text was barely visible.',
             pt: 'Na página do botão de arrependimento, «Pedir a revogação» agora tem bom contraste nos dois temas. Antes, no tema escuro, o texto do botão quase não aparecia.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3801
     {
@@ -658,7 +658,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The platform now validates what is submitted with a patched version that cannot be overwhelmed by very large lists. Nothing changes in how you use the site or the panel.',
             pt: 'A plataforma agora valida o que é enviado com uma versão corrigida que não pode ser sobrecarregada com listas muito grandes. Nada muda na forma como você usa o site ou o painel.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3775, #3783, #3785, #3792
     {
@@ -675,7 +675,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered. Even on the narrowest phones the bar fits on a single row.',
             pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto. Mesmo nos celulares mais estreitos a barra cabe em uma só linha.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3373
     {
