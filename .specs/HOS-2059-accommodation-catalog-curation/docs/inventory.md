@@ -51,8 +51,37 @@ every row listed.
 **5 relation rows** sit on retired catalog rows in production (river_view 1,
 panoramic_view 1, shared_patio 2, disability_accessible 1). 0147 moves each onto
 its survivor, or collapses it when the same listing already links the survivor.
-Expected after 0147: zero relation rows on a retired catalog row, and
-`moved + collapsed = 5` in its log line.
+
+## Collisions: listings that already link the survivor
+
+Second read-only query, same day: for every merge pair, how many accommodations
+link BOTH the retired row and its survivor (so the move collapses into the
+existing survivor row instead of inserting). `wifi_full_property` and
+`satellite_wifi`, which both merge into `wifi`, were also checked against each
+other. Venue and experience have no links on any touched row, so only
+accommodations can collide.
+
+| Retired row | Survivor | Listings with both |
+|---|---|---|
+| amenity `shared_patio` | amenity `patio` | **2** |
+| amenity `panoramic_view` | feature `panoramic_view_extended` | **1** |
+| every other pair (17 pairs, plus wifi_full_property and satellite_wifi) | | 0 |
+
+Both `shared_patio` listings already link `patio`. `scope` does not exist in
+production yet, so after HOS-2058 every `patio` row reads `scope = NULL`. If the
+collapse only kept the survivor row, the "shared" meaning would be lost on both
+listings. 0147 therefore fills the survivor's NULL attributes from the source:
+both rows end with `scope = shared`. The `panoramic_view` collision crosses
+kinds, so the survivor feature has nothing to fill.
+
+## Expected log line in production
+
+- `relationsOnRetiredRows` = 5
+- `relationsMoved` = 2 (river_view, disability_accessible)
+- `relationsCollapsed` = 3 (shared_patio 2, panoramic_view 1)
+- `relationsCollapsedWithAttributes` = 2 (the forced `scope = shared`)
+- `survivorAttributesFilled` = 2
+- After the run, zero relation rows point at a retired catalog row.
 
 ## Retyped amenities
 
