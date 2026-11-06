@@ -59,8 +59,8 @@ export interface CurrentRenewalDeadlines {
     readonly values: unknown;
 }
 
-/** Stamps both renewal clock columns together on an active subscription. */
-async function stampRenewalNoticeClock(input: {
+/** Stamps both renewal clock columns together on an active subscription for the cycle. */
+export async function stampRenewalNoticeClock(input: {
     readonly tx: DrizzleClient;
     readonly subscriptionId: string;
     readonly version: number;
