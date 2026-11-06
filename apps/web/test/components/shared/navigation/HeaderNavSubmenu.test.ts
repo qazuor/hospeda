@@ -20,7 +20,17 @@ describe('HeaderNavSubmenu', () => {
     });
 
     it('lets scoped header navigation styles reach links rendered by child components', () => {
-        expect(header).toMatch(/\.header__nav\s+:global\(\.header__nav-link\)/);
-        expect(header).toMatch(/\.header__nav\s+:global\(\.header__nav-link--active\)/);
+        // The base rule and the active rule must both open a declaration block
+        // through the anchored :global() form, not merely be mentioned somewhere.
+        expect(header).toMatch(/\.header__nav\s+:global\(\.header__nav-link\)\s*\{/);
+        expect(header).toMatch(/\.header__nav\s+:global\(\.header__nav-link--active\)\s*\{/);
+    });
+
+    it('keeps no scoped .header__nav-link selector that a child component cannot match', () => {
+        // Astro scopes a bare `.header__nav-link` selector to Header.astro's own
+        // elements, so the submenu's parent link (rendered by a child component)
+        // silently loses it. Every selector for the class must go through :global().
+        const withoutGlobal = header.replace(/:global\(\.header__nav-link[\w-]*\)/g, '');
+        expect(withoutGlobal).not.toMatch(/\.header__nav-link/);
     });
 });
