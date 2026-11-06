@@ -98,6 +98,27 @@
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
+.navSubList {
+    list-style: none;
+    margin: 0 0 0 0.75rem;
+    padding: 0 0 0 0.75rem;
+    border-left: 1px solid var(--border-a35);
+}
+
+.navSubLink {
+    display: block;
+    padding: 0.5rem;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    text-decoration: none;
+}
+
+.navSubLink:hover,
+.navSubLink:focus-visible {
+    color: var(--brand-accent);
+}
+
 /* Auth section */
 .authSection {
     padding: 1rem 1.25rem;
