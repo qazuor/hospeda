@@ -51,6 +51,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
                 .select()
                 .from(subscriptions)
                 .where(eq(subscriptions.id, ids.successor.id));
+            const losses = await tx
+                .select()
+                .from(coverageLosses)
+                .where(eq(coverageLosses.userId, ids.userId));
             expect(result).toMatchObject({
                 outcome: 'CUT',
                 from: 'PENDING_AUTHORIZATION',
@@ -59,6 +63,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             });
             expect(pred).toMatchObject({ status: 'SUSPENDED', succeededById: ids.successor.id });
             expect(succ).toMatchObject({ status: 'ABANDONED', succeedsId: ids.predecessor.id });
+            expect(losses).toHaveLength(0);
         });
     });
 
