@@ -109,7 +109,40 @@
         "familyFriendly": "Apto familia",
         "workFriendly": "Apto trabajo",
         "generalAppliances": "Equipamiento",
+        "parking": "Estacionamiento",
+        "laundry": "Lavandería",
+        "waterActivities": "Actividades acuáticas",
+        "wellness": "Bienestar",
+        "dining": "Gastronomía",
         "other": "Otros"
+    },
+    "featureCategories": {
+        "location": "Ubicación",
+        "view": "Vistas",
+        "access": "Acceso",
+        "style": "Estilo",
+        "audience": "Ideal para",
+        "offerProfile": "Perfil de la oferta",
+        "sustainability": "Sustentabilidad",
+        "activities": "Actividades",
+        "cuisine": "Cocina",
+        "dietary": "Opciones alimentarias",
+        "language": "Idiomas",
+        "other": "Otras"
+    },
+    "amenityAttributes": {
+        "scope": {
+            "label": "Uso",
+            "private": "Privado",
+            "shared": "Compartido",
+            "unset": "Sin indicar"
+        },
+        "availability": {
+            "label": "Disponibilidad",
+            "yearRound": "Todo el año",
+            "seasonal": "De temporada",
+            "unset": "Sin indicar"
+        }
     },
     "amenityNames": {
         "wifi": "WiFi",

@@ -542,7 +542,25 @@
             "safety": "Seguridad",
             "familyFriendly": "Apto familia",
             "workFriendly": "Apto trabajo",
-            "generalAppliances": "Electrodomésticos"
+            "generalAppliances": "Electrodomésticos",
+            "parking": "Estacionamiento",
+            "laundry": "Lavandería",
+            "waterActivities": "Actividades acuáticas",
+            "wellness": "Bienestar",
+            "dining": "Gastronomía"
+        },
+        "featureCategory": {
+            "location": "Ubicación",
+            "view": "Vistas",
+            "access": "Acceso",
+            "style": "Estilo",
+            "audience": "Ideal para",
+            "offerProfile": "Perfil de la oferta",
+            "sustainability": "Sustentabilidad",
+            "activities": "Actividades",
+            "cuisine": "Cocina",
+            "dietary": "Opciones alimentarias",
+            "language": "Idiomas"
         },
         "event": {
             "concert": "Concierto",

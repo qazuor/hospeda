@@ -203,7 +203,26 @@
         "safety": "Safety",
         "familyFriendly": "Family-friendly",
         "workFriendly": "Work-friendly",
-        "generalAppliances": "General appliances"
+        "generalAppliances": "General appliances",
+        "parking": "Parking",
+        "laundry": "Laundry",
+        "waterActivities": "Water activities",
+        "wellness": "Wellness",
+        "dining": "Dining"
+    },
+    "featureCategory": {
+        "label": "Category",
+        "location": "Location",
+        "view": "Views",
+        "access": "Access",
+        "style": "Style",
+        "audience": "Ideal for",
+        "offerProfile": "Offer profile",
+        "sustainability": "Sustainability",
+        "activities": "Activities",
+        "cuisine": "Cuisine",
+        "dietary": "Dietary options",
+        "language": "Languages"
     },
     "isActive": {
         "label": "Active"

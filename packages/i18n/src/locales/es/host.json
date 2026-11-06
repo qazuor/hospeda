@@ -311,6 +311,8 @@
                 "currency": "Moneda",
                 "currencyFixedArs": "ARS — Peso argentino",
                 "amenities": "Comodidades",
+                "amenityDetails": "Detalles",
+                "amenityDetailsHint": "Indicá si es de uso privado o compartido y si está disponible todo el año.",
                 "features": "Características",
                 "phone": "Teléfono",
                 "phoneCountry": "País",
