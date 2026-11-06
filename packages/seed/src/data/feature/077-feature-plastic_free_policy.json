@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "077-feature-plastic_free_policy",
     "slug": "plastic_free_policy",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",
         "en": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",

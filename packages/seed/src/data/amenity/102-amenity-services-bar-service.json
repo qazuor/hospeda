@@ -8,7 +8,7 @@
         "pt": "Servicio de bar con bebidas alcohólicas y no alcohólicas"
     },
     "applicableVerticals": ["venue"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "BarServiceIcon",
     "isBuiltin": false,
     "isFeatured": true,

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "102-feature-peruvian_cuisine",
     "slug": "peruvian_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina peruana: ceviches y platos de la tradición peruana",
         "en": "Peruvian cuisine: ceviche and traditional Peruvian dishes",

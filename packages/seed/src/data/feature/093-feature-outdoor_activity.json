@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "093-feature-outdoor_activity",
     "slug": "outdoor_activity",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Actividad desarrollada completamente al aire libre en entornos naturales",
         "en": "Actividad desarrollada completamente al aire libre en entornos naturales",

@@ -8,7 +8,7 @@
         "pt": "Jacuzzi / hidromasaje"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "OUTDOORS",
+    "type": "WELLNESS",
     "icon": "JacuzziIcon",
     "isBuiltin": false,
     "isFeatured": true,

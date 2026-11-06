@@ -8,7 +8,7 @@
         "pt": "Restaurante"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "FullBoardIcon",
     "isBuiltin": false,
     "isFeatured": true,

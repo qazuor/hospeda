@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "031-feature-room_rental",
     "slug": "room_rental",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
         "en": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",

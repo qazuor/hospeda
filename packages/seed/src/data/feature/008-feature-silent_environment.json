@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "008-feature-silent_environment",
     "slug": "silent_environment",
+    "category": "LOCATION",
     "description": {
         "es": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
         "en": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",

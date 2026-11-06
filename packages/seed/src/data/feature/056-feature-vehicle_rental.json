@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "056-feature-vehicle_rental",
     "slug": "vehicle_rental",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
         "en": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",

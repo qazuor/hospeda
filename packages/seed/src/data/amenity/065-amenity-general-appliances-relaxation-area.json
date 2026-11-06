@@ -8,7 +8,7 @@
         "pt": "Zona de relax"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WELLNESS",
     "icon": "RelaxationAreaIcon",
     "isBuiltin": false,
     "isFeatured": true,

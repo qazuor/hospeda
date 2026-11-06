@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "024-feature-themed_rooms",
     "slug": "themed_rooms",
+    "category": "STYLE",
     "description": {
         "es": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
         "en": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",

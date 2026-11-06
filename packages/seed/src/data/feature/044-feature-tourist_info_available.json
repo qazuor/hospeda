@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "044-feature-tourist_info_available",
     "slug": "tourist_info_available",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
         "en": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",

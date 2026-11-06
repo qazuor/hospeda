@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "028-feature-autonomous_checkin",
     "slug": "autonomous_checkin",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",
         "en": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",

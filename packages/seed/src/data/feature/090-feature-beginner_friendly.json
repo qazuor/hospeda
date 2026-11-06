@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "090-feature-beginner_friendly",
     "slug": "beginner_friendly",
+    "category": "AUDIENCE",
     "description": {
         "es": "No se requiere experiencia previa, ideal para principiantes",
         "en": "No se requiere experiencia previa, ideal para principiantes",

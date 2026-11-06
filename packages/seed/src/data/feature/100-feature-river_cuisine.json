@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "100-feature-river_cuisine",
     "slug": "river_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina de río: pescados y platos típicos del litoral",
         "en": "River cuisine: fish and dishes typical of the Litoral region",

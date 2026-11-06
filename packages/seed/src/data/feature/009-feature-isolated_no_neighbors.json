@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "009-feature-isolated_no_neighbors",
     "slug": "isolated_no_neighbors",
+    "category": "LOCATION",
     "description": {
         "es": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",
         "en": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",

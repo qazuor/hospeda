@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "070-feature-dock_access",
     "slug": "dock_access",
+    "category": "ACCESS",
     "description": {
         "es": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
         "en": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
