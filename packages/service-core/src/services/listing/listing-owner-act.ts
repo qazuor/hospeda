@@ -96,7 +96,7 @@ const NOT_A_CHANGE = new Set<string>([
 ]);
 
 /** Write-only payload keys that never exist on the row, so cannot be diffed. */
-const WRITE_ONLY_KEYS = new Set<string>(['amenityIds', 'featureIds']);
+const WRITE_ONLY_KEYS = new Set<string>(['amenityIds', 'featureIds', 'amenityAttributes']);
 
 /** Renders a non-content value for storage: dates as ISO strings, absent as null. */
 function toStoredValue(value: unknown): unknown {

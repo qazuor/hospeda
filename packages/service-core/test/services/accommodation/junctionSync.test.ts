@@ -598,3 +598,103 @@ describe('AccommodationService junction sync (SPEC-172)', () => {
         });
     });
 });
+
+// ─── HOS-2058: per-amenity relation attributes ───────────────────────────────
+
+describe('AccommodationService amenityAttributes (HOS-2058)', () => {
+    const actor = createAdminActor();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('amenityAttributes alone (no amenityIds) updates the linked rows', async () => {
+        // Arrange — A is linked with no attributes declared yet.
+        const { service, model, rAmenityModel } = buildFixtures();
+        const existing = createMockAccommodation({ id: 'acc-001' });
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue(existing);
+        (rAmenityModel.findAll as Mock).mockResolvedValue({
+            items: [{ accommodationId: 'acc-001', amenityId: UUID_AMENITY_A }],
+            total: 1
+        });
+
+        // Act
+        const result = await service.update(
+            actor,
+            'acc-001',
+            {
+                amenityAttributes: [
+                    { amenityId: UUID_AMENITY_A, scope: 'private', availability: 'seasonal' }
+                ]
+            } as never,
+            ctxWithTx
+        );
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(rAmenityModel.update).toHaveBeenCalledWith(
+            { accommodationId: 'acc-001', amenityId: UUID_AMENITY_A },
+            { scope: 'private', availability: 'seasonal' },
+            mockTx
+        );
+        expect(rAmenityModel.create).not.toHaveBeenCalled();
+        expect(rAmenityModel.hardDelete).not.toHaveBeenCalled();
+    });
+
+    it('never forwards amenityAttributes to the accommodations row update', async () => {
+        const { service, model, rAmenityModel } = buildFixtures();
+        const existing = createMockAccommodation({ id: 'acc-001' });
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue(existing);
+        (rAmenityModel.findAll as Mock).mockResolvedValue({
+            items: [{ accommodationId: 'acc-001', amenityId: UUID_AMENITY_A }],
+            total: 1
+        });
+
+        await service.update(
+            actor,
+            'acc-001',
+            {
+                name: 'Renamed',
+                amenityAttributes: [{ amenityId: UUID_AMENITY_A, scope: 'shared' }]
+            } as never,
+            ctxWithTx
+        );
+
+        const rowPayloads = (model.update as Mock).mock.calls.map(
+            (call: unknown[]) => call[1] as Record<string, unknown>
+        );
+        expect(rowPayloads.length).toBeGreaterThan(0);
+        for (const payload of rowPayloads) {
+            expect(payload.amenityAttributes).toBeUndefined();
+        }
+    });
+
+    it('rejects an attribute entry for an amenity that is not linked', async () => {
+        const { service, model, rAmenityModel } = buildFixtures();
+        const existing = createMockAccommodation({ id: 'acc-001' });
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue(existing);
+        (rAmenityModel.findAll as Mock).mockResolvedValue({
+            items: [{ accommodationId: 'acc-001', amenityId: UUID_AMENITY_A }],
+            total: 1
+        });
+
+        const result = await service
+            .update(
+                actor,
+                'acc-001',
+                {
+                    amenityAttributes: [{ amenityId: UUID_AMENITY_B, scope: 'shared' }]
+                } as never,
+                ctxWithTx
+            )
+            .catch((error: unknown) => ({ error }));
+
+        expect((result as { error?: { code?: string } }).error?.code).toBe(
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        expect(rAmenityModel.update).not.toHaveBeenCalled();
+    });
+});

@@ -1145,6 +1145,8 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // HOS-2058: per-amenity scope/availability, write-only like amenityIds.
+            ctx.hookState.pendingAmenityAttributes = data.amenityAttributes;
             // HOS-1499: what the owner wrote, for the owner-act event.
             ctx.hookState.ownerActPayload = data as Record<string, unknown>;
             // SPEC-204 DIRECT CUTOVER: pendingMedia is no longer captured for update.
@@ -1159,6 +1161,8 @@ export class AccommodationService extends BaseCrudService<
         const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
         cleanData.aiAssistedFields = undefined;
         cleanData.refreshSlugFromName = undefined;
+        // HOS-2058: write-only junction input, never a column.
+        cleanData.amenityAttributes = undefined;
 
         if (aiAssistedFields !== undefined && ctx.hookState) {
             ctx.hookState.pendingAiAssistedFields = aiAssistedFields;
@@ -1207,7 +1211,11 @@ export class AccommodationService extends BaseCrudService<
         // SPEC-172: sync amenity/feature junctions transactionally.
         // pendingAmenityIds/pendingFeatureIds were captured by _beforeUpdate.
         // undefined → skip (no-op contract); defined → sync inside the same ctx.tx.
-        if (ctx.hookState?.pendingAmenityIds !== undefined) {
+        // HOS-2058: amenityAttributes alone (no amenityIds) also triggers the sync.
+        if (
+            ctx.hookState?.pendingAmenityIds !== undefined ||
+            ctx.hookState?.pendingAmenityAttributes !== undefined
+        ) {
             if (!ctx.tx) {
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
@@ -1217,6 +1225,7 @@ export class AccommodationService extends BaseCrudService<
             await syncAmenityJunction({
                 accommodationId: entity.id,
                 amenityIds: ctx.hookState.pendingAmenityIds,
+                amenityAttributes: ctx.hookState.pendingAmenityAttributes,
                 junctionModel: this._rAmenityModel,
                 amenityModel: this._amenityModel,
                 tx: ctx.tx
