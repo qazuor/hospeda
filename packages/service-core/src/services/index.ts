@@ -233,6 +233,7 @@ export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';
 export * from './billing/subscription/exit-grace.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
+export { reevaluateRetainedPayments } from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/expire-manual-grace.service.js';
 export * from './billing/subscription/grace-reminder-notice.js';
 export * from './billing/subscription/grace-started-notice.js';
