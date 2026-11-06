@@ -335,7 +335,20 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             }
         ]
     },
-    ACC_19: { unbound: 'B2 (HOS-1515) builds it' },
+    ACC_19: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-price/admin/index.ts',
+                route: 'adminPreviewCyclePriceRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-price/admin/index.ts',
+                route: 'adminSetCyclePriceRoute'
+            }
+        ]
+    },
     ACC_20: { unbound: 'B10 (HOS-1595) builds it' },
     ACC_21: {
         bindings: [
@@ -468,10 +481,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-    it('b. checks exactly 53 bindings across 19 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(19);
+    it('b. checks exactly 55 bindings across 20 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(20);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(53);
+        expect(total).toBe(55);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
