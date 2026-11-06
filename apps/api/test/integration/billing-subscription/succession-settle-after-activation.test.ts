@@ -1,13 +1,14 @@
-import { emailOutbox, eq, providerLinks, subscriptions } from '@repo/db';
+import { emailOutbox, eq } from '@repo/db';
 import { MercadoPagoPaymentProvider } from '@repo/payments';
 import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
 import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { cancelActiveSubscription } from '../../../../../packages/service-core/src/services/billing/subscription/cancel-active-subscription.service';
+import { applyS12ToPrincipal } from '../../../../../packages/service-core/src/services/billing/subscription/service-end-s12';
 import {
     closeNow,
-    readCloseCase,
-    seedCloseCase
+    readCloseCase
 } from '../../../../../packages/service-core/test/integration/services/support/succession-close-fixtures';
 import { initApp } from '../../../src/app';
 import { subscriptionSuccessionReevaluationJob } from '../../../src/cron/jobs/subscription-succession-reevaluation.job';
@@ -18,7 +19,7 @@ import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
-import { withCompositionRollback } from './succession-wiring-fixtures';
+import { startSettlementSuccession, withCompositionRollback } from './succession-wiring-fixtures';
 
 const clock = createAdjustableClock({ start: closeNow });
 const fake = new FakePaymentProvider({
@@ -29,13 +30,14 @@ const fake = new FakePaymentProvider({
 const webhookSecret = 'b8b8-succession-settle-secret';
 let app: ReturnType<typeof initApp>;
 let server: FakeProviderServer;
+let provider: MercadoPagoPaymentProvider;
 
 beforeAll(async () => {
     process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = webhookSecret;
     await testDb.setup();
     validateApiEnv();
     server = await startFakeProviderServer({ provider: fake, clock });
-    const provider = new MercadoPagoPaymentProvider({
+    provider = new MercadoPagoPaymentProvider({
         clock,
         baseUrl: server.url,
         accessToken: 'test-token'
@@ -63,17 +65,18 @@ const context = (): CronJobContext => ({
     dryRun: false
 });
 
-async function authorization(reference: string, approve = false) {
-    const created = await fake.authorize({
-        reference,
-        amount: { amountMinor: 250000, currency: 'ARS' },
-        cadence: { everyMonths: 1 },
-        reason: 'Succession settlement test',
-        returnUrl: 'https://example.test/return'
+const settlementCase = (
+    tx: Parameters<typeof startSettlementSuccession>[0],
+    options: { complement?: boolean; courtesy?: boolean } = {}
+) =>
+    startSettlementSuccession(tx, {
+        provider,
+        clock,
+        approve: async (authorizationId) => {
+            await fake.approve({ authorizationId });
+        },
+        ...options
     });
-    if (approve) await fake.approve({ authorizationId: created.authorizationId });
-    return created.authorizationId;
-}
 
 function oldCancelCalls(authorizationId: string) {
     return server
@@ -109,21 +112,9 @@ async function deliverAuthorization(authorizationId: string) {
 describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
     it('(a, c) cancels the predecessor only after the authorization webhook and closes once', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'ACTIVE',
-                successorStatus: 'PENDING_AUTHORIZATION',
-                complement: true
-            });
-            const oldId = await authorization(ids.predecessor.id, true);
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values([
-                { subscriptionId: ids.predecessor.id, provider: 'MERCADO_PAGO', providerId: oldId },
-                {
-                    subscriptionId: ids.successor.id,
-                    provider: 'MERCADO_PAGO',
-                    providerId: successorId
-                }
-            ]);
+            const ids = await settlementCase(tx, { complement: true });
+            const oldId = ids.predecessorAuthorizationId;
+            const successorId = ids.successorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             await beforeCancelNotice.beforeCancel({
                 subscriptionId: ids.predecessor.id,
@@ -157,8 +148,9 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
             expect(
                 notices.filter(
                     (notice) =>
+                        notice.template === 'billing.succession-predecessor-cancel' &&
                         (notice.payload as { subscriptionId?: string }).subscriptionId ===
-                        ids.predecessor.id
+                            ids.predecessor.id
                 )
             ).toHaveLength(1);
         });
@@ -166,29 +158,10 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
 
     it('(b) leaves the old subscription and authorization alive when checkout is abandoned', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'ACTIVE',
-                successorStatus: 'PENDING_AUTHORIZATION'
-            });
-            const oldId = await authorization(ids.predecessor.id, true);
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values([
-                { subscriptionId: ids.predecessor.id, provider: 'MERCADO_PAGO', providerId: oldId },
-                {
-                    subscriptionId: ids.successor.id,
-                    provider: 'MERCADO_PAGO',
-                    providerId: successorId
-                }
-            ]);
+            const ids = await settlementCase(tx);
+            const oldId = ids.predecessorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             clock.advance({ ms: 4 * 24 * 60 * 60 * 1000 });
-            await tx
-                .update(subscriptions)
-                .set({
-                    authorizationWindowDeadlineVersion: 1,
-                    authorizationWindowEndsAt: new Date(closeNow.getTime() + 60 * 60 * 1000)
-                })
-                .where(eq(subscriptions.id, ids.successor.id));
             const { subscriptionWindowExpiryJob } = await import(
                 '../../../src/cron/jobs/subscription-window-expiry.job'
             );
@@ -205,21 +178,10 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
 
     it('(d) does not cancel an already cancelled predecessor preapproval again', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'ACTIVE',
-                successorStatus: 'PENDING_AUTHORIZATION'
-            });
-            const oldId = await authorization(ids.predecessor.id, true);
+            const ids = await settlementCase(tx);
+            const oldId = ids.predecessorAuthorizationId;
             await fake.cancel({ authorizationId: oldId });
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values([
-                { subscriptionId: ids.predecessor.id, provider: 'MERCADO_PAGO', providerId: oldId },
-                {
-                    subscriptionId: ids.successor.id,
-                    provider: 'MERCADO_PAGO',
-                    providerId: successorId
-                }
-            ]);
+            const successorId = ids.successorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             expect((await deliverAuthorization(successorId)).status).toBe(200);
             expect((await readCloseCase(tx, ids)).predecessor?.status).toBe('CANCELLED');
@@ -229,21 +191,8 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
 
     it('(e) reissues courtesy after S17 closes a live predecessor', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'ACTIVE',
-                successorStatus: 'PENDING_AUTHORIZATION',
-                courtesy: true
-            });
-            const oldId = await authorization(ids.predecessor.id, true);
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values([
-                { subscriptionId: ids.predecessor.id, provider: 'MERCADO_PAGO', providerId: oldId },
-                {
-                    subscriptionId: ids.successor.id,
-                    provider: 'MERCADO_PAGO',
-                    providerId: successorId
-                }
-            ]);
+            const ids = await settlementCase(tx, { courtesy: true });
+            const successorId = ids.successorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             await beforeCancelNotice.beforeCancel({
                 subscriptionId: ids.predecessor.id,
@@ -266,21 +215,9 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
 
     it('(f) retries a deferred S17 and S9 through the job', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'ACTIVE',
-                successorStatus: 'PENDING_AUTHORIZATION',
-                courtesy: true
-            });
-            const oldId = await authorization(ids.predecessor.id, true);
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values([
-                { subscriptionId: ids.predecessor.id, provider: 'MERCADO_PAGO', providerId: oldId },
-                {
-                    subscriptionId: ids.successor.id,
-                    provider: 'MERCADO_PAGO',
-                    providerId: successorId
-                }
-            ]);
+            const ids = await settlementCase(tx, { courtesy: true });
+            const oldId = ids.predecessorAuthorizationId;
+            const successorId = ids.successorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             expect((await deliverAuthorization(successorId)).status).toBe(200);
             expect((await readCloseCase(tx, ids)).predecessor?.status).toBe('ACTIVE');
@@ -298,26 +235,55 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
                 subscriptionId: ids.successor.id,
                 balanceMonths: null
             });
+            expect(oldCancelCalls(oldId)).toHaveLength(1);
+            const second = await subscriptionSuccessionReevaluationJob.handler(context());
+            expect(second.success).toBe(true);
+            expect(second.details).toMatchObject({ selected: 0 });
+            expect(oldCancelCalls(oldId)).toHaveLength(1);
         });
     });
 
     it('reissues courtesy when the predecessor already closed itself before activation', async () => {
         await withCompositionRollback(async (tx) => {
-            const ids = await seedCloseCase(tx, {
-                predecessorStatus: 'CANCELLED',
-                successorStatus: 'PENDING_AUTHORIZATION',
-                courtesy: true
-            });
-            await getSuccessionCloser().closeSuccession({
-                predecessorSubscriptionId: ids.predecessor.id,
-                tx
-            });
-            const successorId = await authorization(ids.successor.id);
-            await tx.insert(providerLinks).values({
-                subscriptionId: ids.successor.id,
-                provider: 'MERCADO_PAGO',
-                providerId: successorId
-            });
+            const ids = await settlementCase(tx, { courtesy: true });
+            const scheduled = await cancelActiveSubscription(
+                {
+                    actor: { id: ids.userId, roles: [], permissions: [] },
+                    subscriptionId: ids.predecessor.id
+                },
+                {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    coverageNotices: { emitCoverageChanged: async () => undefined },
+                    complements: {
+                        addonPolicy: async () => {
+                            throw new Error('unexpected addon policy');
+                        },
+                        listing: async () => {
+                            throw new Error('unexpected listing');
+                        }
+                    }
+                }
+            );
+            if (scheduled.outcome !== 'SCHEDULED') throw new Error('S11 did not schedule');
+            const ended = await applyS12ToPrincipal(
+                { tx, subscriptionId: ids.predecessor.id, now: scheduled.serviceEndsAt },
+                {
+                    clock,
+                    successionCloser: getSuccessionCloser(),
+                    orphanhood: {
+                        addonPolicy: async () => {
+                            throw new Error('unexpected addon policy');
+                        },
+                        listing: async () => {
+                            throw new Error('unexpected listing');
+                        }
+                    }
+                }
+            );
+            expect(ended.outcome).toBe('CANCELLED');
+            const successorId = ids.successorAuthorizationId;
             server.mercadoPagoDeliveries({ webhookSecret });
             expect((await deliverAuthorization(successorId)).status).toBe(200);
             const rows = await readCloseCase(tx, ids);
