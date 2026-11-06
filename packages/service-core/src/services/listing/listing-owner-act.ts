@@ -37,7 +37,9 @@
 
 import { type DomainEventChange, domainEventModel } from '@repo/db';
 import type { Actor, ServiceContext } from '../../types';
+import { resolveAdministrativeAuthorization } from '../../utils/administrative-authorization';
 import { resolveServiceCorrelationId } from '../../utils/correlation';
+import { recordListingBusinessLinesChange } from './listing-business-lines-change';
 import { recordListingSupportEdit } from './listing-support-edit';
 
 /** Kind of listing an owner act is about: the vertical IS the table. */
@@ -173,19 +175,27 @@ export interface RecordListingOwnerActInput {
  * Writes one owner act to `domain_event`, inside `ctx.tx` when there is one.
  *
  * Only the owner's own act is written here. When the actor is not the owner,
- * the call is delegated to {@link recordListingSupportEdit}, which writes only
- * for action 15 (ACC:15, HOS-1493). A failed write throws, so inside a
- * transaction the change it describes rolls back with it: the clock never sees
- * an edit without its event.
+ * the call is delegated to the register of the administrative action the route
+ * opened: action 27 writes the business-line change (HOS-1875), action 15
+ * writes the content edit (ACC:15, HOS-1493), and anything else writes
+ * nothing. A failed write throws, so inside a transaction the change it
+ * describes rolls back with it: the clock never sees an edit without its event.
  *
  * @param input - The act, the listing, the actor, the context and the changes.
- * @returns `{ recorded }`, `false` when neither the owner nor action 15 wrote.
+ * @returns `{ recorded }`, `false` when neither the owner nor an action wrote.
  */
 export async function recordListingOwnerAct(
     input: RecordListingOwnerActInput
 ): Promise<{ readonly recorded: boolean }> {
     const { listing, actor, ctx } = input;
     if (!listing.ownerId || actor.id !== listing.ownerId) {
+        const { authorization } = resolveAdministrativeAuthorization();
+        if (
+            authorization?.action === 'ACC_27' &&
+            (input.entityType === 'venue' || input.entityType === 'experience')
+        ) {
+            return recordListingBusinessLinesChange({ ...input, entityType: input.entityType });
+        }
         return recordListingSupportEdit(input);
     }
 
