@@ -120,7 +120,10 @@ export interface UsePhotoSectionResult {
      * assignment site for why it reuses `buildLimitReachedPayloadFromDetails`.
      */
     readonly capUpsell: LimitReachedToastPayload | null;
+    /** Controls are usable once the hydration attempt finished (success or failure). */
     readonly opsReady: boolean;
+    /** True only when persisted media loaded; gates the alt-text warning, not controls. */
+    readonly mediaLoadSucceeded: boolean;
     readonly anyOpInFlight: boolean;
     readonly featuredInputRef: React.RefObject<HTMLInputElement | null>;
     readonly galleryInputRef: React.RefObject<HTMLInputElement | null>;
@@ -167,6 +170,7 @@ export function usePhotoSection({
     );
 
     const [isHydrated, setIsHydrated] = useState(false);
+    const [mediaLoadSucceeded, setMediaLoadSucceeded] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isCompressing, setIsCompressing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -209,6 +213,7 @@ export function usePhotoSection({
 
     useEffect(() => {
         let cancelled = false;
+        setMediaLoadSucceeded(false);
 
         accommodationMediaApi
             .listMedia({ id: accommodationId })
@@ -222,6 +227,7 @@ export function usePhotoSection({
                 const { featured, gallery } = splitMediaRows(result.data.media);
                 setFeaturedItem(featured);
                 setGalleryItems(gallery);
+                setMediaLoadSucceeded(true);
                 setIsHydrated(true);
             })
             .catch((err: unknown) => {
@@ -617,6 +623,7 @@ export function usePhotoSection({
         isGalleryFull,
         capUpsell,
         opsReady,
+        mediaLoadSucceeded,
         anyOpInFlight,
         featuredInputRef,
         galleryInputRef,

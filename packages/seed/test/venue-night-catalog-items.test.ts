@@ -63,6 +63,7 @@ interface CatalogFixture {
     readonly applicableVerticals?: readonly string[];
     readonly lifecycleState?: string;
     readonly icon?: string;
+    readonly category?: string;
 }
 
 const fixturePath = (kind: CatalogKind, file: string): string =>
@@ -140,6 +141,14 @@ describe('night-life catalog items are catalog rows (HOS-1867)', () => {
 
     it.each(NIGHT_FEATURES)('$slug: is ACTIVE, so the owner can actually tick it', ({ file }) => {
         expect(readFixture('feature', file).lifecycleState).toBe('ACTIVE');
+    });
+
+    it.each(NIGHT_FEATURES)('$slug: is filed under the ACTIVITIES category (HOS-2058)', ({
+        file
+    }) => {
+        // HOS-2058 left these two out of its backfill on purpose; the epic
+        // assigns them, and `0135` carries the same value to live databases.
+        expect(readFixture('feature', file).category).toBe('ACTIVITIES');
     });
 
     it.each(NIGHT_FIXTURES)('$slug: is listed in its required manifest', ({ kind, file }) => {

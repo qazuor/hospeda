@@ -8,7 +8,7 @@
         "pt": "Gimnasio completo"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WELLNESS",
     "icon": "GymIcon",
     "isBuiltin": false,
     "isFeatured": true,

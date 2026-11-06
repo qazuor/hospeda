@@ -1821,6 +1821,14 @@ export const PRODUCTION_PLAN_CATALOG = [
     }
 ] as const satisfies readonly PlanCatalogDefinition[];
 
+/**
+ * Entitlement-only catalog publications after the immutable V2.4b baseline.
+ * Owned by the seed package (migration 0133 consumes it); re-exported here so the
+ * catalog source stays the one place to read the whole catalog. Not part of the
+ * generated SQL on purpose: see the constant's own docblock (GUARD:G18).
+ */
+export { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../packages/seed/src/catalog/next-version-entitlements.js';
+
 /** V2.4a fixture retained for the mechanism tests. */
 export const PLACEHOLDER_CATALOG = [
     {

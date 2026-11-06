@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "074-feature-lgbtq_friendly",
     "slug": "lgbtq_friendly",
+    "category": "AUDIENCE",
     "description": {
         "es": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación",
         "en": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación",

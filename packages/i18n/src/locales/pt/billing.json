@@ -198,8 +198,8 @@
             "pageTitle": "Pagamento recusado"
         },
         "payerEmailConfirm": {
-            "title": "Com qual email você vai poder pagar",
-            "body": "O Mercado Pago só vai deixar você pagar com este email exato. Se quiser usar outra conta do Mercado Pago, altere antes de continuar.",
+            "title": "Confirme a conta que você vai usar para pagar",
+            "body": "Você vai pagar com a conta do Mercado Pago de {{email}}. Se essa não for a conta que quer usar, volte e altere o email.",
             "label": "Email de pagamento",
             "invalidError": "Digite um email válido",
             "plusError": "O Mercado Pago não aceita emails com \"+\". Digite outro endereço para poder pagar.",
@@ -235,8 +235,8 @@
             "confirm": "Continuar para o Mercado Pago",
             "submitting": "Preparando o pagamento…",
             "payerEmail": {
-                "label": "E-mail da sua conta do Mercado Pago",
-                "hint": "Tem que ser o e-mail da conta com a qual você vai pagar. Se for diferente do e-mail da sua conta Hospeda, mude aqui: se não coincidir, o Mercado Pago recusa o pagamento.",
+                "label": "Qual email você usa para entrar no Mercado Pago?",
+                "hint": "O Mercado Pago precisa deste email para cobrar e só aceita o pagamento pela conta que o usa. Já preenchemos com o email da sua conta Hospeda; altere apenas se você usa outro no Mercado Pago. Se não coincidir, o pagamento será recusado e nada será cobrado.",
                 "invalid": "Informe um e-mail válido."
             },
             "pending": {

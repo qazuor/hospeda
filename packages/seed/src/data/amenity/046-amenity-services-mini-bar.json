@@ -8,7 +8,7 @@
         "pt": "Mini bar en habitación"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "MiniBarIcon",
     "isBuiltin": false,
     "isFeatured": true,

@@ -72,6 +72,8 @@
 
 .payerEmailHint {
     color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
 }
 
 .payerEmailError {

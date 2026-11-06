@@ -10,5 +10,11 @@ export enum AmenitiesTypeEnum {
     SAFETY = 'SAFETY',
     FAMILY_FRIENDLY = 'FAMILY_FRIENDLY',
     WORK_FRIENDLY = 'WORK_FRIENDLY',
-    GENERAL_APPLIANCES = 'GENERAL_APPLIANCES'
+    GENERAL_APPLIANCES = 'GENERAL_APPLIANCES',
+    // HOS-2058: appended at the end (Postgres appends enum values; order is compared).
+    PARKING = 'PARKING',
+    LAUNDRY = 'LAUNDRY',
+    WATER_ACTIVITIES = 'WATER_ACTIVITIES',
+    WELLNESS = 'WELLNESS',
+    DINING = 'DINING'
 }

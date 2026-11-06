@@ -249,11 +249,13 @@ const isNew = data.createdAt
 					</div>
 				) : (
 					<div class="acc-card__price-block">
-						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Consultar')}</span>
+						<span class="acc-card__price-value acc-card__price-value--consult">{t('home.accommodations.price.consult', 'Precio a consultar')}</span>
 					</div>
 				)}
-				<span class="acc-card__cta-btn">
-					{t('common.readMore', 'Ver más')} →
+				<span class:list={['acc-card__cta-btn', !formattedPrice && 'acc-card__cta-btn--compact']}>
+					{formattedPrice
+						? `${t('common.readMore', 'Ver más')} →`
+						: `${t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad')} →`}
 				</span>
 			</div>
 		</div>
@@ -690,8 +692,11 @@ const isNew = data.createdAt
 		color: var(--core-muted-foreground);
 	}
 
-	/* Divider */
+	/* Divider — `margin-top: auto` pushes it and the price/CTA row below it to
+	 * the bottom of the (flex: 1) content column, so the footer lines up across
+	 * a row of cards whatever the title/description length (HOS-2035). */
 	.acc-card__divider {
+		margin-top: auto;
 		height: 1px;
 		background-color: var(--border);
 		width: 100%;
@@ -710,6 +715,7 @@ const isNew = data.createdAt
 		align-items: baseline;
 		gap: 4px;
 		white-space: nowrap;
+		min-width: 0;
 	}
 
 	.acc-card__price-label {
@@ -726,6 +732,15 @@ const isNew = data.createdAt
 		font-size: 16px;
 		line-height: 24px;
 		color: var(--brand-accent-text);
+	}
+
+	.acc-card__price-value--consult {
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 11px;
+		line-height: 17.6px;
+		color: var(--core-muted-foreground);
+		white-space: normal;
 	}
 
 	.acc-card__cta-btn {
@@ -753,6 +768,10 @@ const isNew = data.createdAt
 
 	.acc-card:hover .acc-card__cta-btn {
 		opacity: 0.85;
+	}
+
+	.acc-card__cta-btn--compact {
+		padding-inline: var(--space-3, 0.75rem);
 	}
 
 	/*

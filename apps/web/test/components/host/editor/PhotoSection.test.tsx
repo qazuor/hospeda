@@ -44,7 +44,8 @@ const {
     mockReorderMedia,
     mockUpdateMedia,
     mockUploadEntityImage,
-    mockAddToast
+    mockAddToast,
+    mockRequestLeaveWarning
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
@@ -54,7 +55,13 @@ const {
     mockReorderMedia: vi.fn(),
     mockUpdateMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
-    mockAddToast: vi.fn()
+    mockAddToast: vi.fn(),
+    mockRequestLeaveWarning: vi.fn().mockResolvedValue(true)
+}));
+
+vi.mock('@/lib/forms/leave-warning-registry', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/forms/leave-warning-registry')>()),
+    requestLeaveWarning: mockRequestLeaveWarning
 }));
 
 // ---------------------------------------------------------------------------
@@ -431,6 +438,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 const urls = imgs.map((i) => i.getAttribute('src'));
                 expect(urls).toContain(NEW_ROW.url);
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('does NOT mutate gallery state when addMedia fails', async () => {
@@ -494,6 +502,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(imgs).toHaveLength(1);
                 expect(imgs[0]).toHaveAttribute('src', GALLERY_ROW_2.url);
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('does NOT remove the item from state when removeMedia fails', async () => {
@@ -910,6 +919,46 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(urls).toContain(FEATURED_ROW.url);
             });
         });
+
+        it('promotes at the gallery cap and keeps the demoted cover in the gallery', async () => {
+            const galleryAtCap = Array.from({ length: 50 }, (_, index) => ({
+                ...GALLERY_ROW_1,
+                id: `gallery-${index}`,
+                url: `https://cdn.example.com/gallery-${index}.jpg`,
+                sortOrder: index
+            }));
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, ...galleryAtCap]));
+            const promotedRow = { ...galleryAtCap[0]!, isFeatured: true };
+            mockSetFeaturedMedia.mockResolvedValue({
+                ok: true as const,
+                data: { media: promotedRow }
+            });
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(51));
+
+            fireEvent.click(screen.getByLabelText('Usar foto 1 como portada'));
+
+            await waitFor(() =>
+                expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: 'gallery-0'
+                })
+            );
+            await waitFor(() => {
+                expect(screen.getAllByRole('img')).toHaveLength(51);
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
+                    'src',
+                    promotedRow.url
+                );
+                expect(
+                    screen
+                        .getAllByRole('img')
+                        .some((image) => image.getAttribute('src') === FEATURED_ROW.url)
+                ).toBe(true);
+            });
+            expect(mockAddToast).not.toHaveBeenCalled();
+        });
     });
 
     // ── 9. Manual reordering (HOS-122) ──────────────────────────────────────
@@ -934,6 +983,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                     orderedIds: [FEATURED_ROW.id, GALLERY_ROW_2.id, GALLERY_ROW_1.id]
                 });
             });
+            expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
         it('disables move-up on the first item and move-down on the last item', async () => {
@@ -1056,6 +1106,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             await waitFor(() => {
                 expect(screen.getByAltText('Living con sofá')).toBeInTheDocument();
             });
+            expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
         });
 
         it('correcting an existing alt replaces it, and leaves the other gallery photo untouched', async () => {

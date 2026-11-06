@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "069-feature-private_viewpoint",
     "slug": "private_viewpoint",
+    "category": "VIEW",
     "description": {
         "es": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje",
         "en": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje",

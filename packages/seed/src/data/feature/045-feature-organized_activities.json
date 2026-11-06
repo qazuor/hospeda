@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "045-feature-organized_activities",
     "slug": "organized_activities",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
         "en": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",

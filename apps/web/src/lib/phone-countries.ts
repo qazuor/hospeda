@@ -158,5 +158,14 @@ export function composePhoneValue(params: {
     if (!trimmedNumber) {
         return '';
     }
+    // Already international: a pasted "+54 9 ..." must not become "+54 +54 9 ...".
+    if (trimmedNumber.startsWith('+')) {
+        return trimmedNumber;
+    }
+    // Argentina only: no Argentine area code starts with 54, so a leading "54" is
+    // the country code typed by hand ("54 3442 452345"), never part of the number.
+    if (params.country.dialCode === '+54' && /^54[\s\d()-]/.test(trimmedNumber)) {
+        return `+${trimmedNumber}`;
+    }
     return `${params.country.dialCode} ${trimmedNumber}`;
 }

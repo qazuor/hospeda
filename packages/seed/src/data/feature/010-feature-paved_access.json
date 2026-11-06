@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "010-feature-paved_access",
     "slug": "paved_access",
+    "category": "ACCESS",
     "description": {
         "es": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",
         "en": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",

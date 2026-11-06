@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "054-feature-no_tv_area",
     "slug": "no_tv_area",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
         "en": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",

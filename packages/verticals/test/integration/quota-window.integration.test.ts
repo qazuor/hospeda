@@ -149,11 +149,11 @@ describe('TEST:V3:10 — monthly quota with a real cuota_ventana', () => {
         expect(await rows(userId)).toMatchObject([{ consumed: 120, closes_at: at('2026-02-15') }]);
     });
 
-    it('TEST:V3:10 (f) — two titles grant quota and the oldest anchors', async () => {
+    it('TEST:V3:10 (f) — the subscription supersedes the trial quota (HOS-2027); the oldest title still anchors', async () => {
         const userId = await user();
         const { consume } = scenario(userId, '2026-01-20');
         expect(
-            await consume(350, [
+            await consume(250, [
                 source('SUBSCRIPTION', at('2026-01-20'), 300),
                 source('TRIAL', at('2026-01-05'), 100)
             ])

@@ -49,14 +49,16 @@ function plan(slug: string, entitlements: readonly EntitlementKeyEnum[]): PlanCe
 const OWNER_BASICO = plan('owner-basico', [
     EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT,
+    EntitlementKeyEnum.CAN_EMBED_VIDEO
 ]);
 const OWNER_PRO = plan('owner-pro', [
     EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
     EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT,
     EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR,
-    EntitlementKeyEnum.FEATURED_LISTING
+    EntitlementKeyEnum.FEATURED_LISTING,
+    EntitlementKeyEnum.CAN_EMBED_VIDEO
 ]);
 const OWNER_PREMIUM = plan('owner-premium', [
     EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
@@ -66,7 +68,8 @@ const OWNER_PREMIUM = plan('owner-premium', [
     EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR,
     EntitlementKeyEnum.FEATURED_LISTING,
     EntitlementKeyEnum.CUSTOM_BRANDING,
-    EntitlementKeyEnum.HAS_VERIFICATION_BADGE
+    EntitlementKeyEnum.HAS_VERIFICATION_BADGE,
+    EntitlementKeyEnum.CAN_EMBED_VIDEO
 ]);
 
 // tourist-free deliberately lacks CAN_VIEW_RECOMMENDATIONS: it was moved to
@@ -272,6 +275,18 @@ describe('catalog row guards', () => {
         expect(row('compare').cell).toEqual({
             kind: 'entitlement',
             key: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
+        });
+    });
+
+    it('shows the video link in every accommodation plan column (HOS-2037)', () => {
+        expect(cellsBySlug('video', ALL_OWNER_PLANS)).toEqual({
+            'owner-basico': 'yes',
+            'owner-pro': 'yes',
+            'owner-premium': 'yes'
+        });
+        expect(row('video').cell).toEqual({
+            kind: 'entitlement',
+            key: EntitlementKeyEnum.CAN_EMBED_VIDEO
         });
     });
 

@@ -69,3 +69,18 @@ export function addon(args: {
     });
     return { source, grants: args.grants };
 }
+
+/** A live BASE (floor) source of the vertical. */
+export function base(grantList: readonly SourceGrant[]): FoldableSource {
+    const source: CoverageSource = CoverageSourceSchema.parse({
+        type: 'BASE',
+        reference: PLAN_REFERENCE,
+        scope: 'VERTICAL',
+        target: null,
+        since: SINCE,
+        until: 'NEVER_EXPIRES',
+        charged: null,
+        floor: null
+    });
+    return { source, grants: grantList };
+}

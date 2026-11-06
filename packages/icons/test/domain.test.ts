@@ -243,8 +243,15 @@ describe('amenity-type', () => {
                 'SAFETY',
                 'FAMILY_FRIENDLY',
                 'WORK_FRIENDLY',
-                'GENERAL_APPLIANCES'
+                'GENERAL_APPLIANCES',
+                // HOS-2058
+                'PARKING',
+                'LAUNDRY',
+                'WATER_ACTIVITIES',
+                'WELLNESS',
+                'DINING'
             ];
+            expect(Object.keys(AMENITY_TYPE_VISUALS).sort()).toEqual([...knownTypes].sort());
             for (const type of knownTypes) {
                 const visual = getAmenityTypeVisual({ type });
                 expect(visual).toBe(AMENITY_TYPE_VISUALS[type]);

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "080-feature-workshop_training_space",
     "slug": "workshop_training_space",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",
         "en": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",

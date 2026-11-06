@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "041-feature-smoking_area",
     "slug": "smoking_area",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
         "en": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",

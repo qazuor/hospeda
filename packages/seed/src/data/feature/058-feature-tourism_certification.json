@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "058-feature-tourism_certification",
     "slug": "tourism_certification",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",
         "en": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",

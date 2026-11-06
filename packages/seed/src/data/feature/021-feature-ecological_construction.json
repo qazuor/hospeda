@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "021-feature-ecological_construction",
     "slug": "ecological_construction",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Edificación sustentable con materiales ecológicos, técnicas de bioconstrucción y mínimo impacto ambiental",
         "en": "Edificación sustentable con materiales ecológicos, técnicas de bioconstrucción y mínimo impacto ambiental",

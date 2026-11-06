@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "016-feature-ideal_for_seniors",
     "slug": "ideal_for_seniors",
+    "category": "AUDIENCE",
     "description": {
         "es": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",
         "en": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",

@@ -47,13 +47,12 @@
  *
  * ## Not covered
  *
- * Back/forward navigation. By the time any event fires the browser has already
- * committed the history entry, so only a history trap could catch it — see the
- * spec's NG-6. A user who presses back still loses unsaved edits.
+ * Browser back/forward navigation. The shared registry intercepts internal
+ * link clicks and guarded save actions, but does not trap `popstate`.
  */
 
 import { useEffect } from 'react';
-import type { LeaveWarningKind } from '@/lib/forms/leave-warning-registry';
+import type { LeaveWarningCopy, LeaveWarningKind } from '@/lib/forms/leave-warning-registry';
 import { registerLeaveWarning } from '@/lib/forms/leave-warning-registry';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -95,6 +94,8 @@ export interface UseUnsavedChangesGuardOptions {
      * runs — the host was shown, and answered, all of them in a single dialog.
      */
     readonly onConfirm?: () => void;
+    /** Called when the host dismisses the dialog and stays on the current page. */
+    readonly onCancel?: () => void;
     /**
      * What this warning is about. Defaults to `'unsaved-changes'`, which is
      * what every consumer of this hook meant before kinds existed. Only used to
@@ -102,11 +103,24 @@ export interface UseUnsavedChangesGuardOptions {
      */
     readonly kind?: LeaveWarningKind;
     /**
+     * Whether non-navigation actions such as saves should request this
+     * warning. Defaults to `true`; set to `false` for leave-only nudges.
+     */
+    readonly guardsSaves?: boolean;
+    /**
      * How many items the warning is about, for kinds whose combined copy is
      * pluralized. Ignored when this warning is the only active one — `message`
      * already carries its own count in that case.
      */
     readonly count?: number;
+    /**
+     * Also intercept `data-astro-reload` links. Defaults to
+     * `!includeBeforeUnload`: a guard with no native prompt must catch full
+     * loads itself, one with the native prompt is already covered.
+     */
+    readonly interceptReloadLinks?: boolean;
+    /** Rebuilds this warning's copy when a save changes its count. */
+    readonly copyForCount?: (count: number) => LeaveWarningCopy;
     /**
      * Locale used to build the COMBINED copy when this warning shares a page
      * with another one. Optional, and irrelevant while this is the only guard
@@ -144,8 +158,12 @@ export function useUnsavedChangesGuard({
     cancelLabel,
     includeBeforeUnload = true,
     onConfirm,
+    onCancel,
     kind = 'unsaved-changes',
+    guardsSaves = true,
     count,
+    copyForCount,
+    interceptReloadLinks = !includeBeforeUnload,
     locale
 }: UseUnsavedChangesGuardOptions): void {
     useEffect(() => {
@@ -171,10 +189,14 @@ export function useUnsavedChangesGuard({
         // all but the first — see this file's header and HOS-1018.
         const unregister = registerLeaveWarning({
             kind,
+            guardsSaves,
             count,
             locale,
             copy: { message, title, confirmLabel, cancelLabel },
-            onConfirm
+            copyForCount,
+            interceptReloadLinks,
+            onConfirm,
+            onCancel
         });
 
         return () => {
@@ -191,8 +213,12 @@ export function useUnsavedChangesGuard({
         cancelLabel,
         includeBeforeUnload,
         onConfirm,
+        onCancel,
         kind,
+        guardsSaves,
         count,
+        copyForCount,
+        interceptReloadLinks,
         locale
     ]);
 }

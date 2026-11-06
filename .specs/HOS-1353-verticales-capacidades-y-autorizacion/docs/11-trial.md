@@ -428,6 +428,16 @@ distinguía *«autorizó»* de *«cobró»*.
 trial y la suscripción a la vez, y el pliegue los suma. Está declarado donde se pliega (cap. 15
 §2.6) y en la máquina (cap. 03 §2, *«los 26–44 minutos»*).
 
+> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba ya no rige.
+> En el pliegue (`selectPlegableSources`), una fuente `TRIAL` deja de aportar **apenas hay una fuente
+> `SUSCRIPCIÓN` de clase `TÍTULO` en la misma vertical**: las claves `SUMA` toman el cupo de la
+> suscripción, no trial + suscripción. Los `ADDON` siguen sumando sobre ella. Si la suscripción
+> deja de dar título, el trial vuelve a aportar. Motivo: la suma produjo el canje
+> restaurar-y-recortar medido en staging (con `max_accommodations` 1 + 1 = 2, el recálculo
+> republicó la ficha más vieja despublicada por billing y, al convertirse el trial, el tope 1
+> recortó la ficha nueva publicada a mano). `cobertura` **sigue listando el trial** (contrato
+> `12-contrato…` §2.1): la regla vive en el pliegue, no en el contrato.
+
 ### 9.3 Lo que la superficie tiene que decir
 
 Las dos mitades se dicen **antes de confirmar el checkout** de alguien en trial: que al acreditarse

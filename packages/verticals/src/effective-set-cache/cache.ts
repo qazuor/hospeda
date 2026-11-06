@@ -3,7 +3,7 @@ import type { EffectiveSetCacheLogger, EffectiveSetCodec, RedisLike } from './ty
 
 const ENTRY_MAX_AGE_MS = 15 * 60 * 1000;
 const GENERATION_TTL_MS = 30 * 60 * 1000;
-const PREFIX = 'vset:v1:';
+const PREFIX = 'vset:v2:';
 
 interface Envelope {
     readonly version: 1;

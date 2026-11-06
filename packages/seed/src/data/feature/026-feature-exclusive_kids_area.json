@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "026-feature-exclusive_kids_area",
     "slug": "exclusive_kids_area",
+    "category": "AUDIENCE",
     "description": {
         "es": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",
         "en": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",

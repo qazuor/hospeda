@@ -70,14 +70,14 @@ describe('TEST:V3:8 cache invalidation', () => {
             vertical: 'ACCOMMODATION',
             load: async () => snapshot('peek', 'ACCOMMODATION', 7)
         });
-        const before = new Map(h.redis.hashes.get('vset:v1:u:peek'));
+        const before = new Map(h.redis.hashes.get('vset:v2:u:peek'));
         await expect(cache.peek({ userId: 'peek', vertical: 'ACCOMMODATION' })).resolves.toEqual(
             snapshot('peek', 'ACCOMMODATION', 7)
         );
         await expect(
             cache.peek({ userId: 'missing', vertical: 'ACCOMMODATION' })
         ).resolves.toBeUndefined();
-        expect(h.redis.hashes.get('vset:v1:u:peek')).toEqual(before);
+        expect(h.redis.hashes.get('vset:v2:u:peek')).toEqual(before);
         h.advance(15 * 60 * 1000);
         await expect(
             cache.peek({ userId: 'peek', vertical: 'ACCOMMODATION' })
@@ -96,7 +96,7 @@ describe('TEST:V3:8 cache invalidation', () => {
         await expect(
             cache.peek({ userId: 'stale', vertical: 'ACCOMMODATION' })
         ).resolves.toBeUndefined();
-        h.redis.hashes.set('vset:v1:u:bad', new Map([['ACCOMMODATION', '{bad']]));
+        h.redis.hashes.set('vset:v2:u:bad', new Map([['ACCOMMODATION', '{bad']]));
         await expect(
             cache.peek({ userId: 'bad', vertical: 'ACCOMMODATION' })
         ).resolves.toBeUndefined();
@@ -146,7 +146,7 @@ describe('TEST:V3:8 cache invalidation', () => {
     it('rejects corrupt and other-version entries and respects computedAt even when hash TTL is refreshed', async () => {
         const h = harness();
         const cache = h.create();
-        const key = 'vset:v1:u:a';
+        const key = 'vset:v2:u:a';
         h.redis.hashes.set(key, new Map([['ACCOMMODATION', '{broken']]));
         const load = vi.fn(async () => snapshot('a', 'ACCOMMODATION', 1));
         await cache.readThrough({ userId: 'a', vertical: 'ACCOMMODATION', load });

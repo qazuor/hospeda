@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "035-feature-private_grill",
     "slug": "private_grill",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Zona de asado exclusiva para el alojamiento con parrilla completa, utensilios y área de preparación",
         "en": "Zona de asado exclusiva para el alojamiento con parrilla completa, utensilios y área de preparación",

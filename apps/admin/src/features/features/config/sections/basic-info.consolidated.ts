@@ -1,4 +1,4 @@
-import { PermissionEnum } from '@repo/schemas';
+import { FeatureCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 
@@ -8,7 +8,27 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
  * SPEC-266: `name` column dropped from the schema — display label is now
  * resolved at runtime from `@repo/i18n` using `accommodations.featureNames.<slug>`.
  * `applicableVerticals` added as a required checkbox-group field (min 1 vertical).
+ *
+ * HOS-2058: `category` (`FeatureCategoryEnum`) groups the feature on the public
+ * listing and in the host editor. Optional while `features.category` is
+ * nullable; the select is not clearable because the update schema rejects an
+ * empty string, and NULL only exists for rows nobody has classified yet.
  */
+
+/** Spanish labels for `FeatureCategoryEnum`, in the canonical display order. */
+export const FEATURE_CATEGORY_OPTIONS = [
+    { value: FeatureCategoryEnum.LOCATION, label: 'Ubicación' },
+    { value: FeatureCategoryEnum.VIEW, label: 'Vistas' },
+    { value: FeatureCategoryEnum.ACCESS, label: 'Acceso' },
+    { value: FeatureCategoryEnum.STYLE, label: 'Estilo' },
+    { value: FeatureCategoryEnum.AUDIENCE, label: 'Ideal para' },
+    { value: FeatureCategoryEnum.OFFER_PROFILE, label: 'Perfil de la oferta' },
+    { value: FeatureCategoryEnum.SUSTAINABILITY, label: 'Sustentabilidad' },
+    { value: FeatureCategoryEnum.ACTIVITIES, label: 'Actividades' },
+    { value: FeatureCategoryEnum.CUISINE, label: 'Cocina' },
+    { value: FeatureCategoryEnum.DIETARY, label: 'Opciones alimentarias' },
+    { value: FeatureCategoryEnum.LANGUAGE, label: 'Idiomas' }
+] as const;
 export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'basic-info',
     title: 'Información Básica',
@@ -54,6 +74,22 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                 minRows: 2,
                 maxLength: 500,
                 minLength: 10
+            }
+        },
+        {
+            id: 'category',
+            type: FieldTypeEnum.SELECT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Categoría',
+            description:
+                'Grupo en el que se muestra la característica en la ficha y en el editor del anfitrión',
+            permissions: {
+                view: [PermissionEnum.FEATURE_CREATE],
+                edit: [PermissionEnum.FEATURE_UPDATE]
+            },
+            typeConfig: {
+                options: [...FEATURE_CATEGORY_OPTIONS]
             }
         },
         {

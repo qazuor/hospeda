@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "007-feature-residential_area",
     "slug": "residential_area",
+    "category": "LOCATION",
     "description": {
         "es": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",
         "en": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",

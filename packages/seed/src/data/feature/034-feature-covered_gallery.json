@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "034-feature-covered_gallery",
     "slug": "covered_gallery",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",
         "en": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",

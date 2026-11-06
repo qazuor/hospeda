@@ -2,6 +2,8 @@ import {
     AccessRightScopeEnum,
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
+    AmenityAvailabilityEnum,
+    AmenityScopeEnum,
     AuthProviderEnum,
     CalendarSyncStatusEnum,
     ClientTypeEnum,
@@ -15,6 +17,7 @@ import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
     ExternalPlatformEnum,
+    FeatureCategoryEnum,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     HostTradeUsageChannelEnum,
@@ -89,6 +92,21 @@ export const AccessRightScopePgEnum = pgEnum(
 );
 
 export const AmenitiesTypePgEnum = pgEnum('amenities_type_enum', enumToTuple(AmenitiesTypeEnum));
+
+/** HOS-2058: category of a catalog feature (`features.category`). */
+export const FeatureCategoryPgEnum = pgEnum(
+    'feature_category_enum',
+    enumToTuple(FeatureCategoryEnum)
+);
+
+/** HOS-2058: private/shared attribute of an accommodation-amenity relation. */
+export const AmenityScopePgEnum = pgEnum('amenity_scope_enum', enumToTuple(AmenityScopeEnum));
+
+/** HOS-2058: year-round/seasonal attribute of an accommodation-amenity relation. */
+export const AmenityAvailabilityPgEnum = pgEnum(
+    'amenity_availability_enum',
+    enumToTuple(AmenityAvailabilityEnum)
+);
 
 export const ClientTypePgEnum = pgEnum('client_type_enum', enumToTuple(ClientTypeEnum));
 

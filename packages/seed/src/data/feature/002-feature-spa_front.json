@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "002-feature-spa_front",
     "slug": "spa_front",
+    "category": "LOCATION",
     "description": {
         "es": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",
         "en": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",

@@ -43,7 +43,12 @@
                 "SAFETY",
                 "FAMILY_FRIENDLY",
                 "WORK_FRIENDLY",
-                "GENERAL_APPLIANCES"
+                "GENERAL_APPLIANCES",
+                "PARKING",
+                "LAUNDRY",
+                "WATER_ACTIVITIES",
+                "WELLNESS",
+                "DINING"
             ],
             "description": "Amenity type"
         },

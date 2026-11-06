@@ -198,8 +198,8 @@
             "pageTitle": "Payment rejected"
         },
         "payerEmailConfirm": {
-            "title": "Which email you'll be able to pay with",
-            "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
+            "title": "Confirm the account you’ll pay with",
+            "body": "You’ll pay with the Mercado Pago account for {{email}}. If that isn’t the account you want to use, go back and change the email.",
             "label": "Payment email",
             "invalidError": "Enter a valid email",
             "plusError": "Mercado Pago does not accept emails containing \"+\". Enter a different address so you can pay.",
@@ -235,8 +235,8 @@
             "confirm": "Continue to Mercado Pago",
             "submitting": "Preparing your payment…",
             "payerEmail": {
-                "label": "Email of your Mercado Pago account",
-                "hint": "It must be the email of the account you will pay with. If it differs from your Hospeda email, change it here: if it does not match, Mercado Pago will reject the payment.",
+                "label": "Which email do you use to sign in to Mercado Pago?",
+                "hint": "Mercado Pago needs this email to charge you and only accepts payment from the account that uses it. We’ve filled in your Hospeda email; change it only if you use another one in Mercado Pago. If they don’t match, the payment is rejected and you won’t be charged.",
                 "invalid": "Enter a valid email."
             },
             "pending": {

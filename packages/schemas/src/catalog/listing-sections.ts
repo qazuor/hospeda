@@ -313,7 +313,9 @@ export const LISTING_SECTIONS = {
             id: 'amenities',
             vertical: 'accommodation',
             common: true,
-            fields: ['amenityIds', 'featureIds'],
+            // HOS-2058: per-amenity scope/availability is written with the
+            // amenity selection, from the same editor section.
+            fields: ['amenityIds', 'featureIds', 'amenityAttributes'],
             order: 4,
             group: 'property'
         },

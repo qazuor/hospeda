@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "003-feature-panoramic_view_extended",
     "slug": "panoramic_view_extended",
+    "category": "VIEW",
     "description": {
         "es": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
         "en": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",

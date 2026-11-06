@@ -8,7 +8,7 @@
         "pt": "Pedidos para llevar disponibles"
     },
     "applicableVerticals": ["venue"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "LuggageStorageIcon",
     "isBuiltin": false,
     "isFeatured": true,

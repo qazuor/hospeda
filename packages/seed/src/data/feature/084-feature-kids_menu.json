@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "084-feature-kids_menu",
     "slug": "kids_menu",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Menú especial para niños con porciones y preparaciones adecuadas",
         "en": "Menú especial para niños con porciones y preparaciones adecuadas",

@@ -12,6 +12,8 @@
  * refuses a contradiction, so its result never depends on the order the sources
  * arrive in either way.
  *
+ * A TRIAL contributes nothing when a live SUBSCRIPTION title exists in this
+ * vertical's source set; it contributes again when that title disappears.
  * The four strategies fold the SAME set — the one that survives the discard of
  * {@link selectPlegableSources}, not the one `cobertura` returns. `SUM` adds
  * every source; the three "does not accumulate" strategies are one rule said

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "094-feature-pregnancy_safe",
     "slug": "pregnancy_safe",
+    "category": "AUDIENCE",
     "description": {
         "es": "Actividad segura y adaptada para mujeres embarazadas",
         "en": "Actividad segura y adaptada para mujeres embarazadas",

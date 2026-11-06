@@ -178,10 +178,14 @@ if (import.meta.env.SSR) {
  * setting the headers inline at each early return.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+    const passDepth = context.locals.middlewarePassDepth ?? 0;
+    context.locals.middlewarePassDepth = passDepth + 1;
+    const isNestedPass = passDepth > 0;
+
     // HOS-1973: bind the visitor IP so SSR calls to the API forward it.
     const response = await runWithVisitorIp({
         headers: context.request.headers,
-        fn: () => runMiddlewarePipeline(context, next)
+        fn: () => runMiddlewarePipeline(context, next, isNestedPass)
     });
     applySecurityHeaders({ headers: response.headers });
     return response;
@@ -196,7 +200,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
  * @param next - Astro's `MiddlewareNext`, invoking the rest of the pipeline.
  * @returns The `Response` for this request.
  */
-async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext): Promise<Response> {
+async function runMiddlewarePipeline(
+    context: APIContext,
+    next: MiddlewareNext,
+    isNestedPass: boolean
+): Promise<Response> {
     // Step -1: Take this process's one shot at purging the edge cache for the
     // deploy that started it (HOS-427). Deliberately the FIRST thing in the
     // handler, before the static-asset early return, so that whatever request
@@ -486,8 +494,12 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
 
     let response = await next();
 
-    // Step 8: If the downstream handler returned a BODY-LESS 404, rewrite to our
-    // custom 404 page so it renders with the full site layout and i18n context.
+    // Step 8: If the downstream handler returned a 404, rewrite to our custom 404 page
+    // so it renders with the full site layout and i18n context. Astro shares
+    // `locals` across rewrite rendering phases and re-runs middleware for each
+    // phase. HOS-2015: rewriting a nested pagination 404 starts another phase
+    // from inside a rewrite, eventually producing Astro's 508 Loop Detected.
+    // Leave nested 404s raw so the outermost pass renders the custom page once.
     //
     // HOS-1868: the `response.body === null` guard is not cosmetic — it is what
     // stops a 508, and it mirrors the condition Astro itself uses to reroute an
@@ -511,7 +523,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // Steps 9-11 instead of returning (HOS-263): an early `return` here skipped
     // the CSP header, the noindex `X-Robots-Tag` and the cache-tag handling, so
     // every error page shipped without a policy.
-    if (response.status === 404 && response.body === null) {
+    if (response.status === 404 && response.body === null && !isNestedPass) {
         response = await context.rewrite('/404');
     }
 
@@ -544,8 +556,9 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // 410 reached through an inner rewrite already carries the rendered `/404`
     // body; rewriting it again from the outer pass was the other half of the
     // 508 double-rewrite. A body-less 410 (the only kind this app produces) is
-    // unaffected.
-    if (response.status === 410 && response.body === null) {
+    // unaffected. HOS-2015 adds the `isNestedPass` half: nested passes leave the
+    // response raw so only the outermost pass renders the error page.
+    if (response.status === 410 && response.body === null && !isNestedPass) {
         const rendered = await context.rewrite('/404');
         response = new Response(rendered.body, {
             status: 410,

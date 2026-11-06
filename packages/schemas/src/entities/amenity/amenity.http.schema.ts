@@ -71,12 +71,8 @@ export type AmenitySearchHttp = z.infer<typeof AmenitySearchHttpSchema>;
 export const AmenityCreateHttpSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
-    applicableVerticals: z
-        .array(z.enum(['accommodation', 'venue', 'experience']))
-        .min(1)
-        .default(['accommodation']),
+    applicableVerticals: z.array(ApplicableVerticalSchema).min(1).default(['accommodation']),
     type: AmenitiesTypeEnumSchema,
-    category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
     isActive: httpBodyBoolean().default(true),
@@ -174,7 +170,7 @@ export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityC
     // Required fields with defaults for domain schema
     lifecycleState: LifecycleStatusEnum.ACTIVE
 
-    // Note: category, priority, isActive, isPopular from HTTP schema
+    // Note: priority, isActive, isPopular from HTTP schema
     // don't exist in domain schema - these are handled at service layer
 });
 

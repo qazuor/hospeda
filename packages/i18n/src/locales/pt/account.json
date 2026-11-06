@@ -446,6 +446,9 @@
             "endedTitle": "Seu teste grátis de {{vertical}} terminou",
             "endedConverted": "Seu teste terminou e agora você tem seu plano.",
             "endedExpired": "Seu teste terminou em {{end}}.",
+            "activePlanMessage": "Quando seu teste terminar, seu anúncio deixará de aparecer. Escolha um plano para mantê-lo publicado.",
+            "endedPlanMessage": "Seu teste terminou. Escolha um plano para publicar novamente.",
+            "choosePlan": "Escolha seu plano",
             "vertical": {
                 "accommodation": "hospedagem",
                 "experience": "experiências",

@@ -559,7 +559,25 @@
             "safety": "Seguridad",
             "familyFriendly": "Apto familia",
             "workFriendly": "Apto trabajo",
-            "generalAppliances": "Electrodomésticos"
+            "generalAppliances": "Electrodomésticos",
+            "parking": "Estacionamiento",
+            "laundry": "Lavandería",
+            "waterActivities": "Actividades acuáticas",
+            "wellness": "Bienestar",
+            "dining": "Comidas y bebidas"
+        },
+        "featureCategory": {
+            "location": "Ubicación",
+            "view": "Vistas",
+            "access": "Acceso",
+            "style": "Estilo",
+            "audience": "Ideal para",
+            "offerProfile": "Perfil de la oferta",
+            "sustainability": "Sustentabilidad",
+            "activities": "Actividades",
+            "cuisine": "Cocina",
+            "dietary": "Opciones alimentarias",
+            "language": "Idiomas"
         },
         "event": {
             "concert": "Concierto",
@@ -792,7 +810,7 @@
         "fieldPremium": "{field} - Premium",
         "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores",
         "richDescriptionNudge": "Tu plan no incluye descripciones enriquecidas. Podés editar la descripción como texto plano.",
-        "videoNudge": "La incorporación de videos está disponible en planes superiores.",
+        "videoNudge": "Los enlaces de video están disponibles en todos los planes de alojamiento.",
         "upgradeLink": "Actualizar plan"
     },
     "limitGate": {

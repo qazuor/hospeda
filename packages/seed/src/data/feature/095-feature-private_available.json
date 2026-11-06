@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "095-feature-private_available",
     "slug": "private_available",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Modalidad privada disponible para grupos o contratación exclusiva",
         "en": "Modalidad privada disponible para grupos o contratación exclusiva",

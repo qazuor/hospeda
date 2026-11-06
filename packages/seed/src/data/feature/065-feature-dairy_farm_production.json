@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "065-feature-dairy_farm_production",
     "slug": "dairy_farm_production",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
         "en": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",

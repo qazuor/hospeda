@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "072-feature-bilingual_services",
     "slug": "bilingual_services",
+    "category": "LANGUAGE",
     "description": {
         "es": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
         "en": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",

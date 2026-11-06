@@ -113,7 +113,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
 // mobilePhone — the exact shape a shallow JSONB merge can leave behind.
 const CONTACT_WITHOUT_MOBILE = { whatsapp: '+5493435551234' } as const;
 
-// Legacy/persisted phone values that FAIL the strict write regex but were once
+// Legacy/persisted phone values that FAIL the shared write validator but were once
 // storable. A read schema must accept them (never 500); a write schema must not.
 const LEGACY_CONTACT_VALUES: ReadonlyArray<{ label: string; value: Record<string, string> }> = [
     { label: 'AR local format without "+"', value: { mobilePhone: '0223-155-1234' } },

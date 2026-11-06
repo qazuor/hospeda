@@ -44,7 +44,8 @@ describe('adminLight — coverage and naming', () => {
         // user-role (7), auth-provider (5), amenity-type (12) and sponsor-type
         // (3) families — bringing the count to 92. HOS-182 then added the 6
         // poi-category bucket tokens + their 6 `-on` glyph companions → 104.
-        expect(Object.keys(adminLight)).toHaveLength(104); // post-SSOT sponsors/amenities/auth/post-categories
+        // HOS-2058 added 5 amenity-type tokens → 109.
+        expect(Object.keys(adminLight)).toHaveLength(109); // post-SSOT sponsors/amenities/auth/post-categories
     });
 
     it('keys do not include leading "--"', () => {

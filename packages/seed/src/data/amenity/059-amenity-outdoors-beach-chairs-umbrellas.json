@@ -8,7 +8,7 @@
         "pt": "Reposeras y sombrillas"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "OUTDOORS",
+    "type": "WATER_ACTIVITIES",
     "icon": "BeachEquipmentIcon",
     "isBuiltin": false,
     "isFeatured": false,

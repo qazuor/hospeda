@@ -306,20 +306,21 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
      * T-006 added 126 domain alpha tokens (63 domain bases × 2: a15 + a30) for
      * icon subtle badge variants that Chrome 109 could not render. HOS-182 grew
      * the domain bases to 69 (+6 poi-category buckets) → 138 domain alpha.
+     * HOS-2058 added 5 amenity-type bases → 74 bases → 148 domain alpha.
      *
      *   - 104 alpha-family (92 consolidated + 12 FAITHFUL kept-own gap-fillers)
      *   -   1 white-origin alpha (oklch(from white l c h / 0.75))
      *   -  11 lightness-multiply pairs (incl. muted-l105 — T-005 part C)
      *   -  10 lightness-subtract pairs
      *   -   2 lightness-add pairs
-     *   - 138 domain alpha (69 bases × a15+a30 — T-006 + HOS-182)
-     *   = 266 total canonical entries.
+     *   - 148 domain alpha (74 bases × a15+a30 — T-006 + HOS-182 + HOS-2058)
+     *   = 276 total canonical entries.
      *
      * Max snap delta applied to consolidated tokens: 0.020 (imperceptible). The
      * FAITHFUL gap-fillers have delta 0 (exact source value).
      */
-    it('has the expected canonical count (266 entries)', () => {
-        expect(VARIANT_TOKEN_MAP.length).toBe(266);
+    it('has the expected canonical count (276 entries)', () => {
+        expect(VARIANT_TOKEN_MAP.length).toBe(276);
     });
 
     /**
@@ -457,7 +458,7 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
                 .length,
             'lightness-add': VARIANT_TOKEN_MAP.filter((e) => e.family === 'lightness-add').length
         };
-        expect(counts.alpha).toBe(243);
+        expect(counts.alpha).toBe(253);
         expect(counts['lightness-multiply']).toBe(11);
         expect(counts['lightness-subtract']).toBe(10);
         expect(counts['lightness-add']).toBe(2);

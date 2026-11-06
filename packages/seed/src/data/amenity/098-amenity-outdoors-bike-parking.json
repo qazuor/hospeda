@@ -8,7 +8,7 @@
         "pt": "Estacionamiento para bicicletas disponible"
     },
     "applicableVerticals": ["venue"],
-    "type": "OUTDOORS",
+    "type": "PARKING",
     "icon": "BicyclesIcon",
     "isBuiltin": false,
     "isFeatured": false,

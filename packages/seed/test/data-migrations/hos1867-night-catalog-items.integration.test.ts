@@ -142,6 +142,7 @@ interface FeatureRow {
     readonly applicable_verticals: string[];
     readonly deleted_at: string | null;
     readonly lifecycle_state: string;
+    readonly category: string | null;
 }
 
 /** Reads every stored row for one amenity slug. */
@@ -157,7 +158,7 @@ async function readAmenityRows(tx: DrizzleClient, slug: string): Promise<Amenity
 /** Reads every stored row for one feature slug. */
 async function readFeatureRows(tx: DrizzleClient, slug: string): Promise<FeatureRow[]> {
     const result = await tx.execute(sql`
-        SELECT slug, applicable_verticals, deleted_at, lifecycle_state
+        SELECT slug, applicable_verticals, deleted_at, lifecycle_state, category
         FROM features
         WHERE slug = ${slug}
     `);
@@ -206,7 +207,8 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
                 amenitiesCreated: 3,
                 amenitiesSkipped: 0,
                 featuresCreated: 2,
-                featuresSkipped: 0
+                featuresSkipped: 0,
+                featuresCategorized: 0
             });
 
             for (const slug of NIGHT_AMENITIES) {
@@ -223,6 +225,7 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
                 expect(rows[0]?.deleted_at, `${slug} deleted_at`).toBeNull();
                 expect(rows[0]?.applicable_verticals, `${slug} verticals`).toEqual(['venue']);
                 expect(rows[0]?.lifecycle_state, `${slug} lifecycle_state`).toBe('ACTIVE');
+                expect(rows[0]?.category, `${slug} category`).toBe('ACTIVITIES');
             }
         });
     });
@@ -243,7 +246,8 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
                 amenitiesCreated: 0,
                 amenitiesSkipped: 3,
                 featuresCreated: 0,
-                featuresSkipped: 2
+                featuresSkipped: 2,
+                featuresCategorized: 0
             });
             expect(await countCatalogRows(tx)).toEqual(before);
         });
@@ -263,9 +267,50 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
                 amenitiesCreated: 2,
                 amenitiesSkipped: 1,
                 featuresCreated: 2,
-                featuresSkipped: 0
+                featuresSkipped: 0,
+                featuresCategorized: 0
             });
             expect(await readAmenityRows(tx, 'dance_floor')).toHaveLength(1);
+        });
+    });
+
+    it('categorizes a pre-existing feature that has no category yet', async () => {
+        await withRollback(async (tx) => {
+            // Arrange: a usable dj_sets row created before features.category existed.
+            await clearNightRows(tx);
+            await insertFeature(tx, 'dj_sets', ['venue']);
+
+            // Act
+            const result = await nightCatalogItems.up(await buildCtx(tx));
+
+            // Assert: skipped as a row, but its category is filled in.
+            expect(result.counts).toEqual({
+                amenitiesCreated: 3,
+                amenitiesSkipped: 0,
+                featuresCreated: 1,
+                featuresSkipped: 1,
+                featuresCategorized: 1
+            });
+            const rows = await readFeatureRows(tx, 'dj_sets');
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.category).toBe('ACTIVITIES');
+        });
+    });
+
+    it('never overwrites a category that is already set', async () => {
+        await withRollback(async (tx) => {
+            // Arrange: an admin already filed karaoke under another category.
+            await clearNightRows(tx);
+            await insertFeature(tx, 'karaoke', ['venue']);
+            await tx.execute(sql`UPDATE features SET category = 'AUDIENCE' WHERE slug = 'karaoke'`);
+
+            // Act
+            const result = await nightCatalogItems.up(await buildCtx(tx));
+
+            // Assert
+            expect(result.counts.featuresCategorized).toBe(0);
+            const rows = await readFeatureRows(tx, 'karaoke');
+            expect(rows[0]?.category).toBe('AUDIENCE');
         });
     });
 
