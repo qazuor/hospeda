@@ -400,6 +400,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 ]
             }
         ]
+    },
+    ACC_27: {
+        bindings: [
+            {
+                kind: 'tableGate',
+                file: 'apps/api/src/routes/venue/admin/changeBusinessLines.ts',
+                markers: ["administrativeAction: 'ACC_27'"]
+            }
+        ]
     }
 };
 
@@ -436,15 +445,15 @@ const UNBOUND_ROWS: readonly { readonly action: AdministrativeAction; readonly r
     });
 
 describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row agrees with its route gate', () => {
-    it('a. covers exactly the 25 catalog actions, in order', () => {
+    it('a. covers exactly the 26 catalog actions, in order', () => {
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
-        expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
+        expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(26);
     });
 
-    it('b. checks exactly 35 bindings across 14 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(14);
+    it('b. checks exactly 36 bindings across 15 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(15);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(35);
+        expect(total).toBe(36);
     });
 
     it.each(

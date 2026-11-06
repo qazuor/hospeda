@@ -357,7 +357,9 @@ describe('HOS-1721 pre-trial host adds photos to their own DRAFT', () => {
         expect(result.body).toEqual({
             subjectId: OWNER,
             evaluatedSteps: [4, 5, 7],
-            businessLines: []
+            businessLines: [],
+            // No administrative action ran on this own edit (ACC:27, HOS-1875).
+            administrativeAction: null
         });
         expect(mocks.preTrialDraftLimits).toHaveBeenCalledWith({ userId: OWNER, vertical });
     });

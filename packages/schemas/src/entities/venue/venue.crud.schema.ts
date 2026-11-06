@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { VenueSchema } from './venue.schema.js';
@@ -485,6 +486,29 @@ export const VenuePatchInputSchema = VenueUpdateInputSchema;
 
 /** TypeScript type for {@link VenuePatchInputSchema}. */
 export type VenuePatchInput = z.infer<typeof VenuePatchInputSchema>;
+
+/**
+ * Body of the dedicated business-line change route (ACC:27, HOS-1875).
+ *
+ * The classification of a venue and nothing else: the object is `.strict()`, so
+ * a body that also tries to write content is a 400 before the service sees it.
+ * The service's own action-27 scope is the second layer
+ * (`assertBusinessLinesChangeOnly`). No `vertical` field (F-V1-047): the route's
+ * listing access declares it.
+ */
+export const VenueBusinessLinesChangeInputSchema = z
+    .object({
+        businessLines: z.array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+    })
+    .strict();
+
+/** TypeScript type for {@link VenueBusinessLinesChangeInputSchema}. */
+export type VenueBusinessLinesChangeInput = z.infer<typeof VenueBusinessLinesChangeInputSchema>;
 
 /**
  * Schema for venue update response.
