@@ -18,7 +18,7 @@ import apartmentsImg from "@/assets/images/categories/apartments.jpg";
 import musicImg from "@/assets/images/categories/music.jpg";
 import cultureImg from "@/assets/images/categories/culture.jpg";
 import foodEventsImg from "@/assets/images/categories/food-events.jpg";
-import { EventCategoryEnum } from "@repo/schemas";
+import { FOOD_EVENTS_CATEGORY, slugForEventCategory } from "@/lib/facet-slugs";
 import postsImg from "@/assets/images/categories/posts.jpg";
 import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
 import DestinationsSection from "@/components/sections/DestinationsSection.astro";
@@ -210,7 +210,7 @@ const categoryTiles = [
     {
         title: t("home.categoryTiles.tiles.foodEvents.title", "Eventos gastronómicos"),
         description: t("home.categoryTiles.tiles.foodEvents.description", "Sabores únicos de la cocina regional y nacional"),
-        href: `${buildUrl({ locale, path: "/eventos/" })}?category=${EventCategoryEnum.GASTRONOMY}`,
+        href: buildUrl({ locale, path: `/eventos/categoria/${slugForEventCategory({ category: FOOD_EVENTS_CATEGORY })}/` }),
         image: foodEventsImg,
     },
     {

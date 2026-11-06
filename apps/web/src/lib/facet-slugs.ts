@@ -76,6 +76,9 @@ export const EVENT_CATEGORY_SLUG_BY_ENUM: Readonly<Record<EventCategoryEnum, str
         [EventCategoryEnum.OTHER]: 'otros'
     });
 
+/** Category linked from the home food-events tile. */
+export const FOOD_EVENTS_CATEGORY: EventCategoryEnum = EventCategoryEnum.GASTRONOMY;
+
 /** Owner-approved canonical Spanish slug for every `PostCategoryEnum` value. */
 export const POST_CATEGORY_SLUG_BY_ENUM: Readonly<Record<PostCategoryEnum, string>> = Object.freeze(
     {

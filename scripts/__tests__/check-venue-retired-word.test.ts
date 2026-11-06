@@ -43,6 +43,28 @@ function fixture(
 }
 
 describe('G-FAC-R1 retired venue word', () => {
+    it('keeps the home source and its title key out of exemption a', () => {
+        const config = JSON.parse(
+            readFileSync(join(ROOT, 'scripts/guards/venue-retired-word.json'), 'utf8')
+        );
+        expect(config.exemptions.a.files).not.toHaveProperty(
+            'apps/web/src/pages/[lang]/index.astro'
+        );
+        expect(
+            Object.keys(config.exemptions.a.keys).some((key) =>
+                key.startsWith('home.json#categoryTiles')
+            )
+        ).toBe(false);
+    });
+
+    it('rejects the retired identifier in the home source without an exemption', () => {
+        const oldWord = ['gastro', 'nomy'].join('');
+        const { result } = fixture({
+            'apps/web/src/pages/[lang]/index.astro': `const x = EventCategoryEnum.${oldWord.toUpperCase()};`
+        });
+        expect(result.violations.some(({ rule }) => rule === 1)).toBe(true);
+    });
+
     it('excludes the guard, its test, and its exemption inventory from the scan', () => {
         const { result } = fixture({
             'scripts/check-venue-retired-word.ts': oldWord,
