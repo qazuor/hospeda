@@ -60,6 +60,7 @@ export type RequestPlanChangeResult =
           readonly path: 'REJECTED';
           readonly reason:
               | 'NO_CHANGE'
+              | 'GRACE_PERIOD'
               | 'SCHEDULED_CHANGE_EXISTS'
               | 'NOT_ACTIVE'
               | 'MIGRATION_CHANGE_QUEUED'
@@ -86,6 +87,8 @@ export async function requestPlanChange(
         userId: value.actor.id
     });
     const target = await readPlanChangeTarget({ billingOptionId: value.billingOptionId });
+    if (origin.subscription.status === 'GRACE_PERIOD')
+        return { path: 'REJECTED', reason: 'GRACE_PERIOD' };
     const queued = await readScheduledPlanChange({ subscriptionId: value.subscriptionId });
     if (origin.subscription.billingOptionId === target.id && queued) {
         if (origin.subscription.status !== 'ACTIVE')

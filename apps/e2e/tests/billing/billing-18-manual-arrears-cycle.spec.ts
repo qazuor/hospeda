@@ -120,6 +120,12 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
             );
             const card = await showStatus('Pago pendiente');
             await expect(card.getByTestId('my-subscription-grace')).toHaveCount(0);
+            const planChangeGrace = card.getByTestId('my-subscription-plan-change-grace');
+            await expect(planChangeGrace).toBeVisible();
+            await expect(planChangeGrace).toContainText('pagando tu cuota');
+            await expect(card.getByTestId('my-subscription-plan-change-unavailable')).toHaveCount(
+                0
+            );
         });
 
         let suspensionMailReceivedAt: Date | null = null;

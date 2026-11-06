@@ -19,6 +19,87 @@ afterEach(retirePlanChanges);
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction', () => {
+    it('TEST:B8b:17 rejects every plan-change choice from grace without provider or database writes', async () => {
+        const cases = ['DOWN', 'UP', 'CYCLE', 'SAME'] as const;
+        for (const scenario of cases) {
+            const seeded = await seedPlanChange({
+                status: 'GRACE_PERIOD',
+                rankRelation:
+                    scenario === 'DOWN' ? 'HIGHER' : scenario === 'UP' ? 'LOWER' : undefined
+            });
+            if (scenario === 'DOWN' || scenario === 'UP')
+                seeded.verticals.setChangeDirection({
+                    fromPlanVersionId: seeded.planVersionId,
+                    toPlanVersionId: seeded.targetPlanVersionId,
+                    direction: scenario
+                });
+            const targetId =
+                scenario === 'SAME'
+                    ? seeded.predecessorBillingOptionId
+                    : scenario === 'CYCLE'
+                      ? ((
+                            await getServiceTestDb()
+                                .insert(billingOptions)
+                                .values({
+                                    planVersionId: seeded.planVersionId,
+                                    cycle: 'annual',
+                                    amount: 2000000,
+                                    currency: 'ARS'
+                                })
+                                .returning({ id: billingOptions.id })
+                        )[0]?.id ?? '')
+                      : seeded.targetBillingOptionId;
+            const authorize = vi.spyOn(seeded.fake, 'authorize');
+            const mutate = vi.spyOn(seeded.fake, 'changeAmount');
+            const countBefore = await getServiceTestDb()
+                .select({ id: subscriptions.id })
+                .from(subscriptions)
+                .where(eq(subscriptions.userId, seeded.user.id));
+
+            const result = await requestPlanChange(
+                { ...seeded.input, billingOptionId: targetId },
+                seeded.ports
+            );
+
+            const countAfter = await getServiceTestDb()
+                .select({ id: subscriptions.id })
+                .from(subscriptions)
+                .where(eq(subscriptions.userId, seeded.user.id));
+            expect(result).toEqual({ path: 'REJECTED', reason: 'GRACE_PERIOD' });
+            expect(authorize).not.toHaveBeenCalled();
+            expect(mutate).not.toHaveBeenCalled();
+            expect(countAfter).toHaveLength(countBefore.length);
+            expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
+        }
+    });
+
+    it('TEST:B8b:17 applies the same DOWN request when the source is ACTIVE', async () => {
+        const seeded = await seedPlanChange({ status: 'ACTIVE', rankRelation: 'HIGHER' });
+        seeded.verticals.setChangeDirection({
+            fromPlanVersionId: seeded.planVersionId,
+            toPlanVersionId: seeded.targetPlanVersionId,
+            direction: 'DOWN'
+        });
+        const result = await requestPlanChange(seeded.input, seeded.ports);
+        expect(result.path).toBe('DOWNGRADE');
+    });
+
+    it('TEST:B8b:17 rejects a MANUAL grace subscription before the same-option result', async () => {
+        const seeded = await seedPlanChange({ status: 'GRACE_PERIOD' });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ paymentMethod: 'MANUAL' })
+            .where(eq(subscriptions.id, seeded.predecessor.id));
+        const mutate = vi.spyOn(seeded.fake, 'changeAmount');
+        const result = await requestPlanChange(
+            { ...seeded.input, billingOptionId: seeded.predecessorBillingOptionId },
+            seeded.ports
+        );
+        expect(result).toEqual({ path: 'REJECTED', reason: 'GRACE_PERIOD' });
+        expect(mutate).not.toHaveBeenCalled();
+        expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
+    });
+
     it('(a) follows DOWN for a higher rank, mutates list amount and queues the capability drop', async () => {
         const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
         seeded.verticals.setChangeDirection({
