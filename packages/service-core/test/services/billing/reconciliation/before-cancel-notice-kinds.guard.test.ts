@@ -117,7 +117,8 @@ const EXPECTED_KINDS = [
     'DIRECT_CANCELLATION',
     'ATTEMPT_REPLACED',
     'ATTEMPT_CANCELLED',
-    'SUCCESSION_PREDECESSOR'
+    'SUCCESSION_PREDECESSOR',
+    'SUCCESSOR_CUT'
 ];
 
 describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice kind', () => {
@@ -130,11 +131,24 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
 
     it('(b) the file that records a transition asks its first notice with the same kind', () => {
         const mismatched = recordings
-            .map(({ path, code, transition }) => ({ path, code, kind: declaredKind(transition) }))
+            .map(({ path, code, transition }) => ({
+                path,
+                code,
+                transition,
+                kind: declaredKind(transition)
+            }))
             .filter(({ kind }) => kind !== 'RECIPIENTLESS' && kind !== 'UNDECLARED')
-            .filter(({ code, kind }) => !code.includes(`kind: '${kind}'`))
+            .filter(
+                ({ code, transition, kind }) =>
+                    transition !== 'S31' && !code.includes(`kind: '${kind}'`)
+            )
             .map(({ path, kind }) => `${path}: kind: '${kind}'`);
         expect(mismatched).toEqual([]);
+        const afterCommit = readFileSync(
+            join(BILLING_DIR, 'subscription/successor-cut-after-commit.ts'),
+            'utf8'
+        );
+        expect(afterCommit).toContain("kind: 'SUCCESSOR_CUT'");
     });
 
     it('(c) is not vacuous: the known recorded transitions are found', () => {
@@ -158,7 +172,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) AC:B8b:9 the fourteen kinds have fourteen distinct templates and only S3 says the window expired', () => {
+    it('(d) AC:B8b:9 and AC:B8b:13 the fifteen kinds have fifteen distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);

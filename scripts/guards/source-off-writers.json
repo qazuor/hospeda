@@ -131,6 +131,23 @@
         "reason": "S17 cancels the predecessor after its successor authorized; the coverage notice is emitted after commit (AC:B8b:9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "writeSuccessorCutStatus",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/successor-cut-after-commit.ts",
+        "reason": "S31 cuts the successor after a predecessor chargeback; AC:B8b:13 requires the transaction-local status write and post-commit coverage notice."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "cutSuccessorWrites",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S31 closes the deferred courtesy balance as an audit record without changing its coverage source (AC:B8b:13)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
         "symbol": "writePausedCancellation",
         "table": "subscriptions",
@@ -226,6 +243,22 @@
         "effect": "turns-off",
         "via": "notice",
         "reason": "S8 moves an ACTIVE PRINCIPAL to PAUSED, which emits no source in subscription-sources.ts; the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+        "symbol": "reissueDeferredCourtesy",
+        "table": "courtesyGrants",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S9 clears the deferred balance on the same grant it attaches to the successor, making the COURTESY source eligible in the transaction that pauses the principal (AC:B8b:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+        "symbol": "reissueDeferredCourtesy",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S9 moves the ACTIVE PRINCIPAL to PAUSED in the same transaction that re-emits its COURTESY source; the CHANGED coverage notice is sent after commit (AC:B8b:12)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",

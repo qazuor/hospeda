@@ -35,4 +35,5 @@ export * from './signup-confirmed.js';
 export * from './signup-declined.js';
 export * from './signup-incomplete.js';
 export * from './succession-predecessor-cancel.js';
+export * from './successor-cut-cancel.js';
 export * from './tourist-vip-inherited-cancel.js';
