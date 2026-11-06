@@ -92,11 +92,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ]);
             expect([after.graceStartedAt, after.graceEndsAt]).toEqual([null, null]);
             expect(await openReasons(s.subscriptionId)).toEqual(['PAUSA_NO_APLICADA']);
+            expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([]);
             expect(
                 (await s.provider.readAuthorization({ authorizationId: s.authorizationId }))
                     .snapshot.status
             ).toBe('paused');
-            expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([]);
             expect(
                 s.beforeCancel.mock.calls.filter(
                     ([notice]) => notice.subscriptionId === s.subscriptionId
