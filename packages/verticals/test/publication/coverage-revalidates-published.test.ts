@@ -98,7 +98,7 @@ describe('TEST:6.11:1 coverage revalidates every published listing of the owner'
             correlationId: firstPublished
         });
 
-        expect(result.lowered.sort()).toEqual([firstPublished, secondPublished].sort());
+        expect([...result.lowered].sort()).toEqual([firstPublished, secondPublished].sort());
         expect(revalidatedListingIds(harness)).toEqual([firstPublished, secondPublished].sort());
     });
 
