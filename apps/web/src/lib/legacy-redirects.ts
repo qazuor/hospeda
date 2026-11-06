@@ -4,7 +4,9 @@
  * `/mi-cuenta/messages` -> `/mi-cuenta/consultas`, `/blog` -> `/publicaciones`,
  * `/publicaciones/autor` -> `/autores`, and the three H-110 facet-landing
  * legacy-English-slug redirects (`/alojamientos/tipo/`, `/eventos/categoria/`,
- * `/publicaciones/categoria/`).
+ * `/publicaciones/categoria/`), and the HOS-2059 retired amenity/feature slugs
+ * (`/alojamientos/comodidades/` and `/alojamientos/caracteristicas/`, see
+ * `catalog-retired-slugs.ts`).
  *
  * Extracted out of `middleware.ts` for two reasons:
  *
@@ -34,6 +36,7 @@
  * same "chained redirect" reason described above.
  */
 
+import { resolveRetiredCatalogSlugPath } from './catalog-retired-slugs';
 import {
     ACCOMMODATION_TYPE_LEGACY_ENGLISH_SLUGS,
     EVENT_CATEGORY_LEGACY_ENGLISH_SLUGS,
@@ -219,6 +222,13 @@ export function resolveLegacyRedirectTarget({
     });
     if (postCategoryTarget) {
         return { target: postCategoryTarget, status: 301 };
+    }
+
+    // HOS-2059: a retired or renamed amenity/feature slug's landing goes to its
+    // survivor's landing, which may live in the other catalog family.
+    const retiredCatalogTarget = resolveRetiredCatalogSlugPath({ path });
+    if (retiredCatalogTarget) {
+        return { target: retiredCatalogTarget, status: 301 };
     }
 
     return undefined;
