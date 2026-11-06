@@ -11,6 +11,7 @@ import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments
 import { SubscriptionPlanChangeResponseSchema } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { suspendForArrears } from '../../../../../packages/service-core/src/services/billing/subscription/suspend-for-arrears.service';
 import { initApp } from '../../../src/app';
 import { subscriptionWindowExpiryJob } from '../../../src/cron/jobs/subscription-window-expiry.job';
 import type { CronJobContext } from '../../../src/cron/types';
@@ -73,6 +74,135 @@ afterAll(async () => {
 });
 
 describe('TEST:B8b:8 TEST:B8b:24 succession declared through the route', () => {
+    it('succeeds a card principal suspended by S6 and mirrors a provider pause through the route', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await startPlanChangeScenario(tx, {
+                provider,
+                clock,
+                approve: async (authorizationId) => {
+                    await fake.approve({ authorizationId });
+                }
+            });
+            await fake.pause({ authorizationId: row.authorizationId });
+            const suspension = await suspendForArrears(
+                {
+                    subscriptionId: row.subscriptionId,
+                    event: 'PROVIDER_PAUSE_OBSERVED',
+                    occurrenceId: `route-suspension-${row.subscriptionId}`
+                },
+                {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+                }
+            );
+            expect(suspension).toMatchObject({ outcome: 'SUSPENDED', cancelCall: 'SENT' });
+            const [suspended] = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(suspended).toMatchObject({
+                status: 'SUSPENDED',
+                paymentMethod: 'CARD',
+                class: 'PRINCIPAL'
+            });
+            expect(
+                (await fake.readAuthorization({ authorizationId: row.authorizationId })).snapshot
+                    .status
+            ).toBe('cancelled');
+
+            const response = await post(row.subscriptionId, row.userId, row.targetOptionId);
+            expect(response.status, await response.clone().text()).toBe(200);
+            const result = SubscriptionPlanChangeResponseSchema.parse(
+                ((await response.json()) as { data: unknown }).data
+            );
+            expect(result.outcome).toBe('SUCCESSION');
+            if (result.outcome !== 'SUCCESSION') throw new Error('Expected succession');
+            const [successor] = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, result.subscriptionId));
+            const [predecessor] = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(successor?.status).toBe('PENDING_AUTHORIZATION');
+            expect(successor?.succeedsId).toBe(row.subscriptionId);
+            expect(successor?.firstChargeAt?.getTime()).toBe(clock.now().getTime());
+            expect(predecessor?.status).toBe('SUSPENDED');
+            expect(predecessor?.succeededById).toBe(result.subscriptionId);
+            const [link] = await tx
+                .select()
+                .from(providerLinks)
+                .where(eq(providerLinks.subscriptionId, result.subscriptionId));
+            if (!link) throw new Error('Successor provider link missing');
+            const oldCancellationCalls = server
+                .requests()
+                .filter(
+                    (request) =>
+                        request.method === 'PUT' &&
+                        request.path === `/preapproval/${row.authorizationId}`
+                ).length;
+            await fake.approve({ authorizationId: link.providerId });
+            clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+            const delivery = server
+                .mercadoPagoDeliveries({ webhookSecret })
+                .deliveries.find(
+                    (candidate) =>
+                        new URLSearchParams(candidate.query).get('data.id') === link.providerId
+                );
+            if (!delivery) throw new Error('Successor authorization delivery missing');
+            const webhook = await app.request(`/api/v1/webhooks/mercadopago?${delivery.query}`, {
+                method: 'POST',
+                headers: {
+                    ...delivery.headers,
+                    'user-agent': delivery.headers['user-agent'] ?? 'vitest'
+                },
+                body: delivery.body
+            });
+            expect(webhook.status).toBe(200);
+            const [closed] = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(closed?.status).toBe('CANCELLED');
+            expect(
+                server
+                    .requests()
+                    .filter(
+                        (request) =>
+                            request.method === 'PUT' &&
+                            request.path === `/preapproval/${row.authorizationId}`
+                    )
+            ).toHaveLength(oldCancellationCalls);
+        });
+
+        await withCompositionRollback(async (tx) => {
+            const row = await startPlanChangeScenario(tx, {
+                provider,
+                clock,
+                approve: async (authorizationId) => {
+                    await fake.approve({ authorizationId });
+                }
+            });
+            await fake.pause({ authorizationId: row.authorizationId });
+            const response = await post(row.subscriptionId, row.userId, row.targetOptionId);
+            expect(response.status).toBe(422);
+            const notices = await tx
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, row.userId));
+            expect(notices.some((notice) => notice.template === 'billing.arrears-suspension')).toBe(
+                true
+            );
+            const [predecessor] = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(predecessor?.status).toBe('ACTIVE');
+        });
+    });
+
     it('(e) keeps the ACTIVE predecessor until authorization', async () => {
         await withCompositionRollback(async (tx) => {
             const row = await startPlanChangeScenario(tx, {
