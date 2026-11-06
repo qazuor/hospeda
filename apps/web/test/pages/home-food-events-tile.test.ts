@@ -25,7 +25,7 @@ describe('home food-events category tile', () => {
         const actual = homeLocales.map((locale) => {
             const json = JSON.parse(
                 readFileSync(
-                    resolve(__dirname, `../../../packages/i18n/src/locales/${locale}/home.json`),
+                    resolve(__dirname, `../../../../packages/i18n/src/locales/${locale}/home.json`),
                     'utf8'
                 )
             );
