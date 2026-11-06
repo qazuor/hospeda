@@ -334,6 +334,32 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 provider half', ()
         ).toBe('cancelled');
     });
 
+    it('(n) still cancels when the outbox has definitively failed the notice', async () => {
+        const seeded = await seedS17({ successorStatus: 'PENDING_AUTHORIZATION' });
+        const db = getServiceTestDb();
+        const cut = await db.transaction(async (tx) =>
+            createSuccessorCutter(successorCutPorts(tx)).cutSuccessor({
+                predecessorSubscriptionId: seeded.predecessorId,
+                tx
+            })
+        );
+
+        const result = await completeSuccessorCut(
+            cut,
+            s17Ports(seeded.provider, { failWith: 'undeliverable:hard_bounce' })
+        );
+
+        expect(result).toMatchObject({ providerCall: 'CONFIRMED', noticeUndeliverable: true });
+        expect(seeded.calls).toEqual([seeded.successorAuthorizationId]);
+        expect(
+            (
+                await seeded.fake.readAuthorization({
+                    authorizationId: seeded.successorAuthorizationId
+                })
+            ).snapshot.status
+        ).toBe('cancelled');
+    });
+
     it('(q) cancels an A5 orphaned complement authorization after commit', async () => {
         const clock = { now: () => s17Now };
         const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
