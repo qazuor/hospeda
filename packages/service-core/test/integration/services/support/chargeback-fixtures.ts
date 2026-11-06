@@ -23,6 +23,7 @@ import { processProviderNotice } from '../../../../src/services/billing/notice/p
 import { createPaymentReconciliationMarkPayments } from '../../../../src/services/billing/payment/payment-ledger.js';
 import { recordChargeFact } from '../../../../src/services/billing/payment/record-charge-fact.service.js';
 import type { ChargebackDetection } from '../../../../src/services/billing/reconciliation/chargeback/chargeback-detection.js';
+import type { BeforeCancelNotice } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 import { getServiceTestDb } from '../helpers.js';
 import { graceWithFailedCycle } from './grace-fixtures.js';
 import { paymentFixture } from './payment-fixtures.js';
@@ -61,12 +62,15 @@ export async function approvedCharge(fixture: ChargebackFixture): Promise<string
 /** The ports a notice is processed with: the real S14 port and the fixture's notices. */
 export function noticePorts(
     fixture: ChargebackFixture,
-    extra: { readonly chargebacks?: ChargebackDetection } = {}
+    extra: {
+        readonly chargebacks?: ChargebackDetection;
+        readonly beforeCancelNotice?: BeforeCancelNotice;
+    } = {}
 ) {
     return {
         provider: fixture.provider,
         clock: fixture.clock,
-        beforeCancelNotice,
+        beforeCancelNotice: extra.beforeCancelNotice ?? beforeCancelNotice,
         coverageNotices: fixture.coverageNotices,
         promoCharges: fixture.promoCharges,
         promoExhaustion: fixture.promoExhaustion,
@@ -79,7 +83,10 @@ export function noticePorts(
 export async function recordCharge(
     fixture: ChargebackFixture,
     chargeId: string,
-    extra: { readonly chargebacks?: ChargebackDetection } = {}
+    extra: {
+        readonly chargebacks?: ChargebackDetection;
+        readonly beforeCancelNotice?: BeforeCancelNotice;
+    } = {}
 ) {
     return recordChargeFact({ chargeId }, noticePorts(fixture, extra));
 }
