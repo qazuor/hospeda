@@ -105,10 +105,14 @@ function readForeignCreateSubject(args: {
 }
 
 /**
- * Runs ONE content call of a route under the action-15 authorization its
- * listing-access chain granted (ACC:15, HOS-1493). The scope opens only when
- * step 3 ran and resolved a subject other than the actor; otherwise `run` runs
- * as is. Step 4b checks section presence and does not change this subject scope.
+ * Runs ONE content call of a route under the administrative authorization its
+ * listing-access chain granted (ACC:15, HOS-1493; ACC:27, HOS-1875). The scope
+ * opens only when step 3 ran and resolved a subject other than the actor;
+ * otherwise `run` runs as is. Step 4b checks section presence and does not
+ * change this subject scope. The action is the one the route declared and step 3
+ * permitted: ACC_15 stays the default of a foreign edit, and only ACC_27's own
+ * route declares the other value.
+ *
  * Wrap only the route's own content service call — never a whole
  * handler nor several calls (coordinator decision, corrida 4).
  *
@@ -126,7 +130,10 @@ export function runListingContentCall<T>(input: {
     if (!access?.evaluatedSteps.includes(3) || !access.subjectId || access.subjectId === actor.id)
         return run();
     return runWithAdministrativeAuthorization({
-        authorization: { action: 'ACC_15', subjectId: access.subjectId },
+        authorization: {
+            action: access.administrativeAction ?? 'ACC_15',
+            subjectId: access.subjectId
+        },
         run
     });
 }
@@ -284,10 +291,15 @@ export async function enforceListingAccess(args: {
             const actionReason = readActionReasonHeader({ ctx });
             if (actionReason !== null) setRequestContextActionReason({ actionReason });
         }
+        // Only the two actions whose scope `runListingContentCall` opens are
+        // carried; ACC_23 is a purge that never wraps a content call.
+        const authorizedAction =
+            adminAction?.permitted && (action === 'ACC_15' || action === 'ACC_27') ? action : null;
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
             evaluatedSteps: result.evaluatedSteps,
-            businessLines: facts?.businessLines ?? []
+            businessLines: facts?.businessLines ?? [],
+            administrativeAction: authorizedAction
         });
         return;
     }

@@ -70,6 +70,12 @@ export interface AppBindings {
             subjectId: string | null;
             evaluatedSteps: readonly (3 | '4b' | 4 | 5 | 6 | 7)[];
             businessLines: readonly BusinessLine[];
+            /**
+             * The administrative action step 3 permitted, when it is one whose
+             * scope `runListingContentCall` can open (ACC:15, ACC:27). `null`
+             * when no administrative action ran or it is not a content action.
+             */
+            administrativeAction?: 'ACC_15' | 'ACC_27' | null;
         };
         /** Better Auth session for the current request */
         session?: AuthSession;
