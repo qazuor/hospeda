@@ -125,6 +125,25 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
         expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
     });
 
+    it.each([
+        'GRACE_PERIOD',
+        'PAUSED'
+    ] as const)('(g) rejects regret from %s without mutating or removing the queue', async (status) => {
+        const seeded = await seedPlanChange({ status });
+        const queued = await seedScheduledChange({
+            subscriptionId: seeded.predecessor.id,
+            effectiveAt: seeded.nextChargeAt
+        });
+        const mutate = vi.spyOn(seeded.fake, 'changeAmount');
+        const result = await requestPlanChange(
+            { ...seeded.input, billingOptionId: seeded.predecessorBillingOptionId },
+            seeded.ports
+        );
+        expect(result).toEqual({ path: 'REJECTED', reason: 'NOT_ACTIVE' });
+        expect(mutate).toHaveBeenCalledTimes(0);
+        expect(await scheduledChangesOf(seeded.predecessor.id)).toEqual([queued]);
+    });
+
     it('(d) rejects replacing a migration queue without mutating the provider or queue', async () => {
         const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
         const migration = await seedPriceIncrease({
