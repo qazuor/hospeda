@@ -52,7 +52,7 @@ describe('G-FAC-R1 retired venue word', () => {
         );
         expect(
             Object.keys(config.exemptions.a.keys).some((key) =>
-                key.startsWith('home.json#categoryTiles')
+                key.includes('/home.json#categoryTiles')
             )
         ).toBe(false);
     });
