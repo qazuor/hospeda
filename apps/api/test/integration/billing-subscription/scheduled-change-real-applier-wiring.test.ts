@@ -82,7 +82,11 @@ async function stateOf(tx: DrizzleClient, subscriptionId: string) {
 }
 
 describe('TEST:B8b:24 real S38 composition', () => {
-    it('webhook S7 applies an overdue change on a suspended card row', async () => {
+    it.each([
+        { name: 'suspended overdue', status: 'SUSPENDED', due: true },
+        { name: 'TEST:B8b:24(e) grace overdue', status: 'GRACE_PERIOD', due: true },
+        { name: 'grace future', status: 'GRACE_PERIOD', due: false }
+    ] as const)('webhook S7 handles $name scheduled change', async ({ status, due }) => {
         await withCompositionRollback(async (tx) => {
             const cardClock = createAdjustableClock({
                 start: new Date('2026-10-01T03:00:00.000Z')
@@ -147,10 +151,11 @@ describe('TEST:B8b:24 real S38 composition', () => {
             const declined = await recordChargeFact({ chargeId }, ports);
             expect(declined.outcome).toBe('GRACE');
             server.mercadoPagoDeliveries({ webhookSecret });
-            await tx
-                .update(subscriptions)
-                .set({ status: 'SUSPENDED' })
-                .where(eq(subscriptions.id, started.subscriptionId));
+            if (status === 'SUSPENDED')
+                await tx
+                    .update(subscriptions)
+                    .set({ status })
+                    .where(eq(subscriptions.id, started.subscriptionId));
             const target = await queueChange(tx, started.subscriptionId);
             const read = await provider.readCharge({ chargeId });
             const createdAt = Date.parse(read.snapshot.createdAt);
@@ -160,6 +165,11 @@ describe('TEST:B8b:24 real S38 composition', () => {
             });
             expect((await provider.readCharge({ chargeId })).snapshot.status).toBe('approved');
             cardClock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+            if (!due)
+                await tx
+                    .update(subscriptionScheduledChanges)
+                    .set({ effectiveAt: new Date(cardClock.now().getTime() + 86_400_000) })
+                    .where(eq(subscriptionScheduledChanges.subscriptionId, started.subscriptionId));
             const seen: string[] = [];
             const unsubscribe = getCoverageNotices().onCoverageChanged((event) => {
                 if (event.userId === user.userId) seen.push(event.change);
@@ -187,12 +197,12 @@ describe('TEST:B8b:24 real S38 composition', () => {
                 expect(response.status).toBe(200);
                 expect(state.row).toMatchObject({
                     status: 'ACTIVE',
-                    planVersionId: target.planVersionId,
-                    billingOptionId: target.billingOptionId
+                    planVersionId: due ? target.planVersionId : source.planVersionId,
+                    billingOptionId: due ? target.billingOptionId : source.billingOptionId
                 });
-                expect(state.queue).toHaveLength(0);
-                expect(state.events).toHaveLength(1);
-                expect(seen.filter((change) => change === 'CHANGED')).toHaveLength(1);
+                expect(state.queue).toHaveLength(due ? 0 : 1);
+                expect(state.events).toHaveLength(due ? 1 : 0);
+                expect(seen.filter((change) => change === 'CHANGED')).toHaveLength(due ? 1 : 0);
             } finally {
                 unsubscribe();
                 await server.close();
