@@ -38,6 +38,15 @@ describe('FeatureService.count', () => {
         expectSuccess(result);
     });
 
+    it('should count by category when given (HOS-2058)', async () => {
+        featureModelMock.count.mockResolvedValue(3);
+
+        const result = await service.count(actor, { category: 'VIEW', page: 1, pageSize: 10 });
+
+        expect(result.data?.count).toBe(3);
+        expect(featureModelMock.count.mock.calls[0]?.[0]).toEqual({ category: 'VIEW' });
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         featureModelMock.count.mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, countParams);

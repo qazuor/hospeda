@@ -42,6 +42,34 @@ describe('FeatureService.search', () => {
         expectSuccess(result);
     });
 
+    it('should filter by category when given (HOS-2058)', async () => {
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        const result = await service.search(actor, { category: 'VIEW', page: 1, pageSize: 10 });
+
+        expectSuccess(result);
+        expect(featureModelMock.findAll.mock.calls[0]?.[0]).toEqual({ category: 'VIEW' });
+    });
+
+    it('should not filter by category when absent', async () => {
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        await service.search(actor, searchParams);
+
+        expect(featureModelMock.findAll.mock.calls[0]?.[0]).not.toHaveProperty('category');
+    });
+
+    it('should reject an unknown category', async () => {
+        const result = await service.search(actor, {
+            category: 'beach',
+            page: 1,
+            pageSize: 10
+        } as never);
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(featureModelMock.findAll).not.toHaveBeenCalled();
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         featureModelMock.findAll.mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, searchParams);
