@@ -125,3 +125,36 @@ export async function retireReissueCourtesyCase(input: {
 
 /** The fake provider type used by the integration service invocation. */
 export type ReissueFakeProvider = PaymentProvider;
+
+/** Returns the provider fake with one asynchronous hook after its pause write. */
+export function pauseProviderWithHook(input: {
+    readonly provider: PaymentProvider;
+    readonly afterPause: () => Promise<void>;
+}): PaymentProvider {
+    return new Proxy(input.provider, {
+        get(target, property, receiver) {
+            if (property === 'pause')
+                return async ({ authorizationId }: { readonly authorizationId: string }) => {
+                    const acknowledgement = await target.pause({ authorizationId });
+                    await input.afterPause();
+                    return acknowledgement;
+                };
+            const method = Reflect.get(target, property, receiver);
+            return typeof method === 'function' ? method.bind(target) : method;
+        }
+    });
+}
+
+/** Closes the seeded deferred balance using S31's production catalog reason. */
+export async function closeReissueCourtesyBalance(input: {
+    readonly grantId: string;
+    readonly closedAt: Date;
+}): Promise<void> {
+    await getServiceTestDb()
+        .update(courtesyGrants)
+        .set({
+            balanceClosedAt: input.closedAt,
+            closeReason: 'CONTRACARGO_DE_LA_PREDECESORA'
+        })
+        .where(eq(courtesyGrants.id, input.grantId));
+}

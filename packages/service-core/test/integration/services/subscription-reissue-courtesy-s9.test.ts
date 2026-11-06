@@ -15,6 +15,8 @@ import { resolveCourtesySources } from '../../../src/services/billing/coverage/c
 import { reissueDeferredCourtesy } from '../../../src/services/billing/subscription/reissue-deferred-courtesy.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
+    closeReissueCourtesyBalance,
+    pauseProviderWithHook,
     retireReissueCourtesyCase,
     seedReissueCourtesyCase
 } from './support/reissue-courtesy-fixtures.js';
@@ -398,19 +400,13 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
     it('(j) reports a declared transition when the row changes after the provider pause', async () => {
         const fixture = await seedReissueCourtesyCase();
         fixtures.push(fixture);
-        const provider = new Proxy(fixture.provider, {
-            get(target, property, receiver) {
-                if (property === 'pause')
-                    return async ({ authorizationId }: { readonly authorizationId: string }) => {
-                        const acknowledgement = await target.pause({ authorizationId });
-                        await getServiceTestDb()
-                            .update(subscriptions)
-                            .set({ status: 'CANCELLED' })
-                            .where(eq(subscriptions.id, fixture.ids.successor.id));
-                        return acknowledgement;
-                    };
-                const method = Reflect.get(target, property, receiver);
-                return typeof method === 'function' ? method.bind(target) : method;
+        const provider = pauseProviderWithHook({
+            provider: fixture.provider,
+            afterPause: async () => {
+                await getServiceTestDb()
+                    .update(subscriptions)
+                    .set({ status: 'CANCELLED' })
+                    .where(eq(subscriptions.id, fixture.ids.successor.id));
             }
         });
         expect(
@@ -443,19 +439,13 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
     it('(j) loses the grant race when its deferred balance closes after the provider pause', async () => {
         const fixture = await seedReissueCourtesyCase();
         fixtures.push(fixture);
-        const provider = new Proxy(fixture.provider, {
-            get(target, property, receiver) {
-                if (property === 'pause')
-                    return async ({ authorizationId }: { readonly authorizationId: string }) => {
-                        const acknowledgement = await target.pause({ authorizationId });
-                        await getServiceTestDb()
-                            .update(courtesyGrants)
-                            .set({ balanceMonths: null })
-                            .where(eq(courtesyGrants.id, fixture.ids.grantId!));
-                        return acknowledgement;
-                    };
-                const method = Reflect.get(target, property, receiver);
-                return typeof method === 'function' ? method.bind(target) : method;
+        const provider = pauseProviderWithHook({
+            provider: fixture.provider,
+            afterPause: async () => {
+                await getServiceTestDb()
+                    .update(courtesyGrants)
+                    .set({ balanceMonths: null })
+                    .where(eq(courtesyGrants.id, fixture.ids.grantId!));
             }
         });
         expect(
@@ -477,5 +467,34 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
             balanceMonths: null
         });
         expect(successor?.status).toBe('ACTIVE');
+    });
+
+    it('(i, j) loses the grant race when the balance closes after the initial reread', async () => {
+        const fixture = await seedReissueCourtesyCase();
+        fixtures.push(fixture);
+        const provider = pauseProviderWithHook({
+            provider: fixture.provider,
+            afterPause: () =>
+                closeReissueCourtesyBalance({
+                    grantId: fixture.ids.grantId!,
+                    closedAt: fixture.clock.now()
+                })
+        });
+        expect(
+            await reissueDeferredCourtesy(
+                { successorSubscriptionId: fixture.ids.successor.id },
+                { ...fixture, provider }
+            )
+        ).toEqual({ outcome: 'LOST_RACE' });
+        const [grant] = await getServiceTestDb()
+            .select()
+            .from(courtesyGrants)
+            .where(eq(courtesyGrants.id, fixture.ids.grantId!));
+        expect(grant).toMatchObject({
+            subscriptionId: fixture.ids.predecessor.id,
+            balanceMonths: 3,
+            balanceClosedAt: fixture.clock.now(),
+            closeReason: 'CONTRACARGO_DE_LA_PREDECESORA'
+        });
     });
 });
