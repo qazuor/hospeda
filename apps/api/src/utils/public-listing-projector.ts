@@ -189,11 +189,47 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
         // HOS-1849 / 4.5: `multiLine` is the same resolved fact the owner's
         // `sectionStates` route already exposes. It travels with the public
         // listing so the web never re-derives it from business lines.
+        // HOS-1866 / 6.6: `reviewSectionStates` publishes only the sections a
+        // review dimension is bound to, so the web can decide which dimensions
+        // to offer without comparing business lines (G-FAC-03).
         return projectVenueDimensionRatings(
-            { ...projected, multiLine: resolved.multiLine },
+            {
+                ...projected,
+                multiLine: resolved.multiLine,
+                reviewSectionStates: projectVenueReviewSectionStates(resolved.sections)
+            },
             resolved.sections
         ) as T;
     });
+}
+
+/**
+ * Publishes the state of only the sections a review dimension is bound to
+ * (HOS-1866 / 6.6).
+ *
+ * `locked` is published as `available`: a tourist who reached the listing may
+ * have eaten there even when the owner's current plan does not grant the menu,
+ * and the public, cacheable page must not reveal the owner's plan (DEC-FAC-072).
+ * `absent` is the only state that changes with the business lines, which is the
+ * only reason the detail-page cache is purged — so publishing anything else
+ * would leave a stale value behind a plan change.
+ *
+ * @param states - The resolver's section states for this listing.
+ * @returns One `{ state }` entry per bound section, `absent` or `available`.
+ */
+export function projectVenueReviewSectionStates(
+    states: ReadonlyMap<string, { readonly state: string }>
+): Partial<Record<string, { readonly state: 'absent' | 'available' }>> {
+    const projected: Record<string, { readonly state: 'absent' | 'available' }> = {};
+    for (const dimension of REVIEW_RULES.venue.dimensions) {
+        if (!('boundSection' in dimension)) continue;
+        const state = states.get(dimension.boundSection)?.state;
+        if (!state) continue;
+        projected[dimension.boundSection] = {
+            state: state === 'absent' ? 'absent' : 'available'
+        };
+    }
+    return projected;
 }
 
 /** Hide persisted dimension aggregates when the dimension's section is absent. */

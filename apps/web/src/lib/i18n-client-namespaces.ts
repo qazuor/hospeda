@@ -324,6 +324,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
+    'review.dimensions',
     'review.form',
     'review.venueSidebar',
     'review.list',

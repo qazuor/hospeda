@@ -45,6 +45,11 @@
         "venue": {
             "pendingNotice": "Tu reseña está pendiente de aprobación y será visible cuando sea revisada.",
             "alreadyReviewed": "Ya enviaste una reseña para este lugar."
+        },
+        "dimensions": {
+            "title": "Calificá por aspecto",
+            "optional": "Opcional",
+            "removeHint": "Tocá de nuevo la estrella elegida para quitar tu voto"
         }
     },
     "locked": {
@@ -91,6 +96,11 @@
         "noReviews": "Aún no hay reseñas",
         "noReviewsDescription": "Sé el primero en dejar una reseña",
         "verified": "Verificado"
+    },
+    "dimensionAverages": {
+        "title": "Por aspecto",
+        "votes_one": "{{count}} voto",
+        "votes_other": "{{count}} votos"
     },
     "dimensions": {
         "food": "Comida",

@@ -13,15 +13,21 @@
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
+import type { ResolvedDimensionAverage } from '@/lib/venue/review-dimensions-view';
 
 interface Props {
     readonly reviews: readonly VenueReviewPublicItem[];
     readonly totalReviews: number;
     readonly reviewsCount: number;
     readonly locale: SupportedLocale;
+    /**
+     * Dimensions with at least one vote, from `resolveDimensionAverages`.
+     * Empty when no dimension has votes; the block below is skipped then.
+     */
+    readonly dimensionRatings: readonly ResolvedDimensionAverage[];
 }
 
-const { reviews, totalReviews, reviewsCount, locale } = Astro.props;
+const { reviews, totalReviews, reviewsCount, locale, dimensionRatings } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 if (reviewsCount <= 0) return;
@@ -31,6 +37,28 @@ if (reviewsCount <= 0) return;
     <h2 class="venue-detail__section-title">
         {t('venue.detail.reviews.title', 'Reseñas')}
     </h2>
+    {dimensionRatings.length > 0 && (
+        <div class="venue-detail__dimension-averages">
+            <h3 class="venue-detail__dimension-title">
+                {t('review.dimensionAverages.title')}
+            </h3>
+            <ul class="venue-detail__dimension-list">
+                {dimensionRatings.map((dimension) => (
+                    <li class="venue-detail__dimension-item">
+                        <span class="venue-detail__dimension-label">
+                            {t(dimension.labelKey)}
+                        </span>
+                        <span class="venue-detail__dimension-average">
+                            {dimension.average.toFixed(1)}
+                        </span>
+                        <span class="venue-detail__dimension-votes">
+                            {tPlural('review.dimensionAverages.votes', dimension.count)}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    )}
     {reviews.length === 0 ? (
         <p class="venue-detail__reviews-empty">
             {t(
@@ -127,5 +155,57 @@ if (reviewsCount <= 0) return;
         font-weight: 500;
         margin: 0;
         padding: var(--space-2, 8px) 0;
+    }
+
+    .venue-detail__dimension-averages {
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .venue-detail__dimension-title {
+        font-family: var(--font-heading);
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .venue-detail__dimension-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .venue-detail__dimension-item {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-3, 12px);
+        padding: var(--space-2, 8px) var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .venue-detail__dimension-label {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        flex: 1;
+    }
+
+    .venue-detail__dimension-average {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--rating-star);
+    }
+
+    .venue-detail__dimension-votes {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
     }
 </style>
