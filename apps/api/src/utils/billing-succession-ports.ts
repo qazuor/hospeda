@@ -27,6 +27,12 @@ export function getSuccessionCloser() {
     });
 }
 
+/** Reuse the webhook's real notice delegates for successor admission reads. */
+export async function getPlanChangeMirror() {
+    const { buildMercadoPagoNoticePorts } = await import('../routes/webhooks/mercadopago-ports.js');
+    return { delegate: buildMercadoPagoNoticePorts().delegates.delegate };
+}
+
 /** Collect S38 effects inside the transaction and publish them after its service commits. */
 export function createScheduledChangeCollector() {
     const pending: Extract<ApplyScheduledChangeResult, { outcome: 'APPLIED' }>[] = [];

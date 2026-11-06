@@ -1,14 +1,19 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
+    billingOptions,
     courtesyGrants,
     type DrizzleClient,
     eq,
     getDb,
+    plans,
+    planVersionLimits,
+    planVersions,
     setDb,
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
+import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { activateSubscription } from '../../../../../packages/service-core/src/services/billing/subscription/activate-subscription.service';
 import { startSubscription } from '../../../../../packages/service-core/src/services/billing/subscription/start-subscription.service';
 import { startSuccession } from '../../../../../packages/service-core/src/services/billing/subscription/start-succession.service';
@@ -33,6 +38,96 @@ export async function withCompositionRollback(
             setDb(db);
         }
     });
+}
+
+/** Reach an ACTIVE card predecessor through S1 and S2, with a real catalog destination. */
+export async function startPlanChangeScenario(
+    tx: DrizzleClient,
+    input: {
+        readonly provider: PaymentProvider;
+        readonly clock: Clock;
+        readonly approve: (authorizationId: string) => Promise<void>;
+        readonly direction?: 'UP' | 'DOWN';
+    }
+) {
+    const user = await seedCoverageUser(tx);
+    const source = await seedCoveragePlanVersion(tx, 'accommodation');
+    const [plan] = await tx
+        .insert(plans)
+        .values({
+            vertical: 'accommodation',
+            slug: `route-target-${crypto.randomUUID()}`,
+            name: 'Route target'
+        })
+        .returning({ id: plans.id });
+    if (!plan) throw new Error('Target plan missing');
+    const [targetVersion] = await tx
+        .insert(planVersions)
+        .values({
+            planId: plan.id,
+            vertical: 'accommodation',
+            rank: Math.floor(Math.random() * 1_000_000_000) + 1,
+            sellable: true,
+            current: true,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning({ id: planVersions.id });
+    if (!targetVersion) throw new Error('Target version missing');
+    const [target] = await tx
+        .insert(billingOptions)
+        .values({
+            planVersionId: targetVersion.id,
+            cycle: 'monthly',
+            amount: 300000,
+            currency: 'ARS'
+        })
+        .returning({ id: billingOptions.id });
+    if (!target) throw new Error('Target option missing');
+    if (input.direction === 'DOWN')
+        await tx.insert(planVersionLimits).values({
+            planVersionId: source.planVersionId,
+            key: PUBLICATION_LIMIT_KEYS.accommodation,
+            value: 10
+        });
+    const ports = {
+        provider: input.provider,
+        clock: input.clock,
+        planPolicy: async () => ({
+            graceDays: 10,
+            allowsPause: false,
+            current: true,
+            sellable: true
+        }),
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+        touristVipInheritance: noTouristVip
+    };
+    const started = await startSubscription(
+        {
+            userId: user.userId,
+            billingOptionId: source.billingOptionId,
+            returnUrl: 'https://example.test/return'
+        },
+        ports
+    );
+    await input.approve(started.authorizationId);
+    const activated = await activateSubscription(started.subscriptionId, ports);
+    if (!activated.activated)
+        throw new Error('Plan change predecessor did not activate through S2');
+    // The first successful recurring charge belongs to a later act; anchor its future cycle date for this route fixture.
+    await tx
+        .update(subscriptions)
+        .set({
+            nextChargeAt: new Date(input.clock.now().getTime() + 30 * 24 * 60 * 60 * 1000)
+        })
+        .where(eq(subscriptions.id, started.subscriptionId));
+    return {
+        userId: user.userId,
+        subscriptionId: started.subscriptionId,
+        authorizationId: started.authorizationId,
+        sourceOptionId: source.billingOptionId,
+        targetOptionId: target.id
+    };
 }
 
 /** Build the API settlement scenario through the real S1 and S2 transitions. */
