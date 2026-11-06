@@ -13,7 +13,12 @@ import { runReconciliationSweep } from '../../../src/services/billing/reconcilia
 import * as authorizationWindows from '../../../src/services/billing/subscription/expire-authorization-windows.service';
 import { completeSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { createSuccessorCutter } from '../../../src/services/billing/subscription/successor-cutter';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    isServiceTestDbAvailable,
+    withServiceTestTransaction
+} from './helpers';
 import {
     resetSeededReconciliationInventory,
     trackSeededReconciliationRow,
@@ -28,7 +33,7 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
 import { retainInOwnTransaction } from './support/succession-retention-fixtures';
 import { retireS17, s17Now, s17Ports, seedS17 } from './support/succession-s17-fixtures';
-import { successorCutPorts } from './support/successor-cut-fixtures';
+import { seedSuccessorCutCase, successorCutPorts } from './support/successor-cut-fixtures';
 
 const seededPaymentIds: string[] = [];
 const cutSuccessors: { readonly id: string; readonly predecessorId: string }[] = [];
@@ -453,5 +458,19 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 provider half', ()
             cancelledAddons: [{ instanceId: addon.instanceId }]
         });
         expect(complement.snapshot.status).toBe('cancelled');
+    });
+
+    it('(h) returns NO_LIVE_SUCCESSOR when the only successor is already cancelled', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const ids = await seedSuccessorCutCase(tx, {
+                predecessorStatus: 'CANCELLED',
+                successorStatus: 'CANCELLED'
+            });
+            const result = await createSuccessorCutter(successorCutPorts(tx)).cutSuccessor({
+                predecessorSubscriptionId: ids.predecessor.id,
+                tx
+            });
+            expect(result).toEqual({ outcome: 'NO_LIVE_SUCCESSOR' });
+        });
     });
 });

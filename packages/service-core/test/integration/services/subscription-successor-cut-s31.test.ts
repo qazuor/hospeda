@@ -248,20 +248,6 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
         });
     });
 
-    it('(h) returns NO_LIVE_SUCCESSOR when the only successor is already cancelled', async () => {
-        await withServiceTestTransaction(async (tx) => {
-            const ids = await seedSuccessorCutCase(tx, {
-                predecessorStatus: 'CANCELLED',
-                successorStatus: 'CANCELLED'
-            });
-            const result = await createSuccessorCutter(successorCutPorts(tx)).cutSuccessor({
-                predecessorSubscriptionId: ids.predecessor.id,
-                tx
-            });
-            expect(result).toEqual({ outcome: 'NO_LIVE_SUCCESSOR' });
-        });
-    });
-
     it('(f) records one S31 provider cancellation decision for a linked card successor', async () => {
         await withServiceTestTransaction(async (tx) => {
             const ids = await seedSuccessorCutCase(tx, {
