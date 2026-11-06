@@ -81,6 +81,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
                 outcome: 'NOT_APPLICABLE',
                 reason: 'WAITS_PAUSED'
             });
+        expect(
+            result.results.filter((row) => row.subscriptionId === paused.predecessor.id)
+        ).toHaveLength(1);
         expect(result.results.some((row) => row.subscriptionId === future.predecessor.id)).toBe(
             false
         );
