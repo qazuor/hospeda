@@ -20,9 +20,20 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
         expect((await page.request.get(new URL(href!, WEB_URL).href)).status()).toBe(200);
 
         const nav = page.locator('header nav').first();
-        await expect(nav.getByRole('link', { name: 'Comer y salir' })).toHaveAttribute(
-            'href',
-            '/es/comer-y-salir/'
+        const venueLink = nav.getByRole('link', { name: 'Comer y salir' });
+        await expect(venueLink).toHaveAttribute('href', '/es/comer-y-salir/');
+        const regularLink = nav.getByRole('link', { name: 'Alojamientos' });
+        const venueTypography = await venueLink.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return [style.fontWeight, style.fontSize, style.fontFamily];
+        });
+        const regularTypography = await regularLink.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return [style.fontWeight, style.fontSize, style.fontFamily];
+        });
+        expect(venueTypography).toEqual(regularTypography);
+        const homeVenueColor = await venueLink.evaluate(
+            (element) => getComputedStyle(element).color
         );
         const collectionHrefs = listPublicBusinessLines({ vertical: 'venue' }).map(
             ({ value }) => `/es/comer-y-salir/rubro/${businessLineToUrlSlug({ value }).urlSlug}/`
@@ -35,6 +46,15 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
         const nightSlug = businessLineToUrlSlug({ value: 'nightlife' }).urlSlug;
         await page.goto(`${WEB_URL}/es/comer-y-salir/rubro/${nightSlug}/`);
         await expect(page).toHaveTitle(/^Boliches, bares y pubs en /);
+        const activeVenueLink = page
+            .locator('header nav')
+            .first()
+            .getByRole('link', { name: 'Comer y salir' });
+        await expect(activeVenueLink).toHaveAttribute('aria-current', 'page');
+        const activeVenueColor = await activeVenueLink.evaluate(
+            (element) => getComputedStyle(element).color
+        );
+        expect(activeVenueColor).not.toBe(homeVenueColor);
 
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto(`${WEB_URL}/es/`);
