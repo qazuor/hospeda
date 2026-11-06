@@ -24,6 +24,7 @@ import { createPaymentReconciliationMarkPayments } from '../../../../src/service
 import { recordChargeFact } from '../../../../src/services/billing/payment/record-charge-fact.service.js';
 import type { ChargebackDetection } from '../../../../src/services/billing/reconciliation/chargeback/chargeback-detection.js';
 import { getServiceTestDb } from '../helpers.js';
+import { graceWithFailedCycle } from './grace-fixtures.js';
 import { paymentFixture } from './payment-fixtures.js';
 
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
@@ -36,6 +37,13 @@ export type ChargebackFixture = Awaited<ReturnType<typeof paymentFixture>>;
 /** A fresh subscription with its fake, registered for retirement. */
 export async function chargebackFixture(): Promise<ChargebackFixture> {
     const fixture = await paymentFixture();
+    seeded.push({ subscriptionId: fixture.started.subscriptionId, userId: fixture.user.id });
+    return fixture;
+}
+
+/** A charged-back credited payment on a subscription that entered S4 grace through a rejected cycle. */
+export async function chargebackGraceFixture() {
+    const fixture = await graceWithFailedCycle();
     seeded.push({ subscriptionId: fixture.started.subscriptionId, userId: fixture.user.id });
     return fixture;
 }

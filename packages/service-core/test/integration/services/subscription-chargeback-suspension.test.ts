@@ -2,9 +2,11 @@ import {
     and,
     emailOutbox,
     eq,
+    isNull,
     payments,
     providerLinks,
     reconciliationMarkPayments,
+    subscriptionPauses,
     subscriptions
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -13,18 +15,29 @@ import {
     createChargebackDetection,
     createChargebackSuspension
 } from '../../../src/services/billing/reconciliation/chargeback/chargeback-detection';
+import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { orphanPorts } from './support/addon-orphan-fixtures';
 import type { ChargebackFixture } from './support/chargeback-fixtures';
 import {
     approvedCharge,
     chargebackFixture,
+    chargebackGraceFixture,
     chargebackMarks,
     paymentOfCharge,
     recordCharge,
     retireChargebackFixtures
 } from './support/chargeback-fixtures';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
+
+const emptyComplements = {
+    addonPolicy: async () => {
+        throw new Error('No addon expected');
+    },
+    listing: async () => {
+        throw new Error('No listing expected');
+    }
+};
 
 afterEach(retireChargebackFixtures);
 afterAll(closeServiceTestPool);
@@ -152,6 +165,106 @@ describe('TEST:B7:7 AC:B7:10 chargeback S6 on a real credited payment', () => {
                 'billing.payment-credited',
                 'billing.signup-confirmed'
             ]);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:B7:7 preserves the real S4 grace clock while S6 suspends on chargeback',
+        async () => {
+            const fixture = await chargebackGraceFixture();
+            const chargeId = fixture.initialChargeId;
+            const [before] = await getServiceTestDb()
+                .select({
+                    status: subscriptions.status,
+                    graceStartedAt: subscriptions.graceStartedAt,
+                    graceEndsAt: subscriptions.graceEndsAt
+                })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            expect(before?.status).toBe('GRACE_PERIOD');
+
+            await fixture.provider.chargeBack({ chargeId });
+            const result = await detectionFor(fixture, true).detect({
+                payment: await paymentOfCharge(chargeId),
+                actor: 'provider',
+                correlationId: crypto.randomUUID()
+            });
+
+            const [after] = await getServiceTestDb()
+                .select({
+                    status: subscriptions.status,
+                    graceStartedAt: subscriptions.graceStartedAt,
+                    graceEndsAt: subscriptions.graceEndsAt
+                })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            expect(result.suspension?.outcome).toBe('SUSPENDED');
+            expect(after).toMatchObject({
+                status: 'SUSPENDED',
+                graceStartedAt: before?.graceStartedAt,
+                graceEndsAt: before?.graceEndsAt
+            });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:B7:7 leaves PAUSED CUSTOMER_REQUEST in place and only opens the chargeback mark',
+        async () => {
+            const fixture = await chargebackFixture();
+            const chargeId = await approvedCharge(fixture);
+            expect((await recordCharge(fixture, chargeId)).outcome).toBe('CREDITED');
+            const paused = await pauseSubscription(
+                { subscriptionId: fixture.started.subscriptionId, requestedMonths: 1 },
+                {
+                    provider: fixture.provider,
+                    clock: fixture.clock,
+                    planPolicy: async () => ({
+                        graceDays: 7,
+                        allowsPause: true,
+                        current: true,
+                        sellable: true
+                    }),
+                    complements: emptyComplements
+                }
+            );
+            expect(paused.outcome).toBe('PAUSED');
+            const [openPause] = await getServiceTestDb()
+                .select()
+                .from(subscriptionPauses)
+                .where(
+                    and(
+                        eq(subscriptionPauses.subscriptionId, fixture.started.subscriptionId),
+                        isNull(subscriptionPauses.actualEndAt)
+                    )
+                );
+            expect(openPause?.reason).toBe('CUSTOMER_REQUEST');
+
+            await fixture.provider.chargeBack({ chargeId });
+            const result = await detectionFor(fixture, true).detect({
+                payment: await paymentOfCharge(chargeId),
+                actor: 'provider',
+                correlationId: crypto.randomUUID()
+            });
+
+            const [subscription] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            expect(result.suspension).toMatchObject({
+                outcome: 'NOT_APPLICABLE',
+                reason: 'NOT_COURTESY_PAUSE'
+            });
+            expect(subscription?.status).toBe('PAUSED');
+            expect(await chargebackMarks(fixture.started.subscriptionId)).toHaveLength(1);
+            const mails = await getServiceTestDb()
+                .select({ template: emailOutbox.template })
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, fixture.user.id));
+            expect(mails.map((row) => row.template).sort()).toEqual([
+                'billing.payment-credited',
+                'billing.signup-confirmed'
+            ]);
+            expect(openPause?.actualEndAt).toBeNull();
         }
     );
 });
