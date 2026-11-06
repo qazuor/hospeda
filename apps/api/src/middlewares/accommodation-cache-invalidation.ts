@@ -25,10 +25,20 @@ export const ACCOMMODATION_WRITE_MOUNT_PATHS = [
     '/api/v1/admin/accommodations'
 ] as const;
 
+/**
+ * Non-GET write-tier requests that only READ (they are POSTs because they carry
+ * a body). They must not evict the public cache on every call.
+ */
+export const ACCOMMODATION_READ_ONLY_POST_PATHS = [
+    '/api/v1/protected/accommodations/compare',
+    '/api/v1/admin/accommodations/batch'
+] as const;
+
 /** Creates middleware that evicts accommodation-dependent public responses after successful writes. */
 export function accommodationCacheInvalidationMiddleware(): MiddlewareHandler<AppBindings> {
     return createPublicCacheInvalidationMiddleware({
-        pathPrefixes: ACCOMMODATION_CACHE_INVALIDATION_PREFIXES
+        pathPrefixes: ACCOMMODATION_CACHE_INVALIDATION_PREFIXES,
+        excludePaths: ACCOMMODATION_READ_ONLY_POST_PATHS
     });
 }
 

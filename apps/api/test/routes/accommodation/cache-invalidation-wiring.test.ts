@@ -12,6 +12,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountAccommodationCacheInvalidation } from '../../../src/middlewares/accommodation-cache-invalidation.js';
 import { clearCache, createCacheMiddleware } from '../../../src/middlewares/cache.js';
@@ -51,6 +52,7 @@ let servedValue = 'old';
 
 /** Write paths a host editor / admin hits, relative to the tier mount (method, path). */
 const WRITE_PATHS: ReadonlyArray<readonly [string, string]> = [
+    ['POST', ''],
     ['PATCH', `/${ID}`],
     ['PUT', `/${ID}`],
     ['POST', `/${ID}/faqs`],
@@ -69,6 +71,9 @@ function buildApp(tier: 'protected' | 'admin'): Hono<AppBindings> {
     const writes = new Hono<AppBindings>();
     // Status is driven by the request so one stand-in covers success and failure.
     writes.all('*', (c) => {
+        if (c.req.header('x-test-throw') === 'validation') {
+            throw new HTTPException(400, { message: 'invalid' });
+        }
         const status = Number(c.req.header('x-test-status') ?? '200');
         return c.json({ ok: status < 400 }, status as 200);
     });
@@ -145,18 +150,51 @@ describe.each(['protected', 'admin'] as const)('%s accommodation cache invalidat
     });
 });
 
+describe.each([
+    ['protected', '/compare'],
+    ['admin', '/batch']
+] as const)('%s read-only POST %s', (tier, path) => {
+    it('does not evict the public cache', async () => {
+        const app = buildApp(tier);
+        await (await app.request(SLUG_URL)).text();
+        await (await app.request(DEST_URL)).text();
+
+        const res = await write(app, tier, ['POST', path]);
+        expect(res.status).toBe(200);
+
+        expect((await app.request(SLUG_URL)).headers.get('x-cache')).toBe('HIT');
+        expect((await app.request(DEST_URL)).headers.get('x-cache')).toBe('HIT');
+    });
+});
+
+describe.each(['protected', 'admin'] as const)('%s thrown handler error', (tier) => {
+    it('does not evict on a 4xx that goes through onError', async () => {
+        const app = buildApp(tier);
+        await (await app.request(SLUG_URL)).text();
+
+        const res = await app.request(`/api/v1/${tier}/accommodations/${ID}`, {
+            method: 'PATCH',
+            headers: { 'x-test-throw': 'validation' },
+            body: '{}'
+        });
+        expect(res.status).toBe(400);
+
+        expect((await app.request(SLUG_URL)).headers.get('x-cache')).toBe('HIT');
+    });
+});
+
 describe('routes/index.ts wiring', () => {
     it('mounts the accommodation invalidation before the accommodation routers', () => {
         const source = readFileSync(
             new URL('../../../src/routes/index.ts', import.meta.url),
             'utf8'
         );
-        const mountAt = source.indexOf('mountAccommodationCacheInvalidation({ app })');
-        const protectedAt = source.indexOf(
-            "app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes)"
+        const mountAt = source.search(/mountAccommodationCacheInvalidation\(\s*\{\s*app\s*\}\s*\)/);
+        const protectedAt = source.search(
+            /app\.route\(\s*'\/api\/v1\/protected\/accommodations',\s*protectedAccommodationRoutes\s*\)/
         );
-        const adminAt = source.indexOf(
-            "app.route('/api/v1/admin/accommodations', adminAccommodationRoutes)"
+        const adminAt = source.search(
+            /app\.route\(\s*'\/api\/v1\/admin\/accommodations',\s*adminAccommodationRoutes\s*\)/
         );
         expect(mountAt).toBeGreaterThan(-1);
         expect(protectedAt).toBeGreaterThan(-1);
