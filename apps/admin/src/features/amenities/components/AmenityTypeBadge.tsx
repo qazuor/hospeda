@@ -18,6 +18,12 @@ const TYPE_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
     SAFETY: 'admin-entities.types.amenity.safety',
     FAMILY_FRIENDLY: 'admin-entities.types.amenity.familyFriendly',
     WORK_FRIENDLY: 'admin-entities.types.amenity.workFriendly',
+    // HOS-2058
+    PARKING: 'admin-entities.types.amenity.parking',
+    LAUNDRY: 'admin-entities.types.amenity.laundry',
+    WATER_ACTIVITIES: 'admin-entities.types.amenity.waterActivities',
+    WELLNESS: 'admin-entities.types.amenity.wellness',
+    DINING: 'admin-entities.types.amenity.dining',
     GENERAL_APPLIANCES: 'admin-entities.types.amenity.generalAppliances'
 };
 

@@ -116,6 +116,12 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                     { value: AmenitiesTypeEnum.SAFETY, label: 'Seguridad' },
                     { value: AmenitiesTypeEnum.FAMILY_FRIENDLY, label: 'Familiar' },
                     { value: AmenitiesTypeEnum.WORK_FRIENDLY, label: 'Trabajo' },
+                    // HOS-2058
+                    { value: AmenitiesTypeEnum.PARKING, label: 'Estacionamiento' },
+                    { value: AmenitiesTypeEnum.LAUNDRY, label: 'Lavandería' },
+                    { value: AmenitiesTypeEnum.WATER_ACTIVITIES, label: 'Actividades acuáticas' },
+                    { value: AmenitiesTypeEnum.WELLNESS, label: 'Bienestar' },
+                    { value: AmenitiesTypeEnum.DINING, label: 'Gastronomía' },
                     { value: AmenitiesTypeEnum.GENERAL_APPLIANCES, label: 'Electrodomésticos' }
                 ]
             }
