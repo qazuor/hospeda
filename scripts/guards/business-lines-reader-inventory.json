@@ -302,6 +302,11 @@
             "spec": ".hoja/contexto.md:47-56"
         },
         {
+            "file": "packages/verticals/src/listing-sections/business-lines-change.ts",
+            "category": "resolver",
+            "spec": ".hoja/contexto.md:250-255"
+        },
+        {
             "file": "packages/seed/src/example/venues.seed.ts",
             "category": "seed",
             "spec": ".hoja/contexto.md:47-56"
