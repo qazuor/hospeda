@@ -2,6 +2,7 @@ import { billingDeadlineVersions, desc, eq, sql, subscriptions } from '@repo/db'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { readCycleDeadlines } from '../../../src/services/billing/subscription/plan-change-cycle-deadlines.js';
 import { requestPlanChange } from '../../../src/services/billing/subscription/request-plan-change.service.js';
+import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service.js';
 import { resolveSuccessorWindow } from '../../../src/services/billing/subscription/successor-window.js';
 import {
     closeServiceTestPool,
@@ -47,6 +48,35 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
         });
         expect(successors).toHaveLength(0);
         expect(predecessor?.succeededById).toBeNull();
+        expect(authorize).toHaveBeenCalledTimes(0);
+    });
+
+    it('rejects a direct S1 call when the window became too short before insertion', async () => {
+        const seeded = await seedPlanChange({ nextChargeAt: chargeAt });
+        const authorize = vi.spyOn(seeded.fake, 'authorize');
+        await expect(
+            startSuccession(
+                {
+                    userId: seeded.user.id,
+                    predecessorSubscriptionId: seeded.predecessor.id,
+                    billingOptionId: seeded.targetBillingOptionId,
+                    returnUrl: seeded.input.returnUrl
+                },
+                { ...seeded.ports, clock: clockAt('2026-10-11T05:00:00.000Z') }
+            )
+        ).rejects.toMatchObject({
+            reason: 'SUCCESSION_WINDOW_TOO_SHORT'
+        });
+        const [predecessor] = await getServiceTestDb()
+            .select({ succeededById: subscriptions.succeededById })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.predecessor.id));
+        const successors = await getServiceTestDb()
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(eq(subscriptions.succeedsId, seeded.predecessor.id));
+        expect(predecessor?.succeededById).toBeNull();
+        expect(successors).toHaveLength(0);
         expect(authorize).toHaveBeenCalledTimes(0);
     });
 
