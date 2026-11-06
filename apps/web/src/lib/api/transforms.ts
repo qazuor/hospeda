@@ -2160,13 +2160,13 @@ function extractAmenityAttributes(
  * The `slug` field from the API response is stored in `AmenityData.slug` so
  * that client-side components can re-resolve the label with the correct locale.
  *
- * BETA-133: the public amenities catalog (`AmenityPublicSchema`) exposes the
- * grouping value under the `type` field (an `AmenitiesTypeEnum` member, e.g.
- * `"SERVICES"`), not `category` — the raw JSON never actually carries a
- * `category` key. The public features catalog (`FeaturePublicSchema`) has no
- * grouping field at all. Read `item.type` first (amenities), falling back to
- * `item.category` for forward-compat if the API ever adds that name; features
- * fall through to `null`, which the editor groups under a catch-all bucket.
+ * Grouping value (BETA-133, HOS-2058): amenities carry it under `type` (an
+ * `AmenitiesTypeEnum` member, e.g. `"SERVICES"`) and have no `category` key;
+ * features carry it under `category` (a `FeatureCategoryEnum` member, e.g.
+ * `"VIEW"`, nullable while release N backfills it) and have no `type`. So
+ * `item.type ?? item.category` resolves the right field for either kind; a
+ * feature with no category yet maps to `null`, which the editor groups under
+ * a catch-all bucket.
  *
  * @param items - Raw catalog objects from the public amenities / features endpoint
  * @returns Typed AmenityData array for the editor's checkbox group
