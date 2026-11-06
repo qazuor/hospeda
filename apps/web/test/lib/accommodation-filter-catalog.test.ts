@@ -8,10 +8,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { amenitiesList, featuresList } = vi.hoisted(() => ({
+const { amenitiesList, featuresList, warn } = vi.hoisted(() => ({
     amenitiesList: vi.fn(),
-    featuresList: vi.fn()
+    featuresList: vi.fn(),
+    warn: vi.fn()
 }));
+
+vi.mock('../../src/lib/logger', () => ({ webLogger: { warn } }));
 
 vi.mock('../../src/lib/api/endpoints', () => ({
     amenitiesApi: { list: amenitiesList },
@@ -19,7 +22,11 @@ vi.mock('../../src/lib/api/endpoints', () => ({
     SSR_PUBLIC_CACHE_TTL_MS: 1000
 }));
 
-import { fetchAccommodationFilterCatalog } from '../../src/lib/filters/accommodation-filter-catalog';
+import {
+    fetchAccommodationFilterAmenities,
+    fetchAccommodationFilterCatalog,
+    fetchAccommodationFilterFeatures
+} from '../../src/lib/filters/accommodation-filter-catalog';
 
 const PAGE_SIZE = 100;
 
@@ -53,6 +60,7 @@ describe('fetchAccommodationFilterCatalog', () => {
     beforeEach(() => {
         amenitiesList.mockReset();
         featuresList.mockReset();
+        warn.mockReset();
     });
 
     it('scopes both calls to the accommodation vertical', async () => {
@@ -105,5 +113,80 @@ describe('fetchAccommodationFilterCatalog', () => {
 
         expect(amenities).toEqual([]);
         expect(features).toHaveLength(2);
+    });
+
+    it('keeps the partial list and logs when a later page fails', async () => {
+        amenitiesList.mockImplementation(async (params?: { page?: number }) => {
+            if (params?.page === 2) return { ok: false, error: { status: 502 } };
+            return paged({ total: 250 })(params);
+        });
+        featuresList.mockImplementation(paged({ total: 1 }));
+
+        const { amenities } = await fetchAccommodationFilterCatalog();
+
+        expect(amenities).toHaveLength(100);
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0]?.[1]).toMatchObject({ endpoint: 'amenities', page: 2 });
+    });
+
+    it('logs a first-page failure with endpoint and page', async () => {
+        amenitiesList.mockResolvedValue({ ok: false, error: { status: 500 } });
+        featuresList.mockImplementation(paged({ total: 1 }));
+
+        await fetchAccommodationFilterCatalog();
+
+        expect(warn.mock.calls[0]?.[1]).toMatchObject({ endpoint: 'amenities', page: 1 });
+    });
+
+    it('stops after page one when totalPages is 0 or missing', async () => {
+        const one = (totalPages: number | undefined) =>
+            vi.fn(async () => ({
+                ok: true as const,
+                data: {
+                    items: [{ id: 'a', slug: 'a' }],
+                    pagination: { totalPages }
+                }
+            }));
+        amenitiesList.mockImplementation(one(0));
+        featuresList.mockImplementation(one(undefined));
+
+        const { amenities, features } = await fetchAccommodationFilterCatalog();
+
+        expect(amenities).toHaveLength(1);
+        expect(features).toHaveLength(1);
+        expect(amenitiesList).toHaveBeenCalledTimes(1);
+        expect(featuresList).toHaveBeenCalledTimes(1);
+    });
+
+    it('caps paging at 20 pages', async () => {
+        amenitiesList.mockImplementation(paged({ total: 100 * 50 }));
+
+        const amenities = await fetchAccommodationFilterAmenities();
+
+        expect(amenitiesList).toHaveBeenCalledTimes(20);
+        expect(amenities).toHaveLength(2000);
+    });
+
+    it('asks only for active amenities and sorts both lists by displayWeight desc', async () => {
+        amenitiesList.mockImplementation(paged({ total: 1 }));
+        featuresList.mockImplementation(paged({ total: 1 }));
+
+        await fetchAccommodationFilterCatalog();
+
+        expect(amenitiesList.mock.calls[0]?.[0]).toMatchObject({ isActive: true });
+        expect(featuresList.mock.calls[0]?.[0]).toMatchObject({
+            sortBy: 'displayWeight',
+            sortOrder: 'desc'
+        });
+    });
+
+    it('exposes single-catalog loaders that call only their own endpoint', async () => {
+        amenitiesList.mockImplementation(paged({ total: 1 }));
+        featuresList.mockImplementation(paged({ total: 1 }));
+
+        await fetchAccommodationFilterAmenities();
+        expect(featuresList).not.toHaveBeenCalled();
+        await fetchAccommodationFilterFeatures();
+        expect(featuresList).toHaveBeenCalledTimes(1);
     });
 });

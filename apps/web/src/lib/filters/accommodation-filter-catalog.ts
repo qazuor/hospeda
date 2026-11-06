@@ -15,6 +15,7 @@
 import type { AmenityPublic, FeaturePublic } from '@repo/schemas';
 import { amenitiesApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import type { ApiResult, PaginatedResponse } from '@/lib/api/types';
+import { webLogger as logger } from '@/lib/logger';
 
 /** Server-side page size cap (`MAX_PAGE_SIZE` in apps/api). */
 const CATALOG_PAGE_SIZE = 100;
@@ -34,43 +35,82 @@ type PageFetcher<T> = (params: {
 
 /**
  * Pages through a list endpoint until every row is collected.
- * A failed page degrades to what was collected so far (empty on first-page failure).
+ * A failed page degrades to what was collected so far (empty on first-page
+ * failure) and is logged with the endpoint and page.
  */
 const collectAllPages = async <T>({
+    endpoint,
     fetchPage
 }: {
+    readonly endpoint: string;
     readonly fetchPage: PageFetcher<T>;
 }): Promise<readonly T[]> => {
     const first = await fetchPage({ page: 1 });
-    if (!first.ok) return [];
+    if (!first.ok) {
+        logger.warn('accommodation-filter-catalog: catalog page fetch failed', {
+            endpoint,
+            page: 1,
+            error: first.error
+        });
+        return [];
+    }
     const items: T[] = [...first.data.items];
-    const totalPages = Math.min(first.data.pagination.totalPages, MAX_CATALOG_PAGES);
+    const totalPages = Math.min(first.data.pagination.totalPages ?? 1, MAX_CATALOG_PAGES);
     for (let page = 2; page <= totalPages; page++) {
         const next = await fetchPage({ page });
-        if (!next.ok) break;
+        if (!next.ok) {
+            logger.warn('accommodation-filter-catalog: catalog page fetch failed', {
+                endpoint,
+                page,
+                error: next.error
+            });
+            break;
+        }
         items.push(...next.data.items);
     }
     return items;
 };
 
-/**
- * Fetches the complete, active, accommodation-applicable amenity and feature catalogs.
- *
- * @returns Both catalogs, each sorted by `displayWeight` desc; empty on failure.
- */
-export const fetchAccommodationFilterCatalog = async (): Promise<AccommodationFilterCatalog> => {
-    const base = {
+const baseParams = () =>
+    ({
         pageSize: CATALOG_PAGE_SIZE,
         applicableVertical: 'accommodation' as const,
         sortBy: 'displayWeight',
         sortOrder: 'desc' as const,
         cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
-    };
+    }) as const;
+
+/**
+ * Fetches every active accommodation-applicable amenity.
+ *
+ * @returns Amenities sorted by `displayWeight` desc; empty on failure.
+ */
+export const fetchAccommodationFilterAmenities = async (): Promise<readonly AmenityPublic[]> =>
+    collectAllPages({
+        endpoint: 'amenities',
+        fetchPage: ({ page }) => amenitiesApi.list({ ...baseParams(), isActive: true, page })
+    });
+
+/**
+ * Fetches every accommodation-applicable feature.
+ *
+ * @returns Features sorted by `displayWeight` desc; empty on failure.
+ */
+export const fetchAccommodationFilterFeatures = async (): Promise<readonly FeaturePublic[]> =>
+    collectAllPages({
+        endpoint: 'features',
+        fetchPage: ({ page }) => featuresApi.list({ ...baseParams(), page })
+    });
+
+/**
+ * Fetches the complete amenity and feature catalogs in parallel.
+ *
+ * @returns Both catalogs; each empty on failure.
+ */
+export const fetchAccommodationFilterCatalog = async (): Promise<AccommodationFilterCatalog> => {
     const [amenities, features] = await Promise.all([
-        collectAllPages({
-            fetchPage: ({ page }) => amenitiesApi.list({ ...base, isActive: true, page })
-        }),
-        collectAllPages({ fetchPage: ({ page }) => featuresApi.list({ ...base, page }) })
+        fetchAccommodationFilterAmenities(),
+        fetchAccommodationFilterFeatures()
     ]);
     return { amenities, features };
 };
