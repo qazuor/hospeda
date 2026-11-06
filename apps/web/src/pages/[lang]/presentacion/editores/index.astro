@@ -76,6 +76,9 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -119,17 +122,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Editores</p>
     <h1>Contá el Litoral que conocés</h1>
     <div class="rule"></div>
@@ -154,6 +156,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       &mdash; este es tu espacio. Escribís notas, cargás eventos en la agenda, o las dos cosas; y
       todo sale firmado con tu nombre y con los créditos de haberlo hecho.
     </p>
+    </div>
+    <HospedinFigure pose="camara" placement="hero" say="¿Qué lugar nos contás?" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Qué cuesta</span>
@@ -351,19 +356,19 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       <p class="eyebrow">Antes de postularte</p>
       <h2>Las preguntas de siempre</h2>
     </div>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Pregunta</th><th scope="col">Respuesta</th></tr>
         </thead>
         <tbody>
-          <tr><td>¿Cada cuánto tengo que escribir?</td><td><strong>No hay un mínimo</strong>, pero idealmente una nota por mes o más. Recomendamos al menos una por semana.</td></tr>
-          <tr><td>¿Puedo cargar sólo eventos y no escribir notas?</td><td><strong>Sí</strong>, y al revés también. Son dos tareas separadas: hacés la que te guste, o las dos.</td></tr>
-          <tr><td>¿De qué largo tiene que ser una nota?</td><td>El que pida el tema. Una recomendación breve y una guía larga entran las dos.</td></tr>
-          <tr><td>¿Puedo dejar de colaborar cuando quiera?</td><td>Sí, sin aviso previo y sin explicaciones. Lo que publicaste queda, salvo que pidas que lo bajemos.</td></tr>
-          <tr><td>¿El texto sigue siendo mío?</td><td><strong>Sí.</strong> Podés republicarlo en tu blog o en tu portfolio; sólo te pedimos que menciones que salió primero en Hospeda y que sumes el enlace a la nota original.</td></tr>
-          <tr><td>¿Puedo escribir también en otros lados?</td><td>Sí, <strong>no pedimos exclusividad</strong>. Y también podés traer a Hospeda algo que ya publicaste en otro lado, siempre que encaje con los temas y el formato que usamos acá.</td></tr>
-          <tr><td>¿Y si el evento que cargué se suspende o cambia de fecha?</td><td>Lo actualizás desde tu cuenta mientras esté en borrador o esperando revisión. Si ya lo aprobamos y todavía no te habilitamos para publicar solo, escribinos y lo corregimos nosotros en el momento. <strong>Mantener al día lo que cargaste es parte del trabajo</strong>: una agenda con datos viejos molesta más de lo que ayuda.</td></tr>
+          <tr><td data-label="Pregunta">¿Cada cuánto tengo que escribir?</td><td data-label="Respuesta"><strong>No hay un mínimo</strong>, pero idealmente una nota por mes o más. Recomendamos al menos una por semana.</td></tr>
+          <tr><td data-label="Pregunta">¿Puedo cargar sólo eventos y no escribir notas?</td><td data-label="Respuesta"><strong>Sí</strong>, y al revés también. Son dos tareas separadas: hacés la que te guste, o las dos.</td></tr>
+          <tr><td data-label="Pregunta">¿De qué largo tiene que ser una nota?</td><td data-label="Respuesta">El que pida el tema. Una recomendación breve y una guía larga entran las dos.</td></tr>
+          <tr><td data-label="Pregunta">¿Puedo dejar de colaborar cuando quiera?</td><td data-label="Respuesta">Sí, sin aviso previo y sin explicaciones. Lo que publicaste queda, salvo que pidas que lo bajemos.</td></tr>
+          <tr><td data-label="Pregunta">¿El texto sigue siendo mío?</td><td data-label="Respuesta"><strong>Sí.</strong> Podés republicarlo en tu blog o en tu portfolio; sólo te pedimos que menciones que salió primero en Hospeda y que sumes el enlace a la nota original.</td></tr>
+          <tr><td data-label="Pregunta">¿Puedo escribir también en otros lados?</td><td data-label="Respuesta">Sí, <strong>no pedimos exclusividad</strong>. Y también podés traer a Hospeda algo que ya publicaste en otro lado, siempre que encaje con los temas y el formato que usamos acá.</td></tr>
+          <tr><td data-label="Pregunta">¿Y si el evento que cargué se suspende o cambia de fecha?</td><td data-label="Respuesta">Lo actualizás desde tu cuenta mientras esté en borrador o esperando revisión. Si ya lo aprobamos y todavía no te habilitamos para publicar solo, escribinos y lo corregimos nosotros en el momento. <strong>Mantener al día lo que cargaste es parte del trabajo</strong>: una agenda con datos viejos molesta más de lo que ayuda.</td></tr>
         </tbody>
       </table>
     </div>
@@ -392,18 +397,18 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       <p class="eyebrow">Qué manejás</p>
       <h2>Lo que podés y lo que no</h2>
     </div>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Acción</th><th scope="col">Cómo es</th></tr>
         </thead>
         <tbody>
-          <tr><td>Escribir y editar tus notas y tus eventos</td><td><strong>Todas las veces que quieras mientras están en borrador o esperando revisión</strong>, y también si te devolvemos algo para corregir. Una vez que lo aprobamos queda fijo: nos pedís el cambio y lo hacemos en el momento, hasta que te habilitamos a publicar solo y lo editás vos.</td></tr>
-          <tr><td>Subir imágenes, poner temas, cargar organizadores</td><td><strong>Vos</strong></td></tr>
-          <tr><td>Moderar los comentarios de tus notas y eventos</td><td><strong>Vos</strong>, si lo deseás (aprobás, rechazás o borrás), y/o alguno de los administradores del sitio</td></tr>
-          <tr><td>Publicar lo que escribiste o cargaste</td><td>Al principio lo hacemos nosotros. Se te habilita con el tiempo y publicaciones previas hechas.</td></tr>
-          <tr><td>Editar las notas y los eventos de otro editor</td><td>No. Cada uno edita lo suyo.</td></tr>
-          <tr><td>Borrar una nota o un evento tuyo ya publicado</td><td>Pedínoslo y lo bajamos.</td></tr>
+          <tr><td data-label="Acción">Escribir y editar tus notas y tus eventos</td><td data-label="Cómo es"><strong>Todas las veces que quieras mientras están en borrador o esperando revisión</strong>, y también si te devolvemos algo para corregir. Una vez que lo aprobamos queda fijo: nos pedís el cambio y lo hacemos en el momento, hasta que te habilitamos a publicar solo y lo editás vos.</td></tr>
+          <tr><td data-label="Acción">Subir imágenes, poner temas, cargar organizadores</td><td data-label="Cómo es"><strong>Vos</strong></td></tr>
+          <tr><td data-label="Acción">Moderar los comentarios de tus notas y eventos</td><td data-label="Cómo es"><strong>Vos</strong>, si lo deseás (aprobás, rechazás o borrás), y/o alguno de los administradores del sitio</td></tr>
+          <tr><td data-label="Acción">Publicar lo que escribiste o cargaste</td><td data-label="Cómo es">Al principio lo hacemos nosotros. Se te habilita con el tiempo y publicaciones previas hechas.</td></tr>
+          <tr><td data-label="Acción">Editar las notas y los eventos de otro editor</td><td data-label="Cómo es">No. Cada uno edita lo suyo.</td></tr>
+          <tr><td data-label="Acción">Borrar una nota o un evento tuyo ya publicado</td><td data-label="Cómo es">Pedínoslo y lo bajamos.</td></tr>
         </tbody>
       </table>
     </div>
@@ -422,6 +427,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Postulate</h2>
     <p>
       Si tenés algo para contar del Litoral &mdash; una nota, la agenda de lo que pasa en tu
@@ -443,6 +449,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       publicación.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 

@@ -2,9 +2,10 @@
 /**
  * @file presentacion/proveedores/index.astro
  * @description Commercial presentation for service providers (HOS-978). A verbatim
- * migration of the owner-approved artifact "Presentación Proveedores"; the copy and the
- * stylesheet below are the artifact's own and must not be rewritten here —
- * the artifact is the source of truth for both.
+ * migration of the owner-approved artifact "Presentación Proveedores"; the copy is the artifact's own
+ * and must not be rewritten here — the artifact is the source of truth for it. The
+ * styling no longer follows the artifact: it is the Hospeda brand look, see
+ * `styles/presentacion.css`.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/sumate/proveedor/). That landing sells and is
  * optimized to rank. This page is what the owner sends personally to one
@@ -41,6 +42,9 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -84,17 +88,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Directorio de oficios</p>
     <h1>Sumate como proveedor de servicios</h1>
     <div class="rule"></div>
@@ -111,6 +114,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       ordenada de resolver sus inconvenientes e imprevistos. Vos ofrecés un beneficio para ellos,
       te encuentran, y cada trabajo queda registrado con la firma de los dos.
     </p>
+    </div>
+    <HospedinFigure pose="lamparita" placement="hero" say="¡Tengo una idea para vos!" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Costo de estar</span>
@@ -199,18 +205,18 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       chica en tus palabras (&ldquo;no incluye materiales&rdquo;, &ldquo;dentro del ejido urbano&rdquo;, etc.).
       Sólo elegís una de estas seis formas.
     </p>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Tipo</th><th scope="col">Qué significa</th><th scope="col">Ejemplo</th></tr>
         </thead>
         <tbody>
-          <tr><td class="mono">Porcentaje</td><td>Descuento en porcentaje sobre tu precio.</td><td>15&nbsp;% en mano de obra</td></tr>
-          <tr><td class="mono">Monto fijo</td><td>Una rebaja de un importe fijo.</td><td>Una rebaja fija en la visita</td></tr>
-          <tr><td class="mono">2 x 1</td><td>Dos servicios al precio de uno.</td><td>Dos limpiezas, pagás una</td></tr>
-          <tr><td class="mono">Atención las 24hs</td><td>Atendés a cualquier hora, todos los días.</td><td>&ldquo;Una pérdida de agua un domingo a las 3 de la mañana&rdquo;</td></tr>
-          <tr><td class="mono">Atención prioritaria</td><td>El anfitrión de Hospeda pasa al frente de tu cola.</td><td>&ldquo;Te llama el martes y vas el miércoles, aunque tengas la semana llena&rdquo;</td></tr>
-          <tr><td class="mono">Otra ventaja</td><td>Algo diferente pero que igual vale como beneficio.</td><td>&ldquo;Pago en cuotas&rdquo; o &ldquo;Materiales incluidos&rdquo;</td></tr>
+          <tr><td data-label="Tipo" class="mono">Porcentaje</td><td data-label="Qué significa">Descuento en porcentaje sobre tu precio.</td><td data-label="Ejemplo">15&nbsp;% en mano de obra</td></tr>
+          <tr><td data-label="Tipo" class="mono">Monto fijo</td><td data-label="Qué significa">Una rebaja de un importe fijo.</td><td data-label="Ejemplo">Una rebaja fija en la visita</td></tr>
+          <tr><td data-label="Tipo" class="mono">2 x 1</td><td data-label="Qué significa">Dos servicios al precio de uno.</td><td data-label="Ejemplo">Dos limpiezas, pagás una</td></tr>
+          <tr><td data-label="Tipo" class="mono">Atención las 24hs</td><td data-label="Qué significa">Atendés a cualquier hora, todos los días.</td><td data-label="Ejemplo">&ldquo;Una pérdida de agua un domingo a las 3 de la mañana&rdquo;</td></tr>
+          <tr><td data-label="Tipo" class="mono">Atención prioritaria</td><td data-label="Qué significa">El anfitrión de Hospeda pasa al frente de tu cola.</td><td data-label="Ejemplo">&ldquo;Te llama el martes y vas el miércoles, aunque tengas la semana llena&rdquo;</td></tr>
+          <tr><td data-label="Tipo" class="mono">Otra ventaja</td><td data-label="Qué significa">Algo diferente pero que igual vale como beneficio.</td><td data-label="Ejemplo">&ldquo;Pago en cuotas&rdquo; o &ldquo;Materiales incluidos&rdquo;</td></tr>
         </tbody>
       </table>
     </div>
@@ -347,16 +353,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       <p class="eyebrow">Tu ficha</p>
       <h2>Qué cambiás solo y qué no</h2>
     </div>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
         </thead>
         <tbody>
-          <tr><td>Teléfono, WhatsApp o dirección de tu página web</td><td><strong>Vos, al instante</strong></td></tr>
-          <tr><td>Horarios / si atendés 24&nbsp;h</td><td><strong>Vos, al instante</strong></td></tr>
-          <tr><td>El beneficio y su letra chica</td><td>Vos, pero <strong>lo revisamos antes de publicarlo</strong>. Mientras tanto sigue vigente el anterior: tu ficha nunca deja de verse.</td></tr>
-          <tr><td>Nombre del negocio, rubro y ciudad</td><td>El equipo. Escribinos y lo cambiamos.</td></tr>
+          <tr><td data-label="Dato">Teléfono, WhatsApp o dirección de tu página web</td><td data-label="Quién lo cambia"><strong>Vos, al instante</strong></td></tr>
+          <tr><td data-label="Dato">Horarios / si atendés 24&nbsp;h</td><td data-label="Quién lo cambia"><strong>Vos, al instante</strong></td></tr>
+          <tr><td data-label="Dato">El beneficio y su letra chica</td><td data-label="Quién lo cambia">Vos, pero <strong>lo revisamos antes de publicarlo</strong>. Mientras tanto sigue vigente el anterior: tu ficha nunca deja de verse.</td></tr>
+          <tr><td data-label="Dato">Nombre del negocio, rubro y ciudad</td><td data-label="Quién lo cambia">El equipo. Escribinos y lo cambiamos.</td></tr>
         </tbody>
       </table>
     </div>
@@ -375,6 +381,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Sumate</h2>
     <p>
       El formulario tarda cinco minutos y se hace desde el celular o la computadora. Lo peor que puede pasar es
@@ -392,6 +399,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       ni lo cubre, pero deja constancia de si se respetó.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 

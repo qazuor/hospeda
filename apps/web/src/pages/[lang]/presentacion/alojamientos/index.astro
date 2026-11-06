@@ -74,6 +74,10 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
+import PlanTabs from '@/components/presentacion/PlanTabs.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -117,17 +121,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Alojamientos</p>
     <h1>Publicá tu alojamiento en Hospeda</h1>
     <div class="rule"></div>
@@ -137,6 +140,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       Publicás tu casa, departamento o cabaña, y el que la quiere alquilar te escribe
       <strong>directo a vos</strong>.
     </p>
+    </div>
+    <HospedinFigure pose="telefono" placement="hero" say="¡Lo publicás desde el celu!" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Comisión por reserva</span>
@@ -268,33 +274,35 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       Si lo pagás por año, <strong>pagás diez meses y tenés doce</strong>. Los valores vigentes
       están siempre en el sitio.
     </p>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">&nbsp;</th>
-            <th scope="col">Básico</th>
-            <th scope="col">Profesional</th>
-            <th scope="col">Premium</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Alojamientos publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">10</td></tr>
-          <tr><td>Fotos por alojamiento</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
-          <tr><td>Promociones activas</td><td class="mono">2</td><td class="mono">5</td><td class="mono">sin tope</td></tr>
-          <tr><td>Aparecer destacado</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Calendario conectado con Airbnb, Booking y Google</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Descripción con formato</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Enlace a videos de YouTube, Vimeo o Dailymotion</td><td>sí</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Atención prioritaria</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Estadísticas avanzadas</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Insignia de verificado</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Usos de inteligencia artificial por mes <span class="mono">(mejorar textos, chat con turistas)</span></td><td class="mono">50</td><td class="mono">250</td><td class="mono">1250</td></tr>
-          <tr><td>Traducciones automáticas por mes</td><td class="mono">200</td><td class="mono">1000</td><td class="mono">5000</td></tr>
-          <tr><td>Tu identidad visual en la ficha</td><td>—</td><td>—</td><td>próximamente</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <PlanTabs id="alojamientos-planes" plans={['Básico', 'Profesional', 'Premium']} selected={1}>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">&nbsp;</th>
+              <th scope="col">Básico</th>
+              <th scope="col">Profesional</th>
+              <th scope="col">Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Alojamientos publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">10</td></tr>
+            <tr><td>Fotos por alojamiento</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
+            <tr><td>Promociones activas</td><td class="mono">2</td><td class="mono">5</td><td class="mono">sin tope</td></tr>
+            <tr><td>Aparecer destacado</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Calendario conectado con Airbnb, Booking y Google</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Descripción con formato</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Enlace a videos de YouTube, Vimeo o Dailymotion</td><td>sí</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Atención prioritaria</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Estadísticas avanzadas</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>Insignia de verificado</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>Usos de inteligencia artificial por mes <span class="mono">(mejorar textos, chat con turistas)</span></td><td class="mono">50</td><td class="mono">250</td><td class="mono">1250</td></tr>
+            <tr><td>Traducciones automáticas por mes</td><td class="mono">200</td><td class="mono">1000</td><td class="mono">5000</td></tr>
+            <tr><td>Tu identidad visual en la ficha</td><td>—</td><td>—</td><td>próximamente</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </PlanTabs>
     <p class="subhead">
       <strong>En los tres planes</strong> entran: editar toda tu ficha, calendario de ocupación,
       preguntas frecuentes, promociones, estadísticas básicas y la ayuda de la inteligencia
@@ -322,15 +330,15 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
     </div>
     <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de nivel</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o una propiedad más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
     <p>Hay de dos tipos. Los que se cobran <strong>por mes</strong> duran mientras dure tu suscripción y los sacás cuando quieras. Los de <strong>una sola vez</strong> valen por un período fijo y se aplican a una sola ficha. Estos son los que hay para vos:</p>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Complemento</th><th scope="col">Qué te da</th><th scope="col">Cómo se cobra</th></tr>
         </thead>
         <tbody>
-          <tr><td>Destacar tu alojamiento por 7 o 30 días</td><td>Tu alojamiento aparece destacado en los resultados durante 7 o 30 días. Útil para un fin de semana largo o el arranque de temporada.</td><td>Por única vez</td></tr>
-          <tr><td>20 fotos más</td><td>20 fotos más en cada uno de tus alojamientos, además de las de tu plan.</td><td>Por mes</td></tr>
-          <tr><td>5 alojamientos más</td><td>Cinco alojamientos más por encima del tope de tu plan.</td><td>Por mes</td></tr>
+          <tr><td data-label="Complemento">Destacar tu alojamiento por 7 o 30 días</td><td data-label="Qué te da">Tu alojamiento aparece destacado en los resultados durante 7 o 30 días. Útil para un fin de semana largo o el arranque de temporada.</td><td data-label="Cómo se cobra">Por única vez</td></tr>
+          <tr><td data-label="Complemento">20 fotos más</td><td data-label="Qué te da">20 fotos más en cada uno de tus alojamientos, además de las de tu plan.</td><td data-label="Cómo se cobra">Por mes</td></tr>
+          <tr><td data-label="Complemento">5 alojamientos más</td><td data-label="Qué te da">Cinco alojamientos más por encima del tope de tu plan.</td><td data-label="Cómo se cobra">Por mes</td></tr>
         </tbody>
       </table>
     </div>
@@ -427,6 +435,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Probalo</h2>
     <p>
       Armar la ficha es gratis y no compromete a nada. Recién decidís cuando la querés publicar,
@@ -446,6 +455,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       pueden cambiar; los del momento están siempre publicados en el sitio.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 
