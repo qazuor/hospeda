@@ -6,7 +6,8 @@ import { createBooleanQueryParam } from '../../common/boolean-params.js';
  * Admin search schema for features.
  * Extends base admin search with feature-specific filters.
  *
- * Note: The features table has no `category` column.
+ * Note: `features.category` exists since HOS-2058 (nullable in release N),
+ * but this admin search does not filter by it yet.
  *
  * @example
  * ```ts

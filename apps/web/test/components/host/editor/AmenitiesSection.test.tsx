@@ -6,7 +6,9 @@
  * - Amenities render grouped under collapsible category headers
  * - A category group's `<details>` toggles open/closed via its `<summary>`
  * - Toggling a checkbox still fires the onToggleAmenity/onToggleFeature handlers
- * - Features (no category data) still render as a single flat checkbox grid
+ * - Features group into category accordions too (HOS-2058), NULL → "Otras"
+ * - A checked amenity exposes a collapsed scope/availability disclosure
+ *   (HOS-2058); an unchecked one does not
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -50,6 +52,7 @@ const MOCK_DATA: AccommodationEditData = {
     isAvailable: true,
     isFeatured: false,
     amenityIds: [],
+    amenityAttributes: {},
     featureIds: [],
     phone: '',
     email: '',
@@ -71,7 +74,8 @@ const MOCK_AMENITIES: readonly AmenityData[] = [
 ];
 
 const MOCK_FEATURES: readonly AmenityData[] = [
-    { id: 'ft-river', slug: 'river_front', category: null }
+    { id: 'ft-river', slug: 'river_front', category: null },
+    { id: 'ft-quiet', slug: 'quiet_area', category: 'LOCATION' }
 ];
 
 function buildProps(overrides: Partial<AmenitiesSectionProps> = {}): AmenitiesSectionProps {
@@ -82,6 +86,7 @@ function buildProps(overrides: Partial<AmenitiesSectionProps> = {}): AmenitiesSe
         features: MOCK_FEATURES,
         onToggleAmenity: vi.fn(),
         onToggleFeature: vi.fn(),
+        onChangeAmenityAttribute: vi.fn(),
         ...overrides
     };
 }
@@ -194,13 +199,71 @@ describe('AmenitiesSection', () => {
         expect(screen.getByRole('checkbox', { name: 'pool' })).not.toBeChecked();
     });
 
-    it('should render features as a flat checkbox grid (no category grouping)', () => {
-        const { container } = render(<AmenitiesSection {...buildProps()} />);
+    it('should group features by category, with uncategorized ones under "Otras" (HOS-2058)', () => {
+        render(<AmenitiesSection {...buildProps()} />);
 
-        // Features have no category data, so they must not be wrapped in <details>.
-        const featureCheckbox = screen.getByRole('checkbox', { name: 'river_front' });
-        expect(featureCheckbox.closest('details')).toBeNull();
-        expect(container.querySelector('details')).not.toBeNull(); // amenities still grouped
+        const located = screen.getByRole('checkbox', { name: 'quiet_area' });
+        const uncategorized = screen.getByRole('checkbox', { name: 'river_front' });
+
+        expect(located.closest('details')?.textContent).toContain('Ubicación');
+        expect(uncategorized.closest('details')?.textContent).toContain('Otras');
+    });
+
+    it('should not offer attribute controls for an unchecked amenity (HOS-2058)', () => {
+        render(<AmenitiesSection {...buildProps()} />);
+
+        expect(screen.queryByText('Detalles')).toBeNull();
+        expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    });
+
+    it('should offer collapsed scope/availability controls for a checked amenity', () => {
+        const { container } = render(
+            <AmenitiesSection
+                {...buildProps({ data: { ...MOCK_DATA, amenityIds: ['am-pool'] } })}
+            />
+        );
+
+        const summary = screen.getByText('Detalles');
+        const disclosure = summary.closest('details') as HTMLDetailsElement;
+        expect(disclosure.open).toBe(false);
+        // Nothing declared yet: "not specified" is the selected option in both groups.
+        const radios = Array.from(
+            container.querySelectorAll<HTMLInputElement>('input[name^="amenity-am-pool-"]')
+        );
+        expect(radios).toHaveLength(6);
+        expect(radios.filter((radio) => radio.checked)).toHaveLength(2);
+        expect(screen.getAllByRole('radio', { name: 'Sin indicar' })).toHaveLength(2);
+    });
+
+    it('should reflect declared attributes and report changes', () => {
+        const onChangeAmenityAttribute = vi.fn();
+        render(
+            <AmenitiesSection
+                {...buildProps({
+                    data: {
+                        ...MOCK_DATA,
+                        amenityIds: ['am-pool'],
+                        amenityAttributes: {
+                            'am-pool': { scope: 'shared', availability: null }
+                        }
+                    },
+                    onChangeAmenityAttribute
+                })}
+            />
+        );
+
+        expect(screen.getByRole('radio', { name: 'Compartido' })).toBeChecked();
+        expect(screen.getByRole('radio', { name: 'Privado' })).not.toBeChecked();
+
+        fireEvent.click(screen.getByRole('radio', { name: 'De temporada' }));
+        expect(onChangeAmenityAttribute).toHaveBeenCalledWith(
+            'am-pool',
+            'availability',
+            'seasonal'
+        );
+
+        fireEvent.click(screen.getAllByRole('radio', { name: 'Sin indicar' })[0] as HTMLElement);
+        expect(onChangeAmenityAttribute).toHaveBeenCalledWith('am-pool', 'scope', null);
     });
 
     it('should call onToggleFeature when a feature checkbox is clicked', () => {

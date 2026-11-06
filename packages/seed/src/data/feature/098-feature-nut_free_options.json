@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "098-feature-nut_free_options",
     "slug": "nut_free_options",
+    "category": "DIETARY",
     "description": {
         "es": "Opciones del menú sin frutos secos para personas alérgicas",
         "en": "Nut-free menu options for people with an allergy",

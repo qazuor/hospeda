@@ -8,7 +8,7 @@
         "pt": "Servicio de lavandería"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "SERVICES",
+    "type": "LAUNDRY",
     "icon": "LaundryServiceIcon",
     "isBuiltin": false,
     "isFeatured": false,

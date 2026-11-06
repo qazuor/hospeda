@@ -4,6 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
 import { AccommodationIdSchema, FeatureIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { FeatureCategoryEnumSchema } from '../../enums/feature-category.schema.js';
 import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 
 /**
@@ -31,6 +32,14 @@ export const FeatureSchema = z.object({
         }),
 
     description: i18nText({ min: 10, max: 500 }).nullish(),
+
+    /**
+     * Feature category (HOS-2058). Groups the feature in editors and public
+     * grids. Nullable in release N of the expand/contract: the column is added
+     * nullable and backfilled by data-migration 0146; release N+1 makes it
+     * NOT NULL and this field required.
+     */
+    category: FeatureCategoryEnumSchema.nullish(),
 
     /**
      * Verticals this feature is applicable to (SPEC-266).

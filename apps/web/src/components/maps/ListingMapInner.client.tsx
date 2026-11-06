@@ -56,6 +56,7 @@ const MarkerClusterGroup = ((
 ).default ?? ReactLeafletClusterImport) as typeof ReactLeafletClusterImport;
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import type {
     AccommodationListingItem,
@@ -293,11 +294,15 @@ const FLOATING_CARD_GAP_ABOVE_MARKER = 18;
 function AccommodationCardPopup({
     item,
     viewDetailsLabel,
+    priceConsultLabel,
+    consultAvailabilityLabel,
     locale,
     onClose
 }: {
     readonly item: AccommodationListingItem;
-    readonly viewDetailsLabel?: string;
+    readonly viewDetailsLabel: string;
+    readonly priceConsultLabel: string;
+    readonly consultAvailabilityLabel: string;
     readonly locale: SupportedLocale;
     readonly onClose: () => void;
 }) {
@@ -364,6 +369,8 @@ function AccommodationCardPopup({
             <AccommodationPopupContent
                 item={item}
                 viewDetailsLabel={viewDetailsLabel}
+                priceConsultLabel={priceConsultLabel}
+                consultAvailabilityLabel={consultAvailabilityLabel}
                 locale={locale}
             />
         </div>,
@@ -392,6 +399,7 @@ export function ListingMapInner(props: ListingMapProps) {
     } = props;
 
     const isAccommodationMode = props.mode === 'accommodation-list';
+    const accommodationI18nStrings = props.mode === 'accommodation-list' ? props.i18nStrings : null;
     const maxZoom = isAccommodationMode ? ACCOMMODATION_MAX_ZOOM : DESTINATION_MAX_ZOOM;
 
     // HOS-95: id of the accommodation whose floating card is open (accommodation
@@ -690,11 +698,13 @@ export function ListingMapInner(props: ListingMapProps) {
                     Accommodations use the floating card, which manages its own
                     close-on-interact inside AccommodationCardPopup. */}
                 {!isAccommodationMode && <ClosePopupOnInteract />}
-                {openAccommodationItem && (
+                {openAccommodationItem && accommodationI18nStrings && (
                     <AccommodationCardPopup
                         key={openAccommodationItem.id}
                         item={openAccommodationItem}
-                        viewDetailsLabel={i18nStrings.viewDetails}
+                        viewDetailsLabel={accommodationI18nStrings.viewDetails}
+                        priceConsultLabel={accommodationI18nStrings.priceConsult}
+                        consultAvailabilityLabel={accommodationI18nStrings.consultAvailability}
                         locale={locale}
                         onClose={() => setOpenCardId(null)}
                     />
@@ -713,13 +723,18 @@ export function ListingMapInner(props: ListingMapProps) {
     );
 }
 
-function AccommodationPopupContent({
+/** Render the accommodation popup body with its localized price and CTA copy. */
+export function AccommodationPopupContent({
     item,
     viewDetailsLabel,
+    priceConsultLabel,
+    consultAvailabilityLabel,
     locale
 }: {
     readonly item: AccommodationListingItem;
-    readonly viewDetailsLabel?: string;
+    readonly viewDetailsLabel: string;
+    readonly priceConsultLabel: string;
+    readonly consultAvailabilityLabel: string;
     readonly locale: SupportedLocale;
 }) {
     const hasRating =
@@ -782,14 +797,21 @@ function AccommodationPopupContent({
                     {item.priceLabel ? (
                         <span className={styles.popupPrice}>{item.priceLabel}</span>
                     ) : (
-                        <span aria-hidden="true" />
+                        <span className={cn(styles.popupPrice, styles.popupPriceConsult)}>
+                            {priceConsultLabel}
+                        </span>
                     )}
                     {item.detailHref ? (
                         <a
                             href={item.detailHref}
-                            className={styles.popupCta}
+                            className={cn(
+                                styles.popupCta,
+                                !item.priceLabel && styles.popupCtaCompact
+                            )}
                         >
-                            <span>{viewDetailsLabel ?? 'Ver más'}</span>
+                            <span>
+                                {item.priceLabel ? viewDetailsLabel : consultAvailabilityLabel}
+                            </span>
                             <span aria-hidden="true">→</span>
                         </a>
                     ) : null}

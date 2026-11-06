@@ -10,8 +10,8 @@ import { safeExternalUrl } from '../common/safe-external-url.schema.js';
 import {
     FacebookUrlRegex,
     InstagramUrlRegex,
-    InternationalPhoneRegex,
     LinkedInUrlRegex,
+    phoneNumberSchema,
     TwitterUrlRegex,
     YouTubeUrlRegex
 } from '../utils/utils.js';
@@ -122,16 +122,15 @@ export const ProfileEditSchema = z.strictObject({
     avatarUrl: z.union([z.literal(''), z.string().url()]).optional(),
 
     /**
-     * Contact phone number in E.164 format (`+<country><number>`).
+     * Contact phone number in common Argentine or international format.
      * Accepts an empty string `''` to allow clearing the phone field.
      *
-     * Uses the shared {@link InternationalPhoneRegex} — the SAME constant the
-     * server validates `contactInfo.mobilePhone` against — so client-side and
-     * server-side validation can never diverge (BETA-34). The regex enforces a
-     * leading `+`, a first digit 1-9, up to 15 total digits, with optional
-     * space-separated groups.
+     * Uses the shared phone parser used by contact writes so client-side and
+     * server-side validation accept the same formats.
      */
-    phone: z.union([z.literal(''), z.string().regex(InternationalPhoneRegex)]).optional(),
+    phone: z
+        .union([z.literal(''), phoneNumberSchema('zodError.common.contact.phone.argentina')])
+        .optional(),
 
     // ─── SPEC-113 polish: extended profile fields ───────────────────────────
     //

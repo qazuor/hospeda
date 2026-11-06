@@ -42,8 +42,13 @@
  *   T-016 amenities / features
  */
 
-import type { OpeningHours } from '@repo/schemas';
+import {
+    ExperienceOwnerUpdateInputSchema,
+    type OpeningHours,
+    VenueOwnerUpdateInputSchema
+} from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ZodTypeAny } from 'zod';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { resolveBusinessLinesFieldError } from '@/components/listing/editor/BusinessLinesField.client';
@@ -61,6 +66,7 @@ import {
     buildSlugRefreshPayload,
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
+import { refineStrictContactPhone } from '@/lib/phone-editor-validation';
 import { addToast } from '@/store/toast-store';
 import {
     LISTING_AGGREGATE_FIELDS,
@@ -199,7 +205,7 @@ function sameStringList(a: readonly string[], b: readonly string[]): boolean {
  *
  * `null` is the clear. Every field of the shared `ContactInfoSchema` and
  * `SocialNetworkSchema` is `.nullish()` for exactly this reason, so `null`
- * validates while `''` does NOT (`zodError.common.contact.mobilePhone.international`,
+ * validates while an invalid non-empty phone reports `zodError.common.contact.phone.argentina`,
  * `zodError.common.social.*.invalid`) — the empty string is not an option here.
  */
 function nullWhenEmpty(value: string): string | null {
@@ -551,6 +557,18 @@ const VERTICAL_PATCH_FIELDS: Readonly<
 };
 
 /**
+ * Client-side validation schemas: the real owner-update schemas (the same ones
+ * {@link LISTING_VERTICAL_FORM_CONFIG} declares as `updateSchema`) plus the
+ * strict Argentine phone rule (HOS-2034). The shared schema stays permissive so
+ * stored legacy phones keep validating; only the editor refuses a too-short
+ * `+54` value.
+ */
+const EDITOR_SCHEMAS: Readonly<Record<VenueOrExperience, ZodTypeAny>> = {
+    venue: VenueOwnerUpdateInputSchema.superRefine(refineStrictContactPhone),
+    experience: ExperienceOwnerUpdateInputSchema.superRefine(refineStrictContactPhone)
+};
+
+/**
  * Owner editor for ONE section. Tracks which field groups changed and PATCHes
  * only the dirty subset of the keys this section owns, so a save here can never
  * re-submit — let alone clobber — another section's data.
@@ -569,7 +587,7 @@ export function ListingEditor({
     const { t } = createTranslations(locale);
     // Per-vertical data (update schema, PATCH endpoint, business-line presence)
     // read from the shared record instead of compared against a literal.
-    const { updateSchema, patchPath, showsBusinessLines } = LISTING_VERTICAL_FORM_CONFIG[vertical];
+    const { patchPath, showsBusinessLines } = LISTING_VERTICAL_FORM_CONFIG[vertical];
 
     // Field-level validation is delegated to the shared `useZodForm` primitive
     // (HOS-190 slice 3) against the REAL per-vertical owner-update schema — the
@@ -579,7 +597,7 @@ export function ListingEditor({
     // hoc summary/priceFrom checks this editor had) closes contact
     // (mobilePhone/workEmail), social networks, opening hours, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
-    const schema = updateSchema;
+    const schema = EDITOR_SCHEMAS[vertical];
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,

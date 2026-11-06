@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PreferredContactEnumSchema } from '../enums/index.js';
-import { InternationalPhoneRegex } from '../utils/utils.js';
+import { phoneNumberSchema } from '../utils/utils.js';
 import { safeExternalUrl } from './safe-external-url.schema.js';
 
 /**
@@ -19,9 +19,8 @@ import { safeExternalUrl } from './safe-external-url.schema.js';
  * Widening `string | undefined` to `string | null | undefined` is ADDITIVE, so
  * it is allowed under the package's compatibility policy
  * (`docs/guides/schema-compat-policy.md`): no payload that validated before
- * stops validating. The bounds themselves are untouched — a non-null
- * `mobilePhone` still has to satisfy {@link InternationalPhoneRegex}, and a
- * non-null `website` still has to be a URL.
+ * stops validating. Non-null phone fields use the shared human-format phone
+ * validator, and a non-null `website` still has to be a URL.
  *
  * `preferredEmail` / `preferredPhone` are enums, not free strings, and they are
  * widened by exactly one value for the same reason: they are keys of the SAME
@@ -37,30 +36,10 @@ export const ContactInfoSchema = z.object({
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
         .nullish(),
     workEmail: z.string().email({ message: 'zodError.common.contact.workEmail.invalid' }).nullish(),
-    homePhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.homePhone.international'
-        })
-        .nullish(),
-    workPhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.workPhone.international'
-        })
-        .nullish(),
-    mobilePhone: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.mobilePhone.international'
-        })
-        .nullish(),
-    whatsapp: z
-        .string()
-        .regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.whatsapp.international'
-        })
-        .nullish(),
+    homePhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    workPhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    mobilePhone: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
+    whatsapp: phoneNumberSchema('zodError.common.contact.phone.argentina').nullish(),
     website: safeExternalUrl('zodError.common.contact.website.invalid').nullish(),
     preferredEmail: PreferredContactEnumSchema.nullish(),
     preferredPhone: PreferredContactEnumSchema.nullish()
@@ -74,8 +53,8 @@ export type ContactInfo = z.infer<typeof ContactInfoSchema>;
  * (`apps/api/src/utils/response-helpers.ts`), which FAIL-CLOSES to HTTP 500 when
  * a stored row does not satisfy the schema. `contact_info` is an unbounded JSONB
  * column shallow-merged at the DB layer (`jsonb-merge.ts`), so a legacy/imported/
- * partially-edited row can legitimately hold a phone in a format the strict WRITE
- * regex rejects (an AR local `0223-155-1234`, a bare `+54`, embedded spaces) — or
+ * partially-edited row can legitimately hold a phone in a format the shared WRITE
+ * validator rejects (a bare `+54`, a too-short number, free text) — or
  * omit `mobilePhone` entirely. Reading such a row must NEVER 500, so response
  * schemas assert TYPE + PRESENCE only for the free-form contact fields; the phone
  * format stays enforced on the WRITE path via {@link ContactInfoSchema}.

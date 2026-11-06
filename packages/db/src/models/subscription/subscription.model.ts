@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, notInArray, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -18,6 +18,7 @@ import {
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
+    type SUBSCRIPTION_STATUSES,
     subscriptions
 } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -56,6 +57,24 @@ export interface DeclinedWithProviderLink {
 
 /** Subject of S1's live-commitment read (AC:B3:6). */
 export interface FindLiveCommitmentInput {
+    readonly userId: string;
+    readonly vertical: string;
+    readonly tx?: DrizzleClient;
+}
+
+/**
+ * Statuses of a checkout that never produced a paying subscription: authorization
+ * never completed, was abandoned, or the first charge was declined (S16,
+ * record-charge-fact.service.ts). They do not count as subscription history.
+ */
+const NEVER_COMPLETED_CHECKOUT_STATUSES = [
+    'PENDING_AUTHORIZATION',
+    'ABANDONED',
+    'CHARGE_DECLINED'
+] as const satisfies readonly (typeof SUBSCRIPTION_STATUSES)[number][];
+
+/** Input for checking whether a user has ever had a subscription in a vertical. */
+export interface ExistsAnyForUserInput {
     readonly userId: string;
     readonly vertical: string;
     readonly tx?: DrizzleClient;
@@ -147,6 +166,27 @@ export interface AbandonPendingAuthorizationResult {
 
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
+    /**
+     * Checks subscription history for a user and vertical, including lapsed and
+     * superseded rows. Pending checkout, abandoned attempts, and a declined
+     * first charge do not count as subscription history for new-user eligibility.
+     */
+    async existsAnyForUser(input: ExistsAnyForUserInput): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(
+                and(
+                    eq(subscriptions.userId, input.userId),
+                    eq(subscriptions.vertical, input.vertical),
+                    notInArray(subscriptions.status, [...NEVER_COMPLETED_CHECKOUT_STATUSES])
+                )
+            )
+            .limit(1);
+        return row !== undefined;
+    }
+
     /** Completes the exact creation key once, without creating a provider link. */
     async recordCreationRejected(input: RecordCreationRejectedInput): Promise<boolean> {
         const db = input.tx ?? getDb();

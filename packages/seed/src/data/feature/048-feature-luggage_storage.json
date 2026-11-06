@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "048-feature-luggage_storage",
     "slug": "luggage_storage",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",
         "en": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",

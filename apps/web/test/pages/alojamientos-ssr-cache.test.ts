@@ -60,9 +60,16 @@ describe('HOS-299 — bounded catalog reads opt into the SSR cache', () => {
     ])('%s page caches all three catalog reads', (_name, path) => {
         const source = readFileSync(path, 'utf8');
 
-        for (const apiCall of ['destinationsApi.list', 'amenitiesApi.list', 'featuresApi.list']) {
-            expect(callArgsOf(source, apiCall)).toContain('cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS');
-        }
+        expect(callArgsOf(source, 'destinationsApi.list')).toContain(
+            'cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS'
+        );
+        // HOS-2057: amenities and features are read through the shared loader,
+        // whose own test pins the cache opt-in on every page request
+        // (test/lib/accommodation-filter-catalog.test.ts). Direct calls are
+        // forbidden by accommodation-listing-catalog-via-helper.guard.test.ts.
+        expect(callArgsOf(source, 'fetchAccommodationFilterCatalog')).toBe(
+            'fetchAccommodationFilterCatalog()'
+        );
     });
 
     it.each([

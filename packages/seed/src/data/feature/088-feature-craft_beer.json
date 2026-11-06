@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "088-feature-craft_beer",
     "slug": "craft_beer",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Selección de cervezas artesanales locales y regionales en carta",
         "en": "Selección de cervezas artesanales locales y regionales en carta",

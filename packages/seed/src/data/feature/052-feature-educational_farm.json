@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "052-feature-educational_farm",
     "slug": "educational_farm",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
         "en": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",

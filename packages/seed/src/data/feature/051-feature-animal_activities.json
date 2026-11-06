@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "051-feature-animal_activities",
     "slug": "animal_activities",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",
         "en": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",

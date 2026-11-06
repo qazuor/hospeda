@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "020-feature-minimalist_style",
     "slug": "minimalist_style",
+    "category": "STYLE",
     "description": {
         "es": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",
         "en": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",

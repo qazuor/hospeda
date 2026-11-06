@@ -565,6 +565,13 @@ export interface DetailAmenity {
     readonly additionalCost: number | null;
     /** Display priority (higher = more important, range 1-100). Defaults to 50. */
     readonly displayWeight: number;
+    /**
+     * HOS-2058: declared scope of the relation. `null`/absent = not declared,
+     * which renders no badge. Only the accommodation detail fills it.
+     */
+    readonly scope?: 'private' | 'shared' | null;
+    /** HOS-2058: declared availability of the relation; `null`/absent = not declared. */
+    readonly availability?: 'year_round' | 'seasonal' | null;
 }
 
 /** Feature relation from accommodation join. */
@@ -576,6 +583,11 @@ export interface DetailFeature {
     readonly comments: string | null;
     /** Display priority (higher = more important, range 1-100). Defaults to 50. */
     readonly displayWeight: number;
+    /**
+     * HOS-2058: `FeatureCategoryEnum` value the grid groups by. `null`/absent =
+     * not classified; a list with no classified feature renders flat.
+     */
+    readonly category?: string | null;
 }
 
 /** FAQ item from accommodation join. */

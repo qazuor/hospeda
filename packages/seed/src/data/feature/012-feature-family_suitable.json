@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "012-feature-family_suitable",
     "slug": "family_suitable",
+    "category": "AUDIENCE",
     "description": {
         "es": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
         "en": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",

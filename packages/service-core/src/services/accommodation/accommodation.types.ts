@@ -1,4 +1,4 @@
-import type { Accommodation } from '@repo/schemas';
+import type { Accommodation, AccommodationAmenityAttributes } from '@repo/schemas';
 
 /**
  * Every value {@link PublishEligibility} can take, in declaration order.
@@ -195,6 +195,12 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * Same three-way contract as `pendingAmenityIds`.
      */
     pendingFeatureIds?: readonly string[];
+    /**
+     * Per-amenity relation attributes (`scope`, `availability`) from the update
+     * input (HOS-2058 write-only). `undefined` → attributes untouched; see
+     * `syncAmenityJunction` for the full contract.
+     */
+    pendingAmenityAttributes?: readonly AccommodationAmenityAttributes[];
     /**
      * AI-assisted field type values extracted from the update input
      * (SPEC-198.1). Stored here by `_beforeUpdate` so `_afterUpdate` can

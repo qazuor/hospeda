@@ -189,6 +189,9 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     currency: 'static read-only indicator, not an editable control',
     // Checkbox GROUPS — many controls, one key, no single focus target.
     amenityIds: 'checkbox group in AmenitiesSection',
+    // HOS-2058: per-amenity radio GROUPS (scope + availability for every
+    // checked amenity), one key, no single focus target.
+    amenityAttributes: 'per-amenity radio groups in AmenitiesSection',
     featureIds: 'checkbox group in AmenitiesSection'
 };
 

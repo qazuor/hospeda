@@ -203,6 +203,30 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService.updateOwn — ownership gate', () => {
+    it('normalizes a contact update through the owner update pipeline', async () => {
+        const service = makeService(makeExperienceEntity());
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            {
+                contactInfo: {
+                    mobilePhone: '3442 45-2345',
+                    whatsapp: '03442 15 45-2345',
+                    homePhone: '3442 45-2345',
+                    workPhone: '+65 6123 4567'
+                }
+            },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.contactInfo).toMatchObject({
+            mobilePhone: '+5493442452345',
+            whatsapp: '+5493442452345',
+            homePhone: '+543442452345',
+            workPhone: '+6561234567'
+        });
+    });
+
     it('should return NOT_FOUND when experience does not exist', async () => {
         const service = makeService(null);
         const result = await service.updateOwn(ENTITY_ID, {}, ownerActor);

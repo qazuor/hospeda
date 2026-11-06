@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "108-feature-karaoke",
     "slug": "karaoke",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Equipo de karaoke para cantar en vivo con amigos",
         "en": "Karaoke setup to sing along with friends",

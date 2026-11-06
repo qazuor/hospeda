@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "039-feature-perimeter_fence",
     "slug": "perimeter_fence",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",
         "en": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",

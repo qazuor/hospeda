@@ -65,7 +65,7 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
         expect(result.output).toContain('accommodations 42 columns / 15 SET');
         expect(result.output).toContain('venues 46 columns / 24 SET');
         expect(result.output).toContain('experiences 46 columns / 24 SET');
-        expect(result.output).toContain('71 system rows and 5 action-15 exceptions');
+        expect(result.output).toContain('71 system rows and 6 action-15 exceptions');
     });
 
     it('reads a column the table gains through a spread', () => {

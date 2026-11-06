@@ -69,4 +69,20 @@ describe('resolveListingPublishAffordances — TEST:1729:6', () => {
         expect(subscribeDestination).not.toHaveBeenCalled();
         expect(result.size).toBe(0);
     });
+
+    it('reads a billing-unpublished vertical so venue owners can republish (HOS-2023)', async () => {
+        const subscribeDestination = vi.fn(() => Promise.resolve(destination('PUBLISH')));
+        const result = await resolveListingPublishAffordances({
+            listings: [listing('venue', PublicationStatusEnum.UNPUBLISHED_BY_BILLING)],
+            cookieHeader: 'session=x',
+            api: { subscribeDestination } as never
+        });
+
+        expect(subscribeDestination).toHaveBeenCalledTimes(1);
+        expect(subscribeDestination).toHaveBeenCalledWith({
+            vertical: 'venue',
+            cookieHeader: 'session=x'
+        });
+        expect(result.get('venue')).toMatchObject({ kind: 'publish', trialDays: 30 });
+    });
 });

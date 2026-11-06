@@ -3,6 +3,7 @@ import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
+import { AccommodationAmenityAttributesListSchema } from '../amenity/amenity.schema.js';
 import {
     ACCOMMODATION_SLUG_MAX_LENGTH,
     AccommodationExtraInfoSchema,
@@ -201,6 +202,12 @@ export const AccommodationUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.accommodation.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * Optional per-amenity relation attributes (`scope`, `availability`) for
+         * junction sync on update (HOS-2058 write-only). See
+         * `AccommodationAmenityAttributesListSchema` for the contract.
+         */
+        amenityAttributes: AccommodationAmenityAttributesListSchema.optional(),
         /**
          * Optional list of AI-assisted field types that were modified by the
          * host via the AI text-improvement panel (SPEC-198.1).

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "046-feature-transfer_service",
     "slug": "transfer_service",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
         "en": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",

@@ -56,6 +56,7 @@ import {
     type VenueUpdateInput,
     VenueUpdateInputSchema
 } from '@repo/schemas';
+import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -65,7 +66,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { assertListingReadable, entityNotFoundError } from '../../utils';
+import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
@@ -136,6 +137,24 @@ export class VenueService extends BaseListingService<
     protected readonly createSchema = VenueAdminCreateInputSchema;
     protected readonly updateSchema = VenueUpdateInputSchema;
     protected readonly searchSchema = VenueSearchSchema;
+    protected readonly normalizers: CrudNormalizersFromSchemas<
+        typeof VenueAdminCreateInputSchema,
+        typeof VenueUpdateInputSchema,
+        typeof VenueSearchSchema
+    > = {
+        create: (data) => ({
+            ...data,
+            ...(data.contactInfo
+                ? { contactInfo: normalizeContactInfo(data.contactInfo) as typeof data.contactInfo }
+                : {})
+        }),
+        update: (data) => ({
+            ...data,
+            ...(data.contactInfo
+                ? { contactInfo: normalizeContactInfo(data.contactInfo) as typeof data.contactInfo }
+                : {})
+        })
+    };
 
     // -----------------------------------------------------------------------
     // Catalog / junction model instances (injectable for unit tests)

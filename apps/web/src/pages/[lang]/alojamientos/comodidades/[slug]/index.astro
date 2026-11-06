@@ -20,8 +20,9 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { accommodationsApi, amenitiesApi } from '@/lib/api/endpoints';
+import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { fetchAccommodationFilterAmenities } from '@/lib/filters/accommodation-filter-catalog';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -35,9 +36,8 @@ const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
 // Resolve amenity slug: fetch full list, find by slug
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100 });
-if (!amenitiesResult.ok) return new Response(null, { status: 404 });
-const amenityItems = amenitiesResult.data.items as unknown as Array<Record<string, unknown>>;
+// Accommodation-scoped and fully paged (HOS-2057): a single page-100 read dropped slugs past the cap.
+const amenityItems = await fetchAccommodationFilterAmenities();
 const amenity = amenityItems.find((a) => String(a.slug) === slug);
 if (!amenity) return new Response(null, { status: 404 });
 const amenityId = String(amenity.id);

@@ -105,7 +105,13 @@ export function LanguageSwitcher({
                 <a
                     key={loc}
                     href={buildLocaleUrl({ currentPath, targetLocale: loc })}
-                    onClick={() => handleSelect(loc)}
+                    onClick={(event) => {
+                        // The leave-warning registry claims this click while it asks the
+                        // host to confirm leaving. Persist the locale only once the
+                        // confirmed click is replayed, so cancelling changes nothing.
+                        if (event.defaultPrevented) return;
+                        handleSelect(loc);
+                    }}
                     className={cn(styles.option, loc === locale && styles.optionActive)}
                     aria-current={loc === locale ? 'true' : undefined}
                     aria-label={LOCALE_NAMES[loc]}

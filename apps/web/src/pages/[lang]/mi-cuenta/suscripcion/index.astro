@@ -104,6 +104,7 @@ if (returnSubscriptionId) {
 		accountEmail={user.email}
 		declaredPayerEmail={returnDeclaredPayerEmail}
 	/>}
+	<div data-subscription-sections>
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
 	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <section data-testid="trial-promo-redeem">
@@ -112,4 +113,5 @@ if (returnSubscriptionId) {
 			<PromoCodeRedeem client:visible vertical={vertical} locale={locale} offer="TRIAL" />
 		)}
 	</section>}
+	</div>
 </AccountLayout>

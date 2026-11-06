@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "107-feature-dj_sets",
     "slug": "dj_sets",
+    "category": "ACTIVITIES",
     "description": {
         "es": "Sesiones de DJ con música en vivo durante la noche",
         "en": "DJ sets with live music throughout the night",

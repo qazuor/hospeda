@@ -11,10 +11,10 @@
  *
  * What it does NOT verify:
  * - The billing machines (subscription, payment, refund, manual_payment, addon_instance). Its
- *   domain is the three verticals machines the spec names (`04-catalogos.md:880`); a billing row
+ *   domain is the three verticals machines the spec names (`04-catalogos.md:892`); a billing row
  *   whose evento names time (for example TRANS:B:S10) is a finding for the owner, not a check here.
  * - The code that implements the transitions (crons, services). It checks the declared tables,
- *   which is what the catalog says the guard reads (`04-catalogos.md:880-881`).
+ *   which is what the catalog says the guard reads (`04-catalogos.md:892-893`).
  * - The prose of each row's `efectos`/`nota`: only the corpus `to` states and `writes` columns.
  * - Who evaluates steps 5 to 7 for a clock-triggered transition (`V5.md:1058-1059`).
  */
@@ -34,7 +34,7 @@ import {
 /** Repository-relative path to the declared class of every in-scope transition. */
 export const CLASSES_PATH = 'scripts/guards/transition-classes.json';
 
-/** Machines whose transitions G-R3-B classifies: the verticals machines (`04-catalogos.md:880`). */
+/** Machines whose transitions G-R3-B classifies: the verticals machines (`04-catalogos.md:892`). */
 export const G_R3_B_MACHINES = ['trial', 'publication', 'partner_application'] as const;
 
 /** One of the machines in the guard's scope. */

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "096-feature-senior_friendly",
     "slug": "senior_friendly",
+    "category": "AUDIENCE",
     "description": {
         "es": "Actividad de baja intensidad física apta para adultos mayores",
         "en": "Actividad de baja intensidad física apta para adultos mayores",

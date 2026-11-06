@@ -59,6 +59,12 @@
     font-weight: 600;
 }
 
+.field .emailHint {
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+}
+
 .field input {
     min-height: 44px;
     padding: var(--space-2) var(--space-3);

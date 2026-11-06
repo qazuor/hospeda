@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "025-feature-wifi_full_property",
     "slug": "wifi_full_property",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",
         "en": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",

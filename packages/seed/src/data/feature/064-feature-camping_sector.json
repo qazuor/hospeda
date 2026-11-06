@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "064-feature-camping_sector",
     "slug": "camping_sector",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",
         "en": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",

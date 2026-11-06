@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "105-feature-mediterranean_cuisine",
     "slug": "mediterranean_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina mediterránea: platos de las tradiciones culinarias del Mediterráneo",
         "en": "Mediterranean cuisine: dishes from Mediterranean culinary traditions",

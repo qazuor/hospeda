@@ -293,7 +293,7 @@
         ]
     },
     "supportEditExceptions": {
-        "count": 5,
+        "count": 6,
         "fields": [
             {
                 "field": "name",
@@ -306,6 +306,10 @@
             {
                 "field": "amenityIds",
                 "reason": "Relation rows live in r_<vertical>_amenity, deleted by the purge; not a column of the listing table."
+            },
+            {
+                "field": "amenityAttributes",
+                "reason": "Per-amenity scope/availability (HOS-2058) lives on r_accommodation_amenity rows, deleted by the purge; not a column of the listing table."
             },
             {
                 "field": "featureIds",

@@ -1,6 +1,6 @@
 {
-  "id": "26d9f393-0bf7-4f8b-abbf-04e4e333e4f4",
-  "prevId": "a551dc0e-d6d2-469f-81a4-824f8cf556b7",
+  "id": "a551dc0e-d6d2-469f-81a4-824f8cf556b7",
+  "prevId": "ecd22c4b-286b-417a-bef8-2510f97bb0fc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -39,13 +39,6 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
-        },
-        "business_lines": {
-          "name": "business_lines",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "ARRAY['standard']::text[]"
         },
         "description": {
           "name": "description",
@@ -274,21 +267,6 @@
         }
       },
       "indexes": {
-        "accommodations_business_lines_gin_idx": {
-          "name": "accommodations_business_lines_gin_idx",
-          "columns": [
-            {
-              "expression": "business_lines",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
-          "with": {}
-        },
         "accommodations_isVerified_idx": {
           "name": "accommodations_isVerified_idx",
           "columns": [
@@ -528,12 +506,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "accommodations_business_lines_valid": {
-          "name": "accommodations_business_lines_valid",
-          "value": "cardinality(\"accommodations\".\"business_lines\") >= 1 AND \"accommodations\".\"business_lines\" <@ ARRAY['standard']::text[]"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.accommodation_faqs": {
@@ -2065,6 +2038,13 @@
           "notNull": true,
           "default": "'{}'"
         },
+        "category": {
+          "name": "category",
+          "type": "feature_category_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "lifecycle_state": {
           "name": "lifecycle_state",
           "type": "lifecycle_status_enum",
@@ -2206,6 +2186,20 @@
         "additional_cost_percent": {
           "name": "additional_cost_percent",
           "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "amenity_scope_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability": {
+          "name": "availability",
+          "type": "amenity_availability_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         }
@@ -10988,13 +10982,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "business_lines": {
-          "name": "business_lines",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "ARRAY['standard']::text[]"
-        },
         "price_from": {
           "name": "price_from",
           "type": "integer",
@@ -11213,21 +11200,6 @@
         }
       },
       "indexes": {
-        "experiences_business_lines_gin_idx": {
-          "name": "experiences_business_lines_gin_idx",
-          "columns": [
-            {
-              "expression": "business_lines",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
-          "with": {}
-        },
         "experiences_destinationId_idx": {
           "name": "experiences_destinationId_idx",
           "columns": [
@@ -11439,12 +11411,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "experiences_business_lines_valid": {
-          "name": "experiences_business_lines_valid",
-          "value": "cardinality(\"experiences\".\"business_lines\") >= 1 AND \"experiences\".\"business_lines\" <@ ARRAY['standard']::text[]"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.r_experience_amenity": {
@@ -25025,12 +24992,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "business_lines": {
-          "name": "business_lines",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true
-        },
         "price_range": {
           "name": "price_range",
           "type": "price_range_enum",
@@ -25203,21 +25164,6 @@
         }
       },
       "indexes": {
-        "venues_business_lines_gin_idx": {
-          "name": "venues_business_lines_gin_idx",
-          "columns": [
-            {
-              "expression": "business_lines",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
-          "with": {}
-        },
         "venues_destinationId_idx": {
           "name": "venues_destinationId_idx",
           "columns": [
@@ -25429,12 +25375,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "venues_business_lines_valid": {
-          "name": "venues_business_lines_valid",
-          "value": "cardinality(\"venues\".\"business_lines\") >= 1 AND \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] AND CASE \"venues\".\"type\"::text WHEN 'RESTAURANT' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'CAFE' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'PARRILLA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'HELADERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'PANADERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'ROTISERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'FOOD_TRUCK' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'BAR' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'CERVECERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'PUB' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'BOLICHE' THEN \"venues\".\"business_lines\" <@ ARRAY['nightlife']::text[] ELSE false END"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.venue_daily_specials": {
@@ -32413,7 +32354,28 @@
         "SAFETY",
         "FAMILY_FRIENDLY",
         "WORK_FRIENDLY",
-        "GENERAL_APPLIANCES"
+        "GENERAL_APPLIANCES",
+        "PARKING",
+        "LAUNDRY",
+        "WATER_ACTIVITIES",
+        "WELLNESS",
+        "DINING"
+      ]
+    },
+    "public.amenity_availability_enum": {
+      "name": "amenity_availability_enum",
+      "schema": "public",
+      "values": [
+        "year_round",
+        "seasonal"
+      ]
+    },
+    "public.amenity_scope_enum": {
+      "name": "amenity_scope_enum",
+      "schema": "public",
+      "values": [
+        "private",
+        "shared"
       ]
     },
     "public.auth_provider_enum": {
@@ -32605,6 +32567,23 @@
         "idle",
         "pending",
         "running"
+      ]
+    },
+    "public.feature_category_enum": {
+      "name": "feature_category_enum",
+      "schema": "public",
+      "values": [
+        "LOCATION",
+        "VIEW",
+        "ACCESS",
+        "STYLE",
+        "AUDIENCE",
+        "OFFER_PROFILE",
+        "SUSTAINABILITY",
+        "ACTIVITIES",
+        "CUISINE",
+        "DIETARY",
+        "LANGUAGE"
       ]
     },
     "public.host_trade_benefit_type_enum": {

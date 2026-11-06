@@ -82,7 +82,7 @@ const EXPERIENCE_BUSINESS_LINE_VALUES = BUSINESS_LINES.experience.map(
  *
  * Types are `.nullish()` strings with NO format assertion, mirroring
  * `ContactInfoReadSchema` (HOS-190 read-superset-of-write): a legacy row
- * holding a phone the strict WRITE regex rejects must not 500 a public page.
+ * holding a phone the shared WRITE validator rejects must not 500 a public page.
  */
 export const ExperiencePublicContactInfoSchema = z.object({
     workEmail: z.string().nullish(),

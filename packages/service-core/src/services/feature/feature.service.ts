@@ -1,7 +1,7 @@
 import { AccommodationModel, FeatureModel, features, RAccommodationFeatureModel } from '@repo/db';
 import type {
     Accommodation,
-    AccommodationFeature,
+    AccommodationFeatureRelation,
     AccommodationIdType,
     Feature,
     FeatureIdType
@@ -204,7 +204,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
-        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -212,6 +212,8 @@ export class FeatureService extends BaseCrudRelatedService<
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
+        if (category) where.category = category;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         // buildWhereClause cannot handle text[] containment, so we build the
@@ -229,7 +231,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ count: number }> {
-        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -237,6 +239,8 @@ export class FeatureService extends BaseCrudRelatedService<
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
+        if (category) where.category = category;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         const additionalConditions = applicableVertical
@@ -316,7 +320,7 @@ export class FeatureService extends BaseCrudRelatedService<
         actor: Actor,
         params: z.infer<typeof AddFeatureToAccommodationInputSchema>,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationFeatureRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFeatureToAccommodation',
             input: { actor, ...params },
@@ -351,8 +355,7 @@ export class FeatureService extends BaseCrudRelatedService<
                 const relation = await this.relatedModel.create({
                     accommodationId: accommodationId as AccommodationIdType,
                     featureId: featureId as FeatureIdType,
-                    notes: comments || undefined, // Map comments to notes, handle null
-                    isHighlighted: false // Default value
+                    comments: comments || undefined // handle null
                 });
                 return { relation };
             }
@@ -369,7 +372,7 @@ export class FeatureService extends BaseCrudRelatedService<
         actor: Actor,
         params: z.infer<typeof RemoveFeatureFromAccommodationInputSchema>,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationFeatureRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFeatureFromAccommodation',
             input: { actor, ...params },
@@ -450,7 +453,7 @@ export class FeatureService extends BaseCrudRelatedService<
 
                 const features = relationsWithFeature
                     .filter((r) => 'feature' in r && r.feature != null)
-                    .map((r) => (r as AccommodationFeature & { feature: Feature }).feature)
+                    .map((r) => (r as AccommodationFeatureRelation & { feature: Feature }).feature)
                     .sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50));
 
                 return { features };
@@ -510,7 +513,9 @@ export class FeatureService extends BaseCrudRelatedService<
                 const accommodationIds = [
                     ...new Set(
                         relations
-                            .map((r) => (r as AccommodationFeature).accommodationId as string)
+                            .map(
+                                (r) => (r as AccommodationFeatureRelation).accommodationId as string
+                            )
                             .filter((id): id is string => typeof id === 'string' && id.length > 0)
                     )
                 ];

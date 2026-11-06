@@ -31,18 +31,36 @@
  * amenities drop `$schema`, `id` and `name`; features additionally drop
  * `lifecycleState` (server-managed).
  *
+ * ## Feature category (HOS-2058)
+ *
+ * Once `features.category` exists, the two feature fixtures declare
+ * `category: "ACTIVITIES"`, and this migration carries it in both paths: an
+ * inserted row takes it from the fixture like every other field, and an
+ * existing usable row that has NO category yet gets the fixture's value. A
+ * category already set (by an admin, or by an earlier run) is never
+ * overwritten, so a second run changes nothing. HOS-2058's own backfill
+ * (`0146`) deliberately leaves these two slugs to this epic. The amenities
+ * keep their type (`dance_floor` ENTERTAINMENT, `vip_area` and `cloakroom`
+ * SERVICES) and get no category: amenities have none.
+ *
  * ## `destructive` flag decision
  *
- * `false` — the migration only ever INSERTs a row that is missing. Nothing is
- * deleted, and no existing row is rewritten.
+ * `false` — the migration only INSERTs a row that is missing, and only fills
+ * `features.category` where it is NULL. Nothing is deleted, and no value that
+ * is already set is rewritten.
  */
+import { and, eq, features, isNull } from '@repo/db';
+import type { FeatureCategoryEnum } from '@repo/schemas';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
     name: '0135-hos1867-night-catalog-items',
     group: 'required',
-    destructive: false
+    destructive: false,
+    // HOS-433: the feature path writes `features.category`. If the column is
+    // not there yet the runner refuses instead of ledgering a partial run.
+    requiresColumns: [{ table: 'features', column: 'category' }]
 } as const satisfies SeedMigrationModule['meta'];
 
 /**
@@ -79,6 +97,7 @@ interface FeatureFixture {
     readonly name?: unknown;
     readonly lifecycleState?: string;
     readonly slug: string;
+    readonly category?: FeatureCategoryEnum;
     readonly [key: string]: unknown;
 }
 
@@ -135,6 +154,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     let amenitiesSkipped = 0;
     let featuresCreated = 0;
     let featuresSkipped = 0;
+    let featuresCategorized = 0;
 
     for (const fixture of amenityFixtures) {
         const existing = (await amenityModel.findOne(
@@ -181,6 +201,17 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 throw new Error(`HOS-1867 ${conflict}`);
             }
             featuresSkipped += 1;
+
+            // HOS-2058: fill the category only where none is set, so an admin's
+            // choice and a previous run are both left alone.
+            if (fixture.category) {
+                const categorized = await ctx.db
+                    .update(features)
+                    .set({ category: fixture.category })
+                    .where(and(eq(features.slug, fixture.slug), isNull(features.category)))
+                    .returning({ id: features.id });
+                featuresCategorized += categorized.length;
+            }
             continue;
         }
 
@@ -198,12 +229,13 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     }
 
     return {
-        summary: `HOS-1867 night catalog items: ${amenitiesCreated} amenities created, ${amenitiesSkipped} skipped; ${featuresCreated} features created, ${featuresSkipped} skipped`,
+        summary: `HOS-1867 night catalog items: ${amenitiesCreated} amenities created, ${amenitiesSkipped} skipped; ${featuresCreated} features created, ${featuresSkipped} skipped, ${featuresCategorized} existing features categorized`,
         counts: {
             amenitiesCreated,
             amenitiesSkipped,
             featuresCreated,
-            featuresSkipped
+            featuresSkipped,
+            featuresCategorized
         }
     };
 }

@@ -55,6 +55,8 @@ describe('slice composition', () => {
         // slice and both sides lose it in step, so that test still passes.
         // Mutation-verified: this is the only assertion that fails.
         const expected = [
+            // HOS-2058: per-amenity scope/availability, sent by the services page.
+            'amenityAttributes',
             'amenityIds',
             'apartment',
             'basePrice',

@@ -256,9 +256,9 @@ describe('ProfileEditSchema', () => {
     });
 
     describe('phone validation', () => {
-        it('should reject a phone without leading +', () => {
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, phone: '541134567890' });
-            expect(result.success).toBe(false);
+        it('accepts a common Argentine national format', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, phone: '3442 45-2345' });
+            expect(result.success).toBe(true);
         });
 
         it('should reject a phone with letters', () => {

@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "097-feature-lactose_free_options",
     "slug": "lactose_free_options",
+    "category": "DIETARY",
     "description": {
         "es": "Opciones del menú sin lactosa para personas con intolerancia",
         "en": "Lactose-free menu options for people with an intolerance",

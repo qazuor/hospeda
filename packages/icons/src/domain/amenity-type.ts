@@ -9,6 +9,11 @@
  */
 
 import type { ComponentType } from 'react';
+import { BreakfastIcon } from '../icons/amenities/BreakfastIcon';
+import { KayakRentalIcon } from '../icons/amenities/KayakRentalIcon';
+import { ParkingIcon } from '../icons/amenities/ParkingIcon';
+import { SpaServicesIcon } from '../icons/amenities/SpaServicesIcon';
+import { WasherIcon } from '../icons/amenities/WasherIcon';
 import { WifiIcon } from '../icons/amenities/WifiIcon';
 import { TreeIcon } from '../icons/features/TreeIcon';
 import { BedIcon } from '../icons/system/BedIcon';
@@ -50,7 +55,13 @@ export const AMENITY_TYPE_VISUALS: Readonly<Record<string, AmenityTypeVisual>> =
     SAFETY: { icon: ShieldIcon, colorToken: 'amenity-type-safety' },
     FAMILY_FRIENDLY: { icon: UsersThreeIcon, colorToken: 'amenity-type-family-friendly' },
     WORK_FRIENDLY: { icon: BriefcaseIcon, colorToken: 'amenity-type-work-friendly' },
-    GENERAL_APPLIANCES: { icon: WrenchIcon, colorToken: 'amenity-type-general-appliances' }
+    GENERAL_APPLIANCES: { icon: WrenchIcon, colorToken: 'amenity-type-general-appliances' },
+    // HOS-2058
+    PARKING: { icon: ParkingIcon, colorToken: 'amenity-type-parking' },
+    LAUNDRY: { icon: WasherIcon, colorToken: 'amenity-type-laundry' },
+    WATER_ACTIVITIES: { icon: KayakRentalIcon, colorToken: 'amenity-type-water-activities' },
+    WELLNESS: { icon: SpaServicesIcon, colorToken: 'amenity-type-wellness' },
+    DINING: { icon: BreakfastIcon, colorToken: 'amenity-type-dining' }
 };
 
 export const AMENITY_TYPE_FALLBACK_VISUAL: AmenityTypeVisual = {

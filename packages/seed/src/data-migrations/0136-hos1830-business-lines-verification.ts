@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0133-hos1830-business-lines-verification
+ * Data migration: 0136-hos1830-business-lines-verification
  *
  * Verifies the structural backfill invariant after the dual-write boundary.
  *
@@ -16,7 +16,7 @@ import { accommodations, experiences, sql, venues } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0133-hos1830-business-lines-verification',
+    name: '0136-hos1830-business-lines-verification',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

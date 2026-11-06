@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "057-feature-sustainable_accommodation",
     "slug": "sustainable_accommodation",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Operación completamente eco-friendly con prácticas sustentables en todas las actividades y servicios",
         "en": "Operación completamente eco-friendly con prácticas sustentables en todas las actividades y servicios",

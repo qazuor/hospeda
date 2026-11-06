@@ -1174,7 +1174,10 @@ export function toAccommodationDetailPageProps({
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
                     additionalCost: a.additionalCost == null ? null : Number(a.additionalCost),
-                    displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50)
+                    displayWeight: Number(a.displayWeight ?? nestedAmenity?.displayWeight ?? 50),
+                    // HOS-2058: declared relation attributes; anything else reads as undeclared.
+                    scope: toAmenityScope(a.scope),
+                    availability: toAmenityAvailability(a.availability)
                 };
             })
             .sort((a, b) => b.displayWeight - a.displayWeight),
@@ -1188,7 +1191,14 @@ export function toAccommodationDetailPageProps({
                     icon: f.icon ? String(f.icon) : null,
                     hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
                     comments: f.comments ? String(f.comments) : null,
-                    displayWeight: Number(f.displayWeight ?? nestedFeature?.displayWeight ?? 50)
+                    displayWeight: Number(f.displayWeight ?? nestedFeature?.displayWeight ?? 50),
+                    // HOS-2058: the FeaturesGrid groups by it.
+                    category:
+                        f.category == null
+                            ? nestedFeature?.category == null
+                                ? null
+                                : String(nestedFeature.category)
+                            : String(f.category)
                 };
             })
             .sort((a, b) => b.displayWeight - a.displayWeight),
@@ -1866,7 +1876,10 @@ export function toEventDetailProps({
 import type {
     AccommodationEditData,
     AccommodationVideoEntry,
+    AmenityAttributeValue,
+    AmenityAvailabilityValue,
     AmenityData,
+    AmenityScopeValue,
     DestinationData,
     MediaImage
 } from './types';
@@ -2011,6 +2024,7 @@ export function transformAccommodationEdit({
         featuredByEntitlement:
             item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
+        amenityAttributes: extractAmenityAttributes(amenitiesArr),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
         phone: String(
@@ -2105,6 +2119,42 @@ function extractIdList(
         .filter((id) => id.length > 0);
 }
 
+/** Narrows a raw value to a declared amenity scope, or `null`. */
+function toAmenityScope(value: unknown): AmenityScopeValue | null {
+    return value === 'private' || value === 'shared' ? value : null;
+}
+
+/** Narrows a raw value to a declared amenity availability, or `null`. */
+function toAmenityAvailability(value: unknown): AmenityAvailabilityValue | null {
+    return value === 'year_round' || value === 'seasonal' ? value : null;
+}
+
+/**
+ * Reads the HOS-2058 relation attributes off the protected amenity rows into a
+ * map keyed by amenity id. Rows with nothing declared are left out, so the
+ * map only ever holds real declarations.
+ *
+ * @param items - The `amenities` array of the protected accommodation read
+ * @returns Declared scope/availability per amenity id
+ */
+function extractAmenityAttributes(
+    items: readonly (Record<string, unknown> | string)[] | undefined
+): Readonly<Record<string, AmenityAttributeValue>> {
+    const result: Record<string, AmenityAttributeValue> = {};
+    if (!items) return result;
+    for (const entry of items) {
+        if (typeof entry === 'string') continue;
+        const nested = entry.amenity as Record<string, unknown> | undefined;
+        const id = String(entry.amenityId ?? nested?.id ?? entry.id ?? '');
+        if (id.length === 0) continue;
+        const scope = toAmenityScope(entry.scope);
+        const availability = toAmenityAvailability(entry.availability);
+        if (scope === null && availability === null) continue;
+        result[id] = { scope, availability };
+    }
+    return result;
+}
+
 /**
  * Transforms a list of raw amenity or feature catalog objects into AmenityData[].
  *
@@ -2115,13 +2165,13 @@ function extractIdList(
  * The `slug` field from the API response is stored in `AmenityData.slug` so
  * that client-side components can re-resolve the label with the correct locale.
  *
- * BETA-133: the public amenities catalog (`AmenityPublicSchema`) exposes the
- * grouping value under the `type` field (an `AmenitiesTypeEnum` member, e.g.
- * `"SERVICES"`), not `category` — the raw JSON never actually carries a
- * `category` key. The public features catalog (`FeaturePublicSchema`) has no
- * grouping field at all. Read `item.type` first (amenities), falling back to
- * `item.category` for forward-compat if the API ever adds that name; features
- * fall through to `null`, which the editor groups under a catch-all bucket.
+ * Grouping value (BETA-133, HOS-2058): amenities carry it under `type` (an
+ * `AmenitiesTypeEnum` member, e.g. `"SERVICES"`) and have no `category` key;
+ * features carry it under `category` (a `FeatureCategoryEnum` member, e.g.
+ * `"VIEW"`, nullable while release N backfills it) and have no `type`. So
+ * `item.type ?? item.category` resolves the right field for either kind; a
+ * feature with no category yet maps to `null`, which the editor groups under
+ * a catch-all bucket.
  *
  * @param items - Raw catalog objects from the public amenities / features endpoint
  * @returns Typed AmenityData array for the editor's checkbox group

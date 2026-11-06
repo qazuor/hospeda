@@ -56,10 +56,12 @@
  */
 export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.aiChat',
+    'accommodations.amenityAttributes',
     'accommodations.amenityCategories',
     'accommodations.amenityNames',
     'accommodations.comparison',
     'accommodations.detail',
+    'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',
     'account.alerts',

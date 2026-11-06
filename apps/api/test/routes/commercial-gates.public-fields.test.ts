@@ -2,6 +2,7 @@ import { VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../../../scripts/production-catalog/catalog.js';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
 import { filterPublicPaidFields } from '../../src/utils/entitlement-filter';
@@ -116,9 +117,43 @@ function entriesFor(userId: string): string[] {
     if (userId === OWNER.touristVip) return ['can_view_search_history'];
     if (userId === OWNER.premium) return KEYS;
     if (userId === OWNER.pro) return ['can_use_rich_description', 'can_embed_video'];
-    if (userId === OWNER.basic) return ['ai_chat'];
+    if (userId === OWNER.basic)
+        return [
+            'ai_chat',
+            ...PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS.filter(
+                (entry) => entry.vertical === 'accommodation' && entry.slug === 'owner-basico'
+            ).map((entry) => entry.key)
+        ];
     return [];
 }
+
+describe('HOS-2037 Básico public video entitlement', () => {
+    it('keeps a Básico host video through the public ficha route when the catalog grants it', async () => {
+        expect(entriesFor(OWNER.basic)).toContain('can_embed_video');
+        mocks.getBySlug.mockResolvedValue({ data: accommodation(OWNER.basic) });
+        const { publicGetAccommodationBySlugRoute } = await import(
+            '../../src/routes/accommodation/public/getBySlug'
+        );
+        const response = await appFor(publicGetAccommodationBySlugRoute).request(
+            '/slug/public-stay'
+        );
+        const body = (await response.json()) as {
+            data: { videos: unknown[]; media: { videos: unknown[] } };
+        };
+
+        expect(response.status).toBe(200);
+        expect(mocks.effectiveSet).toHaveBeenCalledWith({
+            userId: OWNER.basic,
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+        expect(body.data.videos).toEqual([
+            { url: 'https://vimeo.com/123', moderationState: 'APPROVED' }
+        ]);
+        expect(body.data.media.videos).toEqual([
+            { url: 'https://vimeo.com/123', moderationState: 'APPROVED' }
+        ]);
+    });
+});
 
 function accommodation(ownerId: string) {
     const video = { url: 'https://vimeo.com/123', moderationState: 'APPROVED' };
