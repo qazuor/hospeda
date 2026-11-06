@@ -5,10 +5,14 @@ import {
     eq,
     manualPayments,
     providerLinks,
-    subscriptions
+    subscriptions,
+    users
 } from '@repo/db';
 import { afterAll, describe, expect, it } from 'vitest';
-import { completeSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
+import {
+    completeSuccessorCut,
+    runWithSuccessorCut
+} from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { createSuccessorCutter } from '../../../src/services/billing/subscription/successor-cutter';
 import {
     closeServiceTestPool,
@@ -17,6 +21,12 @@ import {
     withServiceTestTransaction
 } from './helpers';
 import { readInstance } from './support/addon-orphan-fixtures';
+import {
+    frozenClock,
+    seedCoveragePlanVersion,
+    seedCoverageUser
+} from './support/coverage-fixtures';
+import { registryWithConsumer } from './support/coverage-notice-fixtures';
 import { readCloseCase } from './support/succession-close-fixtures';
 import { cutNow, seedSuccessorCutCase, successorCutPorts } from './support/successor-cut-fixtures';
 
@@ -314,6 +324,107 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             .from(subscriptions)
             .where(eq(subscriptions.id, idsHolder.id!));
         expect(rows).toHaveLength(0);
+    });
+
+    it('(j) orchestrates rollback and committed predecessor writes with one real post-commit notice', async () => {
+        const db = getServiceTestDb();
+        const rolledBackPredecessorId = crypto.randomUUID();
+        const rolledBackSuccessorId = crypto.randomUUID();
+        const ports = successorCutPorts(db);
+        await expect(
+            runWithSuccessorCut({
+                db,
+                predecessorSubscriptionId: rolledBackPredecessorId,
+                ports,
+                work: async (tx) => {
+                    const user = await seedCoverageUser(tx);
+                    const plan = await seedCoveragePlanVersion(tx, 'accommodation');
+                    await tx.insert(subscriptions).values({
+                        id: rolledBackPredecessorId,
+                        userId: user.userId,
+                        vertical: 'accommodation',
+                        planVersionId: plan.planVersionId,
+                        billingOptionId: plan.billingOptionId,
+                        paymentMethod: 'CARD',
+                        class: 'PRINCIPAL',
+                        status: 'SUSPENDED'
+                    });
+                    await tx.insert(subscriptions).values({
+                        id: rolledBackSuccessorId,
+                        userId: user.userId,
+                        vertical: 'accommodation',
+                        planVersionId: plan.planVersionId,
+                        billingOptionId: plan.billingOptionId,
+                        paymentMethod: 'CARD',
+                        class: 'PRINCIPAL',
+                        status: 'PENDING_AUTHORIZATION',
+                        succeedsId: rolledBackPredecessorId
+                    });
+                    throw new Error('caller work failed');
+                }
+            })
+        ).rejects.toThrow('caller work failed');
+        expect(
+            await db.select().from(subscriptions).where(eq(subscriptions.id, rolledBackSuccessorId))
+        ).toHaveLength(0);
+
+        const predecessorId = crypto.randomUUID();
+        const successorId = crypto.randomUUID();
+        const committedUserId = { value: '' };
+        const observer = registryWithConsumer({
+            clock: frozenClock(cutNow),
+            subscriptionId: successorId
+        });
+        const result = await runWithSuccessorCut({
+            db,
+            predecessorSubscriptionId: predecessorId,
+            ports: {
+                ...ports,
+                coverageNotices: observer.registry
+            },
+            work: async (tx) => {
+                const user = await seedCoverageUser(tx);
+                committedUserId.value = user.userId;
+                const plan = await seedCoveragePlanVersion(tx, 'accommodation');
+                await tx.insert(subscriptions).values({
+                    id: predecessorId,
+                    userId: user.userId,
+                    vertical: 'accommodation',
+                    planVersionId: plan.planVersionId,
+                    billingOptionId: plan.billingOptionId,
+                    paymentMethod: 'CARD',
+                    class: 'PRINCIPAL',
+                    status: 'ACTIVE'
+                });
+                await tx.insert(subscriptions).values({
+                    id: successorId,
+                    userId: user.userId,
+                    vertical: 'accommodation',
+                    planVersionId: plan.planVersionId,
+                    billingOptionId: plan.billingOptionId,
+                    paymentMethod: 'CARD',
+                    class: 'PRINCIPAL',
+                    status: 'ACTIVE',
+                    succeedsId: predecessorId
+                });
+                await tx
+                    .update(subscriptions)
+                    .set({ succeededById: successorId, status: 'SUSPENDED' })
+                    .where(eq(subscriptions.id, predecessorId));
+            }
+        });
+        expect(result.cut).toMatchObject({ outcome: 'CUT', from: 'ACTIVE', to: 'CANCELLED' });
+        expect(observer.observed).toHaveLength(1);
+        expect(observer.observed[0]?.event).toMatchObject({
+            userId: committedUserId.value,
+            vertical: 'accommodation',
+            sourceType: 'SUBSCRIPTION',
+            change: 'REMOVED'
+        });
+        expect(observer.observed[0]?.subscriptionSources).toEqual([]);
+        await db.delete(coverageLosses).where(eq(coverageLosses.userId, committedUserId.value));
+        await db.delete(subscriptions).where(eq(subscriptions.userId, committedUserId.value));
+        await db.delete(users).where(eq(users.id, committedUserId.value));
     });
 });
 
