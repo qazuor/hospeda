@@ -96,6 +96,7 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'promoCharges',
                 'promoExhaustion',
                 'successionCloser',
+                'successionSettler',
                 'touristVipInheritance'
             ].sort()
         );

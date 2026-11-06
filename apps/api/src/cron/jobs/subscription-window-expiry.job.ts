@@ -11,7 +11,8 @@ import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import {
     createScheduledChangeCollector,
-    getSuccessionCloser
+    getSuccessionCloser,
+    settleSuccessionAfterActivation
 } from '../../utils/billing-succession-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
@@ -74,6 +75,7 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             changeDirection: createPlanCatalogInverse({ reader: planCatalogModel }).changeDirection,
             complements: buildComplementPolicyPorts(),
             successionCloser: getSuccessionCloser(),
+            successionSettler: settleSuccessionAfterActivation,
             scheduledChangeApplier: collector.applier
         };
         try {

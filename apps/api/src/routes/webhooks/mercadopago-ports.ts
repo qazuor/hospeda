@@ -12,7 +12,10 @@ import {
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
-import { getSuccessionCloser } from '../../utils/billing-succession-ports';
+import {
+    getSuccessionCloser,
+    settleSuccessionAfterActivation
+} from '../../utils/billing-succession-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
 import {
@@ -84,6 +87,7 @@ export function buildMercadoPagoNoticePorts(input?: {
         cancellationSeen: providerLinkCancellationSeen,
         markPayments,
         successionCloser,
+        successionSettler: settleSuccessionAfterActivation,
         ...(input?.scheduledChangeApplier
             ? { scheduledChangeApplier: input.scheduledChangeApplier }
             : {}),
