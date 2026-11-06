@@ -1,6 +1,13 @@
 {
     "fila_viva": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+            "symbol": "cutSuccessorWrites",
+            "row": null,
+            "why": "AC:B8b:13 S31 reads the live principal successor while holding its row lock before applying its declared cut state.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/succession-closer.service.ts",
             "symbol": "closeSuccessionWrites",
             "row": null,
@@ -316,6 +323,27 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy-support.ts",
+            "symbol": "computeReissueWindow",
+            "row": null,
+            "why": "S9 validates the deferred month balance as a positive integer before computing the reissued calendar window (AC:B8b:12, reissue-deferred-courtesy-support.ts:11).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+            "symbol": "reissueDeferredCourtesy",
+            "row": null,
+            "why": "S9 reads an open deferred balance and updates that same grant to the successor with balanceMonths null in one transaction (AC:B8b:12, reissue-deferred-courtesy.service.ts:51).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+            "symbol": "cutSuccessorWrites",
+            "row": null,
+            "why": "AC:B8b:13 closes only open non-null courtesy balances whose subscription row has succeeded_by_id pointing to the successor.",
+            "subject": "courtesy_grant"
+        },
         {
             "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
             "symbol": "deferOrCloseCourtesy",

@@ -147,9 +147,17 @@ export async function activateCreditedPendingAuthorizations(
  * @param ports - S3's ports
  * @returns How many retained payments were handed to S5/S7
  */
-async function reevaluateRetainedPayments(
+export async function reevaluateRetainedPayments(
     input: { readonly predecessorId: string },
-    ports: ExpireAuthorizationWindowsPorts
+    ports: Pick<
+        ExpireAuthorizationWindowsPorts,
+        | 'provider'
+        | 'clock'
+        | 'billingFacts'
+        | 'coverageNotices'
+        | 'scheduledChangeApplier'
+        | 'complements'
+    >
 ): Promise<number> {
     const { predecessorId } = input;
     let retentions: Awaited<ReturnType<typeof findOpenRetentionsBySubscription>>;

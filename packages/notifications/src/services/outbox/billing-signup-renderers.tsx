@@ -34,7 +34,9 @@ import {
     SignupDeclined,
     SignupIncomplete,
     SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
+    SUCCESSOR_CUT_CANCEL_SUBJECT,
     SuccessionPredecessorCancel,
+    SuccessorCutCancel,
     TOURIST_VIP_INHERITED_CANCEL_SUBJECT,
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
@@ -182,6 +184,13 @@ function successionPredecessorCancel(row: EmailOutboxRow) {
         subject: SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
         react: <SuccessionPredecessorCancel />
     };
+}
+
+function successorCutCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de corte de la sucesión');
+    return { subject: SUCCESSOR_CUT_CANCEL_SUBJECT, react: <SuccessorCutCancel /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -454,6 +463,7 @@ export function createBillingSignupRenderers(input: {
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row),
         'billing.direct-cancellation': ({ row }) => directCancellation(row),
-        'billing.succession-predecessor-cancel': ({ row }) => successionPredecessorCancel(row)
+        'billing.succession-predecessor-cancel': ({ row }) => successionPredecessorCancel(row),
+        'billing.successor-cut-cancel': ({ row }) => successorCutCancel(row)
     };
 }

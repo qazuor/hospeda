@@ -236,6 +236,7 @@ export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';
 export * from './billing/subscription/exit-grace.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
+export { reevaluateRetainedPayments } from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/expire-manual-grace.service.js';
 export * from './billing/subscription/grace-reminder-notice.js';
 export * from './billing/subscription/grace-started-notice.js';
@@ -258,6 +259,8 @@ export * from './billing/subscription/refuse-undeclared-transition.js';
 export * from './billing/subscription/register-late-manual-payment.service.js';
 export * from './billing/subscription/register-manual-payment.service.js';
 export * from './billing/subscription/register-unallocated-manual-payment.service.js';
+export * from './billing/subscription/reissue-deferred-courtesy.service.js';
+export * from './billing/subscription/reissue-deferred-courtesy-support.js';
 export * from './billing/subscription/renewal-notice.js';
 export * from './billing/subscription/request-plan-change.service.js';
 export { readResumableCheckoutUrl } from './billing/subscription/resolve-live-commitment.js';
@@ -284,6 +287,18 @@ export * from './billing/subscription/succession-permanent-grant.js';
 export * from './billing/subscription/succession-retained-payment.js';
 export * from './billing/subscription/succession-target-guard.js';
 export * from './billing/subscription/successor-credit.js';
+export {
+    completeSuccessorCut,
+    runWithSuccessorCut
+} from './billing/subscription/successor-cut-after-commit.js';
+export type {
+    SuccessorCutResult,
+    SuccessorCutter
+} from './billing/subscription/successor-cutter.js';
+export {
+    createSuccessorCutter,
+    unimplementedSuccessorCutter
+} from './billing/subscription/successor-cutter.js';
 export * from './billing/subscription/suspend-for-arrears.service.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
