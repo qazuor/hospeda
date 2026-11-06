@@ -9,7 +9,9 @@
  *  - the collection of the published line is indexable and appears in the sitemap
  *    with the three locales and their hreflang alternates;
  *  - the other line's collection has no listing in this destination, so it is
- *    `noindex,follow` and shows the empty state with its publish CTA;
+ *    `noindex,follow` (the filtered view keeps its "no results" copy; the
+ *    collection-specific empty state and its publish CTA are covered by the
+ *    source and i18n tests);
  *  - an unknown segment is a hard 404;
  *  - robots.txt blocks the `businessLine` query param.
  *
@@ -224,7 +226,11 @@ test.describe('AC:6:2 venue collections: sitemap, noindex when empty, 404 and cr
             'index,follow,max-image-preview:large'
         );
 
-        // ── 4. The empty collection is noindex and shows its empty state ─────
+        // ── 4. The empty collection is noindex ───────────────────────────────
+        // `destinationId` is an active filter, so this render keeps the shared
+        // "no results" state (the collection-specific empty state only replaces
+        // the genuinely unfiltered one). The noindex rule applies to every
+        // zero-result render.
         const emptyResponse = await page.goto(scoped(emptyPath), {
             waitUntil: 'domcontentloaded'
         });
@@ -233,9 +239,10 @@ test.describe('AC:6:2 venue collections: sitemap, noindex when empty, 404 and cr
             'content',
             'noindex,follow'
         );
-        await expect(page.locator('body')).toContainText('Todavía no hay locales publicados');
-        await expect(page.locator('body')).toContainText('Ver todo Comer y salir');
-        await expect(page.locator('a[href="/es/publicar/comer-y-salir/"]').first()).toBeVisible();
+        await expect(page.locator('body')).toContainText(
+            'No se encontraron locales con los filtros seleccionados.'
+        );
+        await expect(page.locator('body')).not.toContainText('Publicá tu local');
 
         // ── 5. robots.txt blocks the businessLine query param ────────────────
         const robots = await request.get(`${WEB_URL}/robots.txt`);
