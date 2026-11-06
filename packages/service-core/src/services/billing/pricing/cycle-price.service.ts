@@ -14,7 +14,10 @@ import {
 } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import { CYCLE_MINIMUM_DAYS } from '../../plan-catalog/plan-publication.service.js';
-import { PROVIDER_AMOUNT_FLOOR_MINOR } from '../promo/provider-amount-floor.js';
+import {
+    PROVIDER_AMOUNT_CEILING_MINOR,
+    PROVIDER_AMOUNT_FLOOR_MINOR
+} from '../promo/provider-amount-floor.js';
 import {
     assertCyclePriceActionPermitted,
     cyclePriceRejection,
@@ -32,6 +35,12 @@ function assertPriceRules(args: {
         throw cyclePriceRejection({
             reason: 'CYCLE_PRICE_BELOW_PROVIDER_MINIMUM',
             message: `El monto mínimo que acepta Mercado Pago es ARS ${PROVIDER_AMOUNT_FLOOR_MINOR / 100}.`
+        });
+    }
+    if (args.amount > PROVIDER_AMOUNT_CEILING_MINOR) {
+        throw cyclePriceRejection({
+            reason: 'CYCLE_PRICE_ABOVE_PROVIDER_MAXIMUM',
+            message: `El monto máximo que acepta Mercado Pago es ARS ${PROVIDER_AMOUNT_CEILING_MINOR / 100}.`
         });
     }
     const cycleDays = CYCLE_MINIMUM_DAYS[args.cycle];
@@ -66,6 +75,11 @@ export async function previewCyclePrice(args: {
         throw cyclePriceRejection({
             reason: 'PLAN_VERSION_NOT_FOUND',
             message: 'Versión de plan no encontrada.'
+        });
+    if (!version.sellable)
+        throw cyclePriceRejection({
+            reason: 'PLAN_VERSION_NOT_SELLABLE',
+            message: 'No se puede fijar el precio de una versión no vendible.'
         });
     assertPriceRules({ amount, cycle, graceDays: version.graceDays });
     const [option] = await db
@@ -132,6 +146,11 @@ export async function setCyclePrice(args: {
                 throw cyclePriceRejection({
                     reason: 'PLAN_VERSION_NOT_FOUND',
                     message: 'Versión de plan no encontrada.'
+                });
+            if (!version.sellable)
+                throw cyclePriceRejection({
+                    reason: 'PLAN_VERSION_NOT_SELLABLE',
+                    message: 'No se puede fijar el precio de una versión no vendible.'
                 });
             assertPriceRules({ amount, cycle, graceDays: version.graceDays });
             const [option] = await tx

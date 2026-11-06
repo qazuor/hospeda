@@ -1,11 +1,14 @@
-import { billingOptions, domainEvent, eq, subscriptions } from '@repo/db';
+import { billingOptions, domainEvent, eq, plans, planVersions, subscriptions } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
     previewCyclePrice,
     setCyclePrice
 } from '../../../src/services/billing/pricing/cycle-price.service.js';
-import { PROVIDER_AMOUNT_FLOOR_MINOR } from '../../../src/services/billing/promo/provider-amount-floor.js';
+import {
+    PROVIDER_AMOUNT_CEILING_MINOR,
+    PROVIDER_AMOUNT_FLOOR_MINOR
+} from '../../../src/services/billing/promo/provider-amount-floor.js';
 import { readAnchoredBillingOption } from '../../../src/services/billing/read-anchored-billing-option.js';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service.js';
 import {
@@ -182,6 +185,77 @@ describe.skipIf(!isServiceTestDbAvailable())('cycle price action 19', () => {
             PROVIDER_AMOUNT_FLOOR_MINOR
         );
         expect(result.billingOption.amount).toBe(PROVIDER_AMOUNT_FLOOR_MINOR);
+    });
+
+    it('PM-334 rejects a non-sellable version before writing and allows current=false', async () => {
+        const fixture = await seedCyclePriceVersion();
+        const [plan] = await getServiceTestDb()
+            .insert(plans)
+            .values({
+                vertical: 'accommodation',
+                slug: `cycle-unsellable-${crypto.randomUUID()}`,
+                name: 'Básico'
+            })
+            .returning({ id: plans.id });
+        if (!plan) throw new Error('Missing fixture plan');
+        const [version] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: plan.id,
+                vertical: 'accommodation',
+                rank: Math.floor(Math.random() * 1_000_000_000) + 1000,
+                sellable: false,
+                current: false,
+                graceDays: 10,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning({ id: planVersions.id });
+        if (!version) throw new Error('Missing fixture version');
+        await expect(
+            previewCyclePrice({ actor: fixture.actor, input: request(version.id) })
+        ).rejects.toMatchObject({ reason: 'PLAN_VERSION_NOT_SELLABLE' });
+        await expect(confirm(fixture.actor, version.id)).rejects.toMatchObject({
+            reason: 'PLAN_VERSION_NOT_SELLABLE'
+        });
+        expect(await optionRows(version.id)).toHaveLength(0);
+        const [other] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: plan.id,
+                vertical: 'accommodation',
+                rank: Math.floor(Math.random() * 1_000_000_000) + 1000,
+                sellable: true,
+                current: false,
+                graceDays: 10,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning({ id: planVersions.id });
+        if (!other) throw new Error('Missing noncurrent fixture');
+        expect((await confirm(fixture.actor, other.id)).billingOption.amount).toBe(price);
+    });
+
+    it('PM-334 rejects an amount above RP3 ceiling before any write in preview and act', async () => {
+        const fixture = await seedCyclePriceVersion();
+        const above = PROVIDER_AMOUNT_CEILING_MINOR + 1;
+        await expect(
+            previewCyclePrice({
+                actor: fixture.actor,
+                input: request(fixture.planVersionId, above)
+            })
+        ).rejects.toMatchObject({
+            reason: 'CYCLE_PRICE_ABOVE_PROVIDER_MAXIMUM',
+            message: `El monto máximo que acepta Mercado Pago es ARS ${PROVIDER_AMOUNT_CEILING_MINOR / 100}.`
+        });
+        await expect(confirm(fixture.actor, fixture.planVersionId, above)).rejects.toMatchObject({
+            reason: 'CYCLE_PRICE_ABOVE_PROVIDER_MAXIMUM'
+        });
+        expect(await optionRows(fixture.planVersionId)).toHaveLength(0);
+        expect(
+            (await confirm(fixture.actor, fixture.planVersionId, PROVIDER_AMOUNT_CEILING_MINOR))
+                .billingOption.amount
+        ).toBe(PROVIDER_AMOUNT_CEILING_MINOR);
     });
 
     it('AC:B2:4 E5 checks grace at equal and shorter cycle boundaries', async () => {
