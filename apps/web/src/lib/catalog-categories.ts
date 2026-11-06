@@ -84,7 +84,7 @@ export const AMENITY_CATEGORY_LABELS: Readonly<
     LAUNDRY: { i18nKey: 'laundry', fallback: 'Lavandería' },
     WATER_ACTIVITIES: { i18nKey: 'waterActivities', fallback: 'Actividades acuáticas' },
     WELLNESS: { i18nKey: 'wellness', fallback: 'Bienestar' },
-    DINING: { i18nKey: 'dining', fallback: 'Gastronomía' },
+    DINING: { i18nKey: 'dining', fallback: 'Comidas y bebidas' },
     GENERAL_APPLIANCES: { i18nKey: 'generalAppliances', fallback: 'Equipamiento' }
 };
 
