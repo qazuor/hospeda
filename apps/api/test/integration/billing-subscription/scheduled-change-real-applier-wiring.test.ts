@@ -1,9 +1,12 @@
 import {
     and,
+    billingOptions,
     type DrizzleClient,
     domainEvent,
     eq,
     manualPayments,
+    plans,
+    planVersions,
     subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
@@ -47,13 +50,51 @@ beforeAll(async () => {
 afterAll(() => testDb.teardown());
 
 /** A destination version and a queue entry on a row seeded by this test. */
-async function queueChange(tx: DrizzleClient, subscriptionId: string) {
+async function queueChange(tx: DrizzleClient, subscriptionId: string, downgrade = false) {
     const [source] = await tx
-        .select({ vertical: subscriptions.vertical })
+        .select({ vertical: subscriptions.vertical, rank: planVersions.rank })
         .from(subscriptions)
+        .innerJoin(planVersions, eq(planVersions.id, subscriptions.planVersionId))
         .where(eq(subscriptions.id, subscriptionId));
     if (!source?.vertical) throw new Error('Missing subscription vertical');
-    const target = await seedCoveragePlanVersion(tx, source.vertical);
+    let target: { readonly planVersionId: string; readonly billingOptionId: string };
+    if (downgrade) {
+        const [plan] = await tx
+            .insert(plans)
+            .values({
+                vertical: source.vertical,
+                slug: `downgrade-${crypto.randomUUID()}`,
+                name: 'Downgrade plan'
+            })
+            .returning({ id: plans.id });
+        if (!plan) throw new Error('Missing downgrade plan');
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: plan.id,
+                vertical: source.vertical,
+                rank: source.rank - 1,
+                sellable: false,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning({ id: planVersions.id, rank: planVersions.rank });
+        if (!version || version.rank >= source.rank) throw new Error('Target is not a downgrade');
+        const [option] = await tx
+            .insert(billingOptions)
+            .values({
+                planVersionId: version.id,
+                cycle: 'monthly',
+                amount: 200000,
+                currency: 'ARS'
+            })
+            .returning({ id: billingOptions.id });
+        if (!option) throw new Error('Missing downgrade billing option');
+        target = { planVersionId: version.id, billingOptionId: option.id };
+    } else {
+        target = await seedCoveragePlanVersion(tx, source.vertical);
+    }
     await tx.insert(subscriptionScheduledChanges).values({
         subscriptionId,
         targetPlanVersionId: target.planVersionId,
@@ -156,7 +197,7 @@ describe('TEST:B8b:24 real S38 composition', () => {
                     .update(subscriptions)
                     .set({ status })
                     .where(eq(subscriptions.id, started.subscriptionId));
-            const target = await queueChange(tx, started.subscriptionId);
+            const target = await queueChange(tx, started.subscriptionId, status === 'GRACE_PERIOD');
             const read = await provider.readCharge({ chargeId });
             const createdAt = Date.parse(read.snapshot.createdAt);
             const expiresAt = Date.parse(read.snapshot.expiresAt ?? read.snapshot.createdAt);
