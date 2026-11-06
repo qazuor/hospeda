@@ -177,6 +177,15 @@ const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend({
     availability: AmenityAvailabilityEnumSchema.nullish()
 });
 const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
+/**
+ * Admin-tier amenity row on an accommodation: the full catalog row plus the
+ * HOS-2058 relation attributes from `r_accommodation_amenity`.
+ * NULL = not declared.
+ */
+const AccommodationAmenityAdminReadSchema = AmenityAdminSchema.extend({
+    scope: AmenityScopeEnumSchema.nullish(),
+    availability: AmenityAvailabilityEnumSchema.nullish()
+});
 
 /**
  * PUBLIC ACCESS SCHEMA
@@ -701,7 +710,7 @@ export const AccommodationAdminSchema = AccommodationSchema.extend({
     /** City projection of the linked destination (SPEC-095). */
     cityDestination: CityDestinationRefSchema.optional(),
     /** Amenities with junction table data from r_accommodation_amenity (admin tier). */
-    amenities: z.array(AmenityAdminSchema).optional(),
+    amenities: z.array(AccommodationAmenityAdminReadSchema).optional(),
     /** Features with junction table data from r_accommodation_feature (admin tier). */
     features: z.array(FeatureAdminSchema).optional(),
     /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
