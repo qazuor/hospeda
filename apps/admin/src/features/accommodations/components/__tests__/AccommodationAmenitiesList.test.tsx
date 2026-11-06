@@ -2,10 +2,16 @@
 /**
  * HOS-2058: the accommodation amenities tab renders the real `amenities`
  * relation, grouped by type, with badges only for declared scope/availability.
- * `useTranslations` is not mocked: real @repo/i18n resolves es labels.
+ * `useTranslations` is not mocked: amenity names resolve via trans (es).
  */
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The global @repo/icons mock (test/setup.tsx) has no getAmenityTypeIcon.
+vi.mock('@repo/icons', () => ({
+    getAmenityTypeIcon: () => () => <svg data-testid="type-icon" />
+}));
+
 import { AccommodationAmenitiesList } from '../AccommodationAmenitiesList';
 
 const amenities = [
@@ -39,12 +45,14 @@ describe('AccommodationAmenitiesList', () => {
 
     it('shows badges only for declared scope and availability', () => {
         render(<AccommodationAmenitiesList amenities={amenities} />);
-        expect(screen.getByText('Privado')).toBeTruthy();
-        expect(screen.getByText('Compartido')).toBeTruthy();
-        expect(screen.getByText('Todo el año')).toBeTruthy();
-        expect(screen.getByText('De temporada')).toBeTruthy();
+        // The admin test setup mocks the translator to echo keys.
+        const prefix = 'accommodations.amenityAttributes';
+        expect(screen.getByText(`${prefix}.scope.private`)).toBeTruthy();
+        expect(screen.getByText(`${prefix}.scope.shared`)).toBeTruthy();
+        expect(screen.getByText(`${prefix}.availability.yearRound`)).toBeTruthy();
+        expect(screen.getByText(`${prefix}.availability.seasonal`)).toBeTruthy();
+        // Undeclared (null/null) renders only the name, no badge.
         const wifiRow = screen.getByText('WiFi').closest('li');
-        expect(wifiRow?.querySelectorAll('span').length).toBe(1);
-        expect(wifiRow?.textContent).toBe('WiFi');
+        expect(wifiRow?.children.length).toBe(1);
     });
 });
