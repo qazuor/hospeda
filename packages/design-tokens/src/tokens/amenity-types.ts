@@ -10,7 +10,7 @@
  *   per-type semantic token  →  `--amenity-type-<type>`
  *        ↓ consumed in BOTH apps via the SSOT in `@repo/icons`
  *
- * Each of the 12 `AmenitiesTypeEnum` values maps to ONE existing base palette
+ * Each of the 17 `AmenitiesTypeEnum` values maps to ONE existing base palette
  * and exposes a dedicated `--amenity-type-<type>` token whose VALUE is a
  * `var()` reference to that palette's shade-500 primitive. No NEW base
  * palettes are introduced.
@@ -19,7 +19,8 @@
 import type { Theme } from '../themes/types.js';
 
 /**
- * Type → palette assignment for the 12 amenity-type categories.
+ * Type → palette assignment for the 17 amenity-type categories (HOS-2058 added
+ * the last five; they reuse existing palettes).
  * Slug naming uses kebab-case for tokens (e.g. `bed-and-bath`).
  */
 export const amenityTypeTokens: Theme = {
@@ -34,5 +35,10 @@ export const amenityTypeTokens: Theme = {
     'amenity-type-safety': 'var(--palette-danger-500)',
     'amenity-type-family-friendly': 'var(--palette-rose-500)',
     'amenity-type-work-friendly': 'var(--palette-sand-500)',
-    'amenity-type-general-appliances': 'var(--palette-neutral-500)'
+    'amenity-type-general-appliances': 'var(--palette-neutral-500)',
+    'amenity-type-parking': 'var(--palette-neutral-500)',
+    'amenity-type-laundry': 'var(--palette-sky-500)',
+    'amenity-type-water-activities': 'var(--palette-teal-500)',
+    'amenity-type-wellness': 'var(--palette-purple-500)',
+    'amenity-type-dining': 'var(--palette-terracotta-500)'
 };

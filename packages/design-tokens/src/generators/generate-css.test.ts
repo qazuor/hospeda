@@ -99,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 150 palettes + 239 webLight = 389', () => {
+    it('total :root declarations = 150 palettes + 244 webLight = 394', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(150 + Object.keys(webLight).length);
-        expect(total).toBe(389); // 150 palettes + 239 webLight
+        expect(total).toBe(394); // 150 palettes + 244 webLight (+5 HOS-2058 amenity types)
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -197,7 +197,7 @@ describe('buildCSS — admin light theme block', () => {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(adminLight).length);
-        expect(countDeclarations(block)).toBe(104); // + HOS-182 poi-category buckets + -on
+        expect(countDeclarations(block)).toBe(109); // + HOS-182 poi-category buckets + -on, +5 HOS-2058 amenity types
     });
 
     it('exposes the web brand tokens (cross-app badge support) in the admin scope', () => {
@@ -324,6 +324,6 @@ describe('buildCSS — web-only artifact (HOS-369 W3-5)', () => {
         expect(saved).toBeGreaterThan(6000);
         // Pinned so a theme growing the admin blocks shows up here rather than
         // silently changing what the web app was told it saves.
-        expect(saved).toBe(6544);
+        expect(saved).toBe(6828); // +284 for the five HOS-2058 amenity-type tokens
     });
 });
