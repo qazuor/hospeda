@@ -50,6 +50,7 @@ import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pa
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import {
     buildVenueBusinessLineCollectionPath,
+    isVenueCollectionEmpty,
     resolveVenueBusinessLineCollection
 } from '@/lib/venue/business-line-collection';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -152,6 +153,10 @@ const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
     return new Response(null, { status: 404 });
 }
+
+// An empty collection has nothing to index. A failed fetch is not emptiness: a
+// transient API error must not drop the collection out of the index.
+const isEmptyCollection = isVenueCollectionEmpty({ fetchOk: result.ok, total });
 
 const cards = items.map((item) =>
     toVenueCardProps({ item: item as unknown as Record<string, unknown>, locale })
@@ -327,6 +332,7 @@ const breadcrumbJsonLdItems = [
     ogTagline={pageDescription}
     totalCount={total}
     filterSummary={filterSummary}
+    noindex={isEmptyCollection}
 >
     <CollectionPageJsonLd
         slot="head-extra"
@@ -402,10 +408,23 @@ const breadcrumbJsonLdItems = [
         <EmptyState
             locale={locale}
             variant="empty"
-            message={t(
-                'venue.listing.emptyCatalog',
-                'Todavía no hay locales publicados.'
+            actionUrl={listBaseUrl}
+            actionLabel={t(
+                'venue.listing.collectionEmpty.viewAll',
+                'Ver todo {{vertical}}',
+                { vertical: t('venue.listing.title') }
             )}
+            message={t(
+                'venue.listing.collectionEmpty.message',
+                'Todavía no hay locales publicados en {{line}}.',
+                { line: businessLineLabel }
+            )}
+            suggestions={[
+                {
+                    label: t('venue.listing.collectionEmpty.publish', 'Publicá tu local'),
+                    url: buildUrl({ locale, path: 'publicar/comer-y-salir' })
+                }
+            ]}
         />
     )}
 

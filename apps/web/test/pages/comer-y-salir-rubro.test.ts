@@ -85,6 +85,22 @@ describe('comer-y-salir/rubro/[rubro]/index.astro', () => {
         });
     });
 
+    describe('empty collection indexability (HOS-1869, AC:6:2)', () => {
+        it('imports the shared emptiness predicate and marks the layout noindex', () => {
+            expect(src).toContain('isVenueCollectionEmpty');
+            expect(src).toContain('isVenueCollectionEmpty({ fetchOk: result.ok, total })');
+            expect(src).toMatch(/noindex=\{isEmptyCollection\}/);
+        });
+
+        it('uses the collection empty state with its CTA and publish suggestion', () => {
+            expect(src).toContain('venue.listing.collectionEmpty.message');
+            expect(src).toContain('venue.listing.collectionEmpty.viewAll');
+            expect(src).toContain('venue.listing.collectionEmpty.publish');
+            expect(src).toContain('actionUrl={listBaseUrl}');
+            expect(src).toContain("path: 'publicar/comer-y-salir'");
+        });
+    });
+
     describe('pagination', () => {
         it('builds canonical and neighbour links from the collection path', () => {
             expect(src).toContain('buildPaginationLinks({');

@@ -11,6 +11,11 @@
         "subtitle": "Discover places to eat and go out across the region",
         "emptyState": "No venues found with the selected filters.",
         "emptyCatalog": "There are no published venues yet.",
+        "collectionEmpty": {
+            "message": "There are no venues published under {{line}} yet.",
+            "viewAll": "See all {{vertical}}",
+            "publish": "List your venue"
+        },
         "errorBanner": "Could not load the Food & nightlife listings. Please try again later.",
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",

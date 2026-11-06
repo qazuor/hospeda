@@ -11,6 +11,11 @@
         "subtitle": "Descubrí lugares para comer y salir en la región",
         "emptyState": "No se encontraron locales con los filtros seleccionados.",
         "emptyCatalog": "Todavía no hay locales publicados.",
+        "collectionEmpty": {
+            "message": "Todavía no hay locales publicados en {{line}}.",
+            "viewAll": "Ver todo {{vertical}}",
+            "publish": "Publicá tu local"
+        },
         "errorBanner": "No se pudo cargar el listado de Comer y salir. Intentá de nuevo más tarde.",
         "results_one": "{{count}} establecimiento encontrado",
         "results_other": "{{count}} establecimientos encontrados",
