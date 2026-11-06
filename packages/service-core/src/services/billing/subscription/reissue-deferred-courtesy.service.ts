@@ -28,6 +28,12 @@ import { computeReissueWindow } from './reissue-deferred-courtesy-support.js';
 const logger = createLogger('reissue-deferred-courtesy-s9');
 const inputSchema = z.strictObject({ successorSubscriptionId: z.uuid() });
 
+class S9LostRaceError extends Error {
+    constructor() {
+        super('S9 transaction lost its guarded subscription update');
+    }
+}
+
 /** The stable outcome of attempting S9 on a successor. */
 export type ReissueDeferredCourtesyResult =
     | {
@@ -215,7 +221,7 @@ export async function reissueDeferredCourtesy(
                     userId: subscriptions.userId,
                     vertical: subscriptions.vertical
                 });
-            if (!paused) return { kind: 'LOST_RACE' as const };
+            if (!paused) throw new S9LostRaceError();
             if (!paused.userId || !paused.vertical)
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
@@ -265,10 +271,14 @@ export async function reissueDeferredCourtesy(
             };
         });
     } catch (error) {
-        const cause = extractPostgresErrorCause(error);
-        if (cause?.code === '23505' && cause.constraint === 'uq_subscription_pause_open')
-            return { outcome: 'NOT_APPLICABLE', reason: 'ALREADY_PAUSED' };
-        throw error;
+        if (error instanceof S9LostRaceError) {
+            written = { kind: 'LOST_RACE' };
+        } else {
+            const cause = extractPostgresErrorCause(error);
+            if (cause?.code === '23505' && cause.constraint === 'uq_subscription_pause_open')
+                return { outcome: 'NOT_APPLICABLE', reason: 'ALREADY_PAUSED' };
+            throw error;
+        }
     }
     if (written.kind === 'ALREADY_PAUSED')
         return { outcome: 'NOT_APPLICABLE', reason: 'ALREADY_PAUSED' };
