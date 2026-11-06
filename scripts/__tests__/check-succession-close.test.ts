@@ -69,6 +69,14 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
             'c1 pointer writer'
         );
     });
+    it('(c1) rejects succeedsId null in a local const patch outside clearSuccessorLink', () => {
+        const file = 'packages/service-core/src/services/billing/subscription/other.ts';
+        red(
+            file,
+            'export function other(tx: Tx) { const patch = { succeedsId: null }; return tx.update(subscriptions).set(patch); }',
+            'c1 pointer writer'
+        );
+    });
     it('(c1) accepts succeedsId null in clearSuccessorLink', () => {
         expect(run({ root: tree(), minScannedFiles: 1 })).toMatchObject({ exitCode: 0 });
     });
@@ -120,6 +128,19 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
             mutate(WRITES_FILE, '.set({ balanceMonths: months })', '.set({ other: months })'),
             'c4 courtesy balance'
         );
+    });
+    it('(c4) accepts the monthly balanceMonths in a local const patch', () => {
+        const source = mutate(
+            WRITES_FILE,
+            '.set({ balanceMonths: months })',
+            '.set(patch)'
+        ).replace(
+            "if (option.cycle === 'monthly') {",
+            "if (option.cycle === 'monthly') {\n            const patch = { balanceMonths: months };"
+        );
+        expect(run({ root: tree({ [WRITES_FILE]: source }), minScannedFiles: 1 })).toMatchObject({
+            exitCode: 0
+        });
     });
     it('(c4) rejects missing nonmonthly balanceMonths, the separate TEST mutation', () => {
         red(
@@ -182,6 +203,14 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
         red(
             file,
             'export function move(tx: Tx) { return tx.update(promoRedemptions).set({ subscriptionId: "new" }); }',
+            'c5 promo immobility'
+        );
+    });
+    it('(c5) rejects repointing promo redemption from a file-level const patch', () => {
+        const file = 'packages/service-core/src/services/billing/subscription/promo-move.ts';
+        red(
+            file,
+            'const patch = { subscriptionId: "new" }; export function move(tx: Tx) { return tx.update(promoRedemptions).set(patch); }',
             'c5 promo immobility'
         );
     });

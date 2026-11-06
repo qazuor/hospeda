@@ -4,8 +4,14 @@
  * Checks registered pointer writers, their paired calls from S18, complement repointing,
  * both courtesy balance writes, the S19 reconciliation mark, and promo immobility.
  * Exit 0 is clean; exit 1 reports `G-R1-C: <rule>: <file>:<line> <detail>`.
- * What it does NOT see: writes through spreads, runtime-built SQL, aliased writers, or
- * whether a guarded write executes. TEST:B8b:10 checks the behavior with a database.
+ * What it does NOT see:
+ * - Properties supplied through spreads.
+ * - Runtime-built SQL.
+ * - Aliased writers.
+ * - Identifiers initialized with a non-literal expression.
+ * - Objects mutated after their const declaration.
+ * - Objects supplied through function parameters.
+ * - Whether a guarded write executes. TEST:B8b:10 checks behavior with a database.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -96,10 +102,43 @@ function tableOf(set: ts.CallExpression): string | null {
     }
     return null;
 }
+function objectLiteral(argument: ts.Expression | undefined): ts.ObjectLiteralExpression | null {
+    if (!argument) return null;
+    if (ts.isObjectLiteralExpression(argument)) return argument;
+    if (!ts.isIdentifier(argument)) return null;
+    for (let scope: ts.Node | undefined = argument.parent; scope; scope = scope.parent) {
+        if (
+            ts.isFunctionLike(scope) &&
+            scope.parameters.some(
+                (parameter) =>
+                    ts.isIdentifier(parameter.name) && parameter.name.text === argument.text
+            )
+        )
+            return null;
+        if (!ts.isBlock(scope) && !ts.isSourceFile(scope)) continue;
+        for (const statement of scope.statements) {
+            if (!ts.isVariableStatement(statement)) continue;
+            const declaration = statement.declarationList.declarations.find(
+                (candidate) =>
+                    ts.isIdentifier(candidate.name) && candidate.name.text === argument.text
+            );
+            if (!declaration) continue;
+            if (
+                statement.getStart() >= argument.getStart() ||
+                !(statement.declarationList.flags & ts.NodeFlags.Const) ||
+                !declaration.initializer ||
+                !ts.isObjectLiteralExpression(declaration.initializer)
+            )
+                return null;
+            return declaration.initializer;
+        }
+    }
+    return null;
+}
 function sets(node: ts.Node): Write[] {
     return callsNamed(node, 'set').flatMap((call) => {
-        const object = call.arguments[0];
-        return ts.isObjectLiteralExpression(object) ? [{ call, object, table: tableOf(call) }] : [];
+        const object = objectLiteral(call.arguments[0]);
+        return object ? [{ call, object, table: tableOf(call) }] : [];
     });
 }
 function read(root: string, file: string): ts.SourceFile | null {
