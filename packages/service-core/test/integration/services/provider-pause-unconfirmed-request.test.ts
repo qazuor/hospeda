@@ -130,11 +130,18 @@ describe.skipIf(!isServiceTestDbAvailable())(
     () => {
         it('preserves the principal and open mark without notice or cancel', async () => {
             const s = await pending22();
+            const before = await row(s.subscriptionId);
+            const coverageBefore = [...s.fixture.coverageEvents];
             await handleProviderPauseIsArrears(
                 { subscriptionId: s.subscriptionId, readAt: s.fixture.clock.now() },
                 s.ports
             );
-            expect((await row(s.subscriptionId)).status).toBe('ACTIVE');
+            const after = await row(s.subscriptionId);
+            expect(after.status).toBe('ACTIVE');
+            expect([after.graceStartedAt, after.graceEndsAt]).toEqual([
+                before.graceStartedAt,
+                before.graceEndsAt
+            ]);
             expect(await openReasons(s.subscriptionId)).toEqual(['PAUSA_NO_APLICADA']);
             expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([]);
             expect(
@@ -143,6 +150,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 )
             ).toEqual([]);
             expect(await arrearsMails(s.fixture.user.id)).toEqual([]);
+            expect(s.fixture.coverageEvents).toEqual(coverageBefore);
+            expect(
+                s.facts.filter(
+                    (fact) =>
+                        fact.kind === 'SUSPENDED_FOR_ARREARS' &&
+                        fact.subscriptionId === s.subscriptionId
+                )
+            ).toEqual([]);
         });
     }
 );
@@ -168,6 +183,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(ownCancels(s.cancel.mock.calls, s.authorizationId)).toEqual([]);
             expect(await arrearsMails(s.fixture.user.id)).toEqual([]);
             expect(s.fixture.coverageEvents).toEqual(coverageBefore);
+            expect(
+                s.facts.filter(
+                    (fact) =>
+                        fact.kind === 'SUSPENDED_FOR_ARREARS' &&
+                        fact.subscriptionId === s.subscriptionId
+                )
+            ).toEqual([]);
         });
     }
 );
@@ -200,6 +222,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(
                 s.beforeCancel.mock.calls.filter(([notice]) => notice.subscriptionId === id)
             ).toEqual([]);
+            expect(await arrearsMails(s.fixture.user.id)).toEqual([]);
         });
     }
 );
