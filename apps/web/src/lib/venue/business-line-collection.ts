@@ -65,7 +65,7 @@ export function resolveVenueBusinessLineCollection({
  * @param input - The path to build.
  * @param input.locale - Active locale.
  * @param input.businessLine - Internal catalog value of the collection.
- * @returns The path with its trailing slash, e.g. `/en/comer-y-salir/rubro/noche/`.
+ * @returns The path with its trailing slash, e.g. `/<lang>/comer-y-salir/rubro/<slug>/`.
  */
 export function buildVenueBusinessLineCollectionPath({
     locale,
