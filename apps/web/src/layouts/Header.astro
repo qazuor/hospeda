@@ -343,7 +343,7 @@ const serverUserRoles = serverUser?.roles ?? [];
         }
     }
 
-    .header__nav-link {
+    .header__nav :global(.header__nav-link) {
         position: relative;
         font-family: var(--font-sans);
         font-weight: 600;
@@ -356,21 +356,21 @@ const serverUserRoles = serverUser?.roles ?? [];
         border-radius: 2px;
     }
 
-    .header__nav-link:hover {
+    .header__nav :global(.header__nav-link):hover {
         color: var(--brand-primary-text);
     }
 
-    .header__nav-link:focus-visible {
+    .header__nav :global(.header__nav-link):focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }
 
-    .header__nav-link--active {
+    .header__nav :global(.header__nav-link--active) {
         color: var(--brand-primary-text);
         font-weight: 700;
     }
 
-    .header__nav-link--active::after {
+    .header__nav :global(.header__nav-link--active)::after {
         content: '';
         position: absolute;
         bottom: -4px;
