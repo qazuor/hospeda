@@ -1,4 +1,5 @@
 import { and, asc, eq, getDb, inArray, subscriptions } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import {
@@ -8,6 +9,7 @@ import {
 } from './cancel-succession-predecessor.service.js';
 
 const inputSchema = z.strictObject({ limit: z.number().int().min(1).max(200) });
+const logger = createLogger('reevaluate-succession-predecessors');
 const S17_PREDECESSOR_STATUSES = [
     'ACTIVE',
     'GRACE_PERIOD',
@@ -28,7 +30,11 @@ export interface ReevaluateSuccessionPredecessorsResult {
 /** Reevaluates live predecessors with ACTIVE principal successors in id order, serially. */
 export async function reevaluateSuccessionPredecessors(
     input: { readonly limit: number },
-    ports: CancelSuccessionPredecessorPorts
+    ports: CancelSuccessionPredecessorPorts & {
+        readonly afterCancelled?: (input: {
+            readonly successorSubscriptionId: string;
+        }) => Promise<void>;
+    }
 ): Promise<ReevaluateSuccessionPredecessorsResult> {
     const { limit } = inputSchema.parse(input);
     const predecessor = alias(subscriptions, 's17_predecessor');
@@ -47,8 +53,20 @@ export async function reevaluateSuccessionPredecessors(
         .limit(limit);
     const candidates = selected.map((row) => row.successorId);
     const results: CancelSuccessionPredecessorResult[] = [];
-    for (const successorSubscriptionId of candidates)
-        results.push(await cancelSuccessionPredecessor({ successorSubscriptionId }, ports));
+    for (const successorSubscriptionId of candidates) {
+        const result = await cancelSuccessionPredecessor({ successorSubscriptionId }, ports);
+        results.push(result);
+        if (result.outcome === 'CANCELLED' && ports.afterCancelled) {
+            try {
+                await ports.afterCancelled({ successorSubscriptionId });
+            } catch (error) {
+                logger.error(
+                    { successorSubscriptionId, error },
+                    'S9 retry failed after S17 cancellation'
+                );
+            }
+        }
+    }
     return {
         selected: candidates.length,
         cancelled: results.filter((result) => result.outcome === 'CANCELLED').length,
