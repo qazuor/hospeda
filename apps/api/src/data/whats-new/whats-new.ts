@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4161
     {
         id: '2026-11-06-amenity-details-and-feature-categories',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T22:01:16Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -173,7 +173,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4157
     {
         id: '2026-11-06-complete-amenity-filter-in-listings',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T21:01:16Z',
         highlight: false,
         title: {
             es: 'El filtro de comodidades de alojamientos ahora muestra todas',
@@ -190,7 +190,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4143
     {
         id: '2026-11-05-choose-a-plan-from-your-trial',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T20:01:16Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -208,7 +208,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4144
     {
         id: '2026-11-05-why-checkout-asks-for-your-email',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T19:01:16Z',
         highlight: false,
         title: {
             es: 'Ahora queda claro por qué el pago te pide el email de Mercado Pago',
@@ -225,7 +225,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4109
     {
         id: '2026-11-05-paying-keeps-your-published-listings',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T18:01:16Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -243,7 +243,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4111, #4132
     {
         id: '2026-11-05-price-on-request-cards',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T17:01:16Z',
         highlight: false,
         title: {
             es: 'Los alojamientos sin precio ahora dicen «Precio a consultar»',
@@ -260,7 +260,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4116
     {
         id: '2026-11-05-import-your-first-listing-without-a-plan',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T16:01:16Z',
         highlight: false,
         roles: ['USER', 'HOST'],
         title: {
@@ -278,7 +278,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4112
     {
         id: '2026-11-05-phone-numbers-as-you-write-them',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T15:01:16Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -296,7 +296,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4110
     {
         id: '2026-11-05-cover-photo-outside-the-cap',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T14:01:16Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -314,7 +314,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4113, #4133
     {
         id: '2026-11-05-photo-texts-panel-and-reminder',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T13:01:16Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -332,7 +332,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4114
     {
         id: '2026-11-05-video-link-in-every-plan',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T12:01:16Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -350,7 +350,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4009, #4097
     {
         id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T11:01:16Z',
         highlight: false,
         roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -368,7 +368,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4001, #4098
     {
         id: '2026-11-02-out-of-range-listing-pages-show-not-found',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T10:01:16Z',
         highlight: false,
         title: {
             es: 'Las páginas de un listado que no existen ahora avisan que no hay nada',
@@ -385,7 +385,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4020
     {
         id: '2026-11-02-lifting-a-moderation-keeps-published-listings',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T09:01:16Z',
         roles: ['HOST'],
         highlight: false,
         title: {
@@ -403,7 +403,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4006
     {
         id: '2026-11-02-admin-moderation-terms-list-loads',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T08:01:16Z',
         roles: ['ADMIN', 'SUPER_ADMIN'],
         highlight: false,
         title: {
@@ -421,7 +421,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4029
     {
         id: '2026-11-03-rich-text-editor-toolbar-dark-mode',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T07:01:16Z',
         roles: ['HOST', 'EDITOR'],
         highlight: false,
         title: {
@@ -439,7 +439,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4000
     {
         id: '2026-11-02-accommodation-save-rejects-unknown-fields',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T06:01:16Z',
         roles: ['HOST'],
         highlight: false,
         title: {
@@ -457,7 +457,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4031
     {
         id: '2026-11-03-accommodation-list-filter-by-currency-and-date',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-06T05:01:16Z',
         highlight: false,
         title: {
             es: 'Los alojamientos se pueden filtrar por moneda y por fecha de alta',
