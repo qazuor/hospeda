@@ -216,7 +216,7 @@ export async function syncFeatureJunction({
     const toInsert = [...targetIds].filter((id) => !existingIds.has(id));
     for (const featureId of toInsert) {
         // TYPE-WORKAROUND: The DB schema columns (hostReWriteName, comments) do not match
-        // the generic type parameter (AccommodationFeature which has notes/isHighlighted).
+        // the generic type parameter (AccommodationFeatureRelation).
         // This is a pre-existing type mismatch in the codebase. We cast to the parameter
         // type; Drizzle resolves fields by column name at query generation time and only
         // writes columns that exist in the table schema — extra fields are silently ignored.
