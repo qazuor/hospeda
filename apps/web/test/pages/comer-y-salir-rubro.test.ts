@@ -30,6 +30,20 @@ function cacheArgs(): string {
 }
 
 describe('comer-y-salir/rubro/[rubro]/index.astro', () => {
+    describe('collection copy', () => {
+        it('resolves localized collection metadata after destinations load', () => {
+            expect(src).toContain('resolveVenueCollectionCopy({');
+            expect(src.indexOf('const destinations =')).toBeLessThan(
+                src.indexOf('resolveVenueCollectionCopy({')
+            );
+            expect(src).toContain('ORGANIZATION_INFO.areaServed.name');
+            expect(src).toContain('title={heading}');
+            expect(src).toContain('subtitle={intro}');
+            expect(src).toContain('ogTagline={ogTagline}');
+            expect(src).not.toContain("t('venue.listing.subtitle')");
+        });
+    });
+
     describe('segment resolution', () => {
         it('resolves the segment through the catalog helper, not a literal', () => {
             expect(src).toContain('resolveVenueBusinessLineCollection({');

@@ -20,7 +20,7 @@ import {
     urlSlugToBusinessLine
 } from '@repo/schemas';
 import { buildUrl } from '@/lib/urls';
-import type { SupportedLocale } from '../i18n';
+import type { SupportedLocale, TranslationFn } from '../i18n';
 
 /** A resolved business-line collection: its internal value and canonical slug. */
 export interface VenueBusinessLineCollection {
@@ -45,6 +45,64 @@ export function listVenueBusinessLineCollections(): readonly VenueBusinessLineCo
         businessLine: value,
         urlSlug: businessLineToUrlSlug({ value }).urlSlug
     }));
+}
+
+/**
+ * Builds the public navigation entries for every venue collection.
+ *
+ * Labels come from the approved business-line translations; hrefs use the
+ * canonical catalog paths. The result follows catalog order and is safe to
+ * pass to server-rendered navigation components.
+ *
+ * @param input - Locale and translation function used by the page.
+ * @returns One translated link for every public venue collection.
+ */
+export function buildVenueCollectionNavItems({
+    locale,
+    t
+}: {
+    readonly locale: SupportedLocale;
+    readonly t: TranslationFn;
+}): readonly { readonly label: string; readonly href: string }[] {
+    return listVenueBusinessLineCollections().map(({ businessLine }) => ({
+        label: t(`venue.owner.businessLines.${businessLine}.label`),
+        href: buildVenueBusinessLineCollectionPath({ locale, businessLine })
+    }));
+}
+
+/** Collection page copy resolved for a destination and active locale. */
+export interface VenueCollectionCopy {
+    readonly pageTitle: string;
+    readonly description: string;
+    readonly heading: string;
+    readonly intro: string;
+    readonly ogTagline: string;
+}
+
+/**
+ * Resolves localized metadata and heading copy for a venue collection.
+ *
+ * @param input - Business line, destination name and translation function.
+ * @returns All five collection copy fields with destination placeholders filled.
+ */
+export function resolveVenueCollectionCopy({
+    businessLine,
+    destinationName,
+    t
+}: {
+    readonly businessLine: PublicBusinessLine;
+    readonly destinationName: string;
+    readonly t: TranslationFn;
+}): VenueCollectionCopy {
+    const key = `venue.collections.${businessLine}`;
+    const params = { destino: destinationName };
+    return {
+        pageTitle: t(`${key}.pageTitle`, undefined, params),
+        description: t(`${key}.description`, undefined, params),
+        heading: t(`${key}.heading`, undefined, params),
+        intro: t(`${key}.intro`, undefined, params),
+        ogTagline: t(`${key}.ogTagline`, undefined, params)
+    };
 }
 
 /**

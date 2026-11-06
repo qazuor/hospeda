@@ -51,12 +51,14 @@ import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import {
     buildVenueBusinessLineCollectionPath,
     isVenueCollectionEmpty,
-    resolveVenueBusinessLineCollection
+    resolveVenueBusinessLineCollection,
+    resolveVenueCollectionCopy
 } from '@/lib/venue/business-line-collection';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
+import { ORGANIZATION_INFO } from '@/lib/constants';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -75,8 +77,6 @@ const baseUrl = buildVenueBusinessLineCollectionPath({
 });
 const listBaseUrl = buildUrl({ locale, path: 'comer-y-salir' });
 const businessLineLabel = t(`venue.owner.businessLines.${collection.businessLine}.label`);
-const pageTitle = `${businessLineLabel} · ${t('venue.listing.title')}`;
-const pageDescription = t('venue.listing.subtitle');
 
 // --- Edge cacheability ---
 // This is a listing: every venue write must evict it. Same gate as the general
@@ -144,6 +144,9 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
 ]);
 
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const destinationName = destinations.find(({ id }) => id === destinationId)?.name ?? ORGANIZATION_INFO.areaServed.name;
+const collectionCopy = resolveVenueCollectionCopy({ businessLine: collection.businessLine, destinationName, t });
+const { pageTitle, description, heading, intro, ogTagline } = collectionCopy;
 const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
 
 const hasError = !result.ok;
@@ -323,13 +326,13 @@ const breadcrumbJsonLdItems = [
 <ListingLayout
     locale={locale}
     title={pageTitle}
-    description={pageDescription}
+    description={description}
     canonicalPath={canonicalPath}
     prevPath={prevPath}
     nextPath={nextPath}
     showFilters={true}
     filterPosition="left"
-    ogTagline={pageDescription}
+    ogTagline={ogTagline}
     totalCount={total}
     filterSummary={filterSummary}
     noindex={isEmptyCollection}
@@ -337,7 +340,7 @@ const breadcrumbJsonLdItems = [
     <CollectionPageJsonLd
         slot="head-extra"
         name={pageTitle}
-        description={pageDescription}
+        description={description}
         url={collectionPageUrl}
     />
 
@@ -364,7 +367,8 @@ const breadcrumbJsonLdItems = [
         slot="page-header"
         locale={locale}
         tagline={t('venue.listing.title')}
-        title={businessLineLabel}
+        title={heading}
+        subtitle={intro}
     />
 
     <FilterSidebar

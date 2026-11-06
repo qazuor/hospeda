@@ -14,9 +14,11 @@ import { describe, expect, it } from 'vitest';
 import {
     buildVenueBusinessLineCollectionPath,
     buildVenueBusinessLineCollectionSitemapPath,
+    buildVenueCollectionNavItems,
     isVenueCollectionEmpty,
     listVenueBusinessLineCollections,
-    resolveVenueBusinessLineCollection
+    resolveVenueBusinessLineCollection,
+    resolveVenueCollectionCopy
 } from '../../../src/lib/venue/business-line-collection';
 
 describe('resolveVenueBusinessLineCollection', () => {
@@ -57,6 +59,52 @@ describe('buildVenueBusinessLineCollectionPath', () => {
         expect(
             buildVenueBusinessLineCollectionPath({ locale: 'en', businessLine: 'nightlife' })
         ).toBe(`/en/comer-y-salir/rubro/${urlSlug}/`);
+    });
+});
+
+describe('venue collection navigation and copy', () => {
+    it('builds translated links in catalog order', () => {
+        const calls: string[] = [];
+        const items = buildVenueCollectionNavItems({
+            locale: 'es',
+            t: (key) => {
+                calls.push(key);
+                return key;
+            }
+        });
+        const catalog = listPublicBusinessLines({ vertical: 'venue' });
+        expect(items).toHaveLength(catalog.length);
+        expect(items.map(({ label }) => label)).toEqual(
+            catalog.map(({ value }) => `venue.owner.businessLines.${value}.label`)
+        );
+        expect(items.map(({ href }, index) => href)).toEqual(
+            catalog.map(({ value }) =>
+                buildVenueBusinessLineCollectionPath({ locale: 'es', businessLine: value })
+            )
+        );
+        expect(calls).toHaveLength(catalog.length);
+    });
+
+    it('requests all collection copy fields with destination interpolation', () => {
+        const calls: { key: string; params?: Record<string, unknown> }[] = [];
+        const copy = resolveVenueCollectionCopy({
+            businessLine: listPublicBusinessLines({ vertical: 'venue' })[0].value,
+            destinationName: 'Colón',
+            t: (key, _fallback, params) => {
+                calls.push({ key, params });
+                return key;
+            }
+        });
+        expect(Object.keys(copy)).toEqual([
+            'pageTitle',
+            'description',
+            'heading',
+            'intro',
+            'ogTagline'
+        ]);
+        expect(calls).toHaveLength(5);
+        expect(calls.every(({ key }) => key.startsWith('venue.collections.'))).toBe(true);
+        expect(calls.every(({ params }) => params?.destino === 'Colón')).toBe(true);
     });
 });
 

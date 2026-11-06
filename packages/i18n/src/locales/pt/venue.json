@@ -377,5 +377,21 @@
         "FOOD_TRUCK": "Comida preparada e servida em um veículo.",
         "PUB": "Formato de bar com chope e clima de pub.",
         "BOLICHE": "Casa noturna ou clube que funciona exclusivamente à noite."
+    },
+    "collections": {
+        "nightlife": {
+            "pageTitle": "Baladas, bares e pubs em {{destino}}",
+            "description": "Descubra baladas, bares e pubs para sair à noite em {{destino}}.",
+            "heading": "Baladas, bares e pubs",
+            "intro": "Lugares para sair à noite em {{destino}}.",
+            "ogTagline": "Para sair à noite"
+        },
+        "food": {
+            "pageTitle": "Onde comer em {{destino}}",
+            "description": "Descubra restaurantes, cafés e lugares para comer em {{destino}}.",
+            "heading": "Onde comer",
+            "intro": "Lugares para comer em {{destino}}.",
+            "ogTagline": "Onde comer"
+        }
     }
 }
