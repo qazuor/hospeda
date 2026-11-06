@@ -146,6 +146,8 @@ export const FeatureListItemSchema = FeatureSchema.pick({
     slug: true,
     description: true,
     applicableVerticals: true,
+    // HOS-2058: shown in the admin list column.
+    category: true,
     icon: true,
     isBuiltin: true,
     isFeatured: true,
