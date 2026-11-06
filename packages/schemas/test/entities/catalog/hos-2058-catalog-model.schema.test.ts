@@ -22,6 +22,10 @@ import {
     FeaturePublicSchema
 } from '../../../src/entities/feature/feature.access.schema.js';
 import {
+    FeatureCreateInputSchema,
+    FeatureUpdateInputSchema
+} from '../../../src/entities/feature/feature.crud.schema.js';
+import {
     FeatureCreateHttpSchema,
     httpToDomainFeatureCreate,
     httpToDomainFeatureUpdate
@@ -62,6 +66,23 @@ describe('FeatureSchema.category (HOS-2058)', () => {
     it('is exposed by the public and protected access schemas', () => {
         expect(Object.keys(FeaturePublicSchema.shape)).toContain('category');
         expect(Object.keys(FeatureProtectedSchema.shape)).toContain('category');
+    });
+});
+
+describe('feature create/update domain input category (HOS-2058, admin routes)', () => {
+    it('the strict create input accepts category and rejects an unknown one', () => {
+        const base = { applicableVerticals: ['accommodation'] };
+        expect(FeatureCreateInputSchema.safeParse({ ...base, category: 'STYLE' }).success).toBe(
+            true
+        );
+        expect(FeatureCreateInputSchema.safeParse({ ...base, category: 'beach' }).success).toBe(
+            false
+        );
+    });
+
+    it('the update input accepts a category change and a clear to null', () => {
+        expect(FeatureUpdateInputSchema.safeParse({ category: 'ACCESS' }).success).toBe(true);
+        expect(FeatureUpdateInputSchema.safeParse({ category: null }).success).toBe(true);
     });
 });
 

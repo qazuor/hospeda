@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { i18nText } from '../../common/i18n.schema.js';
 import { FeatureIdSchema } from '../../common/id.schema.js';
+import { FeatureCategoryEnumSchema } from '../../enums/feature-category.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
@@ -51,6 +52,9 @@ export const FeatureCreateInputSchema = z
             .optional(),
 
         description: i18nText({ min: 10, max: 500 }).optional(),
+
+        /** Feature category (HOS-2058). Nullable while `features.category` is nullable. */
+        category: FeatureCategoryEnumSchema.nullish(),
 
         icon: z
             .string({
