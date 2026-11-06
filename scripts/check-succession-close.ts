@@ -9,6 +9,9 @@
  * - Runtime-built SQL.
  * - Aliased writers.
  * - Identifiers initialized with a non-literal expression.
+ * - Insert rows held in a non-literal array (including a const built with map).
+ * - Insert rows held in a let assigned in branches, as in startSuccession.
+ * - onConflictDoUpdate({ set }) writes.
  * - Objects mutated after their const declaration.
  * - Objects supplied through function parameters.
  * - Whether a guarded write executes. TEST:B8b:10 checks behavior with a database.
@@ -27,7 +30,7 @@ import {
 import { listProductionFiles } from './succession-writers-scan.js';
 
 const DIR = 'packages/service-core/src/services/billing/subscription';
-/** The S1 opening is owned by G-R1-A, not the S18 close. */
+/** AC:B8b:8 (B8b.md:512-523): S1 inserts the successor with sucede_a; G-R1-A owns its opening. */
 export const OPENERS = [
     { file: `${DIR}/start-succession.service.ts`, name: 'startSuccession' }
 ] as const;
@@ -60,6 +63,7 @@ type Write = {
     readonly call: ts.CallExpression;
     readonly object: ts.ObjectLiteralExpression;
     readonly table: string | null;
+    readonly kind: 'set' | 'insert';
 };
 function property(
     object: ts.ObjectLiteralExpression,
@@ -91,12 +95,12 @@ function inNonmonthlyElse(node: ts.Node, owner: ts.Node): boolean {
             return true;
     return false;
 }
-function tableOf(set: ts.CallExpression): string | null {
-    let receiver: ts.Expression = set.expression;
+function tableOf(call: ts.CallExpression, operation: 'update' | 'insert'): string | null {
+    let receiver: ts.Expression = call.expression;
     if (!ts.isPropertyAccessExpression(receiver)) return null;
     receiver = receiver.expression;
     while (ts.isCallExpression(receiver) && ts.isPropertyAccessExpression(receiver.expression)) {
-        if (receiver.expression.name.text === 'update' && ts.isIdentifier(receiver.arguments[0]))
+        if (receiver.expression.name.text === operation && ts.isIdentifier(receiver.arguments[0]))
             return receiver.arguments[0].text;
         receiver = receiver.expression.expression;
     }
@@ -138,7 +142,20 @@ function objectLiteral(argument: ts.Expression | undefined): ts.ObjectLiteralExp
 function sets(node: ts.Node): Write[] {
     return callsNamed(node, 'set').flatMap((call) => {
         const object = objectLiteral(call.arguments[0]);
-        return object ? [{ call, object, table: tableOf(call) }] : [];
+        return object ? [{ call, object, table: tableOf(call, 'update'), kind: 'set' }] : [];
+    });
+}
+function insertValues(node: ts.Node): Write[] {
+    return callsNamed(node, 'values').flatMap((call) => {
+        const table = tableOf(call, 'insert');
+        if (!table) return [];
+        const argument = call.arguments[0];
+        const rows =
+            argument && ts.isArrayLiteralExpression(argument) ? argument.elements : [argument];
+        return rows.flatMap((row) => {
+            const object = objectLiteral(row);
+            return object ? [{ call, object, table, kind: 'insert' as const }] : [];
+        });
     });
 }
 function read(root: string, file: string): ts.SourceFile | null {
@@ -303,15 +320,15 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
             source.includes('succeedsId') ||
             source.includes('promoRedemptions')
         )
-            for (const set of sets(sf)) {
-                const successor = property(set.object, 'succeededById');
-                const predecessor = value(set.object, 'succeedsId');
+            for (const write of [...sets(sf), ...insertValues(sf)]) {
+                const successor = property(write.object, 'succeededById');
+                const predecessor = value(write.object, 'succeedsId');
                 if (
                     (successor &&
                         (!ts.isPropertyAssignment(successor) || !isNull(successor.initializer))) ||
                     isNull(predecessor)
                 ) {
-                    const owner = topLevelName(set.call);
+                    const owner = topLevelName(write.call);
                     const permitted = [...OPENERS, ...CLOSE_WRITERS].some(
                         (writer) =>
                             writer.file === file &&
@@ -326,20 +343,24 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                             finding(
                                 'c1 pointer writer',
                                 file,
-                                set.call,
+                                write.call,
                                 sf,
                                 `${owner} writes a succession pointer outside the registered writers`
                             )
                         );
                 }
-                if (set.table === 'promoRedemptions' && property(set.object, 'subscriptionId'))
+                if (
+                    write.kind === 'set' &&
+                    write.table === 'promoRedemptions' &&
+                    property(write.object, 'subscriptionId')
+                )
                     findings.push(
                         finding(
                             'c5 promo immobility',
                             file,
-                            set.call,
+                            write.call,
                             sf,
-                            `${topLevelName(set.call)} repoints promoRedemptions.subscriptionId`
+                            `${topLevelName(write.call)} repoints promoRedemptions.subscriptionId`
                         )
                     );
             }

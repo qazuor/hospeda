@@ -77,6 +77,30 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
             'c1 pointer writer'
         );
     });
+    it('(c1) rejects succeedsId null in an unregistered insert', () => {
+        const file = 'packages/service-core/src/services/billing/subscription/other.ts';
+        red(
+            file,
+            'export function other(tx: Tx) { return tx.insert(subscriptions).values({ succeedsId: null }); }',
+            'c1 pointer writer'
+        );
+    });
+    it('(c1) rejects succeedsId null in a const insert row', () => {
+        const file = 'packages/service-core/src/services/billing/subscription/other.ts';
+        red(
+            file,
+            'export function other(tx: Tx) { const row = { succeedsId: null }; return tx.insert(subscriptions).values(row); }',
+            'c1 pointer writer'
+        );
+    });
+    it('(c1) rejects succeedsId null in a literal insert row array', () => {
+        const file = 'packages/service-core/src/services/billing/subscription/other.ts';
+        red(
+            file,
+            'export function other(tx: Tx) { return tx.insert(subscriptions).values([{ id: "a" }, { succeedsId: null }]); }',
+            'c1 pointer writer'
+        );
+    });
     it('(c1) accepts succeedsId null in clearSuccessorLink', () => {
         expect(run({ root: tree(), minScannedFiles: 1 })).toMatchObject({ exitCode: 0 });
     });
