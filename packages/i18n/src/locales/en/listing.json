@@ -461,6 +461,15 @@
             "draftIsYours": "Publishing it is up to you.",
             "fixRequestOpen": "The fix request is still open."
         },
-        "surplusTitle": "Listing unpublished by your plan limit"
+        "surplusTitle": "Listing unpublished by your plan limit",
+        "businessLinesChanged": {
+            "title": "Support changed the business lines of this listing",
+            "added": "Added: {{lines}}.",
+            "removed": "Removed: {{lines}}.",
+            "shownSections": "Now visible: {{sections}}.",
+            "hiddenSections": "No longer visible: {{sections}}.",
+            "nothingDeleted": "Nothing was deleted: whatever you saved in a hidden section comes back if you restore the line.",
+            "changedAt": "Change from {{date}}."
+        }
     }
 }

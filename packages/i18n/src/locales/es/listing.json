@@ -461,6 +461,15 @@
             "draftIsYours": "Publicarla es decisión tuya.",
             "fixRequestOpen": "El pedido de arreglo sigue abierto."
         },
-        "surplusTitle": "Ficha despublicada por el límite de tu plan"
+        "surplusTitle": "Ficha despublicada por el límite de tu plan",
+        "businessLinesChanged": {
+            "title": "Soporte cambió los rubros de esta ficha",
+            "added": "Agregó: {{lines}}.",
+            "removed": "Quitó: {{lines}}.",
+            "shownSections": "Ahora se ven: {{sections}}.",
+            "hiddenSections": "Dejan de verse: {{sections}}.",
+            "nothingDeleted": "No se borró nada: lo que cargaste en una sección oculta vuelve si recuperás el rubro.",
+            "changedAt": "Cambio del {{date}}."
+        }
     }
 }
