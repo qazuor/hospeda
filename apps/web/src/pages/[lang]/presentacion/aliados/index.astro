@@ -2,9 +2,10 @@
 /**
  * @file presentacion/aliados/index.astro
  * @description Commercial presentation for partners (aliados) (HOS-978). A verbatim
- * migration of the owner-approved artifact "Presentación Aliados"; the copy and the
- * stylesheet below are the artifact's own and must not be rewritten here —
- * the artifact is the source of truth for both.
+ * migration of the owner-approved artifact "Presentación Aliados"; the copy is the artifact's own
+ * and must not be rewritten here — the artifact is the source of truth for it. The
+ * styling no longer follows the artifact: it is the Hospeda brand look, see
+ * `styles/presentacion.css`.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/sumate/partner/). That landing sells and is
  * optimized to rank. This page is what the owner sends personally to one
@@ -41,6 +42,10 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
+import PlanTabs from '@/components/presentacion/PlanTabs.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -84,17 +89,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Aliados</p>
     <h1>Acompañá al turismo del Litoral</h1>
     <div class="rule"></div>
@@ -103,6 +107,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
       qué hacer. Los aliados acompañan ese momento — no con un banner que la gente esquiva,
       sino con presencia estable en el lugar donde se toma la decisión.
     </p>
+    </div>
+    <HospedinFigure pose="te-explico" placement="hero" say="Te cuento cómo es" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Dos niveles</span>
@@ -172,23 +179,25 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
       <p class="eyebrow">Los dos niveles</p>
       <h2>Qué incluye cada uno</h2>
     </div>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr><th scope="col">&nbsp;</th><th scope="col">Plata</th><th scope="col">Oro</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Tu logo en el carrusel de aliados de la portada</td><td>sí</td><td>sí, y un poco más grande</td></tr>
-          <tr><td>Se puede hacer clic en tu logo</td><td>—</td><td><strong>sí</strong></td></tr>
-          <tr><td>Adónde lleva ese clic</td><td>—</td><td>A tu página propia o a tu sitio, como prefieras</td></tr>
-          <tr><td><strong>Página propia</strong> con logo, textos, contacto y redes</td><td>—</td><td><strong>sí</strong></td></tr>
-          <tr><td>Entrás en las publicaciones de nuestras redes</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Entrás en el newsletter</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Prioridad y frecuencia en esas apariciones</td><td>Normal</td><td>Preferente</td></tr>
-          <tr><td>Registro con enlace de cada aparición</td><td>sí</td><td>sí</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <PlanTabs id="aliados-planes" plans={['Plata', 'Oro']} selected={1}>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th scope="col">&nbsp;</th><th scope="col">Plata</th><th scope="col">Oro</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Tu logo en el carrusel de aliados de la portada</td><td>sí</td><td>sí, y un poco más grande</td></tr>
+            <tr><td>Se puede hacer clic en tu logo</td><td>—</td><td><strong>sí</strong></td></tr>
+            <tr><td>Adónde lleva ese clic</td><td>—</td><td>A tu página propia o a tu sitio, como prefieras</td></tr>
+            <tr><td><strong>Página propia</strong> con logo, textos, contacto y redes</td><td>—</td><td><strong>sí</strong></td></tr>
+            <tr><td>Entrás en las publicaciones de nuestras redes</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Entrás en el newsletter</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Prioridad y frecuencia en esas apariciones</td><td>Normal</td><td>Preferente</td></tr>
+            <tr><td>Registro con enlace de cada aparición</td><td>sí</td><td>sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </PlanTabs>
     <p class="subhead">
       <strong>La página propia es la diferencia entre un nivel y el otro.</strong> Vive en
       <strong>https://hospeda.com.ar/es/partners/tu-nombre</strong> y es tuya para contar quién sos con
@@ -232,23 +241,23 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
       con qué incluye cada uno en tu caso concreto.
     </p>
     <p class="subhead">Hay diversas formas de abonar, la que le sirva a tu administración:</p>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Forma</th><th scope="col">Cómo funciona</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>Suscripción por Mercado Pago (Débito automático)</td>
-            <td>Te mandamos un enlace, lo autorizás una vez y <strong>los cobros salen solos</strong> cada período. Sin trámite mes a mes ni año a año. Se da de baja cuando quieras.</td>
+            <td data-label="Forma">Suscripción por Mercado Pago (Débito automático)</td>
+            <td data-label="Cómo funciona">Te mandamos un enlace, lo autorizás una vez y <strong>los cobros salen solos</strong> cada período. Sin trámite mes a mes ni año a año. Se da de baja cuando quieras.</td>
           </tr>
           <tr>
-            <td>Efectivo o cheque</td>
-            <td>Lo arreglamos directo, sin plataforma de por medio. Útil si tenés que rendir el gasto de otra forma o preferís no dejar una tarjeta cargada.</td>
+            <td data-label="Forma">Efectivo o cheque</td>
+            <td data-label="Cómo funciona">Lo arreglamos directo, sin plataforma de por medio. Útil si tenés que rendir el gasto de otra forma o preferís no dejar una tarjeta cargada.</td>
           </tr>
           <tr>
-            <td>¿Otras formas?</td>
-            <td>Hablanos y nos ponemos de acuerdo.</td>
+            <td data-label="Forma">¿Otras formas?</td>
+            <td data-label="Cómo funciona">Hablanos y nos ponemos de acuerdo.</td>
           </tr>
         </tbody>
       </table>
@@ -349,6 +358,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Hablemos</h2>
     <p>
       Si te interesa, escribinos y coordinamos una charla. Te contamos qué estamos haciendo, qué
@@ -369,6 +379,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
       de conversión.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 

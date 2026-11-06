@@ -1,0 +1,26 @@
+---
+/**
+ * @file PresentationBrandBar.astro
+ * @description The Hospeda signature at the top of every `/presentacion/*`
+ * page: the logo symbol plus the `hospeda` wordmark, set as live text in the
+ * brand heading font so it follows the light/dark theme (the raster wordmark
+ * is black-on-white and would vanish on the dark ground).
+ *
+ * The presentations render no site header, so this is what tells a reader,
+ * at a glance, whose page this is.
+ */
+import logoSrc from '@/assets/images/logo.webp';
+---
+
+<a class="brandbar" href="https://hospeda.com.ar" aria-label="Hospeda, ir al sitio">
+	<img
+		class="brandbar__logo"
+		src={logoSrc.src}
+		width={logoSrc.width}
+		height={logoSrc.height}
+		alt=""
+		loading="eager"
+		decoding="async"
+	/>
+	<span class="brandbar__word">hospeda</span>
+</a>

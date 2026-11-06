@@ -1,0 +1,27 @@
+---
+/**
+ * @file PresentationFooter.astro
+ * @description Brand sign-off at the bottom of every `/presentacion/*` page:
+ * the logo, the brand slogan from the character bible
+ * (`marketing/personaje-hospedin.md` → «El eslogan») and the site address,
+ * over the three-colour landscape band taken from the logo.
+ */
+import logoSrc from '@/assets/images/logo.webp';
+---
+
+<div class="brandfoot">
+	<div class="brandfoot__band" aria-hidden="true"></div>
+	<div class="brandfoot__inner">
+		<img
+			class="brandfoot__logo"
+			src={logoSrc.src}
+			width={logoSrc.width}
+			height={logoSrc.height}
+			alt=""
+			loading="lazy"
+			decoding="async"
+		/>
+		<p class="brandfoot__slogan">Todo tu viaje, en un solo lugar.</p>
+		<a class="brandfoot__url" href="https://hospeda.com.ar">hospeda.com.ar</a>
+	</div>
+</div>
