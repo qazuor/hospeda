@@ -1,6 +1,7 @@
 import { eq, planMigrationSubscriptions, promoRedemptions, subscriptions } from '@repo/db';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
+import { sql } from 'drizzle-orm';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { applyScheduledChangeInTx } from '../../../src/services/billing/subscription/apply-scheduled-change.service.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
@@ -36,15 +37,15 @@ import {
 
 const pausedQueueIds: string[] = [];
 
-async function waitForRegretLock(): Promise<void> {
+async function waitForRegretLock(blockerPid: number): Promise<void> {
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
         const result = await getServiceTestPool().query<{ pid: number }>(
             `SELECT pid FROM pg_stat_activity
              WHERE wait_event_type = 'Lock'
-               AND query ILIKE '%subscription%'
-               AND pid <> pg_backend_pid()
-             LIMIT 1`
+               AND $1 = ANY(pg_blocking_pids(pid))
+             LIMIT 1`,
+            [blockerPid]
         );
         if (result.rows.length > 0) return;
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -345,6 +346,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
         });
         let releaseApplication: () => void = () => undefined;
         let applicationLocked: () => void = () => undefined;
+        let applicationPid = 0;
         const applicationHasLock = new Promise<void>((resolve) => {
             applicationLocked = resolve;
         });
@@ -352,6 +354,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
             releaseApplication = resolve;
         });
         const application = getServiceTestDb().transaction(async (tx) => {
+            const [backend] = (await tx.execute(sql`select pg_backend_pid() as pid`)).rows as {
+                pid: number;
+            }[];
+            applicationPid = backend!.pid;
             await tx
                 .select({ id: subscriptions.id })
                 .from(subscriptions)
@@ -376,9 +382,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
             () => ({ completed: true }),
             (error: unknown) => ({ error })
         );
-        await waitForRegretLock();
-        releaseApplication();
+        let lockObservationError: unknown;
+        try {
+            await waitForRegretLock(applicationPid);
+        } catch (error) {
+            lockObservationError = error;
+        } finally {
+            releaseApplication();
+        }
         await application;
+        if (lockObservationError) throw lockObservationError;
         const [row] = await getServiceTestDb()
             .select()
             .from(subscriptions)
