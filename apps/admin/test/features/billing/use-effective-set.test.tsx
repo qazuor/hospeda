@@ -18,7 +18,7 @@ const response = {
     userId,
     vertical: VerticalEnum.ACCOMMODATION,
     hasLiveNonTrialTitle: false,
-    entitlements: { respond_reviews: 1 },
+    entitlements: { respond_reviews: 1, can_embed_video: 1 },
     limits: { max_accommodations: 'Infinity' }
 };
 
@@ -51,7 +51,7 @@ describe('TEST:B13a:23 AC:B13a:23 useEffectiveSet', () => {
             path: `/api/v1/admin/users/${userId}/effective-set?vertical=accommodation`
         });
         expect(result.current.limit('max_accommodations')).toBe(Number.POSITIVE_INFINITY);
-        expect(result.current.has('can_embed_video')).toBe(false);
+        expect(result.current.has('can_embed_video')).toBe(true);
         expect(result.current.limit('max_photos_per_accommodation')).toBe(0);
     });
 

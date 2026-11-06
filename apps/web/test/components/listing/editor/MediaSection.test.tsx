@@ -14,8 +14,8 @@
  *   inside `removeMedia`, before dropping the row. The client-side call this
  *   replaced was unreachable anyway — `media/protected/delete-entity` rejects
  *   the venue and experience kinds with HTTP 400.
- * - Setting a new featured image calls upload → addMedia → setFeaturedMedia
- *   immediately, and the previous featured moves to the gallery.
+ * - Setting a new featured image calls the atomic upload → addFeaturedMedia
+ *   endpoint immediately; the replaced cover follows HOS-803 replacement semantics.
  * - A failed operation surfaces an inline error + toast and does NOT mutate
  *   state (the UI never claims success on failure).
  * - Gallery cap enforcement (HOS-322 size-limit coverage retained).
@@ -43,6 +43,7 @@ const {
     mockAddMedia,
     mockRemoveMedia,
     mockSetFeaturedMedia,
+    mockAddFeaturedMedia,
     mockDeleteMedia,
     mockAddToast
 } = vi.hoisted(() => ({
@@ -50,6 +51,7 @@ const {
     mockAddMedia: vi.fn(),
     mockRemoveMedia: vi.fn(),
     mockSetFeaturedMedia: vi.fn(),
+    mockAddFeaturedMedia: vi.fn(),
     mockDeleteMedia: vi.fn().mockResolvedValue({ ok: true, data: { deleted: true } }),
     mockAddToast: vi.fn()
 }));
@@ -67,7 +69,8 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
         removeMedia: mockRemoveMedia,
-        setFeaturedMedia: mockSetFeaturedMedia
+        setFeaturedMedia: mockSetFeaturedMedia,
+        addFeaturedMedia: mockAddFeaturedMedia
     },
     protectedMediaApi: {
         deleteMedia: mockDeleteMedia
@@ -397,11 +400,16 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
         it('TEST:1819:6 AC:1:3 sends venue as the upload entity type', async () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             stubFetchUploadOk();
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            const featuredRow = { ...NEW_ROW, isFeatured: true };
-            mockSetFeaturedMedia.mockReturnValue(
-                Promise.resolve({ ok: true as const, data: { media: featuredRow } })
+            mockAddFeaturedMedia.mockReturnValue(
+                Promise.resolve({
+                    ok: true as const,
+                    data: {
+                        media: { ...NEW_ROW, isFeatured: true },
+                        previousFeatured: { id: FEATURED_ROW.id }
+                    }
+                })
             );
+            const featuredRow = { ...NEW_ROW, isFeatured: true };
 
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
@@ -415,20 +423,14 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             expect((request?.body as FormData).get('entityType')).toBe('venue');
 
             await waitFor(() => {
-                expect(mockAddMedia).toHaveBeenCalledWith({
+                expect(mockAddFeaturedMedia).toHaveBeenCalledWith({
                     vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
             });
-
-            await waitFor(() => {
-                expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                    vertical: 'venue',
-                    id: LISTING_ID,
-                    mediaId: NEW_ROW.id
-                });
-            });
+            expect(mockAddMedia).not.toHaveBeenCalled();
+            expect(mockSetFeaturedMedia).not.toHaveBeenCalled();
 
             await waitFor(() => {
                 const img = screen.getByAltText('Imagen principal');
@@ -436,13 +438,15 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             });
         });
 
-        it('moves the previous featured image to the gallery when a new one is set', async () => {
+        it('replaces the previous featured image through the atomic featured endpoint', async () => {
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW]));
             stubFetchUploadOk();
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
             const newFeaturedRow = { ...NEW_ROW, isFeatured: true };
-            mockSetFeaturedMedia.mockReturnValue(
-                Promise.resolve({ ok: true as const, data: { media: newFeaturedRow } })
+            mockAddFeaturedMedia.mockReturnValue(
+                Promise.resolve({
+                    ok: true as const,
+                    data: { media: newFeaturedRow, previousFeatured: { id: FEATURED_ROW.id } }
+                })
             );
 
             render(<MediaSection {...defaultProps} />);
@@ -463,18 +467,20 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
                     newFeaturedRow.url
                 );
             });
+            expect(
+                screen
+                    .getAllByRole('img')
+                    .some((image) => image.getAttribute('src') === FEATURED_ROW.url)
+            ).toBe(false);
 
-            await waitFor(() => {
-                const urls = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
-                expect(urls).toContain(FEATURED_ROW.url);
-            });
+            expect(mockAddMedia).not.toHaveBeenCalled();
+            expect(mockSetFeaturedMedia).not.toHaveBeenCalled();
         });
 
         it('surfaces an inline error + toast and keeps state when setFeaturedMedia fails', async () => {
             mockListMedia.mockReturnValue(makeListOk([]));
             stubFetchUploadOk();
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            mockSetFeaturedMedia.mockReturnValue(makeError('featured op failed'));
+            mockAddFeaturedMedia.mockReturnValue(makeError('featured op failed'));
 
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
@@ -483,9 +489,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const file = new File(['img'], 'portada.jpg', { type: 'image/jpeg' });
             fireEvent.change(featured, { target: { files: [file] } });
 
-            await waitFor(() => {
-                expect(screen.getByText('featured op failed')).toBeInTheDocument();
-            });
+            await waitFor(() => expect(screen.getByText('featured op failed')).toBeInTheDocument());
             expect(screen.queryByAltText('Imagen principal')).not.toBeInTheDocument();
             expect(mockAddToast).toHaveBeenCalledWith({
                 type: 'error',
@@ -538,6 +542,9 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(screen.queryByText('+')).not.toBeInTheDocument();
+                expect(
+                    screen.getByText(`Galería de fotos (${GALLERY_CAP}/${GALLERY_CAP})`)
+                ).toBeInTheDocument();
             });
         });
 

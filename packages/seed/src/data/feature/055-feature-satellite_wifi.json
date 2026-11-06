@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "055-feature-satellite_wifi",
     "slug": "satellite_wifi",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",
         "en": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",

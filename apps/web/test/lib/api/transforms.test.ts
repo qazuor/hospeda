@@ -941,8 +941,33 @@ describe('toAccommodationDetailPageProps', () => {
                 icon: 'wifi',
                 isOptional: false,
                 additionalCost: null,
-                displayWeight: 50
+                displayWeight: 50,
+                // HOS-2058: undeclared relation attributes stay null.
+                scope: null,
+                availability: null
             });
+        });
+
+        it('should carry declared amenity scope/availability and the feature category (HOS-2058)', () => {
+            const item = makeFullItem();
+            const result = toAccommodationDetailPageProps({
+                item: {
+                    ...item,
+                    amenities: [
+                        {
+                            amenityId: 'am-1',
+                            slug: 'pool',
+                            scope: 'shared',
+                            availability: 'seasonal'
+                        }
+                    ],
+                    features: [{ featureId: 'ft-1', slug: 'river_front', category: 'LOCATION' }]
+                }
+            });
+
+            expect(result.amenities[0]?.scope).toBe('shared');
+            expect(result.amenities[0]?.availability).toBe('seasonal');
+            expect(result.features[0]?.category).toBe('LOCATION');
         });
 
         it('should map features array', () => {
@@ -955,7 +980,9 @@ describe('toAccommodationDetailPageProps', () => {
                 icon: 'pool',
                 hostReWriteName: 'Pileta',
                 comments: 'Heated',
-                displayWeight: 50
+                displayWeight: 50,
+                // HOS-2058: unclassified feature.
+                category: null
             });
         });
 

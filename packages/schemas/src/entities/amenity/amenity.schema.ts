@@ -5,6 +5,8 @@ import { i18nText } from '../../common/i18n.schema.js';
 import { AccommodationIdSchema, AmenityIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PriceSchema } from '../../common/price.schema.js';
+import { AmenityAvailabilityEnumSchema } from '../../enums/amenity-availability.schema.js';
+import { AmenityScopeEnumSchema } from '../../enums/amenity-scope.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.schema.js';
 
 /**
@@ -91,9 +93,50 @@ export const AccommodationAmenityRelationSchema = z.object({
         })
         .min(0, { message: 'zodError.accommodationAmenity.additionalCostPercent.min' })
         .max(100, { message: 'zodError.accommodationAmenity.additionalCostPercent.max' })
-        .optional()
+        .optional(),
+    /**
+     * Whether the amenity is private to the guest or shared (HOS-2058).
+     * NULL means "not declared" -- never infer a value.
+     */
+    scope: AmenityScopeEnumSchema.nullish(),
+    /**
+     * Whether the amenity is available all year or only in season (HOS-2058).
+     * NULL means "not declared" -- never infer a value.
+     */
+    availability: AmenityAvailabilityEnumSchema.nullish()
 });
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
+
+/**
+ * One amenity's relation attributes, as the host editor writes them (HOS-2058).
+ * `scope` / `availability` absent or `null` both mean "not declared".
+ */
+export const AccommodationAmenityAttributesSchema = AccommodationAmenityRelationSchema.pick({
+    amenityId: true,
+    scope: true,
+    availability: true
+});
+export type AccommodationAmenityAttributes = z.infer<typeof AccommodationAmenityAttributesSchema>;
+
+/**
+ * Write-only list of per-amenity relation attributes on an accommodation update
+ * (HOS-2058). Contract, enforced by the accommodation junction sync:
+ *
+ * - `undefined` -> attributes of existing rows are left untouched;
+ * - provided -> every amenity linked after the update gets exactly the listed
+ *   values, and a linked amenity that is NOT listed is reset to NULL (not
+ *   declared). An entry for an amenity that is not linked is rejected.
+ *
+ * Each `amenityId` may appear at most once.
+ */
+export const AccommodationAmenityAttributesListSchema = z
+    .array(AccommodationAmenityAttributesSchema)
+    .refine((items) => new Set(items.map((item) => item.amenityId)).size === items.length, {
+        message: 'zodError.accommodationAmenity.attributes.duplicate'
+    });
+export type AccommodationAmenityAttributesList = z.infer<
+    typeof AccommodationAmenityAttributesListSchema
+>;
 
 /**
  * venue-Amenity Relation Schema

@@ -3,10 +3,8 @@
  * @description TEST:V8a:7 (component level, HOS-1492, row 4): the accumulated
  * free-trial days per vertical and their origin in Mi Suscripción.
  *
- * Vitest cannot render `.astro` in this repo, so these assertions read the
- * SOURCE for the component's decisions (nothing for `NONE` or zero days, only
- * the origins above zero, the dates when both are known, no fetch, no island)
- * and the real locale files for the copy the row obliges.
+ * Source and locale copy contract assertions. Behavioural markup rendering is
+ * covered in TrialSummary.render.test.ts.
  */
 
 import { readFileSync } from 'node:fs';
@@ -25,6 +23,9 @@ interface TrialSummaryCopy {
     readonly endedTitle: string;
     readonly endedConverted: string;
     readonly endedExpired: string;
+    readonly activePlanMessage: string;
+    readonly endedPlanMessage: string;
+    readonly choosePlan: string;
     readonly vertical: Record<'accommodation' | 'venue' | 'experience', string>;
     readonly total_one: string;
     readonly total_other: string;
@@ -82,6 +83,11 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
         expect(copies[2].endedTitle).toBe('Seu teste grátis de {{vertical}} terminou');
         expect(copies[2].endedConverted).toBe('Seu teste terminou e agora você tem seu plano.');
         expect(copies[2].endedExpired).toBe('Seu teste terminou em {{end}}.');
+        for (const copy of copies) {
+            expect(copy.activePlanMessage).toBeTruthy();
+            expect(copy.endedPlanMessage).toBeTruthy();
+            expect(copy.choosePlan).toBeTruthy();
+        }
     });
 
     it('lists only the origins above zero, in base, promo, support order', () => {
@@ -139,6 +145,48 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
             'const VERTICAL_KEY: Readonly<Record<PublishVerticalSlug, string>> = {'
         );
         expect(SOURCE).not.toMatch(/vertical\s*===|as unknown as/);
+    });
+
+    it('offers the localized pricing page and active trial copy for each visible vertical', () => {
+        expect(SOURCE).toContain(
+            'const PRICING_PATH_BY_VERTICAL: Record<PublishVerticalSlug, string> = {'
+        );
+        expect(SOURCE).toContain("accommodation: 'planes/anfitriones/precios'");
+        expect(SOURCE).toContain("venue: 'planes/comer-y-salir/precios'");
+        expect(SOURCE).toContain("experience: 'planes/experiencias/precios'");
+        expect(SOURCE).toContain(
+            'href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
+        );
+        expect(SOURCE).toContain("'account.subscription.trialSummary.activePlanMessage'");
+        expect(SOURCE).toContain("'account.subscription.trialSummary.choosePlan'");
+        expect(SOURCE).toContain(
+            '<a class={styles.planButton} href={view.plan.href}>{view.plan.label}</a>'
+        );
+        expect(SOURCE).toContain('{view.plan && (');
+        expect(SOURCE).toContain(
+            'hasLiveSubscription: liveSubscriptionVerticals.includes(vertical)'
+        );
+        expect(SOURCE).toContain("if (state.kind === 'hidden') return [];");
+    });
+
+    it('uses ended copy and the same localized pricing link for expired trials', () => {
+        expect(SOURCE).toContain(
+            "message: t('account.subscription.trialSummary.endedPlanMessage')"
+        );
+        expect(SOURCE).toContain(
+            'href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
+        );
+        const copy = readCopy('es');
+        expect(copy.endedPlanMessage).toBe(
+            'Tu prueba terminó. Elegí un plan para volver a publicar.'
+        );
+    });
+
+    it('has English copy and builds English pricing URLs with the shared URL helper', () => {
+        const copy = readCopy('en');
+        expect(copy.choosePlan).toBe('Choose your plan');
+        expect(SOURCE).toContain("import { buildUrl } from '@/lib/urls';");
+        expect(SOURCE).toContain('buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })');
     });
 
     it('does not fetch, ships no island and styles with its CSS module', () => {

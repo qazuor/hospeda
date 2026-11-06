@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "004-feature-natural_environment",
     "slug": "natural_environment",
+    "category": "LOCATION",
     "description": {
         "es": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",
         "en": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",

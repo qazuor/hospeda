@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "091-feature-english_guide_available",
     "slug": "english_guide_available",
+    "category": "LANGUAGE",
     "description": {
         "es": "Guía disponible en idioma inglés para visitantes internacionales",
         "en": "Guía disponible en idioma inglés para visitantes internacionales",

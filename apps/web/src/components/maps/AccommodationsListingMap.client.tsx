@@ -68,7 +68,12 @@ interface AccommodationsListingMapProps {
     readonly i18nStrings: {
         readonly attribution: string;
         readonly approximateDisclaimer: string;
-        readonly viewDetails?: string;
+        /** Localized details action used by priced accommodation popups. */
+        readonly viewDetails: string;
+        /** Localized no-price explanation shown in accommodation popups. */
+        readonly priceConsult: string;
+        /** Localized CTA explaining that the visitor can ask about availability. */
+        readonly consultAvailability: string;
     };
     /**
      * Localised label for the type chip on each popup, keyed by the API's
@@ -102,6 +107,8 @@ interface AccommodationsListingMapProps {
     readonly pricePerNightLabel?: string;
     readonly priceConsultLabel?: string;
     readonly ctaLabel?: string;
+    /** Localized CTA for sidebar cards whose accommodation has no listed price. */
+    readonly noPriceCtaLabel?: string;
     readonly amenitiesLabel?: string;
     /** Pre-pluralised "9 fotos" / "1 foto" / "8 photos" per accommodation id. */
     readonly photosLabelById?: Record<string, string>;
@@ -137,6 +144,7 @@ export function AccommodationsListingMap({
     pricePerNightLabel,
     priceConsultLabel,
     ctaLabel,
+    noPriceCtaLabel,
     amenitiesLabel,
     photosLabelById,
     priceLabelById,
@@ -248,6 +256,7 @@ export function AccommodationsListingMap({
                         pricePerNightLabel,
                         priceConsultLabel,
                         ctaLabel,
+                        noPriceCtaLabel,
                         amenities,
                         extraAmenitiesCount,
                         amenitiesLabel,
@@ -279,6 +288,7 @@ export function AccommodationsListingMap({
             pricePerNightLabel,
             priceConsultLabel,
             ctaLabel,
+            noPriceCtaLabel,
             amenitiesLabel,
             photosLabelById,
             priceLabelById

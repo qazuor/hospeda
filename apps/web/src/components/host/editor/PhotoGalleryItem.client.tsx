@@ -184,6 +184,7 @@ export function PhotoGalleryItem({
             <PhotoMetadataEditor
                 locale={locale}
                 item={item}
+                closeOnSuccessfulSave
                 disabled={disabled}
                 compactLayout
                 toggleAriaLabel={t(

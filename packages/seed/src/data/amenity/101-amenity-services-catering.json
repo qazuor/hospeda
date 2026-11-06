@@ -8,7 +8,7 @@
         "pt": "Servicio de catering para eventos y reuniones"
     },
     "applicableVerticals": ["venue"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "FullBoardIcon",
     "isBuiltin": false,
     "isFeatured": false,

@@ -8,7 +8,7 @@
         "pt": "Equipamiento de pesca"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WATER_ACTIVITIES",
     "icon": "FishingEquipmentIcon",
     "isBuiltin": false,
     "isFeatured": true,

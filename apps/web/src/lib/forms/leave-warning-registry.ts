@@ -1,7 +1,7 @@
 /**
  * @file leave-warning-registry.ts
  * @description The single place that decides what to ask before an internal
- * link click leaves the current page (HOS-1018).
+ * link click leaves the page or a guarded action saves (HOS-1018).
  *
  * ## Why this exists at all
  *
@@ -75,8 +75,15 @@ export interface LeaveWarningCopy {
 export interface LeaveWarningEntry {
     /** Which warning this is. See {@link LeaveWarningKind}. */
     readonly kind: LeaveWarningKind;
+    /**
+     * Whether non-navigation actions such as saves should request this
+     * warning. Defaults to `true`; set to `false` for leave-only nudges.
+     */
+    readonly guardsSaves?: boolean;
     /** Copy shown when this is the ONLY active warning. */
     readonly copy: LeaveWarningCopy;
+    /** Rebuilds count-sensitive copy when an action supplies a live count. */
+    readonly copyForCount?: (count: number) => LeaveWarningCopy;
     /**
      * How many items the warning is about, for kinds whose combined copy is
      * pluralized (`photo-alt`). Ignored for kinds that do not count anything.
@@ -94,6 +101,22 @@ export interface LeaveWarningEntry {
      * one whose copy happened to be displayed.
      */
     readonly onConfirm?: () => void;
+    /**
+     * Run when the host dismisses the dialog and stays on the current page.
+     * Only runs when this entry's own copy was the one shown: in a combined
+     * dialog the cancel label is neutral ("keep editing") and must not trigger
+     * an entry-specific action such as jumping to a photo.
+     */
+    readonly onCancel?: () => void;
+    /**
+     * Also intercept links marked `data-astro-reload` (full page loads such as
+     * the language switcher or the Fotos "back" links). Only meaningful for
+     * entries that do NOT raise the native `beforeunload` prompt: for those, a
+     * full load would otherwise leave with no warning at all. Entries that do
+     * use `beforeunload` already get the browser's prompt there, so they leave
+     * this unset to avoid asking twice.
+     */
+    readonly interceptReloadLinks?: boolean;
 }
 
 /**
@@ -110,7 +133,17 @@ const registrations = new Map<symbol, LeaveWarningEntry>();
 
 let listenerInstalled = false;
 let dialogOpen = false;
+/** True while a confirmed full-load link click is replayed; see `handleClickCapture`. */
+let replayingConfirmedClick = false;
 let navigate: NavigateFn | null = null;
+
+/** True when at least one active entry opted in to intercepting full-load links. */
+function wantsReloadLinks(): boolean {
+    for (const entry of registrations.values()) {
+        if (entry.interceptReloadLinks) return true;
+    }
+    return false;
+}
 
 /**
  * Returns true when a click should be left alone: anything the router itself
@@ -126,7 +159,10 @@ function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolea
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return true;
     if (anchor.hasAttribute('download')) return true;
     if (anchor.target && anchor.target !== '_self') return true;
-    if (anchor.dataset.astroReload !== undefined) return true;
+    // A forced full load leaves the page just like a soft navigation does. It is
+    // only ignored when no active entry opted in to covering it (see
+    // `interceptReloadLinks`), because `beforeunload` already covers the others.
+    if (anchor.dataset.astroReload !== undefined && !wantsReloadLinks()) return true;
 
     const href = anchor.getAttribute('href');
     if (!href) return true;
@@ -178,9 +214,32 @@ function resolveCopy(entries: readonly LeaveWarningEntry[]): LeaveWarningCopy {
         throw new Error('resolveCopy called with no active leave warnings');
     }
     if (entries.length === 1) {
+        if (first.copyForCount && first.count !== undefined) {
+            return first.copyForCount(first.count);
+        }
         return first.copy;
     }
     return buildCombinedLeaveWarningCopy(entries) ?? first.copy;
+}
+
+/**
+ * Shows a registered warning before a non-navigation action such as saving.
+ * Returns true when the action may continue; missing registrations are a no-op.
+ */
+export async function requestLeaveWarning(
+    kind: LeaveWarningKind,
+    options?: { readonly count?: number }
+): Promise<boolean> {
+    const entries = activeEntries().filter(
+        (entry) => entry.kind === kind && entry.guardsSaves !== false
+    );
+    if (entries.length === 0) return true;
+    const adjustedEntries =
+        options?.count === undefined
+            ? entries
+            : entries.map((entry) => ({ ...entry, count: options.count }));
+    if (options?.count === 0) return true;
+    return requestEntriesConfirmation(adjustedEntries);
 }
 
 /**
@@ -202,7 +261,7 @@ function warmRouter(): void {
 
 /** The one and only capture-phase click listener. */
 function handleClickCapture(event: MouseEvent): void {
-    if (registrations.size === 0) return;
+    if (registrations.size === 0 || replayingConfirmedClick) return;
 
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -215,29 +274,62 @@ function handleClickCapture(event: MouseEvent): void {
     // navigation. Nothing has been fetched or swapped yet.
     event.preventDefault();
 
-    if (dialogOpen) return;
-
     const entries = activeEntries();
-    dialogOpen = true;
     const href = anchor.href;
+    const reload = anchor.dataset.astroReload !== undefined;
 
-    void showConfirmationDialog(resolveCopy(entries))
-        .then((confirmed) => {
-            if (!confirmed) return;
+    void requestEntriesConfirmation(entries).then((confirmed) => {
+        if (!confirmed) {
+            return;
+        }
 
-            for (const entry of entries) {
-                entry.onConfirm?.();
+        // A forced full load must stay a full load, and the anchor's own click
+        // handlers (the language switcher persists the chosen locale) must run
+        // only now that the host confirmed. Replaying the click lets both
+        // happen natively; the flag keeps the replay from being intercepted.
+        if (reload) {
+            replayingConfirmedClick = true;
+            try {
+                anchor.click();
+            } finally {
+                replayingConfirmedClick = false;
             }
+        } else if (navigate) {
+            navigate(href);
+        } else {
+            window.location.href = href;
+        }
+    });
+}
 
-            if (navigate) {
-                navigate(href);
-            } else {
-                window.location.href = href;
-            }
-        })
-        .finally(() => {
-            dialogOpen = false;
-        });
+/** Resolves after the confirmation dialog's deferred unmount and focus restore. */
+function afterDialogTeardown(): Promise<void> {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, 0);
+    });
+}
+
+/** Shared confirmation runner for navigation and action-triggered warnings. */
+async function requestEntriesConfirmation(entries: readonly LeaveWarningEntry[]): Promise<boolean> {
+    if (dialogOpen) return false;
+    dialogOpen = true;
+    try {
+        const confirmed = await showConfirmationDialog(resolveCopy(entries));
+        // The dialog resolves first and unmounts afterwards, and its unmount
+        // restores focus to whatever was focused before it opened. A cancel
+        // action that moves focus (e.g. "Completar ahora") must therefore run
+        // after that teardown, or the restore silently undoes it.
+        if (!confirmed && entries.length === 1) await afterDialogTeardown();
+        for (const entry of entries) {
+            if (confirmed) entry.onConfirm?.();
+            // A combined dialog carries a neutral cancel label, so entry-specific
+            // cancel actions only run when that entry's own copy was shown.
+            else if (entries.length === 1) entry.onCancel?.();
+        }
+        return confirmed;
+    } finally {
+        dialogOpen = false;
+    }
 }
 
 /**
@@ -292,5 +384,6 @@ export function __resetLeaveWarningRegistry(): void {
         listenerInstalled = false;
     }
     dialogOpen = false;
+    replayingConfirmedClick = false;
     navigate = null;
 }

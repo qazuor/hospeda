@@ -225,6 +225,19 @@ describe('PATCH /protected/accommodations/:id — flat to domain conversion (SPE
         expect(input.featureIds).toEqual([AMENITY_UUID_1]);
     });
 
+    it('passes amenityAttributes (scope/availability) straight through (HOS-2058)', async () => {
+        const input = await patch({
+            amenityIds: [AMENITY_UUID_1],
+            amenityAttributes: [
+                { amenityId: AMENITY_UUID_1, scope: 'private', availability: 'year_round' }
+            ]
+        });
+
+        expect(input.amenityAttributes).toEqual([
+            { amenityId: AMENITY_UUID_1, scope: 'private', availability: 'year_round' }
+        ]);
+    });
+
     it('passes summary straight through', async () => {
         const input = await patch({ summary: 'A short summary text here' });
 

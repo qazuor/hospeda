@@ -26,7 +26,8 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
-import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { accommodationsApi, destinationsApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { fetchAccommodationFilterCatalog } from '@/lib/filters/accommodation-filter-catalog';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -165,14 +166,12 @@ const contextQuery = contextQueryParams.toString() || undefined;
 // `Promise.all` and not `allSettled`: none of these reject. The API client
 // returns an `ApiResult` and each `.ok` is checked below, so a failed catalog
 // read degrades to an empty filter list exactly as it did sequentially.
-const [destinationsResult, amenitiesResult, featuresResult, result] = await Promise.all([
+const [destinationsResult, filterCatalog, result] = await Promise.all([
 	// Destinations for the filter dropdown (CITY only — accommodations are
 	// browsed by city, not by parent administrative regions).
 	destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
-	// Amenities for filter chips
-	amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
-	// Features for filter chips
-	featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// Amenities + features for filter chips: accommodation-scoped, fully paged (HOS-2057)
+	fetchAccommodationFilterCatalog(),
 	// The accommodations themselves
 	accommodationsApi.list({
 	page,
@@ -186,8 +185,7 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 ]);
 
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
-const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
-const features = featuresResult.ok ? featuresResult.data.items : [];
+const { amenities, features } = filterCatalog;
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];

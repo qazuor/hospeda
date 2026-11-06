@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "083-feature-vegetarian_options",
     "slug": "vegetarian_options",
+    "category": "DIETARY",
     "description": {
         "es": "Opciones vegetarianas en el menú para quienes no consumen carne",
         "en": "Opciones vegetarianas en el menú para quienes no consumen carne",

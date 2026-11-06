@@ -11,7 +11,10 @@
 
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
+import {
+    __resetLeaveWarningRegistry,
+    requestLeaveWarning
+} from '@/lib/forms/leave-warning-registry';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
@@ -131,6 +134,25 @@ describe('useUnsavedChangesGuard', () => {
     });
 
     describe('when the form is dirty', () => {
+        it('keeps guarding saves by default for other guard kinds', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
+
+            await act(async () => {
+                expect(await requestLeaveWarning('unsaved-changes')).toBe(false);
+            });
+
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
+
         it('should prompt on beforeunload', () => {
             renderHook(() =>
                 useUnsavedChangesGuard({

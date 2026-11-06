@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "023-feature-smart_home",
     "slug": "smart_home",
+    "category": "STYLE",
     "description": {
         "es": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",
         "en": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",

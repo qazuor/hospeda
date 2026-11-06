@@ -20,14 +20,21 @@ import type { MediaSectionProps } from '../../../../src/components/listing/edito
 import { MediaSection } from '../../../../src/components/listing/editor/MediaSection.client';
 import type { CompressionOutcome } from '../../../../src/lib/media/compress-image';
 
-const { mockListMedia, mockAddMedia, mockSetFeaturedMedia, mockAddToast, mockCompressImage } =
-    vi.hoisted(() => ({
-        mockListMedia: vi.fn(),
-        mockAddMedia: vi.fn(),
-        mockSetFeaturedMedia: vi.fn(),
-        mockAddToast: vi.fn(),
-        mockCompressImage: vi.fn()
-    }));
+const {
+    mockListMedia,
+    mockAddMedia,
+    mockSetFeaturedMedia,
+    mockAddFeaturedMedia,
+    mockAddToast,
+    mockCompressImage
+} = vi.hoisted(() => ({
+    mockListMedia: vi.fn(),
+    mockAddMedia: vi.fn(),
+    mockSetFeaturedMedia: vi.fn(),
+    mockAddFeaturedMedia: vi.fn(),
+    mockAddToast: vi.fn(),
+    mockCompressImage: vi.fn()
+}));
 
 vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'http://api.test'
@@ -41,6 +48,7 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     listingMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
+        addFeaturedMedia: mockAddFeaturedMedia,
         removeMedia: vi.fn(),
         setFeaturedMedia: mockSetFeaturedMedia
     },
@@ -106,6 +114,8 @@ const NEW_ROW = {
 const makeAddOk = () => Promise.resolve({ ok: true as const, data: { media: NEW_ROW } });
 const makeSetFeaturedOk = () =>
     Promise.resolve({ ok: true as const, data: { media: { ...NEW_ROW, isFeatured: true } } });
+const makeAddFeaturedOk = () =>
+    Promise.resolve({ ok: true as const, data: { media: { ...NEW_ROW, isFeatured: true } } });
 
 function stubFetchUploadOk() {
     global.fetch = vi.fn().mockResolvedValue({
@@ -135,6 +145,7 @@ describe('MediaSection client-side compression wiring (HOS-332)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockListMedia.mockReturnValue(makeListEmpty());
+        mockAddFeaturedMedia.mockReturnValue(makeAddFeaturedOk());
     });
 
     it('MANDATORY: uploads the original file successfully when compression cannot decode it, as long as it fits under the cap', async () => {

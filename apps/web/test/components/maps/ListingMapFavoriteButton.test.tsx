@@ -163,18 +163,40 @@ beforeAll(async () => {
 const i18n = {
     attribution: '© OSM',
     approximateDisclaimer: 'Ubicación aproximada.',
-    viewDetails: 'Ver más'
+    viewDetails: 'Ver más',
+    priceConsult: 'Precio a consultar',
+    consultAvailability: 'Consultar disponibilidad'
 };
 
 const baseItem = {
     id: 'acc-uuid-1',
     slug: 'cabana-test',
     name: 'Cabaña Test',
+    detailHref: '/es/alojamientos/cabana-test/',
     thumbnailUrl: 'https://example.com/img.jpg',
     approximateLocation: { lat: -30, lng: -58, radiusMeters: 150 }
 };
 
 describe('ListingMap — FavoriteButton in popup (T-044)', () => {
+    it('shows localized price explanation and availability CTA when the item has no price', async () => {
+        render(
+            <ListingMap
+                mode="accommodation-list"
+                initialCenter={[-30, -58]}
+                items={[baseItem]}
+                ariaLabel="map"
+                i18nStrings={i18n}
+                locale="es"
+            />
+        );
+
+        const [marker] = await screen.findAllByTestId('marker');
+        fireEvent.click(marker);
+
+        expect(await screen.findByText('Precio a consultar')).toBeInTheDocument();
+        expect(screen.getByText('Consultar disponibilidad')).toBeInTheDocument();
+    });
+
     it('renders FavoriteButton inside the accommodation popup', async () => {
         render(
             <ListingMap

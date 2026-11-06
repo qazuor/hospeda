@@ -444,5 +444,13 @@
         "via": "caller",
         "notifiedBy": "packages/service-core/src/services/billing/subscription/apply-due-scheduled-changes.service.ts",
         "reason": "TRANS:B:S38 changes the subscription plan and billing option; the due-change batch emits the post-commit coverage notice."
+    },
+    {
+        "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
+        "symbol": "reanchorSubscriptionsToVersion",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2037 moves a live subscription to an additive, price-neutral twin version; status and coverage periods are untouched, so no coverage source turns off."
     }
 ]

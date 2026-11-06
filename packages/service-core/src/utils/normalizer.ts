@@ -1,4 +1,5 @@
 import type { AdminInfoType } from '@repo/schemas';
+import { normalizeArgentinePhone, parsePhoneNumber } from '@repo/schemas';
 
 /**
  * Utility functions for normalizing data across services.
@@ -6,38 +7,37 @@ import type { AdminInfoType } from '@repo/schemas';
  */
 
 /**
- * Normalizes phone numbers to international format.
- * Ensures they start with + and follow the E.164 standard.
+ * Normalizes a phone number to its canonical international form.
+ *
+ * Parsing is delegated to the shared `@repo/schemas` parser, which is the same
+ * one the validators use, so every accepted input normalizes to a value the
+ * validators also accept. Canonical forms:
+ * - mobile (by meaning or by marker): `+549` + 10 national digits
+ * - landline: `+54` + 10 national digits
+ * - any other country, and legacy E.164 values: `+<digits>` untouched
+ *
+ * Input the parser does not accept (never produced by a validated payload)
+ * keeps the historic best-effort cleanup.
  *
  * @param phone - The phone number to normalize
+ * @param mobileByMeaning - `true` (default) for fields that mean a mobile line
+ *   (`mobilePhone`, `whatsapp`), `false` for general/landline fields
  * @returns The normalized phone number
  *
  * @example
  * ```typescript
- * normalizePhoneNumber('+54 11 5555-0002') // Returns: '+541155550002'
- * normalizePhoneNumber('11 5555-0002') // Returns: '+541155550002'
- * normalizePhoneNumber('155550002') // Returns: '+54155550002'
+ * normalizePhoneNumber('3442 45-2345') // '+5493442452345'
+ * normalizePhoneNumber('3442 45-2345', false) // '+543442452345'
+ * normalizePhoneNumber('3442 15 45-2345', false) // '+5493442452345'
+ * normalizePhoneNumber('155550002') // '+54155550002' (unparseable, legacy cleanup)
  * ```
  */
-export const normalizePhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters except +
-    let cleaned = phone.replace(/[^\d+]/g, '');
-
-    // If it doesn't start with +, add it
-    if (!cleaned.startsWith('+')) {
-        // Assume it's an Argentine number if no country code
-        if (cleaned.startsWith('54')) {
-            cleaned = `+${cleaned}`;
-        } else if (cleaned.startsWith('11') || cleaned.startsWith('15')) {
-            // Argentine mobile numbers
-            cleaned = `+54${cleaned}`;
-        } else {
-            // Default to +54 for Argentine numbers
-            cleaned = `+54${cleaned}`;
-        }
+export const normalizePhoneNumber = (phone: string, mobileByMeaning = true): string => {
+    if (parsePhoneNumber(phone, mobileByMeaning)) {
+        return normalizeArgentinePhone(phone, mobileByMeaning);
     }
-
-    return cleaned;
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    return cleaned.startsWith('+') ? cleaned : `+${cleaned.startsWith('54') ? '' : '54'}${cleaned}`;
 };
 
 /**
@@ -71,16 +71,16 @@ export const normalizeContactInfo = (contactInfo: unknown): unknown => {
 
     // Normalize phone numbers
     if (typeof normalized.mobilePhone === 'string') {
-        normalized.mobilePhone = normalizePhoneNumber(normalized.mobilePhone);
+        normalized.mobilePhone = normalizePhoneNumber(normalized.mobilePhone, true);
     }
     if (typeof normalized.homePhone === 'string') {
-        normalized.homePhone = normalizePhoneNumber(normalized.homePhone);
+        normalized.homePhone = normalizePhoneNumber(normalized.homePhone, false);
     }
     if (typeof normalized.workPhone === 'string') {
-        normalized.workPhone = normalizePhoneNumber(normalized.workPhone);
+        normalized.workPhone = normalizePhoneNumber(normalized.workPhone, false);
     }
     if (typeof normalized.whatsapp === 'string') {
-        normalized.whatsapp = normalizePhoneNumber(normalized.whatsapp);
+        normalized.whatsapp = normalizePhoneNumber(normalized.whatsapp, true);
     }
 
     // Normalize emails

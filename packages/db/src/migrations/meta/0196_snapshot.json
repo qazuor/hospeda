@@ -1,6 +1,6 @@
 {
-  "id": "6e2b57d7-98a6-4f62-9dda-b619126094f8",
-  "prevId": "5d130fd2-e415-4183-8f9b-c02be81d555f",
+  "id": "5d130fd2-e415-4183-8f9b-c02be81d555f",
+  "prevId": "3123a95a-8790-4be9-ab2c-52c4964e05d1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2038,6 +2038,13 @@
           "notNull": true,
           "default": "'{}'"
         },
+        "category": {
+          "name": "category",
+          "type": "feature_category_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "lifecycle_state": {
           "name": "lifecycle_state",
           "type": "lifecycle_status_enum",
@@ -2179,6 +2186,20 @@
         "additional_cost_percent": {
           "name": "additional_cost_percent",
           "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "amenity_scope_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability": {
+          "name": "availability",
+          "type": "amenity_availability_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         }
@@ -8044,7 +8065,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -28251,13 +28272,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entry": {
-          "name": "entry",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'INSTALLMENT'"
-        },
         "registered_by": {
           "name": "registered_by",
           "type": "uuid",
@@ -28327,10 +28341,6 @@
         "ck_manual_payment_status": {
           "name": "ck_manual_payment_status",
           "value": "\"manual_payment\".\"status\" IN ('AWAITING', 'REGISTERED', 'DECLARED_UNPAID')"
-        },
-        "ck_manual_payment_entry": {
-          "name": "ck_manual_payment_entry",
-          "value": "\"manual_payment\".\"entry\" IN ('INSTALLMENT', 'UNALLOCATED')"
         },
         "ck_manual_payment_registration": {
           "name": "ck_manual_payment_registration",
@@ -32350,7 +32360,12 @@
         "SAFETY",
         "FAMILY_FRIENDLY",
         "WORK_FRIENDLY",
-        "GENERAL_APPLIANCES"
+        "GENERAL_APPLIANCES",
+        "PARKING",
+        "LAUNDRY",
+        "WATER_ACTIVITIES",
+        "WELLNESS",
+        "DINING"
       ]
     },
     "public.auth_provider_enum": {
@@ -33967,6 +33982,39 @@
       "values": [
         "visible",
         "archived"
+      ]
+    },
+    "public.amenity_availability_enum": {
+      "name": "amenity_availability_enum",
+      "schema": "public",
+      "values": [
+        "year_round",
+        "seasonal"
+      ]
+    },
+    "public.amenity_scope_enum": {
+      "name": "amenity_scope_enum",
+      "schema": "public",
+      "values": [
+        "private",
+        "shared"
+      ]
+    },
+    "public.feature_category_enum": {
+      "name": "feature_category_enum",
+      "schema": "public",
+      "values": [
+        "LOCATION",
+        "VIEW",
+        "ACCESS",
+        "STYLE",
+        "AUDIENCE",
+        "OFFER_PROFILE",
+        "SUSTAINABILITY",
+        "ACTIVITIES",
+        "CUISINE",
+        "DIETARY",
+        "LANGUAGE"
       ]
     }
   },

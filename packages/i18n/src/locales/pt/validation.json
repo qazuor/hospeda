@@ -57,7 +57,7 @@
                 "invalid": "El email no es válido"
             },
             "phone": {
-                "international": "El número no es válido"
+                "argentina": "Digite um telefone argentino válido, por exemplo 3442 45-2345 ou +54 9 3442 45-2345."
             }
         },
         "delete": {
@@ -252,6 +252,9 @@
         },
         "isOptional": {
             "required": "El indicador de opcionalidad es obligatorio"
+        },
+        "attributes": {
+            "duplicate": "Cada comodidade pode aparecer apenas uma vez"
         }
     },
     "accommodationCalendarSync": {
@@ -1600,6 +1603,9 @@
             },
             "workPhone": {
                 "international": "El work phone no es válido"
+            },
+            "phone": {
+                "argentina": "Digite um telefone argentino válido, por exemplo 3442 45-2345 ou +54 9 3442 45-2345."
             }
         },
         "contentMedia": {
@@ -2630,6 +2636,15 @@
         },
         "partnerLogoClickDestination": {
             "invalid": "O destino do clique no logo não é válido"
+        },
+        "featureCategory": {
+            "invalid": "Escolha uma categoria de característica válida"
+        },
+        "amenityScope": {
+            "invalid": "Escolha se a comodidade é privada ou compartilhada"
+        },
+        "amenityAvailability": {
+            "invalid": "Escolha se a comodidade está disponível o ano todo ou por temporada"
         }
     },
     "event": {

@@ -11,7 +11,12 @@ import {
     rAccommodationAmenity,
     rAccommodationFeature
 } from '@repo/db';
-import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
+import type {
+    AmenityAvailabilityEnum,
+    AmenityProtected,
+    AmenityScopeEnum,
+    FeatureProtected
+} from '@repo/schemas';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
@@ -29,6 +34,15 @@ import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
+
+/**
+ * An amenity catalog row plus its HOS-2058 relation attributes, as the editor
+ * baseline needs them. NULL = not declared.
+ */
+type ProtectedAmenityWithAttributes = AmenityProtected & {
+    readonly scope: AmenityScopeEnum | null;
+    readonly availability: AmenityAvailabilityEnum | null;
+};
 
 /**
  * Fetches the amenities linked to an accommodation through
@@ -58,7 +72,9 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param accommodationId - The accommodation UUID to load amenities for.
  * @returns Amenity catalog rows in `AmenityProtectedSchema` shape.
  */
-async function fetchProtectedAmenities(accommodationId: string): Promise<AmenityProtected[]> {
+async function fetchProtectedAmenities(
+    accommodationId: string
+): Promise<ProtectedAmenityWithAttributes[]> {
     const db = getDb();
     const rows = await db
         .select({
@@ -68,6 +84,9 @@ async function fetchProtectedAmenities(accommodationId: string): Promise<Amenity
             icon: amenities.icon,
             applicableVerticals: amenities.applicableVerticals,
             type: amenities.type,
+            // HOS-2058: relation attributes, so the editor can rebuild them.
+            scope: rAccommodationAmenity.scope,
+            availability: rAccommodationAmenity.availability,
             isFeatured: amenities.isFeatured,
             displayWeight: amenities.displayWeight,
             isBuiltin: amenities.isBuiltin,
@@ -91,6 +110,8 @@ async function fetchProtectedAmenities(accommodationId: string): Promise<Amenity
     return rows.map((row) => ({
         ...row,
         type: row.type as AmenityProtected['type'],
+        scope: row.scope as AmenityScopeEnum | null,
+        availability: row.availability as AmenityAvailabilityEnum | null,
         lifecycleState: row.lifecycleState as AmenityProtected['lifecycleState'],
         applicableVerticals: row.applicableVerticals as AmenityProtected['applicableVerticals']
     }));
@@ -115,6 +136,7 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
             description: features.description,
             icon: features.icon,
             applicableVerticals: features.applicableVerticals,
+            category: features.category,
             isFeatured: features.isFeatured,
             displayWeight: features.displayWeight,
             isBuiltin: features.isBuiltin,
@@ -129,6 +151,7 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
     // Same narrowing rationale as `fetchProtectedAmenities` (no `type` here).
     return rows.map((row) => ({
         ...row,
+        category: row.category as FeatureProtected['category'],
         lifecycleState: row.lifecycleState as FeatureProtected['lifecycleState'],
         applicableVerticals: row.applicableVerticals as FeatureProtected['applicableVerticals']
     }));

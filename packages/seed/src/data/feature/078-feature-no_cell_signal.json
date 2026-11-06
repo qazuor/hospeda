@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "078-feature-no_cell_signal",
     "slug": "no_cell_signal",
+    "category": "LOCATION",
     "description": {
         "es": "Ubicación naturalmente desconectada de redes móviles para una experiencia de desconexión digital total",
         "en": "Ubicación naturalmente desconectada de redes móviles para una experiencia de desconexión digital total",

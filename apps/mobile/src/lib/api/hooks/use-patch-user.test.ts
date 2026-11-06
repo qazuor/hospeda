@@ -194,12 +194,24 @@ describe('UserPatchBodySchema', () => {
         }
     });
 
-    it('fails when mobilePhone contains a hyphen (invalid E.164 format)', () => {
-        // Hyphenated phones like '+54 11 1234-5678' must be rejected client-side
-        // so the server never receives them and returns a generic 400.
+    it('accepts a hyphenated Argentine mobilePhone (HOS-2034 shared validator)', () => {
         const result = UserPatchBodySchema.safeParse({
             contactInfo: { mobilePhone: '+54 11 1234-5678' }
         });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts a local-form Argentine mobilePhone (HOS-2034)', () => {
+        const result = UserPatchBodySchema.safeParse({
+            contactInfo: { mobilePhone: '3442 45-2345' }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it.each(['123', '3442 ABC-2345'])('fails when mobilePhone is not a phone (%s)', (phone) => {
+        // Genuinely malformed phones must be rejected client-side so the server
+        // never receives them and returns a generic 400.
+        const result = UserPatchBodySchema.safeParse({ contactInfo: { mobilePhone: phone } });
         expect(result.success).toBe(false);
         if (!result.success) {
             const paths = result.error.issues.map((i) => i.path.join('.'));

@@ -249,8 +249,8 @@ export function usePhotoGalleryMutations({
      * save on one photo never touches any other photo's fields — and merges
      * the server's authoritative row back into whichever slot the item lives
      * in (portada or gallery), without disturbing the rest of that slot's
-     * state. Returns `true` on success so the calling form can show a
-     * "saved" confirmation and stay open for further edits.
+     * state. It never asks about other photos' missing alt text: the HOS-1018
+     * warning fires only when the host leaves Fotos (HOS-2043).
      */
     const handleUpdateMediaText = useCallback(
         async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {

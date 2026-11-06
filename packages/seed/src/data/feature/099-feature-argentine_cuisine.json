@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "099-feature-argentine_cuisine",
     "slug": "argentine_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina argentina y criolla: asados, empanadas y platos tradicionales",
         "en": "Argentine and criollo cuisine: grilled meats, empanadas and traditional dishes",

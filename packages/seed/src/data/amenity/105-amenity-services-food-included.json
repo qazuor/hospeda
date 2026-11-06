@@ -8,7 +8,7 @@
         "pt": "Alimentación o refrigerios incluidos en el precio de la experiencia"
     },
     "applicableVerticals": ["experience"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "BreakfastIcon",
     "isBuiltin": false,
     "isFeatured": true,

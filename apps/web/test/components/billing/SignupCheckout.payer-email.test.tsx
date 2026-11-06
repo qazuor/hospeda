@@ -35,6 +35,12 @@ describe('TEST:1730:5 checkout payer email', () => {
     it('prefills an editable account email without starting or showing a resume link', () => {
         render(<SignupCheckout {...props} />);
         const input = screen.getByTestId('signup-checkout-payer-email');
+        const hint = input.parentElement?.querySelector('p[id]');
+        expect(hint).not.toBeNull();
+        expect(
+            hint!.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(input.getAttribute('aria-describedby')?.split(/\s+/)).toContain(hint!.id);
         expect(input).toHaveValue(props.accountEmail);
         fireEvent.change(input, { target: { value: 'changed@example.test' } });
         expect(input).toHaveValue('changed@example.test');
@@ -67,6 +73,10 @@ describe('TEST:1730:5 checkout payer email', () => {
         fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
         expect(await screen.findByRole('alert')).toHaveTextContent('Ingresá un email válido.');
         expect(input).toHaveAttribute('aria-invalid', 'true');
+        const hint = input.parentElement?.querySelector('p[id]');
+        const error = screen.getByRole('alert');
+        expect(input.getAttribute('aria-describedby')?.split(/\s+/)).toContain(hint!.id);
+        expect(input.getAttribute('aria-describedby')?.split(/\s+/)).toContain(error.id);
         expect(start).not.toHaveBeenCalled();
         fireEvent.change(input, { target: { value: 'fixed@example.test' } });
         await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());

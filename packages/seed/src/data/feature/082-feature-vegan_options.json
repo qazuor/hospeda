@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "082-feature-vegan_options",
     "slug": "vegan_options",
+    "category": "DIETARY",
     "description": {
         "es": "Opciones de menú totalmente veganas sin ingredientes de origen animal",
         "en": "Opciones de menú totalmente veganas sin ingredientes de origen animal",

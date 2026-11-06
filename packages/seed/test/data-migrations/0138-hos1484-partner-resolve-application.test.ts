@@ -1,7 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0133-hos1484-partner-resolve-application.js';
+import * as migration from '../../src/data-migrations/0138-hos1484-partner-resolve-application.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -26,7 +26,7 @@ function buildCtx(inserted: unknown[]): { ctx: SeedMigrationCtx; values: () => u
 describe('HOS-1484 partner application permission seed migration', () => {
     it('is required, additive, and grants exactly both staff roles', () => {
         expect(migration.meta).toEqual({
-            name: '0133-hos1484-partner-resolve-application',
+            name: '0138-hos1484-partner-resolve-application',
             group: 'required',
             destructive: false
         });

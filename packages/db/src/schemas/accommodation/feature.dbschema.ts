@@ -1,7 +1,7 @@
 import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
+import { FeatureCategoryPgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { rAccommodationFeature } from './r_accommodation_feature.dbschema.ts';
 
@@ -14,6 +14,12 @@ export const features = pgTable('features', {
     isFeatured: boolean('is_featured').notNull().default(false),
     displayWeight: integer('display_weight').notNull().default(50),
     applicableVerticals: text('applicable_verticals').array().notNull().default([]),
+    /**
+     * HOS-2058: catalog category. NULLABLE in release N (expand/contract):
+     * data-migration 0146 backfills every seeded row by slug, and release N+1
+     * makes it NOT NULL.
+     */
+    category: FeatureCategoryPgEnum('category'),
     lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

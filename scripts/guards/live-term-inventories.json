@@ -202,6 +202,13 @@
             "row": 19,
             "subject": "addon_instance",
             "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
+        },
+        {
+            "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
+            "symbol": "reanchorSubscriptionsToVersion",
+            "row": null,
+            "why": "HOS-2037 re-anchor: moves every live principal subscription anchored to one plan version onto an additive, price-neutral twin; reads the live set via LIVE_SUBSCRIPTION_STATUSES, never writes status.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [

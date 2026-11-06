@@ -4,6 +4,7 @@
  * Covers normalizePhoneNumber, normalizeContactInfo, normalizeAdminInfo.
  */
 
+import { ContactInfoSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeAdminInfo,
@@ -16,28 +17,96 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('normalizePhoneNumber()', () => {
+    it.each([
+        ['3442 45-2345', '+543442452345'],
+        ['3442452345', '+543442452345'],
+        ['(3442) 45-2345', '+543442452345'],
+        ['03442 452345', '+543442452345'],
+        ['3442 15 45-2345', '+5493442452345'],
+        ['+54 9 3442 45-2345', '+5493442452345'],
+        ['+5493442452345', '+5493442452345'],
+        ['54 3442 452345', '+543442452345']
+    ])('normalizes Argentine format %s to %s', (phone, expected) =>
+        expect(normalizePhoneNumber(phone, false)).toBe(expected));
+
     it('should keep number that already starts with +', () => {
-        expect(normalizePhoneNumber('+541155550002')).toBe('+541155550002');
+        expect(normalizePhoneNumber('+541155550002', false)).toBe('+541155550002');
+    });
+
+    it.each([
+        '+65 6123 4567',
+        '+1 555123456'
+    ])('preserves non-Argentine international number %s', (phone) => {
+        expect(normalizePhoneNumber(phone)).toBe(phone.replace(/\s/g, ''));
+    });
+
+    it.each([
+        ['011 15 2345-6789', '+5491123456789'],
+        ['0223 15 412-3456', '+5492234123456']
+    ])('normalizes domestic mobile %s without trunk/15', (phone, expected) => {
+        expect(normalizePhoneNumber(phone)).toBe(expected);
+    });
+
+    it('preserves the HOS-1027 international mobile canonical', () => {
+        expect(normalizePhoneNumber('+54 9344 4123456')).toBe('+5493444123456');
     });
 
     it('should strip formatting characters from international number', () => {
-        expect(normalizePhoneNumber('+54 11 5555-0002')).toBe('+541155550002');
+        expect(normalizePhoneNumber('+54 11 5555-0002', false)).toBe('+541155550002');
     });
 
     it('should prefix with + when number starts with 54 (country code)', () => {
-        expect(normalizePhoneNumber('541155550002')).toBe('+541155550002');
+        expect(normalizePhoneNumber('541155550002', false)).toBe('+541155550002');
     });
 
     it('should prefix with +54 when number starts with 11 (Argentine mobile)', () => {
-        expect(normalizePhoneNumber('11 5555-0002')).toBe('+541155550002');
+        expect(normalizePhoneNumber('11 5555-0002', false)).toBe('+541155550002');
     });
 
     it('should prefix with +54 when number starts with 15 (Argentine mobile alt)', () => {
-        expect(normalizePhoneNumber('155550002')).toBe('+54155550002');
+        expect(normalizePhoneNumber('155550002', false)).toBe('+54155550002');
     });
 
-    it('should default to +54 prefix for other number formats', () => {
-        expect(normalizePhoneNumber('9876543210')).toBe('+549876543210');
+    it('uses the field meaning for an ambiguous bare number', () => {
+        expect(normalizePhoneNumber('3442452345', false)).toBe('+543442452345');
+        expect(normalizePhoneNumber('3442452345', true)).toBe('+5493442452345');
+    });
+});
+
+describe('normalizePhoneNumber() output always passes the validator (HOS-2034)', () => {
+    const inputs = [
+        '3442 45-2345',
+        '3442452345',
+        '(3442) 45-2345',
+        '03442 452345',
+        '3442 15 45-2345',
+        '+54 9 3442 45-2345',
+        '+5493442452345',
+        '54 3442 452345',
+        '3415123456',
+        '+54 3442 15 45-2345',
+        '+54 03442 452345',
+        '+54 0223-155-1234',
+        '+54 3415 123456',
+        '+54115550002',
+        '+549345704627',
+        '+54934515732848',
+        '+65 6123 4567',
+        '+1 5551234567'
+    ];
+
+    it.each(inputs)('%s', (input) => {
+        for (const field of ['mobilePhone', 'homePhone', 'workPhone', 'whatsapp'] as const) {
+            const out = normalizeContactInfo({ [field]: input }) as Record<string, string>;
+            expect(ContactInfoSchema.safeParse({ [field]: input }).success).toBe(true);
+            expect(ContactInfoSchema.safeParse({ [field]: out[field] }).success).toBe(true);
+            expect((normalizeContactInfo(out) as Record<string, string>)[field]).toBe(out[field]);
+        }
+    });
+
+    it('does not strip a 15 from an international number of the right length', () => {
+        expect(normalizePhoneNumber('+54 3415 123456', false)).toBe('+543415123456');
+        expect(normalizePhoneNumber('+54 3415 123456', true)).toBe('+5493415123456');
     });
 });
 
@@ -57,7 +126,7 @@ describe('normalizeContactInfo()', () => {
             string,
             unknown
         >;
-        expect(result.mobilePhone).toBe('+541155550001');
+        expect(result.mobilePhone).toBe('+5491155550001');
     });
 
     it('should normalize homePhone', () => {
@@ -83,7 +152,18 @@ describe('normalizeContactInfo()', () => {
             string,
             unknown
         >;
-        expect(result.whatsapp).toBe('+541155550004');
+        expect(result.whatsapp).toBe('+5491155550004');
+    });
+
+    it('uses mobile canonical for mobilePhone and whatsapp and landline canonical for homePhone', () => {
+        const result = normalizeContactInfo({
+            homePhone: '3442 45-2345',
+            mobilePhone: '3442 45-2345',
+            whatsapp: '3442 45-2345'
+        }) as Record<string, unknown>;
+        expect(result.homePhone).toBe('+543442452345');
+        expect(result.mobilePhone).toBe('+5493442452345');
+        expect(result.whatsapp).toBe('+5493442452345');
     });
 
     it('should normalize mobilePhone and whatsapp to the exact same value when given the same input (regression HOS-1027)', () => {
@@ -126,10 +206,10 @@ describe('normalizeContactInfo()', () => {
             otherField: 'preserved'
         }) as Record<string, unknown>;
 
-        expect(result.mobilePhone).toBe('+541111111111');
+        expect(result.mobilePhone).toBe('+5491111111111');
         expect(result.homePhone).toBe('+541122222222');
         expect(result.workPhone).toBe('+541133333333');
-        expect(result.whatsapp).toBe('+541144444444');
+        expect(result.whatsapp).toBe('+5491144444444');
         expect(result.personalEmail).toBe('personal@test.com');
         expect(result.workEmail).toBe('work@test.com');
         expect(result.otherField).toBe('preserved');

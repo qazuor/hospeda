@@ -12,7 +12,9 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
+import { FeatureCategoryEnumSchema } from '../../enums/feature-category.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 
 /**
  * HTTP-compatible feature search schema with automatic coercion
@@ -21,11 +23,12 @@ import { stripShapeDefaults } from '../../utils/utils.js';
 export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters with HTTP coercion
     slug: z.string().optional(),
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
-    applicableVertical: z.enum(['accommodation', 'venue', 'experience']).optional(),
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Boolean filters with HTTP coercion
     isAvailable: createBooleanQueryParam('Filter by feature availability status'),
@@ -65,11 +68,12 @@ export const FeatureCreateHttpSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.feature.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
     /** Verticals this feature is applicable to (SPEC-266). */
-    applicableVerticals: z
-        .array(z.enum(['accommodation', 'venue', 'experience']))
-        .min(1)
-        .default(['accommodation']),
-    category: z.string().min(1).max(50).optional(),
+    applicableVerticals: z.array(ApplicableVerticalSchema).min(1).default(['accommodation']),
+    /**
+     * Feature category (HOS-2058). Nullable while `features.category` is
+     * nullable (release N of the expand/contract); `null` clears it.
+     */
+    category: FeatureCategoryEnumSchema.nullish(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
     isAvailable: httpBodyBoolean().default(true),
@@ -139,6 +143,7 @@ export function httpToDomainFeatureCreate(
         slug: httpData.slug,
         description: httpData.description,
         applicableVerticals: httpData.applicableVerticals,
+        ...(httpData.category === undefined ? {} : { category: httpData.category }),
         icon: httpData.icon,
         isBuiltin: false, // Default value
         isFeatured: false, // Default value
@@ -158,6 +163,7 @@ export function httpToDomainFeatureUpdate(
         slug: httpData.slug,
         description: httpData.description,
         applicableVerticals: httpData.applicableVerticals,
+        ...(httpData.category === undefined ? {} : { category: httpData.category }),
         icon: httpData.icon,
         displayWeight: httpData.displayWeight
     };

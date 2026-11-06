@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "101-feature-italian_cuisine",
     "slug": "italian_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina italiana: pastas, pizzas y platos de la tradición italiana",
         "en": "Italian cuisine: pasta, pizza and traditional Italian dishes",

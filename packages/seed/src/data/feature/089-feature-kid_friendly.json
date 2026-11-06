@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "089-feature-kid_friendly",
     "slug": "kid_friendly",
+    "category": "AUDIENCE",
     "description": {
         "es": "Actividad apta y segura para niños desde corta edad",
         "en": "Actividad apta y segura para niños desde corta edad",

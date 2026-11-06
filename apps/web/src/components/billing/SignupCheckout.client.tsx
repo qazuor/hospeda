@@ -219,6 +219,12 @@ export function SignupCheckout({
                         >
                             {t('billing.checkout.signup.payerEmail.label')}
                         </label>
+                        <p
+                            className={styles.payerEmailHint}
+                            id={payerEmailHelpId}
+                        >
+                            {t('billing.checkout.signup.payerEmail.hint')}
+                        </p>
                         <input
                             id={payerEmailInputId}
                             className={styles.payerEmailInput}
@@ -240,12 +246,6 @@ export function SignupCheckout({
                                 );
                             }}
                         />
-                        <p
-                            className={styles.payerEmailHint}
-                            id={payerEmailHelpId}
-                        >
-                            {t('billing.checkout.signup.payerEmail.hint')}
-                        </p>
                         {payerEmailError && (
                             <p
                                 className={styles.payerEmailError}

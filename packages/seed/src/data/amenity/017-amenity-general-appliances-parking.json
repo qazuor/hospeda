@@ -8,7 +8,7 @@
         "pt": "Cochera / Estacionamiento"
     },
     "applicableVerticals": ["accommodation", "venue", "experience"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "PARKING",
     "icon": "ParkingIcon",
     "isBuiltin": false,
     "isFeatured": true,

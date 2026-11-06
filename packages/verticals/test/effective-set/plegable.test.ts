@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { foldPlegableSet } from '../../src/effective-set/fold';
 import { selectPlegableSources } from '../../src/effective-set/plegable';
-import { addon, grant, subscription, trial } from './sources';
+import { addon, base, grant, subscription, trial } from './sources';
 
 const PHOTOS = 'max_photos_per_accommodation';
 const trialPhotos = () => trial([grant({ key: PHOTOS, value: 20, strategy: 'SUM' })]);
@@ -62,5 +62,74 @@ describe('TEST:V3:2 — without a live non-trial title, the complements are disc
 
         expect(plegable).toContain(complement);
         expect(plegable).toHaveLength(2);
+    });
+});
+
+describe('HOS-2027 — a same-vertical SUBSCRIPTION title supersedes the TRIAL', () => {
+    const ACCOMMODATIONS = 'max_accommodations';
+    const cap = (value: number) => grant({ key: ACCOMMODATIONS, value, strategy: 'SUM' });
+
+    it('BASE + TRIAL(1) + SUBSCRIPTION(1) folds to 1, never 2', () => {
+        const folded = foldPlegableSet({
+            sources: [base([cap(0)]), trial([cap(1)]), subscription([cap(1)])]
+        });
+
+        expect(folded.get(ACCOMMODATIONS)).toBe(1);
+    });
+
+    it('the plegable set drops the trial and keeps base and subscription', () => {
+        const trialSource = trial([cap(1)]);
+        const plegable = selectPlegableSources({
+            sources: [base([cap(0)]), trialSource, subscription([cap(1)])]
+        });
+
+        expect(plegable).not.toContain(trialSource);
+        expect(plegable).toHaveLength(2);
+    });
+
+    it('the TRIAL alone still grants its own limit', () => {
+        const folded = foldPlegableSet({ sources: [base([cap(0)]), trial([cap(1)])] });
+
+        expect(folded.get(ACCOMMODATIONS)).toBe(1);
+    });
+
+    it('the trial contributes again when the subscription title is gone', () => {
+        const folded = foldPlegableSet({ sources: [trial([cap(3)])] });
+
+        expect(folded.get(ACCOMMODATIONS)).toBe(3);
+    });
+
+    it('an ADDON still adds on top of the subscription while the trial is dropped: 1 + 2 = 3', () => {
+        const folded = foldPlegableSet({
+            sources: [
+                trial([cap(1)]),
+                subscription([cap(1)]),
+                addon({ scope: 'USER', grants: [cap(2)] })
+            ]
+        });
+
+        expect(folded.get(ACCOMMODATIONS)).toBe(3);
+    });
+
+    it('a subscription of ANOTHER vertical (the inherited Tourist VIP) does not drop the trial', () => {
+        const touristTrial = trial([cap(1)]);
+        const inherited = { ...subscription([cap(5)]), foreignVertical: true as const };
+        const plegable = selectPlegableSources({ sources: [touristTrial, inherited] });
+
+        expect(plegable).toContain(touristTrial);
+        expect(foldPlegableSet({ sources: [touristTrial, inherited] }).get(ACCOMMODATIONS)).toBe(6);
+    });
+
+    it('a subscription of the trial vertical drops it, even beside an inherited one', () => {
+        const ownTrial = trial([cap(1)]);
+        const plegable = selectPlegableSources({
+            sources: [
+                ownTrial,
+                subscription([cap(1)]),
+                { ...subscription([cap(5)]), foreignVertical: true as const }
+            ]
+        });
+
+        expect(plegable).not.toContain(ownTrial);
     });
 });

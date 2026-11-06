@@ -168,6 +168,7 @@ export async function resolveEffectiveSet(
                             foldable.splice(index, 1);
                     }
                 foldable.push({
+                    foreignVertical: true,
                     source: {
                         ...inheritance.source,
                         reference: { kind: 'PLAN_VERSION', planVersionId: vip.id },

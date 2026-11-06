@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
-const EXPECTED_GET_PROTECTED_COUNT = 97;
+const EXPECTED_GET_PROTECTED_COUNT = 98;
 // HOS-1703: empty on purpose; add a file only with a linked owner decision
 const PENDING_OWNER_DECISION: readonly string[] = [];
 
@@ -62,6 +62,14 @@ describe('TEST:1693:4 no protected GET route reads ACCOMMODATION_UPDATE_ANY as a
                 /PermissionEnum\.ACCOMMODATION_VIEW_ALL\b/
             );
         }
+        const importerAccess = protectedGets.find(
+            (candidate) => candidate.file === 'accommodation/protected/import-from-url-access.ts'
+        );
+        expect(
+            importerAccess,
+            'importer access must be included in protected GET inventory'
+        ).toBeDefined();
+        expect(importerAccess?.text).not.toMatch(/PermissionEnum\.ACCOMMODATION_UPDATE_ANY\b/);
         expect(protectedGets).toHaveLength(EXPECTED_GET_PROTECTED_COUNT);
     });
 });

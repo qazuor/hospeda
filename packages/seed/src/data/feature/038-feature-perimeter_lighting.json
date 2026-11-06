@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "038-feature-perimeter_lighting",
     "slug": "perimeter_lighting",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Sistema de iluminación completo alrededor de toda la propiedad para seguridad y orientación nocturna",
         "en": "Sistema de iluminación completo alrededor de toda la propiedad para seguridad y orientación nocturna",

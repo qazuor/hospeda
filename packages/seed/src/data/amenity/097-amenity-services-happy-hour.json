@@ -8,7 +8,7 @@
         "pt": "Promociones especiales en bebidas durante el happy hour"
     },
     "applicableVerticals": ["venue"],
-    "type": "SERVICES",
+    "type": "DINING",
     "icon": "BarServiceIcon",
     "isBuiltin": false,
     "isFeatured": false,
