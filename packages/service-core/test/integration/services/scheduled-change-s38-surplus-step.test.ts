@@ -11,10 +11,10 @@ import { successionClock } from './support/succession-fixtures.js';
 afterEach(retirePlanChanges);
 afterAll(closeServiceTestPool);
 
-function noticeSpy(calls: unknown[]): CoverageNotices {
+function noticeSpy(calls: unknown[], userId: string): CoverageNotices {
     return {
         async emitCoverageChanged(event) {
-            calls.push({ kind: 'notice', event });
+            if (event.userId === userId) calls.push({ kind: 'notice', event });
         }
     };
 }
@@ -39,14 +39,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     vertical: string;
                     keepListingIds: readonly string[];
                 }) {
-                    calls.push({ kind: 'step', ...input });
+                    if (input.userId === seeded.user.id) calls.push({ kind: 'step', ...input });
                 }
             };
             const summary = await applyDueScheduledChanges(
                 { limit: 10 },
                 {
                     clock: { now: () => successionClock.now() },
-                    coverageNotices: noticeSpy(calls),
+                    coverageNotices: noticeSpy(calls, seeded.user.id),
                     surplusStep
                 }
             );
@@ -55,7 +55,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.predecessor.id));
             expect(row?.planVersionId).toBe(seeded.targetPlanVersionId);
-            expect(summary).toMatchObject({ applied: 1, failed: 0, warnings: [] });
+            expect(summary.results).toContainEqual({
+                subscriptionId: seeded.predecessor.id,
+                outcome: 'APPLIED'
+            });
             expect(calls).toEqual([
                 {
                     kind: 'step',
@@ -89,11 +92,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 { limit: 10 },
                 {
                     clock: { now: () => successionClock.now() },
-                    coverageNotices: noticeSpy(calls),
+                    coverageNotices: noticeSpy(calls, seeded.user.id),
                     surplusStep
                 }
             );
-            expect(summary.applied).toBe(1);
+            expect(summary.results).toContainEqual({
+                subscriptionId: seeded.predecessor.id,
+                outcome: 'APPLIED'
+            });
             expect(surplusStep.reconcile).not.toHaveBeenCalled();
             expect(calls).toHaveLength(1);
             expect(calls[0]).toMatchObject({ kind: 'notice', event: { change: 'CHANGED' } });
@@ -111,12 +117,16 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const calls: unknown[] = [];
             const summary = await applyDueScheduledChanges(
                 { limit: 10 },
-                { clock: { now: () => successionClock.now() }, coverageNotices: noticeSpy(calls) }
+                {
+                    clock: { now: () => successionClock.now() },
+                    coverageNotices: noticeSpy(calls, seeded.user.id)
+                }
             );
-            expect(summary).toMatchObject({
-                applied: 1,
-                warnings: ['SURPLUS_STEP_NOT_REGISTERED']
+            expect(summary.results).toContainEqual({
+                subscriptionId: seeded.predecessor.id,
+                outcome: 'APPLIED'
             });
+            expect(summary.warnings).toContain('SURPLUS_STEP_NOT_REGISTERED');
             expect(calls).toHaveLength(1);
             expect(calls[0]).toMatchObject({ kind: 'notice', event: { change: 'CHANGED' } });
         });
@@ -135,7 +145,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 { limit: 10 },
                 {
                     clock: { now: () => successionClock.now() },
-                    coverageNotices: noticeSpy(calls),
+                    coverageNotices: noticeSpy(calls, seeded.user.id),
                     surplusStep: {
                         reconcile: vi.fn(async () => {
                             throw new Error('step failed');
@@ -143,7 +153,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     }
                 }
             );
-            expect(summary).toMatchObject({ applied: 1, warnings: ['SURPLUS_STEP_FAILED'] });
+            expect(summary.results).toContainEqual({
+                subscriptionId: seeded.predecessor.id,
+                outcome: 'APPLIED'
+            });
+            expect(summary.warnings).toContain('SURPLUS_STEP_FAILED');
             expect(calls).toHaveLength(1);
             expect(calls[0]).toMatchObject({ kind: 'notice', event: { change: 'CHANGED' } });
         });

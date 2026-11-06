@@ -103,6 +103,11 @@ export async function applyDueScheduledChanges(
     readonly notApplicable: number;
     readonly failed: number;
     readonly warnings: readonly string[];
+    readonly results: readonly {
+        readonly subscriptionId: string;
+        readonly outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED';
+        readonly reason?: string;
+    }[];
 }> {
     const { limit } = inputSchema.parse(input);
     const now = ports.clock.now();
@@ -124,7 +129,7 @@ export async function applyDueScheduledChanges(
         .orderBy(asc(subscriptionScheduledChanges.effectiveAt))
         .limit(limit);
     const waitingRows = await db
-        .select({ subscriptionId: subscriptions.id })
+        .select({ subscriptionId: subscriptions.id, status: subscriptions.status })
         .from(subscriptionScheduledChanges)
         .innerJoin(subscriptions, eq(subscriptions.id, subscriptionScheduledChanges.subscriptionId))
         .where(
@@ -134,18 +139,33 @@ export async function applyDueScheduledChanges(
                 lte(subscriptionScheduledChanges.effectiveAt, now)
             )
         );
+    const results: {
+        subscriptionId: string;
+        outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED';
+        reason?: string;
+    }[] = waitingRows.map((row) => ({
+        subscriptionId: row.subscriptionId,
+        outcome: 'NOT_APPLICABLE',
+        reason: row.status === 'PAUSED' ? 'WAITS_PAUSED' : 'WAITS_SUSPENDED'
+    }));
     const summary = {
         applied: 0,
         waiting: waitingRows.length,
         notApplicable: 0,
         failed: 0,
-        warnings: [] as string[]
+        warnings: [] as string[],
+        results
     };
     for (const row of due) {
         try {
             const result = await db.transaction((tx) =>
                 applyScheduledChangeInTx({ subscriptionId: row.subscriptionId, now, tx })
             );
+            summary.results.push({
+                subscriptionId: row.subscriptionId,
+                outcome: result.outcome,
+                ...(result.outcome === 'NOT_APPLICABLE' ? { reason: result.reason } : {})
+            });
             if (result.outcome === 'NOT_APPLICABLE') {
                 if (result.reason === 'WAITS_PAUSED' || result.reason === 'WAITS_SUSPENDED')
                     summary.waiting++;
@@ -157,6 +177,7 @@ export async function applyDueScheduledChanges(
             summary.warnings.push(...finished.warnings);
         } catch (error) {
             summary.failed++;
+            summary.results.push({ subscriptionId: row.subscriptionId, outcome: 'FAILED' });
             logger.error(
                 { subscriptionId: row.subscriptionId, error },
                 'Scheduled change row failed; continuing batch'

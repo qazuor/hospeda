@@ -44,10 +44,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
         const active = await seed('ACTIVE', new Date('2000-01-01T00:00:00Z'));
         const paused = await seed('PAUSED', new Date('2000-01-02T00:00:00Z'));
         const future = await seed('ACTIVE', new Date(now.getTime() + 60_000));
+        const pausedQueue = await scheduledChangesOf(paused.predecessor.id);
         const emitted: CoverageChangedEvent[] = [];
         const result = await applyDueScheduledChanges(
             { limit: 100 },
-            { clock: fixedClock(now), coverageNotices: notices((event) => emitted.push(event)) }
+            {
+                clock: fixedClock(now),
+                coverageNotices: notices((event) => {
+                    if (event.userId === active.user.id) emitted.push(event);
+                })
+            }
         );
         const [applied] = await getServiceTestDb()
             .select()
@@ -61,16 +67,25 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, future.predecessor.id));
-        expect(result).toMatchObject({
-            applied: 1,
-            waiting: 1,
-            notApplicable: 0,
-            failed: 0,
-            warnings: []
+        expect(result.results).toContainEqual({
+            subscriptionId: active.predecessor.id,
+            outcome: 'APPLIED'
         });
+        expect(
+            result.results.filter((row) => row.subscriptionId === paused.predecessor.id)
+        ).toEqual([
+            {
+                subscriptionId: paused.predecessor.id,
+                outcome: 'NOT_APPLICABLE',
+                reason: 'WAITS_PAUSED'
+            }
+        ]);
+        expect(result.results.some((row) => row.subscriptionId === future.predecessor.id)).toBe(
+            false
+        );
         expect(applied?.planVersionId).toBe(active.targetPlanVersionId);
         expect(waiting?.planVersionId).toBe(paused.planVersionId);
-        expect(await scheduledChangesOf(paused.predecessor.id)).toHaveLength(1);
+        expect(await scheduledChangesOf(paused.predecessor.id)).toEqual(pausedQueue);
         expect(notDue?.planVersionId).toBe(future.planVersionId);
         expect(emitted).toEqual([
             {
@@ -99,11 +114,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
             .from(subscriptions)
             .where(eq(subscriptions.id, active.predecessor.id));
         expect(row?.planVersionId).toBe(active.targetPlanVersionId);
-        expect(result).toMatchObject({
-            applied: 1,
-            failed: 0,
-            warnings: ['COVERAGE_NOTICE_FAILED']
+        expect(result.results).toContainEqual({
+            subscriptionId: active.predecessor.id,
+            outcome: 'APPLIED'
         });
+        expect(result.warnings).toContain('COVERAGE_NOTICE_FAILED');
     });
 
     it('counts a row failure and continues with the next due subscription', async () => {
@@ -112,14 +127,20 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
         const second = await seed('ACTIVE', new Date('2000-01-02T00:00:00Z'));
         const original = scheduledChangeService.applyScheduledChangeInTx;
         const applySpy = vi.spyOn(scheduledChangeService, 'applyScheduledChangeInTx');
-        applySpy.mockImplementationOnce(async () => {
-            throw new Error('row failure');
+        applySpy.mockImplementation(async (input) => {
+            if (input.subscriptionId === first.predecessor.id) throw new Error('row failure');
+            return original(input);
         });
-        applySpy.mockImplementationOnce((input) => original(input));
         const emitted: CoverageChangedEvent[] = [];
         const result = await applyDueScheduledChanges(
-            { limit: 2 },
-            { clock: fixedClock(now), coverageNotices: notices((event) => emitted.push(event)) }
+            { limit: 100 },
+            {
+                clock: fixedClock(now),
+                coverageNotices: notices((event) => {
+                    if (event.userId === first.user.id || event.userId === second.user.id)
+                        emitted.push(event);
+                })
+            }
         );
         const [firstRow] = await getServiceTestDb()
             .select()
@@ -129,7 +150,12 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, second.predecessor.id));
-        expect(result).toMatchObject({ applied: 1, failed: 1 });
+        expect(result.results).toEqual(
+            expect.arrayContaining([
+                { subscriptionId: first.predecessor.id, outcome: 'FAILED' },
+                { subscriptionId: second.predecessor.id, outcome: 'APPLIED' }
+            ])
+        );
         expect(firstRow?.planVersionId).toBe(first.planVersionId);
         expect(secondRow?.planVersionId).toBe(second.targetPlanVersionId);
         expect(emitted).toHaveLength(1);

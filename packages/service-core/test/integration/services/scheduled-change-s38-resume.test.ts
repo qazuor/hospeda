@@ -72,7 +72,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 on S10 return', ()
                     coverageNotices
                 }
             );
-            expect(batch.waiting).toBeGreaterThanOrEqual(1);
+            expect(batch.results).toContainEqual({
+                subscriptionId: principal.subscriptionId,
+                outcome: 'NOT_APPLICABLE',
+                reason: 'WAITS_PAUSED'
+            });
             const [paused] = await getServiceTestDb()
                 .select({ status: subscriptions.status })
                 .from(subscriptions)

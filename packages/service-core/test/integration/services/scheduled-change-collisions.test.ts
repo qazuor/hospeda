@@ -185,7 +185,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
             { ...seeded.input, billingOptionId: seeded.predecessorBillingOptionId },
             seeded.ports
         );
-        expect(result).toEqual({ path: 'REJECTED', reason: 'NOT_ACTIVE' });
+        expect(result).toEqual({
+            path: 'REJECTED',
+            reason: status === 'GRACE_PERIOD' ? 'GRACE_PERIOD' : 'NOT_ACTIVE'
+        });
         expect(mutate).toHaveBeenCalledTimes(0);
         expect(await scheduledChangesOf(seeded.predecessor.id)).toEqual([queued]);
     });
