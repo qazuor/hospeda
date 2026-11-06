@@ -19,7 +19,7 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { type BillingCycle, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { getServiceTestDb, getServiceTestPool, seedAccommodation } from '../helpers.js';
 import { seedCoveragePlanVersion } from './coverage-fixtures.js';
@@ -133,8 +133,25 @@ export async function seedPlanChange(input: {
     readonly status?: string;
     readonly providerState?: 'active' | 'cancelled';
     readonly rankRelation?: 'HIGHER' | 'LOWER';
+    readonly nextChargeAt?: Date;
+    readonly sourceCycle?: BillingCycle;
+    readonly targetCycle?: BillingCycle;
+    readonly paymentMethod?: 'CARD' | 'MANUAL';
 }) {
     const choice = await seedSuccessionChoice();
+    let predecessorBillingOptionId = choice.predecessorBillingOptionId;
+    if (input.sourceCycle && input.sourceCycle !== 'monthly') {
+        const [option] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: choice.planVersionId,
+                cycle: input.sourceCycle,
+                amount: 250000,
+                currency: 'ARS'
+            })
+            .returning({ id: billingOptions.id });
+        predecessorBillingOptionId = option?.id ?? '';
+    }
     let targetPlanVersionId = choice.targetPlanVersionId;
     let targetBillingOptionId = choice.targetBillingOptionId;
     if (input.rankRelation) {
@@ -160,15 +177,31 @@ export async function seedPlanChange(input: {
         );
         targetBillingOptionId = option.rows[0]?.id ?? '';
     }
+    if (
+        input.targetCycle &&
+        (input.rankRelation ? input.targetCycle !== 'monthly' : input.targetCycle !== 'quarterly')
+    ) {
+        const [option] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: targetPlanVersionId,
+                cycle: input.targetCycle,
+                amount: 500000,
+                currency: 'ARS'
+            })
+            .returning({ id: billingOptions.id });
+        targetBillingOptionId = option?.id ?? '';
+    }
     const seeded = await seedPredecessor({
         userId: choice.user.id,
         planVersionId: choice.planVersionId,
-        billingOptionId: choice.predecessorBillingOptionId,
+        billingOptionId: predecessorBillingOptionId,
         status: input.status ?? 'ACTIVE',
+        paymentMethod: input.paymentMethod,
         providerState: input.providerState ?? 'active',
         honestAboutM1: true
     });
-    const nextChargeAt = new Date('2026-11-11T13:00:00.000Z');
+    const nextChargeAt = input.nextChargeAt ?? new Date('2026-11-11T13:00:00.000Z');
     await getServiceTestDb()
         .update(subscriptions)
         .set({ nextChargeAt })
@@ -195,6 +228,7 @@ export async function seedPlanChange(input: {
     owned.push({ userId: choice.user.id, predecessorId: seeded.predecessor.id, promoCodeIds: [] });
     return {
         ...choice,
+        predecessorBillingOptionId,
         targetPlanVersionId,
         targetBillingOptionId,
         ...seeded,

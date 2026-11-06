@@ -14,10 +14,12 @@ import {
     type DowngradeSurplusPreview,
     previewDowngradeSurplus
 } from './downgrade-surplus-preview.js';
+import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
     mutatePlanChangeAmount,
     queueDowngrade,
     readPlanChangeOrigin,
+    readPlanChangeOriginCycle,
     readPlanChangeTarget,
     readScheduledPlanChange,
     readSuccessorCredit,
@@ -26,6 +28,7 @@ import {
 } from './request-plan-change-support.js';
 import { type StartSuccessionPorts, startSuccession } from './start-succession.service.js';
 import { scheduleSuccessorFirstChargeWithCredit } from './successor-credit.js';
+import { resolveSuccessorWindow } from './successor-window.js';
 
 const inputSchema = z.strictObject({
     actor: z.strictObject({ id: z.uuid() }),
@@ -56,6 +59,12 @@ export type RequestPlanChangeResult =
           readonly surplus: DowngradeSurplusPreview;
       }
     | { readonly path: 'REGRET'; readonly amountMinor: number }
+    /** AC:B8b:18, PLAZO:15: the predecessor's cycle leaves too little checkout time. */
+    | {
+          readonly path: 'REJECTED';
+          readonly reason: 'CHANGE_WINDOW_TOO_SHORT';
+          readonly availableFrom: Date;
+      }
     | {
           readonly path: 'REJECTED';
           readonly reason:
@@ -133,7 +142,14 @@ export async function requestPlanChange(
                   })
               ).direction;
 
-    if (direction === 'DOWN') {
+    /** DEC-SUB-006 and EX-4 forbid mutating a live cycle; EX-20 makes a cross-cycle DOWN a succession. */
+    const crossesCycle =
+        direction === 'DOWN' &&
+        (await readPlanChangeOriginCycle({
+            billingOptionId: origin.subscription.billingOptionId
+        })) !== BillingCycleSchema.parse(target.cycle);
+
+    if (direction === 'DOWN' && !crossesCycle) {
         if (origin.subscription.status !== 'ACTIVE')
             return { path: 'REJECTED', reason: 'NOT_ACTIVE' };
         const existingQueue = queued;
@@ -259,6 +275,25 @@ export async function requestPlanChange(
     }
 
     const targetCycle = BillingCycleSchema.parse(target.cycle);
+    const window = await getDb().transaction(async (tx) => {
+        const deadlines = await readCycleDeadlines({ tx, subscriptionId: value.subscriptionId });
+        return resolveSuccessorWindow({
+            now: ports.clock.now(),
+            cardHours: deadlines.values['10'].cardHours,
+            minimumRemainingHours: deadlines.values['15'].hoursRemaining,
+            predecessor: {
+                status: origin.subscription.status,
+                paymentMethod: origin.subscription.paymentMethod,
+                nextChargeAt: origin.subscription.nextChargeAt
+            }
+        });
+    });
+    if (window.kind === 'NOT_OFFERED')
+        return {
+            path: 'REJECTED',
+            reason: 'CHANGE_WINDOW_TOO_SHORT',
+            availableFrom: window.availableFrom
+        };
     let creditDays = 0;
     const successor = await startSuccession(
         {

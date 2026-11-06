@@ -53,6 +53,26 @@ export async function readPlanChangeOrigin(input: {
     return row;
 }
 
+/** Reads the persisted source cycle for DEC-SUB-006 plan-change routing. */
+export async function readPlanChangeOriginCycle(input: {
+    readonly billingOptionId: string;
+}): Promise<BillingCycle> {
+    const [row] = await getDb()
+        .select({ cycle: billingOptions.cycle })
+        .from(billingOptions)
+        .where(eq(billingOptions.id, input.billingOptionId))
+        .limit(1);
+    const cycle = BillingCycleSchema.safeParse(row?.cycle);
+    if (!cycle.success)
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unknown predecessor cycle',
+            undefined,
+            'PLAN_CHANGE_INVALID_CYCLE'
+        );
+    return cycle.data;
+}
+
 /** Reads the destination's persisted list price and plan identity. */
 export async function readPlanChangeTarget(input: { readonly billingOptionId: string }) {
     const [row] = await getDb()
