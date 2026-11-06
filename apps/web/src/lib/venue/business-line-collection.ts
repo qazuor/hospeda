@@ -15,6 +15,7 @@
 import {
     type BusinessLineUrlSlug,
     businessLineToUrlSlug,
+    listPublicBusinessLines,
     type PublicBusinessLine,
     urlSlugToBusinessLine
 } from '@repo/schemas';
@@ -27,6 +28,23 @@ export interface VenueBusinessLineCollection {
     readonly businessLine: PublicBusinessLine;
     /** Canonical Spanish URL slug for the collection. */
     readonly urlSlug: BusinessLineUrlSlug;
+}
+
+/**
+ * Lists every public venue business-line collection, in catalog order.
+ *
+ * The catalog is read through `listPublicBusinessLines`, never imported here:
+ * G-FAC-03 keeps the catalog value behind a closed allowlist, and the sitemap
+ * needs exactly the same set the page resolves against.
+ *
+ * @returns Every public venue collection with its internal value and canonical
+ *   slug.
+ */
+export function listVenueBusinessLineCollections(): readonly VenueBusinessLineCollection[] {
+    return listPublicBusinessLines({ vertical: 'venue' }).map(({ value }) => ({
+        businessLine: value,
+        urlSlug: businessLineToUrlSlug({ value }).urlSlug
+    }));
 }
 
 /**
@@ -76,4 +94,45 @@ export function buildVenueBusinessLineCollectionPath({
 }): string {
     const { urlSlug } = businessLineToUrlSlug({ value: businessLine });
     return buildUrl({ locale, path: `comer-y-salir/rubro/${urlSlug}` });
+}
+
+/**
+ * Builds the locale-agnostic sitemap path of a business-line collection.
+ *
+ * The sitemap emits one entry per locale by prefixing this path itself, so the
+ * returned value has no locale. It always carries a leading and trailing slash.
+ *
+ * @param input - The path to build.
+ * @param input.businessLine - Internal catalog value of the collection.
+ * @returns The path, e.g. `/comer-y-salir/rubro/<slug>/`.
+ */
+export function buildVenueBusinessLineCollectionSitemapPath({
+    businessLine
+}: {
+    readonly businessLine: PublicBusinessLine;
+}): string {
+    const { urlSlug } = businessLineToUrlSlug({ value: businessLine });
+    return `/comer-y-salir/rubro/${urlSlug}/`;
+}
+
+/**
+ * Decides whether a collection page has nothing to index.
+ *
+ * A failed API request is NOT an empty collection: a transient 5xx must not
+ * drop the page out of the index (`listPublicBusinessLines` / the sitemap has
+ * the same rule). Only a successful request that reports zero results is empty.
+ *
+ * @param input - The fetch outcome.
+ * @param input.fetchOk - Whether the collection fetch succeeded.
+ * @param input.total - Total results reported by that fetch.
+ * @returns `true` only when the fetch succeeded and the total is zero.
+ */
+export function isVenueCollectionEmpty({
+    fetchOk,
+    total
+}: {
+    readonly fetchOk: boolean;
+    readonly total: number;
+}): boolean {
+    return fetchOk && total === 0;
 }
