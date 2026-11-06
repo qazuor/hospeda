@@ -1,6 +1,10 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
+    previewCyclePrice,
+    setCyclePrice
+} from '../../../../src/services/billing/pricing/cycle-price.service.js';
+import {
     assertCyclePriceActionPermitted,
     CYCLE_PRICE_REJECTIONS,
     cyclePriceRejection,
@@ -8,8 +12,17 @@ import {
 } from '../../../../src/services/billing/pricing/cycle-price-authorization.js';
 import type { Actor } from '../../../../src/types/index.js';
 
-const getDb = vi.fn();
-vi.mock('@repo/db', () => ({ getDb }));
+const { getDb } = vi.hoisted(() => ({ getDb: vi.fn() }));
+vi.mock('@repo/db', () => ({
+    and: vi.fn(),
+    billingOptions: {},
+    domainEventModel: { insert: vi.fn() },
+    eq: vi.fn(),
+    getDb,
+    planVersions: {},
+    sql: vi.fn(),
+    subscriptions: {}
+}));
 
 const actor = (permissions: PermissionEnum[], system = false): Actor => ({
     id: crypto.randomUUID(),
@@ -18,28 +31,40 @@ const actor = (permissions: PermissionEnum[], system = false): Actor => ({
     _isSystemActor: system
 });
 
+async function expectRejectedBeforeDb(candidate?: Actor): Promise<void> {
+    await expect(previewCyclePrice({ actor: candidate, input: {} })).rejects.toMatchObject({
+        reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN'
+    });
+    await expect(
+        setCyclePrice({ actor: candidate, input: {}, correlationId: crypto.randomUUID() })
+    ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
+    expect(getDb).not.toHaveBeenCalled();
+}
+
 describe('ACC_19 authorization', () => {
-    it('forbids an admin without the action permission before database access', () => {
-        expect(() =>
-            assertCyclePriceActionPermitted({ actor: actor([PermissionEnum.ACCESS_PANEL_ADMIN]) })
-        ).toThrowError(expect.objectContaining({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' }));
-        expect(getDb).not.toHaveBeenCalled();
+    it('forbids an admin without the action permission before database access', async () => {
+        const candidate = actor([PermissionEnum.ACCESS_PANEL_ADMIN]);
+        expect(() => assertCyclePriceActionPermitted({ actor: candidate })).toThrowError(
+            expect.objectContaining({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' })
+        );
+        await expectRejectedBeforeDb(candidate);
     });
 
-    it('forbids a system actor even with the permission', () => {
+    it('forbids a system actor even with the permission', async () => {
+        const candidate = actor([PermissionEnum.BILLING_SET_CYCLE_PRICE], true);
         expect(() =>
             assertCyclePriceActionPermitted({
-                actor: actor([PermissionEnum.BILLING_SET_CYCLE_PRICE], true)
+                actor: candidate
             })
         ).toThrowError(expect.objectContaining({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' }));
-        expect(getDb).not.toHaveBeenCalled();
+        await expectRejectedBeforeDb(candidate);
     });
 
-    it('forbids an absent actor', () => {
+    it('forbids an absent actor', async () => {
         expect(() => assertCyclePriceActionPermitted({ actor: undefined })).toThrowError(
             expect.objectContaining({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' })
         );
-        expect(getDb).not.toHaveBeenCalled();
+        await expectRejectedBeforeDb(undefined);
     });
 
     it('allows the dedicated permission', () => {

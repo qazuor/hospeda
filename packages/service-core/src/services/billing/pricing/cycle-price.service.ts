@@ -1,6 +1,6 @@
 /**
  * Administrative action 19 (ACC:19): set one cycle price on a plan version.
- * AC:B2:4, AC:B2:5, AC:B2:10 and DEC-MP-002 point 2 govern this act.
+ * AC:B2:4, AC:B2:5, AC:B2:10 and DEC-MP-002 📌2 govern this act.
  * Use before cut moment 5 is an operational rule, not a code gate.
  */
 import { and, billingOptions, domainEventModel, eq, getDb, planVersions } from '@repo/db';
