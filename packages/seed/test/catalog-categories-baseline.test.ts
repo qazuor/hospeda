@@ -45,11 +45,30 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
         )
     );
 
-    it('every feature fixture declares a FeatureCategoryEnum category', () => {
+    it('the data-migration backfills exactly the 106 HOS-2058 slugs, each once', () => {
+        expect(migrationCategoryBySlug.size).toBe(106);
+        const total = Object.values(FEATURE_CATEGORY_BACKFILL).reduce(
+            (sum, slugs) => sum + slugs.length,
+            0
+        );
+        expect(total).toBe(106);
+    });
+
+    it('every backfilled slug has a fixture that declares its category', () => {
+        // Scoped to the backfill on purpose: features added by other in-flight
+        // work (e.g. dj_sets/karaoke from HOS-1787) may land without a category
+        // while the column is nullable, and must not break this test.
+        const bySlug = new Map(fixtures.map((fixture) => [fixture.slug, fixture]));
+        for (const slug of migrationCategoryBySlug.keys()) {
+            expect(bySlug.get(slug)?.category, slug).toBeDefined();
+        }
+    });
+
+    it('every fixture that declares a category uses a FeatureCategoryEnum value', () => {
         const valid = new Set<string>(Object.values(FeatureCategoryEnum));
-        expect(fixtures.length).toBeGreaterThanOrEqual(106);
         for (const fixture of fixtures) {
-            expect(valid.has(fixture.category ?? ''), fixture.slug).toBe(true);
+            if (fixture.category === undefined) continue;
+            expect(valid.has(fixture.category), fixture.slug).toBe(true);
         }
     });
 
