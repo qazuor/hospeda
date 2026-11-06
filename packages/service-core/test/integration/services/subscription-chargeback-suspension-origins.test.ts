@@ -10,6 +10,7 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { resolveCourtesySources } from '../../../src/services/billing/coverage/courtesy-sources.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -85,7 +86,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ).toMatchObject({ outcome: 'REISSUED' });
             const beforeSources = await resolveCourtesySources({
                 userId: fixture.ids.userId,
-                vertical: 'accommodation',
+                vertical: VerticalEnum.ACCOMMODATION,
                 ports: { clock: fixture.clock }
             });
             expect(beforeSources.sources).toHaveLength(1);
@@ -131,7 +132,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(
                 await resolveCourtesySources({
                     userId: fixture.ids.userId,
-                    vertical: 'accommodation',
+                    vertical: VerticalEnum.ACCOMMODATION,
                     ports: { clock: fixture.clock }
                 })
             ).toEqual({ sources: [] });

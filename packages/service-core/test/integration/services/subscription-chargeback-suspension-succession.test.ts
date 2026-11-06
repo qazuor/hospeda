@@ -112,7 +112,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .from(subscriptions)
                 .where(eq(subscriptions.id, started.subscriptionId));
             expect(result.suspension?.outcome).toBe('SUSPENDED');
-            expect(result.suspension?.successorCut?.outcome).toBe('CUT');
+            if (result.suspension?.outcome !== 'SUSPENDED')
+                throw new Error('Chargeback did not suspend the predecessor');
+            expect(result.suspension.successorCut?.outcome).toBe('CUT');
             expect(pred).toMatchObject({
                 status: 'SUSPENDED',
                 succeededById: started.subscriptionId
@@ -193,7 +195,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .select({ status: subscriptions.status })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, started.subscriptionId));
-            expect(result.suspension?.successorCut).toMatchObject({
+            if (result.suspension?.outcome !== 'SUSPENDED')
+                throw new Error('Chargeback did not suspend the predecessor');
+            expect(result.suspension.successorCut).toMatchObject({
                 outcome: 'CUT',
                 from: 'ACTIVE',
                 to: 'CANCELLED'
