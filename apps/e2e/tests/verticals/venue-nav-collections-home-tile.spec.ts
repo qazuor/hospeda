@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { businessLineToUrlSlug, listPublicBusinessLines } from '@repo/schemas';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 
@@ -7,6 +8,8 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
     test('links the home tile to its category landing and exposes every collection on desktop and mobile', async ({
         page
     }) => {
+        // The consent banner's backdrop intercepts the mobile hamburger click.
+        await seedCookieConsent(page);
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.goto(`${WEB_URL}/es/`);
         const tileSection = page
