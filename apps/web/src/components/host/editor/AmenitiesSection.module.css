@@ -139,11 +139,19 @@
     color: var(--core-foreground);
 }
 
-/* HOS-2058: a checked amenity carries a collapsed scope/availability disclosure. */
+/*
+ * HOS-2058: a checked amenity carries a collapsed scope/availability disclosure.
+ * Each item spans two rows of the parent grid and adopts them as a subgrid, so
+ * every label in a visual row shares one track (a two-line name stretches its
+ * neighbours' cards instead of pushing them out of line) and every "Detalles"
+ * disclosure starts at the same height. Opening a disclosure only grows the
+ * second track, never the cards above it.
+ */
 .item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 0.25rem;
     min-width: 0;
 }
 
