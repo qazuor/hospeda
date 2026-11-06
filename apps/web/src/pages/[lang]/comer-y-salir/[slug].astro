@@ -47,6 +47,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildRestaurantHasMenu } from '@/lib/venue/menu-jsonld';
+import { resolveDimensionAverages } from '@/lib/venue/review-dimensions-view';
 import {
     orderVenueDetailSections,
     type VenueDetailBodySectionId
@@ -85,6 +86,7 @@ const raw = result.data as unknown as Record<string, unknown>;
 // public payload carries no publication field to re-check.
 
 const venue = toVenueDetailPageProps({ item: raw, locale });
+const dimensionRatings = resolveDimensionAverages({ vertical: 'venue', rating: venue.rating });
 
 // --- Edge cacheability (HOS-369 W2-4) ---
 // After the guard above — the 404/410 for missing, soft-deleted or
@@ -432,6 +434,7 @@ const breadcrumbItems = [
             reviews={reviews}
             totalReviews={totalReviews}
             locale={locale}
+            dimensionRatings={dimensionRatings}
         />
 
         <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
@@ -440,6 +443,7 @@ const breadcrumbItems = [
                 client:visible
                 venueId={venue.id}
                 venueName={venue.name}
+                sectionStates={venue.reviewSectionStates}
                 locale={locale}
                 apiUrl={getApiUrl()}
                 signInHref={reviewSignInHref}

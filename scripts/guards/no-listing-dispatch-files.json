@@ -94,6 +94,22 @@
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
         },
         {
+            "file": "apps/web/src/components/venue/VenueReviewForm.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueReviewDimensionFields.client.tsx",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/venue/review-dimensions-view.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/components/venue/VenueReviewsPreview.astro",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
             "file": "apps/admin/src/routes/_authed/venues/$id.tsx",
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
         },

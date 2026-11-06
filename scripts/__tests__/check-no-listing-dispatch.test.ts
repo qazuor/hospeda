@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -28,6 +28,20 @@ const SECTIONS_SOURCE_TEXT = `export const LISTING_SECTIONS = {
     experience: [{ id: 'basicInfo' }, { id: 'meetingPoint' }],
     accommodation: [{ id: 'location' }]
 };\n`;
+
+const REVIEW_FORM_FILE = 'apps/web/src/components/venue/VenueReviewForm.client.tsx';
+const GUARD_LIST_PATH = path.resolve(
+    import.meta.dirname,
+    '../guards/no-listing-dispatch-files.json'
+);
+
+/** The committed closed-list rows for the venue review form. */
+function listedReviewFormRows(): readonly Row[] {
+    const list = JSON.parse(readFileSync(GUARD_LIST_PATH, 'utf8')) as {
+        readonly files: readonly Row[];
+    };
+    return list.files.filter((row) => row.file === REVIEW_FORM_FILE);
+}
 
 const REVIEW_SOURCE_TEXT = `const REVIEW_RULES_CONTENT = {
     venue: { dimensions: [{ id: 'food' }, { id: 'value' }] },
@@ -122,6 +136,26 @@ describe('TEST:5.8:1 GUARD:G-FAC-05 no dispatch by vertical or section', () => {
         expect(result.exitCode).not.toBe(0);
         expect(result.output).toContain(`${REGISTRY_FILE}:2`);
         expect(result.output).toContain('vertical literal "venue"');
+    });
+
+    it('TEST:6.6:7 detects a dimension comparison inside the venue review form', () => {
+        const rows = listedReviewFormRows();
+        // Non-vacuity: the committed closed list must still route the form
+        // through G-FAC-05. Removing the row turns this green guard red.
+        expect(rows).toHaveLength(1);
+
+        const { root, filesPath } = fixture({
+            rows,
+            files: {
+                [REVIEW_FORM_FILE]:
+                    "declare const dim: string; declare const hasMenu: boolean;\nexport const showFood = dim === 'food' && hasMenu;\n"
+            }
+        });
+        const result = run({ root, filesPath });
+
+        expect(result.exitCode).not.toBe(0);
+        expect(result.output).toContain(`${REVIEW_FORM_FILE}:2`);
+        expect(result.output).toContain('review dimension literal "food"');
     });
 
     it('rejects the section-id and vertical comparison of the listing editor', () => {

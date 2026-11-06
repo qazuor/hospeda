@@ -13,6 +13,10 @@
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
 import type { VenueNightInfoData } from '../lib/venue/night-info';
+import type {
+    PublicDimensionRatings,
+    PublicReviewSectionStates
+} from '../lib/venue/review-dimensions-view';
 
 // Re-export UI types from split file for backward compatibility
 export type {
@@ -1248,6 +1252,19 @@ export interface VenueDetailData extends VenueCardData {
      * component renders nothing without asking about business lines.
      */
     readonly nightInfo?: VenueNightInfoData;
+    /**
+     * Public per-dimension review aggregates (HOS-1866 / 6.6). A missing key
+     * means zero votes; the API already removed every dimension bound to an
+     * `absent` section (DEC-FAC-072), so the page renders what arrives.
+     */
+    readonly rating?: PublicDimensionRatings;
+    /**
+     * Public state of the sections a review dimension is bound to (HOS-1866 /
+     * 6.6). Only `absent` and `available` — `locked` is published as
+     * `available`. Absent when the API did not derive it (an older cached
+     * payload), which the form reads as "offer every dimension".
+     */
+    readonly reviewSectionStates?: PublicReviewSectionStates;
     /** Social network links provided by the owner. */
     readonly socialNetworks: VenueSocialNetworks | null;
     /** SEO metadata fields. */
