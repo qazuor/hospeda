@@ -1,9 +1,9 @@
 /**
- * HOS-2058 -- the seed baseline and data-migration 0143 agree.
+ * HOS-2058 -- the seed baseline and data-migration 0146 agree.
  *
  * Dual-write (HOS-25): a fresh DB gets `features.category` and the moved
  * amenity `type` from the JSON fixtures; an already-seeded DB gets them from
- * 0143. This reads both off disk and fails if they drift, and checks the seed
+ * 0146. This reads both off disk and fails if they drift, and checks the seed
  * JSON schemas still validate the enum values (and keep `category` optional so
  * fixtures added by other in-flight work keep validating).
  */
@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AMENITY_TYPE_MOVES,
     FEATURE_CATEGORY_BACKFILL
-} from '../src/data-migrations/0143-hos-2058-feature-category-amenity-type.js';
+} from '../src/data-migrations/0146-hos-2058-feature-category-amenity-type.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '../src');

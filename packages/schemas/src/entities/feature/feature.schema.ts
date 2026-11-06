@@ -36,7 +36,7 @@ export const FeatureSchema = z.object({
     /**
      * Feature category (HOS-2058). Groups the feature in editors and public
      * grids. Nullable in release N of the expand/contract: the column is added
-     * nullable and backfilled by data-migration 0143; release N+1 makes it
+     * nullable and backfilled by data-migration 0146; release N+1 makes it
      * NOT NULL and this field required.
      */
     category: FeatureCategoryEnumSchema.nullish(),

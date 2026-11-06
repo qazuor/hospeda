@@ -16,7 +16,7 @@ export const features = pgTable('features', {
     applicableVerticals: text('applicable_verticals').array().notNull().default([]),
     /**
      * HOS-2058: catalog category. NULLABLE in release N (expand/contract):
-     * data-migration 0143 backfills every seeded row by slug, and release N+1
+     * data-migration 0146 backfills every seeded row by slug, and release N+1
      * makes it NOT NULL.
      */
     category: FeatureCategoryPgEnum('category'),

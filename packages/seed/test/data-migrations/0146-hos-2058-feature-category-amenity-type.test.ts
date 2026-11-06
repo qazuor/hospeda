@@ -1,5 +1,5 @@
 /**
- * HOS-2058 -- data-migration 0143: backfill `features.category` and retype the
+ * HOS-2058 -- data-migration 0146: backfill `features.category` and retype the
  * moved amenities, by slug. Unit test with a mocked Drizzle client: it pins the
  * statements the migration issues (idempotent WHERE clauses) and its counts.
  */
@@ -10,7 +10,7 @@ import {
     FEATURE_CATEGORY_BACKFILL,
     meta,
     up
-} from '../../src/data-migrations/0143-hos-2058-feature-category-amenity-type.js';
+} from '../../src/data-migrations/0146-hos-2058-feature-category-amenity-type.js';
 
 interface RecordedUpdate {
     readonly table: unknown;
@@ -38,10 +38,10 @@ const createCtx = ({ rowsPerCall }: { readonly rowsPerCall: number }) => {
     return { ctx, updates, update };
 };
 
-describe('0143-hos-2058-feature-category-amenity-type', () => {
+describe('0146-hos-2058-feature-category-amenity-type', () => {
     it('declares a non-destructive required migration that needs features.category', () => {
         expect(meta).toEqual({
-            name: '0143-hos-2058-feature-category-amenity-type',
+            name: '0146-hos-2058-feature-category-amenity-type',
             group: 'required',
             destructive: false,
             requiresColumns: [{ table: 'features', column: 'category' }]

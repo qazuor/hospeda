@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0143-hos-2058-feature-category-amenity-type
+ * Data migration: 0146-hos-2058-feature-category-amenity-type
  *
  * Dual-write counterpart (HOS-25) for HOS-2058, stage 2 of the HOS-1016
  * catalog redesign. Two catalog changes reach already-seeded environments:
@@ -50,7 +50,7 @@ import type { AmenitiesTypeEnum, FeatureCategoryEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0143-hos-2058-feature-category-amenity-type',
+    name: '0146-hos-2058-feature-category-amenity-type',
     group: 'required',
     destructive: false,
     // HOS-433: the backfill writes `features.category`. If the column is not
