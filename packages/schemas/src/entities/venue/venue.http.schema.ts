@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -20,6 +21,13 @@ export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
     destinationId: z.string().uuid().optional(),
     /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
+    /**
+     * Filter by one business line (HOS-1787 leaf 6.8). Singular, like `type`:
+     * one line per request. The value is the internal catalog value in English
+     * (`food`, `nightlife`); the Spanish slug exists only in the web collection
+     * URL and never reaches the API.
+     */
+    businessLine: z.enum(VENUE_BUSINESS_LINE_VALUES).optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
@@ -193,6 +201,7 @@ export const httpToDomainVenueSearch = (httpParams: VenueSearchHttp): VenueSearc
     q: httpParams.q,
     // Entity-specific filters
     type: httpParams.type,
+    businessLine: httpParams.businessLine,
     isFeatured: httpParams.isFeatured,
     priceRange: httpParams.priceRange,
     destinationId: httpParams.destinationId,

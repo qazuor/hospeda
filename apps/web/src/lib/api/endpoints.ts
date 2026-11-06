@@ -22,6 +22,7 @@ import type {
     PostListItem,
     PostPublic,
     PostSummary,
+    PublicBusinessLine,
     QrCodeResolution,
     VenuePublic
 } from '@repo/schemas';
@@ -1589,6 +1590,12 @@ export const venueApi = {
         readonly q?: string;
         readonly destinationId?: string;
         readonly type?: string;
+        /**
+         * Filter by one business line. The value is the internal catalog value
+         * in English (`food`, `nightlife`); the Spanish slug lives only in the
+         * web collection URL and is never sent to the API.
+         */
+        readonly businessLine?: PublicBusinessLine;
         readonly priceRange?: string;
         readonly isFeatured?: boolean;
         readonly minRating?: number;

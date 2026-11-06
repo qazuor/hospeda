@@ -182,4 +182,16 @@ describe('comer-y-salir/index.astro', () => {
             expect(src).not.toContain('prerender = true');
         });
     });
+
+    describe('business-line collections (HOS-1868)', () => {
+        it('keeps the general listing unscoped by business line', () => {
+            // The collection pages filter by line; the general listing must keep
+            // showing every venue, so `businessLine` never reaches this call.
+            expect(src).not.toMatch(/venueApi\.list\(\{[\s\S]*?\bbusinessLine\b/);
+        });
+
+        it('does not import the business-line collection helpers', () => {
+            expect(src).not.toContain('business-line-collection');
+        });
+    });
 });

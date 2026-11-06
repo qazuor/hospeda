@@ -447,6 +447,22 @@ export function createDbMock() {
             }
         ),
         /**
+         * Venue business-line clause builder (HOS-1787 leaves 7.1 and 6.8).
+         *
+         * `VenueService` calls it from both the admin search and the public
+         * `_executeSearch` / `_executeCount`. It must be named here for the same
+         * reason as the catalog builders above: an unnamed export resolves to a
+         * hard vitest error the moment the production line runs, which surfaces
+         * as a 500 instead of a 400/200 assertion.
+         *
+         * Shape-only stub: `undefined` when no line is requested, mirroring the
+         * real builder's no-filter behaviour.
+         */
+        buildVenueBusinessLineCondition: vi.fn(
+            ({ businessLine }: { readonly businessLine?: string }) =>
+                businessLine === undefined ? undefined : { type: 'venueBusinessLine', businessLine }
+        ),
+        /**
          * Simulates withTransaction by executing the callback with a stub tx client.
          * The stub tx client supports the same chained query builder methods as getDb().
          * This allows withServiceTransaction (which calls withTransaction internally)

@@ -454,6 +454,7 @@ export class VenueService extends BaseListingService<
             sortOrder: _sortOrder,
             amenities,
             features,
+            businessLine,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -462,6 +463,12 @@ export class VenueService extends BaseListingService<
         } = params;
 
         const catalogConditions = buildVenueCatalogConditions({ amenities, features });
+        // HOS-1787 leaf 6.8: `business_lines` is `text[]`, so it cannot ride the
+        // scalar spread (the generic builder would emit `eq(text[], 'food')`).
+        // It is composed as an additional `@>` condition, in the search and the
+        // count alike, so the pagination total matches the filtered page.
+        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
+        if (businessLineCondition) catalogConditions.push(businessLineCondition);
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
@@ -517,6 +524,7 @@ export class VenueService extends BaseListingService<
             sortOrder: _sortOrder,
             amenities,
             features,
+            businessLine,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -529,6 +537,10 @@ export class VenueService extends BaseListingService<
         // than the one being paginated, so page 2 of "sin TACC" would exist and be
         // empty.
         const catalogConditions = buildVenueCatalogConditions({ amenities, features });
+        // Mirrors the search: the same `businessLine` condition, so a collection
+        // page N that exists always has items (HOS-1787 leaf 6.8).
+        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
+        if (businessLineCondition) catalogConditions.push(businessLineCondition);
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
