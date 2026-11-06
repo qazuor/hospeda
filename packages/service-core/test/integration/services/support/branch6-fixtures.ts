@@ -1,7 +1,9 @@
 import { coverageLosses, eq, inArray, reconciliationMarkPayments } from '@repo/db';
+import { expect } from 'vitest';
 import { recordChargeFact } from '../../../../src/services/billing/payment/record-charge-fact.service.js';
 import { graceExpiredOccurrenceId } from '../../../../src/services/billing/reconciliation/sweep/grace-expiry-check.js';
 import { cancelDirectSubscription } from '../../../../src/services/billing/subscription/cancel-direct-subscription.service.js';
+import { startSuccession } from '../../../../src/services/billing/subscription/start-succession.service.js';
 import { createSuccessionCloser } from '../../../../src/services/billing/subscription/succession-closer.service.js';
 import { suspendForArrears } from '../../../../src/services/billing/subscription/suspend-for-arrears.service.js';
 import { getServiceTestDb } from '../helpers.js';
@@ -12,9 +14,9 @@ import {
     predecessorInGrace,
     retireSuccessionCases,
     type SeededSuccession,
-    seedLiveSuccessor,
     subscriptionRow
 } from './succession-retention-fixtures.js';
+import { noTouristVip } from './tourist-vip.js';
 
 const seeded: SeededSuccession[] = [];
 
@@ -36,6 +38,7 @@ export async function retainingSuspendedBranch6Predecessor() {
     const subscriptionId = fixture.started.subscriptionId;
     const inGrace = await subscriptionRow(subscriptionId);
     if (!inGrace.graceEndsAt) throw new Error('Grace clock missing');
+    if (!inGrace.billingOptionId) throw new Error('Predecessor billing option missing');
     fixture.clock.advance({
         ms: inGrace.graceEndsAt.getTime() + 3_600_000 - fixture.clock.now().getTime()
     });
@@ -56,8 +59,33 @@ export async function retainingSuspendedBranch6Predecessor() {
         }
     );
     if (suspended.outcome !== 'SUSPENDED') throw new Error(`S6 returned ${suspended.outcome}`);
-    const successor = await seedLiveSuccessor(fixture, subscriptionId);
-    seeded.push({ subscriptionIds: [subscriptionId, successor.id], userId: fixture.user.id });
+    const successor = await startSuccession(
+        {
+            userId: fixture.user.id,
+            predecessorSubscriptionId: subscriptionId,
+            billingOptionId: inGrace.billingOptionId,
+            returnUrl: 'https://example.test/return'
+        },
+        {
+            provider: fixture.provider,
+            clock: fixture.clock,
+            planPolicy: fixture.planPolicy,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip
+        }
+    );
+    seeded.push({
+        subscriptionIds: [subscriptionId, successor.subscriptionId],
+        userId: fixture.user.id
+    });
+    expect(successor).toMatchObject({
+        predecessorId: subscriptionId,
+        basis: 'CARD_SUSPENDED_CONFIRMED_CANCELLED'
+    });
+    expect(await subscriptionRow(successor.subscriptionId)).toMatchObject({
+        status: 'PENDING_AUTHORIZATION',
+        succeedsId: subscriptionId
+    });
     fixture.advanceToAttempt(3);
     const retained = await recordChargeFact({ chargeId: fixture.chargeId }, fixture.ports);
     if (retained.outcome !== 'CREDITED' || retained.reactivation?.outcome !== 'RETAINED_FOR_S19')
