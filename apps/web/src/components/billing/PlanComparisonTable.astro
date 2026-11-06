@@ -22,6 +22,7 @@
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
+import { getLineMarkText } from '@/components/billing/plan-comparison-catalog-rows';
 import { resolveCell } from '@/components/billing/plan-comparison-rows';
 import {
 	formatPriceArs,
@@ -124,7 +125,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 					</th>
 				</tr>
 				{group.rows.map((row) => {
-					const RowIcon = COMPARISON_ROW_ICONS[row.id];
+					const RowIcon = row.icon ?? COMPARISON_ROW_ICONS[row.id];
 					// Per-row descriptive text (SPEC-299). Empty fallback → not rendered.
 					const rowDesc = t(`billing.comparison.rowDesc.${row.id}`, '');
 					return (
@@ -141,6 +142,11 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
 								)}
 							</span>
+							{row.lineMarks?.length ? (
+								<span class="comparison-table__row-desc comparison-table__row-mark">
+									{getLineMarkText({ lineMarks: row.lineMarks, t })}
+								</span>
+							) : null}
 							{rowDesc && (
 								<span class="comparison-table__row-desc">{rowDesc}</span>
 							)}

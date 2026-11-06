@@ -8,7 +8,7 @@
  *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  */
 
-import type { PublicationStatusEnum } from '@repo/schemas';
+import type { PublicationStatusEnum, VenueReview } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -28,6 +28,7 @@ import {
     useVenuePage,
     useVenuePendingReviewsQuery
 } from '@/features/venue';
+import { VenueReviewDimensions } from '@/features/venue/components/VenueReviewDimensions';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -48,8 +49,9 @@ export const Route = createFileRoute('/_authed/venues/$id')({
  *
  * Field names mirror the `VenueReviewSchema` response: `overallRating`
  * is the scalar star rating, `rating` is the optional per-dimension breakdown
- * object (food/service/ambiance/value) — NOT a scalar, so it must never be
- * rendered directly — `reviewerName` and `title`/`content` carry the text.
+ * object — NOT a scalar, so it is only ever rendered through
+ * `VenueReviewDimensions`, which resolves the voted dimensions from the
+ * catalog. `reviewerName` and `title`/`content` carry the text.
  */
 interface PendingReview {
     readonly id: string;
@@ -57,6 +59,7 @@ interface PendingReview {
     readonly title?: string | null;
     readonly content?: string | null;
     readonly overallRating?: number;
+    readonly rating?: VenueReview['rating'];
 }
 
 /**
@@ -109,6 +112,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
                         {review.content && (
                             <p className="mb-4 text-muted-foreground text-sm">{review.content}</p>
                         )}
+                        <VenueReviewDimensions rating={review.rating} />
                         <div className="flex gap-2">
                             <Button
                                 size="sm"

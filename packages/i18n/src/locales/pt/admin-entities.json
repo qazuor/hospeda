@@ -192,7 +192,8 @@
             "noPending": "Nenhuma avaliação pendente de moderação",
             "anonymous": "Anônimo",
             "approve": "Aprovar",
-            "reject": "Rejeitar"
+            "reject": "Rejeitar",
+            "dimensionsLabel": "Dimensões avaliadas"
         },
         "assignOwner": {
             "title": "Atribuir proprietário",

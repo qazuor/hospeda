@@ -113,9 +113,12 @@ describe('VenueForm — rendering', () => {
         expect(screen.getByText('Premium ($$$$)')).toBeInTheDocument();
     });
 
-    it('should render the menu URL field', () => {
+    it('should not render a menu URL field (HOS-1874)', () => {
         renderForm();
-        expect(screen.getByPlaceholderText(/https:\/\/tu-restaurante\.com/i)).toBeInTheDocument();
+        expect(
+            screen.queryByPlaceholderText(/https:\/\/tu-restaurante\.com/i)
+        ).not.toBeInTheDocument();
+        expect(document.querySelector('input[name="menuUrl"]')).toBeNull();
     });
 
     it('should render the destination ID field', () => {
@@ -194,6 +197,27 @@ describe('VenueForm — interaction', () => {
         fireEvent.submit(form);
 
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    });
+
+    it('should submit without a menuUrl key (HOS-1874)', async () => {
+        const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+        renderForm({
+            onSubmit,
+            defaultValues: {
+                name: 'La Parrilla de Juan',
+                type: 'RESTAURANT' as never,
+                destinationId: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
+                ownerId: 'b2c3d4e5-f6a7-4890-9bcd-ef0123456789'
+            }
+        });
+
+        const form = screen.getByRole('form', { name: /formulario de gastronomía/i });
+        fireEvent.submit(form);
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
+        const payload = onSubmit.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(payload).not.toHaveProperty('menuUrl');
     });
 
     // ── H-88 regression ─────────────────────────────────────────────────────
