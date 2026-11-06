@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "087-feature-organic_products",
     "slug": "organic_products",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Ingredientes y productos orgánicos certificados en la cocina",
         "en": "Ingredientes y productos orgánicos certificados en la cocina",

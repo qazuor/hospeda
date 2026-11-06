@@ -164,7 +164,8 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_DEBUG_LAZY_SECTIONS: import.meta.env.VITE_DEBUG_LAZY_SECTIONS,
             VITE_DEBUG_ACTOR_ID: import.meta.env.VITE_DEBUG_ACTOR_ID,
             VITE_ENABLE_LOGGING: import.meta.env.VITE_ENABLE_LOGGING,
-            NODE_ENV: import.meta.env.NODE_ENV || 'development',
+            NODE_ENV:
+                import.meta.env.NODE_ENV || (import.meta.env.PROD ? 'production' : 'development'),
             DEV: import.meta.env.DEV,
             PROD: import.meta.env.PROD
         };
@@ -243,14 +244,20 @@ export const getPaginationConfig = () => {
  * Check if running in development mode
  */
 export const isDevelopment = (): boolean => {
-    return safeEnv.get('NODE_ENV', 'development') === 'development';
+    return (
+        safeEnv.get('NODE_ENV', import.meta.env.PROD ? 'production' : 'development') ===
+        'development'
+    );
 };
 
 /**
  * Check if running in production mode
  */
 export const isProduction = (): boolean => {
-    return safeEnv.get('NODE_ENV', 'development') === 'production';
+    return (
+        safeEnv.get('NODE_ENV', import.meta.env.PROD ? 'production' : 'development') ===
+        'production'
+    );
 };
 
 /**

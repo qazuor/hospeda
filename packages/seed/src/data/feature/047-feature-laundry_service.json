@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "047-feature-laundry_service",
     "slug": "laundry_service",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
         "en": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",

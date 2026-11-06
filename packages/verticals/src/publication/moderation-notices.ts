@@ -18,6 +18,8 @@ export interface ListingModerationNoticePayload {
     readonly reason: string;
     readonly suggestedDate?: string;
     readonly returnedTo?: PublicationStatusEnum;
+    /** The listing was approved but not published because the owner's quota is full. */
+    readonly quotaFull?: boolean;
     readonly fixRequestOpen: boolean;
 }
 

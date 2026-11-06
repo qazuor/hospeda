@@ -54,6 +54,25 @@ describe('G-FAC-R1 retired venue word', () => {
         expect(result.violations).toEqual([]);
     });
 
+    it('leaves every drizzle snapshot out of the scan, whatever its number', () => {
+        const upper = oldWord.toUpperCase();
+        const { result } = fixture({
+            'packages/db/src/migrations/meta/9999_snapshot.json': `{"values":["${upper}"]}`,
+            'packages/service-core/src/venue.ts': 'export const venue = true;'
+        });
+        expect(result.violations).toEqual([]);
+        expect(result.output).toContain('1 archivos');
+    });
+
+    it('still scans a new migration SQL above the historical cutoff', () => {
+        const { result } = fixture({
+            'packages/db/src/migrations/9999_new.sql': `UPDATE x SET kind = '${oldWord}';`
+        });
+        expect(result.violations.map(({ file }) => file)).toContain(
+            'packages/db/src/migrations/9999_new.sql'
+        );
+    });
+
     it('accepts a clean injected tree', () => {
         const { result } = fixture({
             'packages/service-core/src/venue.ts': 'export const venue = true;'
@@ -266,7 +285,7 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(87);
+        expect(history.length).toBe(91);
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(

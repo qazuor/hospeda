@@ -24,7 +24,7 @@ describe('AC:V3:8 — quota grant and anchor', () => {
         ).toEqual({ quota: 100, anchor: at('2026-01-10') });
     });
 
-    it('two live titles sum quota and the oldest anchors', () => {
+    it('a subscription supersedes the trial quota (HOS-2027) and the oldest title still anchors', () => {
         expect(
             selectQuotaGrant({
                 key: KEY,
@@ -33,7 +33,7 @@ describe('AC:V3:8 — quota grant and anchor', () => {
                     source('TRIAL', at('2026-01-05'), 100)
                 ]
             })
-        ).toEqual({ quota: 400, anchor: at('2026-01-05') });
+        ).toEqual({ quota: 300, anchor: at('2026-01-05') });
     });
 
     it('BASE anchors at account signup only when it grants a measured key', () => {

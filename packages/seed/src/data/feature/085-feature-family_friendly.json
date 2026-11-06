@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "085-feature-family_friendly",
     "slug": "family_friendly",
+    "category": "AUDIENCE",
     "description": {
         "es": "Ambiente acogedor y seguro para familias con niños de todas las edades",
         "en": "Ambiente acogedor y seguro para familias con niños de todas las edades",

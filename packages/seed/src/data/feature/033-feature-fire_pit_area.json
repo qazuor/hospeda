@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "033-feature-fire_pit_area",
     "slug": "fire_pit_area",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
         "en": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",

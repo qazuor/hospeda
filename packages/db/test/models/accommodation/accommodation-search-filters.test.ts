@@ -90,4 +90,35 @@ describe('accommodation search filter ledger (HOS-1922)', () => {
         expect(conditions).toHaveLength(1);
         expect(dialect.sqlToQuery(conditions[0] as never).sql).toContain('"deleted_at" is null');
     });
+
+    it('combines currency and inclusive creation bounds with other filters', () => {
+        // Arrange
+        const params = {
+            currency: 'ARS' as const,
+            createdAfter: new Date('2026-01-01T00:00:00.000Z'),
+            createdBefore: new Date('2026-02-01T00:00:00.000Z'),
+            type: 'HOTEL' as const
+        };
+
+        // Act
+        const query = dialect.sqlToQuery(
+            buildAccommodationSearchWhere({ params }) as NonNullable<
+                ReturnType<typeof buildAccommodationSearchWhere>
+            >
+        );
+
+        // Assert
+        expect(query.sql).toContain('"price"->>\'currency\'');
+        expect(query.sql).toContain('"created_at" >=');
+        expect(query.sql).toContain('"created_at" <=');
+        expect(query.sql).toContain('"type" =');
+        expect(query.params).toEqual(
+            expect.arrayContaining([
+                'ARS',
+                params.createdAfter.toISOString(),
+                params.createdBefore.toISOString(),
+                'HOTEL'
+            ])
+        );
+    });
 });

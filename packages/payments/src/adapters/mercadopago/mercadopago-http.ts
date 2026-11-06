@@ -57,17 +57,19 @@ export async function parseResponse<T>(
 }
 
 /** Throws a typed error for a non-successful Mercado Pago response. */
-export function assertResponseOk(
+export async function assertResponseOk(
     response: Response,
     capability: PaymentCapability,
     now: () => Date = systemNow
-): void {
+): Promise<void> {
     if (response.ok) return;
     const code = responseErrorCode(response.status);
+    const body = await readMercadoPagoErrorBody(response);
     throw new PaymentProviderError({
         code,
         capability,
         message: `Mercado Pago request failed (${response.status})`,
+        cause: { status: response.status, body },
         ...transientFromResponse(response, now)
     });
 }

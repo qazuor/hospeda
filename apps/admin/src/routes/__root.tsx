@@ -1,5 +1,4 @@
 import { FeedbackErrorBoundary } from '@repo/feedback';
-import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     createRootRoute,
@@ -12,6 +11,7 @@ import {
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
 import { BrowserGateBanner } from '@/components/BrowserGateBanner';
+import { DevtoolsGate } from '@/components/DevtoolsGate';
 import { AdminFeedbackHeadlessHost } from '@/components/feedback/AdminFeedbackHeadlessHost';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { validatedConfig } from '@/config/ia/validate';
@@ -293,7 +293,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         />
                     </FeedbackErrorBoundary>
                 )}
-                {env.NODE_ENV === 'development' && <TanStackDevtools />}
+                <DevtoolsGate />
                 <Scripts />
             </body>
         </html>

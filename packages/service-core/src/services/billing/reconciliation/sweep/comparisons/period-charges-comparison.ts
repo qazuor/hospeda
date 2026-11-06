@@ -22,6 +22,7 @@ import {
     type LatePaymentFailedCondition,
     lateRejectionDetail
 } from '../../../subscription/late-payment-conditions.js';
+import type { ClosedChargeSnapshots } from '../../charge-snapshots/closed-charge-snapshot.js';
 import type { ReconciliationComparison } from '../reconciliation-divergence.js';
 import { compareCreditedChargeAmount } from './credited-charge-amount.js';
 import type { ExpectedAmountPolicy } from './expected-amount.js';
@@ -112,6 +113,7 @@ export function createPeriodChargesComparison(ports: {
     readonly provider: PaymentProvider;
     readonly expectedAmounts?: ExpectedAmountPolicy;
     readonly dailySummary?: ReconciliationDailySummary;
+    readonly closedChargeSnapshots?: ClosedChargeSnapshots;
 }): ReconciliationComparison {
     const amountPorts = {
         expectedAmounts: ports.expectedAmounts ?? createCutExpectedAmountPolicy(),
@@ -136,13 +138,37 @@ export function createPeriodChargesComparison(ports: {
 
         const listed = await readListedCharges({ authorizationRead: read, act }, ports);
         const divergences = [];
-        for (const chargeRead of listed.charges) {
-            const { snapshot: charge } = assertFreshForAct({ read: chargeRead, act });
+        const chargeViews = [
+            ...listed.charges.map((chargeRead) => {
+                const { snapshot } = assertFreshForAct({ read: chargeRead, act });
+                return {
+                    chargeId: snapshot.chargeId,
+                    createdAt: snapshot.createdAt,
+                    purpose: snapshot.purpose,
+                    status: snapshot.status,
+                    amountMinor: snapshot.amount.amountMinor,
+                    currency: snapshot.amount.currency,
+                    refundedAmountMinor: snapshot.refundedAmount.amountMinor,
+                    chargedBack: snapshot.chargedBack
+                };
+            }),
+            ...listed.closed.map((snapshot) => ({
+                chargeId: snapshot.chargeId,
+                createdAt: snapshot.providerCreatedAt,
+                purpose: snapshot.purpose,
+                status: snapshot.status,
+                amountMinor: snapshot.amountMinor,
+                currency: snapshot.currency,
+                refundedAmountMinor: snapshot.refundedAmountMinor,
+                chargedBack: snapshot.chargedBack
+            }))
+        ];
+        for (const charge of chargeViews) {
             if (charge.purpose !== 'charge' || charge.status !== 'approved') continue;
-            const amountMinor = charge.amount.amountMinor;
+            const amountMinor = charge.amountMinor;
             if (
                 charge.chargedBack ||
-                (amountMinor > 0 && charge.refundedAmount.amountMinor >= amountMinor)
+                (amountMinor > 0 && charge.refundedAmountMinor >= amountMinor)
             )
                 continue;
 
@@ -158,7 +184,7 @@ export function createPeriodChargesComparison(ports: {
                         paymentId: payment.id,
                         chargeId: charge.chargeId,
                         chargedMinor: amountMinor,
-                        chargeCurrency: charge.amount.currency,
+                        chargeCurrency: charge.currency,
                         chargeCreatedAt: new Date(charge.createdAt),
                         isAlreadyHung: () => alreadyHung({ paymentId: payment.id }),
                         ports: amountPorts
@@ -199,7 +225,7 @@ export function createPeriodChargesComparison(ports: {
                         succeededById: subscription.succeededById,
                         isPredecessorInSuccession: predecessor,
                         hasOtherLivePrincipal: otherPrincipal,
-                        paymentAmount: { amountMinor, currency: charge.amount.currency },
+                        paymentAmount: { amountMinor, currency: charge.currency },
                         authorizationAmount: {
                             amountMinor: authorization.amount.amountMinor,
                             currency: authorization.amount.currency

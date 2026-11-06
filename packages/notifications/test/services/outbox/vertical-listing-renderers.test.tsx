@@ -216,10 +216,10 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
         expect(subject).toBe('Tus fichas volvieron a publicarse');
         expect(html).toContain('Volvieron estas fichas: Cabañas del Río.');
         expect(html).toContain('Estas fichas no entraron: Parrilla La Costa.');
-        expect(html).toContain('Vuelve primero la ficha que cayó al final, hasta llenar el cupo.');
         expect(html).toContain(
-            'Las fichas del sistema anterior que nunca se publicaron acá van primero'
+            'Vuelven primero las fichas que publicaste más recientemente, hasta llenar el cupo.'
         );
+        expect(html).not.toContain('sistema anterior');
         expect(html).toContain('siguen ahí: no se borra ninguna');
         expect(readListingNames).toHaveBeenCalledTimes(2);
     });

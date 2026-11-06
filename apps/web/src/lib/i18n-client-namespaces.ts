@@ -56,10 +56,12 @@
  */
 export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.aiChat',
+    'accommodations.amenityAttributes',
     'accommodations.amenityCategories',
     'accommodations.amenityNames',
     'accommodations.comparison',
     'accommodations.detail',
+    'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',
     'account.alerts',
@@ -139,6 +141,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // rejection render these keys in the browser.
     'publish.noPlans',
     'publish.subscribe',
+    // HOS-1977 — the publish button's LIMIT_REACHED rejection renders
+    // these keys in the browser.
+    'publish.limitReached',
     'blog.categories',
     'comments.form',
     'comments.thread',

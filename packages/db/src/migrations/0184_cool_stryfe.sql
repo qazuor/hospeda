@@ -1,0 +1,1 @@
+ALTER TABLE "payment" ADD COLUMN "provider_status_detail" varchar(255);

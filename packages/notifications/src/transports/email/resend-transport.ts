@@ -80,6 +80,9 @@ export class BrevoEmailTransport implements EmailTransport {
     async send(input: SendEmailInput): Promise<SendEmailResult> {
         try {
             const htmlContent = await render(input.react);
+            // HOS-1990: HTML-only mail scores worse with spam filters and is unreadable in
+            // text clients; Brevo takes the plain part as `textContent`.
+            const textContent = await render(input.react, { plainText: true });
 
             const body: Record<string, unknown> = {
                 sender: parseSender(input.from, this.defaultFromEmail, this.defaultFromName),
@@ -87,7 +90,8 @@ export class BrevoEmailTransport implements EmailTransport {
                 subject: this.subjectPrefix
                     ? `${this.subjectPrefix}${input.subject}`
                     : input.subject,
-                htmlContent
+                htmlContent,
+                textContent
             };
 
             if (input.replyTo) {

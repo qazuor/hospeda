@@ -39,7 +39,12 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    requestBody: AccommodationUpdateHttpSchema.partial(),
+    // `.strict()` (HOS-1978): the contract is the FLAT http shape (`maxGuests`,
+    // `basePrice`, `latitude`, ...). Domain-shaped nested keys (`extraInfo`,
+    // `location`, `price`) are not part of it; without strictness Zod stripped
+    // them and the route answered 200 with nothing saved. Now they are a 400
+    // VALIDATION_ERROR naming the key. route-factory preserves strict mode.
+    requestBody: AccommodationUpdateHttpSchema.partial().strict(),
     responseSchema: AccommodationProtectedSchema,
     ownership: {
         entityType: 'accommodation',

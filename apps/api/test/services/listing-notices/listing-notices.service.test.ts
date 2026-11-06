@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
     enqueueNotice: vi.fn(),
     transactionTx: undefined as unknown,
     coverage: vi.fn(),
+    effectiveSet: vi.fn(),
+    warn: vi.fn(),
     trialRows: [] as unknown[]
 }));
 
@@ -51,8 +53,12 @@ vi.mock('../../../src/utils/clock', () => ({
     getClock: () => ({ clock: { now: () => new Date('2026-10-13T12:00:00.000Z') } })
 }));
 vi.mock('../../../src/utils/listing-access/ports', () => ({
-    getListingAccessPorts: () => ({ billing: { coverage: mocks.coverage } })
+    getListingAccessPorts: () => ({
+        billing: { coverage: mocks.coverage },
+        effectiveSet: mocks.effectiveSet
+    })
 }));
+vi.mock('../../../src/utils/logger', () => ({ apiLogger: { warn: mocks.warn, error: vi.fn() } }));
 vi.mock('../../../src/services/listing-notices/fix-reported-notice', () => ({
     enqueueFixReportedNotice: mocks.enqueueNotice
 }));
@@ -98,6 +104,56 @@ describe('TEST:V8a:7 listListingNotices fails closed', () => {
             vertical: VerticalEnum.VENUE,
             ownerId: OWNER
         });
+    });
+});
+
+describe('HOS-1997 the quota read is best effort', () => {
+    const liftedRow = (id: string, daysAgo: number) => ({
+        id,
+        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+        deletionAnnouncedAt: null,
+        enteredCurrentStatus: null,
+        openFixRequest: null,
+        lastLift: {
+            at: new Date(new Date('2026-10-13T12:00:00.000Z').getTime() - daysAgo * 86_400_000),
+            returnedTo: 'UNPUBLISHED_BY_BILLING'
+        }
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.trialRows = [];
+        mocks.coverage.mockResolvedValue({ covered: true, sources: [] });
+    });
+
+    it('still answers every notice, with the generic lift text, when effectiveSet throws', async () => {
+        // Arrange
+        mocks.readOwnerListingNotices.mockResolvedValue([liftedRow(LISTING, 2)]);
+        mocks.effectiveSet.mockRejectedValue(new Error('entitlements down'));
+
+        // Act
+        const result = await listListingNotices({
+            userId: OWNER,
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+
+        // Assert
+        const kinds = result.items[0]?.notices.map((notice) => notice.kind);
+        expect(kinds).toEqual(['SURPLUS', 'MODERATION_LIFTED']);
+        const lifted = result.items[0]?.notices.find((n) => n.kind === 'MODERATION_LIFTED');
+        expect(lifted).not.toHaveProperty('unpublishedBecause');
+        expect(mocks.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not read the quota for a lift outside the display window', async () => {
+        // Arrange
+        mocks.readOwnerListingNotices.mockResolvedValue([liftedRow(LISTING, 40)]);
+
+        // Act
+        await listListingNotices({ userId: OWNER, vertical: VerticalEnum.ACCOMMODATION });
+
+        // Assert
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
     });
 });
 

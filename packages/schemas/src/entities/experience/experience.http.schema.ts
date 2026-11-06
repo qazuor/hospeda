@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { ExperiencePriceUnitEnumSchema, ExperienceTypeEnumSchema } from '../../enums/index.js';
-import { stripShapeDefaults } from '../../utils/utils.js';
+import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible experience search schema with automatic coercion.
@@ -88,7 +88,9 @@ export const ExperienceCreateHttpSchema = z.object({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional(),
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
-    phone: z.string().optional(),
+    phone: phoneNumberSchema('zodError.common.contact.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -228,7 +230,7 @@ export const httpToDomainExperienceCreate = (
               // Omit mobilePhone when absent instead of injecting '' (HOS-190):
               // '' fails the strict ContactInfoSchema phone regex on create.
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
                   personalEmail: httpData.email,
                   website: httpData.website
               }
@@ -281,7 +283,7 @@ export const httpToDomainExperienceUpdate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               } as ExperienceUpdateInput['contactInfo']

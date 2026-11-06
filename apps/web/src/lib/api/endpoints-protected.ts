@@ -11,6 +11,7 @@
 import type {
     AccommodationCalendarSyncStatus,
     AccommodationComparisonResponse,
+    AccommodationImportAccessResponse,
     AccommodationImportAsyncStartResponse,
     AccommodationImportResponse,
     AccommodationImportStatusQuery,
@@ -4391,6 +4392,12 @@ export function isAsyncImportStart(
 
 /** Protected accommodation import-from-URL API endpoint (SPEC-222 / HOS-50). */
 export const accommodationsImportApi = {
+    /** Read the API's importer entitlement/new-user decision for the create flow. */
+    getAccess(): Promise<ApiResult<AccommodationImportAccessResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/import-from-url/access`
+        });
+    },
     /**
      * Import accommodation data from an external listing URL.
      *
@@ -5159,6 +5166,34 @@ export const listingMediaApi = {
         });
     },
 
+    /** Register a new cover atomically without consuming a gallery slot. */
+    addFeaturedMedia({
+        vertical,
+        id,
+        body
+    }: {
+        readonly vertical: ListingMediaVertical;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<
+        ApiResult<{
+            readonly media: ListingMediaRow;
+            readonly previousFeatured: { readonly id: string } | null;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/featured`,
+            body
+        });
+    },
+
     /**
      * Delete a media row by its DB UUID (soft-delete + resequence).
      *
@@ -5556,6 +5591,25 @@ export const billingSubscriptionApi = {
         readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read one owned subscription (status and anchored billing option); a foreign id answers 404. */
+    read({
+        subscriptionId,
+        cookieHeader
+    }: {
+        readonly subscriptionId: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly status: string;
+            readonly billingOptionId: string | null;
+            readonly declaredPayerEmail: string | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}`,
+            cookieHeader
+        });
     },
     /** Read the cancellation consequences for one owned subscription. */
     cancellationPreview({

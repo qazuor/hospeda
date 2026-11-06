@@ -31,9 +31,7 @@ export function ListingRestitution({
                 <Text>Estas fichas no entraron: {notRestoredNames.join(', ')}.</Text>
             ) : null}
             <Text>
-                Vuelve primero la ficha que cayó al final, hasta llenar el cupo. Las fichas del
-                sistema anterior que nunca se publicaron acá van primero, según su antigüedad de
-                carga.
+                Vuelven primero las fichas que publicaste más recientemente, hasta llenar el cupo.
             </Text>
             {notRestoredNames.length > 0 ? (
                 <Text>Las fichas que no entraron siguen ahí: no se borra ninguna.</Text>

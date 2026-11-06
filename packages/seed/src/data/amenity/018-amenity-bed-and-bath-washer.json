@@ -8,7 +8,7 @@
         "pt": "Lavarropas"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "BED_AND_BATH",
+    "type": "LAUNDRY",
     "icon": "WasherIcon",
     "isBuiltin": false,
     "isFeatured": true,

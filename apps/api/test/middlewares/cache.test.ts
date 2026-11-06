@@ -27,7 +27,13 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { clearCache, createCacheMiddleware, getCacheSize } from '../../src/middlewares/cache';
+import {
+    clearCache,
+    createCacheMiddleware,
+    generateCacheKey,
+    getCacheSize,
+    invalidateCacheByPathPrefix
+} from '../../src/middlewares/cache';
 import { getCacheConfig } from '../../src/utils/env';
 import { apiLogger } from '../../src/utils/logger';
 
@@ -114,6 +120,91 @@ describe('Cache Middleware', () => {
     });
 
     describe('Cache Hit and Miss', () => {
+        it('invalidates keys built for public and private paths with or without queries', async () => {
+            const keyArgs = {
+                publicEndpoints: ['/api/v1/public/events'],
+                privateEndpoints: ['/api/v1/public/users'],
+                noCacheEndpoints: []
+            } as const;
+            expect(
+                generateCacheKey({ ...keyArgs, path: '/api/v1/public/events/1', queryString: '' })
+            ).toBe('public:/api/v1/public/events/1');
+            expect(
+                generateCacheKey({
+                    ...keyArgs,
+                    path: '/api/v1/public/events/1',
+                    queryString: 'lang=es'
+                })
+            ).toBe('public:/api/v1/public/events/1?lang=es');
+            expect(
+                generateCacheKey({ ...keyArgs, path: '/api/v1/public/users/1', queryString: '' })
+            ).toBe('private:/api/v1/public/users/1:anonymous');
+            expect(
+                generateCacheKey({
+                    ...keyArgs,
+                    path: '/api/v1/public/users/1',
+                    queryString: 'page=2'
+                })
+            ).toBe('private:/api/v1/public/users/1?page=2:anonymous');
+
+            const app = new Hono();
+            app.use('*', createCacheMiddleware());
+            app.get('/api/v1/public/events/1', (c) => c.json({ type: 'event' }));
+            app.get('/api/v1/public/users/1', (c) => c.json({ type: 'user' }));
+            for (const path of [
+                '/api/v1/public/events/1',
+                '/api/v1/public/events/1?lang=es',
+                '/api/v1/public/users/1',
+                '/api/v1/public/users/1?page=2'
+            ]) {
+                expect((await app.request(path)).headers.get('x-cache')).toBe('MISS');
+                expect((await app.request(path)).headers.get('x-cache')).toBe('HIT');
+            }
+
+            invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/events' });
+            expect((await app.request('/api/v1/public/events/1')).headers.get('x-cache')).toBe(
+                'MISS'
+            );
+            expect(
+                (await app.request('/api/v1/public/events/1?lang=es')).headers.get('x-cache')
+            ).toBe('MISS');
+            expect((await app.request('/api/v1/public/users/1')).headers.get('x-cache')).toBe(
+                'HIT'
+            );
+            expect(
+                (await app.request('/api/v1/public/users/1?page=2')).headers.get('x-cache')
+            ).toBe('HIT');
+        });
+
+        it('invalidates organizer details by id, slug, and public list variants', async () => {
+            const app = new Hono();
+            app.use('*', createCacheMiddleware());
+            app.get('/api/v1/public/event-organizers', (c) => c.json({ data: 'list' }));
+            app.get('/api/v1/public/event-organizers/123', (c) => c.json({ data: 'id' }));
+            app.get('/api/v1/public/event-organizers/slug/example', (c) =>
+                c.json({ data: 'slug' })
+            );
+
+            for (const path of [
+                '/api/v1/public/event-organizers',
+                '/api/v1/public/event-organizers/123',
+                '/api/v1/public/event-organizers/slug/example'
+            ]) {
+                expect((await app.request(path)).headers.get('x-cache')).toBe('MISS');
+                expect((await app.request(path)).headers.get('x-cache')).toBe('HIT');
+            }
+
+            invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/event-organizers' });
+
+            for (const path of [
+                '/api/v1/public/event-organizers',
+                '/api/v1/public/event-organizers/123',
+                '/api/v1/public/event-organizers/slug/example'
+            ]) {
+                expect((await app.request(path)).headers.get('x-cache')).toBe('MISS');
+            }
+        });
+
         it('should return MISS on first request and HIT on second', async () => {
             const { app, getCallCount } = createTestApp();
 

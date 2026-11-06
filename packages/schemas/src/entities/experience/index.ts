@@ -20,6 +20,7 @@ export * from './experience.options.schema.js'; // Lightweight {id,label,slug,ty
 export * from './experience.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 // Relations
 export * from './experience.relations.schema.js'; // Schemas with related entities
+export * from './experience.review.admin-search.schema.js'; // Admin search for experience reviews
 // Core schemas
 export * from './experience.schema.js'; // Main entity schema
 // Subtypes — FAQ and Review

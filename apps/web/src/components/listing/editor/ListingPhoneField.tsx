@@ -9,8 +9,8 @@
  * `CountryCodeCombobox` (BETA-144) verbatim. Mechanically identical to
  * `host/editor/ContactInfoSection`'s phone pair (BETA-139) — the parse/compose
  * primitives in `lib/phone-countries` are the shared contract, so both editors
- * write the same `"<dialCode> <number>"` shape that `InternationalPhoneRegex`
- * validates on the write path.
+ * write the same `"<dialCode> <number>"` shape that the shared phone
+ * validator accepts on the write path.
  *
  * Lives beside `ContactSection.client.tsx` rather than inline in it because the
  * two concerns are independent: this owns the parse/compose state machine, the

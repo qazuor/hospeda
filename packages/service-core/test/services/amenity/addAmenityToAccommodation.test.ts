@@ -72,8 +72,44 @@ describe('AmenityService.addAmenityToAccommodation', () => {
             amenityId: validInput.amenityId,
             isOptional: false,
             additionalCost: undefined,
-            additionalCostPercent: undefined
+            additionalCostPercent: undefined,
+            // HOS-2058: nothing declared -> NULL, never inferred.
+            scope: null,
+            availability: null
         });
+    });
+
+    it('should persist declared scope and availability (HOS-2058)', async () => {
+        // Arrange
+        (amenityModel.findOne as Mock).mockResolvedValueOnce(amenity);
+        (accommodationModel.findOne as Mock).mockResolvedValueOnce({
+            id: validInput.accommodationId
+        });
+        (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
+        (relatedModel.create as Mock).mockResolvedValueOnce({ ...validInput });
+
+        // Act
+        const result = await service.addAmenityToAccommodation(actorWithPerms, {
+            ...validInput,
+            scope: 'shared',
+            availability: 'seasonal'
+        } as never);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(relatedModel.create as Mock).toHaveBeenCalledWith(
+            expect.objectContaining({ scope: 'shared', availability: 'seasonal' })
+        );
+    });
+
+    it('should reject an unknown scope value', async () => {
+        const result = await service.addAmenityToAccommodation(actorWithPerms, {
+            ...validInput,
+            scope: 'public'
+        } as never);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(relatedModel.create as Mock).not.toHaveBeenCalled();
     });
 
     it('should throw NOT_FOUND if amenity does not exist', async () => {

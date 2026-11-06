@@ -37,6 +37,9 @@ export class ContentModerationThresholdService extends BaseCrudService<
     protected readonly createSchema = DisabledCreateSchema;
     protected readonly updateSchema = updateContentModerationThresholdSchema;
     protected readonly searchSchema = contentModerationThresholdAdminSearchSchema;
+    // Required by the inherited `adminList`, which answers 500 CONFIGURATION_ERROR
+    // without it (HOS-1985).
+    protected readonly adminSearchSchema = contentModerationThresholdAdminSearchSchema;
 
     constructor(config: ServiceConfig, model?: ContentModerationThresholdModel) {
         super(config, 'contentModerationThreshold');

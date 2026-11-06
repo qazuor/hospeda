@@ -67,6 +67,7 @@ type PublishState =
     | 'error'
     | 'subscriptionRequired'
     | 'noPlans'
+    | 'limitReached'
     | 'missingRequirements';
 
 /**
@@ -222,6 +223,13 @@ export function PublishButton({
                 setState('noPlans');
                 return;
             }
+            // The plan's publishing cap is full (HOS-1977 review). The API answers
+            // 403 with `error.code === 'LIMIT_REACHED'` (`mapListingPublishDenial`).
+            // Retrying cannot help: the host must free a slot or upgrade.
+            if (result.error.status === 403 && result.error.code === 'LIMIT_REACHED') {
+                setState('limitReached');
+                return;
+            }
             // Admin-paused signups reached the API (the page's verdict was
             // stale). The listing stays a draft; retrying cannot help.
             if (result.error.code === 'NEW_PAID_SIGNUPS_FROZEN') {
@@ -372,6 +380,25 @@ export function PublishButton({
                     className={`${styles.action} ${styles.primary}`}
                 >
                     {subscriptionRequiredCta}
+                </a>
+            </span>
+        );
+    }
+
+    // ── Plan cap reached (HOS-1977 review) ───────────────────────────────
+    if (state === 'limitReached') {
+        return (
+            <span
+                role="alert"
+                className={styles.subscribeToPublish}
+                data-testid="publish-limit-reached"
+            >
+                <span>{t('publish.limitReached.body')}</span>
+                <a
+                    href={buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) })}
+                    className={`${styles.action} ${styles.primary}`}
+                >
+                    {t('publish.limitReached.cta')}
                 </a>
             </span>
         );

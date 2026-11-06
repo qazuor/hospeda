@@ -1,6 +1,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { getLocalDateString } from '@repo/utils';
+import { resolvePlanDisplayName } from '../plan-display-name';
 
 const logger = createLogger('signup-confirmed-notice');
 
@@ -19,8 +20,11 @@ export async function enqueueSignupConfirmedNotice(
     const {
         buildEmailDedupKey,
         buildEventOccurrence,
+        and,
+        desc,
         emailOutboxModel,
         eq,
+        payments,
         plans,
         planVersions,
         subscriptions,
@@ -31,9 +35,10 @@ export async function enqueueSignupConfirmedNotice(
             subscriptionId: subscriptions.id,
             userId: subscriptions.userId,
             vertical: subscriptions.vertical,
-            firstChargeAt: subscriptions.firstChargeAt,
+            nextChargeAt: subscriptions.nextChargeAt,
             email: users.email,
-            planName: plans.name
+            planName: plans.name,
+            planSlug: plans.slug
         })
         .from(subscriptions)
         .leftJoin(users, eq(users.id, subscriptions.userId))
@@ -50,7 +55,20 @@ export async function enqueueSignupConfirmedNotice(
         return;
     }
 
-    const firstChargeDate = getLocalDateString({ instant: row.firstChargeAt ?? input.activatedAt });
+    // The signup IS the first charge (HOS-1012): when MercadoPago already reported it paid, the
+    // notice states it as done; otherwise it says the charge is still being processed.
+    const [credited] = await input.tx
+        .select({ amount: payments.amount, currency: payments.currency })
+        .from(payments)
+        .where(
+            and(eq(payments.subscriptionId, row.subscriptionId), eq(payments.status, 'SUCCEEDED'))
+        )
+        .orderBy(desc(payments.factAt))
+        .limit(1);
+    const todayDate = getLocalDateString({ instant: input.activatedAt });
+    const nextChargeDate = row.nextChargeAt
+        ? getLocalDateString({ instant: row.nextChargeAt })
+        : null;
     const dedupKey = buildEmailDedupKey({
         recipient: row.userId,
         template: SIGNUP_CONFIRMED_TEMPLATE,
@@ -65,8 +83,17 @@ export async function enqueueSignupConfirmedNotice(
             payload: {
                 subscriptionId: row.subscriptionId,
                 vertical: row.vertical,
-                planName: row.planName,
-                firstChargeDate
+                planName: row.planSlug
+                    ? await resolvePlanDisplayName({
+                          vertical: row.vertical,
+                          plan: { slug: row.planSlug, name: row.planName ?? '' }
+                      })
+                    : row.planName,
+                firstPayment: credited
+                    ? { amountMinor: credited.amount, currency: credited.currency }
+                    : null,
+                nextChargeDate:
+                    credited && nextChargeDate && nextChargeDate > todayDate ? nextChargeDate : null
             },
             dedupKey
         },

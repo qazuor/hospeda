@@ -143,14 +143,6 @@ const ADMIN_LIST_UNREACHABLE: ReadonlyArray<{
         reason: 'No adminSearchSchema, and no admin list route: price alerts are listed through the protected tier only.'
     },
     {
-        service: 'ContentModerationTermService',
-        reason: 'No adminSearchSchema, although GET /admin/content-moderation/terms does call adminList — so that endpoint answers CONFIGURATION_ERROR today, for every request.'
-    },
-    {
-        service: 'ContentModerationThresholdService',
-        reason: 'No adminSearchSchema, same as the terms endpoint above.'
-    },
-    {
         service: 'ExchangeRateService',
         reason: 'No adminSearchSchema, and no admin list route: exchange rates are read through the public tier and written by cron.'
     },
@@ -161,10 +153,6 @@ const ADMIN_LIST_UNREACHABLE: ReadonlyArray<{
     {
         service: 'SponsorshipPackageService',
         reason: 'No adminSearchSchema; its admin route calls list(), not adminList().'
-    },
-    {
-        service: 'ExperienceReviewService',
-        reason: 'No adminSearchSchema, although GET /admin/experiences/reviews does call adminList — so that endpoint answers CONFIGURATION_ERROR today, for every request.'
     },
     {
         service: 'VenueReviewService',

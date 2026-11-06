@@ -31,12 +31,17 @@ describe('FeatureSearchHttpSchema — safeParse', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should accept slug and category string filters', () => {
+    it('should accept slug and a FeatureCategoryEnum category filter', () => {
         const result = FeatureSearchHttpSchema.safeParse({
             slug: 'wifi',
-            category: 'connectivity'
+            category: 'LOCATION'
         });
         expect(result.success).toBe(true);
+    });
+
+    it('should reject a category filter outside FeatureCategoryEnum (HOS-2058)', () => {
+        const result = FeatureSearchHttpSchema.safeParse({ category: 'connectivity' });
+        expect(result.success).toBe(false);
     });
 
     it('should coerce isAvailable from string "true" to boolean', () => {

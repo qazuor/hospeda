@@ -9,6 +9,7 @@ import {
     primaryKey,
     uuid
 } from 'drizzle-orm/pg-core';
+import { AmenityAvailabilityPgEnum, AmenityScopePgEnum } from '../enums.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
 import { amenities } from './amenity.dbschema.ts';
 
@@ -23,7 +24,11 @@ export const rAccommodationAmenity = pgTable(
             .references(() => amenities.id, { onDelete: 'cascade' }),
         isOptional: boolean('is_optional').notNull().default(false),
         additionalCost: jsonb('additional_cost').$type<PriceType>(),
-        additionalCostPercent: doublePrecision('additional_cost_percent')
+        additionalCostPercent: doublePrecision('additional_cost_percent'),
+        /** HOS-2058: private/shared. NULL = not declared; never inferred. */
+        scope: AmenityScopePgEnum('scope'),
+        /** HOS-2058: year-round/seasonal. NULL = not declared; never inferred. */
+        availability: AmenityAvailabilityPgEnum('availability')
     },
     (table) => ({
         pk: primaryKey({ columns: [table.accommodationId, table.amenityId] }),

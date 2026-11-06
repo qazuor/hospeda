@@ -25,6 +25,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
+import { trackTimers } from '../../helpers/track-timers';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -498,5 +499,70 @@ describe('DestinationReviewSidebarCard — inline variant', () => {
         openDialog();
         expect(screen.getByRole('heading', { name: /escribir reseña/i })).toBeInTheDocument();
         vi.restoreAllMocks();
+    });
+});
+
+describe('DestinationReviewSidebarCard — nothing outlives the component (BETA-215)', () => {
+    beforeEach(() => {
+        setupDialogMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it('cancels the post-close reset timer when unmounted mid-flight', () => {
+        const timers = trackTimers();
+        const { unmount } = renderCard();
+        openDialog();
+        // Only timers created from here on count (unrelated ones must not).
+        const baseline = timers.mark();
+        fireEvent.keyDown(document.querySelector('dialog') as HTMLDialogElement, {
+            key: 'Escape'
+        });
+        // Arrange: the 200ms reset is scheduled and still pending.
+        expect(timers.pendingSince({ baseline, delay: 200 })).toHaveLength(1);
+
+        unmount();
+
+        // Assert: it was cancelled, so it can never set state on a gone tree.
+        expect(timers.pendingSince({ baseline, delay: 200 })).toHaveLength(0);
+    });
+
+    it('cancels the post-success reload timer when unmounted before it fires', async () => {
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) } as Response);
+        const timers = trackTimers();
+        const { unmount } = renderCard();
+        openDialog();
+        // Only timers created from here on count (unrelated ones must not).
+        const baseline = timers.mark();
+        rateAllDimensions();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+        await waitFor(() =>
+            expect(screen.getByText(/pendiente de aprobación/i)).toBeInTheDocument()
+        );
+        expect(timers.pendingSince({ baseline, delay: 1400 })).toHaveLength(1);
+
+        unmount();
+
+        expect(timers.pendingSince({ baseline, delay: 1400 })).toHaveLength(0);
+    });
+
+    it('aborts the in-flight submit when unmounted', () => {
+        let signal: AbortSignal | undefined;
+        global.fetch = vi.fn((_url: string, init?: RequestInit) => {
+            signal = init?.signal ?? undefined;
+            return new Promise<Response>(() => undefined);
+        }) as unknown as typeof fetch;
+        const { unmount } = renderCard();
+        openDialog();
+        rateAllDimensions();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+        expect(signal?.aborted).toBe(false);
+
+        unmount();
+
+        expect(signal?.aborted).toBe(true);
     });
 });

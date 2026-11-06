@@ -56,8 +56,8 @@ describe('TEST:V3:8 plan publication invalidates the effective-set cache', () =>
             body: publishBody({ overrides: {} })
         });
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(201);
-        expect(redis.values.get('vset:v1:gen:all')).toBe('1');
-        expect(redis.incr).toHaveBeenCalledWith('vset:v1:gen:all');
+        expect(redis.values.get('vset:v2:gen:all')).toBe('1');
+        expect(redis.incr).toHaveBeenCalledWith('vset:v2:gen:all');
     });
 
     it('TEST:V3:8 a failed invalidation does not fail publication', async () => {
@@ -70,7 +70,7 @@ describe('TEST:V3:8 plan publication invalidates the effective-set cache', () =>
             body: publishBody({ overrides: {} })
         });
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(201);
-        expect(redis.incr).toHaveBeenCalledWith('vset:v1:gen:all');
+        expect(redis.incr).toHaveBeenCalledWith('vset:v2:gen:all');
     });
 });
 

@@ -79,6 +79,7 @@ import { EventCategoryEnum } from '@repo/schemas';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { isPageOutOfRange } from '@/lib/listing/listing-pagination';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -223,6 +224,9 @@ const items = result.ok ? result.data.items : [];
 // PaginatedResponse exposes counters under `pagination`, not at the top level.
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
+	return new Response(null, { status: 404 });
+}
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 /**

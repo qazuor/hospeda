@@ -253,6 +253,105 @@ describe('TEST:V8a:7 one notice per kind (AC:V8a:6)', () => {
         expect(kinds).toEqual(['MODERATED']);
     });
 
+    describe('row 30: a lift that left the listing unpublished says why (HOS-1997)', () => {
+        const lifted = (args: {
+            readonly status?: S;
+            readonly coverage?: CoverageResponse;
+            readonly limit?: number | null;
+            readonly rows?: readonly ListingNoticeRow[];
+            readonly fixRequest?: boolean;
+        }) => {
+            const subject = row({
+                publicationStatus: args.status ?? S.UNPUBLISHED_BY_BILLING,
+                lastLift: { at: daysAgo(2), returnedTo: S.UNPUBLISHED_BY_BILLING },
+                openFixRequest: args.fixRequest
+                    ? {
+                          id: 'fix-1',
+                          reason: 'Horario',
+                          suggestedDate: null,
+                          openedAt: daysAgo(2),
+                          openedById: 'admin-1',
+                          ownerReportedFixedAt: null
+                      }
+                    : null
+            });
+            const [item] = buildListingNoticeItems({
+                rows: [subject, ...(args.rows ?? [])],
+                coverage: args.coverage ?? COVERED,
+                now: NOW,
+                ...(args.limit === undefined ? {} : { publishLimit: args.limit })
+            });
+            return item?.notices.find((notice) => notice.kind === 'MODERATION_LIFTED');
+        };
+        const other = (id: string, status: S) =>
+            row({ id, publicationStatus: status }) as ListingNoticeRow;
+
+        it('QUOTA_FULL: covered, quota above zero and as many published as the quota', () => {
+            expect(lifted({ limit: 1, rows: [other('other-1', S.PUBLISHED)] })).toMatchObject({
+                unpublishedBecause: 'QUOTA_FULL'
+            });
+        });
+
+        it('FREE_SLOT: covered and the quota has room', () => {
+            expect(lifted({ limit: 2, rows: [other('other-1', S.PUBLISHED)] })).toMatchObject({
+                unpublishedBecause: 'FREE_SLOT'
+            });
+        });
+
+        it('NOT_COVERED: an uncovered owner is never told to unpublish another listing', () => {
+            expect(
+                lifted({ coverage: UNCOVERED, limit: 1, rows: [other('other-1', S.PUBLISHED)] })
+            ).toMatchObject({ unpublishedBecause: 'NOT_COVERED' });
+        });
+
+        it('NO_ROOM: quota zero or none declared gives no unpublish advice', () => {
+            expect(lifted({ limit: 0 })).toMatchObject({ unpublishedBecause: 'NO_ROOM' });
+            expect(lifted({ limit: null })).toMatchObject({ unpublishedBecause: 'NO_ROOM' });
+        });
+
+        it('leaves the reason out when the quota was not read', () => {
+            expect(lifted({})).not.toHaveProperty('unpublishedBecause');
+        });
+
+        it('drops the SURPLUS notice when the lift says there is room in the quota', () => {
+            const [item] = buildListingNoticeItems({
+                rows: [
+                    row({
+                        publicationStatus: S.UNPUBLISHED_BY_BILLING,
+                        lastLift: { at: daysAgo(2), returnedTo: S.UNPUBLISHED_BY_BILLING }
+                    })
+                ],
+                coverage: COVERED,
+                now: NOW,
+                publishLimit: 2
+            });
+            expect(item?.notices.map((notice) => notice.kind)).toEqual(['MODERATION_LIFTED']);
+        });
+
+        it('keeps the SURPLUS notice when the quota is full', () => {
+            const [item] = buildListingNoticeItems({
+                rows: [
+                    row({
+                        publicationStatus: S.UNPUBLISHED_BY_BILLING,
+                        lastLift: { at: daysAgo(2), returnedTo: S.UNPUBLISHED_BY_BILLING }
+                    }),
+                    other('other-1', S.PUBLISHED)
+                ],
+                coverage: COVERED,
+                now: NOW,
+                publishLimit: 1
+            });
+            expect(item?.notices.map((notice) => notice.kind)).toEqual([
+                'SURPLUS',
+                'MODERATION_LIFTED'
+            ]);
+        });
+
+        it('is not shown once the listing was published again (stale advice)', () => {
+            expect(lifted({ status: S.PUBLISHED, limit: 1 })).toBeUndefined();
+        });
+    });
+
     it('rows 8 and 9: UNPUBLISHED_BY_BILLING while covered is SURPLUS', () => {
         // Act + Assert
         expect(

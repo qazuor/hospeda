@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "061-feature-spiritual_retreat_suitable",
     "slug": "spiritual_retreat_suitable",
+    "category": "AUDIENCE",
     "description": {
         "es": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",
         "en": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",

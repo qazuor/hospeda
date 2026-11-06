@@ -49,33 +49,25 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
 });
 
 // -----------------------------------------------------------------------
-// Bug pin — orphan back_url
+// back_url target (HOS-1979)
 //
-// The companion API-side test file documents in detail. Here we
-// pin the filesystem state: `/billing/return.astro` does NOT exist in
-// apps/web/src/pages. When the bug lands a fix, one of two
-// things will be true and the failure mode of this test points to
-// either:
-//
-//   (a) A new file exists at `apps/web/src/pages/[lang]/billing/return.astro`
-//       (or `apps/web/src/pages/billing/return.astro` without locale
-//       prefix) → flip this assertion to expect(true).
-//   (b) The API was changed to point back_url at one of the
-//       existing /suscriptores/checkout/* pages → delete this
-//       describe block entirely; the API-side test header already
-//       documents the fix.
-//
-// Engram topic_key: bug/back-url-orphan-billing-return.
+// The Mercado Pago `back_url` used to point at the site origin / a never-built
+// `/billing/return` page (the old "orphan back_url" pin). The API now sends the payer to
+// `/{lang}/mi-cuenta/suscripcion/?subscription=<id>`, so that page must exist and the
+// orphan one must stay absent.
 // -----------------------------------------------------------------------
 
-describe('PIN — back_url orphan: /billing/return.astro does not exist', () => {
-    it('confirms no /[lang]/billing/return.astro page is mounted', () => {
-        const localized = resolve(__dirname, '../../src/pages/[lang]/billing/return.astro');
-        expect(existsSync(localized)).toBe(false);
+describe('back_url target: mi-cuenta/suscripcion is the return screen', () => {
+    it('mounts the subscription page the API back_url points to', () => {
+        const target = resolve(
+            __dirname,
+            '../../src/pages/[lang]/mi-cuenta/suscripcion/index.astro'
+        );
+        expect(existsSync(target)).toBe(true);
     });
 
-    it('confirms no unlocalized /billing/return.astro page is mounted either', () => {
-        const unlocalized = resolve(__dirname, '../../src/pages/billing/return.astro');
-        expect(existsSync(unlocalized)).toBe(false);
+    it('still has no /[lang]/billing/return.astro page', () => {
+        const localized = resolve(__dirname, '../../src/pages/[lang]/billing/return.astro');
+        expect(existsSync(localized)).toBe(false);
     });
 });

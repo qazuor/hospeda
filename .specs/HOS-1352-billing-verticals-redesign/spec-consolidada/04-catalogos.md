@@ -333,7 +333,7 @@ máquina sigue hablando sólo el vocabulario del contrato (arriba). **Y el cobro
 del trial** para no tener que esperar: una fecha futura se convierte sola en un *free trial* del
 proveedor (`EX-38`), que es lo que `HOS-1012` eliminó (`DEC-TRIAL-010`).
 
-**Texto de la fuente — «Los 26–44 minutos: dos títulos a la vez, y el pliegue los suma»** (`V/03-maquinas-de-estado.md:164–204`, sin lo tachado):
+**Texto de la fuente — «Los 26–44 minutos: dos títulos a la vez, y el pliegue los ~~suma~~ sumaba (reemplazado el 2026-11-04, HOS-2027: el trial no suma)»** (`V/03-maquinas-de-estado.md:164–204`, sin lo tachado):
 
 Mientras el primer cobro no llega, la persona tiene **dos fuentes de clase `TÍTULO`**: la del
 trial, que apunta al plan de trial —derivado del plan vendible de `rank` más alto (cap. 02 §2.1)—,
@@ -344,13 +344,25 @@ cupos y las de «no acumula» toman el más favorable. Es exactamente el caso qu
 abierto ahora por la ventana del primer cobro. El pliegue **no duplica** nada que no sumara ya con
 dos títulos cualesquiera; lo que cambia es que ahora la ventana existe.
 
+> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba y el punto 1 del ⚠️ siguiente ya no rigen.
+> En el pliegue (`selectPlegableSources`), una fuente `TRIAL` deja de aportar **apenas hay una fuente
+> `SUSCRIPCIÓN` de clase `TÍTULO` en la misma vertical**: las claves `SUMA` toman el cupo de la
+> suscripción, no trial + suscripción. Los `ADDON` siguen sumando sobre ella. Si la suscripción
+> deja de dar título, el trial vuelve a aportar. Motivo: la suma produjo el canje
+> restaurar-y-recortar medido en staging (con `max_accommodations` 1 + 1 = 2, el recálculo
+> republicó la ficha más vieja despublicada por billing y, al convertirse el trial, el tope 1
+> recortó la ficha nueva publicada a mano). `cobertura` **sigue listando el trial** (contrato
+> `12-contrato…` §2.1): la regla vive en el pliegue, no en el contrato.
+
 > ⚠️ **Lo que esto NO cierra, declarado por `DEC-METH-015`** (cap. 15 §2.6 lo repite donde se
 > pliega):
 >
-> 1. **Durante la ventana la persona tiene el cupo de los dos títulos sumado.** Si publica por
+> 1. ~~**Durante la ventana la persona tiene el cupo de los dos títulos sumado.** Si publica por
 >    encima del cupo que le va a quedar, al convertir (`T2`) o al rechazarse el cobro (`S16`) el
 >    conjunto efectivo baja y **el reconciliador de excedentes** despublica lo que sobra (cap. 15
->    §4.3). Dura lo que tarde el primer cobro: los minutos de `PA-3` en un alta.
+>    §4.3). Dura lo que tarde el primer cobro: los minutos de `PA-3` en un alta.~~ **Reemplazado el
+>    2026-11-04 (HOS-2027): durante la ventana rige el cupo de la suscripción solo; el trial no
+>    suma** (nota de arriba), así que no hay excedente que despublicar al convertir.
 > 2. **La ventana es más larga sobre una sucesora con tarjeta**: su primer cobro nace después del
 >    vencimiento de su ventana de autorización (`D8`, `B/12` §4.3), hasta 72 h, y mientras tanto
 >    trae `cobrada: no`. Alcanza a quien, estando en `TRIAL_ACTIVE`, cambia de plan antes de que un
@@ -501,7 +513,7 @@ puerta de la máquina.
 - **Si el cobro se rechaza**, `S16` lleva la fila a `CHARGE_DECLINED`, `PB2` baja la ficha y la
   persona queda en `PRE_TRIAL`: su próximo `PB1`, sin cobertura, arranca el trial por `T1`
   —también sobre la ficha que `PB2` bajó, porque `PB1` sale de `UNPUBLISHED_BY_BILLING` cuando
-  arranca un trial (§9; FASE 9 vuelta 1, R1)—.
+  arranca un trial (§9; FASE 9 vuelta 1, R1)—. Cubierto y con lugar en el cupo, el dueño también la publica a mano (`DEC-DATA-009`, owner 2026-11-02).
 - **La superficie empuja al orden que no necesita `T8`** (decisión del owner, 6c): el botón de
   suscribirse de una vertical **en la que la persona todavía no publicó la manda a publicar**
   **si publicar le arrancaría el trial** (la regla, escrita sólo en `V/19` §4 fila 23; FASE 9
@@ -592,7 +604,7 @@ transiciones**, y ése es el arreglo: las dos listas estaban **congeladas** y se
 apenas el diseño se movió. `PB2` enumeraba cuatro causas y **no conocía `S16`** —el alta cuyo primer cobro se
 rechaza—; `PB3` enumeraba tres y **no conocía `S2`**, así que **el que recontrataba después de
 cancelar pagaba y su ficha no volvía nunca** — y tampoco podía sacarla a mano, porque `PB1` sale de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial
-(FASE 9 vuelta 1, R1) —y quien recontrata está cubierto—.
+(FASE 9 vuelta 1, R1) —y quien recontrata está cubierto—. *(Desde el 2026-11-02, `DEC-DATA-009`: el dueño cubierto, con lugar en el cupo, también puede publicarla a mano.)*
 
 **El contrato ya emite el hecho** —*«la cobertura de (user, vertical) cambió»* (`12-contrato…`
 §3)— así que atarse a él **no agrega un mecanismo: usa el que estaba**. Una lista de transiciones
@@ -630,7 +642,7 @@ segunda rama de `PB2`, y tres meses después **vuelve a Premium y paga el precio
 hasta que `S17` la mata (`12-contrato…` §2.6)—, así que **no hay ningún cambio de `cubierto` que
 disparar**. Con `PB3` pidiendo sólo ese cambio, las tres se quedaban en
 `UNPUBLISHED_BY_BILLING`, desde donde no salía ninguna otra fila — `PB1` sale de `DRAFT`, y de
-`UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1)—, y
+`UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1; hoy también a mano con lugar en el cupo, `DEC-DATA-009`)—, y
 ahí se quedaban **para siempre**. **Paga el plan más caro y recibe el más chico, indefinidamente y
 sin que nada lo señale** (`DEC-DATA-003`). *(Este renglón decía además que el día 90 `PB4` las
 archivaba y el día 180 el hard delete les borraba el contenido, y es falso para este sujeto por la
@@ -696,7 +708,7 @@ se eligió (`DEC-SUB-008`).
 - **desde** (estado origen): `DRAFT` **o `UNPUBLISHED_BY_BILLING`** (FASE 9 vuelta 1, R1)
 - **evento** (disparador): el dueño publica
 - **hacia** (estado destino): `PUBLISHED`
-- **nota** (guardas y efectos): **sólo si el dueño está cubierto** —`cubierto` verdadero en esa vertical— **o si esta publicación dispara `T1`**, o sea si arranca un trial: la persona está en `PRE_TRIAL` y se cumplen las condiciones de `T1` (§2). **Si no, no publica**, y la pantalla le dice *«suscribite para publicar»* (cap. 19 §4 fila 21) (FASE 8 completa, owner 2026-09-25). Es **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha. **Toma el lock del `user + vertical` y cuenta el cupo adentro** (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 8 completa, `F-8CA1-006`, `F-8CA2-010`, owner 2026-09-25). **Desde `UNPUBLISHED_BY_BILLING` sale sólo por la segunda rama**: si esta publicación dispara `T1`. Es el camino del dueño que perdió la ficha por billing y todavía no estrenó su trial — quien quedó en `PRE_TRIAL` por un primer cobro rechazado (§2, `T8`)— (la cartera del corte ya no: nace con su ficha publicada y su prueba activa; revisión del owner, 2026-09-28, C12, `L1-b`; *«o en `DRAFT`»* salió con la simplificación del corte, S-02: las fichas que no son de las cinco se borran). **Con cobertura no sale por acá**: la ficha vuelve por `PB3`, con el criterio de *«cuáles vuelven»*, y no a mano (FASE 9 vuelta 1, R1; owner 2026-09-26, `G1-1`). **Revalida: sí**, llega a `PUBLISHED` (FASE 5, lote 3 A)
+- **nota** (guardas y efectos): **sólo si el dueño está cubierto** —`cubierto` verdadero en esa vertical— **o si esta publicación dispara `T1`**, o sea si arranca un trial: la persona está en `PRE_TRIAL` y se cumplen las condiciones de `T1` (§2). **Si no, no publica**, y la pantalla le dice *«suscribite para publicar»* (cap. 19 §4 fila 21) (FASE 8 completa, owner 2026-09-25). Es **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha. **Toma el lock del `user + vertical` y cuenta el cupo adentro** (abajo, *«publicar ocupa cupo bajo un lock»*; FASE 8 completa, `F-8CA1-006`, `F-8CA2-010`, owner 2026-09-25). **Desde `UNPUBLISHED_BY_BILLING` sale por dos ramas**: si esta publicación dispara `T1`, o —cubierto y con **lugar en el cupo** (`publicadas < cupo`)— a mano (`DEC-DATA-009`, owner 2026-11-02, HOS-1997; con el cupo lleno se rechaza con `LIMIT_REACHED`, y esa publicación a mano nunca consume un trial). La primera rama es el camino del dueño que perdió la ficha por billing y todavía no estrenó su trial — quien quedó en `PRE_TRIAL` por un primer cobro rechazado (§2, `T8`)— (la cartera del corte ya no: nace con su ficha publicada y su prueba activa; revisión del owner, 2026-09-28, C12, `L1-b`; *«o en `DRAFT`»* salió con la simplificación del corte, S-02: las fichas que no son de las cinco se borran). **Con cobertura sale por acá sólo a mano y con lugar en el cupo** (`DEC-DATA-009`, owner 2026-11-02, HOS-1997, que reemplaza en esto a `G1-1`: antes volvía sólo por `PB3`, con el criterio de *«cuáles vuelven»*, y no a mano; FASE 9 vuelta 1, R1; owner 2026-09-26). `PB3` sigue siendo el camino de la restitución automática. **Revalida: sí**, llega a `PUBLISHED` (FASE 5, lote 3 A)
 
 **Texto de la fuente — «Publicar ocupa cupo bajo un lock por `user + vertical`»** (`V/03-maquinas-de-estado.md:842–930`, sin lo tachado):
 
@@ -818,7 +830,7 @@ lo único que billing le empuja a verticales y no tiene transporte durable. Tres
 red: **(1)** si se perdía el aviso de que la cobertura **volvió**, `PB3`/`PB7` no disparaban, `PB4`
 releía, encontraba al dueño cubierto y **reiniciaba el reloj sin republicar**, y el dueño no tiene
 transición propia para salir de `UNPUBLISHED_BY_BILLING` — `PB1` sale
-de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1)—: pagaba y
+de `DRAFT`, y de `UNPUBLISHED_BY_BILLING` sólo si arranca un trial (FASE 9 vuelta 1, R1; desde el 2026-11-02 también a mano con lugar en el cupo, `DEC-DATA-009`)—: pagaba y
 sus fichas no se veían, sin límite (`F-8CA2-002`, `F-8CC1-005`); **(2)** una fuente con `hasta:
 fecha` que deja de emitirse porque la fecha pasó **no es una transición**, así que no produce aviso
 ni invalida el caché (`F-8CA1-007`, `F-8CC1-009`); **(3)** si se perdía el aviso de la caída, nadie

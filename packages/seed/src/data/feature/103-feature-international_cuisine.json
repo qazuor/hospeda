@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "103-feature-international_cuisine",
     "slug": "international_cuisine",
+    "category": "CUISINE",
     "description": {
         "es": "Cocina internacional: platos de distintas tradiciones culinarias del mundo",
         "en": "International cuisine: dishes from different culinary traditions around the world",

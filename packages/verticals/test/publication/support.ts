@@ -27,6 +27,7 @@ export function makeHarness(
         readonly trialAvailable?: boolean;
         readonly setReturnsFalse?: boolean;
         readonly listings?: readonly PublicationListing[];
+        readonly publicationInstants?: ReadonlyMap<string, Date>;
         readonly incompleteListingIds?: readonly string[];
         readonly sources?: readonly CoverageSource[];
         readonly declaredEvent?: typeof event | null;
@@ -264,6 +265,14 @@ export function makeHarness(
         },
         async readPublicationInstants({ listingIds }) {
             calls.push('instants');
+            if (args.publicationInstants) {
+                return new Map(
+                    listingIds.flatMap((id) => {
+                        const instant = args.publicationInstants?.get(id);
+                        return instant ? [[id, instant] as const] : [];
+                    })
+                );
+            }
             return new Map(listingIds.map((id, index) => [id, new Date(at.getTime() + index)]));
         },
         async setPublicationStatus(input) {
@@ -367,6 +376,7 @@ export function makeHarness(
         restitutionNotices,
         listingNotices,
         retentionNotices,
-        getStatus: () => status
+        getStatus: () => status,
+        statusOf: (id: string) => statuses.get(id)
     };
 }

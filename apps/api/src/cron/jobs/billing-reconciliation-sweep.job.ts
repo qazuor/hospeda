@@ -1,6 +1,8 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    CHARGE_SNAPSHOT_PROVIDER,
     createAmountComparison,
+    createClosedChargeSnapshots,
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     createNextChargeSync,
@@ -33,17 +35,57 @@ import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-co
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { createApiListingInverse } from '../../utils/listing-publication/listing-inverse.js';
+import { isMercadoPagoGovernorEnforcing } from '../../utils/mp-traffic-governor.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
+import { isLastSlot } from '../last-slot.js';
 import type { CronJobDefinition } from '../types.js';
+
+/** Holders inside this window are presumed to be the competing tick for this slot. */
+export const SAME_SLOT_WINDOW_MS = 10 * 60_000;
 
 /** HOS-1602, AC:B11:1: reconcile the owned billing inventory every day. */
 export const billingReconciliationSweepJob: CronJobDefinition = {
     name: 'billing-reconciliation-sweep',
     description:
         'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1)',
-    schedule: '0 6 * * *',
+    schedule: '10 2,3,4 * * *',
+    exclusive: true,
+    acceptsNewCycle: true,
+    onOverlapSkipped: ({
+        logger,
+        startedAt,
+        holderRunId,
+        holderStartedAt,
+        holderExecutionMode
+    }) => {
+        if (!isLastSlot({ schedule: billingReconciliationSweepJob.schedule, now: startedAt }))
+            return;
+        const holderAgeMs = holderStartedAt
+            ? startedAt.getTime() - holderStartedAt.getTime()
+            : null;
+        // Only a SCHEDULED holder is the competing tick of this slot (a Coolify rollout). A manual
+        // run starting minutes earlier may stop on budget without finishing the cycle, so its
+        // overlap with the last slot must still alert.
+        const sameSlot =
+            holderExecutionMode === 'scheduled' &&
+            holderAgeMs !== null &&
+            Math.abs(holderAgeMs) <= SAME_SLOT_WINDOW_MS;
+        if (sameSlot) {
+            logger.info('reconciliation last slot overlaps a run for the same slot', {
+                holderRunId,
+                holderStartedAt
+            });
+        } else {
+            logger.error(
+                'reconciliation last slot skipped: another run still holds the lock',
+                { holderRunId, holderStartedAt, holderExecutionMode, holderAgeMs },
+                { capture: true }
+            );
+        }
+    },
+    budgetMs: 2_700_000,
     enabled: true,
-    timeoutMs: 600_000,
+    timeoutMs: 3_000_000,
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
@@ -62,16 +104,34 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             // HOS-1737 gives this sweep run its own paced provider instance.
             const provider = createSweepPacedProvider({
                 provider: getPaymentProvider(),
-                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+                retryOwnership: isMercadoPagoGovernorEnforcing() ? 'governor' : 'legacy'
             });
             const clock = getClock().clock;
+            const closedChargeSnapshots = createClosedChargeSnapshots({
+                provider: CHARGE_SNAPSHOT_PROVIDER,
+                clock
+            });
+            const lastSlot = isLastSlot({
+                schedule: billingReconciliationSweepJob.schedule,
+                now: new Date(),
+                newCycle: ctx.newCycle === true
+            });
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
             const { addonPolicy, listing } = buildBillingCoveragePorts({
                 reader: createBootstrapCoverageReader()
             }).ports;
             const complements = buildComplementPolicyPorts();
             const summary = await runReconciliationSweep(
-                { correlationId: ctx.correlationId },
+                {
+                    correlationId: ctx.correlationId,
+                    signal: ctx.signal,
+                    mode: 'cycle',
+                    newCycle: ctx.newCycle,
+                    lastSlot,
+                    deadlineAt: ctx.deadlineAt,
+                    budgetClock: () => new Date()
+                },
                 {
                     provider,
                     clock,
@@ -79,6 +139,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createStateComparison(),
                         createPeriodChargesComparison({
                             provider,
+                            closedChargeSnapshots,
                             dailySummary: createPersistedReconciliationDailySummary({
                                 correlationId: ctx.correlationId,
                                 clock
@@ -106,6 +167,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createLostFirstRejectionCheck({
                             provider,
                             clock,
+                            closedChargeSnapshots,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
                             billingFacts: getAnalyticsFactSink()
@@ -139,6 +201,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createGraceExpiryCheck({
                             provider,
                             clock,
+                            closedChargeSnapshots,
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
@@ -184,7 +247,74 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     livenessPing: createSentryCronMonitorPing()
                 }
             );
+            if (summary.leaseLost) {
+                // Another slice closed this one after it had worked: never green, keep the evidence.
+                const lostFailedIds = summary.failures.map(({ subscriptionId }) => subscriptionId);
+                logger.error(
+                    'reconciliation slice lost its lease',
+                    {
+                        runId: summary.runId,
+                        cycleId: summary.cycleId,
+                        sliceIndex: summary.sliceIndex,
+                        rowsRead: summary.rowsRead,
+                        rowsFailed: summary.rowsFailed,
+                        failedSubscriptionIds: lostFailedIds
+                    },
+                    { capture: true }
+                );
+                return {
+                    success: false,
+                    message: 'Reconciliation slice lost its lease',
+                    processed: summary.rowsRead,
+                    errors: Math.max(summary.rowsFailed, 1),
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: {
+                        leaseLost: true,
+                        outcome: summary.outcome,
+                        failedSubscriptionIds: lostFailedIds
+                    }
+                };
+            }
+            if (summary.skipped) {
+                // The last slot being refused leaves nobody to finish the cycle: say so.
+                if (summary.skipped === 'lease_held' && lastSlot)
+                    logger.error(
+                        'reconciliation last slot skipped: another slice holds the lease',
+                        { skipped: summary.skipped },
+                        { capture: true }
+                    );
+                return {
+                    success: true,
+                    message: `Reconciliation sweep skipped: ${summary.skipped}`,
+                    processed: 0,
+                    errors: 0,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { skipped: summary.skipped, outcome: summary.outcome ?? null }
+                };
+            }
+            if (summary.orphanedCycle) {
+                const orphan = summary.orphanedCycle;
+                const data = {
+                    cycleId: orphan.cycleId,
+                    failedSubscriptionIds: orphan.failedSubscriptionIds,
+                    rowsFailed: orphan.rowsFailed,
+                    forcedNewCycle: true
+                };
+                if (orphan.rowsFailed > 0 || orphan.failedSubscriptionIds.length > 0)
+                    logger.error(
+                        `forced newCycle abandoned unfinished cycle ${orphan.cycleId}`,
+                        data,
+                        { capture: true }
+                    );
+                else
+                    logger.warn(
+                        `forced newCycle abandoned unfinished cycle ${orphan.cycleId}`,
+                        data
+                    );
+            }
             const { failures, ...details } = summary;
+            const outcome =
+                summary.outcome ?? (summary.stoppedOnBudget ? 'TIMED_OUT' : 'CYCLE_DONE');
             const zeroCallFailures = summary.zeroCallChecks?.failures ?? [];
             const { failures: _zeroCallFailures, ...zeroCallDetails } = summary.zeroCallChecks ?? {
                 results: [],
@@ -193,26 +323,59 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             // HOS-1885 (F1): the alert the retired `dunning` job carried. Billing rows
             // that fail the daily read, or a zero-call check that fails, page Sentry
             // at error level; the bootstrap soft-failure only covers `rowsFailed`.
-            if (summary.rowsFailed > 0 || zeroCallFailures.length > 0) {
+            // HOS-1995: a provider cancel that failed is an error too, not a silent outcome.
+            const cancelCallFailed = summary.cancellationRetry?.callFailed ?? 0;
+            const cancellationRowsFailed = summary.cancellationRetry?.rowsFailed ?? 0;
+            const cycleFailedIds =
+                summary.cycle?.failedSubscriptionIds ??
+                failures.map(({ subscriptionId }) => subscriptionId);
+            // Failed rows of passes without a subscription id never reach the id list, so the
+            // cycle's total count is what decides, not only the ids.
+            const cycleRowsFailed = summary.cycle?.rowsFailed ?? summary.rowsFailed;
+            const closesCycle = outcome === 'CYCLE_DONE';
+            const cycleHasFailedWork =
+                cycleRowsFailed > 0 || cycleFailedIds.length > 0 || zeroCallFailures.length > 0;
+            if (closesCycle && (cycleHasFailedWork || cancelCallFailed > 0)) {
                 logger.error(
                     'Billing reconciliation sweep had failures',
                     {
-                        rowsFailed: summary.rowsFailed,
-                        failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
+                        rowsFailed: cycleRowsFailed,
+                        cancelCallFailed,
+                        failedSubscriptionIds: cycleFailedIds,
                         failedChecks: zeroCallFailures.map(({ check }) => check)
                     },
-                    { capture: true }
+                    { capture: cycleHasFailedWork }
                 );
             }
+            const incomplete = summary.incomplete ?? false;
+            if (incomplete) {
+                logger.error(
+                    'reconciliation cycle incomplete',
+                    { cycleId: summary.cycleId, sliceIndex: summary.sliceIndex },
+                    { capture: true }
+                );
+            } else if (outcome === 'CYCLE_DONE' && lastSlot && (summary.sliceIndex ?? 0) > 0) {
+                logger.warn('reconciliation cycle near capacity', {
+                    cycleId: summary.cycleId,
+                    slices: summary.cycle?.slices
+                });
+            }
             return {
-                success: summary.rowsFailed === 0,
+                success:
+                    !incomplete &&
+                    outcome !== 'FAILED' &&
+                    // Failed rows never turn the run that closes the cycle green.
+                    !(closesCycle && (cycleRowsFailed > 0 || cycleFailedIds.length > 0)) &&
+                    cancelCallFailed === 0 &&
+                    cancellationRowsFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
-                errors: summary.rowsFailed + zeroCallFailures.length,
+                errors: summary.rowsFailed + zeroCallFailures.length + cancelCallFailed,
                 durationMs: Date.now() - startedAt.getTime(),
                 details: {
                     ...details,
-                    failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
+                    stoppedOnBudget: summary.stoppedOnBudget,
+                    failedSubscriptionIds: cycleFailedIds,
                     ...(summary.zeroCallChecks
                         ? {
                               zeroCallChecks: {

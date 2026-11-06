@@ -508,9 +508,13 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
 // ---------------------------------------------------------------------------
 
 describe('HOS-803 — promoting an existing gallery photo is unchanged', () => {
-    it('still demotes the old cover into the gallery instead of deleting it', async () => {
+    it('promotes a gallery photo when the gallery is exactly at cap and demotes the old cover', async () => {
         const service = buildService();
         const targetId = '00000000-0000-4000-8000-0000000000c1';
+        // The service operation is quota-neutral: one gallery row exits and
+        // the previous cover enters, so a gallery already at its cap remains
+        // at the cap after promotion.
+        mockMediaModel.count.mockResolvedValue(getGalleryCap('accommodation'));
 
         mockMediaModel.findFeatured.mockResolvedValue(
             makeMediaRow({ id: PREVIOUS_FEATURED_ID, isFeatured: true, sortOrder: 0 })
@@ -525,6 +529,7 @@ describe('HOS-803 — promoting an existing gallery photo is unchanged', () => {
         });
 
         expect(result.error).toBeUndefined();
+        expect(mockMediaModel.count).not.toHaveBeenCalled();
 
         // The exchange is quota-neutral on its own: the promoted photo leaves
         // the gallery as the old cover enters it, so there is nothing to

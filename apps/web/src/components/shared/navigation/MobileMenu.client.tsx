@@ -64,6 +64,7 @@ import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
+import { clearThemeSyncMarker } from '@/lib/theme';
 import styles from './MobileMenu.module.css';
 import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
 
@@ -427,6 +428,7 @@ export function MobileMenu({
             // leaving it would keep showing the signed-out account for up to
             // the 60s TTL — on a shared device, someone else's identity.
             clearCachedAuthMe();
+            clearThemeSyncMarker();
             await signOut();
         } finally {
             window.location.reload();

@@ -7,12 +7,20 @@
  * pinned the defect as if it were a feature.
  */
 
-import { InternationalPhoneRegex } from '@repo/schemas';
+import { InternationalPhoneRegex, normalizeArgentinePhone } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { buildWhatsAppLink, E164_MAX_DIGITS, E164_MIN_DIGITS } from '@/lib/whatsapp';
 
 describe('buildWhatsAppLink', () => {
     describe('phone normalisation', () => {
+        it('keeps the mobile marker in normalized WhatsApp recipients', () => {
+            const storedPhone = normalizeArgentinePhone('3442 45-2345', true);
+            const { url } = buildWhatsAppLink({ phone: storedPhone });
+
+            expect(storedPhone).toBe('+5493442452345');
+            expect(url).toBe('https://wa.me/5493442452345');
+        });
+
         it('drops the leading + that stops wa.me resolving the recipient (HOS-289)', () => {
             const { url } = buildWhatsAppLink({ phone: '+543442453797' });
 

@@ -2407,6 +2407,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/accommodations/import-from-url/access"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/accommodations/import-from-url/status"
         },
         {

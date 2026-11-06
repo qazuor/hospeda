@@ -3,7 +3,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { getDb, touristVipModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { VerticalEnum } from '@repo/schemas';
+import { VerticalEnum, VerticalEnumSchema } from '@repo/schemas';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { BeforeCancelNotice } from './start-subscription.service';
@@ -23,6 +24,8 @@ export interface CancelInheritedTouristVipPorts {
     readonly touristVipInheritance: TouristVipInheritancePort;
     /** Receives the post-commit `REMOVED` tourist notice (B4.2); defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
+    /** Receives the `SUBSCRIPTION_CANCELLED` analytics fact once the close commits (HOS-1994). */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** Aggregate outcome of a cancellation clause or bounded retry sweep. */
@@ -113,6 +116,29 @@ export async function cancelInheritedTouristVips(
             continue;
         }
         cancelled++;
+        // Exactly one fact per row, and only when the close actually wrote (HOS-1994).
+        const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+        if (subscription.userId && vertical.success) {
+            const occurredAt = ports.clock.now();
+            emitBillingFact({
+                sink: ports.billingFacts,
+                fact: {
+                    kind: 'SUBSCRIPTION_CANCELLED',
+                    userId: subscription.userId,
+                    vertical: vertical.data,
+                    subscriptionId: subscription.id,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    cancelledBy: 'SYSTEM',
+                    path: 'INHERITED_BY_PLAN',
+                    wasScheduled: false,
+                    occurredAt,
+                    lifetimeDays: Math.floor(
+                        (occurredAt.getTime() - subscription.createdAt.getTime()) / 86_400_000
+                    )
+                }
+            });
+        }
         // closeCancelledVip committed on its own: the tourist source is gone (I-5).
         try {
             await notices.emitCoverageChanged({

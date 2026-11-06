@@ -206,8 +206,8 @@ tunnel; the connection strings live in shell variables of that session only.
 
 - **Secrets**: read the credentials from the container over ssh straight into shell
   variables. Never `echo` them, never write them to a file, never paste them in a ticket.
-- **Staging**: the Coolify proxy publishes the staging Postgres on the VPS loopback, port
-  `15432`. Tunnel it: `ssh -N -L 25432:127.0.0.1:15432 <vps>`, and point
+- **Staging**: the staging Postgres container is published on the VPS loopback, port
+  `5433` (HOS-1972: do not use the public Coolify proxy port 15432). Tunnel it: `ssh -N -L 25432:127.0.0.1:5433 <vps>`, and point
   `CUTOVER_STAGING_DATABASE_URL` at `127.0.0.1:25432`.
 - **Production**: there is no published port. Tunnel to the database container's address
   on the Docker network, resolved at the moment of use and **never written down** (it
@@ -598,8 +598,8 @@ nothing here needs a redeploy.
 
 1. **Plan.** Confirm the Sentry plan includes Crons (not verified).
 2. **Sweep monitor, `billing-reconciliation-sweep`.** From `apps/api/src/utils/cron-monitor-ping.ts`:
-   `interval 1 day`, check-in margin 120 minutes (26 h in total). The job runs daily at 06:00
-   (`0 6 * * *`, zone `America/Argentina/Buenos_Aires`). The monitor does not exist until the first
+   `crontab 10 2 * * *`, check-in margin 170 minutes. The job has three slices at 02:10,
+   03:10 and 04:10 (`10 2,3,4 * * *`, zone `America/Argentina/Buenos_Aires`). The monitor does not exist until the first
    check-in of a COMPLETE sweep in that environment creates it (Sentry upserts the monitor from the
    check-in config), and the sweep pings only after a complete run.
    - **Staging, during the rehearsal**, after the first complete sweep: the monitor exists with that
@@ -632,11 +632,11 @@ exist. Sentry check-ins (`cron-monitor-ping.ts`, `cron-heartbeat.ts`) stay exact
    three monitored jobs. Use the schedule from `apps/api/src/cron/schedules.manifest.ts`:
    - `listing-coverage-reconciler` → `0 5 * * *`
    - `listing-remote-deletion-retry` → `45 5 * * *`
-   - `billing-reconciliation-sweep` → `0 6 * * *`
+   - `billing-reconciliation-sweep` → `10 2,3,4 * * *`
 
    Time zone for all six: `America/Argentina/Buenos_Aires`. Pick a grace period you are
-   comfortable with; suggested: **2 h** for `billing-reconciliation-sweep` (Sentry used a 120 min
-   margin) and **1 h** for the other two.
+   comfortable with; suggested: **1 h** for `billing-reconciliation-sweep` and the other two.
+   Sentry's monitor remains `10 2 * * *` with its 170-minute margin.
 3. **Notification.** Add your email as the project's integration so a late ping, a `/fail`, or a
    missed check-in reaches you.
 4. **Env vars per environment.** On the VPS, set both vars for the API resource — the same ping

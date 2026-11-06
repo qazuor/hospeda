@@ -9,7 +9,8 @@ export const billingCreationsSweepJob: CronJobDefinition = {
     name: 'billing-creations-sweep',
     description:
         'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23)',
-    schedule: '*/5 * * * *',
+    schedule: '1-59/5 * * * *',
+    exclusive: true,
     enabled: true,
     timeoutMs: 120_000,
     handler: async (ctx) => {
@@ -27,7 +28,7 @@ export const billingCreationsSweepJob: CronJobDefinition = {
         }
         try {
             const summary = await runCreationsSweep(
-                { correlationId: ctx.correlationId },
+                { correlationId: ctx.correlationId, signal: ctx.signal },
                 {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,

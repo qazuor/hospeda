@@ -127,6 +127,20 @@ describe('TEST:1730:2 and TEST:1730:3b declared payer email on S1', () => {
         expect(row?.declaredPayerEmail).toBe(declaredEmail);
         expect(account?.email).toBe(accountEmail);
     });
+
+    it('sends the provider a back_url to the result screen of THIS attempt (HOS-1979)', async () => {
+        const choice = await seedChoice('monthly');
+        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const result = await startSubscription(
+            { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
+            ports(namespaceFake(fake))
+        );
+        const sentUrl = new URL(authorize.mock.calls[0]?.[0].returnUrl ?? '');
+        expect(sentUrl.origin).toBe('https://hospeda.example');
+        expect(sentUrl.pathname).toBe('/es/mi-cuenta/suscripcion/');
+        expect(sentUrl.searchParams.get('subscription')).toBe(result.subscriptionId);
+    });
 });
 
 describe('TEST:1730:6 pending reuse keeps the first attempt email', () => {

@@ -167,6 +167,33 @@ export function buildPaginatedPath({
     return page > 1 ? `${basePath}page/${page}/` : basePath;
 }
 
+/**
+ * Whether a requested page lies beyond the last page of a listing (HOS-1981).
+ *
+ * Such a URL used to answer 200 with an empty list and `index,follow`: a soft 404
+ * Google indexes and that can be multiplied without end. The owner decided it is
+ * a hard 404 (not a redirect to the last page), applied in the LISTING because
+ * the `page/[page].astro` shim cannot know the total.
+ *
+ * - page 1 is never out of range: an empty listing still has its first page;
+ * - `totalPages === null` means the fetch failed, so nothing is known and the
+ *   page renders (its own error banner) instead of 404ing on an outage.
+ *
+ * @param params.page - Requested 1-based page.
+ * @param params.totalPages - Total pages from a successful fetch, else `null`.
+ * @returns `true` when the listing must answer 404.
+ */
+export function isPageOutOfRange({
+    page,
+    totalPages
+}: {
+    readonly page: number;
+    readonly totalPages: number | null;
+}): boolean {
+    if (page <= 1 || totalPages === null) return false;
+    return page > totalPages;
+}
+
 /** Canonical and neighbour paths for one page of a listing. */
 export interface PaginationLinks {
     readonly canonicalPath: string;

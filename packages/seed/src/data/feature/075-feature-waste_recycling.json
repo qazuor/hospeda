@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "075-feature-waste_recycling",
     "slug": "waste_recycling",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",
         "en": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",

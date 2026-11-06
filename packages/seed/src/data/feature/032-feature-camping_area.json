@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "032-feature-camping_area",
     "slug": "camping_area",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",
         "en": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",

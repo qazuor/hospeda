@@ -48,6 +48,7 @@
         "@repo/cache-tags": "workspace:*",
         "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
+        "@repo/i18n": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
         "@repo/payments": "workspace:*",

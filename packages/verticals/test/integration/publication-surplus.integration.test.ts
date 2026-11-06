@@ -76,7 +76,9 @@ describe('publication surplus in both directions', () => {
                     actorType: 'owner',
                     actorId: userId,
                     correlationId: randomUUID(),
-                    occurredAt: eventAt(6)
+                    // Older than every published listing: newest manual publish returns first (HOS-1984),
+                    // so this distractor must rank last.
+                    occurredAt: new Date('2025-12-01T00:00:00.000Z')
                 });
             }
         }
@@ -170,7 +172,8 @@ describe('publication surplus in both directions', () => {
             vertical,
             correlationId: randomUUID()
         });
-        expect(up.restored).toEqual([listings[3]?.id, listings[4]?.id]);
+        // HOS-1984: the newest manual publish returns first.
+        expect(up.restored).toEqual([listings[4]?.id, listings[3]?.id]);
         expect(
             await listingPublicationModel.readPublicationInstants({
                 tx: db,
@@ -241,7 +244,7 @@ describe('publication surplus in both directions', () => {
         expect(after.rows[0]).toEqual(before.rows[0]);
     });
 
-    it('TEST:V6:5 produces the same published set after different limit paths', async () => {
+    it('TEST:V6:5 keeps the newest manual publishes when coverage returns, so the set depends on the limit path (HOS-1984)', async () => {
         const firstOwner = await seedPublicationOwner({ db });
         const directOwner = await seedPublicationOwner({ db });
         const covered = { value: true };
@@ -307,8 +310,12 @@ describe('publication surplus in both directions', () => {
                 )
                 .filter((index) => index >= 0);
         };
-        expect(await publishedIndexes(firstRows)).toEqual([0, 1, 2, 3]);
-        expect(await publishedIndexes(firstRows)).toEqual(await publishedIndexes(directRows));
+        // HOS-1984 (owner decision, option a): lowering still drops the most recent publish first,
+        // but a returning cap restores the most recent manual publish first. The set is therefore
+        // no longer path-independent: 5 -> 2 -> 4 restores the two newest (3, 4), 4 -> 3 lowers 4,
+        // and 3 -> 4 restores it again, while the direct 5 -> 4 only lowers 4.
+        expect(await publishedIndexes(firstRows)).toEqual([0, 1, 3, 4]);
+        expect(await publishedIndexes(directRows)).toEqual([0, 1, 2, 3]);
     });
 
     it('TEST:V6:5 leaves published listings alone when the limit is undeclared', async () => {

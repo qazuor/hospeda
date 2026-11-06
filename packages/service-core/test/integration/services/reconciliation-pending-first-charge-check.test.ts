@@ -243,7 +243,7 @@ describe('TEST:1731:8 pending first charge reconciliation', () => {
             const own = await setup();
             const summary = await onlyOwn(own.started.subscriptionId, () =>
                 runReconciliationSweep(
-                    {},
+                    { mode: 'single' },
                     {
                         provider: own.provider,
                         clock,

@@ -298,7 +298,7 @@ export function mapListingPublishDenial(
         return new ServiceError(ServiceErrorCode.LIMIT_REACHED, 'Listing limit reached', {
             limitKey: PUBLICATION_LIMIT_KEYS[vertical]
         });
-    if (reason === 'COVERED_USE_PB3' || reason === 'STATE_CHANGED' || reason === 'INVALID_FROM')
+    if (reason === 'STATE_CHANGED' || reason === 'INVALID_FROM')
         return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed');
     if (reason === 'LISTING_NOT_FOUND' || reason === 'NOT_OWNER')
         return new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');

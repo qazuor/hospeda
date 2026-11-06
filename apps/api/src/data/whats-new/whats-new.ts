@@ -152,10 +152,329 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4161
+    {
+        id: '2026-11-06-amenity-details-and-feature-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Contá si cada comodidad es privada o compartida, y si está todo el año',
+            en: 'Say whether each amenity is private or shared, and whether it is available year-round',
+            pt: 'Informe se cada comodidade é privativa ou compartilhada, e se está disponível o ano todo'
+        },
+        body: {
+            es: 'En **Servicios y comodidades**, cada comodidad marcada tiene **Detalles**: podés indicar si es de uso privado o compartido y si está todo el año o es de temporada. Los huéspedes lo ven en la ficha. Además, las características ahora están ordenadas por categoría y hay grupos nuevos de comodidades, como Estacionamiento, Lavandería y Bienestar.',
+            en: 'In **Services and amenities**, each checked amenity has **Details**: you can say whether it is private or shared, and whether it is available year-round or seasonal. Guests see it on your listing. Features are now grouped by category, and there are new amenity groups such as Parking, Laundry and Wellness.',
+            pt: 'Em **Serviços e comodidades**, cada comodidade marcada tem **Detalhes**: você pode informar se é de uso privativo ou compartilhado e se está disponível o ano todo ou na temporada. Os hóspedes veem isso no anúncio. Além disso, as características agora estão organizadas por categoria e há novos grupos de comodidades, como Estacionamento, Lavanderia e Bem-estar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4157
+    {
+        id: '2026-11-06-complete-amenity-filter-in-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El filtro de comodidades de alojamientos ahora muestra todas',
+            en: 'The accommodation amenity filter now lists them all',
+            pt: 'O filtro de comodidades das hospedagens agora mostra todas'
+        },
+        body: {
+            es: 'En el listado de alojamientos, el filtro de **Servicios** muestra todas las comodidades de alojamiento, y solo esas: ya no faltan opciones ni aparecen las de restaurantes o experiencias.',
+            en: 'In the accommodation listing, the **Services** filter shows every accommodation amenity, and only those: no options are missing and restaurant or experience amenities no longer appear.',
+            pt: 'Na listagem de hospedagens, o filtro de **Serviços** mostra todas as comodidades de hospedagem, e só elas: não faltam opções e as de restaurantes ou experiências não aparecem mais.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4143
+    {
+        id: '2026-11-05-choose-a-plan-from-your-trial',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Elegí tu plan desde tu prueba gratis',
+            en: 'Choose your plan from your free trial',
+            pt: 'Escolha seu plano a partir do seu teste grátis'
+        },
+        body: {
+            es: 'En **Mi cuenta → Suscripción**, la tarjeta de tu prueba gratis ahora tiene el botón «Elegí tu plan», que te lleva directo a los planes de esa ficha, también cuando la prueba ya terminó.',
+            en: 'In **My account → Subscription**, your free trial card now has a "Choose your plan" button that takes you straight to the plans for that listing, even after the trial has ended.',
+            pt: 'Em **Minha conta → Assinatura**, o cartão do seu teste grátis agora tem o botão «Escolha seu plano», que leva direto aos planos desse anúncio, inclusive quando o teste já terminou.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4144
+    {
+        id: '2026-11-05-why-checkout-asks-for-your-email',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Ahora queda claro por qué el pago te pide el email de Mercado Pago',
+            en: 'The checkout now explains why it asks for your Mercado Pago email',
+            pt: 'O pagamento agora explica por que pede o email do Mercado Pago'
+        },
+        body: {
+            es: 'Al suscribirte, el campo de email explica que Mercado Pago sólo acepta el pago desde la cuenta con ese email. Viene con el de tu cuenta de Hospeda: cambialo sólo si en Mercado Pago usás otro.',
+            en: 'When you subscribe, the email field explains that Mercado Pago only accepts payment from the account with that email. It comes filled in with your Hospeda email: change it only if you use a different one in Mercado Pago.',
+            pt: 'Ao assinar, o campo de email explica que o Mercado Pago só aceita o pagamento da conta com esse email. Ele já vem com o email da sua conta Hospeda: altere apenas se você usa outro no Mercado Pago.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4109
+    {
+        id: '2026-11-05-paying-keeps-your-published-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Al pasar de la prueba gratis a un plan, tus fichas publicadas siguen igual',
+            en: 'Moving from the free trial to a plan keeps your published listings as they are',
+            pt: 'Ao passar do teste grátis para um plano, seus anúncios publicados continuam iguais'
+        },
+        body: {
+            es: 'Si tu plan permite menos alojamientos de los que cargaste, al contratarlo quedan publicados los que publicaste más recientemente, los mismos que ya estaban en línea durante la prueba.',
+            en: 'If your plan allows fewer properties than you have listed, the ones you published most recently stay published when you subscribe — the same ones that were live during your trial.',
+            pt: 'Se o seu plano permite menos hospedagens do que você cadastrou, ao contratá-lo continuam publicadas as que você publicou mais recentemente, as mesmas que já estavam no ar durante o teste.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4111, #4132
+    {
+        id: '2026-11-05-price-on-request-cards',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los alojamientos sin precio ahora dicen «Precio a consultar»',
+            en: 'Properties without a price now say “Price on request”',
+            pt: 'Hospedagens sem preço agora dizem “Preço sob consulta”'
+        },
+        body: {
+            es: 'En los listados, en la home y en el mapa, las tarjetas de alojamientos sin precio cargado muestran «Precio a consultar» y un botón **Consultar disponibilidad** que lleva a la ficha. Todas las tarjetas tienen el precio y el botón a la misma altura.',
+            en: 'In listings, on the home page and on the map, cards for properties with no price show “Price on request” and a **Check availability** button that takes you to the listing. Every card shows the price and the button at the same height.',
+            pt: 'Nas listagens, na página inicial e no mapa, os cartões de hospedagens sem preço mostram “Preço sob consulta” e um botão **Consultar disponibilidade** que leva ao anúncio. Todos os cartões mostram o preço e o botão na mesma altura.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4116
+    {
+        id: '2026-11-05-import-your-first-listing-without-a-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER', 'HOST'],
+        title: {
+            es: 'Importá tu primer alojamiento desde un link, aunque todavía no tengas plan',
+            en: 'Import your first property from a link, even before you have a plan',
+            pt: 'Importe sua primeira hospedagem a partir de um link, mesmo sem ter um plano'
+        },
+        body: {
+            es: 'Si estás por publicar tu primer alojamiento, en **Publicar** podés pegar el link de tu ficha en otro sitio y te armamos el alta con esos datos para que la revises. Ya no te pedimos un plan para eso.',
+            en: 'If you are about to list your first property, in **Publish** you can paste the link to your listing on another site and we fill in the form with that information for you to review. You no longer need a plan for that.',
+            pt: 'Se você está prestes a publicar sua primeira hospedagem, em **Publicar** você pode colar o link do seu anúncio em outro site e preenchemos o cadastro com esses dados para você revisar. Não pedimos mais um plano para isso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4112
+    {
+        id: '2026-11-05-phone-numbers-as-you-write-them',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Escribí tu teléfono como siempre: nosotros lo ordenamos',
+            en: 'Type your phone number however you like: we tidy it up',
+            pt: 'Digite seu telefone como de costume: nós organizamos'
+        },
+        body: {
+            es: 'En **Contacto y redes** podés cargar el teléfono y el WhatsApp con espacios, guiones, paréntesis, el 0 o el 15, por ejemplo `3442 45-2345` o `+54 9 3442 45-2345`. Lo guardamos en un único formato. Si el número no es válido, te decimos cómo escribirlo.',
+            en: 'In **Contact and social**, you can enter your phone and WhatsApp with spaces, dashes, brackets, the leading 0 or the 15, for example `3442 45-2345` or `+54 9 3442 45-2345`. We save it in a single format. If the number is not valid, we tell you how to write it.',
+            pt: 'Em **Contato e redes**, você pode informar o telefone e o WhatsApp com espaços, hífens, parênteses, o 0 ou o 15, por exemplo `3442 45-2345` ou `+54 9 3442 45-2345`. Guardamos tudo em um único formato. Se o número não for válido, dizemos como escrevê-lo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4110
+    {
+        id: '2026-11-05-cover-photo-outside-the-cap',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'La foto principal ya no ocupa un lugar de tu galería',
+            en: 'Your main photo no longer takes a gallery slot',
+            pt: 'A foto principal não ocupa mais um lugar da sua galeria'
+        },
+        body: {
+            es: 'El tope de fotos de tu plan cuenta sólo la galería. Con un tope de 15, podés tener la foto principal y 15 fotos más, y el contador de **Fotos** muestra ese mismo número.',
+            en: 'Your plan’s photo cap now counts the gallery only. With a cap of 15, you can have your main photo plus 15 more, and the **Photos** counter shows that same number.',
+            pt: 'O limite de fotos do seu plano conta só a galeria. Com um limite de 15, você pode ter a foto principal e mais 15, e o contador de **Fotos** mostra esse mesmo número.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4113, #4133
+    {
+        id: '2026-11-05-photo-texts-panel-and-reminder',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los textos de tus fotos ahora se guardan y se cierran solos',
+            en: 'Your photo texts now save and close on their own',
+            pt: 'Os textos das suas fotos agora são salvos e fecham sozinhos'
+        },
+        body: {
+            es: 'En **Fotos**, al guardar los textos de una foto el panel se cierra solo, sin avisos en el medio, así podés completarlas una tras otra. Si salís de la sección con fotos sin descripción, te avisamos y podés completarlas en el momento o seguir igual.',
+            en: 'In **Photos**, saving a photo’s texts now closes the panel on its own, with no prompts in between, so you can fill them in one after another. If you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
+            pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho, sem avisos no meio, para você completá-las uma após a outra. Se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4114
+    {
+        id: '2026-11-05-video-link-in-every-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ahora podés sumar un video a tu alojamiento desde el plan Básico',
+            en: 'You can now add a video to your listing from the Basic plan',
+            pt: 'Agora você pode adicionar um vídeo à sua hospedagem a partir do plano Básico'
+        },
+        body: {
+            es: 'En **Fotos**, la sección **Videos** acepta enlaces de YouTube, Vimeo o Dailymotion en todos los planes, incluida la prueba gratis. El video se ve en tu ficha pública.',
+            en: 'In **Photos**, the **Videos** section takes YouTube, Vimeo or Dailymotion links on every plan, including the free trial. The video shows on your public listing.',
+            pt: 'Em **Fotos**, a seção **Vídeos** aceita links do YouTube, Vimeo ou Dailymotion em todos os planos, incluído o teste grátis. O vídeo aparece no seu anúncio público.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4009, #4097
+    {
+        id: '2026-11-02-republish-billing-unpublished-venues-and-experiences',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Volvé a publicar las fichas que tu plan dejó sin publicar',
+            en: 'Republish the listings your plan unpublished',
+            pt: 'Publique de novo os anúncios que seu plano despublicou'
+        },
+        body: {
+            es: 'En **Mi comercio**, las fichas de comer y salir y de experiencias que quedaron «Sin publicar por tu plan» ahora muestran el botón **Publicar de nuevo**.',
+            en: 'In **My business**, food and experience listings marked "Unpublished by your plan" now show a **Publish again** button.',
+            pt: 'Em **Meu negócio**, os anúncios de gastronomia e de experiências marcados como «Não publicado pelo seu plano» agora mostram o botão **Publicar de novo**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4001, #4098
+    {
+        id: '2026-11-02-out-of-range-listing-pages-show-not-found',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las páginas de un listado que no existen ahora avisan que no hay nada',
+            en: 'Listing pages that do not exist now say so',
+            pt: 'Páginas de listagem que não existem agora avisam isso'
+        },
+        body: {
+            es: 'Si entrás a una página de un listado que ya no existe, por ejemplo la 99 de alojamientos, ves la página de «Página no encontrada» en vez de un error o una lista vacía.',
+            en: 'If you open a listing page that no longer exists, such as page 99 of stays, you now see the "Page not found" page instead of an error or an empty list.',
+            pt: 'Se você abrir uma página de listagem que não existe mais, como a 99 de hospedagens, agora vê a página «Página não encontrada» em vez de um erro ou de uma lista vazia.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4020
+    {
+        id: '2026-11-02-lifting-a-moderation-keeps-published-listings',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al levantar una moderación no se baja ninguna ficha publicada',
+            en: 'Lifting a moderation never takes down a published listing',
+            pt: 'Ao levantar uma moderação nenhuma ficha publicada é despublicada'
+        },
+        body: {
+            es: 'Si una ficha moderada se aprueba de nuevo y tu cupo está lleno, queda aprobada pero sin publicar, y tus fichas ya publicadas siguen visibles. Para publicarla, despublicá otra.',
+            en: 'If a moderated listing is approved again and your quota is full, it stays approved but unpublished, and your already published listings stay visible. To publish it, unpublish another one.',
+            pt: 'Se uma ficha moderada for aprovada de novo e sua cota estiver cheia, ela fica aprovada mas sem publicar, e suas fichas já publicadas continuam visíveis. Para publicá-la, despublique outra.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4006
+    {
+        id: '2026-11-02-admin-moderation-terms-list-loads',
+        publishedAt: 'on-promotion',
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        highlight: false,
+        title: {
+            es: 'La lista de términos de moderación vuelve a cargar',
+            en: 'The moderation terms list loads again',
+            pt: 'A lista de termos de moderação volta a carregar'
+        },
+        body: {
+            es: 'En el panel de administración, el listado de términos de moderación vuelve a abrirse con su paginación, en lugar de mostrar un error.',
+            en: 'In the admin panel, the moderation terms list opens again with its pagination, instead of showing an error.',
+            pt: 'No painel de administração, a lista de termos de moderação volta a abrir com sua paginação, em vez de mostrar um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4029
+    {
+        id: '2026-11-03-rich-text-editor-toolbar-dark-mode',
+        publishedAt: 'on-promotion',
+        roles: ['HOST', 'EDITOR'],
+        highlight: false,
+        title: {
+            es: 'El editor de texto se ve bien en modo oscuro',
+            en: 'The text editor looks right in dark mode',
+            pt: 'O editor de texto fica bom no modo escuro'
+        },
+        body: {
+            es: 'La barra de herramientas y el área de escritura del editor de texto de fichas, notas y eventos ahora usan los colores del modo oscuro, sin el bloque blanco de antes.',
+            en: 'The toolbar and writing area of the text editor for listings, posts and events now use dark mode colors, without the white block it had before.',
+            pt: 'A barra de ferramentas e a área de escrita do editor de texto de fichas, notas e eventos agora usam as cores do modo escuro, sem o bloco branco de antes.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4000
+    {
+        id: '2026-11-02-accommodation-save-rejects-unknown-fields',
+        publishedAt: 'on-promotion',
+        roles: ['HOST'],
+        highlight: false,
+        title: {
+            es: 'Al guardar un alojamiento, los campos mal enviados ahora avisan',
+            en: 'Saving an accommodation now warns about fields sent the wrong way',
+            pt: 'Ao salvar uma acomodação, os campos enviados de forma errada agora avisam'
+        },
+        body: {
+            es: 'Si al guardar tu alojamiento se manda un dato que no se puede guardar de esa forma, ahora recibís un error que nombra el campo, en lugar de ver "guardado" sin que se haya guardado nada. Los datos de capacidad, ubicación y precio se guardan como siempre.',
+            en: 'If saving your accommodation sends a value that cannot be saved that way, you now get an error naming the field, instead of seeing "saved" when nothing was saved. Capacity, location and price data are saved as usual.',
+            pt: 'Se ao salvar sua acomodação for enviado um dado que não pode ser salvo dessa forma, agora você recebe um erro que nomeia o campo, em vez de ver "salvo" sem que nada tenha sido salvo. Os dados de capacidade, localização e preço são salvos como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4031
+    {
+        id: '2026-11-03-accommodation-list-filter-by-currency-and-date',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los alojamientos se pueden filtrar por moneda y por fecha de alta',
+            en: 'Accommodations can now be filtered by currency and listing date',
+            pt: 'As acomodações agora podem ser filtradas por moeda e por data de cadastro'
+        },
+        body: {
+            es: 'El listado público de alojamientos ahora respeta el filtro por **moneda** del precio y por **fecha de alta** (desde y hasta). Combinados con el tipo, devuelven solo los alojamientos que cumplen todo.',
+            en: 'The public accommodation list now respects the filter by price **currency** and by **listing date** (from and to). Combined with the type, they return only the accommodations that match everything.',
+            pt: 'A lista pública de acomodações agora respeita o filtro por **moeda** do preço e por **data de cadastro** (desde e até). Combinados com o tipo, devolvem apenas as acomodações que atendem a tudo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T06:31:48Z',
         highlight: false,
         title: {
             es: 'Restaurantes y bares ahora están en Comer y salir',
@@ -167,12 +486,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The section for restaurants, bars and venues has a new name: **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
             pt: 'A seção de restaurantes, bares e locais tem um nome novo: **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3824
     {
         id: '2026-10-26-admin-social-secrets-masked',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T05:31:48Z',
         highlight: false,
         roles: ['ADMIN', 'SUPER_ADMIN'],
         title: {
@@ -185,12 +504,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the panel, the social settings list and search now show secret-type values as "***", like the rest of the panel, never in plain text.',
             pt: 'No painel, a lista e a busca das configurações de redes sociais agora mostram os valores do tipo secreto como «***», como no resto do painel, e nunca em texto claro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3811
     {
         id: '2026-10-25-listing-summary-in-portuguese',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T04:31:48Z',
         highlight: false,
         title: {
             es: 'Los listados de Comer y salir y de experiencias se leen en portugués',
@@ -202,12 +521,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in Food & nightlife and experiences no longer appears in Spanish.',
             pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em Comer e sair e em experiências não aparece mais em espanhol.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3833
     {
         id: '2026-10-26-checkout-straight-to-mercadopago',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T03:31:48Z',
         highlight: false,
         title: {
             es: 'Suscribirte ahora te lleva directo a Mercado Pago',
@@ -219,12 +538,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you confirm your subscription you go straight to pay on Mercado Pago, with no intermediate screen or second button. If you left the payment halfway, choosing the same plan again takes you back to that same payment instead of creating another one.',
             pt: 'Ao confirmar sua assinatura, você vai direto pagar no Mercado Pago, sem uma tela intermediária nem um segundo botão. Se deixou o pagamento pela metade, escolher o mesmo plano de novo leva você ao mesmo pagamento, sem criar outro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3800
     {
         id: '2026-10-25-grace-period-reminders',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T02:31:48Z',
         highlight: false,
         title: {
             es: 'Te avisamos antes de que termine el plazo para regularizar tu pago',
@@ -236,12 +555,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If a charge on your subscription fails and you enter the grace period, we now email you a reminder a few days before it ends and another the day before, once each.',
             pt: 'Se uma cobrança da sua assinatura não passar e você entrar no período de carência, agora enviamos um lembrete por e-mail alguns dias antes do vencimento e outro no dia anterior, uma única vez cada.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3805
     {
         id: '2026-10-25-newsletter-subscribers-list-loads',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T01:31:48Z',
         highlight: false,
         roles: ['ADMIN', 'SUPER_ADMIN'],
         title: {
@@ -254,12 +573,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the panel, the newsletter subscribers list failed and showed nothing. It now loads with its filters by status, channel, language and email search, and includes people who subscribed without an account.',
             pt: 'No painel, a lista de assinantes da newsletter dava erro e não mostrava nada. Agora carrega com seus filtros por status, canal, idioma e busca por email, e inclui quem se inscreveu sem ter conta.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3726
     {
         id: '2026-10-20-plans-for-every-listing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T00:31:48Z',
         highlight: false,
         title: {
             es: 'Nuevos planes para publicar alojamientos, locales de Comer y salir y experiencias',
@@ -271,12 +590,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'You can now list your restaurant or your experience, as well as your accommodation, each with its own plans. You start with a 30-day free trial, with no card required, and only then choose whether to pay. Every publishing plan includes the Tourist VIP benefits.',
             pt: 'Agora você pode publicar seu restaurante ou sua experiência, além da sua hospedagem, cada um com seus próprios planos. Você começa com 30 dias de teste grátis, sem cadastrar cartão, e só depois escolhe se quer pagar. Todos os planos para publicar incluem os benefícios do Turista VIP.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3743
     {
         id: '2026-10-21-passwords-accept-any-symbol',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T23:31:48Z',
         highlight: false,
         title: {
             es: 'Tu contraseña puede llevar cualquier símbolo',
@@ -288,12 +607,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Previously, a password with a hyphen or another uncommon symbol could show as valid and then be rejected. Now any symbol is accepted, and what you see while typing it is exactly what is checked when you sign up or change it.',
             pt: 'Antes, uma senha com hífen ou outro símbolo pouco comum podia aparecer como válida e depois ser rejeitada. Agora qualquer símbolo é aceito, e o que você vê ao digitá-la é exatamente o que é validado ao se cadastrar ou alterá-la.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3774
     {
         id: '2026-10-23-account-and-forms-polish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T22:31:48Z',
         highlight: false,
         title: {
             es: 'Tu cuenta y los formularios, más prolijos',
@@ -305,12 +624,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The location map makes it clear when you have not placed the spot yet and that the pin can be dragged. «My enquiries» reads well on mobile, and if you open the event pages without access we explain how to become an editor instead of sending you back to your account without a word.',
             pt: 'O mapa da localização deixa claro quando você ainda não marcou o lugar e que o pino pode ser arrastado. «Minhas consultas» fica legível no celular, e se você abrir as páginas de eventos sem permissão explicamos como virar editor em vez de mandar você para a sua conta sem aviso.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3759
     {
         id: '2026-10-23-withdrawal-button-readable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T21:31:48Z',
         highlight: false,
         title: {
             es: 'El botón de arrepentimiento se lee bien en tema claro y oscuro',
@@ -322,12 +641,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'On the withdrawal page, «Request revocation» now has good contrast in both themes. Previously, in the dark theme, the button text was barely visible.',
             pt: 'Na página do botão de arrependimento, «Pedir a revogação» agora tem bom contraste nos dois temas. Antes, no tema escuro, o texto do botão quase não aparecia.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3801
     {
         id: '2026-10-25-safer-data-validation',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T20:31:48Z',
         highlight: false,
         title: {
             es: 'Actualizamos la validación de datos con un parche de seguridad',
@@ -339,12 +658,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The platform now validates what is submitted with a patched version that cannot be overwhelmed by very large lists. Nothing changes in how you use the site or the panel.',
             pt: 'A plataforma agora valida o que é enviado com uma versão corrigida que não pode ser sobrecarregada com listas muito grandes. Nada muda na forma como você usa o site ou o painel.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3775, #3783, #3785, #3792
     {
         id: '2026-10-24-mobile-floating-dock',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T19:31:48Z',
         highlight: false,
         title: {
             es: 'En el celular, los botones flotantes ya no tapan las tarjetas',
@@ -356,7 +675,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered. Even on the narrowest phones the bar fits on a single row.',
             pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto. Mesmo nos celulares mais estreitos a barra cabe em uma só linha.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3373
     {

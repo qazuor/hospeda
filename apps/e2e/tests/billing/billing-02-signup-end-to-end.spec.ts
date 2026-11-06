@@ -211,8 +211,10 @@ test.describe('TEST:B3:35 AC:B3:33 AC:B3:9 the signup end to end with two abando
             subject: 'Tu suscripción está activa',
             timeoutMs: MAIL_TIMEOUT_MS
         });
-        expect(mail.html).toContain('Mercado Pago');
-        expect(mail.html).toMatch(/\d{1,2} de [a-záéíóú]+ de \d{4}/i);
+        // HOS-1993: the signup IS the first charge, so the mail reports it as made or in flight
+        // (depending on whether the payment is already credited) and never as a future event.
+        expect(mail.html).toMatch(/Ya cobramos el primer pago|procesando el primer cobro/);
+        expect(mail.html).not.toContain('primer cobro real');
         expect(
             fakeServer
                 .requests()

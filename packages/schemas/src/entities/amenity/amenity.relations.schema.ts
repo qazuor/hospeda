@@ -52,21 +52,6 @@ const AccommodationSummarySchema = z.object({
     createdAt: z.date()
 });
 
-/**
- * Amenity category summary schema for relations
- * Contains category information with statistics
- */
-const AmenityCategorySummarySchema = z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    amenityCount: z.number().int().min(0),
-    totalUsageCount: z.number().int().min(0),
-    averageUsagePerAmenity: z.number().min(0),
-    icon: z.string().optional(),
-    color: z.string().optional(),
-    sortOrder: z.number().int().min(0).optional()
-});
-
 // ============================================================================
 // AMENITY WITH RELATIONS SCHEMAS
 // ============================================================================
@@ -116,10 +101,10 @@ export const AmenityWithAccommodationsSchema = AmenitySchema.extend({
 
 /**
  * Amenity with category information
- * Includes detailed category data and related amenities in the same category
+ * The category itself is the amenity's `type` column; this adds related
+ * amenities in the same category and the in-category rank.
  */
 export const AmenityWithCategorySchema = AmenitySchema.extend({
-    categoryInfo: AmenityCategorySummarySchema.optional(),
     relatedAmenities: z
         .array(
             AmenitySchema.pick({
@@ -146,9 +131,9 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                type: true
             }).extend({
-                category: z.string().optional(),
                 usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1), // How similar (0-1)
                 coOccurrenceCount: z.number().int().min(0) // How often used together
@@ -161,9 +146,9 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                icon: true
+                icon: true,
+                type: true
             }).extend({
-                category: z.string().optional(),
                 coOccurrenceRate: z.number().min(0).max(1), // Percentage of co-occurrence
                 coOccurrenceCount: z.number().int().min(0)
             })
@@ -176,9 +161,9 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                type: true
             }).extend({
-                category: z.string().optional(),
                 usageCount: z.number().int().min(0).optional(),
                 alternativeReason: z.string().optional() // Why it's an alternative
             })
@@ -272,8 +257,6 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
     accommodationsCount: z.number().int().min(0).optional(),
     featuredAccommodations: z.array(AccommodationSummarySchema).optional(),
 
-    // Category information
-    categoryInfo: AmenityCategorySummarySchema.optional(),
     relatedAmenities: z
         .array(
             AmenitySchema.pick({
@@ -295,9 +278,9 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                type: true
             }).extend({
-                category: z.string().optional(),
                 usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
@@ -310,9 +293,9 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
             AmenitySchema.pick({
                 id: true,
                 slug: true,
-                icon: true
+                icon: true,
+                type: true
             }).extend({
-                category: z.string().optional(),
                 coOccurrenceRate: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
             })

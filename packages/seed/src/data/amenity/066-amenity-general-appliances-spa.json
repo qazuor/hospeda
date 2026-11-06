@@ -8,7 +8,7 @@
         "pt": "Spa y relajación"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "WELLNESS",
     "icon": "SpaServicesIcon",
     "isBuiltin": false,
     "isFeatured": true,

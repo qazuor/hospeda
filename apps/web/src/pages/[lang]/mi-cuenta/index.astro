@@ -513,7 +513,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 <script>
     import { getApiUrl } from '@/lib/env';
     import type { UserStatsResponse } from '@repo/schemas';
-    import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';
+    import {
+        parsePlanNames,
+        resolveDashboardFreeCard,
+        resolveDashboardPlanStat
+    } from '@/lib/billing/dashboard-plan-stat';
+    import { formatNoticeInstant } from '@/lib/listing/listing-notices';
+    import { TrialSummaryResponseSchema, type TrialSummaryResponse } from '@repo/schemas';
+    import type { SupportedLocale } from '@/lib/i18n';
     import {
         summarizeListingVisibility,
         type ListingWithPublicationStatus
@@ -534,6 +541,35 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         }
     }
 
+    /**
+     * Reads the owner's trial in every vertical that can hold one
+     * (`GET /protected/publish/trial-summary/:vertical`, the canonical trial read) and
+     * returns the summaries that answered. Each read is capped at 3 s; a timeout or failure
+     * leaves that vertical out, so the card keeps the free label. Never rejects.
+     */
+    const TRIAL_READ_TIMEOUT_MS = 3000;
+
+    async function readDashboardTrialSummaries(): Promise<TrialSummaryResponse[]> {
+        const apiUrl = getApiUrl();
+        const reads = await Promise.all(
+            ['accommodation', 'venue', 'experience'].map(async (vertical) => {
+                try {
+                    const res = await fetch(`${apiUrl}/api/v1/protected/publish/trial-summary/${vertical}`, {
+                        credentials: 'include',
+                        signal: AbortSignal.timeout(TRIAL_READ_TIMEOUT_MS)
+                    });
+                    if (!res.ok) return [];
+                    const body = (await res.json()) as { data?: unknown };
+                    const parsed = TrialSummaryResponseSchema.safeParse(body.data);
+                    return parsed.success ? [parsed.data] : [];
+                } catch {
+                    return [];
+                }
+            })
+        );
+        return reads.flat();
+    }
+
     async function loadStats(): Promise<void> {
         const base = `${getApiUrl()}/api/v1/protected`;
 
@@ -545,6 +581,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         const isHostView = document.getElementById('stat-properties') !== null;
         const isListingView = document.getElementById('stat-listings') !== null;
         const isTouristView = !isHostView && !isListingView;
+
+        // Started alongside the stats fetch so a free-plan owner never waits on it serially.
+        // It never rejects (see readDashboardTrialSummaries), so leaving it unawaited is safe.
+        const trialSummariesPromise = readDashboardTrialSummaries();
 
         try {
             // /users/me/stats feeds the subscription widget for ALL views.
@@ -589,10 +629,31 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 } as const;
                 let subscriptionValue: string;
                 let statusAttribute: string | null = null;
+                let statusText: string | null = null;
                 switch (planStat.kind) {
-                    case 'free':
-                        subscriptionValue = subEl?.getAttribute('data-label-free') ?? 'Gratuito';
+                    case 'free': {
+                        // The trial is Hospeda's own: `plan: null` here does NOT mean "free"
+                        // while a trial runs (HOS-1996).
+                        const card = resolveDashboardFreeCard({
+                            trialSummaries: await trialSummariesPromise,
+                            labels: {
+                                free: subEl?.getAttribute('data-label-free') ?? 'Gratuito',
+                                trial: statusEl?.getAttribute('data-label-trial') ?? 'En prueba',
+                                trialEndsOn:
+                                    statusEl?.getAttribute('data-label-trial-ends-on') ?? ''
+                            },
+                            // `data-locale`, not `lang`: `lang` carries the regional tag (es-AR).
+                            formatDate: (iso) =>
+                                formatNoticeInstant({
+                                    iso,
+                                    locale: document.documentElement.dataset
+                                        .locale as SupportedLocale
+                                })
+                        });
+                        subscriptionValue = card.value;
+                        statusText = card.statusText;
                         break;
+                    }
                     case 'multiple': {
                         const template =
                             planStat.count === 1
@@ -618,7 +679,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
 
                 if (statusEl) {
-                    const statusLabel = statusAttribute ? statusEl.getAttribute(statusAttribute) : null;
+                    const statusLabel =
+                        statusText ?? (statusAttribute ? statusEl.getAttribute(statusAttribute) : null);
                     statusEl.textContent = statusLabel ?? '';
                     statusEl.hidden = !statusLabel;
                 }

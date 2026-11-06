@@ -54,6 +54,15 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
                         value: 'WORK_FRIENDLY',
                         labelKey: 'admin-filters.amenityType.workFriendly'
                     },
+                    // HOS-2058
+                    { value: 'PARKING', labelKey: 'admin-filters.amenityType.parking' },
+                    { value: 'LAUNDRY', labelKey: 'admin-filters.amenityType.laundry' },
+                    {
+                        value: 'WATER_ACTIVITIES',
+                        labelKey: 'admin-filters.amenityType.waterActivities'
+                    },
+                    { value: 'WELLNESS', labelKey: 'admin-filters.amenityType.wellness' },
+                    { value: 'DINING', labelKey: 'admin-filters.amenityType.dining' },
                     {
                         value: 'GENERAL_APPLIANCES',
                         labelKey: 'admin-filters.amenityType.generalAppliances'

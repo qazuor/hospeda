@@ -1837,6 +1837,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../db
+      '@repo/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger

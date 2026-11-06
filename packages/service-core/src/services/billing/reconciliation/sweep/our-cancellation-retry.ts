@@ -21,7 +21,8 @@ import {
 } from '../../subscription/subscription-billing-ports.js';
 import {
     type CancelOurAuthorizationNoticeKind,
-    cancelOurAuthorization
+    cancelOurAuthorization,
+    SWEEP_CANCEL_RETRY
 } from '../cancel-our-authorization.js';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import type { ProviderCancellationTransition } from '../provider-cancellation-decision.js';
@@ -117,6 +118,8 @@ export interface RetryOurCancellationInput {
 
 /** Ports of {@link retryOurCancellation}. */
 export interface RetryOurCancellationPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
@@ -230,7 +233,8 @@ export async function retryOurCancellation(
             userId: input.subscription.userId,
             authorizationId: input.providerLink.providerId,
             prior,
-            kind: declared === 'RECIPIENTLESS' ? null : declared
+            kind: declared === 'RECIPIENTLESS' ? null : declared,
+            retry: SWEEP_CANCEL_RETRY
         },
         {
             provider: ports.provider,
@@ -320,6 +324,8 @@ export async function runOurCancellationRetry(
             unconfirmedOnly: input.unconfirmedOnly
         });
         for (const row of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 const result = await retryOurCancellation(
                     {
@@ -341,6 +347,7 @@ export async function runOurCancellationRetry(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }

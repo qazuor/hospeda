@@ -198,8 +198,8 @@
             "pageTitle": "Pago rechazado"
         },
         "payerEmailConfirm": {
-            "title": "Con qué email vas a poder pagar",
-            "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
+            "title": "Confirmá la cuenta con la que vas a pagar",
+            "body": "Vas a pagar con la cuenta de Mercado Pago de {{email}}. Si no es la cuenta que querés usar, volvé y cambiá el email.",
             "label": "Email de pago",
             "invalidError": "Ingresá un email válido",
             "plusError": "Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.",
@@ -235,8 +235,8 @@
             "confirm": "Ir a pagar con Mercado Pago",
             "submitting": "Preparando el pago…",
             "payerEmail": {
-                "label": "Email de tu cuenta de Mercado Pago",
-                "hint": "Tiene que ser el email de la cuenta con la que vas a pagar. Si es distinto del de tu cuenta de Hospeda, cambialo acá: si no coincide, Mercado Pago rechaza el pago.",
+                "label": "¿Con qué email entrás a Mercado Pago?",
+                "hint": "Mercado Pago necesita este email para cobrarte y solo acepta el pago desde la cuenta que lo usa. Ya pusimos el de tu cuenta de Hospeda; cambialo solo si en Mercado Pago usás otro. Si no coincide, el pago se rechaza y no se cobra nada.",
                 "invalid": "Ingresá un email válido."
             },
             "pending": {
@@ -279,6 +279,36 @@
                 "partner": "aliados",
                 "unknown": "Hospeda",
                 "venue": "Comer y salir"
+            }
+        },
+        "return": {
+            "confirmed": {
+                "title": "Tu suscripción está activa",
+                "body": "Mercado Pago confirmó el pago. Ya podés usar tu plan."
+            },
+            "processing": {
+                "title": "Estamos confirmando tu pago",
+                "body": "Mercado Pago todavía no nos avisó el resultado. Esto suele tardar unos segundos."
+            },
+            "stillProcessing": {
+                "title": "Todavía no tenemos la confirmación",
+                "body": "Todavía no vemos el pago. Si ya lo completaste, puede tardar unos minutos en reflejarse. Si no lo completaste, podés retomarlo desde el checkout.",
+                "refresh": "Volver a revisar"
+            },
+            "rejected": {
+                "title": "Mercado Pago no aprobó el pago",
+                "body": "No se cobró nada y el intento anterior quedó cerrado. Podés armar uno nuevo con el mismo plan.",
+                "retry": "Intentar de nuevo",
+                "retrying": "Preparando el pago…"
+            },
+            "unknown": {
+                "title": "No pudimos leer el estado del pago",
+                "body": "Revisá tu suscripción para ver cómo quedó.",
+                "refresh": "Volver a revisar"
+            },
+            "closed": {
+                "title": "Este intento ya no está vigente",
+                "body": "El intento de pago venció o se canceló. Podés ver el estado de tu suscripción desde tu cuenta."
             }
         }
     },

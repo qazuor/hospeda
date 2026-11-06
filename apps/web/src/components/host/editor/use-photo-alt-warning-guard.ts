@@ -1,7 +1,7 @@
 /**
  * @file use-photo-alt-warning-guard.ts
- * @description Warns the host before they leave the Fotos section while some
- * photos still have an empty `alt` text (HOS-1018).
+ * @description Registers the HOS-1018 photo-alt warning for internal links
+ * while persisted photos still have an empty `alt` text.
  *
  * On the sample listing that motivated this, all fifteen photos had an empty
  * `alt`, caption, and description — nothing on the page asks for or explains
@@ -16,12 +16,11 @@
  *
  * Two differences from a normal "unsaved changes" use of that hook:
  *
- * 1. `includeBeforeUnload: false` — this is not data loss, so there is no
- *    reason to also raise the browser's own non-customizable tab-close/reload
- *    prompt. Back/forward navigation and tab close are a known, accepted gap
- *    (see the base hook's "Not covered" section); adding `beforeunload` here
- *    would not close that gap anyway, since its text cannot be customized and
- *    would not carry this feature's explanation.
+ * 1. `includeBeforeUnload: false` — hard exits use the browser's own
+ *    non-customizable prompt, which cannot carry this feature's explanation.
+ *    Browser back/forward navigation is outside this guard; only internal
+ *    link clicks use the shared registry. Photo text saves are not
+ *    guarded by this nudge.
  * 2. `onConfirm` persists a per-accommodation `sessionStorage` flag so the
  *    prompt does not reappear for the rest of the session once the host has
  *    chosen to continue without finishing the alt texts. Choosing to go back
@@ -29,11 +28,12 @@
  *    if they try to leave again with photos still missing alt text.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { isPhotoAltIncomplete } from './photo-section-helpers';
 
 /** Params accepted by {@link usePhotoAltWarningGuard}. */
 export interface UsePhotoAltWarningGuardParams {
@@ -41,11 +41,8 @@ export interface UsePhotoAltWarningGuardParams {
     readonly accommodationId: string;
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
-}
-
-/** Whether an item's `alt` is meaningfully filled in (not empty/whitespace). */
-function hasAlt(item: Pick<AccommodationMediaItem, 'alt'>): boolean {
-    return Boolean(item.alt && item.alt.trim().length > 0);
+    /** False until listMedia succeeded and replaced SSR placeholders with persisted rows. */
+    readonly mediaReady?: boolean;
 }
 
 /** Counts featured + gallery items whose `alt` is empty or whitespace-only. */
@@ -56,7 +53,7 @@ function countMissingAlt(
     const all: readonly AccommodationMediaItem[] = featuredItem
         ? [featuredItem, ...galleryItems]
         : galleryItems;
-    return all.filter((item) => !hasAlt(item)).length;
+    return all.filter(isPhotoAltIncomplete).length;
 }
 
 /**
@@ -102,6 +99,49 @@ function writeDismissed(accommodationId: string): void {
     }
 }
 
+/** Pending retry for {@link focusFirstIncompletePhoto}; module-level so a new request replaces it. */
+let focusTimer: number | undefined;
+
+function clearFocusTimers(): void {
+    if (focusTimer !== undefined) window.clearTimeout(focusTimer);
+    focusTimer = undefined;
+}
+
+/**
+ * Opens and focuses the alt field of the first photo whose required alt text
+ * is incomplete.
+ *
+ * Polls instead of focusing once because the section toggle or textarea may
+ * still be disabled while the incomplete-photo panel opens or its own save is
+ * pending. A single `focus()` call on a disabled element would silently do
+ * nothing. Gives up after ~5 seconds.
+ */
+function focusFirstIncompletePhoto(): void {
+    clearFocusTimers();
+    let attempts = 0;
+    const retry = (): void => {
+        if (attempts++ < 100) focusTimer = window.setTimeout(attempt, 50);
+    };
+    const attempt = (): void => {
+        focusTimer = undefined;
+        const first = document.querySelector<HTMLElement>('[data-photo-metadata-missing="true"]');
+        const toggle = first?.querySelector<HTMLButtonElement>('button[aria-expanded]');
+        if (!first || !toggle?.isConnected) return;
+        if (toggle.getAttribute('aria-expanded') !== 'true') {
+            if (!toggle.disabled) toggle.click();
+            retry();
+            return;
+        }
+        const field = first.querySelector<HTMLTextAreaElement>('textarea[id^="photo-alt-"]');
+        if (!field || field.disabled) {
+            retry();
+            return;
+        }
+        field.focus();
+    };
+    attempt();
+}
+
 /**
  * Warns the host before they leave the Fotos section while photos still have
  * an empty `alt` text.
@@ -119,20 +159,23 @@ export function usePhotoAltWarningGuard({
     locale,
     accommodationId,
     featuredItem,
-    galleryItems
+    galleryItems,
+    mediaReady = true
 }: UsePhotoAltWarningGuardParams): void {
+    useEffect(() => clearFocusTimers, []);
     const { t, tPlural } = createTranslations(locale);
 
     const missingAltCount = useMemo(
-        () => countMissingAlt(featuredItem, galleryItems),
-        [featuredItem, galleryItems]
+        () => (mediaReady ? countMissingAlt(featuredItem, galleryItems) : 0),
+        [featuredItem, galleryItems, mediaReady]
     );
 
-    // Re-read only when the listing id changes (a fresh mount, in practice —
-    // this page is per-accommodation). Not re-read on every render: nothing
-    // in this render path writes the flag, only `onConfirm` below does, right
-    // before the navigation that unmounts this hook.
-    const isDismissed = useMemo(() => readDismissed(accommodationId), [accommodationId]);
+    // Re-read only when the listing id changes. Confirmation updates local
+    // state too, so a save can dismiss the prompt without unmounting this hook.
+    const [isDismissed, setIsDismissed] = useState(() => readDismissed(accommodationId));
+    useEffect(() => {
+        setIsDismissed(readDismissed(accommodationId));
+    }, [accommodationId]);
 
     const shouldWarn = missingAltCount > 0 && !isDismissed;
 
@@ -140,7 +183,36 @@ export function usePhotoAltWarningGuard({
     // `PhotoSection` re-renders on every `uploadProgress` / `isCompressing`
     // tick during an upload. An inline closure would unregister and re-register
     // the leave warning on each of those renders for no reason.
-    const handleConfirm = useCallback(() => writeDismissed(accommodationId), [accommodationId]);
+    const handleConfirm = useCallback(() => {
+        writeDismissed(accommodationId);
+        setIsDismissed(true);
+    }, [accommodationId]);
+    const handleCancel = useCallback(focusFirstIncompletePhoto, []);
+    const copyForCount = useCallback(
+        (count: number) => {
+            const translations = createTranslations(locale);
+            return {
+                title: translations.t(
+                    'host.properties.editor.photo.altWarningTitle',
+                    'Fotos sin texto alternativo'
+                ),
+                message: translations.tPlural(
+                    'host.properties.editor.photo.altWarningMessage',
+                    count,
+                    { count }
+                ),
+                confirmLabel: translations.t(
+                    'host.properties.editor.photo.altWarningContinue',
+                    'Seguir igual'
+                ),
+                cancelLabel: translations.t(
+                    'host.properties.editor.photo.altWarningGoBack',
+                    'Completar ahora'
+                )
+            };
+        },
+        [locale]
+    );
 
     useUnsavedChangesGuard({
         isDirty: shouldWarn,
@@ -150,17 +222,17 @@ export function usePhotoAltWarningGuard({
         // time, and build one dialog that states both — see
         // `lib/forms/leave-warning-copy.ts`.
         kind: 'photo-alt',
+        guardsSaves: false,
         count: missingAltCount,
+        copyForCount,
         locale,
         title: t('host.properties.editor.photo.altWarningTitle', 'Fotos sin texto alternativo'),
         message: tPlural('host.properties.editor.photo.altWarningMessage', missingAltCount, {
             count: missingAltCount
         }),
-        confirmLabel: t(
-            'host.properties.editor.photo.altWarningContinue',
-            'Continuar sin completarlos'
-        ),
-        cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Volver y completarlos'),
-        onConfirm: handleConfirm
+        confirmLabel: t('host.properties.editor.photo.altWarningContinue', 'Seguir igual'),
+        cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Completar ahora'),
+        onConfirm: handleConfirm,
+        onCancel: handleCancel
     });
 }

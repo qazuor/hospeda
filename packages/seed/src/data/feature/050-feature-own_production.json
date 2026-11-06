@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "050-feature-own_production",
     "slug": "own_production",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",
         "en": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",

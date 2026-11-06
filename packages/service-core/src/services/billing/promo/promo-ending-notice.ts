@@ -3,6 +3,7 @@ import { createLogger } from '@repo/logger';
 import { BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
 import { and, desc, eq, lte } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
+import { resolvePlanDisplayName } from '../plan-display-name.js';
 import { composePromoAmount } from './promo-composition.js';
 
 const logger = createLogger('promo-ending-notice');
@@ -64,7 +65,8 @@ export async function applyPromoEndingNotice(input: {
             effectKind: db.promoCodes.effectKind,
             durationKind: db.promoCodes.durationKind,
             email: db.users.email,
-            planName: db.plans.name
+            planName: db.plans.name,
+            planSlug: db.plans.slug
         })
         .from(db.promoRedemptions)
         .innerJoin(db.promoCodes, eq(db.promoCodes.id, db.promoRedemptions.promoCodeId))
@@ -157,7 +159,10 @@ export async function applyPromoEndingNotice(input: {
                 subscriptionId: row.subscriptionId,
                 redemptionId: row.redemptionId,
                 vertical: row.vertical,
-                planName: row.planName,
+                planName: await resolvePlanDisplayName({
+                    vertical: row.vertical,
+                    plan: { slug: row.planSlug, name: row.planName }
+                }),
                 lastDiscountedChargeDate: milestone.targetDate,
                 amountAfterMinor,
                 currency: option.currency,

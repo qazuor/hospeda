@@ -38,10 +38,8 @@ importar los JSON generados. Typecheck no depende de esos archivos (`src/marketi
 
 Hoy existe A1 (`src/a1/`), que todavía mezcla las capas 2 y 3 en una sola composición.
 
-> ⚠️ **A1 hay que regrabarla.** La toma actual usa el viewport anterior (más angosto y alto), previo al dispositivo de
-> referencia: el marco ya es el del S24 Ultra, pero la toma vieja entra con bandas a los
-> costados (letterbox) en el área de página de 412 × 750. Regrabar con `pnpm record:a1` la
-> llena entera; el montaje se recalcula solo desde `events.json`.
+A1 se graba **en staging** con el dispositivo de referencia (como los VC): la toma llena el área
+de página de 412 × 750 y el montaje se recalcula solo desde `events.json`.
 
 ## Uso
 
@@ -51,12 +49,13 @@ cd marketing/videos
 corepack pnpm studio                               # Remotion Studio
 corepack pnpm render:test                          # → $ASSETS/video-lab/out/test.mp4
 corepack pnpm render:a1                            # → $ASSETS/video-lab/out/a1.mp4
-corepack pnpm record:a1 <toma>                     # → $ASSETS/video-lab/recordings/<toma>/
+VIDEO_LOGIN_PASSWORD=… corepack pnpm record:a1 <toma>   # → $ASSETS/video-lab/recordings/a1/<toma>/
 corepack pnpm typecheck
 ```
 
-- Grabar necesita los servers de dev levantados (`WEB_URL`, default `http://localhost:4422`)
-  y la base local (`DB_NAME`, default `worktree_hospeda2`, en el contenedor `hospeda-postgres`).
+- Grabar A1 y los VC va contra staging (`WEB_URL`, default `https://staging.hospeda.com.ar`),
+  logueado con una cuenta del seed; la contraseña sale de `VIDEO_LOGIN_PASSWORD` y nunca se
+  escribe en el código. Los grabadores se niegan a correr contra producción.
 - Grabar con la máquina libre: con la CPU saturada la captura cae a 8-11 cuadros/s.
 - Después del render, normalizar el audio a -14 LUFS con `ffmpeg loudnorm` (ver `REGLAS.md`).
 - Los scripts de `tools/` son Python y se corren con `uv` (instrucciones en cada archivo y en

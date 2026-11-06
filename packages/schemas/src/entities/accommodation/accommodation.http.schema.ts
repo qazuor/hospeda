@@ -10,12 +10,14 @@ import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
     createBooleanQueryParam,
-    createEnumArrayQueryParam
+    createEnumArrayQueryParam,
+    HttpQueryFields
 } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { stripShapeDefaults } from '../../utils/utils.js';
+import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
+import { AccommodationAmenityAttributesListSchema } from '../amenity/amenity.schema.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
@@ -60,6 +62,9 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
+    // Creation timestamp bounds are inclusive in the database query.
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // Capacity filters with HTTP coercion
     minGuests: z.coerce.number().int().min(1).optional(),
@@ -357,8 +362,12 @@ export const AccommodationCreateHttpSchema = z.object({
     media: HttpMediaSchema.optional(),
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
-    phone: z.string().optional(),
-    whatsapp: z.string().optional(),
+    phone: phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
+    whatsapp: phoneNumberSchema('zodError.common.contact.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -477,7 +486,9 @@ export const AccommodationCreateDraftHttpSchema = z.object({
 
     // --- Optional contact (→ contactInfo) ---
     /** Mobile phone. Maps to `contactInfo.mobilePhone`. */
-    phone: z.string().optional(),
+    phone: phoneNumberSchema('zodError.accommodation.contactInfo.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     /** Website URL. Maps to `contactInfo.website`. */
     website: safeExternalUrl('zodError.common.contact.website.invalid').optional(),
 
@@ -515,6 +526,13 @@ export const AccommodationUpdateHttpSchema = z
          * create do reach the table and are NOT discarded.
          */
         media: HttpMediaUpdateSchema.optional(),
+        /**
+         * Per-amenity relation attributes (`scope`, `availability`), HOS-2058.
+         * UPDATE-only and write-only: passed through to the domain input and
+         * applied by the amenity junction sync. See
+         * `AccommodationAmenityAttributesListSchema` for the contract.
+         */
+        amenityAttributes: AccommodationAmenityAttributesListSchema.optional(),
         /**
          * Minimum nights required per stay (H-112, G7 smoke).
          *
@@ -668,6 +686,8 @@ export const httpToDomainAccommodationSearch = (
     minPrice: httpParams.minPrice,
     maxPrice: httpParams.maxPrice,
     currency: httpParams.currency,
+    createdAfter: httpParams.createdAfter,
+    createdBefore: httpParams.createdBefore,
     destinationId: httpParams.destinationId,
     destinationIds: httpParams.destinationIds,
     latitude: httpParams.latitude,
@@ -694,9 +714,8 @@ export const httpToDomainAccommodationSearch = (
     checkIn: httpParams.checkIn,
     checkOut: httpParams.checkOut
 
-    // Note: Fields like ownerId, createdAfter, createdBefore exist in the domain
-    // schema but not in the HTTP schema, so they're not mapped. `isAvailable`,
-    // `city` and `country` were removed (HOS-1922): nothing ever implemented them.
+    // Note: ownerId is domain-only. `isAvailable`, `city` and `country` were
+    // removed (HOS-1922): nothing ever implemented them.
 });
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
@@ -887,7 +906,7 @@ export const httpToDomainAccommodationCreate = (
     // and update converters below) — `mobilePhone: httpData.phone || ''` used
     // to inject an empty string whenever phone was absent but a sibling field
     // (whatsapp/email/website) was present, which then fails
-    // `ContactInfoSchema.mobilePhone`'s `InternationalPhoneRegex` validation
+    // `ContactInfoSchema.mobilePhone`'s shared phone validation
     // even though the host never touched the phone field at all (HOS-190).
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
@@ -895,8 +914,10 @@ export const httpToDomainAccommodationCreate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
-                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
+                  ...(httpData.whatsapp === undefined
+                      ? {}
+                      : { whatsapp: httpData.whatsapp || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
@@ -1047,7 +1068,7 @@ export const httpToDomainAccommodationCreateDraft = (
     ...(httpData.phone !== undefined || httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               } as AccommodationCreateInput['contactInfo']
           }
@@ -1160,8 +1181,10 @@ export const httpToDomainAccommodationUpdate = (
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
-                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone || null }),
+                  ...(httpData.whatsapp === undefined
+                      ? {}
+                      : { whatsapp: httpData.whatsapp || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
@@ -1214,6 +1237,10 @@ export const httpToDomainAccommodationUpdate = (
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
+    // HOS-2058: per-amenity relation attributes, write-only.
+    ...(httpData.amenityAttributes === undefined
+        ? {}
+        : { amenityAttributes: httpData.amenityAttributes }),
     ...(httpData.refreshSlugFromName === undefined
         ? {}
         : { refreshSlugFromName: httpData.refreshSlugFromName }),

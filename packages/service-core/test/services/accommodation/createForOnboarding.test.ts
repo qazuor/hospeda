@@ -191,6 +191,25 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
 
+        it('normalizes an imported phone before storing an onboarding draft', async () => {
+            const actor = createActor({ id: 'user-phone' });
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-phone', ownerId: 'user-phone' })
+            );
+
+            await service.createForOnboarding(actor, {
+                ...VALID_DRAFT_INPUT_WITH_IMPORT_DATA,
+                phone: '3442 45-2345'
+            });
+
+            expect(accommodationModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contactInfo: expect.objectContaining({ mobilePhone: '+5493442452345' })
+                }),
+                expect.anything()
+            );
+        });
+
         // TEST:V9a:1 (unit) — AC:V9a:1, the accommodation owner-create path.
         it('records the owner create as a listing.created event (HOS-1499)', async () => {
             const actor = createActor({ id: 'user-001v' });

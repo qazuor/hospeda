@@ -1,0 +1,40 @@
+---
+/**
+ * @file StripMercadoPagoReturnParams.astro
+ * @description Scrubs `preapproval_id` off the URL the payer lands on after
+ * Mercado Pago (HOS-1979), before any analytics or third-party script can capture it.
+ *
+ * Mount it through the layout's `head-early` slot: it then runs synchronously
+ * during parse, ahead of the PostHog snippet, the feedback nav bootstrap and
+ * every cross-origin subresource that would send a `Referer`. The page never
+ * reads the value (our own `subscription` id is what identifies the attempt), so
+ * stripping it cannot break the screen.
+ *
+ * The script is a STATIC `is:inline` body, so the CSP build scan hashes it with
+ * no extra registration. It does not undo the first request's server access-log
+ * line; it is defense in depth, not a complete fix.
+ */
+---
+
+<script is:inline>
+(function () {
+	try {
+		var url = new URL(window.location.href);
+		var changed = false;
+		// If the provider glued `?preapproval_id=` onto a back_url that already had
+		// a query, the whole tail arrives inside `subscription`: keep only the id.
+		var sub = url.searchParams.get('subscription');
+		if (sub && sub.indexOf('?') > 0) {
+			url.searchParams.set('subscription', sub.split('?')[0]);
+			changed = true;
+		}
+		if (url.searchParams.has('preapproval_id')) {
+			url.searchParams.delete('preapproval_id');
+			changed = true;
+		}
+		if (changed) {
+			window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+		}
+	} catch (e) {}
+})();
+</script>

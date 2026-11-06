@@ -185,7 +185,7 @@ export async function startSuccession(
         pending,
         provider: ports.provider,
         clock: ports.clock,
-        reason: choice.planName,
+        reason: choice.providerReason,
         returnUrl: input.returnUrl,
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken,

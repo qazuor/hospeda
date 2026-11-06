@@ -21,7 +21,10 @@ import { ExperienceCertificatePanel } from '@/components/experience/ExperienceCe
 import { PublishButton } from '@/components/host/PublishButton.client';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
-import { resolvePropertyCardActions } from '@/lib/host/property-card-actions';
+import {
+    resolvePropertyCardActions,
+    resolveRepublishOffer
+} from '@/lib/host/property-card-actions';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ListingCardState } from '@/lib/listing/listing-card-state';
@@ -55,6 +58,12 @@ const PUBLISH_CONFIRM_TITLE_KEY: Readonly<Record<PublishVerticalSlug, string>> =
     accommodation: 'host.properties.card.actions.publishConfirmTitle',
     venue: 'listing.owner.publish.confirmTitle.venue',
     experience: 'listing.owner.publish.confirmTitle.experience'
+};
+
+const REPUBLISH_CONFIRM_TITLE_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
+    accommodation: 'host.properties.card.actions.republishConfirmTitle',
+    venue: 'listing.owner.publish.republishConfirmTitle.venue',
+    experience: 'listing.owner.publish.republishConfirmTitle.experience'
 };
 
 const PUBLISH_CHOOSE_PLAN_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
@@ -164,7 +173,19 @@ export function ListingActions({
         );
     }
 
-    if (state.kind === 'unknown') {
+    // HOS-1998: a listing the system took down for billing offers "Publicar de
+    // nuevo" in every card state but `published`/`purged`, decided by the same
+    // `resolveRepublishOffer` the accommodation card uses. The server reports
+    // anything still missing when the owner presses it.
+    const cardActions = resolvePropertyCardActions({
+        publicationStatus: listing.publicationStatus
+    });
+    const showRepublish = resolveRepublishOffer({
+        actions: cardActions,
+        affordance: publishAffordance
+    });
+
+    if (state.kind === 'unknown' && !showRepublish) {
         return (
             <div className={styles.actions}>
                 <span className={styles.badge}>
@@ -178,25 +199,38 @@ export function ListingActions({
     // incomplete draft (HOS-166 §8 point 4).
     const missing = state.kind === 'draft-incomplete' ? state.missing : [];
     const isComplete = state.kind === 'draft-complete';
-    const cardActions = resolvePropertyCardActions({
-        publicationStatus: listing.publicationStatus
-    });
 
     return (
         <div className={styles.actions}>
             <span className={`${styles.badge} ${styles.badgeDraft}`}>
-                {isComplete
-                    ? t('listing.owner.list.state.draftComplete', 'Borrador — listo para publicar')
-                    : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
+                {cardActions.republish
+                    ? t(
+                          'host.properties.card.status.UNPUBLISHED_BY_BILLING',
+                          'Sin publicar por tu plan'
+                      )
+                    : isComplete
+                      ? t(
+                            'listing.owner.list.state.draftComplete',
+                            'Borrador — listo para publicar'
+                        )
+                      : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
             </span>
 
-            {isComplete && cardActions.publish && (
+            {((isComplete && cardActions.publish) || showRepublish) && (
                 <PublishButton
                     listingId={listing.id}
                     vertical={listing.vertical}
                     locale={locale}
-                    label={t('host.properties.card.actions.publish', 'Publicar')}
-                    confirmTitle={t(PUBLISH_CONFIRM_TITLE_KEY[listing.vertical])}
+                    label={
+                        cardActions.republish
+                            ? t('host.properties.card.actions.republish', 'Publicar de nuevo')
+                            : t('host.properties.card.actions.publish', 'Publicar')
+                    }
+                    confirmTitle={t(
+                        cardActions.republish
+                            ? REPUBLISH_CONFIRM_TITLE_KEY[listing.vertical]
+                            : PUBLISH_CONFIRM_TITLE_KEY[listing.vertical]
+                    )}
                     confirmNote={t(
                         'host.properties.card.actions.publishConfirmNote',
                         'Va a aparecer en el sitio, visible para los turistas.'

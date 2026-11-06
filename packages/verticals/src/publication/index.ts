@@ -11,7 +11,6 @@ export * from './listing-inverse';
 export * from './moderate-listing';
 export * from './moderation-notices';
 export * from './moderation-origin';
-export * from './moderation-queue';
 export * from './publication-lock';
 export * from './publication-notices';
 export * from './publication-order';

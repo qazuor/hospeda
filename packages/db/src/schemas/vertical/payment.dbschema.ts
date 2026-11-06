@@ -34,6 +34,11 @@ export const payments = pgTable(
         providerFactId: varchar('provider_fact_id', { length: 255 }).notNull(),
         /** id del pago embebido */
         providerPaymentId: varchar('provider_payment_id', { length: 255 }),
+        /**
+         * Provider-reported reason for a rejected charge (MercadoPago `status_detail`, e.g.
+         * `cc_rejected_high_risk`); null when the payment was not rejected or the provider gave none (HOS-1991).
+         */
+        providerStatusDetail: varchar('provider_status_detail', { length: 255 }),
         /** fecha del hecho */
         factAt: timestamp('fact_at', { withTimezone: true }).notNull(),
         /** monto reembolsado acumulado */

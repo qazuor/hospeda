@@ -76,7 +76,7 @@ describe('subscription-window-expiry cron', () => {
     it('registers the expected cadence and ports, and counts terminal transitions', async () => {
         expect(subscriptionWindowExpiryJob).toMatchObject({
             name: 'subscription-window-expiry',
-            schedule: '*/15 * * * *',
+            schedule: '7-59/15 * * * *',
             enabled: true,
             timeoutMs: 120_000
         });
@@ -106,7 +106,8 @@ describe('subscription-window-expiry cron', () => {
             clock: mockClock,
             beforeCancelNotice,
             touristVipInheritance,
-            coverageNotices: getCoverageNotices()
+            coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink()
         });
         // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).
         expect(mockCredited.mock.invocationCallOrder[0]).toBeLessThan(

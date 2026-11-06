@@ -45,7 +45,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/protected/create.ts': { operation: 'CREATE' },
     'accommodation/protected/createDraft.ts': { operation: 'CREATE' },
     'accommodation/protected/import-from-url.ts': {
-        exempt: 'Importación por IA desde una URL: su gate es el de usuario ai_accommodation_import de V5.12; devuelve un borrador y no persiste fichas (verificado en dispatchImportFromUrl/finalizeImportDraft).'
+        exempt: 'Importación por IA desde una URL: el gate V5.12 ai_accommodation_import permite a usuarios con entitlement; usuarios realmente nuevos pasan el precheck de trial, historial de subscription, publicación y el cap de cinco usos/24 h. Devuelve un borrador y no persiste fichas.'
     },
     'accommodation/protected/patch.ts': { operation: 'EDIT' },
     'accommodation/protected/publish.ts': { operation: 'PUBLISH' },

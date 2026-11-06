@@ -138,3 +138,70 @@
     font-size: 0.875rem;
     color: var(--core-foreground);
 }
+
+/*
+ * HOS-2058: a checked amenity carries a collapsed scope/availability disclosure.
+ * Each item spans two rows of the parent grid and adopts them as a subgrid, so
+ * every label in a visual row shares one track (a two-line name stretches its
+ * neighbours' cards instead of pushing them out of line) and every "Detalles"
+ * disclosure starts at the same height. Opening a disclosure only grows the
+ * second track, never the cards above it.
+ */
+.item {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 0.25rem;
+    min-width: 0;
+}
+
+.attributes {
+    padding: 0 0.75rem;
+}
+
+.attributesSummary {
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.attributesHint {
+    margin: 0.25rem 0 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.attributeGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    border: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+}
+
+.attributeLegend {
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.attributeOption {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.attributeOption input {
+    accent-color: var(--brand-primary);
+}

@@ -9,18 +9,43 @@
  *
  * This is the ONLY editor page that requests the amenity/feature catalogs.
  * Before the split every screen paid for them.
+ *
+ * HOS-2058: each checked amenity can also declare scope (private/shared) and
+ * availability (year-round/seasonal). Those travel as the write-only
+ * `amenityAttributes` list, built by `buildAmenityAttributesPayload` through
+ * `extendPayload` rather than through `OWN_FIELDS`: the form keeps a map keyed
+ * by amenity id, and the wire wants a list of the CHECKED amenities only,
+ * compared by value against the baseline.
  */
 
-import type { AccommodationEditData, AmenityData } from '@/lib/api/types';
+import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { ActionBar } from '../ActionBar.client';
 import { AmenitiesSection } from '../AmenitiesSection.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
+import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 
-/** The fields this page owns. Nothing else can reach the PATCH body. */
+/**
+ * The fields this page owns. Nothing else can reach the PATCH body, except
+ * `amenityAttributes`, which `extendAttributes` adds (see the file docblock).
+ */
 const OWN_FIELDS = ['amenityIds', 'featureIds'] as const;
+
+/** Module-level so the hook's payload memo does not recompute on every render. */
+function extendAttributes({
+    values,
+    baseline
+}: {
+    readonly values: AccommodationEditData;
+    readonly baseline: AccommodationEditData;
+}): Record<string, unknown> {
+    return { ...buildAmenityAttributesPayload({ values, baseline }) };
+}
+
+/** An empty declaration, used when an amenity has none yet. */
+const NO_ATTRIBUTES: AmenityAttributeValue = { scope: null, availability: null };
 
 interface ServicesFormProps {
     readonly locale: SupportedLocale;
@@ -47,8 +72,22 @@ export function ServicesForm({
         accommodationId,
         initialValues: initialData,
         ownFields: [...OWN_FIELDS],
-        schema: AccommodationServicesSchema
+        schema: AccommodationServicesSchema,
+        extendPayload: extendAttributes
     });
+
+    const setAttribute = <K extends keyof AmenityAttributeValue>(
+        amenityId: string,
+        field: K,
+        value: AmenityAttributeValue[K]
+    ) => {
+        const current = form.values.amenityAttributes ?? {};
+        const next: AmenityAttributeValue = {
+            ...(current[amenityId] ?? NO_ATTRIBUTES),
+            [field]: value
+        };
+        form.setValue('amenityAttributes', { ...current, [amenityId]: next });
+    };
 
     const toggle = (field: 'amenityIds' | 'featureIds', id: string) => {
         const current = form.values[field];
@@ -72,6 +111,7 @@ export function ServicesForm({
                     features={features}
                     onToggleAmenity={(id) => toggle('amenityIds', id)}
                     onToggleFeature={(id) => toggle('featureIds', id)}
+                    onChangeAmenityAttribute={setAttribute}
                 />
             </div>
 

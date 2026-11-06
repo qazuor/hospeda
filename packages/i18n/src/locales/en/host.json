@@ -8,7 +8,8 @@
         "actions": {
             "submit": "Import",
             "submitting": "Importing...",
-            "polling": "Waiting for results..."
+            "polling": "Waiting for results...",
+            "checkingAccess": "Checking import availability…"
         },
         "errors": {
             "urlRequired": "Enter the accommodation URL.",
@@ -18,6 +19,8 @@
             "network": "We couldn't reach the server.",
             "forbidden": "You don't have permission to import from a URL. Check that your plan includes it.",
             "rateLimit": "You've made too many imports in a row. Please wait a moment and try again.",
+            "newUserCap": "You've used your AI imports for the last 24 hours. You can still import: we'll fill in what we can without AI.",
+            "entitlement": "Your plan does not include AI data extraction when importing from a URL.",
             "entitlementCta": "View plans",
             "pastDueCta": "Update payment method",
             "failure": {
@@ -231,6 +234,9 @@
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
                 "publishConfirmTrialNote_one": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
                 "publishConfirmTrialNote_other": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
+                "republish": "Publish again",
+                "republishConfirmTitle": "Publish this accommodation again?",
+                "republishConfirmNote": "It will appear on the site again, visible to travellers.",
                 "publishYes": "Yes, publish",
                 "choosePlan": "Choose a host plan"
             },
@@ -305,6 +311,8 @@
                 "currency": "Currency",
                 "currencyFixedArs": "ARS — Argentine peso",
                 "amenities": "Amenities",
+                "amenityDetails": "Details",
+                "amenityDetailsHint": "Say whether it is private or shared and whether it is available all year.",
                 "features": "Features",
                 "phone": "Phone",
                 "phoneCountry": "Country",
@@ -368,7 +376,6 @@
                 "galleryLoading": "Photo gallery",
                 "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "metadataSaveFailed": "Couldn't save the photo's details",
-                "metadataSavedConfirmation": "Saved",
                 "moveDownAria": "Move photo {{index}} down",
                 "moveUpAria": "Move photo {{index}} up",
                 "persistFailed": "The photo could not be saved",
@@ -396,8 +403,9 @@
                 "altWarningMessage": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_one": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
                 "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
-                "altWarningGoBack": "Go back and fill them in",
-                "altWarningContinue": "Continue without filling them in"
+                "altWarningGoBack": "Complete now",
+                "altWarningContinue": "Continue anyway",
+                "metadataSavedConfirmation": "Saved"
             },
             "video": {
                 "sectionTitle": "Videos",

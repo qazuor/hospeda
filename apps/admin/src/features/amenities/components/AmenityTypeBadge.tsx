@@ -1,12 +1,14 @@
 import type { TranslationKey } from '@repo/i18n';
 import { getAmenityTypeColorScheme, getAmenityTypeIcon } from '@repo/icons';
+import type { AmenitiesTypeEnum } from '@repo/schemas';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Amenity } from '../schemas/amenities.schemas';
 
 /**
- * Maps each uppercase `AmenitiesTypeEnum` value to its i18n label key.
+ * Maps each `AmenitiesTypeEnum` value to its i18n label key. Exhaustive over the
+ * enum: a new type fails to compile until it gets a label.
  */
-const TYPE_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
+export const TYPE_LABEL_KEYS: Readonly<Record<AmenitiesTypeEnum, TranslationKey>> = {
     CLIMATE_CONTROL: 'admin-entities.types.amenity.climateControl',
     CONNECTIVITY: 'admin-entities.types.amenity.connectivity',
     ENTERTAINMENT: 'admin-entities.types.amenity.entertainment',
@@ -18,8 +20,22 @@ const TYPE_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
     SAFETY: 'admin-entities.types.amenity.safety',
     FAMILY_FRIENDLY: 'admin-entities.types.amenity.familyFriendly',
     WORK_FRIENDLY: 'admin-entities.types.amenity.workFriendly',
+    // HOS-2058
+    PARKING: 'admin-entities.types.amenity.parking',
+    LAUNDRY: 'admin-entities.types.amenity.laundry',
+    WATER_ACTIVITIES: 'admin-entities.types.amenity.waterActivities',
+    WELLNESS: 'admin-entities.types.amenity.wellness',
+    DINING: 'admin-entities.types.amenity.dining',
     GENERAL_APPLIANCES: 'admin-entities.types.amenity.generalAppliances'
 };
+
+/**
+ * Resolves the label key for a raw (possibly unknown/lowercase) type string.
+ *
+ * @returns The i18n key, or `undefined` when the type is not a known enum value.
+ */
+export const getAmenityTypeLabelKey = (type: string): TranslationKey | undefined =>
+    (TYPE_LABEL_KEYS as Readonly<Record<string, TranslationKey | undefined>>)[type.toUpperCase()];
 
 /**
  * Type cell for the amenities list: colored pill showing the amenity-type
@@ -36,7 +52,7 @@ export const AmenityTypeBadge = ({ row }: { readonly row: Amenity }) => {
 
     const Icon = getAmenityTypeIcon({ type });
     const scheme = getAmenityTypeColorScheme({ type, variant: 'contrast' });
-    const labelKey = TYPE_LABEL_KEYS[type.toUpperCase()];
+    const labelKey = getAmenityTypeLabelKey(type);
     const label = labelKey ? t(labelKey) : type;
 
     return (

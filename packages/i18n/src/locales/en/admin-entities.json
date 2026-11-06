@@ -542,7 +542,25 @@
             "safety": "Safety",
             "familyFriendly": "Family friendly",
             "workFriendly": "Work friendly",
-            "generalAppliances": "Appliances"
+            "generalAppliances": "Appliances",
+            "parking": "Parking",
+            "laundry": "Laundry",
+            "waterActivities": "Water activities",
+            "wellness": "Wellness",
+            "dining": "Food and drink"
+        },
+        "featureCategory": {
+            "location": "Location",
+            "view": "Views",
+            "access": "Access",
+            "style": "Style",
+            "audience": "Ideal for",
+            "offerProfile": "Offer profile",
+            "sustainability": "Sustainability",
+            "activities": "Activities",
+            "cuisine": "Cuisine",
+            "dietary": "Dietary options",
+            "language": "Languages"
         },
         "event": {
             "concert": "Concert",
@@ -801,7 +819,7 @@
         "fieldPremium": "{field} - Premium",
         "fieldPremiumDescription": "This feature is available on higher plans",
         "richDescriptionNudge": "Your plan does not include rich descriptions. You can edit the description as plain text.",
-        "videoNudge": "Video embedding is available on higher plans.",
+        "videoNudge": "Video links are available on every accommodation plan.",
         "upgradeLink": "Upgrade plan"
     },
     "limitGate": {

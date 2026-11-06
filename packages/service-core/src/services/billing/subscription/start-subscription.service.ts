@@ -27,8 +27,10 @@ import {
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import { buildProviderReason } from '../plan-display-name';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
@@ -126,6 +128,8 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
     readonly vertical: string;
     readonly planName: string;
     readonly planSlug: string;
+    /** Label MercadoPago shows to the payer (HOS-1993); never the internal plan name. */
+    readonly providerReason: string;
 }> {
     const [choice] = await getDb()
         .select({
@@ -141,7 +145,13 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
         .where(eq(billingOptions.id, input.billingOptionId))
         .limit(1);
     if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
-    return choice;
+    return {
+        ...choice,
+        providerReason: await buildProviderReason({
+            vertical: choice.vertical,
+            plan: { slug: choice.planSlug, name: choice.planName }
+        })
+    };
 }
 
 /** Rejects Tourist VIP purchases already inherited from the current plan. */
@@ -195,7 +205,12 @@ export async function authorizePendingSubscription(input: {
         amount: { amountMinor: option.amount, currency: option.currency },
         cadence: { everyMonths: cadence },
         reason: input.reason,
-        returnUrl: input.returnUrl,
+        // HOS-1979: `input.returnUrl` is the site origin; the payer comes back to the
+        // result screen of THIS attempt, not to the home page.
+        returnUrl: buildAuthorizationReturnUrl({
+            siteUrl: input.returnUrl,
+            subscriptionId: pending.subscription.id
+        }),
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken,
         firstChargeAt: input.firstChargeAt
@@ -379,7 +394,7 @@ export async function startSubscription(
                 pending: { subscription: existing.subscription, idempotencyKey: minted.key },
                 provider: ports.provider,
                 clock: ports.clock,
-                reason: choice.planName,
+                reason: choice.providerReason,
                 returnUrl: input.returnUrl,
                 payerEmail: input.payerEmail,
                 paymentToken: input.paymentToken
@@ -429,7 +444,7 @@ export async function startSubscription(
         pending,
         provider: ports.provider,
         clock: ports.clock,
-        reason: choice.planName,
+        reason: choice.providerReason,
         returnUrl: input.returnUrl,
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken

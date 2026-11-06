@@ -26,6 +26,7 @@ import { type ExperienceReviewModel, experienceModel, experienceReviewModel } fr
 import {
     type CountResponse,
     type ExperienceReview,
+    ExperienceReviewAdminSearchSchema,
     type ExperienceReviewCreateInput,
     ExperienceReviewCreateInputSchema,
     ExperienceReviewUpdateInputSchema,
@@ -113,6 +114,8 @@ export class ExperienceReviewService extends BaseCrudService<
     protected readonly createSchema = ExperienceReviewCreateInputSchema;
     protected readonly updateSchema = ExperienceReviewUpdateInputSchema;
     protected readonly searchSchema = ExperienceSearchSchema;
+    // Required by the inherited `adminList` (HOS-1985).
+    protected readonly adminSearchSchema = ExperienceReviewAdminSearchSchema;
 
     /** Injectable for unit tests. */
     private _experienceService: ExperienceService;

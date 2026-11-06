@@ -221,16 +221,36 @@ describe('publish route — PB1/T1 business rejections', () => {
         expect(await statusOf(listingId)).toBe(PublicationStatusEnum.DRAFT);
     });
 
-    it('answers 409 ALREADY_EXISTS to a covered owner publishing from UNPUBLISHED_BY_BILLING (PB3, not PB1)', async () => {
+    it("publishes a covered owner's UNPUBLISHED_BY_BILLING listing by hand when the quota has room (HOS-1997)", async () => {
         const { owner, listingId } = await ownerWithListing(
             PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         );
         publicationControls.covered = true;
+        publicationControls.limit = 1;
+        const { status } = await readResponse(
+            await publish(listingId, actorHeaders({ id: owner.id }))
+        );
+        expect(status).toBe(201);
+        expect(await statusOf(listingId)).toBe(PublicationStatusEnum.PUBLISHED);
+    });
+
+    it('answers 403 LIMIT_REACHED to a covered owner publishing from UNPUBLISHED_BY_BILLING with a full quota (HOS-1997)', async () => {
+        const { owner, destinationId, listingId } = await ownerWithListing(
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+        );
+        await createListing({
+            ownerId: owner.id,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        publicationControls.covered = true;
+        publicationControls.limit = 1;
         const { status, body } = await readResponse(
             await publish(listingId, actorHeaders({ id: owner.id }))
         );
-        expect(status).toBe(409);
-        expect(body.error?.code).toBe('ALREADY_EXISTS');
+        expect(status).toBe(403);
+        expect(body.error?.code).toBe('LIMIT_REACHED');
+        expect(body.error?.details?.limitKey).toBe('max_accommodations');
         expect(await statusOf(listingId)).toBe(PublicationStatusEnum.UNPUBLISHED_BY_BILLING);
     });
 

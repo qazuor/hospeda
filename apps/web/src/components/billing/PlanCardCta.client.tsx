@@ -1,6 +1,7 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
 import {
+    loadBillingUnpublishedListing,
     loadPricingSituation,
     PLAN_CHANGE_UNAVAILABLE_KEY,
     type PlanCardCtaView,
@@ -26,11 +27,32 @@ export function PlanCardCta({
         null
     );
     const { t } = useMemo(() => createTranslations(locale), [locale]);
+    const [ownsBillingUnpublished, setOwnsBillingUnpublished] = useState(false);
     useEffect(() => {
-        void loadPricingSituation({ vertical }).then(setResult);
+        let active = true;
+        void loadPricingSituation({ vertical }).then((situation) => {
+            if (!active) return;
+            // The primary CTA is never delayed by the extra read (HOS-1977).
+            setResult(situation);
+            // Only worth reading for an unspent trial.
+            if (situation.ok && situation.data.situation === 'FIRST_USE') {
+                void loadBillingUnpublishedListing({ vertical }).then((owns) => {
+                    if (active) setOwnsBillingUnpublished(owns);
+                });
+            }
+        });
+        return () => {
+            active = false;
+        };
     }, [vertical]);
     const view: PlanCardCtaView = result
-        ? resolvePlanCardCta({ locale, vertical, plan: { planVersionId, billingOptions }, result })
+        ? resolvePlanCardCta({
+              locale,
+              vertical,
+              plan: { planVersionId, billingOptions },
+              result,
+              ownsBillingUnpublishedListing: ownsBillingUnpublished
+          })
         : { kind: 'none' };
     const label = t(SIGNUP_VERTICAL_LABEL_KEY[vertical]);
     return (
@@ -57,6 +79,17 @@ export function PlanCardCta({
                         )}
                     </a>
                 ))}
+            {view.kind === 'republish' && (
+                <>
+                    <p>{t('publish.subscribe.republishFromPropertiesHint')}</p>
+                    <a
+                        href={view.href}
+                        className={styles.primary}
+                    >
+                        {t('publish.subscribe.republishFromProperties')}
+                    </a>
+                </>
+            )}
             {view.kind === 'current' && (
                 <>
                     <span>

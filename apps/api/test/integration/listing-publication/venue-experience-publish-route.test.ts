@@ -192,17 +192,37 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         );
     });
 
-    it('answers 409 ALREADY_EXISTS for covered UNPUBLISHED_BY_BILLING (PB3 owns restoration)', async () => {
+    it('publishes covered UNPUBLISHED_BY_BILLING by hand when the quota has room (HOS-1997)', async () => {
         const { owner, listingId } = await listing(
             vertical,
             PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         );
         publicationControls.covered = true;
+        publicationControls.limit = 1;
         const answer = await readResponse(
             await publish(vertical, listingId, actorHeaders({ id: owner.id }))
         );
-        expect(answer.status).toBe(409);
-        expect(answer.body.error?.code).toBe('ALREADY_EXISTS');
+        expect(answer.status).toBe(201);
+    });
+
+    it('answers 403 LIMIT_REACHED for covered UNPUBLISHED_BY_BILLING with a full quota (HOS-1997)', async () => {
+        const { owner, listingId } = await listing(
+            vertical,
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+        );
+        await createVerticalListing({
+            vertical,
+            ownerId: owner.id,
+            destinationId: await createVerticalDestination(),
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        publicationControls.covered = true;
+        publicationControls.limit = 1;
+        const answer = await readResponse(
+            await publish(vertical, listingId, actorHeaders({ id: owner.id }))
+        );
+        expect(answer.status).toBe(403);
+        expect(answer.body.error?.code).toBe('LIMIT_REACHED');
     });
 
     it('answers 403 FORBIDDEN subscription_required when the trial slot is occupied', async () => {

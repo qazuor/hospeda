@@ -25,20 +25,23 @@ import {
 } from '@repo/db';
 import {
     type ListingNoticesResponse,
+    PublicationStatusEnum,
     type ReportFixedResponse,
     ServiceErrorCode,
     type TrialSummaryResponse
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { type ListingVertical, trialMachineLockKey } from '@repo/verticals';
+import { type ListingVertical, PUBLICATION_LIMIT_KEYS, trialMachineLockKey } from '@repo/verticals';
 import { and, eq } from 'drizzle-orm';
 import { getClock } from '../../utils/clock';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
+import { apiLogger } from '../../utils/logger';
 import { enqueueFixReportedNotice } from './fix-reported-notice';
 import {
     buildListingNoticeItems,
     buildTrialSummary,
     isTrialRunning,
+    LIFT_NOTICE_WINDOW_DAYS,
     type TrialRowFacts
 } from './listing-notices.builder';
 
@@ -58,6 +61,37 @@ async function readTrialRow(input: {
         .where(and(eq(trials.userId, input.userId), eq(trials.vertical, input.vertical)))
         .limit(1);
     return row ?? null;
+}
+
+/**
+ * The owner's declared publication quota in the vertical (`null` = none).
+ * Best effort: the quota only refines the text of a lift notice, so a failing
+ * read is logged and answered `undefined` (the notice keeps its generic text)
+ * instead of taking every notice of the owner down with it.
+ */
+async function readPublishLimit(input: {
+    readonly userId: string;
+    readonly vertical: ListingVertical;
+}): Promise<number | null | undefined> {
+    try {
+        const effective = await getListingAccessPorts().effectiveSet({
+            userId: input.userId,
+            vertical: input.vertical
+        });
+        return (
+            effective.limits.get({
+                key: PUBLICATION_LIMIT_KEYS[input.vertical],
+                userId: input.userId,
+                vertical: input.vertical
+            }) ?? null
+        );
+    } catch (error) {
+        apiLogger.warn(
+            { error, userId: input.userId, vertical: input.vertical },
+            'Publish quota read failed; lift notices keep their generic text'
+        );
+        return undefined;
+    }
 }
 
 /**
@@ -84,9 +118,28 @@ export async function listListingNotices(input: {
         }),
         readTrialRow(input)
     ]);
+    // The quota is only needed to say WHY a lifted listing is still unpublished,
+    // and only for a lift still inside the display window.
+    const windowStart = now.getTime() - LIFT_NOTICE_WINDOW_DAYS * 86_400_000;
+    const needsLimit =
+        coverage.covered &&
+        rows.some(
+            (row) =>
+                row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING &&
+                row.lastLift?.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING &&
+                row.lastLift.at.getTime() >= windowStart
+        );
+    const publishLimit = needsLimit ? await readPublishLimit(input) : undefined;
     return {
         trialRunning: isTrialRunning({ trial, now }).running,
-        items: [...buildListingNoticeItems({ rows, coverage, now })]
+        items: [
+            ...buildListingNoticeItems({
+                rows,
+                coverage,
+                now,
+                ...(publishLimit === undefined ? {} : { publishLimit })
+            })
+        ]
     };
 }
 

@@ -9,16 +9,22 @@ export const PAYMENT_CREDITED_SUBJECT = 'Recibimos tu pago';
 export function PaymentCredited({
     amount,
     receiptNumber,
-    creditedDate
+    creditedDate,
+    planName
 }: {
     readonly amount: string;
+    /** User-facing plan the payment belongs to (HOS-1993); absent for add-ons and legacy rows. */
+    readonly planName?: string | null;
     readonly receiptNumber: number;
     readonly creditedDate: string;
 }) {
     return (
         <EmailLayout previewText={PAYMENT_CREDITED_SUBJECT}>
             <Heading>{PAYMENT_CREDITED_SUBJECT}</Heading>
-            <Text>Acreditamos tu pago de {amount}.</Text>
+            <Text>
+                Acreditamos tu pago de {amount}
+                {planName ? ` por tu suscripción a ${planName}` : ''}.
+            </Text>
             <Text>
                 Comprobante n.º {receiptNumber}, del {creditedDate}.
             </Text>

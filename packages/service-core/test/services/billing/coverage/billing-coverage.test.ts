@@ -46,6 +46,17 @@ const subscriptionSource = (planVersionId: string): CoverageSource => ({
     floor: null
 });
 
+const trialSource: CoverageSource = {
+    type: 'TRIAL',
+    reference: { kind: 'PLAN_VERSION', planVersionId: 'trial-version' },
+    scope: 'VERTICAL',
+    target: null,
+    since,
+    until: new Date('2026-11-01T00:00:00.000Z'),
+    charged: null,
+    floor: null
+};
+
 const addonSource: CoverageSource = {
     type: 'ADDON',
     reference: { kind: 'ADDON_VERSION', addonVersionId: 'addon-version' },
@@ -122,6 +133,24 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
 
         // Assert
         expect(response).toEqual({ covered: false, sources: [baseSource, addonSource] });
+    });
+
+    it('lists the TRIAL beside an emitted SUBSCRIPTION: the contract returns every live source (the fold supersedes, not the coverage)', async () => {
+        vi.mocked(resolveSubscriptionSources).mockResolvedValue({
+            sources: [subscriptionSource('paid-plan-version')]
+        });
+        vi.mocked(resolveAddonSources).mockResolvedValue({ sources: [addonSource] });
+
+        const response = await createBillingCoverage({
+            ports: fakePorts({ covered: true, sources: [trialSource, baseSource] })
+        }).coverage({ userId, vertical: VerticalEnum.ACCOMMODATION });
+
+        expect(response.sources).toEqual([
+            trialSource,
+            baseSource,
+            subscriptionSource('paid-plan-version'),
+            addonSource
+        ]);
     });
 
     it('emits no COURTESY or GRANT source when the person holds neither', async () => {

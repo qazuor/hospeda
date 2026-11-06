@@ -35,7 +35,21 @@ import { Pool } from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_NAME = 'hospeda_seed_integration_test';
+/**
+ * Ephemeral database name. `HOSPEDA_SEED_INTEGRATION_DB_NAME` lets a worktree run in
+ * its own database; it must start with `hospeda_it_` so the DROP below can never hit a
+ * dev, template or test database.
+ */
+const DB_NAME = (() => {
+    const override = process.env.HOSPEDA_SEED_INTEGRATION_DB_NAME;
+    if (override === undefined) return 'hospeda_seed_integration_test';
+    if (!/^hospeda_it_[a-z0-9_]{1,40}$/.test(override)) {
+        throw new Error(
+            `[seed-integration-setup] HOSPEDA_SEED_INTEGRATION_DB_NAME must match hospeda_it_[a-z0-9_]+ (got "${override}").`
+        );
+    }
+    return override;
+})();
 const CONNECTION_BASE =
     process.env.HOSPEDA_TEST_DATABASE_URL ||
     'postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres';

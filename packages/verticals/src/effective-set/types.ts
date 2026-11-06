@@ -27,5 +27,13 @@ export interface SourceGrant {
  */
 export interface FoldableSource {
     readonly source: CoverageSource;
+    /**
+     * `true` only for a source injected from ANOTHER vertical than the one being
+     * resolved (the Tourist VIP inheritance, whose title is an accommodation or
+     * venue/experience subscription). Coverage sources carry no vertical of their own, so
+     * the resolver marks the one it brings in; such a source never supersedes a
+     * TRIAL (HOS-2027).
+     */
+    readonly foreignVertical?: true;
     readonly grants: readonly SourceGrant[];
 }

@@ -127,7 +127,7 @@ describe('TEST:B3:1 S1 durable pending authorization', () => {
             expect(key?.completedAt).toBeNull();
             expect(input).toMatchObject({
                 reference: row?.id,
-                reason: 'Básico',
+                reason: 'Hospeda · Alojamiento Básico',
                 amount: { amountMinor: 250000, currency: 'ARS' },
                 cadence: { everyMonths: 3 }
             });
@@ -357,5 +357,36 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
                 .from(subscriptions)
                 .where(eq(subscriptions.userId, choice.user.id))
         ).toHaveLength(1);
+    });
+});
+
+// HOS-1993: the provider label is built from the display name, never the stored catalog name.
+describe('S1 sends the user-facing plan name to the provider', () => {
+    it('uses "Básico" for venue-basico even when the stored name is "Basic"', async () => {
+        const choice = await seedChoice();
+        const pool = getServiceTestPool();
+        const planOf = `(SELECT plan_id FROM plan_version WHERE id = $1)`;
+        await pool.query(
+            `UPDATE plan SET slug = 'venue-basico', name = 'Basic' WHERE id = ${planOf}`,
+            [choice.planVersionId]
+        );
+        try {
+            const fake = new FakePaymentProvider({
+                idNamespace: crypto.randomUUID(),
+                clock,
+                honestAbout: [{ lie: 'M1', why: 'inspect the reason sent to the provider' }]
+            });
+            const sent = vi.spyOn(fake, 'authorize');
+            await startSubscription(
+                { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
+                ports(namespaceFake(fake))
+            );
+            expect(sent.mock.calls[0]?.[0].reason).toBe('Hospeda · Alojamiento Básico');
+        } finally {
+            await pool.query(`UPDATE plan SET slug = $2, name = 'Básico' WHERE id = ${planOf}`, [
+                choice.planVersionId,
+                `b3-${crypto.randomUUID()}`
+            ]);
+        }
     });
 });

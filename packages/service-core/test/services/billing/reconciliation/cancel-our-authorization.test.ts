@@ -1,7 +1,16 @@
-import type { PaymentProvider } from '@repo/payments';
+import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { describe, expect, it, vi } from 'vitest';
-import { cancelOurAuthorization } from '../../../../src/services/billing/reconciliation/cancel-our-authorization';
+
+const { logError, logWarn } = vi.hoisted(() => ({ logError: vi.fn(), logWarn: vi.fn() }));
+vi.mock('@repo/logger', () => ({
+    createLogger: () => ({ error: logError, warn: logWarn, info: vi.fn(), debug: vi.fn() })
+}));
+
+import {
+    cancelOurAuthorization,
+    SWEEP_CANCEL_RETRY
+} from '../../../../src/services/billing/reconciliation/cancel-our-authorization';
 import type {
     BeforeCancelNotice,
     BeforeCancelNoticeStatus
@@ -288,5 +297,186 @@ describe('TEST:1683:5 AC:1683:3 a recipient without a kind fails closed', () => 
         expect(result).toStrictEqual({ outcome: 'CALL_FAILED' });
         expect(beforeCancelNotice.beforeCancel).not.toHaveBeenCalled();
         expect(calls).not.toContain('cancel');
+    });
+});
+
+function rateLimited(retryAfterSeconds?: number): PaymentProviderError {
+    return new PaymentProviderError({
+        code: 'REJECTED',
+        capability: 'cancel',
+        message: 'Mercado Pago request failed (429)',
+        cause: { status: 429, body: { message: 'too many requests' } },
+        transient: { kind: 'RATE_LIMITED', ...(retryAfterSeconds ? { retryAfterSeconds } : {}) }
+    });
+}
+
+function serverError(): PaymentProviderError {
+    return new PaymentProviderError({
+        code: 'UNAVAILABLE',
+        capability: 'cancel',
+        message: 'Mercado Pago request failed (503)',
+        cause: { status: 503, body: {} },
+        transient: { kind: 'UNAVAILABLE' }
+    });
+}
+
+function refusal(): PaymentProviderError {
+    return new PaymentProviderError({
+        code: 'REJECTED',
+        capability: 'cancel',
+        message: 'Mercado Pago request failed (400)',
+        cause: { status: 400, body: { message: 'bad' } }
+    });
+}
+
+async function run(
+    context: Awaited<ReturnType<typeof setup>>,
+    options: {
+        readonly retry?: typeof SWEEP_CANCEL_RETRY;
+        readonly sleep?: (ms: number) => Promise<void>;
+    }
+) {
+    const { provider, clock, authorizationId } = context;
+    return cancelOurAuthorization(
+        {
+            subscriptionId: crypto.randomUUID(),
+            userId: null,
+            authorizationId,
+            kind: null,
+            ...(options.retry ? { retry: options.retry } : {})
+        },
+        { provider, clock, ...(options.sleep ? { sleep: options.sleep } : {}) }
+    );
+}
+
+describe('HOS-1995 the sweep cancel call survives a provider throttle', () => {
+    it('retries a 429 with the 2s backoff in the same pass and confirms', async () => {
+        const ctx = await setup();
+        const real = FakePaymentProvider.prototype.cancel.bind(ctx.fake);
+        const cancel = vi.spyOn(ctx.fake, 'cancel');
+        cancel
+            .mockRejectedValueOnce(rateLimited())
+            .mockImplementation(async (input) => real(input));
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(result).toEqual({ outcome: 'CONFIRMED' });
+        expect(cancel).toHaveBeenCalledTimes(2);
+        expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([2000]);
+    });
+
+    it('waits 2s then 4s and stops after three attempts with CALL_FAILED', async () => {
+        const ctx = await setup();
+        const cancel = vi.spyOn(ctx.fake, 'cancel').mockRejectedValue(rateLimited());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(cancel).toHaveBeenCalledTimes(3);
+        expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([2000, 4000]);
+    });
+
+    it('honours Retry-After below the cap and ignores one above it (10s cap)', async () => {
+        const ctx = await setup();
+        vi.spyOn(ctx.fake, 'cancel')
+            .mockRejectedValueOnce(rateLimited(3))
+            .mockRejectedValueOnce(rateLimited(120))
+            .mockRejectedValue(rateLimited());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([3000, 10000]);
+    });
+
+    it('stops retrying when the next wait would exceed the total budget', async () => {
+        const ctx = await setup();
+        const cancel = vi.spyOn(ctx.fake, 'cancel').mockRejectedValue(rateLimited());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, {
+            retry: { ...SWEEP_CANCEL_RETRY, maxAttempts: 5, totalBudgetMs: 5000 },
+            sleep
+        });
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([2000]);
+        expect(cancel).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries a 5xx (UNAVAILABLE) and a network error surfaced as transient', async () => {
+        const ctx = await setup();
+        const network = new PaymentProviderError({
+            code: 'UNAVAILABLE',
+            capability: 'cancel',
+            message: 'fetch failed',
+            cause: new TypeError('fetch failed'),
+            transient: { kind: 'UNAVAILABLE' }
+        });
+        const real = FakePaymentProvider.prototype.cancel.bind(ctx.fake);
+        const cancel = vi.spyOn(ctx.fake, 'cancel');
+        cancel
+            .mockRejectedValueOnce(serverError())
+            .mockRejectedValueOnce(network)
+            .mockImplementation(async (input) => real(input));
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(result).toEqual({ outcome: 'CONFIRMED' });
+        expect(cancel).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not retry a refusal that is not transient', async () => {
+        const ctx = await setup();
+        const cancel = vi.spyOn(ctx.fake, 'cancel').mockRejectedValue(refusal());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(sleep).not.toHaveBeenCalled();
+    });
+
+    it('re-reads after transient-then-refused and reports CONFIRMED when already cancelled', async () => {
+        const ctx = await setup();
+        const real = FakePaymentProvider.prototype.cancel.bind(ctx.fake);
+        vi.spyOn(ctx.fake, 'cancel')
+            .mockImplementationOnce(async (input) => {
+                await real(input);
+                throw serverError();
+            })
+            .mockRejectedValue(refusal());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep });
+        expect(result).toEqual({ outcome: 'CONFIRMED' });
+    });
+
+    it('reports CALL_FAILED when transient-then-refused and the re-read shows it alive', async () => {
+        const ctx = await setup();
+        vi.spyOn(ctx.fake, 'cancel')
+            .mockRejectedValueOnce(serverError())
+            .mockRejectedValue(refusal());
+        const result = await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep: async () => undefined });
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+    });
+
+    it('a caller without a retry policy makes ONE attempt and never sleeps', async () => {
+        const ctx = await setup();
+        const cancel = vi.spyOn(ctx.fake, 'cancel').mockRejectedValue(rateLimited());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await run(ctx, { sleep });
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(sleep).not.toHaveBeenCalled();
+    });
+
+    it('logs the HTTP status and the sanitized body of the failed cancel and captures it', async () => {
+        const ctx = await setup();
+        vi.spyOn(ctx.fake, 'cancel').mockRejectedValue(rateLimited(4));
+        logError.mockClear();
+        await run(ctx, { retry: SWEEP_CANCEL_RETRY, sleep: async () => undefined });
+        const call = logError.mock.calls.find(
+            ([, label]) => label === 'Our provider authorization could not be cancelled'
+        );
+        expect(call?.[0]).toMatchObject({
+            errorName: 'PaymentProviderError',
+            status: 429,
+            body: { message: 'too many requests' },
+            transientKind: 'RATE_LIMITED',
+            attempts: 3
+        });
+        expect(call?.[2]).toMatchObject({ capture: true });
     });
 });

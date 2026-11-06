@@ -343,6 +343,10 @@
             }
         },
         "publish": {
+            "republishConfirmTitle": {
+                "venue": "Publicar este comércio novamente?",
+                "experience": "Publicar esta experiência novamente?"
+            },
             "confirmTitle": {
                 "venue": "Publicar este estabelecimento?",
                 "experience": "Publicar esta experiência?"
@@ -363,7 +367,7 @@
         "restitution": {
             "restored": "Estes anúncios voltaram: {{listings}}.",
             "notRestored": "Estes anúncios não puderam voltar: {{listings}}.",
-            "criterion": "Volta primeiro o anúncio que caiu por último, até preencher as vagas. Anúncios do sistema antigo que nunca foram publicados aqui vêm primeiro, pela data de criação mais antiga.",
+            "criterion": "Voltam primeiro os anúncios que você publicou mais recentemente, até preencher as vagas.",
             "nothingDeleted": "Os anúncios que não voltaram continuam aqui; nenhum é apagado."
         },
         "reason": "Motivo: {{reason}}",
@@ -413,6 +417,12 @@
                 "DRAFT": "Voltou para rascunho.",
                 "UNPUBLISHED_BY_BILLING": "Ficou sem publicar, porque hoje a sua assinatura não tem lugar para ele. Nada foi apagado.",
                 "ARCHIVED": "Continua arquivado, como estava."
+            },
+            "unpublished": {
+                "quotaFull": "Foi aprovado, mas a sua cota está cheia: para publicá-lo, despublique outro anúncio e publique este.",
+                "quotaFullFixRequest": "Continua sem publicar porque a sua cota está cheia: para publicá-lo, despublique outro anúncio e publique este.",
+                "notCovered": "Ficou sem publicar, porque hoje a sua assinatura não o cobre. Nada foi apagado.",
+                "freeSlot": "Há lugar na sua cota: você pode publicá-lo quando quiser."
             },
             "draftIsYours": "Publicá-lo é decisão sua.",
             "fixRequestOpen": "O pedido de correção continua aberto."

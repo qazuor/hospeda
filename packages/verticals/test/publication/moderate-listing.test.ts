@@ -133,4 +133,91 @@ describe('listing moderation gestures', () => {
         expect(closed).toMatchObject({ ok: true, warnings: [] });
         expect(harness.getStatus()).toBe(Status.PUBLISHED);
     });
+
+    describe('lift with the quota (HOS-1997)', () => {
+        const otherId = '00000000-0000-4000-8000-0000000000aa';
+        const lifting = (limit: number) => {
+            const record = (id: string, publicationStatus: Status) => ({
+                id,
+                ownerId: userId,
+                publicationStatus,
+                createdAt: new Date('2026-01-01T00:00:00.000Z'),
+                inactiveSince: new Date('2026-01-01T00:00:00.000Z')
+            });
+            return makeHarness({
+                status: Status.MODERATED,
+                covered: true,
+                limit,
+                moderationOrigin: { from: Status.PUBLISHED, archiveOrigin: null },
+                listings: [record(listingId, Status.MODERATED), record(otherId, Status.PUBLISHED)]
+            });
+        };
+
+        it('TEST:V6:11 leaves the lifted listing unpublished and touches nothing else when the quota is full', async () => {
+            const harness = lifting(1);
+            const result = await liftModeration({
+                ...base(harness),
+                billing: harness.billing,
+                keepFixRequest: false
+            });
+            expect(result).toMatchObject({
+                ok: true,
+                transition: 'PB13',
+                publicationStatus: Status.UNPUBLISHED_BY_BILLING,
+                lowered: []
+            });
+            expect(harness.statusOf(otherId)).toBe(Status.PUBLISHED);
+            expect(harness.statusWrites.every((write) => write.listingId === listingId)).toBe(true);
+            expect(harness.statusEvents.every((evt) => evt.listingId === listingId)).toBe(true);
+            expect(harness.listingNotices).toHaveLength(1);
+            expect(harness.listingNotices[0]).toMatchObject({
+                template: 'verticals.listing-moderation-lifted',
+                payload: { returnedTo: Status.UNPUBLISHED_BY_BILLING, quotaFull: true }
+            });
+        });
+
+        it.each([
+            ['an uncovered owner', { covered: false }],
+            ['no declared limit', { declaredLimit: null }],
+            ['a quota of zero', { limit: 0 }]
+        ] as const)('TEST:V6:11 carries no quotaFull flag for %s (HOS-1997)', async (_label, options) => {
+            const harness = makeHarness({
+                status: Status.MODERATED,
+                covered: true,
+                limit: 1,
+                moderationOrigin: { from: Status.PUBLISHED, archiveOrigin: null },
+                ...options
+            });
+            const result = await liftModeration({
+                ...base(harness),
+                billing: harness.billing,
+                keepFixRequest: false
+            });
+            expect(result).toMatchObject({
+                ok: true,
+                publicationStatus: Status.UNPUBLISHED_BY_BILLING,
+                lowered: []
+            });
+            expect(harness.listingNotices[0]?.payload).not.toHaveProperty('quotaFull');
+        });
+
+        it('TEST:V6:11 publishes the lifted listing with the normal notice when a slot is free', async () => {
+            const harness = lifting(2);
+            const result = await liftModeration({
+                ...base(harness),
+                billing: harness.billing,
+                keepFixRequest: false
+            });
+            expect(result).toMatchObject({
+                ok: true,
+                publicationStatus: Status.PUBLISHED,
+                lowered: []
+            });
+            expect(harness.statusOf(otherId)).toBe(Status.PUBLISHED);
+            expect(harness.listingNotices[0]?.payload).toMatchObject({
+                returnedTo: Status.PUBLISHED
+            });
+            expect(harness.listingNotices[0]?.payload).not.toHaveProperty('quotaFull');
+        });
+    });
 });

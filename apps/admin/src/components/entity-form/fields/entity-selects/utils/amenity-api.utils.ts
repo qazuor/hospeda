@@ -54,7 +54,7 @@ const humanizeSlug = (slug: string): string =>
  * @param slug - The snake_case amenity name (e.g. 'air_conditioning', 'wifi').
  * @returns Human-readable display label in the default locale.
  */
-const translateAmenityName = (slug: string): string => {
+export const translateAmenityName = (slug: string): string => {
     const key = `accommodations.amenityNames.${slug}`;
     const translated = trans[defaultLocale as keyof typeof trans]?.[key];
     if (translated && !translated.startsWith('[MISSING:')) {
