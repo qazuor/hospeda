@@ -248,7 +248,9 @@ export async function replaceQueuedDowngrade(input: {
     });
 }
 
-/** Cancels a customer's queued downgrade only while its source row and queue remain current. */
+/** Cancels a queued downgrade only while its source and queue remain current. The subscription
+ * row lock serializes this with S38, and DELETE RETURNING detects a queue row removed meanwhile.
+ */
 export async function removeQueuedDowngrade(input: {
     readonly subscriptionId: string;
     readonly expectedQueueId: string;
@@ -283,8 +285,16 @@ export async function removeQueuedDowngrade(input: {
                 undefined,
                 'PLAN_CHANGE_STATE_CHANGED'
             );
-        await tx
+        const deleted = await tx
             .delete(subscriptionScheduledChanges)
-            .where(eq(subscriptionScheduledChanges.id, queued.id));
+            .where(eq(subscriptionScheduledChanges.id, queued.id))
+            .returning({ id: subscriptionScheduledChanges.id });
+        if (deleted.length === 0)
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Plan change state changed',
+                undefined,
+                'PLAN_CHANGE_STATE_CHANGED'
+            );
     });
 }

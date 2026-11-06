@@ -6,7 +6,12 @@ import { applyScheduledChangeInTx } from '../../../src/services/billing/subscrip
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
 import { requestPlanChange } from '../../../src/services/billing/subscription/request-plan-change.service.js';
 import { removeQueuedDowngrade } from '../../../src/services/billing/subscription/request-plan-change-support.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import {
     adjustablePauseHarness,
     pausePlanPolicy,
@@ -30,6 +35,22 @@ import {
 } from './support/scheduled-change-fixtures.js';
 
 const pausedQueueIds: string[] = [];
+
+async function waitForRegretLock(): Promise<void> {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+        const result = await getServiceTestPool().query<{ pid: number }>(
+            `SELECT pid FROM pg_stat_activity
+             WHERE wait_event_type = 'Lock'
+               AND query ILIKE '%subscription%'
+               AND pid <> pg_backend_pid()
+             LIMIT 1`
+        );
+        if (result.rows.length > 0) return;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Regret backend did not wait for a database lock within 5 seconds');
+}
 
 afterEach(async () => {
     await retirePriceIncreases();
@@ -355,7 +376,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change colli
             () => ({ completed: true }),
             (error: unknown) => ({ error })
         );
-        await new Promise<void>((resolve) => setImmediate(resolve));
+        await waitForRegretLock();
         releaseApplication();
         await application;
         const [row] = await getServiceTestDb()
