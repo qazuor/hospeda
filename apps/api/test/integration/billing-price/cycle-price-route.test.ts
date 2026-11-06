@@ -76,6 +76,14 @@ describe('TEST:B2:5 cycle price admin route', () => {
                 code: 'FORBIDDEN',
                 allowed: false
             });
+            await expectRefusal({
+                path,
+                body: { ...body, amount: amount + 0.5 },
+                planVersionId,
+                status: 403,
+                code: 'FORBIDDEN',
+                allowed: false
+            });
         }
     });
 
