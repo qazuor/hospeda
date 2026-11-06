@@ -78,7 +78,10 @@ async function fetchAmenities(accommodationId: string) {
             slug: amenities.slug,
             icon: amenities.icon,
             isOptional: rAccommodationAmenity.isOptional,
-            additionalCost: rAccommodationAmenity.additionalCost
+            additionalCost: rAccommodationAmenity.additionalCost,
+            // HOS-2058: relation attributes. NULL = not declared.
+            scope: rAccommodationAmenity.scope,
+            availability: rAccommodationAmenity.availability
         })
         .from(rAccommodationAmenity)
         .innerJoin(amenities, eq(rAccommodationAmenity.amenityId, amenities.id))
@@ -92,7 +95,9 @@ async function fetchAmenities(accommodationId: string) {
         additionalCost:
             r.additionalCost != null && typeof r.additionalCost === 'object'
                 ? null
-                : (r.additionalCost as number | null)
+                : (r.additionalCost as number | null),
+        scope: r.scope ?? null,
+        availability: r.availability ?? null
     }));
 }
 
@@ -109,6 +114,8 @@ async function fetchFeatures(accommodationId: string) {
             featureId: rAccommodationFeature.featureId,
             slug: features.slug,
             icon: features.icon,
+            // HOS-2058: catalog category, used to group the public grid.
+            category: features.category,
             hostReWriteName: rAccommodationFeature.hostReWriteName,
             comments: rAccommodationFeature.comments
         })
@@ -120,6 +127,7 @@ async function fetchFeatures(accommodationId: string) {
         featureId: r.featureId,
         slug: r.slug,
         icon: r.icon ?? null,
+        category: r.category ?? null,
         hostReWriteName: r.hostReWriteName ?? null,
         comments: r.comments ?? null
     }));

@@ -245,6 +245,53 @@ describe('leave warnings on a page that mounts two guards', () => {
         });
     });
 
+    describe('cancelling', () => {
+        /** A closed incomplete-photo panel whose toggle records being opened. */
+        function addIncompletePhotoPanel(): ReturnType<typeof vi.fn> {
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('data-photo-metadata-missing', 'true');
+            const toggle = document.createElement('button');
+            toggle.setAttribute('aria-expanded', 'false');
+            const clicked = vi.fn();
+            toggle.addEventListener('click', () => {
+                toggle.setAttribute('aria-expanded', 'true');
+                clicked();
+            });
+            wrapper.appendChild(toggle);
+            document.body.appendChild(wrapper);
+            return clicked;
+        }
+
+        it('does NOT jump to a photo from the combined dialog (neutral "keep editing")', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const toggleClicked = addIncompletePhotoPanel();
+            renderBothGuards({ videoIsDirty: true, galleryItems: photosWithoutAlt(2) });
+            await flushRouterImport();
+
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 120)));
+
+            expect(showConfirmationDialogMock.mock.calls[0]?.[0].cancelLabel).toBe(
+                'Seguir editando'
+            );
+            expect(toggleClicked).not.toHaveBeenCalled();
+        });
+
+        it('jumps to the first photo from the photo-only dialog ("Completar ahora")', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            const toggleClicked = addIncompletePhotoPanel();
+            renderBothGuards({ videoIsDirty: false, galleryItems: photosWithoutAlt(2) });
+            await flushRouterImport();
+
+            clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+            await flushRouterImport();
+            await act(async () => new Promise((resolve) => setTimeout(resolve, 120)));
+
+            expect(toggleClicked).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('when only ONE condition holds', () => {
         it('shows the plain unsaved-changes dialog, with no mention of photos', async () => {
             showConfirmationDialogMock.mockResolvedValue(false);
@@ -277,8 +324,8 @@ describe('leave warnings on a page that mounts two guards', () => {
             expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
             const call = showConfirmationDialogMock.mock.calls[0]?.[0];
             expect(call?.title).toBe('Fotos sin texto alternativo');
-            expect(call?.confirmLabel).toBe('Continuar sin completarlos');
-            expect(call?.cancelLabel).toBe('Volver y completarlos');
+            expect(call?.confirmLabel).toBe('Seguir igual');
+            expect(call?.cancelLabel).toBe('Completar ahora');
             expect(call?.message).toContain('4 fotos');
             expect(call?.message).not.toContain('cambios sin guardar');
         });
@@ -301,28 +348,32 @@ describe('leave warnings on a page that mounts two guards', () => {
             readonly title: string;
             readonly needle: string;
             readonly confirmLabel: string;
+            readonly cancelLabel: string;
         }> = [
             {
                 locale: 'es',
                 title: 'Cambios sin guardar y fotos sin texto alternativo',
                 needle: '5 fotos siguen sin texto alternativo',
-                confirmLabel: 'Salir y descartar los cambios'
+                confirmLabel: 'Salir y descartar los cambios',
+                cancelLabel: 'Seguir editando'
             },
             {
                 locale: 'en',
                 title: 'Unsaved changes and photos without alt text',
                 needle: '5 photos still have no alt text',
-                confirmLabel: 'Leave and discard the changes'
+                confirmLabel: 'Leave and discard the changes',
+                cancelLabel: 'Keep editing'
             },
             {
                 locale: 'pt',
                 title: 'Alterações não salvas e fotos sem texto alternativo',
                 needle: '5 fotos continuam sem texto alternativo',
-                confirmLabel: 'Sair e descartar as alterações'
+                confirmLabel: 'Sair e descartar as alterações',
+                cancelLabel: 'Continuar editando'
             }
         ];
 
-        for (const { locale, title, needle, confirmLabel } of cases) {
+        for (const { locale, title, needle, confirmLabel, cancelLabel } of cases) {
             it(`is really translated in ${locale}, not just present`, () => {
                 const copy = buildCombinedLeaveWarningCopy([
                     { kind: 'unsaved-changes', copy: VIDEO_COPY },
@@ -333,6 +384,7 @@ describe('leave warnings on a page that mounts two guards', () => {
                 expect(copy?.title).toBe(title);
                 expect(copy?.message).toContain(needle);
                 expect(copy?.confirmLabel).toBe(confirmLabel);
+                expect(copy?.cancelLabel).toBe(cancelLabel);
                 // A missing key degrades to the raw dotted key; a real
                 // translation never contains one.
                 expect(copy?.message).not.toContain('common.confirmations');

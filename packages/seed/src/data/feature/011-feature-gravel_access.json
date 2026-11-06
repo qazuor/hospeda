@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "011-feature-gravel_access",
     "slug": "gravel_access",
+    "category": "ACCESS",
     "description": {
         "es": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales",
         "en": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales",

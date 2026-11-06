@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "059-feature-event_suitable",
     "slug": "event_suitable",
+    "category": "AUDIENCE",
     "description": {
         "es": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
         "en": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",

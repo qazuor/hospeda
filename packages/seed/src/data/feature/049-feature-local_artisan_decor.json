@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "049-feature-local_artisan_decor",
     "slug": "local_artisan_decor",
+    "category": "STYLE",
     "description": {
         "es": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
         "en": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",

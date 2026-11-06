@@ -166,6 +166,7 @@ export function PhotoSection({
         isGalleryFull,
         capUpsell,
         opsReady,
+        mediaLoadSucceeded,
         anyOpInFlight,
         featuredInputRef,
         galleryInputRef,
@@ -191,11 +192,15 @@ export function PhotoSection({
         initialGallery
     });
 
-    // HOS-1018: nudge (never blocks) the host to fill in `alt` text before
-    // leaving the section — see the hook's file header for why this is a
-    // separate, narrower guard than `useUnsavedChangesGuard`'s usual "unsaved
-    // changes" wiring.
-    usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems });
+    // HOS-1018: ask before leaving or saving while required photo alt text is
+    // incomplete. The host can continue, or stay and focus the first photo.
+    usePhotoAltWarningGuard({
+        locale,
+        accommodationId,
+        featuredItem,
+        galleryItems,
+        mediaReady: mediaLoadSucceeded
+    });
 
     // HOS-1183: the main photo is a blocking publish requirement, and this is
     // the realistic last one — hosts fill text first and upload photos last. So
@@ -300,6 +305,7 @@ export function PhotoSection({
                         <PhotoMetadataEditor
                             locale={locale}
                             item={featuredItem}
+                            closeOnSuccessfulSave
                             disabled={anyOpInFlight || !opsReady}
                             toggleAriaLabel={t(
                                 'host.properties.editor.photo.editFeaturedDetailsAria',
@@ -466,7 +472,7 @@ export function PhotoSection({
                     accept="image/jpeg,image/png,image/webp,image/heic"
                     multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
-                    disabled={!isGalleryCapResolved}
+                    disabled={!isGalleryCapResolved || isGalleryFull}
                     onChange={handleGallerySelect}
                 />
             </div>

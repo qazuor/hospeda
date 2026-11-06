@@ -1,4 +1,4 @@
-import { defaultLocale, trans } from '@repo/i18n';
+import { defaultLocale, type TranslationKey, trans } from '@repo/i18n';
 import { EditIcon } from '@repo/icons';
 import type { ApplicableVertical } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
@@ -55,6 +55,21 @@ const VERTICAL_LABELS: Record<ApplicableVertical, string> = {
     accommodation: 'Alojamiento',
     venue: 'Comer y salir',
     experience: 'Experiencia'
+};
+
+/** `FeatureCategoryEnum` value → its `admin-entities.types.featureCategory.*` key (HOS-2058). */
+const FEATURE_CATEGORY_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
+    LOCATION: 'admin-entities.types.featureCategory.location',
+    VIEW: 'admin-entities.types.featureCategory.view',
+    ACCESS: 'admin-entities.types.featureCategory.access',
+    STYLE: 'admin-entities.types.featureCategory.style',
+    AUDIENCE: 'admin-entities.types.featureCategory.audience',
+    OFFER_PROFILE: 'admin-entities.types.featureCategory.offerProfile',
+    SUSTAINABILITY: 'admin-entities.types.featureCategory.sustainability',
+    ACTIVITIES: 'admin-entities.types.featureCategory.activities',
+    CUISINE: 'admin-entities.types.featureCategory.cuisine',
+    DIETARY: 'admin-entities.types.featureCategory.dietary',
+    LANGUAGE: 'admin-entities.types.featureCategory.language'
 };
 
 const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
@@ -141,6 +156,21 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
                     )
                 )
             );
+        }
+    },
+    {
+        // HOS-2058: feature category; NULL = not classified yet.
+        id: 'category',
+        header: t('admin-filters.featureCategory.label'),
+        accessorKey: 'category',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => {
+            const key = row.category ? FEATURE_CATEGORY_LABEL_KEYS[row.category] : undefined;
+            if (!key) {
+                return createElement('span', { className: 'text-muted-foreground text-xs' }, '—');
+            }
+            return createElement('span', { className: 'text-sm text-foreground' }, t(key));
         }
     },
     {

@@ -17,12 +17,9 @@
  * `ActionBar`, which would misleadingly imply one shared save action for
  * the whole page.
  *
- * No plan/entitlement gate is shown here: `CAN_EMBED_VIDEO` only strips
- * YouTube/Vimeo/Dailymotion embeds typed inline in free-text `description`
- * (`gateVideoEmbed()` middleware) — it does not touch this dedicated
- * `media.videos` field at read or write time. Promising a gate the backend
- * does not enforce here would be its own kind of lie, so the copy makes no
- * claim about plan tiers.
+ * `CAN_EMBED_VIDEO` protects linked video embeds on the server's public read
+ * path: the entitlement filter strips `videos` and `media.videos` for plans
+ * without the grant. All accommodation plans currently receive the grant.
  */
 
 import { TextField } from '@/components/ui/TextField';

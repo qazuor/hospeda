@@ -106,6 +106,7 @@ vi.mock('@repo/db', async (importActual) => {
             description: 'features.description',
             icon: 'features.icon',
             applicableVerticals: 'features.applicableVerticals',
+            category: 'features.category',
             isFeatured: 'features.isFeatured',
             displayWeight: 'features.displayWeight',
             isBuiltin: 'features.isBuiltin',
@@ -116,7 +117,9 @@ vi.mock('@repo/db', async (importActual) => {
         rAccommodationAmenity: {
             __table: 'raa',
             amenityId: 'raa.amenityId',
-            accommodationId: 'raa.accommodationId'
+            accommodationId: 'raa.accommodationId',
+            scope: 'raa.scope',
+            availability: 'raa.availability'
         },
         rAccommodationFeature: {
             __table: 'raf',
@@ -376,6 +379,28 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
         expect(body.data.features).toHaveLength(1);
         expect(body.data.features[0].id).toBe(FEATURE_ID);
         expect(body.data.features[0].slug).toBe('parking');
+    });
+
+    it('carries the HOS-2058 relation attributes and the feature category', async () => {
+        // Arrange
+        queueSelectResults(
+            [{ ...AMENITY_ROW, scope: 'shared', availability: null }],
+            [{ ...FEATURE_ROW, category: 'ACCESS' }]
+        );
+        const app = buildApp(ownerActor);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}`);
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.amenities[0].scope).toBe('shared');
+        expect(body.data.amenities[0].availability).toBeNull();
+        expect(body.data.features[0].category).toBe('ACCESS');
+        const amenityQuery = capturedQueries[0] as CapturedQuery;
+        expect(amenityQuery.projection.scope).toBe('raa.scope');
+        expect(amenityQuery.projection.availability).toBe('raa.availability');
     });
 
     it('omits both arrays when the accommodation has no junction rows', async () => {

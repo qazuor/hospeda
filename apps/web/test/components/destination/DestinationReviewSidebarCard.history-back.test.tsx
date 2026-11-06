@@ -144,7 +144,7 @@ describe('DestinationReviewSidebarCard — back button closes the dialog (HOS-33
 
     it('closes the dialog on back instead of navigating off the page, keeping typed content', async () => {
         const user = userEvent.setup();
-        render(<DestinationReviewSidebarCard {...DEFAULT_PROPS} />);
+        const { unmount } = render(<DestinationReviewSidebarCard {...DEFAULT_PROPS} />);
 
         await user.click(screen.getByRole('button', { name: /dejar reseña/i }));
         const dialog = await screen.findByRole('dialog');
@@ -167,5 +167,10 @@ describe('DestinationReviewSidebarCard — back button closes the dialog (HOS-33
         expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
         expect(window.location.pathname).toBe('/es/destinos/colon/');
         expect(window.location.hash).toBe('');
+
+        // dialog-history defers its claimed-URL rewrite to the next task. Drain
+        // that work while jsdom is live, then run the component's cleanup.
+        await settle();
+        unmount();
     });
 });

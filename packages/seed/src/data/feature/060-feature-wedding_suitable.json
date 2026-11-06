@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "060-feature-wedding_suitable",
     "slug": "wedding_suitable",
+    "category": "AUDIENCE",
     "description": {
         "es": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
         "en": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",

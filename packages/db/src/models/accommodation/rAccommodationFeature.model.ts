@@ -1,4 +1,4 @@
-import type { AccommodationFeature } from '@repo/schemas';
+import type { AccommodationFeatureRelation } from '@repo/schemas';
 import { count, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
@@ -7,7 +7,7 @@ import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
-export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeature> {
+export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatureRelation> {
     protected table = rAccommodationFeature;
     public entityName = 'rAccommodationFeature';
 
@@ -73,7 +73,7 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
         where: Record<string, unknown>,
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
-    ): Promise<AccommodationFeature | null> {
+    ): Promise<AccommodationFeatureRelation | null> {
         warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
             const withObj: Record<string, true> = {};
@@ -88,8 +88,8 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                // DRIZZLE-LIMITATION: findFirst with `with: { accommodation, feature }` returns nested join shape; AccommodationFeature entity expects domain-mapped relation types.
-                return result as unknown as AccommodationFeature | null;
+                // DRIZZLE-LIMITATION: findFirst with `with: { accommodation, feature }` returns nested join shape; AccommodationFeatureRelation entity expects domain-mapped relation types.
+                return result as unknown as AccommodationFeatureRelation | null;
             }
             const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

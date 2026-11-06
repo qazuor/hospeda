@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "053-feature-digital_detox_zone",
     "slug": "digital_detox_zone",
+    "category": "OFFER_PROFILE",
     "description": {
         "es": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",
         "en": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",

@@ -235,7 +235,10 @@
                     "label": "Promociones activas"
                 },
                 "richDescription": {
-                    "label": "Descripción enriquecida y video"
+                    "label": "Descripción enriquecida"
+                },
+                "videoLink": {
+                    "label": "Enlace a videos de YouTube, Vimeo o Dailymotion"
                 },
                 "advancedStats": {
                     "label": "Estadísticas avanzadas"

@@ -8,8 +8,13 @@
  * items after expansion). A tiny inline script toggles `data-expanded` on
  * the list (a div, where `aria-expanded` is not an allowed ARIA attribute) to
  * flip the CSS state, while `aria-expanded` lives on the controlling button.
+ *
+ * HOS-2058: an amenity whose relation DECLARES scope and/or availability shows
+ * a badge per declared value (`resolveAmenityAttributeBadges`); an undeclared
+ * one shows nothing.
  */
 import type { AccommodationAmenityItem } from '@/data/types';
+import { resolveAmenityAttributeBadges } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveIcon } from '@repo/icons/resolver';
@@ -63,6 +68,11 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
     {amenities.map((amenity) => {
       const Icon = getIcon(amenity.icon);
       const label = translateAmenity(amenity.name);
+      const badges = resolveAmenityAttributeBadges({
+        scope: amenity.scope,
+        availability: amenity.availability,
+        t
+      });
       return (
         <div class="amenity-item">
           {Icon ? (
@@ -74,6 +84,9 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
           {amenity.additionalCost != null && (
             <span class="amenity-item__cost">{additionalCostLabel}</span>
           )}
+          {badges.map((badge) => (
+            <span class="amenity-item__badge">{badge}</span>
+          ))}
         </div>
       );
     })}
@@ -154,6 +167,17 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
     color: var(--brand-accent);
     font-size: 1.2rem;
     flex-shrink: 0;
+  }
+  .amenity-item {
+    flex-wrap: wrap;
+  }
+  .amenity-item__badge {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0 var(--space-2, 8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--core-muted-foreground);
   }
   .amenity-item__cost {
     font-size: 0.75rem;

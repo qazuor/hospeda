@@ -29,6 +29,13 @@ import type {
     RAccommodationAmenityModel,
     RAccommodationFeatureModel
 } from '@repo/db';
+import {
+    type AccommodationAmenityAttributes,
+    type AmenityAvailabilityEnum,
+    type AmenityScopeEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { ServiceError } from '../../types';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
@@ -46,6 +53,14 @@ interface SyncAmenityJunctionInput {
      * `[…]` → sync to exact set.
      */
     readonly amenityIds: readonly string[] | undefined;
+    /**
+     * Per-amenity relation attributes (HOS-2058).
+     * `undefined` → attributes of existing rows untouched.
+     * `[…]` → every linked amenity gets exactly the listed `scope` /
+     * `availability`; a linked amenity not listed is reset to NULL. An entry
+     * for an amenity that is not linked throws `VALIDATION_ERROR`.
+     */
+    readonly amenityAttributes?: readonly AccommodationAmenityAttributes[] | undefined;
     /** Junction table model (injectable for testing). */
     readonly junctionModel: RAccommodationAmenityModel;
     /** Catalog model used to validate that IDs exist (injectable for testing). */
@@ -77,37 +92,96 @@ interface SyncFeatureJunctionInput {
 // Public sync functions
 // ---------------------------------------------------------------------------
 
+/** The relation-attribute columns of one `r_accommodation_amenity` row. */
+interface AmenityJunctionRow {
+    readonly amenityId: string;
+    readonly scope?: AmenityScopeEnum | null;
+    readonly availability?: AmenityAvailabilityEnum | null;
+}
+
+/** Desired attribute values, keyed by amenity id. NULL = not declared. */
+type DesiredAttributes = ReadonlyMap<
+    string,
+    {
+        readonly scope: AmenityScopeEnum | null;
+        readonly availability: AmenityAvailabilityEnum | null;
+    }
+>;
+
+/**
+ * Builds the desired attribute map for the final linked set, or throws when an
+ * entry names an amenity that will not be linked (HOS-2058).
+ */
+function resolveDesiredAttributes({
+    amenityAttributes,
+    finalIds
+}: {
+    readonly amenityAttributes: readonly AccommodationAmenityAttributes[];
+    readonly finalIds: ReadonlySet<string>;
+}): DesiredAttributes {
+    const listed = new Map(amenityAttributes.map((item) => [item.amenityId, item]));
+    const unlinked = [...listed.keys()].filter((id) => !finalIds.has(id));
+    if (unlinked.length > 0) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            `amenityAttributes references amenities that are not linked: ${unlinked.join(', ')}`
+        );
+    }
+    const desired = new Map<
+        string,
+        { scope: AmenityScopeEnum | null; availability: AmenityAvailabilityEnum | null }
+    >();
+    for (const id of finalIds) {
+        const item = listed.get(id);
+        desired.set(id, {
+            scope: item?.scope ?? null,
+            availability: item?.availability ?? null
+        });
+    }
+    return desired;
+}
+
 /**
  * Syncs `r_accommodation_amenity` for a single accommodation inside an
  * existing database transaction.
  *
- * Three-way contract:
- * - `amenityIds === undefined` → **no-op** (existing rows untouched)
+ * Three-way contract on `amenityIds`:
+ * - `amenityIds === undefined` → **no-op** on the linked set (existing rows untouched)
  * - `amenityIds === []`        → delete all existing rows
  * - `amenityIds = [id, …]`    → diff against current state:
  *     - Rows whose `amenityId` is NOT in the target set are deleted.
  *     - Missing rows are inserted with `isOptional = false`.
  *   Operation is idempotent.
  *
+ * HOS-2058 `amenityAttributes` (`scope`, `availability`):
+ * - `undefined` → no attribute is written; inserted rows get NULL.
+ * - provided → applied to the FINAL linked set (`amenityIds`, or the current
+ *   rows when `amenityIds` is undefined): listed amenities get their values,
+ *   unlisted linked ones are reset to NULL ("not declared"), and an entry for
+ *   an amenity that is not linked throws `VALIDATION_ERROR` before any write.
+ *   Only rows whose values actually change are updated.
+ *
  * Validation: every ID in `amenityIds` must exist in the `amenities` catalog.
  * An unknown ID throws `ServiceError(VALIDATION_ERROR)` which rolls back the
  * surrounding transaction — no partial writes occur.
  *
  * @param input - {@link SyncAmenityJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown,
+ *   or when `amenityAttributes` names an amenity that is not linked.
  */
 export async function syncAmenityJunction({
     accommodationId,
     amenityIds,
+    amenityAttributes,
     junctionModel,
     amenityModel,
     tx
 }: SyncAmenityJunctionInput): Promise<void> {
     // undefined → leave untouched (R-1 regression contract)
-    if (amenityIds === undefined) return;
+    if (amenityIds === undefined && amenityAttributes === undefined) return;
 
     // Validate all supplied IDs exist before touching any rows.
-    if (amenityIds.length > 0) {
+    if (amenityIds !== undefined && amenityIds.length > 0) {
         await validateCatalogIds({
             ids: amenityIds,
             findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
@@ -119,14 +193,21 @@ export async function syncAmenityJunction({
     // Fetch ALL current junction rows for this accommodation (HOS-321: this
     // must not be truncated by the model's default page size — see
     // `readAllJunctionRows`).
-    const existing = await readAllJunctionRows<{ amenityId: string }>({
+    const existing = await readAllJunctionRows<AmenityJunctionRow>({
         where: { accommodationId },
         junctionModel,
         sortBy: 'amenityId',
         tx
     });
-    const existingIds = new Set(existing.map((row) => row.amenityId));
-    const targetIds = new Set(amenityIds);
+    const existingById = new Map(existing.map((row) => [row.amenityId, row]));
+    const existingIds = new Set(existingById.keys());
+    const targetIds = amenityIds === undefined ? existingIds : new Set(amenityIds);
+
+    // Resolve attributes BEFORE any write, so a bad entry rolls back nothing.
+    const desired =
+        amenityAttributes === undefined
+            ? undefined
+            : resolveDesiredAttributes({ amenityAttributes, finalIds: targetIds });
 
     // Delete rows NOT in the target set, in ONE statement. `buildWhereClause`
     // turns an array value on a scalar column into `IN (...)`, so clearing a
@@ -140,15 +221,40 @@ export async function syncAmenityJunction({
     // Insert rows that are in the target set but not yet in the junction table.
     const toInsert = [...targetIds].filter((id) => !existingIds.has(id));
     for (const amenityId of toInsert) {
+        const attributes = desired?.get(amenityId);
         // TYPE-WORKAROUND: The junction model's generic type (AccommodationAmenityRelation)
         // covers all columns; cast is safe because Drizzle maps fields by column name at insert time.
         await junctionModel.create(
             {
                 accommodationId,
                 amenityId,
-                isOptional: false
+                isOptional: false,
                 // additionalCost and additionalCostPercent default to null in DB schema.
+                // HOS-2058: scope/availability stay NULL ("not declared") unless sent.
+                ...(attributes
+                    ? { scope: attributes.scope, availability: attributes.availability }
+                    : {})
             } as Parameters<typeof junctionModel.create>[0],
+            tx
+        );
+    }
+
+    // HOS-2058: update kept rows whose attributes differ from the desired values.
+    if (desired === undefined) return;
+    for (const amenityId of targetIds) {
+        const row = existingById.get(amenityId);
+        if (!row) continue; // just inserted with the desired values
+        const want = desired.get(amenityId);
+        if (!want) continue;
+        if (
+            (row.scope ?? null) === want.scope &&
+            (row.availability ?? null) === want.availability
+        ) {
+            continue;
+        }
+        await junctionModel.update(
+            { accommodationId, amenityId },
+            { scope: want.scope, availability: want.availability },
             tx
         );
     }
@@ -216,7 +322,7 @@ export async function syncFeatureJunction({
     const toInsert = [...targetIds].filter((id) => !existingIds.has(id));
     for (const featureId of toInsert) {
         // TYPE-WORKAROUND: The DB schema columns (hostReWriteName, comments) do not match
-        // the generic type parameter (AccommodationFeature which has notes/isHighlighted).
+        // the generic type parameter (AccommodationFeatureRelation).
         // This is a pre-existing type mismatch in the codebase. We cast to the parameter
         // type; Drizzle resolves fields by column name at query generation time and only
         // writes columns that exist in the table schema — extra fields are silently ignored.

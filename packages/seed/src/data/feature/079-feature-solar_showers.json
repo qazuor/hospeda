@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "079-feature-solar_showers",
     "slug": "solar_showers",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Sistema de calentamiento de agua mediante energía solar para duchas ecológicas y sustentables",
         "en": "Sistema de calentamiento de agua mediante energía solar para duchas ecológicas y sustentables",

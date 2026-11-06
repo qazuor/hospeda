@@ -12,6 +12,7 @@ describe('TEST:V3:8 Tourist VIP effective set', () => {
         readonly inherits: boolean;
         readonly paidVip?: boolean;
         readonly addon?: boolean;
+        readonly trial?: boolean;
     }) {
         const catalog = createInMemoryCatalog();
         const accommodationId = catalog.addPlanVersion(
@@ -52,6 +53,16 @@ describe('TEST:V3:8 Tourist VIP effective set', () => {
             charged: null,
             floor: null
         });
+        const preTrial = CoverageSourceSchema.parse({
+            type: 'TRIAL',
+            reference: { kind: 'PLAN_VERSION', planVersionId: lowId },
+            scope: 'VERTICAL',
+            target: null,
+            since: 'NOT_STARTED',
+            until: 'NOT_STARTED',
+            charged: null,
+            floor: null
+        });
         const accommodation = title(accommodationId);
         const billing = {
             coverage: async ({ vertical }: { readonly vertical: VerticalEnum }) => ({
@@ -61,6 +72,7 @@ describe('TEST:V3:8 Tourist VIP effective set', () => {
                         ? [accommodation]
                         : vertical === VerticalEnum.TOURIST
                           ? [
+                                ...(args.trial ? [preTrial] : []),
                                 ...(args.paidVip ? [title(vipId)] : []),
                                 ...(args.addon ? [complement] : [])
                             ]
@@ -146,5 +158,18 @@ describe('TEST:V3:8 Tourist VIP effective set', () => {
         expect(result.inheritsTouristVip).toBe(false);
         expect(result.entries).toEqual([]);
         expect(result.hasLiveNonTrialTitle).toBe(true);
+    });
+
+    it('HOS-2027: the inherited VIP title (another vertical) does not supersede the Tourist trial', async () => {
+        const { billing, reader } = await setup({ inherits: true, trial: true });
+        const result = await resolveEffectiveSet({
+            reader,
+            billing,
+            trials: { findTrial: async () => null },
+            userId: USER,
+            vertical: VerticalEnum.TOURIST
+        });
+        // trial 1 + inherited VIP 2: the trial is NOT dropped by a foreign-vertical title.
+        expect(result.entries).toContainEqual({ key: KEY, value: 3, strategy: 'SUM' });
     });
 });

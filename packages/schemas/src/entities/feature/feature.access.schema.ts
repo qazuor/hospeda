@@ -20,6 +20,8 @@ export const FeaturePublicSchema = FeatureSchema.pick({
 
     // Verticals (SPEC-266)
     applicableVerticals: true,
+    // HOS-2058: catalog category (nullable in release N).
+    category: true,
 
     // Visibility
     isFeatured: true,
@@ -46,6 +48,8 @@ export const FeatureProtectedSchema = FeatureSchema.pick({
     description: true,
     icon: true,
     applicableVerticals: true,
+    // HOS-2058: catalog category (nullable in release N).
+    category: true,
     isFeatured: true,
     isBuiltin: true,
     displayWeight: true,

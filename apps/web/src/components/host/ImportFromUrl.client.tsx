@@ -86,6 +86,15 @@ export type ImportFromUrlProps = {
     readonly onError?: (failureCodeOrUnknown: string) => void;
 };
 
+/** Access decision shown to the host; `null` while it is still loading. */
+interface ImportAccess {
+    readonly aiEntitlementAllowed: boolean;
+    readonly reason?: 'entitlement' | 'new_user_cap';
+}
+
+/** Used when the precheck cannot be read: render the importer, banner-free. */
+const UNKNOWN_ACCESS: ImportAccess = { aiEntitlementAllowed: true };
+
 /**
  * Renders the import-from-URL form: a URL input, a required legal-confirmation
  * checkbox, and a submit button gated on that checkbox.
@@ -106,11 +115,35 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     const [showHelp, setShowHelp] = useState(false);
     // HOS-50 T-013: non-null while an async Apify run is being polled.
     const [runHandle, setRunHandle] = useState<ImportRunHandle | null>(null);
+    const [access, setAccess] = useState<ImportAccess | null>(null);
     // Guards against re-handling a settle outcome on unrelated re-renders
     // while `runHandle` is unchanged, and is reset whenever a NEW run starts.
     const handledSettleRef = useRef(false);
 
     const pollResult = useImportStatus(runHandle, runHandle !== null);
+
+    useEffect(() => {
+        let active = true;
+        async function loadAccess(): Promise<void> {
+            try {
+                const result = await accommodationsImportApi.getAccess();
+                if (!active) return;
+                // The server stays the enforcement authority and never refuses an
+                // import here, so an unreadable precheck shows the importer
+                // without a banner instead of hiding the URL input.
+                setAccess(result.ok ? result.data : UNKNOWN_ACCESS);
+            } catch (cause) {
+                webLogger.warn('ImportFromUrl: access precheck failed; showing importer', {
+                    error: cause
+                });
+                if (active) setAccess(UNKNOWN_ACCESS);
+            }
+        }
+        void loadAccess();
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const submitDisabled = isSubmitting || !legalConfirmed;
 
@@ -175,8 +208,8 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                             error: result.error,
                             t,
                             fallback: t(
-                                'common.apiError.ENTITLEMENT_REQUIRED',
-                                'Tu plan no incluye esta función. Actualizalo para continuar.'
+                                'host.importFromUrl.errors.entitlement',
+                                'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
                             )
                         })
                     );
@@ -308,8 +341,51 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         }
     }, [pollResult, onError, onImported, t]);
 
+    const entitlementDenied = access?.reason === 'entitlement';
+    const capReached = access?.reason === 'new_user_cap';
+    if (access === null) {
+        return (
+            <section className={styles.importFromUrl}>
+                <p role="status">
+                    {t(
+                        'host.importFromUrl.actions.checkingAccess',
+                        'Verificando disponibilidad de importación…'
+                    )}
+                </p>
+            </section>
+        );
+    }
     return (
         <section className={styles.importFromUrl}>
+            {access?.aiEntitlementAllowed === false ? (
+                <div
+                    className="form-error-banner"
+                    role="alert"
+                >
+                    {capReached
+                        ? t(
+                              'host.importFromUrl.errors.newUserCap',
+                              'Usaste tus importaciones con IA de las últimas 24 horas. Igual podés importar: completamos lo que se pueda sin IA.'
+                          )
+                        : entitlementDenied
+                          ? t(
+                                'host.importFromUrl.errors.entitlement',
+                                'Tu plan no incluye la extracción de datos con IA para importar desde una URL.'
+                            )
+                          : null}
+                    {entitlementDenied ? (
+                        <a
+                            className={styles.errorAction}
+                            href={buildUrl({
+                                locale,
+                                path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
+                            })}
+                        >
+                            {t('host.importFromUrl.errors.entitlementCta', 'Ver planes')}
+                        </a>
+                    ) : null}
+                </div>
+            ) : null}
             {/*
              * NOT a <form>: this island is embedded inside the parent
              * CreatePropertyMiniForm's <form>, and nested forms are invalid HTML

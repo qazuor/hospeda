@@ -64,8 +64,7 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         expect(relatedModel.create as Mock).toHaveBeenCalledWith({
             accommodationId: validInput.accommodationId,
             featureId: validInput.featureId,
-            isHighlighted: false,
-            notes: validInput.comments
+            comments: validInput.comments
         });
     });
 
@@ -145,8 +144,7 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
         (relatedModel.create as Mock).mockResolvedValueOnce({
             ...validInput,
-            isHighlighted: undefined,
-            notes: undefined
+            comments: undefined
         });
         const minimalInput = {
             accommodationId: validInput.accommodationId,
@@ -154,8 +152,7 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         };
         const result = await service.addFeatureToAccommodation(actorWithPerms, minimalInput);
         expect(result.data).toHaveProperty('relation');
-        expect(result.data?.relation.notes).toBeUndefined();
-        expect(result.data?.relation.isHighlighted).toBeUndefined();
+        expect(result.data?.relation.comments).toBeUndefined();
     });
 
     it('should reject null for required fields', async () => {

@@ -33,6 +33,7 @@ describe('resolveTrialSummaryView', () => {
     it('TEST:1727:1 — preserves a running trial and hides NONE and rows born consumed', () => {
         expect(resolveTrialSummaryView({ summary: activeSummary })).toEqual({
             kind: 'running',
+            canChoosePlan: false,
             totalDays: 30,
             origins: { base: 20, promo: 5, support: 5 },
             startedAt: activeSummary.startedAt,
@@ -58,7 +59,7 @@ describe('resolveTrialSummaryView', () => {
             resolveTrialSummaryView({
                 summary: summaryFor(TrialStatusEnum.TRIAL_CONVERTED)
             })
-        ).toEqual({ kind: 'ended_converted' });
+        ).toEqual({ kind: 'ended_converted', canChoosePlan: false });
     });
 
     it('TEST:1727:3 — an expired trial exposes only its actual end instant', () => {
@@ -66,12 +67,12 @@ describe('resolveTrialSummaryView', () => {
             resolveTrialSummaryView({
                 summary: summaryFor(TrialStatusEnum.TRIAL_EXPIRED)
             })
-        ).toEqual({ kind: 'ended_expired', endsAt: activeSummary.endsAt });
+        ).toEqual({ kind: 'ended_expired', canChoosePlan: true, endsAt: activeSummary.endsAt });
         expect(
             resolveTrialSummaryView({
                 summary: summaryFor(TrialStatusEnum.TRIAL_EXPIRED, { endsAt: null })
             })
-        ).toEqual({ kind: 'ended_expired', endsAt: null });
+        ).toEqual({ kind: 'ended_expired', canChoosePlan: true, endsAt: null });
     });
 
     it('TEST:1727:4 — resolves every declared status', () => {
@@ -92,6 +93,7 @@ describe('resolveTrialSummaryView', () => {
         // Assert
         expect(view).toEqual({
             kind: 'ended_converted_without_plan',
+            canChoosePlan: true,
             endsAt: activeSummary.endsAt
         });
     });
@@ -102,15 +104,29 @@ describe('resolveTrialSummaryView', () => {
             hasLiveSubscription: true
         });
 
-        expect(view).toEqual({ kind: 'ended_converted' });
+        expect(view).toEqual({ kind: 'ended_converted', canChoosePlan: false });
     });
 
     it('TEST:1772:3 — the live-subscription flag does not change a running or expired trial', () => {
-        for (const status of [TrialStatusEnum.TRIAL_ACTIVE, TrialStatusEnum.TRIAL_EXPIRED]) {
-            const summary = summaryFor(status);
-            expect(resolveTrialSummaryView({ summary, hasLiveSubscription: false })).toEqual(
-                resolveTrialSummaryView({ summary, hasLiveSubscription: true })
-            );
+        expect(
+            resolveTrialSummaryView({
+                summary: summaryFor(TrialStatusEnum.TRIAL_ACTIVE),
+                hasLiveSubscription: false
+            })
+        ).toMatchObject({ kind: 'running', canChoosePlan: true });
+        expect(
+            resolveTrialSummaryView({
+                summary: summaryFor(TrialStatusEnum.TRIAL_ACTIVE),
+                hasLiveSubscription: true
+            })
+        ).toMatchObject({ kind: 'running', canChoosePlan: false });
+        for (const hasLiveSubscription of [false, true]) {
+            expect(
+                resolveTrialSummaryView({
+                    summary: summaryFor(TrialStatusEnum.TRIAL_EXPIRED),
+                    hasLiveSubscription
+                })
+            ).toMatchObject({ kind: 'ended_expired', canChoosePlan: true });
         }
     });
 
@@ -120,6 +136,10 @@ describe('resolveTrialSummaryView', () => {
             hasLiveSubscription: false
         });
 
-        expect(view).toEqual({ kind: 'ended_converted_without_plan', endsAt: null });
+        expect(view).toEqual({
+            kind: 'ended_converted_without_plan',
+            canChoosePlan: true,
+            endsAt: null
+        });
     });
 });

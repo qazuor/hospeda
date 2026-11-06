@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "006-feature-central_area",
     "slug": "central_area",
+    "category": "LOCATION",
     "description": {
         "es": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
         "en": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",

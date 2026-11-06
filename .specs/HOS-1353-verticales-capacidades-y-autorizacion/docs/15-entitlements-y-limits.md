@@ -220,6 +220,16 @@ como cualquier otra baja.
 > sucesora cuyo primer cobro difiere `D8`, la baja antes del primer cobro, el aviso perdido—
 > están en `V/03` §2, *«los 26–44 minutos»*.
 
+> **Reemplazado el 2026-11-04 (HOS-2027, decisión del owner).** La suma de arriba ya no rige.
+> En el pliegue (`selectPlegableSources`), una fuente `TRIAL` deja de aportar **apenas hay una fuente
+> `SUSCRIPCIÓN` de clase `TÍTULO` en la misma vertical**: las claves `SUMA` toman el cupo de la
+> suscripción, no trial + suscripción. Los `ADDON` siguen sumando sobre ella. Si la suscripción
+> deja de dar título, el trial vuelve a aportar. Motivo: la suma produjo el canje
+> restaurar-y-recortar medido en staging (con `max_accommodations` 1 + 1 = 2, el recálculo
+> republicó la ficha más vieja despublicada por billing y, al convertirse el trial, el tope 1
+> recortó la ficha nueva publicada a mano). `cobertura` **sigue listando el trial** (contrato
+> `12-contrato…` §2.1): la regla vive en el pliegue, no en el contrato.
+
 **El guard** — `G-R2`, en la lista de `V/20` §2: **ninguna de las cuatro estrategias recibe una
 fuente de clase `COMPLEMENTO` cuando el conjunto no tiene ninguna de clase `TÍTULO` viva** **que no
 sea de `tipo: TRIAL`** (FASE 8 completa, `F-8CA1-004`, `F-8CA2-011`, `F-8CC1-006`). Se

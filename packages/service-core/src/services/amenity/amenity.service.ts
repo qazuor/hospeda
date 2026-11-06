@@ -425,7 +425,9 @@ export class AmenityService extends BaseCrudRelatedService<
                     amenityId,
                     isOptional = false,
                     additionalCost,
-                    additionalCostPercent
+                    additionalCostPercent,
+                    scope,
+                    availability
                 } = validatedParams;
                 // Verify amenity exists
                 const amenity = await this.model.findOne({ id: amenityId as AmenityId });
@@ -455,7 +457,10 @@ export class AmenityService extends BaseCrudRelatedService<
                     amenityId: amenityId as AmenityId,
                     isOptional,
                     additionalCost,
-                    additionalCostPercent
+                    additionalCostPercent,
+                    // HOS-2058: declared relation attributes; absent = NULL (not declared).
+                    scope: scope ?? null,
+                    availability: availability ?? null
                 });
                 return { relation };
             }

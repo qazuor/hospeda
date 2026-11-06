@@ -1,6 +1,6 @@
 {
-  "id": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
-  "prevId": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "id": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "prevId": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2095,6 +2095,13 @@
           "notNull": true,
           "default": "'{}'"
         },
+        "category": {
+          "name": "category",
+          "type": "feature_category_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "lifecycle_state": {
           "name": "lifecycle_state",
           "type": "lifecycle_status_enum",
@@ -2236,6 +2243,20 @@
         "additional_cost_percent": {
           "name": "additional_cost_percent",
           "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "amenity_scope_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability": {
+          "name": "availability",
+          "type": "amenity_availability_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         }
@@ -23352,12 +23373,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -32339,7 +32354,12 @@
         "SAFETY",
         "FAMILY_FRIENDLY",
         "WORK_FRIENDLY",
-        "GENERAL_APPLIANCES"
+        "GENERAL_APPLIANCES",
+        "PARKING",
+        "LAUNDRY",
+        "WATER_ACTIVITIES",
+        "WELLNESS",
+        "DINING"
       ]
     },
     "public.auth_provider_enum": {
@@ -33953,6 +33973,39 @@
       "values": [
         "visible",
         "archived"
+      ]
+    },
+    "public.amenity_availability_enum": {
+      "name": "amenity_availability_enum",
+      "schema": "public",
+      "values": [
+        "year_round",
+        "seasonal"
+      ]
+    },
+    "public.amenity_scope_enum": {
+      "name": "amenity_scope_enum",
+      "schema": "public",
+      "values": [
+        "private",
+        "shared"
+      ]
+    },
+    "public.feature_category_enum": {
+      "name": "feature_category_enum",
+      "schema": "public",
+      "values": [
+        "LOCATION",
+        "VIEW",
+        "ACCESS",
+        "STYLE",
+        "AUDIENCE",
+        "OFFER_PROFILE",
+        "SUSTAINABILITY",
+        "ACTIVITIES",
+        "CUISINE",
+        "DIETARY",
+        "LANGUAGE"
       ]
     }
   },

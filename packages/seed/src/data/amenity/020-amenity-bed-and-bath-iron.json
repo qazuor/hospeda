@@ -8,7 +8,7 @@
         "pt": "Plancha de ropa"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "BED_AND_BATH",
+    "type": "LAUNDRY",
     "icon": "ShirtIcon",
     "isBuiltin": false,
     "isFeatured": false,

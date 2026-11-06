@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "081-feature-gluten_free_options",
     "slug": "gluten_free_options",
+    "category": "DIETARY",
     "description": {
         "es": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia",
         "en": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia",

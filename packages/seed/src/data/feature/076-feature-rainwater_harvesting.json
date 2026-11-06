@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "076-feature-rainwater_harvesting",
     "slug": "rainwater_harvesting",
+    "category": "SUSTAINABILITY",
     "description": {
         "es": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
         "en": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",

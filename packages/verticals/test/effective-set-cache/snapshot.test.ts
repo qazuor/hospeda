@@ -85,7 +85,7 @@ describe('effective-set snapshot', () => {
             codec: effectiveSetSnapshotCodec
         });
         await cache.readThrough({ userId: 'A', vertical, load: async () => snapshot });
-        const hash = redis.hashes.get('vset:v1:u:A')!;
+        const hash = redis.hashes.get('vset:v2:u:A')!;
         const envelope = JSON.parse(hash.get(vertical)!) as { value: string };
         hash.set(vertical, JSON.stringify({ ...envelope, value: '{"version":2}' }));
         let loads = 0;
@@ -134,7 +134,7 @@ describe('effective-set snapshot', () => {
             vertical
         };
         await readEffectiveSet(args);
-        const hash = redis.hashes.get('vset:v1:u:A')!;
+        const hash = redis.hashes.get('vset:v2:u:A')!;
         const envelope = JSON.parse(hash.get(vertical)!) as { value: string };
         hash.set(
             vertical,

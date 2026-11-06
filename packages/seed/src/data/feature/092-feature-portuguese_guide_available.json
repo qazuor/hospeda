@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "092-feature-portuguese_guide_available",
     "slug": "portuguese_guide_available",
+    "category": "LANGUAGE",
     "description": {
         "es": "Guía disponible en idioma portugués para visitantes brasileños",
         "en": "Guía disponible en idioma portugués para visitantes brasileños",

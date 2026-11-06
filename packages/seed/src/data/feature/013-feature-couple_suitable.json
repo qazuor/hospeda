@@ -2,6 +2,7 @@
     "$schema": "../../schemas/feature.schema.json",
     "id": "013-feature-couple_suitable",
     "slug": "couple_suitable",
+    "category": "AUDIENCE",
     "description": {
         "es": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
         "en": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",

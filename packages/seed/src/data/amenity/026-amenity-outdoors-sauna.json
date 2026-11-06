@@ -8,7 +8,7 @@
         "pt": "Sauna disponible"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "OUTDOORS",
+    "type": "WELLNESS",
     "icon": "SaunaIcon",
     "isBuiltin": false,
     "isFeatured": true,

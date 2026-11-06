@@ -635,7 +635,40 @@
         "familyFriendly": "Family friendly",
         "workFriendly": "Work friendly",
         "generalAppliances": "Equipment",
+        "parking": "Parking",
+        "laundry": "Laundry",
+        "waterActivities": "Water activities",
+        "wellness": "Wellness",
+        "dining": "Food and drink",
         "other": "Other"
+    },
+    "featureCategories": {
+        "location": "Location",
+        "view": "Views",
+        "access": "Access",
+        "style": "Style",
+        "audience": "Ideal for",
+        "offerProfile": "Offer profile",
+        "sustainability": "Sustainability",
+        "activities": "Activities",
+        "cuisine": "Cuisine",
+        "dietary": "Dietary options",
+        "language": "Languages",
+        "other": "Other"
+    },
+    "amenityAttributes": {
+        "scope": {
+            "label": "Use",
+            "private": "Private",
+            "shared": "Shared",
+            "unset": "Not specified"
+        },
+        "availability": {
+            "label": "Availability",
+            "yearRound": "Year-round",
+            "seasonal": "Seasonal",
+            "unset": "Not specified"
+        }
     },
     "amenityNames": {
         "wifi": "WiFi",

@@ -1543,6 +1543,11 @@ export function createDbMock() {
         userBookmarkModel: {
             findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
         },
+        subscriptionModel: {
+            existsAnyForUser: vi.fn().mockResolvedValue(false)
+        },
+        trials: { userId: 'user_id', vertical: 'vertical', emailPseudonym: 'email_pseudonym' },
+        subscriptions: { userId: 'user_id', vertical: 'vertical', status: 'status' },
 
         // SPEC-243 T-011: UserPushTokenModel singleton. Required so UserService can
         // instantiate at module scope (pushTokenModel = userPushTokenModel) when the
