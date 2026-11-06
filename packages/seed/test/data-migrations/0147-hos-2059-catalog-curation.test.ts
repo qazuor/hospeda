@@ -8,6 +8,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AmenityCreateInputSchema, FeatureCreateInputSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     AMENITY_RETYPES,
@@ -68,6 +69,30 @@ describe('0147-hos-2059-catalog-curation', () => {
         for (const file of NEW_FEATURE_FIXTURE_FILES) {
             expect(manifest.features, file).toContain(file);
             expect(() => readFileSync(join(SRC, 'data/feature', file)), file).not.toThrow();
+        }
+    });
+
+    it('every new fixture passes the service create schema the fresh-DB seed uses', () => {
+        // The fresh-DB seed creates rows through the service, which validates
+        // them; 0147 inserts directly. A 9-character description passed 0147
+        // and broke the E2E seed (`toaster`), so the service schema is the bar.
+        for (const file of NEW_AMENITY_FIXTURE_FILES) {
+            const {
+                id: _id,
+                $schema: _schema,
+                ...fixture
+            } = readJson<Record<string, unknown>>(join(SRC, 'data/amenity', file));
+            const result = AmenityCreateInputSchema.safeParse(fixture);
+            expect(result.success, `${file}: ${result.error?.message}`).toBe(true);
+        }
+        for (const file of NEW_FEATURE_FIXTURE_FILES) {
+            const {
+                id: _id,
+                $schema: _schema,
+                ...fixture
+            } = readJson<Record<string, unknown>>(join(SRC, 'data/feature', file));
+            const result = FeatureCreateInputSchema.safeParse(fixture);
+            expect(result.success, `${file}: ${result.error?.message}`).toBe(true);
         }
     });
 

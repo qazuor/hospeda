@@ -3,9 +3,9 @@
     "id": "136-amenity-kitchen-toaster",
     "slug": "toaster",
     "description": {
-        "es": "Tostadora",
-        "en": "Toaster",
-        "pt": "Torradeira"
+        "es": "Tostadora eléctrica",
+        "en": "Electric toaster",
+        "pt": "Torradeira elétrica"
     },
     "applicableVerticals": ["accommodation"],
     "type": "KITCHEN",

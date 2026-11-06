@@ -52,7 +52,8 @@ import {
     type AmenitiesTypeEnum,
     AmenitiesTypeEnumSchema,
     type AmenityScopeEnum,
-    FeatureCategoryEnumSchema
+    FeatureCategoryEnumSchema,
+    i18nText
 } from '@repo/schemas';
 import { z } from 'zod';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
@@ -239,7 +240,12 @@ export const CATALOG_MERGES: readonly CatalogMerge[] = [
     { source: feature('vehicle_rental'), target: amenity('vehicle_rental') }
 ];
 
-const I18nTextSchema = z.object({ es: z.string(), en: z.string(), pt: z.string() });
+/**
+ * Same bounds as the amenity/feature service schemas (10-500 per locale). This
+ * migration inserts directly, so without them a description the fresh-DB seed
+ * (which goes through the service) rejects would still pass here.
+ */
+const I18nTextSchema = i18nText({ min: 10, max: 500 });
 
 const AmenityFixtureSchema = z.object({
     slug: z.string().min(1),
