@@ -218,6 +218,19 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
             })
             .returning({ id: payments.id });
         if (!payment) throw new Error('S9 payment fixture missing');
+        const [failedPayment] = await getServiceTestDb()
+            .insert(payments)
+            .values({
+                subscriptionId: fixture.ids.successor.id,
+                amount: 250000,
+                currency: 'ARS',
+                status: 'FAILED',
+                provider: 'fake',
+                providerFactId: `s9-failed-${crypto.randomUUID()}`,
+                factAt: fixture.clock.now()
+            })
+            .returning({ id: payments.id });
+        if (!failedPayment) throw new Error('S9 failed payment fixture missing');
         const events: unknown[] = [];
         const result = await reissueDeferredCourtesy(
             { successorSubscriptionId: fixture.ids.successor.id },
@@ -243,7 +256,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
         const hung = await getServiceTestDb()
             .select()
             .from(reconciliationMarkPayments)
-            .where(eq(reconciliationMarkPayments.paymentId, payment.id));
+            .where(eq(reconciliationMarkPayments.markId, marks[0]!.id));
         const coverage = await resolveCourtesySources({
             userId: fixture.ids.userId,
             vertical: VerticalSchema.parse('accommodation'),
@@ -252,7 +265,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:12 S9 deferred courtesy r
         expect(result).toMatchObject({ outcome: 'REISSUED', chargeMarksOpened: 1 });
         expect(marks).toHaveLength(1);
         expect(hung).toHaveLength(1);
-        expect(hung[0]?.markId).toBe(marks[0]?.id);
+        expect(hung[0]?.paymentId).toBe(payment.id);
         expect(events).toEqual([
             {
                 userId: fixture.ids.userId,
