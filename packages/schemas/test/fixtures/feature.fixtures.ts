@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { FeatureCategoryEnum } from '../../src/enums/feature-category.enum.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,
@@ -227,7 +228,7 @@ export const createPartialFeatureUpdateInput = () => {
 // ============================================================================
 
 export const createValidFeatureFilters = () => ({
-    category: faker.lorem.word(),
+    category: faker.helpers.enumValue(FeatureCategoryEnum),
     icon: faker.lorem.word(),
     isBuiltin: faker.datatype.boolean(),
     isFeatured: faker.datatype.boolean(),
@@ -247,7 +248,9 @@ export const createValidFeatureListInput = () => ({
     page: faker.number.int({ min: 1, max: 10 }),
     pageSize: faker.number.int({ min: 10, max: 50 }),
     filters: {
-        category: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.5 }),
+        category: faker.helpers.maybe(() => faker.helpers.enumValue(FeatureCategoryEnum), {
+            probability: 0.5
+        }),
         isBuiltin: faker.helpers.maybe(() => faker.datatype.boolean(), { probability: 0.5 })
     }
 });

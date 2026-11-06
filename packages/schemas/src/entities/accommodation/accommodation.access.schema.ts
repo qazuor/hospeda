@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
-import { PreferredContactEnumSchema } from '../../enums/index.js';
+import {
+    AmenityAvailabilityEnumSchema,
+    AmenityScopeEnumSchema,
+    FeatureCategoryEnumSchema,
+    PreferredContactEnumSchema
+} from '../../enums/index.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
@@ -161,7 +166,16 @@ const LenientCatalogRowFields = {
     applicableVerticals: z.array(z.string()),
     displayWeight: z.number().default(50)
 };
-const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend(LenientCatalogRowFields);
+const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend({
+    ...LenientCatalogRowFields,
+    /**
+     * HOS-2058: relation attributes from `r_accommodation_amenity`, carried on
+     * the catalog row so the host editor can rebuild its baseline.
+     * NULL = not declared.
+     */
+    scope: AmenityScopeEnumSchema.nullish(),
+    availability: AmenityAvailabilityEnumSchema.nullish()
+});
 const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
 
 /**
@@ -328,7 +342,10 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
                 slug: z.string(),
                 icon: z.string().nullable(),
                 isOptional: z.boolean(),
-                additionalCost: z.number().nullable()
+                additionalCost: z.number().nullable(),
+                // HOS-2058: relation attributes. NULL = not declared.
+                scope: AmenityScopeEnumSchema.nullish(),
+                availability: AmenityAvailabilityEnumSchema.nullish()
             })
         )
         .optional(),
@@ -341,6 +358,8 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
                 // identifier and the i18n key (`accommodations.featureNames.<slug>`).
                 slug: z.string(),
                 icon: z.string().nullable(),
+                // HOS-2058: catalog category, used to group the public grid.
+                category: FeatureCategoryEnumSchema.nullish(),
                 hostReWriteName: z.string().nullable(),
                 comments: z.string().nullable()
             })

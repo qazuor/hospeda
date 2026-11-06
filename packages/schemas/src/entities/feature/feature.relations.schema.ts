@@ -52,23 +52,6 @@ const AccommodationSummarySchema = z.object({
     createdAt: z.date()
 });
 
-/**
- * Feature category summary schema for relations
- * Contains category information with statistics
- */
-const FeatureCategorySummarySchema = z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    featureCount: z.number().int().min(0),
-    availableFeatureCount: z.number().int().min(0),
-    totalUsageCount: z.number().int().min(0),
-    averageUsagePerFeature: z.number().min(0),
-    averagePriority: z.number().min(0).max(100),
-    icon: z.string().optional(),
-    color: z.string().optional(),
-    sortOrder: z.number().int().min(0).optional()
-});
-
 // ============================================================================
 // FEATURE WITH RELATIONS SCHEMAS
 // ============================================================================
@@ -122,10 +105,10 @@ export const FeatureWithAccommodationsSchema = FeatureSchema.extend({
 
 /**
  * Feature with category information
- * Includes detailed category data and related features in the same category
+ * The category itself is the `category` column on the feature row (HOS-2058);
+ * this adds related features in the same category and in-category ranks.
  */
 export const FeatureWithCategorySchema = FeatureSchema.extend({
-    categoryInfo: FeatureCategorySummarySchema.optional(),
     relatedFeatures: z
         .array(
             FeatureSchema.pick({
@@ -154,9 +137,9 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1), // How similar (0-1)
@@ -170,9 +153,9 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 coOccurrenceRate: z.number().min(0).max(1), // Percentage of co-occurrence
                 coOccurrenceCount: z.number().int().min(0)
@@ -186,9 +169,9 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 usageCount: z.number().int().min(0).optional(),
                 alternativeReason: z.string().optional(), // Why it's an alternative
@@ -202,9 +185,9 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 complementReason: z.string().optional(), // Why it complements this feature
                 synergySCore: z.number().min(0).max(1).optional() // How well they work together
@@ -360,8 +343,6 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
     accommodationsCount: z.number().int().min(0).optional(),
     featuredAccommodations: z.array(AccommodationSummarySchema).optional(),
 
-    // Category information
-    categoryInfo: FeatureCategorySummarySchema.optional(),
     relatedFeatures: z
         .array(
             FeatureSchema.pick({
@@ -385,9 +366,9 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 description: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1),
@@ -401,9 +382,9 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                icon: true
+                icon: true,
+                category: true
             }).extend({
-                category: z.string().optional(),
                 priority: z.number().int().min(0).max(100).optional(),
                 coOccurrenceRate: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)

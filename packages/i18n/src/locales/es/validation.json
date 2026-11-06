@@ -252,6 +252,9 @@
         },
         "isOptional": {
             "required": "El indicador de opcionalidad es obligatorio"
+        },
+        "attributes": {
+            "duplicate": "Cada comodidad puede aparecer una sola vez"
         }
     },
     "accommodationCalendarSync": {
@@ -2632,6 +2635,15 @@
         },
         "partnerLogoClickDestination": {
             "invalid": "El destino del clic en el logo no es válido"
+        },
+        "featureCategory": {
+            "invalid": "Elegí una categoría de característica válida"
+        },
+        "amenityScope": {
+            "invalid": "Elegí si la comodidad es privada o compartida"
+        },
+        "amenityAvailability": {
+            "invalid": "Elegí si la comodidad está disponible todo el año o por temporada"
         }
     },
     "event": {

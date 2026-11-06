@@ -17,6 +17,7 @@ import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
+import { AccommodationAmenityAttributesListSchema } from '../amenity/amenity.schema.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
@@ -525,6 +526,13 @@ export const AccommodationUpdateHttpSchema = z
          * create do reach the table and are NOT discarded.
          */
         media: HttpMediaUpdateSchema.optional(),
+        /**
+         * Per-amenity relation attributes (`scope`, `availability`), HOS-2058.
+         * UPDATE-only and write-only: passed through to the domain input and
+         * applied by the amenity junction sync. See
+         * `AccommodationAmenityAttributesListSchema` for the contract.
+         */
+        amenityAttributes: AccommodationAmenityAttributesListSchema.optional(),
         /**
          * Minimum nights required per stay (H-112, G7 smoke).
          *
@@ -1229,6 +1237,10 @@ export const httpToDomainAccommodationUpdate = (
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
+    // HOS-2058: per-amenity relation attributes, write-only.
+    ...(httpData.amenityAttributes === undefined
+        ? {}
+        : { amenityAttributes: httpData.amenityAttributes }),
     ...(httpData.refreshSlugFromName === undefined
         ? {}
         : { refreshSlugFromName: httpData.refreshSlugFromName }),

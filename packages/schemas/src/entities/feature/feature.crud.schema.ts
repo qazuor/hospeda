@@ -269,45 +269,6 @@ export const FeatureBulkOperationOutputSchema = z.object({
 });
 
 // ============================================================================
-// CATEGORY MANAGEMENT SCHEMAS
-// ============================================================================
-
-/**
- * Schema for feature category update input
- * Allows updating category for multiple features
- */
-export const FeatureCategoryUpdateInputSchema = z.object({
-    featureIds: z
-        .array(FeatureIdSchema, {
-            message: 'zodError.feature.categoryUpdate.featureIds.required'
-        })
-        .min(1, { message: 'zodError.feature.categoryUpdate.featureIds.min' })
-        .max(50, { message: 'zodError.feature.categoryUpdate.featureIds.max' }),
-    newCategory: z
-        .string({
-            message: 'zodError.feature.categoryUpdate.newCategory.required'
-        })
-        .min(1, { message: 'zodError.feature.categoryUpdate.newCategory.min' })
-        .max(100, { message: 'zodError.feature.categoryUpdate.newCategory.max' })
-});
-
-/**
- * Schema for feature category update response
- * Returns update statistics
- */
-export const FeatureCategoryUpdateOutputSchema = z.object({
-    success: z
-        .boolean({
-            message: 'zodError.feature.categoryUpdate.success.required'
-        })
-        .default(true),
-    updatedCount: z.number().int().min(0),
-    failedCount: z.number().int().min(0),
-    newCategory: z.string(),
-    updatedFeatures: z.array(FeatureSchema).optional()
-});
-
-// ============================================================================
 // ICON MANAGEMENT SCHEMAS
 // ============================================================================
 
@@ -446,8 +407,6 @@ export type FeatureMergeInput = z.infer<typeof FeatureMergeInputSchema>;
 export type FeatureMergeOutput = z.infer<typeof FeatureMergeOutputSchema>;
 export type FeatureBulkOperationInput = z.infer<typeof FeatureBulkOperationInputSchema>;
 export type FeatureBulkOperationOutput = z.infer<typeof FeatureBulkOperationOutputSchema>;
-export type FeatureCategoryUpdateInput = z.infer<typeof FeatureCategoryUpdateInputSchema>;
-export type FeatureCategoryUpdateOutput = z.infer<typeof FeatureCategoryUpdateOutputSchema>;
 export type FeatureIconUpdateInput = z.infer<typeof FeatureIconUpdateInputSchema>;
 export type FeatureIconUpdateOutput = z.infer<typeof FeatureIconUpdateOutputSchema>;
 export type FeatureAvailabilityUpdateInput = z.infer<typeof FeatureAvailabilityUpdateInputSchema>;

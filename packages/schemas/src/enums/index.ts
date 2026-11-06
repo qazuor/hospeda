@@ -5,6 +5,11 @@ export * from './access-right-scope.enum.js';
 export * from './access-right-scope.schema.js';
 export * from './accommodation-type.enum.js';
 export * from './accommodation-type.schema.js';
+// Catalog attribute enums (HOS-2058)
+export * from './amenity-availability.enum.js';
+export * from './amenity-availability.schema.js';
+export * from './amenity-scope.enum.js';
+export * from './amenity-scope.schema.js';
 export * from './amenity-type.enum.js';
 export * from './amenity-type.schema.js';
 export * from './auth-provider.enum.js';
@@ -46,6 +51,9 @@ export * from './experience-type.enum.js';
 export * from './experience-type.schema.js';
 export * from './external-platform.enum.js';
 export * from './external-platform.schema.js';
+// Feature category enum (HOS-2058)
+export * from './feature-category.enum.js';
+export * from './feature-category.schema.js';
 export * from './host-trade-benefit-type.enum.js';
 export * from './host-trade-benefit-type.schema.js';
 export * from './host-trade-category.enum.js';

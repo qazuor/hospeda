@@ -11,6 +11,7 @@ import {
     FeatureStatsSchema,
     FeatureSummarySchema
 } from '../../../src/entities/feature/feature.query.schema.js';
+import { FeatureCategoryEnum } from '../../../src/enums/feature-category.enum.js';
 import { createValidFeatureFilters } from '../../fixtures/feature.fixtures.js';
 
 describe('Feature Query Schemas', () => {
@@ -23,7 +24,7 @@ describe('Feature Query Schemas', () => {
 
         it('should validate filters with category', () => {
             const filters = {
-                category: faker.lorem.word()
+                category: FeatureCategoryEnum.LOCATION
             };
 
             expect(() => FeatureFiltersSchema.parse(filters)).not.toThrow();
@@ -34,7 +35,7 @@ describe('Feature Query Schemas', () => {
 
         it('should validate filters with categories array', () => {
             const filters = {
-                categories: [faker.lorem.word(), faker.lorem.word()]
+                categories: [FeatureCategoryEnum.LOCATION, FeatureCategoryEnum.STYLE]
             };
 
             expect(() => FeatureFiltersSchema.parse(filters)).not.toThrow();

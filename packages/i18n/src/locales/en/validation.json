@@ -252,6 +252,9 @@
         },
         "isOptional": {
             "required": "El indicador de opcionalidad es obligatorio"
+        },
+        "attributes": {
+            "duplicate": "Each amenity can appear only once"
         }
     },
     "accommodationCalendarSync": {
@@ -2632,6 +2635,15 @@
         },
         "partnerLogoClickDestination": {
             "invalid": "The logo click destination is not valid"
+        },
+        "featureCategory": {
+            "invalid": "Choose a valid feature category"
+        },
+        "amenityScope": {
+            "invalid": "Choose whether the amenity is private or shared"
+        },
+        "amenityAvailability": {
+            "invalid": "Choose whether the amenity is available year-round or seasonally"
         }
     },
     "event": {

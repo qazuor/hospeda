@@ -6,6 +6,7 @@ import {
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { FeatureCategoryEnumSchema } from '../../enums/feature-category.schema.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
@@ -30,7 +31,8 @@ import { FeatureSchema } from './feature.schema.js';
 export const FeatureFiltersSchema = z.object({
     // Basic filters
     slug: z.string().optional(),
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
@@ -66,7 +68,7 @@ export const FeatureFiltersSchema = z.object({
     requiresPayment: z.boolean().optional(),
 
     // Category grouping
-    categories: z.array(z.string()).optional()
+    categories: z.array(FeatureCategoryEnumSchema).optional()
 });
 
 // ============================================================================
@@ -85,7 +87,8 @@ export const FeatureFiltersSchema = z.object({
 export const FeatureSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from FeatureFiltersSchema)
     slug: z.string().optional(),
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
@@ -121,7 +124,7 @@ export const FeatureSearchSchema = BaseSearchSchema.extend({
     requiresPayment: z.boolean().optional(),
 
     // Category grouping
-    categories: z.array(z.string()).optional(),
+    categories: z.array(FeatureCategoryEnumSchema).optional(),
 
     // Feature-specific search options
     searchInDescription: z.boolean().default(true).optional(),
@@ -192,21 +195,12 @@ export const FeatureListWithGroupingResponseSchema = FeatureListResponseSchema.e
 // ============================================================================
 
 /**
- * Schema for feature categories input
- */
-export const FeatureCategoriesSchema = z.object({
-    includeUsageCount: z.boolean().default(true),
-    minUsageCount: z.number().int().min(0).default(0),
-    includeUnavailable: z.boolean().default(true),
-    sortBy: z.enum(['name', 'usageCount', 'featureCount', 'averagePriority']).default('name')
-});
-
-/**
  * Schema for popular features input
  */
 export const PopularFeaturesSchema = z.object({
     pageSize: z.number().int().min(1).max(100).default(20),
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     timeframe: z.enum(['all', 'year', 'month', 'week']).default('all'),
     onlyAvailable: z.boolean().default(true),
     minPriority: z.number().int().min(0).max(100).optional()
@@ -216,7 +210,8 @@ export const PopularFeaturesSchema = z.object({
  * Schema for feature priority distribution input
  */
 export const FeaturePriorityDistributionSchema = z.object({
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     includeUnavailable: z.boolean().default(false)
 });
 
@@ -312,7 +307,6 @@ export type FeatureSearchResultItem = z.infer<typeof FeatureSearchResultItemSche
 export type FeatureListResponse = z.infer<typeof FeatureListResponseSchema>;
 export type FeatureSearchResponse = z.infer<typeof FeatureSearchResponseSchema>;
 export type FeatureListWithGroupingResponse = z.infer<typeof FeatureListWithGroupingResponseSchema>;
-export type FeatureCategoriesInput = z.infer<typeof FeatureCategoriesSchema>;
 export type PopularFeaturesInput = z.infer<typeof PopularFeaturesSchema>;
 export type FeaturePriorityDistributionInput = z.infer<typeof FeaturePriorityDistributionSchema>;
 export type FeatureSummary = z.infer<typeof FeatureSummarySchema>;
@@ -327,17 +321,6 @@ export type FeatureSearchResult = FeatureSearchResultItem;
 // ============================================================================
 // COMPUTED SCHEMAS (Keep - these are used for specialized responses)
 // ============================================================================
-
-export const FeatureCategoriesOutputSchema = z.object({
-    categories: z.array(
-        z.object({
-            category: z.string(),
-            count: z.number().int().min(0),
-            averagePriority: z.number().min(0).max(100),
-            features: z.array(FeatureListItemSchema).optional()
-        })
-    )
-});
 
 export const FeaturePriorityDistributionOutputSchema = z.object({
     distribution: z.array(
@@ -376,7 +359,8 @@ export const HttpFeatureSearchSchema = HttpPaginationSchema.safeExtend(
 
     // Basic filters
     slug: z.string().optional(),
-    category: z.string().optional(),
+    /** Filter by feature category (HOS-2058). */
+    category: FeatureCategoryEnumSchema.optional(),
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
@@ -420,7 +404,7 @@ export const FeatureSearchSchemaWithMetadata = applyOpenApiMetadata(
         fields: {
             category: {
                 description: 'Filter by feature category',
-                example: 'amenities'
+                example: 'LOCATION'
             },
             isAvailable: {
                 description: 'Filter available features',
