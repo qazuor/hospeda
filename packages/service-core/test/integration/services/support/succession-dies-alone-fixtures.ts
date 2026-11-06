@@ -1,6 +1,16 @@
-import { emailOutbox, eq, providerLinks, subscriptionModel, subscriptions, users } from '@repo/db';
+import {
+    emailOutbox,
+    eq,
+    inArray,
+    providerLinks,
+    subscriptionModel,
+    subscriptions,
+    users
+} from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { startSubscription } from '../../../../src/services/billing/subscription/start-subscription.service.js';
+import { startSuccession } from '../../../../src/services/billing/subscription/start-succession.service.js';
 import { getServiceTestDb } from '../helpers.js';
 import { frozenClock, seedCoveragePlanVersion, seedCoverageUser } from './coverage-fixtures.js';
 import { noTouristVip } from './tourist-vip.js';
@@ -12,27 +22,44 @@ export async function seedDiesAloneCase() {
     const db = getServiceTestDb();
     const user = await seedCoverageUser(db);
     const plan = await seedCoveragePlanVersion(db, 'accommodation');
-    const provider = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+    const fake = new FakePaymentProvider({
+        clock,
+        idNamespace: crypto.randomUUID(),
+        honestAbout: [{ lie: 'M1', why: 'verify S16 succession against the real S1 writer' }]
+    });
+    let authorizationCreations = 0;
+    const provider = new Proxy(fake as PaymentProvider, {
+        get(target, property, receiver) {
+            if (property === 'authorize')
+                return async (input: Parameters<PaymentProvider['authorize']>[0]) => {
+                    authorizationCreations++;
+                    return fake.authorize(input);
+                };
+            const value: unknown = Reflect.get(target, property, receiver);
+            return typeof value === 'function' ? value.bind(target) : value;
+        }
+    }) as PaymentProvider;
+    const ports = {
+        provider,
+        clock,
+        planPolicy: async () => ({
+            graceDays: 10,
+            allowsPause: false,
+            current: true,
+            sellable: true
+        }),
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+        touristVipInheritance: noTouristVip
+    };
     const started = await startSubscription(
         {
             userId: user.userId,
             billingOptionId: plan.billingOptionId,
             returnUrl: 'https://example.test/return'
         },
-        {
-            provider,
-            clock,
-            planPolicy: async () => ({
-                graceDays: 10,
-                allowsPause: false,
-                current: true,
-                sellable: true
-            }),
-            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
-            touristVipInheritance: noTouristVip
-        }
+        ports
     );
-    await provider.approve({ authorizationId: started.authorizationId });
+    await fake.approve({ authorizationId: started.authorizationId });
     if (
         !(await subscriptionModel.activatePendingAuthorization({
             subscriptionId: started.subscriptionId,
@@ -40,7 +67,17 @@ export async function seedDiesAloneCase() {
         }))
     )
         throw new Error('Could not activate S16 predecessor fixture');
-    const charge = await provider.declineCharge({
+    const successor = await startSuccession(
+        {
+            userId: user.userId,
+            billingOptionId: plan.billingOptionId,
+            predecessorSubscriptionId: started.subscriptionId,
+            returnUrl: 'https://example.test/return'
+        },
+        ports
+    );
+    await fake.approve({ authorizationId: successor.authorizationId });
+    const charge = await fake.declineCharge({
         authorizationId: started.authorizationId,
         declineReason: 'issuer_declined'
     });
@@ -49,27 +86,16 @@ export async function seedDiesAloneCase() {
         .from(subscriptions)
         .where(eq(subscriptions.id, started.subscriptionId));
     if (!predecessor) throw new Error('S16 predecessor missing');
-    const [successor] = await db
-        .insert(subscriptions)
-        .values({
-            userId: user.userId,
-            vertical: 'accommodation',
-            planVersionId: predecessor.planVersionId,
-            billingOptionId: predecessor.billingOptionId,
-            paymentMethod: 'CARD',
-            class: 'PRINCIPAL',
-            status: 'PENDING_AUTHORIZATION',
-            succeedsId: predecessor.id
-        })
-        .returning();
-    if (!successor) throw new Error('S16 successor missing');
     return {
         userId: user.userId,
         predecessorId: predecessor.id,
-        successorId: successor.id,
+        successorId: successor.subscriptionId,
+        successorAuthorizationId: successor.authorizationId,
         chargeId: charge.chargeId,
         provider,
-        clock
+        clock,
+        billingOptionId: plan.billingOptionId,
+        authorizationCreations: () => authorizationCreations
     };
 }
 
@@ -83,8 +109,10 @@ export async function retireDiesAloneCase(
         .update(subscriptions)
         .set({ succeededById: null })
         .where(eq(subscriptions.id, ids.predecessorId));
+    await db
+        .delete(providerLinks)
+        .where(inArray(providerLinks.subscriptionId, [ids.predecessorId, ids.successorId]));
     await db.delete(subscriptions).where(eq(subscriptions.id, ids.successorId));
-    await db.delete(providerLinks).where(eq(providerLinks.subscriptionId, ids.predecessorId));
     await db.delete(subscriptions).where(eq(subscriptions.id, ids.predecessorId));
     await db.delete(users).where(eq(users.id, ids.userId));
 }

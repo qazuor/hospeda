@@ -1,6 +1,7 @@
 import { eq, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service.js';
+import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { createSuccessionCloser } from '../../../src/services/billing/subscription/succession-closer.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { closePorts } from './support/succession-close-fixtures.js';
@@ -8,6 +9,7 @@ import {
     retireDiesAloneCase,
     seedDiesAloneCase
 } from './support/succession-dies-alone-fixtures.js';
+import { noTouristVip } from './support/tourist-vip.js';
 
 const owned: Awaited<ReturnType<typeof seedDiesAloneCase>>[] = [];
 afterEach(async () => {
@@ -87,6 +89,31 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:11 first-charge predecess
         });
         expect(successor).toMatchObject({ status: 'PENDING_AUTHORIZATION', succeedsId: null });
         await rejectNewOrigin(ids);
+        const before = ids.authorizationCreations();
+        const reused = await startSubscription(
+            {
+                userId: ids.userId,
+                billingOptionId: ids.billingOptionId,
+                returnUrl: 'https://example.test/return'
+            },
+            {
+                provider: ids.provider,
+                clock: ids.clock,
+                planPolicy: async () => ({
+                    graceDays: 10,
+                    allowsPause: false,
+                    current: true,
+                    sellable: true
+                }),
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                touristVipInheritance: noTouristVip
+            }
+        );
+        expect(reused).toMatchObject({
+            subscriptionId: ids.successorId,
+            authorizationId: ids.successorAuthorizationId
+        });
+        expect(ids.authorizationCreations()).toBe(before);
     });
 
     it('(b) rolls S16 back when the real act reaches a failing succession closer', async () => {
@@ -117,7 +144,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:11 first-charge predecess
             .from(subscriptions)
             .where(eq(subscriptions.id, ids.successorId));
         expect(predecessor?.status).toBe('ACTIVE');
-        expect(predecessor?.succeededById).toBeNull();
+        expect(predecessor?.succeededById).toBe(ids.successorId);
         expect(successor?.succeedsId).toBe(ids.predecessorId);
     });
 });
