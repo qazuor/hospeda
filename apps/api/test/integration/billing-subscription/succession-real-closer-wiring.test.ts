@@ -1,6 +1,8 @@
-import { createHmac } from 'node:crypto';
 import { eq, providerLinks, subscriptions } from '@repo/db';
-import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
+import { MercadoPagoPaymentProvider } from '@repo/payments';
+import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
+import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
+import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
     closeNow,
@@ -17,7 +19,7 @@ import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders } from './self-cancel-fixtures';
 import { withCompositionRollback } from './succession-wiring-fixtures';
 
-const clock = { now: () => closeNow };
+const clock = createAdjustableClock({ start: closeNow });
 const fake = new FakePaymentProvider({
     idNamespace: crypto.randomUUID(),
     clock,
@@ -25,30 +27,27 @@ const fake = new FakePaymentProvider({
 });
 const webhookSecret = 'b8b24-s18-test-secret';
 let app: ReturnType<typeof initApp>;
-
-function signedHeaders(dataId: string) {
-    const requestId = crypto.randomUUID();
-    const timestamp = String(Math.floor(clock.now().getTime() / 1000));
-    const manifest = `id:${dataId};request-id:${requestId};ts:${timestamp};`;
-    const signature = createHmac('sha256', webhookSecret).update(manifest).digest('hex');
-    return {
-        'content-type': 'application/json',
-        'user-agent': 'vitest',
-        'x-request-id': requestId,
-        'x-signature': `ts=${timestamp},v1=${signature}`
-    };
-}
+let server: FakeProviderServer;
 
 beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = webhookSecret;
     await testDb.setup();
     validateApiEnv();
+    server = await startFakeProviderServer({ provider: fake, clock });
+    const provider = new MercadoPagoPaymentProvider({
+        clock,
+        baseUrl: server.url,
+        accessToken: 'test-token'
+    });
     injectClock({ clock });
-    injectPaymentProvider({ provider: fake });
-    app = initApp({ clock, paymentProvider: fake });
+    injectPaymentProvider({ provider });
+    app = initApp({ clock, paymentProvider: provider });
 });
-afterAll(() => testDb.teardown());
+afterAll(async () => {
+    await server.close();
+    await testDb.teardown();
+});
 
 describe('TEST:B8b:24 real S18 composition', () => {
     it('branch 1 activates a pending successor and closes its retained predecessor', async () => {
@@ -69,23 +68,25 @@ describe('TEST:B8b:24 real S18 composition', () => {
                 provider: 'MERCADO_PAGO',
                 providerId: created.authorizationId
             });
+            server.mercadoPagoDeliveries({ webhookSecret });
             await fake.approve({ authorizationId: created.authorizationId });
-            const encoded = encodeFakeNotice({
-                notice: {
-                    resourceKind: 'authorization',
-                    resourceId: created.authorizationId,
-                    version: '1'
+            clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+            const delivery = server
+                .mercadoPagoDeliveries({ webhookSecret })
+                .deliveries.find(
+                    (candidate) =>
+                        new URLSearchParams(candidate.query).get('data.id') ===
+                        created.authorizationId
+                );
+            if (!delivery) throw new Error('Missing successor authorization delivery');
+            const response = await app.request(`/api/v1/webhooks/mercadopago?${delivery.query}`, {
+                method: 'POST',
+                headers: {
+                    ...delivery.headers,
+                    'user-agent': delivery.headers['user-agent'] ?? 'vitest'
                 },
-                format: 'json'
+                body: delivery.body
             });
-            const response = await app.request(
-                `/api/v1/webhooks/mercadopago?source_news=webhooks&data.id=${encodeURIComponent(created.authorizationId)}&type=subscription_preapproval`,
-                {
-                    method: 'POST',
-                    headers: signedHeaders(created.authorizationId),
-                    body: encoded.body
-                }
-            );
             const rows = await readCloseCase(tx, ids);
             expect(response.status).toBe(200);
             expect(rows.predecessor?.succeededById).toBe(ids.successor.id);

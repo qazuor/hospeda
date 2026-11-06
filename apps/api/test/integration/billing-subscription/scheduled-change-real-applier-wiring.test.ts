@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto';
 import {
     and,
     type DrizzleClient,
@@ -8,7 +7,9 @@ import {
     subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
-import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
+import { MercadoPagoPaymentProvider } from '@repo/payments';
+import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
+import { startFakeProviderServer } from '@repo/payments/fake-server';
 import { PermissionEnum } from '@repo/schemas';
 import {
     activateSubscription,
@@ -16,6 +17,7 @@ import {
     recordChargeFact,
     startSubscription
 } from '@repo/service-core';
+import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     seedCoveragePlanVersion,
@@ -61,19 +63,6 @@ async function queueChange(tx: DrizzleClient, subscriptionId: string) {
     return target;
 }
 
-function signedHeaders(dataId: string, at: Date) {
-    const requestId = crypto.randomUUID();
-    const timestamp = String(Math.floor(at.getTime() / 1000));
-    const manifest = `id:${dataId};request-id:${requestId};ts:${timestamp};`;
-    const signature = createHmac('sha256', webhookSecret).update(manifest).digest('hex');
-    return {
-        'content-type': 'application/json',
-        'user-agent': 'vitest',
-        'x-request-id': requestId,
-        'x-signature': `ts=${timestamp},v1=${signature}`
-    };
-}
-
 async function stateOf(tx: DrizzleClient, subscriptionId: string) {
     const [row] = await tx.select().from(subscriptions).where(eq(subscriptions.id, subscriptionId));
     const queue = await tx
@@ -95,13 +84,9 @@ async function stateOf(tx: DrizzleClient, subscriptionId: string) {
 describe('TEST:B8b:24 real S38 composition', () => {
     it('webhook S7 applies an overdue change on a suspended card row', async () => {
         await withCompositionRollback(async (tx) => {
-            let instant = new Date('2026-10-01T03:00:00.000Z').getTime();
-            const cardClock = {
-                now: () => new Date(instant),
-                advance: (ms: number) => {
-                    instant += ms;
-                }
-            };
+            const cardClock = createAdjustableClock({
+                start: new Date('2026-10-01T03:00:00.000Z')
+            });
             const provider = new FakePaymentProvider({
                 idNamespace: crypto.randomUUID(),
                 clock: cardClock,
@@ -111,9 +96,15 @@ describe('TEST:B8b:24 real S38 composition', () => {
                 ],
                 withoutBehaviour: [{ behaviour: 'RP12', why: 'subscription billing fixture' }]
             });
+            const server = await startFakeProviderServer({ provider, clock: cardClock });
+            const httpProvider = new MercadoPagoPaymentProvider({
+                clock: cardClock,
+                baseUrl: server.url,
+                accessToken: 'test-token'
+            });
             injectClock({ clock: cardClock });
-            injectPaymentProvider({ provider });
-            const webhookApp = initApp({ clock: cardClock, paymentProvider: provider });
+            injectPaymentProvider({ provider: httpProvider });
+            const webhookApp = initApp({ clock: cardClock, paymentProvider: httpProvider });
             const user = await seedCoverageUser(tx);
             const source = await seedCoveragePlanVersion(tx, 'accommodation');
             const ports = {
@@ -147,7 +138,7 @@ describe('TEST:B8b:24 real S38 composition', () => {
             });
             const firstRecorded = await recordChargeFact({ chargeId: firstCharge.chargeId }, ports);
             expect(firstRecorded.outcome).toBe('CREDITED');
-            cardClock.advance(31 * 86_400_000);
+            cardClock.advance({ ms: 31 * 86_400_000 });
             const { chargeId } = await provider.failChargeCycle({
                 authorizationId: started.authorizationId,
                 declineReason: 'issuer_declined',
@@ -155,6 +146,7 @@ describe('TEST:B8b:24 real S38 composition', () => {
             });
             const declined = await recordChargeFact({ chargeId }, ports);
             expect(declined.outcome).toBe('GRACE');
+            server.mercadoPagoDeliveries({ webhookSecret });
             await tx
                 .update(subscriptions)
                 .set({ status: 'SUSPENDED' })
@@ -163,25 +155,32 @@ describe('TEST:B8b:24 real S38 composition', () => {
             const read = await provider.readCharge({ chargeId });
             const createdAt = Date.parse(read.snapshot.createdAt);
             const expiresAt = Date.parse(read.snapshot.expiresAt ?? read.snapshot.createdAt);
-            cardClock.advance(
-                Math.max(0, createdAt + (expiresAt - createdAt) / 4 - cardClock.now().getTime())
-            );
+            cardClock.advance({
+                ms: Math.max(0, createdAt + (expiresAt - createdAt) / 4 - cardClock.now().getTime())
+            });
             expect((await provider.readCharge({ chargeId })).snapshot.status).toBe('approved');
+            cardClock.advance({ ms: FAKE_NOTICE_DELAY_MS });
             const seen: string[] = [];
             const unsubscribe = getCoverageNotices().onCoverageChanged((event) => {
                 if (event.userId === user.userId) seen.push(event.change);
             });
             try {
-                const encoded = encodeFakeNotice({
-                    notice: { resourceKind: 'charge', resourceId: chargeId, version: '1' },
-                    format: 'json'
-                });
+                const delivery = server
+                    .mercadoPagoDeliveries({ webhookSecret })
+                    .deliveries.find(
+                        (candidate) =>
+                            new URLSearchParams(candidate.query).get('data.id') === chargeId
+                    );
+                if (!delivery) throw new Error('Missing approved charge delivery');
                 const response = await webhookApp.request(
-                    `/api/v1/webhooks/mercadopago?source_news=webhooks&data.id=${encodeURIComponent(chargeId)}&type=payment`,
+                    `/api/v1/webhooks/mercadopago?${delivery.query}`,
                     {
                         method: 'POST',
-                        headers: signedHeaders(chargeId, cardClock.now()),
-                        body: encoded.body
+                        headers: {
+                            ...delivery.headers,
+                            'user-agent': delivery.headers['user-agent'] ?? 'vitest'
+                        },
+                        body: delivery.body
                     }
                 );
                 const state = await stateOf(tx, started.subscriptionId);
@@ -196,6 +195,7 @@ describe('TEST:B8b:24 real S38 composition', () => {
                 expect(seen.filter((change) => change === 'CHANGED')).toHaveLength(1);
             } finally {
                 unsubscribe();
+                await server.close();
                 injectClock({ clock });
                 injectPaymentProvider({ provider: fake });
             }
