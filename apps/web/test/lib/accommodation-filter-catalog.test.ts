@@ -79,6 +79,24 @@ describe('fetchAccommodationFilterCatalog', () => {
         expect(featuresList).toHaveBeenCalled();
     });
 
+    /**
+     * HOS-299 pinned the SSR cache opt-in on the pages' own catalog calls. Since
+     * HOS-2057 those calls live here, so the opt-in is asserted on EVERY page
+     * request (a cached page 1 with an uncached page 2 would still hit the API).
+     */
+    it('opts every catalog page request into the SSR cache', async () => {
+        amenitiesList.mockImplementation(paged({ total: 250 }));
+        featuresList.mockImplementation(paged({ total: 101 }));
+
+        await fetchAccommodationFilterCatalog();
+
+        const calls = [...amenitiesList.mock.calls, ...featuresList.mock.calls];
+        expect(calls).toHaveLength(5);
+        for (const call of calls) {
+            expect(call[0]).toMatchObject({ cacheTtlMs: 1000 });
+        }
+    });
+
     it('retrieves every row when the catalog exceeds the 100 page cap', async () => {
         amenitiesList.mockImplementation(paged({ total: 250 }));
         featuresList.mockImplementation(paged({ total: 101 }));
