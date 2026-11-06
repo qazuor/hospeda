@@ -1324,6 +1324,13 @@
       "when": 1793748335941,
       "tag": "0188_unique_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1793940931459,
+      "tag": "0189_classy_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }
