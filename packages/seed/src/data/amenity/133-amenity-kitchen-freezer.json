@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "133-amenity-kitchen-freezer",
+    "slug": "freezer",
+    "description": {
+        "es": "Freezer separado de la heladera",
+        "en": "Freezer separate from the fridge",
+        "pt": "Freezer separado da geladeira"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "RefrigeratorIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "156-amenity-outdoors-boat-moorings",
+    "slug": "boat_moorings",
+    "description": {
+        "es": "Amarras para embarcaciones",
+        "en": "Moorings for boats",
+        "pt": "Amarras para embarcações"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "TouristPierIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "168-amenity-safety-pool-fence",
+    "slug": "pool_fence",
+    "description": {
+        "es": "Cerco de seguridad alrededor de la pileta",
+        "en": "Safety fence around the pool",
+        "pt": "Cerca de segurança ao redor da piscina"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SAFETY",
+    "icon": "PerimeterFenceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

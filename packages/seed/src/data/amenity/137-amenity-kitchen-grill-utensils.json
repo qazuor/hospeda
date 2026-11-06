@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "137-amenity-kitchen-grill-utensils",
+    "slug": "grill_utensils",
+    "description": {
+        "es": "Pinzas, cuchillos y tabla para el asado",
+        "en": "Tongs, knives and board for the barbecue",
+        "pt": "Pinças, facas e tábua para o churrasco"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "BbqGrillIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

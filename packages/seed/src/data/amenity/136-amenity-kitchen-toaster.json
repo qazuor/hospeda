@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "136-amenity-kitchen-toaster",
+    "slug": "toaster",
+    "description": {
+        "es": "Tostadora",
+        "en": "Toaster",
+        "pt": "Torradeira"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "KitchenIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

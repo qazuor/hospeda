@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "111-feature-lagoon_view",
+    "slug": "lagoon_view",
+    "category": "VIEW",
+    "description": {
+        "es": "Vista a la laguna desde el alojamiento",
+        "en": "Lagoon view from the property",
+        "pt": "Vista para a lagoa a partir da hospedagem"
+    },
+    "applicableVerticals": ["accommodation"],
+    "icon": "PanoramicViewIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

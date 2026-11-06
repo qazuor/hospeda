@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "115-amenity-entertainment-outdoor-games",
+    "slug": "outdoor_games",
+    "description": {
+        "es": "Juegos para usar al aire libre",
+        "en": "Games to play outdoors",
+        "pt": "Jogos para usar ao ar livre"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "KidsGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

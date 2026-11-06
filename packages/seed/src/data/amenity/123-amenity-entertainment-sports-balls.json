@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "123-amenity-entertainment-sports-balls",
+    "slug": "sports_balls",
+    "description": {
+        "es": "Pelotas para practicar deportes",
+        "en": "Balls for playing sports",
+        "pt": "Bolas para praticar esportes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "KidsGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}
