@@ -8,7 +8,6 @@ export const subscriptionScheduledChangeJob: CronJobDefinition = {
     name: 'subscription-scheduled-change',
     description: 'Apply due scheduled subscription changes (HOS-1577, AC:B8b:15).',
     schedule: '53 * * * *',
-    exclusive: true,
     enabled: true,
     timeoutMs: 120_000,
     handler: async (ctx) => {

@@ -6,7 +6,7 @@ import { applyDueScheduledChanges } from '../../../src/services/billing/subscrip
 import * as scheduledChangeService from '../../../src/services/billing/subscription/apply-scheduled-change.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { retirePlanChanges, seedPlanChange } from './support/plan-change-fixtures.js';
-import { seedScheduledChange } from './support/scheduled-change-fixtures.js';
+import { scheduledChangesOf, seedScheduledChange } from './support/scheduled-change-fixtures.js';
 import { successionClock } from './support/succession-fixtures.js';
 
 afterEach(async () => {
@@ -46,7 +46,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
         const future = await seed('ACTIVE', new Date(now.getTime() + 60_000));
         const emitted: CoverageChangedEvent[] = [];
         const result = await applyDueScheduledChanges(
-            { limit: 1 },
+            { limit: 100 },
             { clock: fixedClock(now), coverageNotices: notices((event) => emitted.push(event)) }
         );
         const [applied] = await getServiceTestDb()
@@ -61,11 +61,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, future.predecessor.id));
-        expect(result.applied).toBe(1);
-        expect(result.waiting).toBeGreaterThanOrEqual(1);
-        expect(result).toMatchObject({ notApplicable: 0, failed: 0, warnings: [] });
+        expect(result).toMatchObject({
+            applied: 1,
+            waiting: 1,
+            notApplicable: 0,
+            failed: 0,
+            warnings: []
+        });
         expect(applied?.planVersionId).toBe(active.targetPlanVersionId);
         expect(waiting?.planVersionId).toBe(paused.planVersionId);
+        expect(await scheduledChangesOf(paused.predecessor.id)).toHaveLength(1);
         expect(notDue?.planVersionId).toBe(future.planVersionId);
         expect(emitted).toEqual([
             {

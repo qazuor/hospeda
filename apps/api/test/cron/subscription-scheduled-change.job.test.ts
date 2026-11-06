@@ -41,7 +41,6 @@ describe('TEST:B8b:15 subscription-scheduled-change job', () => {
         expect(subscriptionScheduledChangeJob).toMatchObject({
             name: 'subscription-scheduled-change',
             schedule: '53 * * * *',
-            exclusive: true,
             enabled: true,
             timeoutMs: 120_000
         });
