@@ -1,5 +1,5 @@
 import type { FeatureModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { FeatureCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
@@ -45,7 +45,11 @@ describe('FeatureService.search', () => {
     it('should filter by category when given (HOS-2058)', async () => {
         featureModelMock.findAll.mockResolvedValue(paginated);
 
-        const result = await service.search(actor, { category: 'VIEW', page: 1, pageSize: 10 });
+        const result = await service.search(actor, {
+            category: FeatureCategoryEnum.VIEW,
+            page: 1,
+            pageSize: 10
+        });
 
         expectSuccess(result);
         expect(featureModelMock.findAll.mock.calls[0]?.[0]).toEqual({ category: 'VIEW' });
