@@ -1,9 +1,19 @@
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
-import { eq, getDb, subscriptions } from '@repo/db';
-import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
+import { eq, getDb, listingPublicationModel, subscriptions } from '@repo/db';
+import {
+    BillingCycleSchema,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    VerticalEnumSchema
+} from '@repo/schemas';
+import { PUBLICATION_LIMIT_KEYS, type PublicationVertical } from '@repo/verticals';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
 import { extractPostgresErrorCause } from '../../../utils/index.js';
+import {
+    type DowngradeSurplusPreview,
+    previewDowngradeSurplus
+} from './downgrade-surplus-preview.js';
 import {
     mutatePlanChangeAmount,
     queueDowngrade,
@@ -43,6 +53,7 @@ export type RequestPlanChangeResult =
           readonly effectiveAt: Date;
           readonly amountMinor: number;
           readonly replaced?: true;
+          readonly surplus: DowngradeSurplusPreview;
       }
     | { readonly path: 'REGRET'; readonly amountMinor: number }
     | {
@@ -51,7 +62,8 @@ export type RequestPlanChangeResult =
               | 'NO_CHANGE'
               | 'SCHEDULED_CHANGE_EXISTS'
               | 'NOT_ACTIVE'
-              | 'MIGRATION_CHANGE_QUEUED';
+              | 'MIGRATION_CHANGE_QUEUED'
+              | 'KEEP_SELECTION_INVALID';
       };
 
 /** Ports for AC:B8b:7 and the contract's DEC-ARCH-008 direction verdict. */
@@ -124,6 +136,54 @@ export async function requestPlanChange(
         const existingQueue = queued;
         if (existingQueue?.planMigrationSubscriptionId)
             return { path: 'REJECTED', reason: 'MIGRATION_CHANGE_QUEUED' };
+        const targetVertical = VerticalEnumSchema.parse(target.vertical);
+        const surplus = await previewDowngradeSurplus({
+            userId: value.actor.id,
+            vertical: targetVertical,
+            targetPlanVersionId: target.planVersionId
+        });
+        const selection = value.keepSelection ?? {};
+        const selectionKeys = Object.keys(selection);
+        const expectedKey = isPublicationVertical(targetVertical)
+            ? PUBLICATION_LIMIT_KEYS[targetVertical]
+            : null;
+        if (
+            (selectionKeys.length > 0 &&
+                (selectionKeys.length !== 1 || selectionKeys[0] !== expectedKey)) ||
+            (selectionKeys.length > 0 && expectedKey === null)
+        )
+            return { path: 'REJECTED', reason: 'KEEP_SELECTION_INVALID' };
+        const selectedIds = expectedKey ? (selection[expectedKey] ?? []) : [];
+        if (selectedIds.length > 0) {
+            if (!isPublicationVertical(targetVertical))
+                return { path: 'REJECTED', reason: 'KEEP_SELECTION_INVALID' };
+            const listings = await listingPublicationModel.listByOwner({
+                tx: getDb(),
+                vertical: targetVertical,
+                ownerId: value.actor.id
+            });
+            const publishedIds = new Set(
+                listings
+                    .filter((row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED)
+                    .map((row) => row.id)
+            );
+            if (selectedIds.some((id) => !publishedIds.has(id)))
+                return { path: 'REJECTED', reason: 'KEEP_SELECTION_INVALID' };
+        }
+        const keepSelection =
+            selectedIds.length > 0 && surplus.applicable && surplus.surplusCount > 0
+                ? { [surplus.limitKey]: selectedIds }
+                : undefined;
+        const keepListingIds = new Set(selectedIds);
+        const selectedSurplus =
+            selectedIds.length > 0
+                ? await previewDowngradeSurplus({
+                      userId: value.actor.id,
+                      vertical: targetVertical,
+                      targetPlanVersionId: target.planVersionId,
+                      keepListingIds
+                  })
+                : surplus;
         const effectiveAt = origin.subscription.nextChargeAt;
         if (!effectiveAt)
             throw new ServiceError(
@@ -156,20 +216,22 @@ export async function requestPlanChange(
                     targetPlanVersionId: target.planVersionId,
                     targetBillingOptionId: target.id,
                     effectiveAt,
-                    keepSelection: value.keepSelection
+                    keepSelection
                 });
                 return {
                     path: 'DOWNGRADE',
                     effectiveAt,
                     amountMinor: target.amount,
-                    replaced: true
+                    replaced: true,
+                    surplus: selectedSurplus
                 };
             }
             await queueDowngrade({
                 subscriptionId: value.subscriptionId,
                 targetPlanVersionId: target.planVersionId,
                 targetBillingOptionId: target.id,
-                effectiveAt
+                effectiveAt,
+                keepSelection
             });
         } catch (error) {
             const cause = extractPostgresErrorCause(error);
@@ -185,7 +247,12 @@ export async function requestPlanChange(
                 );
             throw error;
         }
-        return { path: 'DOWNGRADE', effectiveAt, amountMinor: target.amount };
+        return {
+            path: 'DOWNGRADE',
+            effectiveAt,
+            amountMinor: target.amount,
+            surplus: selectedSurplus
+        };
     }
 
     const targetCycle = BillingCycleSchema.parse(target.cycle);
@@ -235,4 +302,8 @@ export async function requestPlanChange(
         firstChargeAt: row.firstChargeAt,
         creditDays
     };
+}
+
+function isPublicationVertical(vertical: string): vertical is PublicationVertical {
+    return vertical === 'accommodation' || vertical === 'venue' || vertical === 'experience';
 }

@@ -119,4 +119,38 @@ describe('publication order', () => {
             ).toEqual(['d', 'c']);
         }
     });
+
+    it('TEST:B8b:15 keeps selected listings while lowering unselected surplus first', () => {
+        const entries = ['a', 'b', 'c', 'd'].map((id, index) => ({
+            id,
+            createdAt: date(`2020-01-0${index + 1}T00:00:00Z`),
+            publishedAt: date(`2021-01-0${index + 1}T00:00:00Z`)
+        }));
+        expect(selectSurplusToLower({ published: entries, limit: 2 }).map(({ id }) => id)).toEqual([
+            'd',
+            'c'
+        ]);
+        expect(
+            selectSurplusToLower({ published: entries, limit: 2, keep: new Set() }).map(
+                ({ id }) => id
+            )
+        ).toEqual(['d', 'c']);
+        expect(
+            selectSurplusToLower({ published: entries, limit: 2, keep: new Set(['c', 'd']) }).map(
+                ({ id }) => id
+            )
+        ).toEqual(['b', 'a']);
+        expect(
+            selectSurplusToLower({
+                published: entries,
+                limit: 2,
+                keep: new Set(['a', 'b', 'c'])
+            }).map(({ id }) => id)
+        ).toEqual(['d', 'c']);
+        expect(
+            selectSurplusToLower({ published: entries, limit: 2, keep: new Set(['foreign']) }).map(
+                ({ id }) => id
+            )
+        ).toEqual(['d', 'c']);
+    });
 });

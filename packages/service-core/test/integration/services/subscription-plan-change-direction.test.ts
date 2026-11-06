@@ -1,13 +1,16 @@
 import { billingOptions, eq, promoRedemptions, providerLinks, subscriptions } from '@repo/db';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { requestPlanChange } from '../../../src/services/billing/subscription/request-plan-change.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     retirePlanChanges,
-    seedAdditionalPlanChangeTarget,
     seedCoveredPayment,
     seedPlanChange,
-    seedPlanChangePromo
+    seedPlanChangePromo,
+    seedPlanChangePublications,
+    seedPlanChangeTargetWithLimit
 } from './support/plan-change-fixtures.js';
 import { scheduledChangesOf, seedScheduledChange } from './support/scheduled-change-fixtures.js';
 import { successionClock } from './support/succession-fixtures.js';
@@ -43,7 +46,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
             .select()
             .from(promoRedemptions)
             .where(eq(promoRedemptions.id, promo.id));
-        expect(result).toEqual({
+        expect(result).toMatchObject({
             path: 'DOWNGRADE',
             effectiveAt: seeded.nextChargeAt,
             amountMinor: 500000
@@ -146,24 +149,42 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
         expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
     });
 
-    it('(e) replaces an existing downgrade and asks again per AC:B8b:16', async () => {
+    it('TEST:B8b:16 replaces a downgrade and asks again for keep selection', async () => {
         const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
+        const firstTarget = await seedPlanChangeTargetWithLimit({
+            sourcePlanVersionId: seeded.planVersionId,
+            targetLimit: 2
+        });
+        seeded.verticals.setPlanPolicy({
+            planVersionId: firstTarget.planVersionId,
+            policy: { graceDays: 10, allowsPause: false, current: true, sellable: true }
+        });
         seeded.verticals.setChangeDirection({
             fromPlanVersionId: seeded.planVersionId,
-            toPlanVersionId: seeded.targetPlanVersionId,
+            toPlanVersionId: firstTarget.planVersionId,
             direction: 'DOWN'
+        });
+        const listingIds = await seedPlanChangePublications({
+            userId: seeded.user.id,
+            statuses: [
+                PublicationStatusEnum.PUBLISHED,
+                PublicationStatusEnum.PUBLISHED,
+                PublicationStatusEnum.PUBLISHED
+            ]
         });
         await seedScheduledChange({
             subscriptionId: seeded.predecessor.id,
             effectiveAt: seeded.nextChargeAt,
-            keepSelection: { accommodation_ids: ['old-choice'] }
+            keepSelection: { [PUBLICATION_LIMIT_KEYS.accommodation]: ['old-choice'] }
         });
         const promo = await seedPlanChangePromo({
             subscriptionId: seeded.predecessor.id,
             userId: seeded.user.id
         });
-        const second = await seedAdditionalPlanChangeTarget({
-            planVersionId: seeded.planVersionId
+        const second = await seedPlanChangeTargetWithLimit({
+            sourcePlanVersionId: seeded.planVersionId,
+            targetLimit: 2,
+            amountMinor: 600000
         });
         seeded.verticals.setPlanPolicy({
             planVersionId: second.planVersionId,
@@ -176,7 +197,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
         });
         const mutate = vi.spyOn(seeded.fake, 'changeAmount');
         const result = await requestPlanChange(
-            { ...seeded.input, billingOptionId: second.billingOptionId },
+            { ...seeded.input, billingOptionId: firstTarget.billingOptionId },
             seeded.ports
         );
         const queue = await scheduledChangesOf(seeded.predecessor.id);
@@ -187,28 +208,29 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
             .select()
             .from(promoRedemptions)
             .where(eq(promoRedemptions.id, promo.id));
-        expect(result).toEqual({
+        expect(result).toMatchObject({
             path: 'DOWNGRADE',
             effectiveAt: seeded.nextChargeAt,
-            amountMinor: second.amountMinor,
+            amountMinor: firstTarget.amountMinor,
             replaced: true
         });
         expect(mutate).toHaveBeenCalledTimes(1);
         expect(authorization.snapshot.amount).toEqual({
-            amountMinor: second.amountMinor,
+            amountMinor: firstTarget.amountMinor,
             currency: 'ARS'
         });
         expect(queue).toHaveLength(1);
         expect(queue[0]).toMatchObject({
-            targetPlanVersionId: second.planVersionId,
-            targetBillingOptionId: second.billingOptionId,
+            targetPlanVersionId: firstTarget.planVersionId,
+            targetBillingOptionId: firstTarget.billingOptionId,
             keepSelection: null
         });
         expect(redemption?.remainingCharges).toBe(0);
-        const selected = { accommodation_ids: ['keep-this-one'] };
+        const selected = { [PUBLICATION_LIMIT_KEYS.accommodation]: [listingIds[2]!] };
         const selectedResult = await requestPlanChange(
             {
                 ...seeded.input,
+                billingOptionId: second.billingOptionId,
                 keepSelection: selected
             },
             seeded.ports

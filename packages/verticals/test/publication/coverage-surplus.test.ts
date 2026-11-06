@@ -4,6 +4,37 @@ import { recalculateCoverage } from '../../src/publication/coverage-recalculatio
 import { clock, listingId, makeHarness, userId, vertical } from './support';
 
 describe('covered coverage surplus branches', () => {
+    it('TEST:B8b:15 applies the keep selection to the V6 lowering choice', async () => {
+        const listings = ['old', 'middle', 'new'].map((id, index) => ({
+            id,
+            ownerId: userId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            createdAt: new Date(`2020-01-0${index + 1}T00:00:00Z`),
+            inactiveSince: clock.now()
+        }));
+        const harness = makeHarness({
+            listings,
+            limit: 2,
+            publicationInstants: new Map(
+                listings.map((row, index) => [row.id, new Date(`2021-01-0${index + 1}T00:00:00Z`)])
+            )
+        });
+        const result = await recalculateCoverage({
+            ...harness,
+            clock,
+            userId,
+            vertical,
+            correlationId: listingId,
+            keepListingIds: new Set(['middle', 'new'])
+        });
+        expect(result.loweredBySurplus).toEqual(['old']);
+        expect(['old', 'middle', 'new'].map((id) => harness.statusOf(id))).toEqual([
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            PublicationStatusEnum.PUBLISHED,
+            PublicationStatusEnum.PUBLISHED
+        ]);
+    });
+
     it('TEST:V6:5 lowers an over-limit listing without stamping or restoring it in the same pass', async () => {
         const harness = makeHarness({ status: PublicationStatusEnum.PUBLISHED, limit: 0 });
         const result = await recalculateCoverage({

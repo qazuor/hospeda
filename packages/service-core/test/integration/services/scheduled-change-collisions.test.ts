@@ -1,4 +1,6 @@
 import { eq, planMigrationSubscriptions, promoRedemptions, subscriptions } from '@repo/db';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { applyScheduledChangeInTx } from '../../../src/services/billing/subscription/apply-scheduled-change.service.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
@@ -15,6 +17,8 @@ import {
     seedAdditionalPlanChangeTarget,
     seedPlanChange,
     seedPlanChangePromo,
+    seedPlanChangePublications,
+    seedPlanChangeTargetWithLimit,
     seedSiblingPlanChangeSubscription
 } from './support/plan-change-fixtures.js';
 import { retirePriceIncreases, seedPriceIncrease } from './support/price-increase-fixtures.js';
@@ -35,6 +39,48 @@ afterEach(async () => {
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:16 scheduled change collisions', () => {
+    it('TEST:B8b:16 rejects foreign and non-published keep ids before provider or queue writes', async () => {
+        const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
+        const target = await seedPlanChangeTargetWithLimit({
+            sourcePlanVersionId: seeded.planVersionId,
+            targetLimit: 1
+        });
+        seeded.verticals.setPlanPolicy({
+            planVersionId: target.planVersionId,
+            policy: { graceDays: 10, allowsPause: false, current: true, sellable: true }
+        });
+        seeded.verticals.setChangeDirection({
+            fromPlanVersionId: seeded.planVersionId,
+            toPlanVersionId: target.planVersionId,
+            direction: 'DOWN'
+        });
+        const ids = await seedPlanChangePublications({
+            userId: seeded.user.id,
+            statuses: [PublicationStatusEnum.PUBLISHED, PublicationStatusEnum.DRAFT]
+        });
+        const mutate = vi.spyOn(seeded.fake, 'changeAmount');
+        const foreign = await requestPlanChange(
+            {
+                ...seeded.input,
+                billingOptionId: target.billingOptionId,
+                keepSelection: { [PUBLICATION_LIMIT_KEYS.accommodation]: ['foreign-listing'] }
+            },
+            seeded.ports
+        );
+        const draft = await requestPlanChange(
+            {
+                ...seeded.input,
+                billingOptionId: target.billingOptionId,
+                keepSelection: { [PUBLICATION_LIMIT_KEYS.accommodation]: [ids[1]!] }
+            },
+            seeded.ports
+        );
+        expect(foreign).toEqual({ path: 'REJECTED', reason: 'KEEP_SELECTION_INVALID' });
+        expect(draft).toEqual({ path: 'REJECTED', reason: 'KEEP_SELECTION_INVALID' });
+        expect(mutate).toHaveBeenCalledTimes(0);
+        expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
+    });
+
     it('(a) ends the row promo with the requested amount mutation', async () => {
         const seeded = await seedPlanChange({ rankRelation: 'HIGHER' });
         seeded.verticals.setChangeDirection({

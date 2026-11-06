@@ -146,9 +146,12 @@ export async function queueDowngrade(input: {
     readonly targetPlanVersionId: string;
     readonly targetBillingOptionId: string;
     readonly effectiveAt: Date;
+    readonly keepSelection?: Record<string, string[]>;
 }): Promise<void> {
     await getDb().transaction(async (tx) => {
-        await tx.insert(subscriptionScheduledChanges).values(input);
+        await tx
+            .insert(subscriptionScheduledChanges)
+            .values({ ...input, keepSelection: input.keepSelection ?? null });
         await tx
             .update(promoRedemptions)
             .set({ remainingCharges: 0 })
