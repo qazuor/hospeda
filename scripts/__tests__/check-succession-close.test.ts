@@ -53,6 +53,14 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
             'c1 pointer writer'
         );
     });
+    it('(c1) rejects an unregistered shorthand predecessor writer', () => {
+        const file = 'apps/api/src/succession-bypass.ts';
+        red(
+            file,
+            'export function bypass(tx: Tx, succeededById: string) { return tx.update(subscriptions).set({ succeededById }); }',
+            'c1 pointer writer'
+        );
+    });
     it('(c1) rejects succeedsId null outside clearSuccessorLink', () => {
         const file = 'packages/service-core/src/services/billing/subscription/other.ts';
         red(
@@ -128,6 +136,19 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
         red(
             WRITES_FILE,
             mutate(WRITES_FILE, 'balanceClosedAt: value.now,', 'otherDate: value.now,'),
+            'c4 courtesy balance'
+        );
+    });
+    it('(c4) rejects balanceClosedAt moved to the monthly set', () => {
+        const source = mutate(
+            WRITES_FILE,
+            '.set({ balanceMonths: months })',
+            '.set({ balanceMonths: months, balanceClosedAt: value.now })'
+        );
+        expect(source).toContain('balanceClosedAt: value.now,');
+        red(
+            WRITES_FILE,
+            source.replace('balanceClosedAt: value.now,', 'otherDate: value.now,'),
             'c4 courtesy balance'
         );
     });

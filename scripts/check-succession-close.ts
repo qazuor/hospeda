@@ -73,6 +73,18 @@ function value(object: ts.ObjectLiteralExpression, name: string): ts.Expression 
 function isNull(expression: ts.Expression | null): boolean {
     return expression?.kind === ts.SyntaxKind.NullKeyword;
 }
+function inNonmonthlyElse(node: ts.Node, owner: ts.Node): boolean {
+    for (let parent = node.parent; parent && parent !== owner; parent = parent.parent)
+        if (
+            ts.isIfStatement(parent) &&
+            parent.expression.getText().includes("option.cycle === 'monthly'") &&
+            parent.elseStatement &&
+            node.getStart() >= parent.elseStatement.getStart() &&
+            node.getEnd() <= parent.elseStatement.getEnd()
+        )
+            return true;
+    return false;
+}
 function tableOf(set: ts.CallExpression): string | null {
     let receiver: ts.Expression = set.expression;
     if (!ts.isPropertyAccessExpression(receiver)) return null;
@@ -181,9 +193,13 @@ function anchorChecks(root: string): Finding[] {
     if (
         courtesySets.length !== 2 ||
         courtesySets.some((set) => !property(set.object, 'balanceMonths')) ||
+        !courtesy ||
+        courtesySets.filter((set) => inNonmonthlyElse(set.call, courtesy)).length !== 1 ||
         !courtesySets.some(
             (set) =>
-                property(set.object, 'balanceMonths') && property(set.object, 'balanceClosedAt')
+                inNonmonthlyElse(set.call, courtesy) &&
+                property(set.object, 'balanceMonths') &&
+                property(set.object, 'balanceClosedAt')
         )
     )
         findings.push(
@@ -249,9 +265,13 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
             source.includes('promoRedemptions')
         )
             for (const set of sets(sf)) {
-                const successor = value(set.object, 'succeededById');
+                const successor = property(set.object, 'succeededById');
                 const predecessor = value(set.object, 'succeedsId');
-                if ((successor && !isNull(successor)) || isNull(predecessor)) {
+                if (
+                    (successor &&
+                        (!ts.isPropertyAssignment(successor) || !isNull(successor.initializer))) ||
+                    isNull(predecessor)
+                ) {
                     const owner = topLevelName(set.call);
                     const permitted = [...OPENERS, ...CLOSE_WRITERS].some(
                         (writer) =>
