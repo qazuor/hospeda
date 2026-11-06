@@ -66,7 +66,10 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto(`${WEB_URL}/es/`);
         await page.locator('[data-mobile-toggle]').click();
-        const mobileMenu = page.locator('nav').last();
+        // Scoped to the open mobile dialog: `nav.last()` is the footer's nav.
+        const mobileDialog = page.locator('[role="dialog"][aria-modal="true"]');
+        await expect(mobileDialog).toHaveAttribute('aria-hidden', 'false');
+        const mobileMenu = mobileDialog.locator('nav');
         for (const href of collectionHrefs)
             await expect(mobileMenu.locator(`a[href="${href}"]`)).toBeVisible();
     });
