@@ -12,7 +12,10 @@ vi.mock('@repo/icons', () => ({
     getAmenityTypeIcon: () => () => <svg data-testid="type-icon" />
 }));
 
-import { AccommodationAmenitiesList } from '../AccommodationAmenitiesList';
+import {
+    AccommodationAmenitiesList,
+    selectAccommodationAmenities
+} from '../AccommodationAmenitiesList';
 
 const amenities = [
     {
@@ -54,5 +57,37 @@ describe('AccommodationAmenitiesList', () => {
         // Undeclared (null/null) renders only the name, no badge.
         const wifiRow = screen.getByText('WiFi').closest('li');
         expect(wifiRow?.children.length).toBe(1);
+    });
+});
+
+describe('selectAccommodationAmenities', () => {
+    it('returns the rows of the amenities relation', () => {
+        expect(selectAccommodationAmenities({ amenities })).toEqual(amenities);
+    });
+
+    it('ignores the legacy tags.amenities field (HOS-2058 regression)', () => {
+        expect(selectAccommodationAmenities({ tags: { amenities } })).toEqual([]);
+    });
+
+    it('returns [] while the accommodation is loading', () => {
+        expect(selectAccommodationAmenities(undefined)).toEqual([]);
+    });
+});
+
+describe('AccommodationAmenitiesList ordering and fallback', () => {
+    it('humanizes the slug when there is no translation', () => {
+        render(
+            <AccommodationAmenitiesList
+                amenities={[{ id: 'z1', slug: 'zz_unknown_thing', type: 'KITCHEN' }]}
+            />
+        );
+        expect(screen.getByText('Zz Unknown Thing')).toBeTruthy();
+    });
+
+    it('sorts rows by name within a group', () => {
+        render(<AccommodationAmenitiesList amenities={amenities} />);
+        const climate = screen.getByTestId('amenity-group-CLIMATE_CONTROL');
+        const names = [...climate.querySelectorAll('li > span')].map((n) => n.textContent);
+        expect(names).toEqual(['Aire acondicionado', 'Calefacción']);
     });
 });

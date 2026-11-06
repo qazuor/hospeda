@@ -8,7 +8,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
     AccommodationAmenitiesList,
-    type AccommodationAmenityRow
+    selectAccommodationAmenities
 } from '@/features/accommodations/components/AccommodationAmenitiesList';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
@@ -23,11 +23,7 @@ function AccommodationAmenitiesPage() {
     const { t } = useTranslations();
     const { data: accommodation, isLoading } = useAccommodationQuery(id);
 
-    // The admin detail endpoint returns the real relation under `amenities`.
-    const rawAmenities = (accommodation as { amenities?: unknown } | undefined)?.amenities;
-    const amenities: readonly AccommodationAmenityRow[] = Array.isArray(rawAmenities)
-        ? (rawAmenities as AccommodationAmenityRow[])
-        : [];
+    const amenities = selectAccommodationAmenities(accommodation);
 
     return (
         <AccommodationSubTabLayout

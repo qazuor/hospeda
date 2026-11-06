@@ -1,7 +1,9 @@
-import { defaultLocale, type TranslationKey, trans } from '@repo/i18n';
+import type { TranslationKey } from '@repo/i18n';
 import { getAmenityTypeIcon } from '@repo/icons';
+import { translateAmenityName } from '@/components/entity-form/fields/entity-selects/utils/amenity-api.utils';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
+import { getAmenityTypeLabelKey } from '../../amenities/components/AmenityTypeBadge';
 
 /**
  * Amenity row as returned inside `amenities` by
@@ -21,27 +23,6 @@ export interface AccommodationAmenitiesListProps {
     readonly amenities: readonly AccommodationAmenityRow[];
 }
 
-/** Maps each amenity type to its i18n label key (same keys as `AmenityTypeBadge`). */
-const TYPE_LABEL_KEYS: Readonly<Record<string, TranslationKey>> = {
-    CLIMATE_CONTROL: 'admin-entities.types.amenity.climateControl',
-    CONNECTIVITY: 'admin-entities.types.amenity.connectivity',
-    ENTERTAINMENT: 'admin-entities.types.amenity.entertainment',
-    KITCHEN: 'admin-entities.types.amenity.kitchen',
-    BED_AND_BATH: 'admin-entities.types.amenity.bedAndBath',
-    OUTDOORS: 'admin-entities.types.amenity.outdoors',
-    ACCESSIBILITY: 'admin-entities.types.amenity.accessibility',
-    SERVICES: 'admin-entities.types.amenity.services',
-    SAFETY: 'admin-entities.types.amenity.safety',
-    FAMILY_FRIENDLY: 'admin-entities.types.amenity.familyFriendly',
-    WORK_FRIENDLY: 'admin-entities.types.amenity.workFriendly',
-    PARKING: 'admin-entities.types.amenity.parking',
-    LAUNDRY: 'admin-entities.types.amenity.laundry',
-    WATER_ACTIVITIES: 'admin-entities.types.amenity.waterActivities',
-    WELLNESS: 'admin-entities.types.amenity.wellness',
-    DINING: 'admin-entities.types.amenity.dining',
-    GENERAL_APPLIANCES: 'admin-entities.types.amenity.generalAppliances'
-};
-
 const SCOPE_KEYS = {
     private: 'accommodations.amenityAttributes.scope.private',
     shared: 'accommodations.amenityAttributes.scope.shared'
@@ -54,14 +35,24 @@ const AVAILABILITY_KEYS = {
 
 const UNTYPED_GROUP = 'OTHER';
 
-/** Resolves the amenity label from `accommodations.amenityNames.<slug>`; falls back to the slug. */
+/** Name shown for an amenity: translated, else a humanized slug (never the id). */
 function resolveAmenityLabel({ amenity }: { readonly amenity: AccommodationAmenityRow }): string {
-    const slug = amenity.slug;
-    if (!slug) return amenity.id;
-    const translated =
-        trans[defaultLocale as keyof typeof trans]?.[`accommodations.amenityNames.${slug}`];
-    if (translated && !translated.startsWith('[MISSING:')) return translated;
-    return slug;
+    return translateAmenityName(amenity.slug ?? amenity.id);
+}
+
+/**
+ * Pure selector for the amenities of an accommodation detail payload.
+ * Reads ONLY the `amenities` relation; the legacy `tags.amenities` is ignored
+ * (HOS-2058: reading it made the tab claim "no amenities" for a full listing).
+ *
+ * @param accommodation - The raw accommodation detail (may be undefined while loading).
+ * @returns The amenity rows, or an empty array.
+ */
+export function selectAccommodationAmenities(
+    accommodation: unknown
+): readonly AccommodationAmenityRow[] {
+    const raw = (accommodation as { amenities?: unknown } | null | undefined)?.amenities;
+    return Array.isArray(raw) ? (raw as AccommodationAmenityRow[]) : [];
 }
 
 /**
@@ -79,10 +70,22 @@ export const AccommodationAmenitiesList = ({ amenities }: AccommodationAmenities
         else groups.set(type, [amenity]);
     }
 
+    const sortedGroups = [...groups.entries()]
+        .map(([type, rows]) => {
+            const labelKey = getAmenityTypeLabelKey(type);
+            return {
+                type,
+                label: labelKey ? t(labelKey) : type,
+                rows: rows
+                    .map((amenity) => ({ amenity, name: resolveAmenityLabel({ amenity }) }))
+                    .sort((x, y) => x.name.localeCompare(y.name))
+            };
+        })
+        .sort((x, y) => x.label.localeCompare(y.label));
+
     return (
         <div className="space-y-6">
-            {[...groups.entries()].map(([type, rows]) => {
-                const labelKey = TYPE_LABEL_KEYS[type];
+            {sortedGroups.map(({ type, label, rows }) => {
                 const Icon = type === UNTYPED_GROUP ? null : getAmenityTypeIcon({ type });
                 return (
                     <section
@@ -97,15 +100,15 @@ export const AccommodationAmenitiesList = ({ amenities }: AccommodationAmenities
                                     aria-hidden="true"
                                 />
                             )}
-                            {labelKey ? t(labelKey) : type}
+                            {label}
                         </h3>
                         <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-                            {rows.map((amenity) => (
+                            {rows.map(({ amenity, name }) => (
                                 <li
                                     key={amenity.id}
                                     className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
                                 >
-                                    <span>{resolveAmenityLabel({ amenity })}</span>
+                                    <span>{name}</span>
                                     {amenity.scope && SCOPE_KEYS[amenity.scope] && (
                                         <Badge variant="secondary">
                                             {t(SCOPE_KEYS[amenity.scope])}
