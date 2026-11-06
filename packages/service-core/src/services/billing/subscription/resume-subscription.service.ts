@@ -19,9 +19,15 @@ import {
     createCutExpectedAmountPolicy,
     type ExpectedAmountPolicy
 } from '../reconciliation/sweep/comparisons/expected-amount.js';
+import { finishAppliedScheduledChange } from './apply-due-scheduled-changes.service.js';
+import {
+    type ApplyScheduledChangeResult,
+    applyScheduledChangeInTx
+} from './apply-scheduled-change.service.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
 import { confirmPrincipalResume } from './resume-subscription-provider.js';
+import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const logger = createLogger('resume-subscription-s10');
 const inputSchema = z.strictObject({ subscriptionId: z.uuid(), cause: z.enum(['TERM', 'EARLY']) });
@@ -42,6 +48,7 @@ export type ResumeSubscriptionResult =
               readonly currency: string;
           } | null;
           readonly complements: ResumeComplementsSummary;
+          readonly scheduledChange?: Extract<ApplyScheduledChangeResult, { outcome: 'APPLIED' }>;
       };
 
 /** Runs S10 for a due or early principal return, confirming card state before locking the row. */
@@ -53,6 +60,7 @@ export async function resumeSubscription(
         readonly complements: ComplementPolicyPorts;
         readonly coverageNotices?: CoverageNotices;
         readonly expectedAmount?: ExpectedAmountPolicy;
+        readonly surplusStep?: SurplusStep;
     }
 ): Promise<ResumeSubscriptionResult> {
     const value = inputSchema.parse(input);
@@ -155,8 +163,18 @@ export async function resumeSubscription(
             .update(subscriptionPauses)
             .set({ actualEndAt: now })
             .where(eq(subscriptionPauses.id, pause.id));
+        const scheduledChange = await applyScheduledChangeInTx({
+            subscriptionId: value.subscriptionId,
+            now,
+            tx
+        });
         if (!row.userId || !row.vertical) throw new Error('Principal lacks owner or vertical');
-        return { userId: row.userId, vertical: row.vertical, nextChargeAt };
+        return {
+            userId: row.userId,
+            vertical: row.vertical,
+            nextChargeAt,
+            scheduledChange: scheduledChange.outcome === 'APPLIED' ? scheduledChange : undefined
+        };
     });
     if (!written) {
         await openReconciliationMark({
@@ -179,6 +197,15 @@ export async function resumeSubscription(
             { subscriptionId: value.subscriptionId, error },
             'Coverage notice failed after S10 commit'
         );
+    }
+    if (written.scheduledChange) {
+        await finishAppliedScheduledChange({
+            applied: written.scheduledChange,
+            ports: {
+                coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
+                surplusStep: ports.surplusStep
+            }
+        });
     }
     const complements = await resumeComplementsS33(
         { principalSubscriptionId: value.subscriptionId, trigger: 'PRINCIPAL_ACTIVE' },
@@ -217,5 +244,11 @@ export async function resumeSubscription(
             );
         }
     }
-    return { outcome: 'RESUMED', nextChargeAt: written.nextChargeAt, nextCharge, complements };
+    return {
+        outcome: 'RESUMED',
+        nextChargeAt: written.nextChargeAt,
+        nextCharge,
+        complements,
+        ...(written.scheduledChange ? { scheduledChange: written.scheduledChange } : {})
+    };
 }

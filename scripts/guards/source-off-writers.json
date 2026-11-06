@@ -435,5 +435,14 @@
         "effect": "neutral",
         "via": null,
         "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/apply-scheduled-change.service.ts",
+        "symbol": "applyScheduledChangeInTx",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/apply-due-scheduled-changes.service.ts",
+        "reason": "TRANS:B:S38 changes the subscription plan and billing option; the due-change batch emits the post-commit coverage notice."
     }
 ]

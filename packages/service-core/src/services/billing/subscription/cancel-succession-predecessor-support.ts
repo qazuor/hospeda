@@ -10,6 +10,7 @@ import {
 } from '@repo/db';
 import { z } from 'zod';
 import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close';
+import { discardScheduledChange } from './scheduled-change-discard';
 
 /** Validated S17 input. */
 export const cancelSuccessionPredecessorInputSchema = z.strictObject({
@@ -79,12 +80,14 @@ export async function writeSuccessionPredecessorCancellation(input: {
             )
         )
         .returning({ id: subscriptions.id });
-    if (written)
+    if (written) {
+        await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
         await closeAwaitingManualInstallmentsInTx({
             tx: input.tx,
             subscriptionId: input.subscriptionId,
             now: input.now
         });
+    }
     return written !== undefined;
 }
 

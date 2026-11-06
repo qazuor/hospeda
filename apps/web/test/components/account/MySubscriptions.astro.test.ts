@@ -13,6 +13,11 @@ describe('MySubscriptions SSR block', () => {
         );
         expect(source).toContain('data-testid="my-subscription-grace"');
         expect(source).toContain('date: date(row.graceEndsAt)');
+        expect(source).toContain('data-testid="my-subscription-plan-change-grace"');
+        expect(source).toMatch(
+            /\{row\.status === 'GRACE_PERIOD' && <p[^>]*data-testid="my-subscription-plan-change-grace"/u
+        );
+        expect(source).toContain('GRACE_PLAN_CHANGE_KEY[row.paymentMethod]');
     });
     it('offers cancellation only for allowed states and handles empty and failed reads', () => {
         expect(source).toContain('CANCELLATION_OFFERED[row.status]');

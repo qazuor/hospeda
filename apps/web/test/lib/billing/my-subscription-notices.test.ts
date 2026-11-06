@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    GRACE_PLAN_CHANGE_KEY,
     PLAN_CHANGE_UNAVAILABLE,
     PLAN_CHANGE_UNAVAILABLE_KEY
 } from '../../../src/lib/billing/my-subscription-notices';
@@ -16,5 +17,12 @@ describe('PLAN_CHANGE_UNAVAILABLE', () => {
         { status: 'CANCEL_SCHEDULED', expected: false }
     ] as const)('returns $expected for $status', ({ status, expected }) => {
         expect(PLAN_CHANGE_UNAVAILABLE[status]).toBe(expected);
+    });
+});
+
+it('exposes grace plan-change keys for card and manual payments', () => {
+    expect(GRACE_PLAN_CHANGE_KEY).toEqual({
+        CARD: 'account.subscription.mine.graceChangePlan.CARD',
+        MANUAL: 'account.subscription.mine.graceChangePlan.MANUAL'
     });
 });

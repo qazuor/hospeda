@@ -3,9 +3,18 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { cancelSuccessionPredecessor } from '../../../src/services/billing/subscription/cancel-succession-predecessor.service.js';
 import { reevaluateSuccessionPredecessors } from '../../../src/services/billing/subscription/reevaluate-succession-predecessors.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    deleteScheduledChanges,
+    scheduledChangesOf,
+    seedScheduledChange
+} from './support/scheduled-change-fixtures.js';
 import { retireS17, s17Now, s17Ports, seedS17 } from './support/succession-s17-fixtures.js';
 
-afterEach(retireS17);
+const queuedSubscriptions: string[] = [];
+afterEach(async () => {
+    await deleteScheduledChanges(queuedSubscriptions.splice(0));
+    await retireS17();
+});
 afterAll(closeServiceTestPool);
 
 async function rows(predecessorId: string, successorId: string) {
@@ -108,6 +117,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:9 S17 predecessor cancell
 
     it('(c) skips both call and notice when the predecessor authorization is already cancelled', async () => {
         const seeded = await seedS17({ predecessorCancelled: true });
+        await seedScheduledChange({ subscriptionId: seeded.predecessorId, effectiveAt: s17Now });
+        queuedSubscriptions.push(seeded.predecessorId);
         const result = await cancelSuccessionPredecessor(
             { successorSubscriptionId: seeded.successorId },
             s17Ports(seeded.provider, { deliver: true })
@@ -120,6 +131,22 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:9 S17 predecessor cancell
         });
         expect(seeded.calls).toHaveLength(0);
         expect(await notices(seeded.predecessorId, seeded.userId)).toHaveLength(0);
+        expect(await scheduledChangesOf(seeded.predecessorId)).toHaveLength(0);
+    });
+
+    it('(c2) discards a queued change for a CARD_SUSPENDED_CONFIRMED_CANCELLED predecessor', async () => {
+        const seeded = await seedS17({ predecessorStatus: 'SUSPENDED' });
+        await seedScheduledChange({ subscriptionId: seeded.predecessorId, effectiveAt: s17Now });
+        queuedSubscriptions.push(seeded.predecessorId);
+        const result = await cancelSuccessionPredecessor(
+            { successorSubscriptionId: seeded.successorId },
+            s17Ports(seeded.provider, { deliver: true })
+        );
+        expect(result).toMatchObject({ outcome: 'CANCELLED' });
+        expect((await rows(seeded.predecessorId, seeded.successorId)).predecessor.status).toBe(
+            'CANCELLED'
+        );
+        expect(await scheduledChangesOf(seeded.predecessorId)).toHaveLength(0);
     });
 
     it('(d) requests the succession template before the provider call and closes S18 in one commit', async () => {

@@ -26,6 +26,7 @@ import {
     type DecidedComplementCancellationCall
 } from './complement-s11-rule.js';
 import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
+import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -160,6 +161,7 @@ async function writeS11Cancellation(input: {
         })
         .where(and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, 'ACTIVE')))
         .returning({ id: subscriptions.id });
+    if (row) await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
     return row !== undefined;
 }
 

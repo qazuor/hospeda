@@ -2,6 +2,7 @@ import { endDuePauses } from '@repo/service-core';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
+import { createScheduledChangeSurplusStep } from '../../utils/listing-publication/scheduled-change-surplus-step.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -33,7 +34,8 @@ export const subscriptionPauseEndJob: CronJobDefinition = {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
                     complements: buildComplementPolicyPorts(),
-                    coverageNotices: getCoverageNotices()
+                    coverageNotices: getCoverageNotices(),
+                    surplusStep: createScheduledChangeSurplusStep()
                 }
             );
             const durationMs = Date.now() - startedAt.getTime();

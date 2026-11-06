@@ -467,6 +467,10 @@
             "title": "Tus suscripciones",
             "empty": "No tenés suscripciones vigentes.",
             "planChangeUnavailable": "Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.",
+            "graceChangePlan": {
+                "CARD": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo cambiando la tarjeta con la que pagás en Mercado Pago (el cobro se reintenta en el momento) y, con la suscripción al día, vas a poder hacer cambios en tu plan.",
+                "MANUAL": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo pagando tu cuota y, con la suscripción al día, vas a poder hacer cambios en tu plan."
+            },
             "paidAfterCancellation": "Tu pago entró y tenés servicio hasta el {{date}}; tu suscripción ya estaba cancelada, así que no se renueva: si querés seguir, volvé a suscribirte.",
             "paidAfterCancellationAddons": "El cobro de tus complementos recurrentes de esta suscripción también se cortó: los seguís viendo hasta el {{date}}.",
             "deferredCourtesy_one": "Te queda 1 mes, que empieza a correr cuando completes el pago.",

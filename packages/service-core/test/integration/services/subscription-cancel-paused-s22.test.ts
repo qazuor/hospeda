@@ -27,6 +27,11 @@ import {
 } from './support/cancel-paused-fixtures.js';
 import { retireComplementRows, seedCommittedComplement } from './support/complement-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import {
+    deleteScheduledChanges,
+    scheduledChangesOf,
+    seedScheduledChange
+} from './support/scheduled-change-fixtures.js';
 
 const clock = { now: () => pausedNow };
 const owner = (id: string): Actor => ({ id, roles: [], permissions: [] });
@@ -75,7 +80,11 @@ const decisions = (id: string) =>
             )
         );
 
-afterEach(retirePausedCancellationRows);
+const queuedSubscriptions: string[] = [];
+afterEach(async () => {
+    await deleteScheduledChanges(queuedSubscriptions.splice(0));
+    await retirePausedCancellationRows();
+});
 afterEach(retireComplementRows);
 afterAll(closeServiceTestPool);
 
@@ -83,6 +92,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:5 S22 paused cancellation
     it('(a) cancels a customer pause today with one S22 decision and direct notice', async () => {
         const fake = fakeProvider();
         const seeded = await seedPausedCancellation({ fake });
+        await seedScheduledChange({
+            subscriptionId: seeded.subscriptionId,
+            effectiveAt: pausedNow
+        });
+        queuedSubscriptions.push(seeded.subscriptionId);
         await getServiceTestDb()
             .insert(coverageLosses)
             .values({
@@ -100,6 +114,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:5 S22 paused cancellation
             cancelCall: 'SENT'
         });
         expect((await subscription(seeded.subscriptionId)).status).toBe('CANCELLED');
+        expect(await scheduledChangesOf(seeded.subscriptionId)).toHaveLength(0);
         expect((await subscription(seeded.subscriptionId)).serviceEndsAt).toEqual(pausedNow);
         expect((await pause(seeded.subscriptionId)).actualEndAt).toEqual(pausedNow);
         const losses = await getServiceTestDb()
@@ -187,6 +202,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:5 S22 paused cancellation
                 windowEndsAt: new Date('2026-10-19T00:00:00.000Z')
             }
         });
+        await seedScheduledChange({
+            subscriptionId: seeded.subscriptionId,
+            effectiveAt: pausedNow
+        });
+        queuedSubscriptions.push(seeded.subscriptionId);
         const active = await seedCommittedComplement({
             fake,
             principalStatus: 'PAUSED',
@@ -212,6 +232,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:5 S22 paused cancellation
             complements: { decided: 1 }
         });
         expect((await subscription(seeded.subscriptionId)).status).toBe('CANCEL_SCHEDULED');
+        expect(await scheduledChangesOf(seeded.subscriptionId)).toHaveLength(0);
         expect((await subscription(seeded.subscriptionId)).serviceEndsAt).toEqual(firstChargeAt);
         expect((await subscription(active.complementId)).status).toBe('CANCEL_SCHEDULED');
         expect((await subscription(active.complementId)).serviceEndsAt).toEqual(firstChargeAt);
