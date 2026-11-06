@@ -256,7 +256,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 on S7 return', () 
             },
             purpose: { kind: 'PERIOD', chargeCreatedAt }
         });
-        expect(result.opened).toBe(1);
+        // MP5 sweeps every due row in the shared DB, so the global counter only
+        // proves this run opened something; this row's own installment is the proof.
+        expect(result.opened).toBeGreaterThanOrEqual(1);
         expect(installment?.status).toBe('AWAITING');
         expect(subscription).toMatchObject({
             planVersionId: seededPlan.targetPlanVersionId,
