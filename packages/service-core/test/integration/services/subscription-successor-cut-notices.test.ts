@@ -1,6 +1,12 @@
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it } from 'vitest';
 import { completeSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
+import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
+
+const clock = { now: () => new Date('2026-11-13T12:00:00.000Z') };
+const provider = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+const beforeCancelNotice = outboxBeforeCancelNotice();
 
 afterAll(closeServiceTestPool);
 
@@ -25,6 +31,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 after-commit notic
                     cancellationDecided: false
                 },
                 {
+                    provider,
+                    clock,
+                    beforeCancelNotice,
                     coverageNotices: {
                         emitCoverageChanged: async (event) => {
                             events.push(event);
@@ -33,7 +42,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 after-commit notic
                     }
                 }
             )
-        ).resolves.toBeUndefined();
+        ).resolves.toMatchObject({ providerCall: 'NONE', retainedReevaluated: 0 });
         expect(events).toEqual([
             {
                 userId: expect.any(String),
@@ -63,6 +72,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 after-commit notic
                 cancellationDecided: false
             },
             {
+                provider,
+                clock,
+                beforeCancelNotice,
                 coverageNotices: {
                     emitCoverageChanged: async (event) => {
                         events.push(event);

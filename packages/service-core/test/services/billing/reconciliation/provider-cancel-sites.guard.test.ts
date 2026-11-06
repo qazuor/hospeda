@@ -13,6 +13,8 @@ const BILLING_DIR = join(REPO_ROOT, 'packages/service-core/src/services/billing'
 
 /** Files allowed to cancel without recording, each with its reason. */
 const EXEMPT: Readonly<Record<string, string>> = {
+    'subscription/successor-cut-after-commit.ts':
+        'S31 records its decision in successor-cutter, inside the S6/S12 transaction; this file only performs the call after the commit (AC:B8b:13)',
     'reconciliation/cancel-our-authorization.ts': 'the helper itself; its callers register',
     'reconciliation/sweep/our-cancellation-retry.ts': 'retries a decision already registered',
     'reconciliation/creations/creations-sweep.service.ts':

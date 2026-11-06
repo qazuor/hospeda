@@ -8,6 +8,7 @@ import {
     subscriptions,
     users
 } from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runWithSuccessorCut } from '../../../src/services/billing/subscription/successor-cut-after-commit';
 import { createSuccessorCutter } from '../../../src/services/billing/subscription/successor-cutter';
@@ -24,6 +25,7 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures';
 import { registryWithConsumer } from './support/coverage-notice-fixtures';
+import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
 import { readCloseCase } from './support/succession-close-fixtures';
 import { cutNow, seedSuccessorCutCase, successorCutPorts } from './support/successor-cut-fixtures';
 
@@ -384,7 +386,15 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             runWithSuccessorCut({
                 db,
                 predecessorSubscriptionId: rolledBackPredecessorId,
-                ports: { ...ports, coverageNotices: rolledBackObserver.registry },
+                ports: {
+                    ...ports,
+                    provider: new FakePaymentProvider({
+                        idNamespace: crypto.randomUUID(),
+                        clock: frozenClock(cutNow)
+                    }),
+                    beforeCancelNotice: outboxBeforeCancelNotice(),
+                    coverageNotices: rolledBackObserver.registry
+                },
                 work: async (tx) => {
                     const user = await seedCoverageUser(tx);
                     const plan = await seedCoveragePlanVersion(tx, 'accommodation');
@@ -430,6 +440,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             predecessorSubscriptionId: predecessorId,
             ports: {
                 ...ports,
+                provider: new FakePaymentProvider({
+                    idNamespace: crypto.randomUUID(),
+                    clock: frozenClock(cutNow)
+                }),
+                beforeCancelNotice: outboxBeforeCancelNotice(),
                 coverageNotices: observer.registry
             },
             work: async (tx) => {

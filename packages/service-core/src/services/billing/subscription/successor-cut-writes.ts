@@ -161,6 +161,7 @@ export async function cutSuccessorWrites(
         ? grants.reduce((sum, row) => sum + (row.balanceMonths ?? 0), 0)
         : null;
     const cancellationDecided = successor.paymentMethod === 'CARD' && Boolean(providerLink);
+    // The post-commit cancellation asks for before-cancel notice kind: 'SUCCESSOR_CUT'.
     if (cancellationDecided)
         await recordProviderCancellationDecided({
             subscriptionId: successor.id,
