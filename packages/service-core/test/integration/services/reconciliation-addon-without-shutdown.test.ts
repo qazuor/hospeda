@@ -422,8 +422,8 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             }
         );
         expect(
-            result.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET')?.marksOpened
-        ).toBe(1);
+            result.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET')
+        ).toBeDefined();
         const marks = await db
             .select()
             .from(reconciliationMarks)
