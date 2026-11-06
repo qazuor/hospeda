@@ -16,7 +16,7 @@ import {
 } from '@repo/db';
 import { type Accommodation, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { and } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listingPublicationModel } from '../../../../../packages/db/src/models/listing/listing-publication.model';
 import { recalculateCoverage } from '../../../../../packages/verticals/src/publication/coverage-recalculation';
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
@@ -29,12 +29,38 @@ import { testDb } from '../../e2e/setup/test-database';
 
 const vertical = VerticalEnum.ACCOMMODATION;
 const clock = { now: () => new Date('2026-10-10T12:00:00.000Z') };
+const cache = vi.hoisted(() => ({
+    values: new Map<string, string>(),
+    hashes: new Map<string, Map<string, string>>()
+}));
+vi.mock('../../../src/utils/redis', () => ({
+    getRedisClient: async () => ({
+        get: async (key: string) => cache.values.get(key) ?? null,
+        hget: async (key: string, field: string) => cache.hashes.get(key)?.get(field) ?? null,
+        hset: async (key: string, field: string, value: string) => {
+            const hash = cache.hashes.get(key) ?? new Map<string, string>();
+            hash.set(field, value);
+            cache.hashes.set(key, hash);
+            return 1;
+        },
+        pexpire: async () => 1,
+        incr: async (key: string) => {
+            const next = Number(cache.values.get(key) ?? '0') + 1;
+            cache.values.set(key, String(next));
+            return next;
+        }
+    })
+}));
 beforeAll(async () => {
     await testDb.setup();
     validateApiEnv();
     injectClock({ clock });
 });
-beforeEach(async () => testDb.clean());
+beforeEach(async () => {
+    await testDb.clean();
+    cache.values.clear();
+    cache.hashes.clear();
+});
 afterAll(async () => testDb.teardown());
 
 describe('TEST:B8b:15 scheduled downgrade keep selection', () => {
