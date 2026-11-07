@@ -69,6 +69,11 @@ const manualBinding = (route: string, late = false): Binding => ({
     file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
     route
 });
+const permanentGrantBinding = (file: string, route: string): Binding => ({
+    kind: 'required',
+    file: `apps/api/src/routes/billing-permanent-grant/admin/${file}`,
+    route
+});
 type BoundEntry = { readonly bindings: readonly Binding[] };
 type UnboundEntry = { readonly unbound: string };
 
@@ -140,21 +145,9 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
     ACC_1: { unbound: 'B9b builds it' },
     ACC_2: {
         bindings: [
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/grant.ts',
-                route: 'adminGrantPermanentGrantRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/anchor.ts',
-                route: 'adminAnchorPermanentGrantRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/revocation.ts',
-                route: 'adminRevokePermanentGrantRoute'
-            }
+            permanentGrantBinding('grant.ts', 'adminGrantPermanentGrantRoute'),
+            permanentGrantBinding('anchor.ts', 'adminAnchorPermanentGrantRoute'),
+            permanentGrantBinding('revocation.ts', 'adminRevokePermanentGrantRoute')
         ]
     },
     ACC_3: {
