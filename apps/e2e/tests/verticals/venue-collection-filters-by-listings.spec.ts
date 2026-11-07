@@ -139,7 +139,7 @@ async function createAmenity({ token }: { readonly token: string }): Promise<str
         `INSERT INTO amenities (slug, type, applicable_verticals, display_weight)
          VALUES ($1, 'ENTERTAINMENT', '{venue}', $2)
          RETURNING id`,
-        [`e2e-${token}-amenity`, FIXTURE_DISPLAY_WEIGHT]
+        [`e2e-${token.toLowerCase()}-amenity`, FIXTURE_DISPLAY_WEIGHT]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAmenity: insert returned no id');
@@ -158,7 +158,7 @@ async function createFeature({
         `INSERT INTO features (slug, applicable_verticals, display_weight)
          VALUES ($1, '{venue}', $2)
          RETURNING id`,
-        [`e2e-${token}-${suffix}`, FIXTURE_DISPLAY_WEIGHT]
+        [`e2e-${token.toLowerCase()}-${suffix}`, FIXTURE_DISPLAY_WEIGHT]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createFeature: insert returned no id');
