@@ -1,18 +1,51 @@
 import {
     PermanentGrantRevocationParamsSchema,
+    type PermanentGrantRevocationPreviewResponse,
+    PermanentGrantRevocationPreviewResponseSchema,
     PermanentGrantRevocationRequestSchema,
     type PermanentGrantRevocationResponse,
     PermanentGrantRevocationResponseSchema,
     PermissionEnum,
     VerticalEnumSchema
 } from '@repo/schemas';
-import { revokePermanentGrant } from '@repo/service-core';
+import { previewPermanentGrantRevocation, revokePermanentGrant } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
 import { buildPermanentGrantPorts } from './ports.js';
 import { answerRejection } from './rejections.js';
+
+/** Preview revocation on the act's path without writing anything. */
+export const adminPermanentGrantRevocationPreviewRoute = createAdminRoute({
+    method: 'get',
+    path: '/{permanentGrantId}/revocation',
+    summary: 'Preview revoking a permanent grant (ACC:2)',
+    description:
+        'Shows revocation effects without writing anything. The signed act reads the state again.',
+    tags: ['Billing permanent grants', 'Admin'],
+    requiredPermissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
+    requestParams: PermanentGrantRevocationParamsSchema.shape,
+    responseSchema: PermanentGrantRevocationPreviewResponseSchema,
+    successStatusCode: 200,
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const { permanentGrantId } = PermanentGrantRevocationParamsSchema.parse(params);
+        const actor = getActorFromContext(ctx);
+        try {
+            const result = await previewPermanentGrantRevocation({ actor, permanentGrantId });
+            const response: PermanentGrantRevocationPreviewResponse = {
+                ...result,
+                verticalsLosingService: result.verticalsLosingService.map((vertical) =>
+                    VerticalEnumSchema.parse(vertical)
+                ),
+                addonsTurnedOff: result.addonsTurnedOff.map((row) => ({ ...row }))
+            };
+            return response;
+        } catch (error) {
+            return answerRejection({ error, ctx });
+        }
+    }
+});
 
 /**
  * POST revoke a live grant. billing.grantComplimentary is the route scope; the
