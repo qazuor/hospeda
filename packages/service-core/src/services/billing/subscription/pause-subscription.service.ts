@@ -18,6 +18,13 @@ import { confirmPrincipalPause } from './pause-subscription-provider.js';
 const logger = createLogger('pause-subscription-s8');
 const inputSchema = z.strictObject({ subscriptionId: z.uuid(), requestedMonths: z.number() });
 
+/** Compute the S8 pause end using UTC calendar months. */
+export function pauseExpectedEndAt(now: Date, months: number): Date {
+    const end = new Date(now);
+    end.setUTCMonth(end.getUTCMonth() + months);
+    return end;
+}
+
 /** The result of a customer-request principal pause. */
 export type PauseSubscriptionResult =
     | { readonly outcome: 'REFUSED'; readonly reason: PauseRefusalReason | 'NO_PROVIDER_LINK' }
@@ -91,8 +98,7 @@ export async function pauseSubscription(
         if (!row) return null;
         if (!row.userId || !row.vertical)
             throw new Error('Principal subscription lacks owner or vertical');
-        const expectedEndAt = new Date(now);
-        expectedEndAt.setUTCMonth(expectedEndAt.getUTCMonth() + value.requestedMonths);
+        const expectedEndAt = pauseExpectedEndAt(now, value.requestedMonths);
         const [pause] = await tx
             .insert(subscriptionPauses)
             .values({
