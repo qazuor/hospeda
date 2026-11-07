@@ -25,18 +25,26 @@ const COLUMN_VALUES = vi.hoisted(
 vi.mock('@repo/db', () => {
     return {
         eq: () => null,
+        users: { displayName: 'subjectName', email: 'subjectEmail' },
+        plans: { name: 'planName', id: 'planId' },
+        planVersions: { id: 'planVersionId', planId: 'planId' },
+        billingOptions: { id: 'optionId', cycle: 'cycle' },
         subscriptions: Object.fromEntries(Object.keys(COLUMN_VALUES).map((key) => [key, key])),
         getDb: () => ({
             select: (fields: Record<string, unknown>) => ({
-                from: () => ({
-                    where: () => ({
-                        limit: async () => [
-                            Object.fromEntries(
-                                Object.keys(fields).map((key) => [key, COLUMN_VALUES[key]])
-                            )
-                        ]
-                    })
-                })
+                from: () => {
+                    const chain = {
+                        leftJoin: () => chain,
+                        where: () => ({
+                            limit: async () => [
+                                Object.fromEntries(
+                                    Object.keys(fields).map((key) => [key, COLUMN_VALUES[key]])
+                                )
+                            ]
+                        })
+                    };
+                    return chain;
+                }
             })
         })
     };

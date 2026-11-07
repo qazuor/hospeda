@@ -29,7 +29,7 @@ import {
     adminResumeSubscriptionRoute,
     adminSubscriptionPausePreviewRoute
 } from './pause';
-import { adminPlanChangeRoute } from './plan-change';
+import { adminPlanChangeOptionsRoute, adminPlanChangeRoute } from './plan-change';
 import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
@@ -58,7 +58,11 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
             resourceId: found.row.id,
             metadata: { subjectId: found.subjectId }
         });
-        return found.row;
+        return {
+            ...found.row,
+            ...(found.subject ? { subject: found.subject } : {}),
+            ...(found.currentPlan ? { currentPlan: found.currentPlan } : {})
+        };
     }
 });
 
@@ -73,6 +77,7 @@ router.route('/', adminSubscriptionPausePreviewRoute);
 router.route('/', adminPauseSubscriptionRoute);
 router.route('/', adminResumeSubscriptionRoute);
 router.route('/', adminPlanChangeRoute);
+router.route('/', adminPlanChangeOptionsRoute);
 router.route('/', adminListManualPaymentsRoute);
 router.route('/', adminManualPaymentRegistrationPreviewRoute);
 router.route('/', adminRegisterManualPaymentRoute);

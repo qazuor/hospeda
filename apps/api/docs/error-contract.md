@@ -819,6 +819,19 @@ under [Promo code redemption](#promo-code-redemption); closing a code adds no re
 
 ### Administrative plan change (ACC:10, HOS-1580)
 
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/plan-change-options`
+uses `billing.changeSubscriptionPlan` and returns the current sellable billing
+options for the subscription vertical, including the current option marker. It
+also includes the subscription's anchored option when its version has left the
+current sellable offer, so the current choice remains identifiable. It
+returns 404 `SUBSCRIPTION_NOT_FOUND` when the row is absent and 403
+`ADMINISTRATIVE_ACTION_FORBIDDEN` when the actor is the subject. Successful
+reads record `BILLING_READ`.
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}` also returns optional
+`subject` identity and `currentPlan` display information from the persisted
+subscription associations.
+
 `POST /api/v1/admin/billing-subscription/{subscriptionId}/plan-change` requires
 `billing.changeSubscriptionPlan`. Its strict body has `billingOptionId`,
 `expectedStatus: ACTIVE`, `confirmed: true`, and an optional note. Rejections

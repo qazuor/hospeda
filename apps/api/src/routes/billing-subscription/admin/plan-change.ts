@@ -1,8 +1,10 @@
 import {
+    AdminSubscriptionPlanChangeOptionsResponseSchema,
     AdminSubscriptionPlanChangeParamsSchema,
     AdminSubscriptionPlanChangeRequestSchema,
     AdminSubscriptionPlanChangeResponseSchema,
     PermissionEnum,
+    PublicPlanCatalogVerticalSchema,
     ServiceErrorCode
 } from '@repo/schemas';
 import { requestPlanChange } from '@repo/service-core';
@@ -11,9 +13,78 @@ import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { env } from '../../../utils/env';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { readSellablePlanCatalog } from '../../plan-catalog/public/read-sellable-catalog';
 import { answer, rejectionAnswer } from '../plan-change';
 import { buildPlanChangePorts } from '../plan-change-ports';
 import { readSubscription } from '../read-subscription';
+
+/** Read sellable choices under the same permission and subject guard as ACC_10. */
+export const adminPlanChangeOptionsRoute = createAdminRoute({
+    method: 'get',
+    path: '/{subscriptionId}/plan-change-options',
+    summary: 'Read subscription plan change options (ACC:10)',
+    description: 'Reads sellable billing choices of this subscription vertical.',
+    tags: ['Billing subscriptions', 'Admin'],
+    requiredPermissions: [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN],
+    requestParams: AdminSubscriptionPlanChangeParamsSchema.shape,
+    responseSchema: AdminSubscriptionPlanChangeOptionsResponseSchema,
+    handler: async (ctx, params) => {
+        const actor = getActorFromContext(ctx);
+        const subscriptionId = params.subscriptionId as string;
+        const found = await readSubscription(subscriptionId);
+        if (!found)
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Subscription not found',
+                    reason: 'SUBSCRIPTION_NOT_FOUND',
+                    details: { reason: 'SUBSCRIPTION_NOT_FOUND' }
+                },
+                ctx,
+                404
+            );
+        if (found.subjectId?.toLowerCase() === actor.id.toLowerCase())
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.FORBIDDEN,
+                    message: 'Administrative action forbidden',
+                    reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN',
+                    details: { reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' }
+                },
+                ctx,
+                403
+            );
+        const vertical = PublicPlanCatalogVerticalSchema.parse(found.row.vertical);
+        const catalog = await readSellablePlanCatalog({ vertical });
+        const offeredOptions = catalog.plans.flatMap((plan) =>
+            plan.billingOptions.map((option) => ({
+                billingOptionId: option.id,
+                planId: plan.planId,
+                planName: plan.name,
+                planVersionId: plan.planVersionId,
+                cycle: option.cycle,
+                amountMinor: option.amount,
+                currency: option.currency,
+                current: option.id === found.row.billingOptionId
+            }))
+        );
+        auditLog({
+            auditEvent: AuditEventType.BILLING_READ,
+            actorId: actor.id,
+            resourceType: 'subscription',
+            resourceId: subscriptionId,
+            metadata: { subjectId: found.subjectId }
+        });
+        return {
+            subscriptionId,
+            vertical,
+            options:
+                found.currentBillingOption && !offeredOptions.some((option) => option.current)
+                    ? [found.currentBillingOption, ...offeredOptions]
+                    : offeredOptions
+        };
+    }
+});
 
 /** Execute a confirmed administrative plan change for the subscription owner. */
 export const adminPlanChangeRoute = createAdminRoute({
