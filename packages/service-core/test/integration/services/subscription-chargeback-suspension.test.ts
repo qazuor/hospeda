@@ -16,6 +16,7 @@ import {
     createChargebackSuspension
 } from '../../../src/services/billing/reconciliation/chargeback/chargeback-detection';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service';
+import { writeChargebackSuspension } from '../../../src/services/billing/subscription/suspend-for-chargeback-write';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { orphanPorts } from './support/addon-orphan-fixtures';
 import type { ChargebackFixture } from './support/chargeback-fixtures';
@@ -265,6 +266,56 @@ describe('TEST:B7:7 AC:B7:10 chargeback S6 on a real credited payment', () => {
                 'billing.signup-confirmed'
             ]);
             expect(openPause?.actualEndAt).toBeNull();
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:B7:7 rejects a real CUSTOMER_REQUEST pause inside the locked S6 write',
+        async () => {
+            const fixture = await chargebackFixture();
+            const paused = await pauseSubscription(
+                { subscriptionId: fixture.started.subscriptionId, requestedMonths: 1 },
+                {
+                    provider: fixture.provider,
+                    clock: fixture.clock,
+                    planPolicy: async () => ({
+                        graceDays: 7,
+                        allowsPause: true,
+                        current: true,
+                        sellable: true
+                    }),
+                    complements: emptyComplements
+                }
+            );
+            expect(paused.outcome).toBe('PAUSED');
+
+            const result = await writeChargebackSuspension({
+                subscriptionId: fixture.started.subscriptionId,
+                origin: 'PAUSED',
+                now: fixture.clock.now(),
+                readAt: fixture.clock.now(),
+                clock: fixture.clock,
+                orphanhood: orphanPorts(getServiceTestDb()).ports
+            });
+            const [subscription] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            const pauses = await getServiceTestDb()
+                .select({
+                    reason: subscriptionPauses.reason,
+                    actualEndAt: subscriptionPauses.actualEndAt
+                })
+                .from(subscriptionPauses)
+                .where(
+                    and(
+                        eq(subscriptionPauses.subscriptionId, fixture.started.subscriptionId),
+                        isNull(subscriptionPauses.actualEndAt)
+                    )
+                );
+            expect(result).toEqual({ kind: 'NOT_COURTESY_PAUSE' });
+            expect(subscription?.status).toBe('PAUSED');
+            expect(pauses).toEqual([{ reason: 'CUSTOMER_REQUEST', actualEndAt: null }]);
         }
     );
 });
