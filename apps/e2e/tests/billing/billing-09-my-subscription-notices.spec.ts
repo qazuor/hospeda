@@ -88,6 +88,18 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
             subscriptionId,
             authorizationId
         });
+        // The provider advanced its calendar after the credited cycle. Mirror that
+        // future date before asserting the conditional next-charge line.
+        const nextChargeAt = (
+            await world.fakeServer.provider.readAuthorization({
+                authorizationId
+            })
+        ).snapshot.nextChargeAt;
+        if (!nextChargeAt) throw new Error('Expected a future provider charge after the cycle.');
+        await execSQL('UPDATE subscription SET next_charge_at = $2 WHERE id = $1', [
+            subscriptionId,
+            nextChargeAt
+        ]);
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const subscription = page.locator(
