@@ -13,6 +13,7 @@ import { getLocalDateString } from '@repo/utils';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger';
 import { runCreditedPaymentsCheck } from '../../../src/services/billing/reconciliation/sweep/credited-payments-check';
+import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service';
 import { endScheduledServices } from '../../../src/services/billing/subscription/end-scheduled-services.service';
 import { applyS12ByChargeback } from '../../../src/services/billing/subscription/service-end-s12-chargeback';
 import {
@@ -37,6 +38,7 @@ import {
     scheduledChargebackDetection,
     scheduledChargebackFixture
 } from './support/service-end-chargeback-fixtures';
+import { noTouristVip } from './support/tourist-vip';
 
 const correlationId = () => crypto.randomUUID();
 afterEach(async () => {
@@ -221,10 +223,22 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
             });
             expect(result.serviceEnd?.outcome).toBe('CANCELLED');
             const rows = await getServiceTestDb()
-                .select({ id: subscriptions.id, status: subscriptions.status })
+                .select({
+                    id: subscriptions.id,
+                    status: subscriptions.status,
+                    succeedsId: subscriptions.succeedsId
+                })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, successor.subscriptionId));
-            expect(rows).toEqual([{ id: successor.subscriptionId, status: 'ABANDONED' }]);
+            // S18 clears succeedsId (subscription-succession-close-s18.test.ts); S12's
+            // chargeback event leaves that link for S31's abandoned successor.
+            expect(rows).toEqual([
+                {
+                    id: successor.subscriptionId,
+                    status: 'ABANDONED',
+                    succeedsId: seeded.fixture.started.subscriptionId
+                }
+            ]);
             const [predecessor] = await getServiceTestDb()
                 .select()
                 .from(subscriptions)
@@ -275,6 +289,41 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
+        'cuts a service-activated ACTIVE successor through S31',
+        async () => {
+            const seeded = await scheduledChargebackFixture({ chargeBack: false });
+            const successor = await pendingSuccessor(seeded);
+            await seeded.fixture.provider.approve({ authorizationId: successor.authorizationId });
+            const activated = await activateSubscription(successor.subscriptionId, {
+                provider: seeded.fixture.provider,
+                clock: seeded.fixture.clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+                touristVipInheritance: noTouristVip,
+                coverageNotices: seeded.fixture.coverageNotices
+            });
+            expect(activated.activated).toBe(true);
+            const [before] = await getServiceTestDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
+            expect(before?.status).toBe('CANCEL_SCHEDULED');
+            expect(before?.succeededById).toBe(successor.subscriptionId);
+            await seeded.fixture.provider.chargeBack({ chargeId: seeded.chargeId });
+            const result = await scheduledChargebackDetection({ fixture: seeded.fixture }).detect({
+                payment: seeded.payment,
+                actor: 'job',
+                correlationId: correlationId()
+            });
+            expect(result.serviceEnd?.outcome).toBe('CANCELLED');
+            const [after] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, successor.subscriptionId));
+            expect(after?.status).toBe('CANCELLED');
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
         'ends the same scheduled row through the credited-payments sweep',
         async () => {
             const seeded = await scheduledChargebackFixture();
@@ -296,6 +345,35 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
                 .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
             expect(row).toEqual({ status: 'CANCELLED', serviceEndsAt: seeded.fixture.clock.now() });
             expect(await chargebackMarks(seeded.fixture.started.subscriptionId)).toHaveLength(1);
+            const [mail] = await getServiceTestDb()
+                .select()
+                .from(emailOutbox)
+                .where(
+                    and(
+                        eq(emailOutbox.recipientUserId, seeded.fixture.user.id),
+                        eq(emailOutbox.template, 'billing.chargeback-suspension')
+                    )
+                );
+            expect(mail?.payload).toMatchObject({
+                chargedBackPayment: {
+                    amountMinor: seeded.payment.amount,
+                    currency: seeded.payment.currency,
+                    chargedOn: getLocalDateString({
+                        instant: seeded.payment.factAt,
+                        timeZone: 'Etc/GMT+4'
+                    })
+                }
+            });
+            const [loss] = await getServiceTestDb()
+                .select()
+                .from(coverageLosses)
+                .where(
+                    and(
+                        eq(coverageLosses.userId, seeded.fixture.user.id),
+                        eq(coverageLosses.vertical, 'accommodation')
+                    )
+                );
+            expect(loss?.lostAt).toEqual(seeded.fixture.clock.now());
         }
     );
 
