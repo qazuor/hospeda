@@ -13,6 +13,16 @@ export interface TourStepConfig {
     readonly target: string;
     readonly title: string;
     readonly body: string;
+    /**
+     * HOS-2073: alternative body used when `anchor` is absent from the DOM. Lets
+     * a step stop naming a feature the viewer does not have (e.g. the menu for a
+     * nightlife-only owner), decided by the same server-placed anchor that drops
+     * the dependent step (`venue-qr`).
+     */
+    readonly bodyWhenAnchorAbsent?: {
+        readonly anchor: string;
+        readonly body: string;
+    };
     readonly side?: 'top' | 'right' | 'bottom' | 'left';
     readonly align?: 'start' | 'center' | 'end';
 }
@@ -198,6 +208,10 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 target: '[data-tour="comercio-listings"]',
                 title: 'account.welcomeTour.listing.title',
                 body: 'account.welcomeTour.listingVenue.body',
+                bodyWhenAnchorAbsent: {
+                    anchor: '[data-tour="venue-qr"]',
+                    body: 'account.welcomeTour.listingVenueNoMenu.body'
+                },
                 side: 'right',
                 align: 'start'
             },

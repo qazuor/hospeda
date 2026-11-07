@@ -86,6 +86,9 @@
         "listingVenue": {
             "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento."
         },
+        "listingVenueNoMenu": {
+            "body": "Edite os horários e os dados visíveis do seu estabelecimento."
+        },
         "myListings": {
             "title": "Seus negócios",
             "body": "Revise o status de cada um dos seus negócios e edite-os."
