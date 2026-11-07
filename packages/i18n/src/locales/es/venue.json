@@ -25,6 +25,7 @@
         "type": "Tipo de establecimiento",
         "priceRange": "Rango de precio",
         "featured": "Solo destacados",
+        "amenities": "Comodidades",
         "features": "Aptos y características",
         "minRating": "Calificación mínima",
         "sort": {

@@ -22,6 +22,11 @@ export interface VenueListingEmptyStateFilters {
     readonly isFeatured: boolean | undefined;
     readonly minRating: number | undefined;
     /**
+     * Filter by amenity UUIDs (CSV). Added with the venue amenities group
+     * (HOS-1787 leaf 6.10); it narrows results like any other filter.
+     */
+    readonly amenities: string | undefined;
+    /**
      * The "apto" filter (HOS-1054): a comma-separated list of feature UUIDs.
      * It narrows results like any other filter, so a zero-result page reached
      * with only an apto selected must read as "nothing matched" rather than as
@@ -81,6 +86,7 @@ export function hasActiveVenueListingFilters({
     priceRange,
     isFeatured,
     minRating,
+    amenities,
     features
 }: VenueListingEmptyStateFilters): boolean {
     return Boolean(
@@ -90,6 +96,7 @@ export function hasActiveVenueListingFilters({
             hasNonEmptyText(priceRange) ||
             isFeatured === true ||
             hasFiniteNumber(minRating) ||
+            hasNonEmptyCsv(amenities) ||
             hasNonEmptyCsv(features)
     );
 }

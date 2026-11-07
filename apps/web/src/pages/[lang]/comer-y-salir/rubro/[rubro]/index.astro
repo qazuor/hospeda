@@ -9,9 +9,10 @@
  * also re-derives the canonical slug from the internal value; an unknown
  * segment answers 404 before any fetch or cache header is written.
  *
- * Filters, sort, sidebar, type chips and pagination are deliberately identical
- * to the general listing: narrowing them per line is HOS-1869/1870's scope, not
- * this page's.
+ * Filters and sort are the general listing's; the sidebar catalogs and the type
+ * chips are narrowed to the values present on this collection's published
+ * listings (HOS-1787 leaf 6.10). Pagination stays identical to the general
+ * listing.
  *
  * Structured data: `CollectionPage` (this collection) + `ItemList` (the visible
  * page) + `BreadcrumbList` (Inicio / Comer y salir / {line}), the same
@@ -28,36 +29,44 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import VenueCard from '@/components/venue/VenueCard.astro';
+import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import {
     buildVenueListingSummary,
     DEFAULT_VENUE_TYPES,
     DEFAULT_PRICE_RANGES
 } from '@/lib/listing-summary';
-import { venueApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import {
+    venueApi,
+    destinationsApi,
+    amenitiesApi,
+    featuresApi,
+    SSR_PUBLIC_CACHE_TTL_MS
+} from '@/lib/api/endpoints';
 import { toVenueCardProps } from '@/lib/api/transforms';
-import { getVenueTypeIcon } from '@/lib/venue-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { hasActiveVenueListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
 import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
-import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import {
     buildVenueBusinessLineCollectionPath,
     isVenueCollectionEmpty,
     resolveVenueBusinessLineCollection,
     resolveVenueCollectionCopy
 } from '@/lib/venue/business-line-collection';
+import {
+    buildVenueFilterGroups,
+    buildVenueTypeChips,
+    narrowVenueFilterCatalog
+} from '@/lib/venue/venue-listing-filters';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
-import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
 import { ORGANIZATION_INFO } from '@/lib/constants';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -105,6 +114,7 @@ const minRating = url.searchParams.get('minRating')
     ? Number(url.searchParams.get('minRating'))
     : undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
+const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
     featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
@@ -117,9 +127,22 @@ const DEFAULT_SORT_KEY = 'featured';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// --- Fetch destinations, the venue feature catalog, and the collection ---
-const [destinationsResult, featuresResult, result] = await Promise.all([
+// --- Fetch destinations, the venue catalogs, the collection and its filters ---
+const [
+    destinationsResult,
+    amenitiesResult,
+    featuresResult,
+    filterOptionsResult,
+    result
+] = await Promise.all([
     destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+    amenitiesApi.list({
+        pageSize: 100,
+        applicableVertical: 'venue',
+        sortBy: 'displayWeight',
+        sortOrder: 'desc',
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    }),
     featuresApi.list({
         pageSize: 100,
         applicableVertical: 'venue',
@@ -127,6 +150,7 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
         sortOrder: 'desc',
         cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
     }),
+    venueApi.getFilterOptions({ businessLine: collection.businessLine }),
     venueApi.list({
         page,
         pageSize,
@@ -136,6 +160,7 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
         priceRange,
         isFeatured,
         minRating,
+        amenities: amenitiesParam,
         features: featuresParam,
         sortBy: sortResolved.sortBy,
         sortOrder: sortResolved.sortOrder,
@@ -147,7 +172,14 @@ const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 const destinationName = destinations.find(({ id }) => id === destinationId)?.name ?? ORGANIZATION_INFO.areaServed.name;
 const collectionCopy = resolveVenueCollectionCopy({ businessLine: collection.businessLine, destinationName, t });
 const { pageTitle, description, heading, intro, ogTagline } = collectionCopy;
+const amenityCatalog = amenitiesResult.ok ? amenitiesResult.data.items : [];
 const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
+
+// A failed options read must not offer a filter without published listings
+// (AC:6:11), and the render must not be frozen into the shared cache while it
+// shows that poorer sidebar. `null` makes the narrowing fail closed; the
+// rendered `VenueFilterOptionsDegradation` marks the response degraded.
+const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -172,78 +204,35 @@ const hasActiveFilters = hasActiveVenueListingFilters({
     priceRange,
     isFeatured,
     minRating,
+    amenities: amenitiesParam,
     features: featuresParam
 });
 
-// --- Filter groups and chips (same catalog as the general listing) ---
-const VENUE_TYPES = VENUE_TYPE_OPTIONS;
-const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
+// --- Filter groups and chips (narrowed to this collection's published listings) ---
+const splitIds = (value: string | undefined): readonly string[] =>
+    (value ?? '')
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
 
-const filterGroups: FilterGroup[] = [
-    {
-        id: 'q',
-        label: t('venue.listing.search'),
-        type: 'search',
-        placeholder: t('venue.listing.searchPlaceholder')
-    },
-    {
-        id: 'destinationId',
-        label: t('venue.listing.destination'),
-        type: 'select-search',
-        options: destinations.map((d) => ({
-            value: d.id,
-            label: d.name,
-            featured: Boolean(d.isFeatured)
-        })),
-        maxVisible: 8
-    },
-    {
-        id: 'type',
-        label: t('venue.listing.type'),
-        type: 'checkbox',
-        options: VENUE_TYPES.map((value) => ({
-            value,
-            label: t(`venue.types.${value}`, value)
-        }))
-    },
-    {
-        id: 'priceRange',
-        label: t('venue.listing.priceRange'),
-        type: 'checkbox',
-        options: PRICE_RANGES.map((value) => ({
-            value,
-            label: t(`venue.card.priceRange.${value}`, value)
-        }))
-    },
-    {
-        id: 'isFeatured',
-        label: t('venue.listing.featured'),
-        type: 'toggle'
-    },
-    ...(featureCatalog.length > 0
-        ? ([
-              {
-                  id: 'features',
-                  label: t('venue.listing.features'),
-                  type: 'icon-chips',
-                  options: featureCatalog.map((f) => ({
-                      value: f.id,
-                      label: t(
-                          `accommodations.featureNames.${f.slug ?? ''}`,
-                          f.slug ?? undefined
-                      ),
-                      icon: f.icon ?? undefined
-                  })),
-                  maxVisible: 10
-              }
-          ] satisfies FilterGroup[])
-        : []),
-    {
-        id: 'minRating',
-        label: t('venue.listing.minRating'),
-        type: 'stars'
+const narrowedCatalog = narrowVenueFilterCatalog({
+    filterOptions,
+    amenities: amenityCatalog,
+    features: featureCatalog,
+    active: {
+        type,
+        amenityIds: splitIds(amenitiesParam),
+        featureIds: splitIds(featuresParam)
     }
-];
+});
+
+const filterGroups = buildVenueFilterGroups({
+    t,
+    destinations,
+    types: narrowedCatalog.types,
+    amenities: narrowedCatalog.amenities,
+    features: narrowedCatalog.features
+});
 
 const sortOptions = [
     { value: 'featured', label: t('venue.listing.sort.featured') },
@@ -260,6 +249,7 @@ if (type) initialParams.type = type;
 if (priceRange) initialParams.priceRange = priceRange;
 if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
 
@@ -292,20 +282,12 @@ const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
     totalPages
 });
 
-const typeChips = VENUE_TYPES.map((value) => {
-    const isActive = type === value;
-    return {
-        label: t(`venue.types.${value}`, value),
-        href: buildToggleParamHref({
-            baseUrl,
-            searchParams: url.searchParams,
-            key: 'type',
-            value,
-            isActive
-        }),
-        active: isActive,
-        icon: getVenueTypeIcon({ type: value })
-    };
+const typeChips = buildVenueTypeChips({
+    t,
+    types: narrowedCatalog.types,
+    baseUrl,
+    searchParams: url.searchParams,
+    activeType: type
 });
 
 // --- Structured data ---
@@ -387,6 +369,8 @@ const breadcrumbJsonLdItems = [
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
     />
+
+    <VenueFilterOptionsDegradation failed={!filterOptionsResult.ok || !amenitiesResult.ok || !featuresResult.ok} />
 
     {hasError && !result.ok && (
         <ErrorBanner
