@@ -116,16 +116,34 @@ describe('comer-y-salir/index.astro', () => {
             expect(src).toContain('venueApi.getFilterOptions()');
         });
 
+        it('renders VenueFilterOptionsDegradation instead of calling the marker', () => {
+            expect(src).toContain(
+                "import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';"
+            );
+            expect(src).toMatch(/<VenueFilterOptionsDegradation\s+failed=\{/);
+            expect(src).not.toContain('markResponseDegraded');
+            const helperImport = src.match(
+                /import\s*\{([\s\S]*?)\}\s*from\s*'@\/lib\/venue\/venue-listing-filters'/
+            );
+            expect(helperImport, 'venue-listing-filters import not found').not.toBeNull();
+            expect((helperImport?.[1] ?? '').includes('Degraded')).toBe(false);
+        });
+
+        it('passes the options, amenities and features failures to the component', () => {
+            const start = src.indexOf('<VenueFilterOptionsDegradation');
+            expect(start, '<VenueFilterOptionsDegradation not found').toBeGreaterThan(-1);
+            const tag = src.slice(start, src.indexOf('/>', start) + 2);
+
+            expect(tag).toContain('!filterOptionsResult.ok');
+            expect(tag).toContain('!amenitiesResult.ok');
+            expect(tag).toContain('!featuresResult.ok');
+        });
+
         it('narrows the sidebar and type chips to published values', () => {
             expect(src).toContain('narrowVenueFilterCatalog(');
             expect(src).toContain('buildVenueFilterGroups(');
             expect(src).toContain('buildVenueTypeChips(');
             expect(src).not.toContain('VENUE_TYPE_OPTIONS');
-        });
-
-        it('degrades the response when the options read fails', () => {
-            expect(src).toContain('markVenueFilterOptionsDegraded(');
-            expect(src).toContain('filterOptionsResult.ok');
         });
 
         it('reads and forwards the amenities filter', () => {
