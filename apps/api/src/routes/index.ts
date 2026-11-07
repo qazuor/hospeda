@@ -7,6 +7,7 @@
  */
 
 import { ApiInfoSchema } from '@repo/schemas';
+import { mountAccommodationCacheInvalidation } from '../middlewares/accommodation-cache-invalidation';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
@@ -460,6 +461,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/price-alerts', protectedPriceAlertRoutes);
         // Personalized recommendations feed (SPEC-284 — entitlement-gated, binary in v1)
         app.route('/api/v1/protected/recommendations', protectedRecommendationsRoutes);
+        // Evict the public accommodation cache after any successful accommodation write
+        // in BOTH tiers (HOS-2063). Registered ahead of every accommodation router.
+        mountAccommodationCacheInvalidation({ app });
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
 
         // External reputation owner CRUD + refresh (SPEC-237 T-008)

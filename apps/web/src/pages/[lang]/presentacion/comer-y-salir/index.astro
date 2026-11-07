@@ -16,7 +16,7 @@
  * viene». The owner also kept two earlier promises in the present tense (decided 2026-09-05). Do NOT "correct" any of
  * these back to today's behaviour — shipping the issue closes the gap. Ahead of the code as of 2026-10-31:
  *  1. RUBROS, «DE NOCHE», PUB/BOLICHE, THE TWO COLLECTIONS AND REVIEW DIMENSIONS — masthead, «Para comer, para salir o
- *     para las dos», «De noche», the tier table's rubro and «De noche» rows, «Qué más podés mostrar» (reviews) and the
+ *     ambas», «De noche», the tier table's rubro and «De noche» rows, «Qué más podés mostrar» (reviews) and the
  *     URL paragraph. `VenueTypeEnum` has no PUB/BOLICHE and nothing reads `business_lines` yet: HOS-1802/1803/1804
  *     (catalogues, resolver, nightInfo), HOS-1806 (editor), HOS-1807 (public web). Field list and the Ley 24.788 text
  *     are `sub-specs/4-tipos-y-noche.md`; the approved labels are DEC-FAC-068. The owner states that everything lives in
@@ -36,8 +36,8 @@
  *
  * THREE STRINGS HERE ARE FROZEN BY A TEST. `test/pages/listing-amenities-render.test.ts` (HOS-1071/1072) asserts this page
  * contains "Lo que ofrece el local" and "delivery o take away", and that the FIRST row of "Quién manda sobre qué" carries this
- * markup VERBATIM, on one line:
- *     lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>
+ * markup on one line (the cells may carry attributes such as `data-label`):
+ *     lo que ofrece el local, contacto y redes</td><td …><strong>Vos, cuando quieras</strong>
  * The suite also asserts this page never names `AmenitiesGrid`. Reword any of the three and it fails; that is the point.
  * The rest of that table is verified permissions: name, type and city ARE owner-editable (`VenueOwnerUpdateInputSchema`);
  * restoring the old team-owned row reintroduces a bug fixed twice already (see the experiences page).
@@ -70,6 +70,10 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
+import PlanTabs from '@/components/presentacion/PlanTabs.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -115,21 +119,24 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Comer y salir</p>
-    <h1>Tu local, donde se planea el viaje</h1>
+    <h1>Tu local donde se planea el viaje</h1>
     <div class="rule"></div>
-    <p class="masthead__lede">El turista, cuando decide un destino, primero busca dónde dormir y, sin dudas, qué hacer; el dónde y qué comer también es parte de la elección. Hospeda es el portal donde el turista encuentra todo para planificar sus vacaciones, y allí es donde debe estar tu servicio local (restaurante, bar, parrilla, café, carrito, pub, cervecería, boliche, entre otros), a disposición del viajero y también de las personas de la ciudad y la región, con toda la información para decidir qué hacer, qué comer y adónde salir.</p>
+    <p class="masthead__lede">El turista, cuando decide un destino, primero busca dónde dormir y, sin dudas, qué hacer; el dónde y qué comer también es parte de la elección. Hospeda es el portal donde el turista encuentra todo para planificar sus vacaciones, y allí es donde debe estar tu servicio, ya sea restaurante, bar, parrilla, café, carrito, pub, cervecería, boliche, entre otros.</p>
+    <p class="masthead__lede">Hospeda será la guía con toda la información para decidir qué hacer, qué comer y adónde salir, tanto para el turista como para las personas de la ciudad.</p>
+    </div>
+    <HospedinFigure pose="senalando" placement="hero" say="¡Acá te encuentran!" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Comisión</span>
@@ -140,8 +147,12 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
         <span class="fact__v">30 días</span>
       </div>
       <div class="fact">
-        <span class="fact__k">Locales publicados</span>
-        <span class="fact__v">1, 3 o 5</span>
+        <span class="fact__k">Rubros</span>
+        <span class="fact__v">Comer, salir o ambas</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Público</span>
+        <span class="fact__v">Turistas y vecinos</span>
       </div>
     </div>
   </header>
@@ -222,7 +233,7 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
   <section>
     <div class="sec-head">
       <p class="eyebrow">Tus rubros</p>
-      <h2>Para comer, para salir o para las dos</h2>
+      <h2>Para comer, para salir o ambas</h2>
     </div>
     <p>Cada local dice qué es: <strong>Gastronomía</strong>, <strong>Noche</strong>, o las dos. Una parrilla es Gastronomía, un boliche es Noche, y un resto-bar que cocina hasta las once y después sube la música es las dos cosas. Según lo que elijas, tu ficha muestra lo que te corresponde: la carta y el menú del día del lado de la cocina, la entrada, la edad y el dress code del lado de la noche.</p>
     <ul class="plain">
@@ -238,35 +249,37 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <h2>Tres planes, según cuántos locales tengas</h2>
     </div>
     <p>El eje principal es ese: <strong>cuántos locales publicás</strong>. Uno, tres o cinco. Lo demás &mdash; la carta cargada en serio, el menú del día, la agenda, las traducciones &mdash; viene después, y está en la tabla. La cuota es fija en los tres: no es un cargo por cubierto ni por consulta. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez meses y tenés doce</strong>. Los valores del día están siempre publicados en <a href={preciosUrl}>el sitio</a>.</p>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">&nbsp;</th>
-            <th scope="col">Básico</th>
-            <th scope="col">Profesional</th>
-            <th scope="col">Premium</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Locales publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">5</td></tr>
-          <tr><td>Fotos por local</td><td class="mono">30</td><td class="mono">30</td><td class="mono">30</td></tr>
-          <tr><td>Rubros: Gastronomía, Noche o los dos</td><td>sí</td><td>sí</td><td>sí</td></tr>
-          <tr><td>La sección «De noche»: entrada, edad y dress code</td><td>sí</td><td>sí</td><td>sí</td></tr>
-          <tr><td>La agenda de eventos del local</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>La carta: cargada en serio, en foto, en PDF o con el enlace a la tuya</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>El menú del día, que se vence solo</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Una foto por cada ítem de la carta</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>La carta en inglés y en portugués</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>El QR de la mesa, con el panel de escaneos</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <PlanTabs id="comer-y-salir-planes" plans={['Básico', 'Profesional', 'Premium']} selected={1}>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">&nbsp;</th>
+              <th scope="col">Básico</th>
+              <th scope="col">Profesional</th>
+              <th scope="col">Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Locales publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">5</td></tr>
+            <tr><td>Fotos por local</td><td class="mono">30</td><td class="mono">30</td><td class="mono">30</td></tr>
+            <tr><td>Rubros: Gastronomía, Noche o los dos</td><td>sí</td><td>sí</td><td>sí</td></tr>
+            <tr><td>La sección «De noche»: entrada, edad y dress code</td><td>sí</td><td>sí</td><td>sí</td></tr>
+            <tr><td>La agenda de eventos del local</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>La carta: cargada en serio, en foto, en PDF o con el enlace a la tuya</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>El menú del día, que se vence solo</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Una foto por cada ítem de la carta</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>La carta en inglés y en portugués</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>El QR de la mesa, con el panel de escaneos</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </PlanTabs>
     <p class="subhead"><strong>Los 3 planes incluyen:</strong> editar toda tu ficha cuando quieras, publicarla vos mismo, elegir tus rubros, la sección de noche y las estadísticas de visitas. Las filas de la carta valen para los locales con cocina.</p>
     <div class="notice">
-      <h3>Además, sos turista VIP sin pagar nada más.</h3>
+      <h3>Además, sos turista VIP en Hospeda 100% bonificado.</h3>
       <p>Hospeda tiene una <strong>cuenta paga para viajeros</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas, recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de los anfitriones</strong>.</p>
       <p><strong>Con cualquiera de los tres planes eso viene incluido.</strong> No es un descuento ni una promoción: el plan trae adentro el paquete completo de turista VIP. Cuando salís vos a recorrer la zona, o a comer y a salir a otro lado, usás el sitio con todo desbloqueado.</p>
     </div>
@@ -277,16 +290,16 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <p class="eyebrow">Para crecer sin cambiar de plan</p>
       <h2>Complementos</h2>
     </div>
-    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de plan</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o un local más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
+    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de nivel</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o un local más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
     <p>Hay de dos tipos. Los que se cobran <strong>por mes</strong> duran mientras dure tu suscripción y los sacás cuando quieras. Los de <strong>una sola vez</strong> valen por un período fijo y se aplican a una sola ficha. Estos son los que hay para vos:</p>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Complemento</th><th scope="col">Qué te da</th><th scope="col">Cómo se cobra</th></tr>
         </thead>
         <tbody>
-          <tr><td>Destacar tu local por 7 o 30 días</td><td>Tu local aparece destacado en los resultados durante 7 o 30 días.</td><td>Por única vez</td></tr>
-          <tr><td>1 local más</td><td>Un local más por encima del tope de tu plan.</td><td>Por mes</td></tr>
+          <tr><td data-label="Complemento">Destacar tu local por 7 o 30 días</td><td data-label="Qué te da">Tu local aparece destacado en los resultados durante 7 o 30 días.</td><td data-label="Cómo se cobra">Por única vez</td></tr>
+          <tr><td data-label="Complemento">1 local más</td><td data-label="Qué te da">Un local más por encima del tope de tu plan.</td><td data-label="Cómo se cobra">Por mes</td></tr>
         </tbody>
       </table>
     </div>
@@ -305,7 +318,7 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <li><span class="tick">&rarr;</span><span><strong>Material gráfico con IA.</strong> Piezas generadas con inteligencia artificial, listas para imprimir.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Destacar un evento.</strong> Tu show o tu fecha arriba de la agenda.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Más fotos.</strong> Más fotos por local que las de tu plan.</span></li>
-      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Aparecé entre los beneficios que recibe el turista.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Podés formar parte de un grupo de comercios que brindan beneficios al turista que visita tu ciudad.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>La agenda de eventos del local.</strong> Publicá tus fechas y shows en la agenda. <em>Hoy, desde Profesional.</em></span></li>
       <li><span class="tick">&rarr;</span><span><strong>La carta.</strong> Cargada en serio, en foto, en PDF o con el enlace a la tuya, para los locales con cocina. <em>Hoy, desde Profesional.</em></span></li>
       <li><span class="tick">&rarr;</span><span><strong>El especial del día.</strong> Se vence solo cuando termina el día. <em>Hoy, desde Profesional.</em></span></li>
@@ -407,18 +420,18 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <p class="eyebrow">Quién manda sobre qué</p>
       <h2>Lo que cambiás solo y lo que no</h2>
     </div>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
         </thead>
         <tbody>
-          <tr><td>Fotos, descripción, horarios, carta, rango de precios, lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong></td></tr>
-          <tr><td>Tus rubros, la entrada, la edad y el dress code</td><td><strong>Vos, cuando quieras</strong></td></tr>
-          <tr><td>Tus preguntas frecuentes</td><td><strong>Vos</strong></td></tr>
-          <tr><td>Nombre del local, tipo (bar, boliche, café&hellip;) y ciudad</td><td><strong>Vos, cuando quieras</strong></td></tr>
-          <tr><td>La dirección web de tu ficha</td><td><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
-          <tr><td>Si tu local aparece destacado</td><td><strong>Vos</strong>.</td></tr>
+          <tr><td data-label="Dato">Fotos, descripción, horarios, carta, rango de precios, lo que ofrece el local, contacto y redes</td><td data-label="Quién lo cambia"><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td data-label="Dato">Tus rubros, la entrada, la edad y el dress code</td><td data-label="Quién lo cambia"><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td data-label="Dato">Tus preguntas frecuentes</td><td data-label="Quién lo cambia"><strong>Vos</strong></td></tr>
+          <tr><td data-label="Dato">Nombre del local, tipo (bar, boliche, café&hellip;) y ciudad</td><td data-label="Quién lo cambia"><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td data-label="Dato">La dirección web de tu ficha</td><td data-label="Quién lo cambia"><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
+          <tr><td data-label="Dato">Si tu local aparece destacado</td><td data-label="Quién lo cambia"><strong>Vos</strong>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -470,6 +483,7 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Probalo</h2>
     <p>Armar la ficha es gratis y no te compromete. Recién decidís cuando la querés publicar, y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.</p>
     <a class="cta" href={ctaHref}>{ctaLabel}</a>
@@ -486,6 +500,9 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       publicados en el sitio.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 

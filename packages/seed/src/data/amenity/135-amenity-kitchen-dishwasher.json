@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "135-amenity-kitchen-dishwasher",
+    "slug": "dishwasher",
+    "description": {
+        "es": "Lavavajillas",
+        "en": "Dishwasher",
+        "pt": "Lava-louças"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "WasherIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

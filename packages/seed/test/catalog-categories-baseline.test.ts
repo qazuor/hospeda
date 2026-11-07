@@ -16,6 +16,10 @@ import {
     AMENITY_TYPE_MOVES,
     FEATURE_CATEGORY_BACKFILL
 } from '../src/data-migrations/0146-hos-2058-feature-category-amenity-type.js';
+import {
+    CATALOG_MERGES,
+    FEATURE_SLUG_RENAMES
+} from '../src/data-migrations/0147-hos-2059-catalog-curation.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '../src');
@@ -37,12 +41,30 @@ const readSchema = (file: string) =>
         readonly required: readonly string[];
     };
 
+/**
+ * HOS-2059 (0147) later retires some of the 0146 rows and renames one. The
+ * baseline reflects the END state, so a 0146 slug is looked up under its
+ * current name, and a retired one is not looked up at all.
+ */
+const RETIRED_FEATURES = new Set(
+    CATALOG_MERGES.filter((merge) => merge.source.kind === 'feature').map(
+        (merge) => merge.source.slug
+    )
+);
+const RENAMED_FEATURES = new Map(FEATURE_SLUG_RENAMES.map((rename) => [rename.from, rename.to]));
+
 describe('feature fixtures carry a category (HOS-2058)', () => {
     const fixtures = readDir('feature');
     const migrationCategoryBySlug = new Map(
         Object.entries(FEATURE_CATEGORY_BACKFILL).flatMap(([category, slugs]) =>
             slugs.map((slug) => [slug, category] as const)
         )
+    );
+    /** The 0146 slugs still in the baseline, under their current name. */
+    const liveCategoryBySlug = new Map(
+        [...migrationCategoryBySlug]
+            .filter(([slug]) => !RETIRED_FEATURES.has(slug))
+            .map(([slug, category]) => [RENAMED_FEATURES.get(slug) ?? slug, category] as const)
     );
 
     it('the data-migration backfills exactly the 106 HOS-2058 slugs, each once', () => {
@@ -59,7 +81,7 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
         // work (e.g. dj_sets/karaoke from HOS-1787) may land without a category
         // while the column is nullable, and must not break this test.
         const bySlug = new Map(fixtures.map((fixture) => [fixture.slug, fixture]));
-        for (const slug of migrationCategoryBySlug.keys()) {
+        for (const slug of liveCategoryBySlug.keys()) {
             expect(bySlug.get(slug)?.category, slug).toBeDefined();
         }
     });
@@ -74,7 +96,7 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
 
     it('the baseline category equals the data-migration category for every backfilled slug', () => {
         const bySlug = new Map(fixtures.map((fixture) => [fixture.slug, fixture.category]));
-        for (const [slug, category] of migrationCategoryBySlug) {
+        for (const [slug, category] of liveCategoryBySlug) {
             expect(bySlug.get(slug), slug).toBe(category);
         }
     });

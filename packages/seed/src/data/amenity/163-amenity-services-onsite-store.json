@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "163-amenity-services-onsite-store",
+    "slug": "onsite_store",
+    "description": {
+        "es": "Almacén propio con bebidas, comida y leña",
+        "en": "On-site store with drinks, food and firewood",
+        "pt": "Mercearia própria com bebidas, comida e lenha"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SERVICES",
+    "icon": "ShoppingServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

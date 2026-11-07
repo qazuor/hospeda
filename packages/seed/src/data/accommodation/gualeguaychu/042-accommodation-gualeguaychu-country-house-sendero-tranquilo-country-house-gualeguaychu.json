@@ -130,7 +130,6 @@
         "009-feature-isolated_no_neighbors",
         "003-feature-panoramic_view_extended",
         "006-feature-central_area",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

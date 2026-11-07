@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "155-amenity-outdoors-dock",
+    "slug": "dock",
+    "description": {
+        "es": "Muelle propio sobre el agua",
+        "en": "Private dock on the water",
+        "pt": "Píer próprio sobre a água"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "DockAccessIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

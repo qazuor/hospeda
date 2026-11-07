@@ -172,12 +172,7 @@
             "equipado"
         ]
     },
-    "featureIds": [
-        "030-feature-full_rental",
-        "043-feature-internal_parking",
-        "025-feature-wifi_full_property",
-        "044-feature-tourist_info_available"
-    ],
+    "featureIds": ["030-feature-full_rental", "044-feature-tourist_info_available"],
     "amenityIds": [
         "001-amenity-connectivity-wifi",
         "002-amenity-climate-control-air-conditioning",
@@ -195,7 +190,8 @@
         "038-amenity-accessibility-elevator",
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
-        "043-amenity-safety-fire-extinguisher"
+        "043-amenity-safety-fire-extinguisher",
+        "017-amenity-general-appliances-parking"
     ],
     "faqs": [],
     "iaData": [],

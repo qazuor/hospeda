@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "126-amenity-entertainment-pool-table",
+    "slug": "pool_table",
+    "description": {
+        "es": "Mesa de pool con tacos",
+        "en": "Pool table with cues",
+        "pt": "Mesa de sinuca com tacos"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "BoardGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

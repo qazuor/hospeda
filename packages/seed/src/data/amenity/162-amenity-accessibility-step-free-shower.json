@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "162-amenity-accessibility-step-free-shower",
+    "slug": "step_free_shower",
+    "description": {
+        "es": "Ducha a nivel del piso, sin escalón",
+        "en": "Floor-level shower with no step",
+        "pt": "Chuveiro no nível do piso, sem degrau"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ACCESSIBILITY",
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

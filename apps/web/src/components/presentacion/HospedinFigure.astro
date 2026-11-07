@@ -1,0 +1,90 @@
+---
+/**
+ * @file HospedinFigure.astro
+ * @description Hospedín, the Hospeda mascot, for the `/presentacion/*` pages,
+ * with an optional speech bubble.
+ *
+ * The cutouts come from the marketing character sheets
+ * (`marketing/personaje-hospedin.md` is the character bible). They are
+ * shipped as-is: the bible forbids redrawing or recolouring the character,
+ * so this component only picks a pose and sizes it. Every cutout keeps the
+ * floating sun (the bible's one hard rule) — the high-res marketing exports
+ * split it into a separate file, which is why the lower-res ones are used.
+ * `camara.png` was cut from `personaje/acciones.png` («con la cámara») with
+ * the rembg silhouette thresholded to opaque, its holes filled and the
+ * background flooded back out between the legs: the plain rembg pass leaves the white hoodie half-transparent, which shows as a grey
+ * ghost on the dark theme (the same defect that rules out the «descubrí»,
+ * «es fácil» and «enumerando» exports).
+ *
+ * The image goes through `astro:assets`, so the ~400KB source PNGs are served
+ * as resized modern formats; the hero one is eager (it is above the fold) and
+ * the closing one lazy.
+ */
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+import camara from '@/assets/images/hospedin/camara.png';
+import lamparita from '@/assets/images/hospedin/lamparita.png';
+import saludando from '@/assets/images/hospedin/saludando.png';
+import senalando from '@/assets/images/hospedin/senalando.png';
+import teExplico from '@/assets/images/hospedin/te-explico.png';
+import telefono from '@/assets/images/hospedin/telefono.png';
+import vamos from '@/assets/images/hospedin/vamos.png';
+
+/** The poses available as cutouts. */
+export type HospedinPose =
+	| 'camara'
+	| 'lamparita'
+	| 'saludando'
+	| 'senalando'
+	| 'te-explico'
+	| 'telefono'
+	| 'vamos';
+
+const POSES: Readonly<Record<HospedinPose, ImageMetadata>> = {
+	camara,
+	lamparita,
+	saludando,
+	senalando,
+	'te-explico': teExplico,
+	telefono,
+	vamos
+};
+
+interface Props {
+	/** Which pose to show. */
+	readonly pose: HospedinPose;
+	/**
+	 * Where it sits: the masthead (large, eager), the closing block (small,
+	 * lazy) or a card on the presentations index (thumbnail, lazy).
+	 */
+	readonly placement: 'hero' | 'close' | 'card';
+	/** Optional speech bubble, in Hospedín's voice (rioplatense, short). */
+	readonly say?: string;
+}
+
+const { pose, placement, say } = Astro.props;
+const isHero = placement === 'hero';
+
+/** Candidate widths and the `sizes` hint per placement (CSS widths live in presentacion.css). */
+const SIZING: Readonly<Record<Props['placement'], { widths: number[]; sizes: string }>> = {
+	hero: { widths: [240, 360, 480], sizes: '(max-width: 40rem) 10rem, 15rem' },
+	close: { widths: [180, 270, 360], sizes: '(max-width: 40rem) 7.5rem, 12rem' },
+	card: { widths: [150, 225, 300], sizes: '(max-width: 40rem) 5.5rem, 9rem' }
+};
+const { widths, sizes } = SIZING[placement];
+---
+
+<figure class:list={['hospedin', `hospedin--${placement}`, `hospedin--pose-${pose}`]}>
+	{say && <p class="hospedin__say">{say}</p>}
+	<Picture
+		src={POSES[pose]}
+		formats={['avif', 'webp']}
+		widths={widths}
+		sizes={sizes}
+		alt={placement === 'card' ? '' : 'Hospedín, el personaje de Hospeda'}
+		class="hospedin__img"
+		loading={isHero ? 'eager' : 'lazy'}
+		decoding="async"
+	/>
+</figure>
