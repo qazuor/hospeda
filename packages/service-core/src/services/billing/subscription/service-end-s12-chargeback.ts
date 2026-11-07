@@ -249,9 +249,12 @@ export async function applyS12ByChargeback(
         logger.error({ subscriptionId, error }, 'S31 completion failed after chargeback S12');
     }
     try {
+        const coverageNotices = ports.coverageNotices ?? unwiredCoverageNotices;
         await emitServiceEndRemoved({
             ended: [committed],
-            coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+            coverageNotices: {
+                emitCoverageChanged: (event) => coverageNotices.emitCoverageChanged(event)
+            }
         });
     } catch (error) {
         logger.error({ subscriptionId, error }, 'Coverage notice failed after chargeback S12');
