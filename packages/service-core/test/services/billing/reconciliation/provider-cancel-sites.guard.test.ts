@@ -23,6 +23,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
         'S1 re-cancels the preapproval of a CHARGE_DECLINED row whose S16 already registered',
     'subscription/suspend-for-arrears.service.ts':
         'S6 leaves the row SUSPENDED, live: not one of the eleven rows of salvedad 4, B11.md:372',
+    'subscription/suspend-for-chargeback.service.ts':
+        'S6 by its third event leaves the row SUSPENDED, live, like the other S6 events',
     'subscription/cancel-succession-predecessor.service.ts':
         'S17 writes CANCELLED only after the re-read confirms the cancellation; its retry is the state re-evaluation, not the sweep (AC:B8b:9)'
 };

@@ -36,7 +36,9 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     /** S17: the successor authorized; the predecessor's authorization is cancelled (AC:B8b:9, DEC-SUB-006 implication 4). */
     SUCCESSION_PREDECESSOR: 'billing.succession-predecessor-cancel',
     /** S31: a chargeback cut the predecessor and the successor is cut with it; no authorization window expired (AC:B8b:13). */
-    SUCCESSOR_CUT: 'billing.successor-cut-cancel'
+    SUCCESSOR_CUT: 'billing.successor-cut-cancel',
+    /** S6 by its third event: a chargeback suspended the row (AC:B7:10, `B/19` row 10-ter); S6 retries itself, never through the sweep. */
+    CHARGEBACK_SUSPENSION: 'billing.chargeback-suspension'
 } as const;
 
 /** A kind of before-cancel notice; each one has its own template and no kind is a default. */

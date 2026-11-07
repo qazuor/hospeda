@@ -118,7 +118,8 @@ const EXPECTED_KINDS = [
     'ATTEMPT_REPLACED',
     'ATTEMPT_CANCELLED',
     'SUCCESSION_PREDECESSOR',
-    'SUCCESSOR_CUT'
+    'SUCCESSOR_CUT',
+    'CHARGEBACK_SUSPENSION'
 ];
 
 describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice kind', () => {
@@ -172,7 +173,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) AC:B8b:9 and AC:B8b:13 the fifteen kinds have fifteen distinct templates and only S3 says the window expired', () => {
+    it('(d) AC:B7:10 and AC:B8b:9/13 the sixteen kinds have distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);
@@ -188,6 +189,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
         for (const kind of kinds)
             expect(Object.hasOwn(BEFORE_CANCEL_TEMPLATE_BY_KIND, kind), kind).toBe(true);
         expect(values).not.toContain('ARREARS_SUSPENSION');
+        expect(values).not.toContain('CHARGEBACK_SUSPENSION');
     });
 
     it('(f) ignores a recorded transition that only appears in a comment', () => {

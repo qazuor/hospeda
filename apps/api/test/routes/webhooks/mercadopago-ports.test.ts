@@ -81,6 +81,7 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'beforeCancelNotice',
                 'billingFacts',
                 'cancellationSeen',
+                'chargebacks',
                 'clock',
                 'changeDirection',
                 'coverageNotices',
