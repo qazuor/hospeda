@@ -482,6 +482,18 @@
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/open-refunds"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/pause"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/pause-preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/resume"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/revocation"
         },

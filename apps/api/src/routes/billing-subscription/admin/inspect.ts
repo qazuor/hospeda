@@ -25,6 +25,11 @@ import {
 } from './manual-payment-late';
 import { adminSubscriptionOpenRefundsRoute } from './open-refunds';
 import {
+    adminPauseSubscriptionRoute,
+    adminResumeSubscriptionRoute,
+    adminSubscriptionPausePreviewRoute
+} from './pause';
+import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
 } from './revocation';
@@ -63,6 +68,9 @@ router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
+router.route('/', adminSubscriptionPausePreviewRoute);
+router.route('/', adminPauseSubscriptionRoute);
+router.route('/', adminResumeSubscriptionRoute);
 router.route('/', adminListManualPaymentsRoute);
 router.route('/', adminManualPaymentRegistrationPreviewRoute);
 router.route('/', adminRegisterManualPaymentRoute);

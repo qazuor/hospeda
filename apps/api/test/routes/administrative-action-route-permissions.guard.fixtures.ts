@@ -226,7 +226,25 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
             }
         ]
     },
-    ACC_9: { unbound: 'B8b builds it' },
+    ACC_9: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/pause.ts',
+                route: 'adminSubscriptionPausePreviewRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/pause.ts',
+                route: 'adminPauseSubscriptionRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/pause.ts',
+                route: 'adminResumeSubscriptionRoute'
+            }
+        ]
+    },
     ACC_10: { unbound: 'B8b builds it' },
     ACC_11: {
         bindings: [

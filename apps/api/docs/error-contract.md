@@ -816,3 +816,9 @@ the permission is rejected before query, params, or body validation.
 The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`. A redemption
 attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
 under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.
+
+### Administrative pause and resume (ACC:9, HOS-1580)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/pause-preview`, `POST /pause`, and `POST /resume` each require `billing.pauseSubscription` at the route factory. Rejections follow 401 authentication → 403 route permission → 400 strict params/body → 404 `SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` when the observed status changed → the typed S8/S10 result. The POST bodies require `confirmed: true` and the observed `expectedStatus`; pause also requires `months` from 1 through 4.
+
+Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `MONTHS_EXHAUSTED` with 409 `CONFLICT`; `NOT_PRINCIPAL`, `MANUAL_PAYER`, `NOT_MONTHLY`, `PLAN_DISALLOWS_PAUSE`, `MONTHS_OUT_OF_RANGE`, and `NO_PROVIDER_LINK` with 422 `VALIDATION_ERROR`. Resume refuses `NOT_PAUSED`, `NO_OPEN_PAUSE`, and `PAUSE_NOT_CUSTOMER_REQUEST` with 409; provider calls are forbidden for a courtesy pause. `NOT_APPLIED` and `LOST_RACE` are 409. Each typed error carries `error.reason` and `error.details.reason`. Provider rejection is 422 `PROVIDER_REJECTED`; transient provider failure is 503 with `Retry-After` when available. The preview records `BILLING_READ`, and only a successful POST records `BILLING_MUTATION` with `administrativeAction: ACC_9` and the admin as actor.
