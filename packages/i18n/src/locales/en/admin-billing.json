@@ -34,7 +34,10 @@
             "semiannual": "Semiannual",
             "annual": "Annual"
         },
-        "actions": { "publish": "Publish new version", "createPlan": "Create plan" },
+        "actions": {
+            "publish": "Publish new version",
+            "createPlan": "Create plan"
+        },
         "form": {
             "title": "New version of «{name}»",
             "current": "Current version",
@@ -60,7 +63,11 @@
             "from": "Current",
             "to": "New",
             "absent": "(absent)",
-            "kinds": { "entitlement": "Entitlement", "limit": "Limit", "setting": "Setting" },
+            "kinds": {
+                "entitlement": "Entitlement",
+                "limit": "Limit",
+                "setting": "Setting"
+            },
             "reach_one": "Reaches {{count}} anchored customer.",
             "reach_other": "Reaches {{count}} anchored customers.",
             "noChanges": "No key changes.",
@@ -91,7 +98,10 @@
         "title": "Deadlines",
         "intro": "Every deadline that decides when something happens. SUPER_ADMIN only.",
         "clocksRule": "Changing a deadline publishes a new version of its half's deadlines. Clocks already running keep theirs, so the change only applies to clocks that start afterwards.",
-        "sections": { "vertical": "Vertical deadlines", "billing": "Billing deadlines" },
+        "sections": {
+            "vertical": "Vertical deadlines",
+            "billing": "Billing deadlines"
+        },
         "version": "Version {version}",
         "keyLabel": "Deadline {key}",
         "keys": {
@@ -2169,5 +2179,79 @@
             "TECHNICAL_PROBLEMS": "I had technical problems",
             "OTHER": "Other reason"
         }
+    },
+    "permanentGrants": {
+        "title": "Permanent grants",
+        "beneficiary": "Beneficiary ID",
+        "search": "Search",
+        "invalidUserId": "Enter a valid UUID.",
+        "loading": "Loading…",
+        "loadError": "Could not load the information.",
+        "noGrant": "No live grant.",
+        "liveGrant": "Live grant",
+        "grant": "Grant access",
+        "anchor": "Anchor vertical",
+        "revoke": "Revoke grant",
+        "vertical": "Vertical",
+        "plan": "Plan",
+        "selectPlan": "Select a plan",
+        "catalogError": "Could not load the plan catalog.",
+        "noPlans": "No current plans for this vertical.",
+        "includesAddons": "Include add-ons",
+        "reason": "Reason",
+        "preview": "Review what will happen",
+        "confirmGrant": "Confirm grant",
+        "confirmAnchor": "Confirm anchor",
+        "confirmRevoke": "Confirm revocation",
+        "cancel": "Back",
+        "result": "Action completed",
+        "resultGrant": "Grant created: {{id}}",
+        "resultAnchor": "Anchor created: {{id}}",
+        "resultRevoke": "Revoked on {{date}}",
+        "stoppedCharges": "Charges that will stop",
+        "stoppedCharge": "Subscription {{id}} for {{vertical}} will no longer be charged.",
+        "endingCourtesies": "Current courtesies that will end",
+        "endingCourtesy": "Courtesy for {{vertical}} ends on {{date}}. At the provider it changes from paused to cancelled.",
+        "endingCourtesyAnchor": "The current courtesy in this vertical ({{vertical}}) ends on {{date}}. At the provider it changes from paused to cancelled.",
+        "closedBalances": "Deferred courtesy balances that will close",
+        "closedBalance_one": "Deferred courtesy balance for {{vertical}} closes: {{count}} month. That month will not return.",
+        "closedBalance_other": "Deferred courtesy balance for {{vertical}} closes: {{count}} months. Those months will not return.",
+        "convertedAddons": "Add-ons changing to $0",
+        "convertedAddon": "{{name}} changes to $0.",
+        "providerEmail": "The customer receives the provider email.",
+        "providerEmailPerPreapproval": "A provider email arrives for this preapproval.",
+        "noneStopped": "No charges to stop.",
+        "noneCourtesy": "No current courtesies to end.",
+        "noneBalances": "No deferred balances to close.",
+        "noneAddons": "No add-ons to convert.",
+        "revocationTitle": "Revocation leaves the customer without service",
+        "losingService": "No service in {{vertical}}.",
+        "noneLosingService": "No verticals lose service.",
+        "addonsOff": "Add-ons that turn off and do not return automatically",
+        "addonOff": "{{name}} turns off and does not return automatically.",
+        "noneAddonsOff": "No add-ons to turn off.",
+        "trialNoReturn": "The trial does not return.",
+        "oldDebitNoResume": "The old debit does not resume: the customer must authorize a new one.",
+        "revocationReason": "Revocation reason (saved)",
+        "actionError": "Could not complete the action.",
+        "unknownRefusal": "Action refused: {{reason}}.",
+        "verticals": {
+            "accommodation": "Accommodation",
+            "venue": "Dining",
+            "experience": "Experiences",
+            "tourist": "Tourist",
+            "partner": "Partner"
+        },
+        "refusals": {
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You do not have permission for this action.",
+            "PERMANENT_GRANT_NOT_FOUND": "The grant does not exist.",
+            "PERMANENT_GRANT_NOT_LIVE": "The grant is no longer live.",
+            "PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED": "This vertical is already anchored.",
+            "PERMANENT_GRANT_ALREADY_LIVE": "The beneficiary already has a live grant.",
+            "PERMANENT_GRANT_REFERENCE_NOT_FOUND": "The plan or its version was not found.",
+            "PERMANENT_GRANT_FLOOR_NOT_CURRENT": "The selected version is no longer current.",
+            "INVALID_PERMANENT_GRANT_INPUT": "The grant details are invalid."
+        },
+        "invalidForm": "Check the vertical, current plan, and reason."
     }
 }
