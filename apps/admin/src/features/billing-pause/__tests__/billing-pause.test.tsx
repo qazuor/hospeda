@@ -46,6 +46,10 @@ const preview = {
     quota: { pausesLeft: 2, monthsLeft: 4 },
     openPause: null
 };
+const inspection = {
+    subject: { id: id, displayName: 'Cliente Uno' },
+    currentPlan: { planName: 'Plan Base', cycle: 'monthly' }
+};
 function view() {
     render(
         <QueryClientProvider
@@ -60,16 +64,21 @@ beforeEach(() => {
 });
 describe('TEST:B8b:22 AC:B8b:22 panel pause screen and hook', () => {
     it('confirms the full pause effects and sends expectedStatus', async () => {
-        fetchApi.mockResolvedValueOnce({ data: { data: preview } }).mockResolvedValueOnce({
-            data: {
-                data: { outcome: 'PAUSED', expectedEndAt: preview.expectedEndAtByMonths['1'] }
-            }
-        });
+        fetchApi
+            .mockResolvedValueOnce({ data: { data: preview } })
+            .mockResolvedValueOnce({ data: { data: inspection } })
+            .mockResolvedValueOnce({
+                data: {
+                    data: { outcome: 'PAUSED', expectedEndAt: preview.expectedEndAtByMonths['1'] }
+                }
+            });
         view();
-        await screen.findByText(`Cliente: ${id}`);
+        await screen.findByText('Cliente: Cliente Uno');
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPause.review }));
         const confirm = screen.getByTestId('billing-pause-confirmation');
-        expect(confirm.textContent).toContain(`La suscripción de ${id} se pausa hasta el`);
+        expect(confirm.textContent).toContain(
+            'La suscripción de Cliente Uno (plan Plan Base) se pausa hasta el'
+        );
         expect(confirm.textContent).toContain(es.subscriptionPause.listingEffect);
         expect(confirm.textContent).toContain(es.subscriptionPause.retentionEffect);
         expect(confirm.textContent).toContain(es.subscriptionPause.addonEffect);
@@ -103,6 +112,7 @@ describe('TEST:B8b:22 AC:B8b:22 panel pause screen and hook', () => {
                     }
                 }
             })
+            .mockResolvedValueOnce({ data: { data: inspection } })
             .mockResolvedValueOnce({
                 data: {
                     data: {
@@ -116,10 +126,10 @@ describe('TEST:B8b:22 AC:B8b:22 panel pause screen and hook', () => {
                 }
             });
         view();
-        await screen.findByText(`Cliente: ${id}`);
+        await screen.findByText('Cliente: Cliente Uno');
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPause.review }));
         expect(screen.getByTestId('billing-pause-confirmation').textContent).toContain(
-            `La suscripción de ${id} se reanuda hoy`
+            'La suscripción de Cliente Uno (plan Plan Base) se reanuda hoy'
         );
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPause.confirm }));
         await waitFor(() =>

@@ -34,7 +34,10 @@
             "semiannual": "Semestral",
             "annual": "Anual"
         },
-        "actions": { "publish": "Publicar versión nueva", "createPlan": "Crear plan" },
+        "actions": {
+            "publish": "Publicar versión nueva",
+            "createPlan": "Crear plan"
+        },
         "form": {
             "title": "Versión nueva de «{name}»",
             "current": "Versión vigente",
@@ -60,7 +63,11 @@
             "from": "Vigente",
             "to": "Nueva",
             "absent": "(no está)",
-            "kinds": { "entitlement": "Entitlement", "limit": "Limit", "setting": "Ajuste" },
+            "kinds": {
+                "entitlement": "Entitlement",
+                "limit": "Limit",
+                "setting": "Ajuste"
+            },
             "reach_one": "Alcanza a {{count}} cliente anclado.",
             "reach_other": "Alcanza a {{count}} clientes anclados.",
             "noChanges": "No cambia ninguna clave.",
@@ -91,7 +98,10 @@
         "title": "Plazos",
         "intro": "Todo plazo que decide cuándo pasa algo. Sólo SUPER_ADMIN.",
         "clocksRule": "Cambiar un plazo publica una versión nueva de los plazos de su mitad. Los relojes ya arrancados conservan la suya, así que el cambio vale sólo para los relojes que arrancan después.",
-        "sections": { "vertical": "Plazos de verticales", "billing": "Plazos de billing" },
+        "sections": {
+            "vertical": "Plazos de verticales",
+            "billing": "Plazos de billing"
+        },
         "version": "Versión {version}",
         "keyLabel": "Plazo {key}",
         "keys": {
@@ -2094,13 +2104,15 @@
             "ACTIVE": "Activa",
             "GRACE_PERIOD": "En período de gracia",
             "SUSPENDED": "Suspendida",
-            "CANCEL_SCHEDULED": "Con baja programada"
+            "CANCEL_SCHEDULED": "Con baja programada",
+            "PAUSED": "Pausada"
         },
         "effects": {
             "ACTIVE": "No se le vuelve a cobrar, y el servicio sigue hasta el {date}, el fin del período que ya pagó.",
             "GRACE_PERIOD": "El servicio se corta hoy: pierde el servicio que el período de gracia le daba hasta el {date}. A cambio, no se le reclama la cuota que no se pudo cobrar.",
             "SUSPENDED": "La suscripción termina hoy. El servicio ya estaba cortado por la suspensión, y queda libre para volver a suscribirse.",
-            "CANCEL_SCHEDULED": "Ya tiene la baja pedida: el servicio sigue hasta el {date}. No hay nada que confirmar."
+            "CANCEL_SCHEDULED": "Ya tiene la baja pedida: el servicio sigue hasta el {date}. No hay nada que confirmar.",
+            "PAUSED": "La suscripción pausada conserva el servicio hasta el {date}; esta acción no se puede confirmar desde aquí."
         },
         "authorization": {
             "CARD": "Si su débito automático en Mercado Pago sigue vivo, se cancela hoy. Antes le mandamos un correo; después puede llegarle uno de Mercado Pago avisando la cancelación.",
@@ -2177,9 +2189,9 @@
         "invalidId": "La suscripción no existe.",
         "error": "No se pudo completar la acción ({reason}). Revisá el estado y volvé a intentar.",
         "months": "Meses de pausa",
-        "pauseConfirm": "La suscripción de {customer} se pausa hasta el {date}.",
+        "pauseConfirm": "La suscripción de {customer} (plan {plan}) se pausa hasta el {date}.",
         "resumePreview": "La pausa estaba prevista hasta el {date}.",
-        "resumeConfirm": "La suscripción de {customer} se reanuda hoy. El próximo día de cobro se muestra al terminar.",
+        "resumeConfirm": "La suscripción de {customer} (plan {plan}) se reanuda hoy. El próximo día de cobro se muestra al terminar.",
         "listingEffect": "Su ficha sale del sitio hoy y vuelve al reanudar si el cupo del plan alcanza.",
         "retentionEffect": "Durante la pausa no se archiva ni borra la ficha ni recibe avisos de retención; el reloj vuelve a cero al reanudar.",
         "addonEffect": "Los complementos de esta vertical se pausan con el plan; los de cuenta sólo si no queda otra vertical compatible.",
@@ -2191,5 +2203,29 @@
         "paused": "Pausa registrada hasta el {date}.",
         "resumed": "Suscripción reanudada. Próximo cobro: {date}.",
         "chargePending": "pendiente de confirmación del proveedor"
+    },
+    "subscriptionPlanChange": {
+        "title": "Cambiar plan de suscripción",
+        "invalidId": "La suscripción no existe.",
+        "loading": "Cargando opciones…",
+        "error": "No se pudo completar el cambio. Revisá el estado y volvé a intentar.",
+        "unavailable": "La suscripción no está activa.",
+        "customer": "Cliente: {customer}",
+        "current": "Plan actual: {plan}",
+        "destination": "Plan destino",
+        "choose": "Elegí una opción",
+        "note": "Nota (opcional)",
+        "confirmation": "Confirmá el cambio de {customer}: de {current} a {destination}.",
+        "review": "Revisar cambio",
+        "confirm": "Confirmar cambio",
+        "noOptions": "No hay otros planes facturables disponibles.",
+        "succession": "Copiá el enlace y envialo al cliente. El plan actual sigue hasta que el cliente autorice.",
+        "checkoutLabel": "Enlace de autorización para copiar",
+        "firstCharge": "Primer cobro: {date}.",
+        "creditDays": "Días de crédito: {days}.",
+        "downgrade": "El cambio se aplicará el {date}.",
+        "regret": "Se revirtió el cambio programado. Importe: {amount} centavos.",
+        "copy": "Copiar enlace",
+        "copied": "Enlace copiado."
     }
 }

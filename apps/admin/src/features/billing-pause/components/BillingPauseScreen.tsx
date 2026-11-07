@@ -35,6 +35,9 @@ export function BillingPauseScreen({ subscriptionId }: BillingPauseScreenProps) 
     );
     const [failure, setFailure] = useState<string | null>(null);
     const data = preview.data;
+    const customer =
+        data?.subject?.displayName || data?.subject?.email || data?.subject?.id || subscriptionId;
+    const plan = data?.currentPlan?.planName ?? '—';
     const resuming = data?.status === 'PAUSED' && data.openPause?.reason === 'CUSTOMER_REQUEST';
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     const expectedEnd = data?.expectedEndAtByMonths?.[String(months)];
@@ -88,7 +91,7 @@ export function BillingPauseScreen({ subscriptionId }: BillingPauseScreenProps) 
                             <>
                                 <p>
                                     {t('admin-billing.subscriptionPause.customer', {
-                                        customer: subscriptionId
+                                        customer
                                     })}
                                 </p>
                                 {resuming ? (
@@ -104,7 +107,7 @@ export function BillingPauseScreen({ subscriptionId }: BillingPauseScreenProps) 
                                             <p data-testid="billing-pause-confirmation">
                                                 {t(
                                                     'admin-billing.subscriptionPause.resumeConfirm',
-                                                    { customer: subscriptionId }
+                                                    { customer, plan }
                                                 )}
                                             </p>
                                         ) : null}
@@ -146,7 +149,8 @@ export function BillingPauseScreen({ subscriptionId }: BillingPauseScreenProps) 
                                                     {t(
                                                         'admin-billing.subscriptionPause.pauseConfirm',
                                                         {
-                                                            customer: subscriptionId,
+                                                            customer,
+                                                            plan,
                                                             date: expectedEnd
                                                                 ? date(expectedEnd)
                                                                 : ''

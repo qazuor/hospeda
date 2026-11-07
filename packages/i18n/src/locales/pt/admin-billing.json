@@ -34,7 +34,10 @@
             "semiannual": "Semestral",
             "annual": "Anual"
         },
-        "actions": { "publish": "Publicar nova versão", "createPlan": "Criar plano" },
+        "actions": {
+            "publish": "Publicar nova versão",
+            "createPlan": "Criar plano"
+        },
         "form": {
             "title": "Nova versão de «{name}»",
             "current": "Versão vigente",
@@ -60,7 +63,11 @@
             "from": "Vigente",
             "to": "Nova",
             "absent": "(ausente)",
-            "kinds": { "entitlement": "Entitlement", "limit": "Limit", "setting": "Ajuste" },
+            "kinds": {
+                "entitlement": "Entitlement",
+                "limit": "Limit",
+                "setting": "Ajuste"
+            },
             "reach_one": "Alcança {{count}} cliente ancorado.",
             "reach_other": "Alcança {{count}} clientes ancorados.",
             "noChanges": "Nenhuma chave muda.",
@@ -91,7 +98,10 @@
         "title": "Prazos",
         "intro": "Todo prazo que decide quando algo acontece. Somente SUPER_ADMIN.",
         "clocksRule": "Mudar um prazo publica uma nova versão dos prazos da sua metade. Os relógios já iniciados mantêm a deles, então a mudança só vale para os relógios que começarem depois.",
-        "sections": { "vertical": "Prazos das verticais", "billing": "Prazos de billing" },
+        "sections": {
+            "vertical": "Prazos das verticais",
+            "billing": "Prazos de billing"
+        },
         "version": "Versão {version}",
         "keyLabel": "Prazo {key}",
         "keys": {
@@ -2094,13 +2104,15 @@
             "ACTIVE": "Ativa",
             "GRACE_PERIOD": "Em período de carência",
             "SUSPENDED": "Suspensa",
-            "CANCEL_SCHEDULED": "Cancelamento agendado"
+            "CANCEL_SCHEDULED": "Cancelamento agendado",
+            "PAUSED": "Pausada"
         },
         "effects": {
             "ACTIVE": "Não será cobrado de novo, e o serviço continua até {date}, o fim do período já pago.",
             "GRACE_PERIOD": "O serviço termina hoje: perde o serviço que o período de carência lhe dava até {date}. Em troca, a parcela que não conseguimos cobrar não é cobrada.",
             "SUSPENDED": "A assinatura termina hoje. O serviço já estava cortado pela suspensão, e fica livre para assinar de novo.",
-            "CANCEL_SCHEDULED": "O cancelamento já foi pedido: o serviço continua até {date}. Não há nada a confirmar."
+            "CANCEL_SCHEDULED": "O cancelamento já foi pedido: o serviço continua até {date}. Não há nada a confirmar.",
+            "PAUSED": "A assinatura pausada mantém o serviço até {date}; esta ação não pode ser confirmada aqui."
         },
         "authorization": {
             "CARD": "Se o débito automático no Mercado Pago ainda estiver ativo, é cancelado hoje. Antes enviamos um e-mail; depois o Mercado Pago pode enviar um avisando o cancelamento.",
@@ -2177,9 +2189,9 @@
         "invalidId": "Assinatura não encontrada.",
         "error": "Não foi possível concluir a ação ({reason}). Confira o estado e tente novamente.",
         "months": "Meses de pausa",
-        "pauseConfirm": "A assinatura de {customer} fica pausada até {date}.",
+        "pauseConfirm": "A assinatura de {customer} (plano {plan}) fica pausada até {date}.",
         "resumePreview": "A pausa estava prevista até {date}.",
-        "resumeConfirm": "A assinatura de {customer} é retomada hoje. A data da próxima cobrança aparece ao concluir.",
+        "resumeConfirm": "A assinatura de {customer} (plano {plan}) é retomada hoje. A próxima data de cobrança aparece ao concluir.",
         "listingEffect": "O anúncio sai do site hoje e volta ao retomar se houver espaço no plano.",
         "retentionEffect": "Durante a pausa, o anúncio não é arquivado nem apagado e não recebe avisos de retenção; o prazo recomeça ao retomar.",
         "addonEffect": "Os adicionais desta vertical pausam com o plano; os da conta pausam só se não restar outra vertical compatível.",
@@ -2191,5 +2203,29 @@
         "paused": "Pausa registrada até {date}.",
         "resumed": "Assinatura retomada. Próxima cobrança: {date}.",
         "chargePending": "aguardando confirmação do provedor"
+    },
+    "subscriptionPlanChange": {
+        "title": "Alterar plano da assinatura",
+        "invalidId": "Assinatura não encontrada.",
+        "loading": "Carregando opções…",
+        "error": "Não foi possível concluir a alteração. Confira o status e tente novamente.",
+        "unavailable": "A assinatura não está ativa.",
+        "customer": "Cliente: {customer}",
+        "current": "Plano atual: {plan}",
+        "destination": "Plano de destino",
+        "choose": "Escolha uma opção",
+        "note": "Nota (opcional)",
+        "confirmation": "Confirme a alteração de {customer}: de {current} para {destination}.",
+        "review": "Revisar alteração",
+        "confirm": "Confirmar alteração",
+        "noOptions": "Não há outros planos faturáveis disponíveis.",
+        "succession": "Copie o link e envie ao cliente. O plano atual continua até o cliente autorizar.",
+        "checkoutLabel": "Link de autorização para copiar",
+        "firstCharge": "Primeira cobrança: {date}.",
+        "creditDays": "Dias de crédito: {days}.",
+        "downgrade": "A alteração será aplicada em {date}.",
+        "regret": "A alteração agendada foi revertida. Valor: {amount} centavos.",
+        "copy": "Copiar link",
+        "copied": "Link copiado."
     }
 }

@@ -3,6 +3,12 @@ import { fetchApi } from '@/lib/api/client';
 
 /** Administrative pause preview returned by action 9. */
 export interface PausePreview {
+    readonly subject?: {
+        readonly id: string;
+        readonly displayName?: string;
+        readonly email?: string;
+    };
+    readonly currentPlan?: { readonly planName: string; readonly cycle: string };
     readonly subscriptionId: string;
     readonly status: string;
     readonly offered: boolean;
@@ -40,7 +46,15 @@ export function useBillingPausePreview({
             const response = await fetchApi<{ data: PausePreview }>({
                 path: pausePreviewPath({ subscriptionId })
             });
-            return response.data.data;
+            const inspection = await fetchApi<{
+                data: {
+                    subject?: PausePreview['subject'];
+                    currentPlan?: PausePreview['currentPlan'];
+                };
+            }>({
+                path: `/api/v1/admin/billing-subscription/${subscriptionId}`
+            });
+            return { ...response.data.data, ...inspection.data.data };
         },
         enabled: enabled && subscriptionId.length > 0,
         retry: false
