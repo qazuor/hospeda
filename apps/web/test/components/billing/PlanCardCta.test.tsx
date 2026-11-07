@@ -70,6 +70,9 @@ describe('PlanCardCta', () => {
                 billingOptions={{ monthly: 'm2', annual: null }}
             />
         );
+        expect((await screen.findByTestId('pricing-card-cta')).textContent).toBe(
+            'Cambiar a este plan · por mes'
+        );
         fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
         fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
         await waitFor(() => expect(fetchMock).toHaveBeenCalled());
