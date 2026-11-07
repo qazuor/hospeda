@@ -6,9 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
 
 const src = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/index.astro'),
@@ -16,11 +14,6 @@ const src = readFileSync(
 );
 
 describe('comer-y-salir/index.astro', () => {
-    it('derives listing filters and chips from every venue enum value', () => {
-        expect(VENUE_TYPE_OPTIONS).toHaveLength(Object.values(VenueTypeEnum).length);
-        expect([...VENUE_TYPE_OPTIONS].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
-        expect(src).toContain('const VENUE_TYPES = VENUE_TYPE_OPTIONS');
-    });
     describe('locale', () => {
         it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
             expect(src).toContain('Astro.locals.locale');
@@ -118,47 +111,33 @@ describe('comer-y-salir/index.astro', () => {
         });
     });
 
-    describe('filter groups', () => {
-        it('includes a search (q) filter group', () => {
-            expect(src).toContain("id: 'q'");
+    describe('published-listing filters (HOS-1787 leaf 6.10, AC:6:11)', () => {
+        it('fetches the whole-vertical filter options without a business line', () => {
+            expect(src).toContain('venueApi.getFilterOptions()');
         });
 
-        it('includes a destinationId select-search filter', () => {
-            expect(src).toContain("id: 'destinationId'");
-            expect(src).toContain("type: 'select-search'");
+        it('narrows the sidebar and type chips to published values', () => {
+            expect(src).toContain('narrowVenueFilterCatalog(');
+            expect(src).toContain('buildVenueFilterGroups(');
+            expect(src).toContain('buildVenueTypeChips(');
+            expect(src).not.toContain('VENUE_TYPE_OPTIONS');
         });
 
-        it('includes a type checkbox filter', () => {
-            expect(src).toContain("id: 'type'");
-            expect(src).toContain("type: 'checkbox'");
+        it('degrades the response when the options read fails', () => {
+            expect(src).toContain('markResponseDegraded(');
+            expect(src).toContain('filterOptionsResult.ok');
         });
 
-        it('includes a priceRange checkbox filter', () => {
-            expect(src).toContain("id: 'priceRange'");
-        });
-
-        it('includes a toggle for isFeatured', () => {
-            expect(src).toContain("id: 'isFeatured'");
-            expect(src).toContain("type: 'toggle'");
-        });
-
-        it('includes a stars filter for minRating', () => {
-            expect(src).toContain("id: 'minRating'");
-            expect(src).toContain("type: 'stars'");
+        it('reads and forwards the amenities filter', () => {
+            expect(src).toContain("url.searchParams.get('amenities')");
+            expect(src).toContain('amenities: amenitiesParam');
+            expect(src).toContain('if (amenitiesParam) initialParams.amenities = amenitiesParam;');
         });
     });
 
     describe('i18n', () => {
         it('uses venue i18n namespace for page title', () => {
             expect(src).toContain('venue.listing.title');
-        });
-
-        it('uses venue.types for type filter labels', () => {
-            expect(src).toContain('venue.types.');
-        });
-
-        it('uses venue.card.priceRange for price range labels', () => {
-            expect(src).toContain('venue.card.priceRange.');
         });
     });
 

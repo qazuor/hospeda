@@ -99,6 +99,35 @@ describe('comer-y-salir/rubro/[rubro]/index.astro', () => {
         });
     });
 
+    describe('published-listing filters (HOS-1787 leaf 6.10, AC:6:11)', () => {
+        it('fetches the filter options for the resolved collection', () => {
+            const start = src.indexOf('venueApi.getFilterOptions(');
+            expect(start, 'venueApi.getFilterOptions( not found').toBeGreaterThan(-1);
+            const call = src.slice(start, src.indexOf(')', start) + 1);
+            expect(call).toContain('businessLine: collection.businessLine');
+        });
+
+        it('narrows the sidebar and type chips to published values', () => {
+            expect(src).toContain('narrowVenueFilterCatalog(');
+            expect(src).toContain('buildVenueFilterGroups(');
+            expect(src).toContain('buildVenueTypeChips(');
+            // The chips may never fall back to the full enum: that would offer
+            // types the collection's published listings do not carry.
+            expect(src).not.toContain('VENUE_TYPE_OPTIONS');
+        });
+
+        it('degrades the response when the options read fails', () => {
+            expect(src).toContain('markResponseDegraded(');
+            expect(src).toContain('filterOptionsResult.ok');
+        });
+
+        it('reads and forwards the amenities filter', () => {
+            expect(src).toContain("url.searchParams.get('amenities')");
+            expect(src).toContain('amenities: amenitiesParam');
+            expect(src).toContain('if (amenitiesParam) initialParams.amenities = amenitiesParam;');
+        });
+    });
+
     describe('empty collection indexability (HOS-1869, AC:6:2)', () => {
         it('imports the shared emptiness predicate and marks the layout noindex', () => {
             expect(src).toContain('isVenueCollectionEmpty');
