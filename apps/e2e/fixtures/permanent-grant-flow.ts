@@ -258,6 +258,79 @@ export async function cleanupPermanentGrantE2eRows(args: {
         'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))'
     );
     await attempt('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
+    // Mirror the two terminal populations read by the reconciliation sweep. Check
+    // before cleanupArrearsRows deletes subscriptions, so an escaped link reports
+    // the case's subscription IDs here instead of failing a later spec's sweep.
+    const leaked = await execSQL<{ pass: string; subscription_id: string }>(
+        `WITH latest_decision AS (
+             SELECT DISTINCT ON (entity_id) entity_id, occurred_at
+             FROM domain_event
+             WHERE entity_type = 'subscription'
+               AND event_type = 'subscription.provider_cancellation_decided'
+             ORDER BY entity_id, occurred_at DESC, id DESC
+         ), clock AS (
+             SELECT NOW() AS now,
+                    (SELECT ("values"->'16'->>'days')::integer
+                     FROM billing_deadline_version ORDER BY version DESC LIMIT 1) AS window_days
+         ), candidates AS (
+             SELECT 'cancellationRetry' AS pass, s.id AS subscription_id
+             FROM subscription s
+             JOIN provider_link pl ON pl.subscription_id = s.id
+             JOIN latest_decision decision ON decision.entity_id = s.id::text
+             WHERE s.user_id = ANY($1::uuid[])
+               AND s.status IN ('CANCELLED', 'ABANDONED', 'CHARGE_DECLINED')
+               AND pl.cancelled_seen_at IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM reconciliation_mark rm
+                   WHERE rm.subscription_id = s.id
+                     AND rm.reason = 'CANCELACION_SIN_CONFIRMAR'
+                     AND rm.lifted_at IS NULL
+               )
+             UNION ALL
+             SELECT 'terminalReturn' AS pass, s.id AS subscription_id
+             FROM subscription s
+             JOIN provider_link pl ON pl.subscription_id = s.id
+             LEFT JOIN billing_option bo ON bo.id = s.billing_option_id
+             CROSS JOIN clock
+             WHERE s.user_id = ANY($1::uuid[])
+               AND s.status IN ('CANCELLED', 'ABANDONED', 'CHARGE_DECLINED')
+               AND NOT (
+                   EXISTS (SELECT 1 FROM domain_event de
+                           WHERE de.entity_type = 'subscription'
+                             AND de.entity_id = s.id::text
+                             AND de.event_type = 'subscription.provider_cancellation_decided')
+                   AND pl.cancelled_seen_at IS NULL
+                   AND NOT EXISTS (SELECT 1 FROM reconciliation_mark rm
+                                   WHERE rm.subscription_id = s.id
+                                     AND rm.reason = 'CANCELACION_SIN_CONFIRMAR'
+                                     AND rm.lifted_at IS NULL)
+               )
+               AND (
+                   EXISTS (SELECT 1 FROM reconciliation_mark rm
+                           WHERE rm.subscription_id = s.id AND rm.lifted_at IS NULL)
+                   OR EXISTS (SELECT 1 FROM succession_retained_payment srp
+                              WHERE srp.subscription_id = s.id AND srp.released_at IS NULL)
+                   OR (pl.cancelled_seen_at IS NOT NULL AND pl.cancelled_seen_at >
+                       clock.now - GREATEST(
+                           CASE bo.cycle
+                               WHEN 'monthly' THEN 31
+                               WHEN 'quarterly' THEN 92
+                               WHEN 'semiannual' THEN 184
+                               WHEN 'annual' THEN 366
+                               ELSE 366
+                           END, clock.window_days
+                       ) * INTERVAL '1 day')
+               )
+         )
+         SELECT pass, subscription_id FROM candidates ORDER BY pass, subscription_id`,
+        ids
+    );
+    if (leaked.length > 0)
+        failures.push(
+            new Error(
+                `Permanent grant sweep candidates survived cleanup: ${JSON.stringify(leaked)}`
+            )
+        );
     if (failures.length > 0)
         throw new AggregateError(failures, 'Permanent grant E2E cleanup failed.');
 }
