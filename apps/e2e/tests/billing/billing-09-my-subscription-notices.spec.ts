@@ -22,7 +22,7 @@ import {
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
 
-test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clock', () => {
+test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
     test.setTimeout(300_000);
     let world: FakeWorld | null = null;
@@ -65,7 +65,9 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         }
     });
 
-    test('TEST:B13a:6 shows the literal AU notice and no plan-change control', async ({ page }) => {
+    test('TEST:B13a:6 TEST:B8b:14 offers changing an ACTIVE plan with the original notices intact', async ({
+        page
+    }) => {
         if (!world) throw new Error('Expected fake provider world.');
         const subscriber = await createSubscriber();
         userIds.push(subscriber.user.id, subscriber.admin.id);
@@ -94,17 +96,13 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         await expect(subscription).toContainText('Básico');
         await expect(subscription).toContainText('Alojamiento');
         await expect(subscription.getByTestId('my-subscription-price')).toContainText('por mes');
-        const notice = subscription.getByTestId('my-subscription-plan-change-unavailable');
-        await expect(notice).toBeVisible();
-        await expect(notice).toHaveText(
-            'Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.'
-        );
-        await expect(subscription.getByRole('button', { name: /cambiar (de )?plan/i })).toHaveCount(
-            0
-        );
-        await expect(subscription.getByRole('link', { name: /cambiar (de )?plan/i })).toHaveCount(
-            0
-        );
+        await expect(subscription.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
+        await expect(subscription.locator('p')).toHaveText([
+            'Alojamiento',
+            'Activa',
+            /por mes/,
+            /Próximo cobro:/
+        ]);
     });
 
     test('TEST:B13a:7 shows a deferred balance with its condition until it closes', async ({

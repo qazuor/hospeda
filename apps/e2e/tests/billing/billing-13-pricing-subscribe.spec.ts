@@ -15,8 +15,6 @@ import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
-const AU =
-    'Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.';
 const card = (page: Page, versionId: string) =>
     page.locator(`[data-testid="pricing-card-cta"][data-plan-version-id="${versionId}"]`);
 const versionFor = async (slug: string): Promise<string> => {
@@ -118,11 +116,9 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         const basic = card(page, await versionFor('owner-basico'));
         await expect(basic).toHaveAttribute('data-kind', 'current');
         await expect(basic).toContainText('Tu plan actual en alojamiento');
-        await expect(basic).toContainText(AU);
         const premium = card(page, await versionFor('owner-premium'));
-        await expect(premium).toHaveAttribute('data-kind', 'planChangeUnavailable');
-        await expect(premium).toContainText(AU);
-        await expect(premium.locator('a')).toHaveCount(0);
+        await expect(premium).toHaveAttribute('data-kind', 'planChange');
+        await expect(premium.getByRole('button', { name: /Cambiar a este plan/ })).toBeVisible();
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(
             page.locator(
@@ -141,7 +137,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         );
     });
 
-    test('TEST:B13a:11 active owner sees current card, unavailable change, and vertical in Mi Suscripción', async ({
+    test('TEST:B13a:11 active owner sees current card, plan-change offer, and vertical in Mi Suscripción', async ({
         page
     }) => {
         const user = await owner();
@@ -152,11 +148,9 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         const basic = card(page, await versionFor('owner-basico'));
         await expect(basic).toHaveAttribute('data-kind', 'current');
         await expect(basic).toContainText('Tu plan actual en alojamiento');
-        await expect(basic).toContainText(AU);
         const premium = card(page, await versionFor('owner-premium'));
-        await expect(premium).toHaveAttribute('data-kind', 'planChangeUnavailable');
-        await expect(premium).toContainText(AU);
-        await expect(premium.locator('a')).toHaveCount(0);
+        await expect(premium).toHaveAttribute('data-kind', 'planChange');
+        await expect(premium.getByRole('button', { name: /Cambiar a este plan/ })).toBeVisible();
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(
             page.locator(
