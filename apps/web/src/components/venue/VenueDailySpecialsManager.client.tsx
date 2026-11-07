@@ -51,10 +51,25 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import styles from './VenueDailySpecialsManager.module.css';
-import { VenueSectionLockedPanel, type VenueSectionState } from './VenueSectionLockedPanel.client';
+import {
+    translateUpsell,
+    VenueSectionLockedPanel,
+    type VenueSectionState
+} from './VenueSectionLockedPanel.client';
 
 /** The entitlement the menú del día write requires. */
 const DAILY_SPECIALS_ENTITLEMENT = 'manage_venue_daily_special';
+
+/**
+ * Catalog-plan wording for the menú del día upsell. Shared by the proactive
+ * panel and the runtime 403 so the two can never disagree.
+ */
+const DAILY_SPECIALS_UPSELL_COPY = {
+    key: 'venue.owner.editor.dailySpecials.locked',
+    fallback: 'El menú del día está disponible desde el plan {{plan}}.',
+    noPlanKey: 'venue.owner.editor.dailySpecials.lockedNoPlan',
+    noPlanFallback: 'El menú del día está disponible en un plan pago.'
+} as const;
 
 /** One special, as held in form state. Ids are not carried — see the payload schema. */
 interface DailySpecialDraft {
@@ -89,6 +104,8 @@ export interface VenueDailySpecialsManagerProps {
      * A locked section is read-only and shows its upsell on first render.
      */
     readonly sectionState?: VenueSectionState;
+    /** Localized name of the cheapest catalog plan that unlocks this section. */
+    readonly upsellPlanName?: string | null;
 }
 
 /** What the panel is doing right now. */
@@ -134,7 +151,8 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
 export function VenueDailySpecialsManager({
     listingId,
     locale,
-    sectionState = 'available'
+    sectionState = 'available',
+    upsellPlanName
 }: VenueDailySpecialsManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -260,10 +278,7 @@ export function VenueDailySpecialsManager({
         if (result.error.status === 403) {
             setIsLocked(true);
             setMessage(
-                t(
-                    'venue.owner.editor.dailySpecials.locked',
-                    'El menú del día está disponible desde el plan Profesional.'
-                )
+                translateUpsell({ t, planName: upsellPlanName, ...DAILY_SPECIALS_UPSELL_COPY })
             );
             return;
         }
@@ -271,7 +286,7 @@ export function VenueDailySpecialsManager({
         setMessage(
             t('venue.owner.editor.dailySpecials.saveError', 'No se pudo guardar el menú del día.')
         );
-    }, [basePath, specials, t]);
+    }, [basePath, specials, t, upsellPlanName]);
 
     /**
      * HOS-1854. Empties a locked menú del día through the API's `delete`
@@ -322,7 +337,9 @@ export function VenueDailySpecialsManager({
                     gate={lockedGate}
                     locale={locale}
                     messageKey="venue.owner.editor.dailySpecials.locked"
-                    messageFallback="El menú del día está disponible desde el plan Profesional."
+                    messageFallback="El menú del día está disponible desde el plan {{plan}}."
+                    noPlanMessageFallback="El menú del día está disponible en un plan pago."
+                    planName={upsellPlanName}
                     preTrialMessageKey="venue.owner.editor.dailySpecials.lockedPreTrial"
                     preTrialMessageFallback="El menú del día se habilita cuando publiques tu ficha."
                     sectionLabel={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}

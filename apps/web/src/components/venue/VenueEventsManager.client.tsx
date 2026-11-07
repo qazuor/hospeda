@@ -44,10 +44,25 @@ import { createTranslations } from '@/lib/i18n';
 import type { EventDraft } from '@/lib/venue/venue-event-draft';
 import { VenueEventEntryCard } from './VenueEventEntryCard.client';
 import styles from './VenueEventsManager.module.css';
-import { VenueSectionLockedPanel, type VenueSectionState } from './VenueSectionLockedPanel.client';
+import {
+    translateUpsell,
+    VenueSectionLockedPanel,
+    type VenueSectionState
+} from './VenueSectionLockedPanel.client';
 
 /** The entitlement the venue agenda write requires. */
 const VENUE_EVENTS_ENTITLEMENT = 'manage_venue_events';
+
+/**
+ * Catalog-plan wording for the venue agenda upsell. Shared by the proactive
+ * panel and the runtime 403 so the two can never disagree.
+ */
+const VENUE_EVENTS_UPSELL_COPY = {
+    key: 'venue.owner.editor.venueEventsManager.locked',
+    fallback: 'Mantener una agenda de eventos está disponible desde el plan {{plan}}.',
+    noPlanKey: 'venue.owner.editor.venueEventsManager.lockedNoPlan',
+    noPlanFallback: 'Mantener una agenda de eventos está disponible en un plan pago.'
+} as const;
 
 /** One agenda entry, as the API returns it. */
 interface VenueEventRow {
@@ -84,6 +99,8 @@ export interface VenueEventsManagerProps {
      * A locked section is read-only and shows its upsell on first render.
      */
     readonly sectionState?: VenueSectionState;
+    /** Localized name of the cheapest catalog plan that unlocks this section. */
+    readonly upsellPlanName?: string | null;
 }
 
 const EMPTY_DRAFT: EventDraft = {
@@ -118,7 +135,8 @@ export function VenueEventsManager({
     listingId,
     locale,
     weekdayLabels,
-    sectionState = 'available'
+    sectionState = 'available',
+    upsellPlanName
 }: VenueEventsManagerProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
@@ -262,10 +280,7 @@ export function VenueEventsManager({
         if (result.error.status === 403) {
             setIsLocked(true);
             setMessage(
-                t(
-                    'venue.owner.editor.venueEventsManager.locked',
-                    'Mantener una agenda de eventos está disponible desde el plan Profesional.'
-                )
+                translateUpsell({ t, planName: upsellPlanName, ...VENUE_EVENTS_UPSELL_COPY })
             );
             return;
         }
@@ -273,7 +288,7 @@ export function VenueEventsManager({
         setMessage(
             t('venue.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
         );
-    }, [basePath, entries, t]);
+    }, [basePath, entries, t, upsellPlanName]);
 
     /**
      * HOS-1854. Empties a locked agenda through the API's `delete` intent: an
@@ -328,7 +343,9 @@ export function VenueEventsManager({
                     gate={lockedGate}
                     locale={locale}
                     messageKey="venue.owner.editor.venueEventsManager.locked"
-                    messageFallback="Mantener una agenda de eventos está disponible desde el plan Profesional."
+                    messageFallback="Mantener una agenda de eventos está disponible desde el plan {{plan}}."
+                    noPlanMessageFallback="Mantener una agenda de eventos está disponible en un plan pago."
+                    planName={upsellPlanName}
                     preTrialMessageKey="venue.owner.editor.venueEventsManager.lockedPreTrial"
                     preTrialMessageFallback="La agenda de eventos se habilita cuando publiques tu ficha."
                     sectionLabel={t(

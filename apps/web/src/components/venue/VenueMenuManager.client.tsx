@@ -93,11 +93,16 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import type { VenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 import { VenueMenuLinkField } from './VenueMenuLinkField.client';
 import styles from './VenueMenuManager.module.css';
 import { VenueMenuPlanNotice } from './VenueMenuPlanNotice.client';
 import { VenueMenuTranslationFields } from './VenueMenuTranslationFields.client';
-import { VenueSectionLockedPanel, type VenueSectionState } from './VenueSectionLockedPanel.client';
+import {
+    translateUpsell,
+    VenueSectionLockedPanel,
+    type VenueSectionState
+} from './VenueSectionLockedPanel.client';
 
 /** What the API returns for the uploaded photo/PDF. */
 interface MenuFile {
@@ -193,6 +198,8 @@ export interface VenueMenuManagerProps {
      * listing whose body carries only `{ menuUrl: null }`.
      */
     readonly menuUrl?: string | null;
+    /** Catalog plan names used by each carta upsell, including runtime 403 notices. */
+    readonly upsellPlans?: Pick<VenueUpsellPlans, 'menu' | 'itemPhotos' | 'translations'>;
 }
 
 const EMPTY_ITEM: MenuItemDraft = {
@@ -219,6 +226,24 @@ const EMPTY_SECTION: MenuSectionDraft = {
     descriptionPt: '',
     items: []
 };
+
+const PHOTO_UPSELL_COPY = {
+    key: 'venue.owner.editor.menuManager.photoLocked',
+    fallback:
+        'Las fotos por plato están disponibles desde el plan {{plan}}. Podés quitar las fotos y guardar la carta igual.',
+    noPlanKey: 'venue.owner.editor.menuManager.photoLockedNoPlan',
+    noPlanFallback:
+        'Las fotos por plato están disponibles en un plan pago. Podés quitar las fotos y guardar la carta igual.'
+} as const;
+
+const TRANSLATION_UPSELL_COPY = {
+    key: 'venue.owner.editor.menuManager.translationLocked',
+    fallback:
+        'Traducir la carta está disponible desde el plan {{plan}}. Podés borrar las traducciones y guardar la carta en español.',
+    noPlanKey: 'venue.owner.editor.menuManager.translationLockedNoPlan',
+    noPlanFallback:
+        'Traducir la carta está disponible en un plan pago. Podés borrar las traducciones y guardar la carta en español.'
+} as const;
 
 /** What the per-dish photo upload route answers with. */
 interface MenuItemPhotoUpload {
@@ -307,7 +332,8 @@ export function VenueMenuManager({
     listingId,
     locale,
     sectionState = 'available',
-    menuUrl = null
+    menuUrl = null,
+    upsellPlans
 }: VenueMenuManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -513,10 +539,7 @@ export function VenueMenuManager({
             if (response?.status === 403) {
                 setIsPhotoLocked(true);
                 setMessage(
-                    t(
-                        'venue.owner.editor.menuManager.photoLocked',
-                        'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
-                    )
+                    translateUpsell({ t, planName: upsellPlans?.itemPhotos, ...PHOTO_UPSELL_COPY })
                 );
                 return;
             }
@@ -553,7 +576,7 @@ export function VenueMenuManager({
                 )
             );
         },
-        [basePath, patchItem, t]
+        [basePath, patchItem, t, upsellPlans?.itemPhotos]
     );
 
     /**
@@ -651,10 +674,7 @@ export function VenueMenuManager({
             if (carriedPhoto) {
                 setIsPhotoLocked(true);
                 setMessage(
-                    t(
-                        'venue.owner.editor.menuManager.photoLocked',
-                        'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
-                    )
+                    translateUpsell({ t, planName: upsellPlans?.itemPhotos, ...PHOTO_UPSELL_COPY })
                 );
                 return;
             }
@@ -671,10 +691,11 @@ export function VenueMenuManager({
             if (carriedTranslation) {
                 setIsTranslationLocked(true);
                 setMessage(
-                    t(
-                        'venue.owner.editor.menuManager.translationLocked',
-                        'Traducir la carta está disponible en el plan Premium. Podés borrar las traducciones y guardar la carta en español.'
-                    )
+                    translateUpsell({
+                        t,
+                        planName: upsellPlans?.translations,
+                        ...TRANSLATION_UPSELL_COPY
+                    })
                 );
                 return;
             }
@@ -687,7 +708,7 @@ export function VenueMenuManager({
         }
 
         setMessage(t('venue.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.'));
-    }, [basePath, readGate, sections, t]);
+    }, [basePath, readGate, sections, t, upsellPlans?.itemPhotos, upsellPlans?.translations]);
 
     // ── The uploaded photo / PDF ────────────────────────────────────────────
 
@@ -900,7 +921,9 @@ export function VenueMenuManager({
                     gate={lockedGate}
                     locale={locale}
                     messageKey="venue.owner.editor.menuManager.locked"
-                    messageFallback="Tu carta completa está disponible desde el plan Profesional."
+                    messageFallback="Tu carta completa está disponible desde el plan {{plan}}."
+                    noPlanMessageFallback="Tu carta completa está disponible en un plan pago."
+                    planName={upsellPlans?.menu}
                     preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
                     preTrialMessageFallback="La carta se habilita cuando publiques tu ficha."
                     sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
@@ -1023,6 +1046,7 @@ export function VenueMenuManager({
                             id={planNoticeId}
                             gate={menuGate}
                             locale={locale}
+                            planName={upsellPlans?.menu}
                         />
                     ) : null}
 
@@ -1228,6 +1252,7 @@ export function VenueMenuManager({
                                     hasDescription={false}
                                     locked={isTranslationLocked}
                                     locale={locale}
+                                    planName={upsellPlans?.translations}
                                     onChange={(patch) => {
                                         patchSection(sectionIndex, patch);
                                     }}
@@ -1283,6 +1308,7 @@ export function VenueMenuManager({
                                             hasDescription={true}
                                             locked={isTranslationLocked}
                                             locale={locale}
+                                            planName={upsellPlans?.translations}
                                             onChange={(patch) => {
                                                 patchItem(sectionIndex, itemIndex, patch);
                                             }}

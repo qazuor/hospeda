@@ -268,7 +268,8 @@
                 "linkSave": "Guardar enlace",
                 "linkSaved": "Enlace guardado.",
                 "linkSaveError": "No se pudo guardar el enlace.",
-                "locked": "Tu carta completa está disponible desde el plan Profesional.",
+                "locked": "Tu carta completa está disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "Tu carta completa está disponible en un plan pago.",
                 "lockedPreTrial": "La carta se habilita cuando publiques tu ficha.",
                 "seePlans": "Ver planes",
                 "addPhoto": "Agregar foto",
@@ -279,7 +280,8 @@
                 "photoAltPlaceholder": "Describí la foto (opcional)",
                 "photoAttached": "Foto agregada. Acordate de guardar la carta.",
                 "photoUploadError": "No se pudo subir la foto del plato.",
-                "photoLocked": "Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.",
+                "photoLocked": "Las fotos por plato están disponibles desde el plan {{plan}}. Podés quitar las fotos y guardar la carta igual.",
+                "photoLockedNoPlan": "Las fotos por plato están disponibles en un plan pago. Podés quitar las fotos y guardar la carta igual.",
                 "translations": "Traducciones (EN/PT)",
                 "nameEn": "Nombre en inglés",
                 "nameEnPlaceholder": "Nombre en inglés",
@@ -289,8 +291,10 @@
                 "descriptionEnPlaceholder": "Descripción en inglés",
                 "descriptionPt": "Descripción en portugués",
                 "descriptionPtPlaceholder": "Descripción en portugués",
-                "translationLocked": "Traducir la carta está disponible en el plan Premium. Podés borrar las traducciones y guardar la carta en español.",
-                "translationLockedHint": "Disponible en el plan Premium. Borrá el inglés y el portugués para guardar la carta en español."
+                "translationLocked": "Traducir la carta está disponible desde el plan {{plan}}. Podés borrar las traducciones y guardar la carta en español.",
+                "translationLockedNoPlan": "Traducir la carta está disponible en un plan pago. Podés borrar las traducciones y guardar la carta en español.",
+                "translationLockedHint": "Disponible desde el plan {{plan}}. Borrá el inglés y el portugués para guardar la carta en español.",
+                "translationLockedHintNoPlan": "Disponible en un plan pago. Borrá el inglés y el portugués para guardar la carta en español."
             },
             "dailySpecials": {
                 "title": "Menú del día",
@@ -312,7 +316,8 @@
                 "saving": "Guardando…",
                 "saved": "Menú del día guardado.",
                 "saveError": "No se pudo guardar el menú del día.",
-                "locked": "El menú del día está disponible desde el plan Profesional.",
+                "locked": "El menú del día está disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "El menú del día está disponible en un plan pago.",
                 "lockedPreTrial": "El menú del día se habilita cuando publiques tu ficha.",
                 "expired": "Ya venció — no se está mostrando.",
                 "scheduled": "Programado — todavía no se muestra."
@@ -343,7 +348,8 @@
                 "saving": "Guardando…",
                 "saved": "Agenda guardada.",
                 "saveError": "No se pudo guardar la agenda.",
-                "locked": "Mantener una agenda de eventos está disponible desde el plan Profesional.",
+                "locked": "Mantener una agenda de eventos está disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "Mantener una agenda de eventos está disponible en un plan pago.",
                 "lockedPreTrial": "La agenda de eventos se habilita cuando publiques tu ficha."
             },
             "lockedSection": {

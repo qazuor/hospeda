@@ -30,6 +30,8 @@ import { VenueDailySpecialsManager } from '@/components/venue/VenueDailySpecials
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 
 export const prerender = false;
@@ -44,6 +46,8 @@ if (resolution.error) return resolution.error;
 
 const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
+const plans = await fetchAudiencePlans({ audience: 'venue' });
+const upsellPlans = resolveVenueUpsellPlans({ plans, t });
 
 // HOS-1854. See `carta.astro` for the same wiring: the state comes from the
 // resolver's map and only a locked section pays for the count read.
@@ -84,5 +88,6 @@ const lockedCount = sectionId ? lockedCounts[sectionId] : null;
 		listingId={listingId}
 		locale={locale}
 		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
+		upsellPlanName={upsellPlans.dailySpecials}
 	/>
 </ListingEditorSectionLayout>
