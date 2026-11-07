@@ -28,6 +28,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
+import { buildChargebackDetection } from '../../utils/billing-chargeback-detection.js';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
@@ -122,6 +123,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 reader: createBootstrapCoverageReader()
             }).ports;
             const complements = buildComplementPolicyPorts();
+            const markPayments = createPaymentReconciliationMarkPayments(clock);
             const summary = await runReconciliationSweep(
                 {
                     correlationId: ctx.correlationId,
@@ -212,7 +214,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             touristVipInheritance,
                             complements,
                             promoCharges: createPromoChargePolicy(),
-                            promoExhaustion: createPromoExhaustion({ provider, clock })
+                            promoExhaustion: createPromoExhaustion({ provider, clock }),
+                            // AC:B7:10: a charged period read `charged_back` settles through S6.
+                            chargebacks: buildChargebackDetection({ markPayments })
                         }),
                         // HOS-1685, CRIT:1685:2: copy the provider's next payment date onto the ACTIVE card row. Last, so no check above sees a value this run moved (H4).
                         createNextChargeSync()
@@ -233,13 +237,13 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     // The mark opened for a retained payment hangs it (AC:B5:32); without
                     // the real ledger port each one fails as "not registered". The sweep
                     // hands it to the comparisons and the zero-call checks.
-                    markPayments: createPaymentReconciliationMarkPayments(clock),
+                    markPayments,
                     // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
                     cancellationRetry: { beforeCancelNotice },
                     cancellationSeen: providerLinkCancellationSeen,
                     terminalReturn: { beforeCancelNotice },
                     // AC:B11:12, AC:B11:27: re-read credited payments with the real defaults.
-                    creditedPayments: {},
+                    creditedPayments: { chargebacks: buildChargebackDetection({ markPayments }) },
                     // AC:B11:13: zero population until B10 writes order keys.
                     paidOrders: {},
                     markEscalation: { notice: {} },

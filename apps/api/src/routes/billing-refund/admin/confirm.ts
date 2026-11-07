@@ -15,6 +15,7 @@ import {
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
+import { buildChargebackDetection } from '../../../utils/billing-chargeback-detection';
 import { getClock } from '../../../utils/clock';
 import { getPaymentProvider } from '../../../utils/payment-provider';
 import { createErrorResponse } from '../../../utils/response-helpers';
@@ -77,13 +78,16 @@ export const adminConfirmRefundRoute = createAdminRoute({
         RefundConfirmationRequestSchema.parse(body);
         const actor = getActorFromContext(ctx);
         const clock = getClock().clock;
+        const markPayments = createPaymentReconciliationMarkPayments(clock);
         try {
             const result = await confirmRefund(
                 { actor, refundId: String(params.refundId) },
                 {
                     clock,
                     provider: getPaymentProvider(),
-                    markPayments: createPaymentReconciliationMarkPayments(clock)
+                    markPayments,
+                    // AC:B7:10: a chargeback read while confirming runs S6 as well as the mark.
+                    chargebacks: buildChargebackDetection({ markPayments })
                 }
             );
             auditLog({

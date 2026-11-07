@@ -10,6 +10,7 @@ import {
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
+import { buildChargebackDetection } from '../../utils/billing-chargeback-detection';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
@@ -44,6 +45,9 @@ import { touristVipInheritance } from '../billing-subscription/tourist-vip-inher
  *   `LIVE_PREAPPROVAL_ON_CLOSED_ROW` (H-7). The unknown preapproval is not a grid
  *   cell: the receiver itself hands it to `handleUnknownAuthorization`.
  * HOS-1589 (AC:B9b:4/5) registers the production promo counter and S30 ports.
+ * `chargebacks` is the complete chargeback detection of the API (HOS-1631,
+ * AC:B7:10): the receiver hands it to `recordChargeFact`, so a `charged_back`
+ * charge notice runs S6 as well as opening the reason-17 mark.
  *
  * NOT registered (H-1, H-14): `RESUME_MIRROR`, `CANCELLED_ON_PAUSE` and
  * `CANCELLED_WHILE_PENDING` keep throwing `MIRROR_PAIR_NOT_REGISTERED`; there is no `successionCloser`: S18 does not exist yet (B8b), so
@@ -77,6 +81,8 @@ export function buildMercadoPagoNoticePorts() {
         touristVipInheritance,
         cancellationSeen: providerLinkCancellationSeen,
         markPayments,
+        // AC:B7:10: a `charged_back` charge notice runs S6 and opens reason 17.
+        chargebacks: buildChargebackDetection({ markPayments }),
         confirmedRefunds: confirmedRefundsForNotice,
         complements,
         delegates: createProviderNoticeMirrorDelegates({

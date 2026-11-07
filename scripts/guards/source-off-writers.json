@@ -114,6 +114,15 @@
         "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); both the wrapper and MP2 call emitArrearsSuspensionCoverageChanged after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/suspend-for-chargeback-write.ts",
+        "symbol": "writeChargebackSuspension",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/suspend-for-chargeback.service.ts",
+        "reason": "S6 by chargeback moves ACTIVE, GRACE_PERIOD or PAUSED courtesy to SUSPENDED; the caller reuses S6's coverage removal after commit (AC:B7:10)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",
         "symbol": "writeDirectCancellation",
         "table": "subscriptions",

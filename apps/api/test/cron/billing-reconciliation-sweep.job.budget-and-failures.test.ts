@@ -334,7 +334,12 @@ describe('billing reconciliation sweep cron', () => {
         // Assert
         expect(mockSweep).toHaveBeenCalledWith(
             expect.objectContaining({ correlationId: expect.any(String), lastSlot: true }),
-            expect.objectContaining({ creditedPayments: {}, paidOrders: {} })
+            expect.objectContaining({
+                creditedPayments: expect.objectContaining({
+                    chargebacks: expect.objectContaining({ detect: expect.any(Function) })
+                }),
+                paidOrders: {}
+            })
         );
         expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['paid-row']);
