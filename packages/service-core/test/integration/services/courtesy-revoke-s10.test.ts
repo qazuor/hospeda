@@ -11,7 +11,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { grantTemporaryCourtesy } from '../../../src/services/billing/subscription/grant-temporary-courtesy.service.js';
 import { canPause } from '../../../src/services/billing/subscription/pause-policy.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
@@ -24,6 +24,20 @@ import {
 } from './support/courtesy-fixtures.js';
 import { addonPolicyFromTx } from './support/coverage-fixtures.js';
 import { pausePlanPolicy } from './support/pause-fixtures.js';
+
+const { courtesyNoticeError } = vi.hoisted(() => ({ courtesyNoticeError: vi.fn() }));
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: (category: string) => {
+            const logger = actual.createLogger(category);
+            return category === 'courtesy-revoked-notice'
+                ? { ...logger, error: courtesyNoticeError }
+                : logger;
+        }
+    };
+});
 
 const db = getServiceTestDb();
 const complements = {
@@ -42,8 +56,23 @@ const grant = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>) =>
         },
         s.ports
     );
-const revoke = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>) =>
-    revokeTemporaryCourtesy({ subscriptionId: s.subscriptionId }, { ...s.ports, complements });
+type CourtesySeed = Awaited<ReturnType<typeof seedCourtesyPrincipal>>;
+const revoke = async (s: CourtesySeed, provider = s.ports.provider) =>
+    revokeTemporaryCourtesy(
+        { subscriptionId: s.subscriptionId },
+        { ...s.ports, provider, complements }
+    );
+const withoutProviderChargeDate = (provider: CourtesySeed['ports']['provider']) =>
+    new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'readAuthorization')
+                return async (input: Parameters<typeof target.readAuthorization>[0]) => {
+                    const read = await target.readAuthorization(input);
+                    return { ...read, snapshot: { ...read.snapshot, nextChargeAt: null } };
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
 afterEach(retireCourtesyFixtures);
 afterAll(closeServiceTestPool);
 
@@ -116,6 +145,75 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:14 courtesy revocation is
                 { clock: s.ports.clock, planPolicy: pausePlanPolicy() }
             )
         ).toMatchObject({ allowed: true });
+    });
+    it('uses the stored charge date in the notice when the provider reread has none', async () => {
+        const s = await seedCourtesyPrincipal();
+        expect((await grant(s)).outcome).toBe('GRANTED');
+        const storedChargeAt = new Date('2027-03-22T12:00:00.000Z');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: storedChargeAt })
+            .where(eq(subscriptions.id, s.subscriptionId));
+
+        const result = await revoke(s, withoutProviderChargeDate(s.ports.provider));
+        expect(result.outcome).toBe('RESUMED');
+        if (result.outcome !== 'RESUMED') throw new Error('S10 did not resume');
+        expect(result.nextChargeAt).toBeNull();
+        const mail = await db
+            .select({ payload: emailOutbox.payload })
+            .from(emailOutbox)
+            .where(
+                and(
+                    eq(emailOutbox.recipientUserId, s.userId),
+                    eq(emailOutbox.template, 'billing.courtesy-revoked')
+                )
+            );
+        expect(mail).toHaveLength(1);
+        expect(mail[0]?.payload).toMatchObject({
+            subscriptionId: s.subscriptionId,
+            nextChargeOn: '2027-03-22'
+        });
+    });
+    it('logs the missing charge date and skips the notice after applying revocation', async () => {
+        const s = await seedCourtesyPrincipal();
+        expect((await grant(s)).outcome).toBe('GRANTED');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: null })
+            .where(eq(subscriptions.id, s.subscriptionId));
+        courtesyNoticeError.mockClear();
+
+        const result = await revoke(s, withoutProviderChargeDate(s.ports.provider));
+        expect(result.outcome).toBe('RESUMED');
+        expect(courtesyNoticeError).toHaveBeenCalledWith(
+            { subscriptionId: s.subscriptionId },
+            'Next charge date missing for courtesy revocation'
+        );
+        const mail = await db
+            .select({ id: emailOutbox.id })
+            .from(emailOutbox)
+            .where(
+                and(
+                    eq(emailOutbox.recipientUserId, s.userId),
+                    eq(emailOutbox.template, 'billing.courtesy-revoked')
+                )
+            );
+        expect(mail).toEqual([]);
+        const [subscription] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, s.subscriptionId));
+        expect(subscription?.status).toBe('ACTIVE');
+        const [pause] = await db
+            .select({ actualEndAt: subscriptionPauses.actualEndAt })
+            .from(subscriptionPauses)
+            .where(eq(subscriptionPauses.subscriptionId, s.subscriptionId));
+        expect(pause?.actualEndAt).toEqual(courtesyNow);
+        const [courtesy] = await db
+            .select({ endsAt: courtesyGrants.endsAt })
+            .from(courtesyGrants)
+            .where(eq(courtesyGrants.subscriptionId, s.subscriptionId));
+        expect(courtesy?.endsAt).toEqual(courtesyNow);
     });
     it('keeps the row paused and the grant live if the provider reread still says paused', async () => {
         const s = await seedCourtesyPrincipal({ resumeAcknowledgesOnly: true });
