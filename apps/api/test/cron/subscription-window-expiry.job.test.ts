@@ -91,6 +91,7 @@ describe('subscription-window-expiry cron', () => {
             changeDirection: expect.any(Function),
             complements: mockComplementPorts,
             successionCloser: expect.objectContaining({ closeSuccession: expect.any(Function) }),
+            successionSettler: expect.any(Function),
             scheduledChangeApplier: expect.objectContaining({
                 applyScheduledChange: expect.any(Function)
             })
@@ -105,6 +106,7 @@ describe('subscription-window-expiry cron', () => {
             changeDirection: expect.any(Function),
             complements: mockComplementPorts,
             successionCloser: expect.objectContaining({ closeSuccession: expect.any(Function) }),
+            successionSettler: expect.any(Function),
             scheduledChangeApplier: expect.objectContaining({
                 applyScheduledChange: expect.any(Function)
             })
