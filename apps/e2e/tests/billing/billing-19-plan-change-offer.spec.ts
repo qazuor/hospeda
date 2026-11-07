@@ -10,6 +10,7 @@ import {
     type FakeWorld,
     formatMarketDate,
     recordCreditedCycle,
+    runCron,
     WEB_URL
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
@@ -91,6 +92,20 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
             subscriptionId,
             authorizationId
         });
+        const nextChargeAt = (
+            await world.fakeServer.provider.readAuthorization({ authorizationId })
+        ).snapshot.nextChargeAt;
+        if (!nextChargeAt) throw new Error('Expected a future provider charge after the cycle.');
+        const sweep = await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        expect(sweep.success).toBe(true);
+        const synced = await execSQL<{ next_charge_at: Date | null }>(
+            'SELECT next_charge_at FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(synced[0]?.next_charge_at?.toISOString()).toBe(nextChargeAt);
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const article = page.locator(
             `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
