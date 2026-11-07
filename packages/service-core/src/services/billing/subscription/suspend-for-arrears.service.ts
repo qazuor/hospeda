@@ -21,6 +21,7 @@ import {
     recordCancellationSeen
 } from './subscription-billing-ports';
 import { openSuccessionRetentions } from './succession-retained-payment';
+import { findOpenUnconfirmedPauseRequest } from './unconfirmed-pause-request.js';
 
 const logger = createLogger('suspend-for-arrears');
 
@@ -92,6 +93,8 @@ export type SuspendForArrearsResult =
               | 'SUCCESSION_IN_PROGRESS'
               | 'NOT_CARD_PRINCIPAL'
               | 'RETAINED_PAYMENT'
+              /** AC:2003:1: an open request makes the provider pause our own pending action. */
+              | 'PAUSE_REQUEST_UNCONFIRMED'
               | 'LOST_RACE';
       };
 
@@ -137,6 +140,7 @@ export { type ArrearsSuspensionWrite, writeArrearsSuspension } from './arrears-s
  * After the S19 retained-payment guard, AC:B7:11 skips the first, second and
  * fifth events while a live successor points at this predecessor. The third
  * event (chargeback, Phase 2) will be exempt from that guard.
+ * HOS-2003 skips the second event while our pause or resume request mark remains open.
  *
  * @param input - The row, the event and its occurrence
  * @param ports - Provider, clock, notice and the optional ports
@@ -173,6 +177,17 @@ export async function suspendForArrears(
             'Arrears suspension waits for the live succession to end'
         );
         return { outcome: 'NOT_APPLICABLE', reason: 'SUCCESSION_IN_PROGRESS' };
+    }
+
+    if (value.event === 'PROVIDER_PAUSE_OBSERVED') {
+        const mark = await findOpenUnconfirmedPauseRequest({ subscriptionId: subscription.id });
+        if (mark) {
+            logger.warn(
+                { subscriptionId: subscription.id, event: value.event, markReason: mark.reason },
+                'Arrears suspension waits for review of an unconfirmed pause request'
+            );
+            return { outcome: 'NOT_APPLICABLE', reason: 'PAUSE_REQUEST_UNCONFIRMED' };
+        }
     }
 
     // What the suspension notice says (AC:B7:30), read while the row is still in
