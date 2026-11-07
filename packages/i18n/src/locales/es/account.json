@@ -86,6 +86,9 @@
         "listingVenue": {
             "body": "Edita el menu, los horarios y los datos visibles de tu local."
         },
+        "listingVenueNoMenu": {
+            "body": "Edita los horarios y los datos visibles de tu local."
+        },
         "myListings": {
             "title": "Tus comercios",
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."

@@ -107,10 +107,17 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
                 doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
                 onDestroyStarted: handleDestroy,
                 steps: visibleSteps.map((step) => {
+                    // HOS-2073: use the menu-neutral copy when the step's
+                    // companion anchor is not on the page.
+                    const bodyKey =
+                        step.bodyWhenAnchorAbsent &&
+                        document.querySelector(step.bodyWhenAnchorAbsent.anchor) === null
+                            ? step.bodyWhenAnchorAbsent.body
+                            : step.body;
                     const stepDef: Record<string, unknown> = {
                         popover: {
                             title: t(step.title, step.title),
-                            description: t(step.body, step.body),
+                            description: t(bodyKey, bodyKey),
                             side: step.side ?? 'bottom',
                             align: step.align ?? 'center'
                         }
