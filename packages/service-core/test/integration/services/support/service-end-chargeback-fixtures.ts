@@ -100,27 +100,34 @@ export async function pendingSuccessor(
 }
 
 /** Detection wired to the real S12 service and a replaceable S31 interface. */
-export function scheduledChargebackDetection(input: {
+export function s12ChargebackPorts(input: {
     readonly fixture: Awaited<ReturnType<typeof chargebackFixture>>;
     readonly successorCutter?: SuccessorCutter;
 }) {
     const { fixture } = input;
     const orphanhood = orphanPorts(getServiceTestDb()).ports;
+    return {
+        successorCutter:
+            input.successorCutter ?? createSuccessorCutter({ clock: fixture.clock, orphanhood }),
+        orphanhood,
+        clock: fixture.clock,
+        provider: fixture.provider,
+        beforeCancelNotice: outboxBeforeCancelNotice(),
+        coverageNotices: fixture.coverageNotices
+    };
+}
+
+/** Detection wired to the real S12 service and a replaceable S31 interface. */
+export function scheduledChargebackDetection(input: {
+    readonly fixture: Awaited<ReturnType<typeof chargebackFixture>>;
+    readonly successorCutter?: SuccessorCutter;
+}) {
+    const { fixture } = input;
     return createChargebackDetection({
         markPayments: createPaymentReconciliationMarkPayments(fixture.clock),
         clock: fixture.clock,
         serviceEnd: {
-            run: (args) =>
-                applyS12ByChargeback(args, {
-                    successorCutter:
-                        input.successorCutter ??
-                        createSuccessorCutter({ clock: fixture.clock, orphanhood }),
-                    orphanhood,
-                    clock: fixture.clock,
-                    provider: fixture.provider,
-                    beforeCancelNotice: outboxBeforeCancelNotice(),
-                    coverageNotices: fixture.coverageNotices
-                })
+            run: (args) => applyS12ByChargeback(args, s12ChargebackPorts(input))
         }
     });
 }

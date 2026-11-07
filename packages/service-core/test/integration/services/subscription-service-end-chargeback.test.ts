@@ -14,6 +14,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger';
 import { runCreditedPaymentsCheck } from '../../../src/services/billing/reconciliation/sweep/credited-payments-check';
 import { endScheduledServices } from '../../../src/services/billing/subscription/end-scheduled-services.service';
+import { applyS12ByChargeback } from '../../../src/services/billing/subscription/service-end-s12-chargeback';
 import {
     closeServiceTestPool,
     getServiceTestDb,
@@ -22,13 +23,17 @@ import {
 } from './helpers';
 import { orphanPorts } from './support/addon-orphan-fixtures';
 import {
+    approvedCharge,
+    chargebackFixture,
     chargebackMarks,
+    paymentOfCharge,
     recordCharge,
     retireChargebackFixtures
 } from './support/chargeback-fixtures';
 import {
     pendingSuccessor,
     retireServiceEndSuccessors,
+    s12ChargebackPorts,
     scheduledChargebackDetection,
     scheduledChargebackFixture
 } from './support/service-end-chargeback-fixtures';
@@ -41,6 +46,33 @@ afterEach(async () => {
 afterAll(closeServiceTestPool);
 
 describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
+    it.skipIf(!isServiceTestDbAvailable())(
+        'does not apply its second event to an ACTIVE principal',
+        async () => {
+            const fixture = await chargebackFixture();
+            const chargeId = await approvedCharge(fixture);
+            await recordCharge(fixture, chargeId);
+            const payment = await paymentOfCharge(chargeId);
+            await fixture.provider.chargeBack({ chargeId });
+            const result = await applyS12ByChargeback(
+                {
+                    subscriptionId: fixture.started.subscriptionId,
+                    paymentId: payment.id,
+                    now: fixture.clock.now()
+                },
+                s12ChargebackPorts({ fixture })
+            );
+            expect(result).toEqual({
+                outcome: 'NOT_APPLICABLE',
+                subscriptionId: fixture.started.subscriptionId
+            });
+            const [row] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            expect(row?.status).toBe('ACTIVE');
+        }
+    );
     it.skipIf(!isServiceTestDbAvailable())(
         'ends before S11 date, opens reason 17, sends one mail and makes no new provider call',
         async () => {

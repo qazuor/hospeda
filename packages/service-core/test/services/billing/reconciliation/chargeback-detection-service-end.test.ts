@@ -1,4 +1,10 @@
+import type { DrizzleClient } from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AddonOrphanhoodPorts } from '../../../../src/services/billing/addon/addon-orphanhood-ports';
+import { applyS12ByChargeback } from '../../../../src/services/billing/subscription/service-end-s12-chargeback';
 
 const mock = vi.hoisted(() => ({
     status: 'CANCEL_SCHEDULED',
@@ -53,6 +59,82 @@ beforeEach(() => {
 });
 
 describe('TEST:B8a:7 chargeback detection S12 dispatch', () => {
+    it('guards the actual S12 UPDATE with CANCEL_SCHEDULED in its SQL predicate', async () => {
+        const locked = {
+            class: 'PRINCIPAL',
+            status: 'CANCEL_SCHEDULED',
+            userId: subscriptionId,
+            vertical: 'accommodation'
+        };
+        const query = {
+            from: () => query,
+            where: () => query,
+            limit: () => query,
+            for: async () => [locked]
+        };
+        const updateWhere = vi.fn((_condition: SQL): never => {
+            throw new Error('guard captured');
+        });
+        const tx = {
+            select: () => query,
+            update: () => ({ set: () => ({ where: updateWhere }) })
+        } as unknown as DrizzleClient;
+        const db = {
+            transaction: async (work: (value: DrizzleClient) => Promise<unknown>) => work(tx)
+        } as unknown as DrizzleClient;
+        await expect(
+            applyS12ByChargeback(
+                { subscriptionId, paymentId, now },
+                {
+                    db,
+                    clock: { now: () => now },
+                    successorCutter: { cutSuccessor: vi.fn() },
+                    orphanhood: {} as AddonOrphanhoodPorts,
+                    provider: {} as PaymentProvider,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+                }
+            )
+        ).rejects.toThrow('guard captured');
+        const predicate = updateWhere.mock.calls[0]?.[0];
+        expect(predicate).toBeDefined();
+        const compiled = new PgDialect().sqlToQuery(predicate!);
+        expect(compiled.sql).toMatch(/"subscription"\."status"/);
+        expect(compiled.params).toContain('CANCEL_SCHEDULED');
+    });
+    it('rejects a locked COMPLEMENTO row before any write or S31 call', async () => {
+        const locked = {
+            class: 'COMPLEMENTO',
+            status: 'CANCEL_SCHEDULED',
+            userId: subscriptionId,
+            vertical: 'accommodation'
+        };
+        const query = {
+            from: () => query,
+            where: () => query,
+            limit: () => query,
+            for: async () => [locked]
+        };
+        const update = vi.fn();
+        const tx = { select: () => query, update } as unknown as DrizzleClient;
+        const db = {
+            transaction: async (work: (value: DrizzleClient) => Promise<unknown>) => work(tx)
+        } as unknown as DrizzleClient;
+        const cutSuccessor = vi.fn();
+        const skipped = await applyS12ByChargeback(
+            { subscriptionId, paymentId, now },
+            {
+                db,
+                clock: { now: () => now },
+                successorCutter: { cutSuccessor },
+                orphanhood: {} as AddonOrphanhoodPorts,
+                provider: {} as PaymentProvider,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            }
+        );
+        expect(skipped).toEqual({ outcome: 'NOT_APPLICABLE', subscriptionId });
+        expect(update).toHaveBeenCalledTimes(0);
+        expect(cutSuccessor).toHaveBeenCalledTimes(0);
+    });
     it('calls the S12 port after MARKED', async () => {
         const detection = createChargebackDetection({
             clock: { now: () => now },
