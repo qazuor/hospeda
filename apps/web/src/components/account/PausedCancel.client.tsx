@@ -46,7 +46,7 @@ export function PausedCancel({
             setState('error');
         }
     }
-    async function confirm() {
+    async function applyCancellation() {
         if (!preview) return;
         setState('pending');
         try {
@@ -111,7 +111,7 @@ export function PausedCancel({
                     <button
                         type="button"
                         className={styles.confirm}
-                        onClick={() => void confirm()}
+                        onClick={() => void applyCancellation()}
                     >
                         {t('account.subscription.mine.pausedCancel.confirm')}
                     </button>

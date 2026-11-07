@@ -20,7 +20,7 @@ export function ResumeOffer({ subscriptionId, locale }: ResumeOfferProps) {
         amountMinor: number;
         currency: string;
     } | null>(null);
-    async function confirm() {
+    async function applyResume() {
         setState('pending');
         try {
             const result = await billingSubscriptionApi.resume({ subscriptionId });
@@ -54,7 +54,7 @@ export function ResumeOffer({ subscriptionId, locale }: ResumeOfferProps) {
                     <button
                         type="button"
                         className={styles.primary}
-                        onClick={() => void confirm()}
+                        onClick={() => void applyResume()}
                     >
                         {t('account.subscription.mine.resume.confirm')}
                     </button>

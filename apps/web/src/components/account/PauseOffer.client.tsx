@@ -36,7 +36,7 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
             setState('error');
         }
     }
-    async function confirm() {
+    async function applyPause() {
         if (!preview?.offered || !preview.expectedEndAtByMonths[String(months)]) return;
         setState('pending');
         try {
@@ -131,7 +131,7 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                             <button
                                 type="button"
                                 className={styles.primary}
-                                onClick={() => void confirm()}
+                                onClick={() => void applyPause()}
                             >
                                 {t('account.subscription.mine.pause.confirm')}
                             </button>
