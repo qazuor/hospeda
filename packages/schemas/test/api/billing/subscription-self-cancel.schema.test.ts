@@ -35,7 +35,10 @@ describe('self cancellation schemas', () => {
             currency: 'ARS',
             cycle: 'monthly'
         },
-        nextCharge: null
+        nextCharge: null,
+        pause: null,
+        promo: null,
+        succession: null
     };
     it('requires paidAfterCancellation and accepts null or the addon outcome', () => {
         expect(
@@ -55,6 +58,49 @@ describe('self cancellation schemas', () => {
                 ...ownSubscriptions,
                 subscriptions: [ownRow]
             }).success
+        ).toBe(false);
+    });
+    it('accepts a paused owner row with pause, promo and open checkout fields', () => {
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [
+                    {
+                        ...ownRow,
+                        status: 'PAUSED',
+                        paidAfterCancellation: null,
+                        pause: {
+                            reason: 'CUSTOMER_REQUEST',
+                            expectedEndAt: '2026-11-05T12:00:00.000Z'
+                        },
+                        promo: { endsAt: null },
+                        succession: { checkoutOpen: true }
+                    }
+                ]
+            }).success
+        ).toBe(true);
+    });
+    it('accepts additive current courtesy and individual checkout deadline, including absence', () => {
+        const base = { ...ownRow, paidAfterCancellation: null };
+        const parse = (row: Record<string, unknown>) =>
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [row]
+            }).success;
+        expect(parse(base)).toBe(true);
+        expect(
+            parse({
+                ...base,
+                liveCourtesyMonths: 3,
+                succession: {
+                    checkoutOpen: true,
+                    checkoutDeadline: '2026-11-10T12:00:00.000Z'
+                }
+            })
+        ).toBe(true);
+        expect(parse({ ...base, liveCourtesyMonths: -1 })).toBe(false);
+        expect(
+            parse({ ...base, succession: { checkoutOpen: true, checkoutDeadline: 'invalid' } })
         ).toBe(false);
     });
     it('accepts an empty or populated deferred courtesy list', () => {
@@ -155,13 +201,20 @@ describe('self cancellation schemas', () => {
             { ...base, origin: 'ACTIVE', serviceEndsAt: new Date().toISOString() },
             { ...base, origin: 'GRACE_PERIOD', graceEndsAt: new Date().toISOString() },
             { ...base, origin: 'SUSPENDED' },
-            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() }
+            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() },
+            {
+                ...base,
+                origin: 'PAUSED',
+                serviceEndsAt: new Date().toISOString(),
+                basis: 'NOW',
+                courtesyMonthsLost: 2
+            }
         ])
             expect(SubscriptionCancellationPreviewResponseSchema.safeParse(value).success).toBe(
                 true
             );
     });
-    it('rejects unknown origins, addon effects and malformed ids', () => {
+    it('rejects incomplete paused previews, unknown addon effects and malformed ids (AC:B8b:25)', () => {
         expect(
             SubscriptionCancellationPreviewResponseSchema.safeParse({ origin: 'PAUSED' }).success
         ).toBe(false);

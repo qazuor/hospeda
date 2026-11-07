@@ -2104,13 +2104,15 @@
             "ACTIVE": "Active",
             "GRACE_PERIOD": "In grace period",
             "SUSPENDED": "Suspended",
-            "CANCEL_SCHEDULED": "Cancellation scheduled"
+            "CANCEL_SCHEDULED": "Cancellation scheduled",
+            "PAUSED": "Paused"
         },
         "effects": {
             "ACTIVE": "They will not be charged again, and the service continues until {date}, the end of the period already paid.",
             "GRACE_PERIOD": "The service ends today: they lose the service the grace period was giving them until {date}. In exchange, the installment we could not charge is not claimed.",
             "SUSPENDED": "The subscription ends today. The service was already cut by the suspension, and they are free to subscribe again.",
-            "CANCEL_SCHEDULED": "Cancellation is already requested: the service continues until {date}. There is nothing to confirm."
+            "CANCEL_SCHEDULED": "Cancellation is already requested: the service continues until {date}. There is nothing to confirm.",
+            "PAUSED": "The paused subscription keeps service until {date}; this action cannot be confirmed here."
         },
         "authorization": {
             "CARD": "If their automatic debit on Mercado Pago is still alive, it is cancelled today. We email them first; then Mercado Pago may email them about the cancellation.",
@@ -2179,6 +2181,52 @@
             "TECHNICAL_PROBLEMS": "I had technical problems",
             "OTHER": "Other reason"
         }
+    },
+    "subscriptionPause": {
+        "title": "Pause or resume subscription",
+        "customer": "Customer: {customer}",
+        "loading": "Checking pause…",
+        "invalidId": "Subscription not found.",
+        "error": "Could not complete the action ({reason}). Review the status and try again.",
+        "months": "Pause months",
+        "pauseConfirm": "The subscription for {customer} (plan {plan}) is paused until {date}.",
+        "resumePreview": "The pause was scheduled until {date}.",
+        "resumeConfirm": "The subscription for {customer} (plan {plan}) resumes today. The next charge date appears when complete.",
+        "listingEffect": "The listing leaves the public site today and returns on resume if the plan has room.",
+        "retentionEffect": "During the pause, the listing is neither archived nor deleted and receives no retention notices; its clock restarts on resume.",
+        "addonEffect": "Addons in this vertical pause with the plan; account addons pause only if no other compatible vertical remains.",
+        "addonPaused": "pauses",
+        "addonContinues": "continues",
+        "refusal": "Pause cannot be offered: {reason}. Courtesy ends: {date}.",
+        "review": "Review effects",
+        "confirm": "Confirm action",
+        "paused": "Paused until {date}.",
+        "resumed": "Subscription resumed. Next charge: {date}.",
+        "chargePending": "awaiting provider confirmation"
+    },
+    "subscriptionPlanChange": {
+        "title": "Change subscription plan",
+        "invalidId": "Subscription not found.",
+        "loading": "Loading options…",
+        "error": "Could not complete the change. Check the status and try again.",
+        "unavailable": "The subscription is not active.",
+        "customer": "Customer: {customer}",
+        "current": "Current plan: {plan}",
+        "destination": "Destination plan",
+        "choose": "Choose an option",
+        "note": "Note (optional)",
+        "confirmation": "Confirm the change for {customer}: from {current} to {destination}.",
+        "review": "Review change",
+        "confirm": "Confirm change",
+        "noOptions": "No other billable plans are available.",
+        "succession": "Copy the link and send it to the customer. The current plan continues until the customer authorizes.",
+        "checkoutLabel": "Authorization link to copy",
+        "firstCharge": "First charge: {date}.",
+        "creditDays": "Credit days: {days}.",
+        "downgrade": "The change takes effect on {date}.",
+        "regret": "The scheduled change was reversed. Amount: {amount} cents.",
+        "copy": "Copy link",
+        "copied": "Link copied."
     },
     "permanentGrants": {
         "title": "Permanent grants",

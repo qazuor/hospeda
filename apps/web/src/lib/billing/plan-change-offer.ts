@@ -17,6 +17,7 @@ import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 export interface PlanChangeChoice {
     readonly id: string;
     readonly label: string;
+    readonly cycle: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
 }
 
 /** Resolve the owner's active principal row for one pricing vertical. */
@@ -58,13 +59,10 @@ export async function loadPlanChangeChoices({
             t
         });
         return plan.billingOptions
-            .filter(
-                (option) =>
-                    (option.cycle === 'monthly' || option.cycle === 'annual') &&
-                    option.id !== current.data.billingOptionId
-            )
+            .filter((option) => option.id !== current.data.billingOptionId)
             .map((option) => ({
                 id: option.id,
+                cycle: option.cycle,
                 label: t('account.subscription.mine.planChange.choice', undefined, {
                     plan: name,
                     cycle: t(SIGNUP_CYCLE_LABEL_KEY[option.cycle]),
@@ -161,16 +159,20 @@ export function planChangeErrorMessage({
             });
     }
     const key =
-        reason === 'GRACE_PERIOD'
-            ? 'grace'
-            : reason === 'CYCLE_END_PENDING'
-              ? 'cycleEndPending'
-              : reason === 'CHANGE_WINDOW_TOO_SHORT' || reason === 'SUCCESSION_WINDOW_TOO_SHORT'
-                ? 'window'
-                : reason === 'NO_CHANGE'
-                  ? 'same'
-                  : reason === 'SCHEDULED_CHANGE_EXISTS' || reason === 'MIGRATION_CHANGE_QUEUED'
-                    ? 'scheduled'
-                    : 'other';
+        reason === 'SUCCESSION_IN_PROGRESS'
+            ? 'succession'
+            : reason === 'LAST_CHARGE_NOT_ENTERED' || reason === 'PREAPPROVAL_NOT_AUTHORIZED'
+              ? 'lastCharge'
+              : reason === 'GRACE_PERIOD'
+                ? 'grace'
+                : reason === 'CYCLE_END_PENDING'
+                  ? 'cycleEndPending'
+                  : reason === 'CHANGE_WINDOW_TOO_SHORT' || reason === 'SUCCESSION_WINDOW_TOO_SHORT'
+                    ? 'window'
+                    : reason === 'NO_CHANGE'
+                      ? 'same'
+                      : reason === 'SCHEDULED_CHANGE_EXISTS' || reason === 'MIGRATION_CHANGE_QUEUED'
+                        ? 'scheduled'
+                        : 'other';
     return t(`account.subscription.mine.planChange.reason.${key}`);
 }

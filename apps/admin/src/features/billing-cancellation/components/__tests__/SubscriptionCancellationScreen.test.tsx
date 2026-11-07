@@ -72,6 +72,16 @@ const PREVIEWS: Record<
         origin: 'SUSPENDED',
         addons: []
     },
+    PAUSED: {
+        subscriptionId: ID,
+        vertical: 'accommodation',
+        paymentMethod: 'CARD',
+        origin: 'PAUSED',
+        serviceEndsAt: '2026-11-04T03:00:00.000Z',
+        basis: 'NOW',
+        courtesyMonthsLost: 0,
+        addons: []
+    },
     CANCEL_SCHEDULED: {
         subscriptionId: ID,
         vertical: 'accommodation',

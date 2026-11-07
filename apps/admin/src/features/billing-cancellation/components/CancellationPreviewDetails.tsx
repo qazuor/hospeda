@@ -18,7 +18,9 @@ export function CancellationPreviewDetails({
 }) {
     const { t, locale } = useTranslations();
     const date =
-        preview.origin === 'ACTIVE' || preview.origin === 'CANCEL_SCHEDULED'
+        preview.origin === 'ACTIVE' ||
+        preview.origin === 'CANCEL_SCHEDULED' ||
+        preview.origin === 'PAUSED'
             ? formatCancellationDate({ iso: preview.serviceEndsAt, locale })
             : preview.origin === 'GRACE_PERIOD'
               ? formatCancellationDate({ iso: preview.graceEndsAt, locale })

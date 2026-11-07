@@ -11,12 +11,18 @@ import {
     emitAddonCoverageRemoved
 } from '../addon/addon-instance-a5.js';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { CancelOurAuthorizationOutcome } from '../reconciliation/cancel-our-authorization.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { CancelActiveCall } from './cancel-active-subscription.service.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import type { DecidedComplementCancellationCall } from './complement-s11-rule.js';
+import {
+    computeS11ServiceEnd,
+    readS11ServiceEndFacts,
+    type S11ServiceEndSubscription
+} from './s11-service-end.js';
 import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
@@ -71,6 +77,7 @@ export interface CancelPausedSubscriptionPorts {
     readonly orphanhood: AddonOrphanhoodPorts;
     readonly complements: ComplementPolicyPorts;
     readonly successionCloser?: SuccessionCloser;
+    readonly billingFacts?: BillingFactSink;
     readonly cancellationSeen?: CancellationSeenAnnotator;
 }
 
@@ -82,6 +89,7 @@ export interface CancelPausedReading {
     readonly cardPayer: boolean;
     readonly authorizationId: string | null;
     readonly kind: 'DIRECT_CANCELLATION' | 'SCHEDULED_CANCELLATION';
+    readonly actorKind: 'USER' | 'ADMIN';
 }
 
 /** S22's stable outcomes, including typed precondition failures. */
@@ -220,6 +228,22 @@ export async function readOpenPauseId(input: {
         )
         .limit(1);
     return pause?.id ?? null;
+}
+
+/** Shares S22's credited end decision between the committed act and its preview. */
+export async function resolvePausedCancellationEnd(input: {
+    readonly tx: DrizzleClient;
+    readonly subscription: S11ServiceEndSubscription;
+    readonly now: Date;
+}) {
+    const facts = await readS11ServiceEndFacts({ tx: input.tx, subscription: input.subscription });
+    const credited = facts.creditEndsAt !== null && facts.creditEndsAt > input.now;
+    const end = credited ? computeS11ServiceEnd({ now: input.now, ...facts }) : null;
+    return {
+        credited,
+        serviceEndsAt: end?.serviceEndsAt ?? input.now,
+        basis: end?.basis ?? ('NOW' as const)
+    };
 }
 
 /** Opens rule 1's reconciliation mark for a lost S22 write race. */

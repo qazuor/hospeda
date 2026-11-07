@@ -1,4 +1,11 @@
-import { domainEventModel, eq, getDb, providerLinks, subscriptions } from '@repo/db';
+import {
+    domainEventModel,
+    eq,
+    getDb,
+    providerLinks,
+    subscriptionPauses,
+    subscriptions
+} from '@repo/db';
 import { PermissionEnum, SubscriptionCancellationResponseSchema } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -20,6 +27,7 @@ import {
 const clock = routeClock();
 const fake = routeFake(clock);
 const audit = vi.hoisted(() => vi.fn());
+const pauseIds: string[] = [];
 vi.mock('../../../src/utils/audit-logger', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     auditLog: audit
@@ -46,6 +54,8 @@ beforeEach(() => {
     audit.mockClear();
 });
 afterEach(async () => {
+    for (const id of pauseIds.splice(0))
+        await getDb().delete(subscriptionPauses).where(eq(subscriptionPauses.subscriptionId, id));
     await retireSelfCancelRows();
 });
 afterAll(async () => {
@@ -157,18 +167,62 @@ describe('TEST:1617:1 self cancellation through the protected route', () => {
         expect(event.some((entry) => entry.reason === 'S24')).toBe(true);
     });
 
-    it('(e) PAUSED is rejected without changing the row', async () => {
+    it('(e) PAUSED with an open pause cancels through S22', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'PAUSED' })
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        await getDb()
+            .insert(subscriptionPauses)
+            .values({
+                subscriptionId: seeded.subscriptionId,
+                reason: 'CUSTOMER_REQUEST',
+                requestedMonths: 2,
+                startsAt: new Date('2026-10-01T12:00:00.000Z'),
+                expectedEndAt: new Date('2026-12-01T12:00:00.000Z')
+            });
+        pauseIds.push(seeded.subscriptionId);
+        await presetSelfCancelNotice({ ...seeded, status: 'sent' });
+
+        const response = await post(seeded.subscriptionId, ownerHeaders(seeded.ownerId));
+        expect(response.status).toBe(200);
+        const body = SubscriptionCancellationResponseSchema.parse(
+            ((await response.json()) as { data: unknown }).data
+        );
+        expect(body).toMatchObject({
+            subscriptionId: seeded.subscriptionId,
+            outcome: 'CANCELLED'
+        });
+        const [row] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        expect(row?.status).toBe('CANCELLED');
+        expect(row?.serviceEndsAt?.toISOString()).toBe(body.serviceEndsAt);
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: seeded.subscriptionId
+        });
+        expect(events.some((event) => event.reason === 'S22')).toBe(true);
+    });
+
+    it('(e) PAUSED without an open pause rejects with NO_OPEN_PAUSE and leaves the row unchanged', async () => {
         const seeded = await seedSelfState('PAUSED');
+        const [before] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
         const response = await post(seeded.subscriptionId, ownerHeaders(seeded.ownerId));
         expect(response.status).toBe(409);
         expect(((await response.json()) as { error: { reason: string } }).error.reason).toBe(
-            'CANCELLATION_STATE_NOT_ALLOWED'
+            'NO_OPEN_PAUSE'
         );
         const [row] = await getDb()
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.subscriptionId));
-        expect(row?.status).toBe('PAUSED');
+        expect(row).toEqual(before);
     });
 
     it('(f) waits for our notice before provider cancellation, but proceeds after exhaustion', async () => {

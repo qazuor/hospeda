@@ -12,13 +12,15 @@ export function GraceReminder({
     graceEndDate,
     daysBefore,
     subscriptionUrl,
-    paymentMethod
+    paymentMethod,
+    planChangePending
 }: {
     readonly vertical: string;
     readonly graceEndDate: string;
     readonly daysBefore: number;
     readonly subscriptionUrl: string;
     readonly paymentMethod: 'CARD' | 'MANUAL';
+    readonly planChangePending?: boolean;
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
     const remaining = daysBefore === 1 ? '1 día' : `${daysBefore} días`;
@@ -44,6 +46,7 @@ export function GraceReminder({
                 Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener
                 que volver a suscribirte. Mi Suscripción: {subscriptionUrl}
             </Text>
+            {planChangePending ? <Text>Tu cambio de plan sigue pendiente.</Text> : null}
         </EmailLayout>
     );
 }

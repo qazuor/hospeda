@@ -341,7 +341,8 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
         typeof data.vertical !== 'string' ||
         data.vertical.trim() === '' ||
         !graceEndsAt ||
-        Number.isNaN(graceEndsAt.getTime())
+        Number.isNaN(graceEndsAt.getTime()) ||
+        (data.planChangePending !== undefined && typeof data.planChangePending !== 'boolean')
     )
         throw new TypeError('Faltan datos requeridos del aviso de inicio del grace');
     const graceEndDate = formatDate({ dateString: getLocalDateString({ instant: graceEndsAt }) });
@@ -352,6 +353,7 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
                 vertical={data.vertical}
                 graceEndDate={graceEndDate}
                 subscriptionUrl={subscriptionUrl}
+                planChangePending={data.planChangePending === true}
             />
         )
     };
