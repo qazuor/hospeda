@@ -218,7 +218,7 @@ describe('AC:B13a:6 (support) — preview route actors and refusals', () => {
             self
         );
         expect(liveAsBeneficiary.status).toBe(200);
-        expect((await liveAsBeneficiary.json()).data.permanentGrantId).toBe(grantId);
+        expect((await liveAsBeneficiary.json()).data.grant.permanentGrantId).toBe(grantId);
         expect(await grantState(beneficiaryId)).toEqual(baseline);
         const revoked = await request(
             `${BASE}/${grantId}/revocation`,
