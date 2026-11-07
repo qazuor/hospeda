@@ -1,3 +1,4 @@
+import { FAKE_AMOUNT_CEILING_MINOR } from '@repo/payments/fake';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types/index.js';
 import { PromoRedemptionReason } from './promo-redemption-reasons.js';
@@ -9,7 +10,7 @@ const RP3_FLOOR = 1_500;
 export const PROVIDER_AMOUNT_FLOOR_MINOR = RP3_FLOOR;
 
 /** RP:RP3 upper bound in minor units for Mercado Pago amounts. */
-export const PROVIDER_AMOUNT_CEILING_MINOR = 200_000_000;
+export const PROVIDER_AMOUNT_CEILING_MINOR = FAKE_AMOUNT_CEILING_MINOR;
 
 /**
  * Asserts that the composed promo amount meets Mercado Pago's minimum threshold.
