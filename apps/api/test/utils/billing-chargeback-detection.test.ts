@@ -7,7 +7,10 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
-const { detectionPorts } = vi.hoisted(() => ({ detectionPorts: [] as unknown[] }));
+const { detectionPorts, suspensionPorts } = vi.hoisted(() => ({
+    detectionPorts: [] as unknown[],
+    suspensionPorts: [] as unknown[]
+}));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
@@ -17,6 +20,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             detectionPorts.push(ports);
             return original.createChargebackDetection(
                 ports as Parameters<typeof original.createChargebackDetection>[0]
+            );
+        },
+        createChargebackSuspension: (ports: unknown) => {
+            suspensionPorts.push(ports);
+            return original.createChargebackSuspension(
+                ports as Parameters<typeof original.createChargebackSuspension>[0]
             );
         }
     };
@@ -54,6 +63,31 @@ describe('TEST:B7:7 AC:B7:10 the API builder wires the complete chargeback detec
         };
         expect(ports.markPayments).toBe(marks);
         expect(typeof ports.suspension?.suspend).toBe('function');
+    });
+
+    it('builds S6 with the production orphanhood and complement ports', () => {
+        // Arrange / Act
+        buildChargebackDetection({ markPayments: markPayments() });
+
+        // Assert
+        const ports = suspensionPorts.at(-1) as {
+            provider?: unknown;
+            clock?: unknown;
+            beforeCancelNotice?: { beforeCancel?: unknown };
+            coverageNotices?: unknown;
+            orphanhood?: { addonPolicy?: unknown; listing?: unknown };
+            complements?: { addonPolicy?: unknown; listing?: unknown };
+            cancellationSeen?: unknown;
+        };
+        expect(ports.provider).toBeDefined();
+        expect(ports.clock).toBeDefined();
+        expect(typeof ports.beforeCancelNotice?.beforeCancel).toBe('function');
+        expect(ports.coverageNotices).toBeDefined();
+        expect(typeof ports.orphanhood?.addonPolicy).toBe('function');
+        expect(typeof ports.orphanhood?.listing).toBe('function');
+        expect(typeof ports.complements?.addonPolicy).toBe('function');
+        expect(typeof ports.complements?.listing).toBe('function');
+        expect(ports.cancellationSeen).toBeDefined();
     });
 
     it('executes detect and answers NOT_APPLICABLE for a payment with no subscription', async () => {
