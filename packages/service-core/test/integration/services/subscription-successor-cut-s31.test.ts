@@ -469,10 +469,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:13 S31 successor cut', ()
             .select({ id: subscriptions.id, status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.userId, committedUserId.value));
-        expect(committedRows).toEqual([
-            { id: predecessorId, status: 'SUSPENDED' },
-            { id: successorId, status: 'CANCELLED' }
-        ]);
+        // The select has no ORDER BY, so compare by id: row order is not part of the contract.
+        expect(Object.fromEntries(committedRows.map((row) => [row.id, row.status]))).toEqual({
+            [predecessorId]: 'SUSPENDED',
+            [successorId]: 'CANCELLED'
+        });
         expect(observer.observed).toHaveLength(1);
         expect(observer.observed[0]?.event).toMatchObject({
             userId: committedUserId.value,
