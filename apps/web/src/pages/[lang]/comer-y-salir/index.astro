@@ -15,6 +15,7 @@ import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import VenueCard from '@/components/venue/VenueCard.astro';
+import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -41,7 +42,6 @@ import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pa
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
-    markVenueFilterOptionsDegraded,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 
@@ -175,11 +175,9 @@ const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
 
 // A failed options read must not offer a filter without published listings,
 // and the render must not be frozen into the shared cache while it shows that
-// poorer sidebar. `null` makes the narrowing fail closed.
+// poorer sidebar. `null` makes the narrowing fail closed; the rendered
+// `VenueFilterOptionsDegradation` marks the response degraded.
 const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
-if (!filterOptionsResult.ok) {
-    markVenueFilterOptionsDegraded({ locals: Astro.locals });
-}
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -372,6 +370,8 @@ const itemListEntries = cards.map((card) => ({
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
     />
+
+    <VenueFilterOptionsDegradation failed={!filterOptionsResult.ok || !amenitiesResult.ok || !featuresResult.ok} />
 
     {hasError && !result.ok && (
         <ErrorBanner
