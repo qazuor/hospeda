@@ -379,6 +379,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-prices"
         },
         {

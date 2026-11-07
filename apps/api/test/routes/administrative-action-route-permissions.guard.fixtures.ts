@@ -152,6 +152,11 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-permanent-grant/admin/anchor.ts',
                 route: 'adminAnchorPermanentGrantRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-permanent-grant/admin/revocation.ts',
+                route: 'adminRevokePermanentGrantRoute'
             }
         ]
     },

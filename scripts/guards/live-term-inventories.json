@@ -155,8 +155,8 @@
             "subject": "addon_instance"
         },
         {
-            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
-            "symbol": "runAddonWithoutShutdownCheck",
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listLiveAddonInstanceIdsPage",
             "row": 25,
             "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
             "subject": "addon_instance"
@@ -204,6 +204,13 @@
             "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
         },
         {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
+            "symbol": "revokePermanentGrant",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:7 (HOS-1634): revocar lee las instancias vivas tituladas por sus anclas."
+        },
+        {
             "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
             "symbol": "reanchorSubscriptionsToVersion",
             "row": null,
@@ -212,6 +219,12 @@
         }
     ],
     "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
+            "symbol": "revokePermanentGrant",
+            "row": null,
+            "why": "Revocar exige un grant vivo: uno ya revocado se rechaza con PERMANENT_GRANT_NOT_LIVE (AC:B9a:7, HOS-1634)."
+        },
         {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant-live-anchors.ts",
             "symbol": "hasLivePermanentGrantAnchor",
