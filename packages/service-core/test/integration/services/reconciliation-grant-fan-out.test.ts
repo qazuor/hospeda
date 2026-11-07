@@ -16,6 +16,7 @@ import {
     resumePermanentGrant
 } from '../../../src/services/billing/grant/permanent-grant.service.js';
 import { revokePermanentGrant } from '../../../src/services/billing/grant/permanent-grant-revoke.js';
+import { runGrantFanOutCheck } from '../../../src/services/billing/reconciliation/sweep/grant-fan-out-check.js';
 import { runZeroCallChecks } from '../../../src/services/billing/reconciliation/sweep/zero-call-checks.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
@@ -217,6 +218,12 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 (await marksOf(id)).filter(({ reason }) => reason === 'FAN_OUT_DE_GRANT_INCOMPLETO')
             ).toHaveLength(1);
             expect(await openedEventsOf(id)).toHaveLength(opened);
+            const pageHeartbeat = vi.fn(async () => undefined);
+            await runGrantFanOutCheck(
+                { correlationId: crypto.randomUUID(), pageSize: 1 },
+                { heartbeat: pageHeartbeat }
+            );
+            expect(pageHeartbeat).toHaveBeenCalled();
         });
 
         it('E2: repeats on the same mark without resuming', async () => {
