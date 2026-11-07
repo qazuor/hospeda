@@ -25,6 +25,7 @@
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
         "featured": "Somente destaques",
+        "amenities": "Comodidades",
         "features": "Opções alimentares e características",
         "minRating": "Avaliação mínima",
         "sort": {

@@ -25,6 +25,7 @@
         "type": "Establishment type",
         "priceRange": "Price range",
         "featured": "Featured only",
+        "amenities": "Amenities",
         "features": "Dietary options and features",
         "minRating": "Minimum rating",
         "sort": {
