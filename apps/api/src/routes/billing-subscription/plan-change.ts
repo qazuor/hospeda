@@ -33,6 +33,7 @@ const rejectionAnswer: Readonly<Record<Rejection, { status: 409 | 422; code: str
     SCHEDULED_CHANGE_EXISTS: { status: 409, code: 'CONFLICT' },
     MIGRATION_CHANGE_QUEUED: { status: 409, code: 'CONFLICT' },
     CHANGE_WINDOW_TOO_SHORT: { status: 409, code: 'CONFLICT' },
+    CYCLE_END_PENDING: { status: 409, code: 'CONFLICT' },
     NO_CHANGE: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     KEEP_SELECTION_INVALID: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR }
 };

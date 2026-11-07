@@ -42,6 +42,32 @@ beforeAll(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:B8b:17 plan change route rejects grace', () => {
+    it('answers 409 CONFLICT while the activated subscription has no next charge date', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await startPlanChangeScenario(tx, {
+                provider: fake,
+                clock,
+                approve: async (authorizationId) => {
+                    await fake.approve({ authorizationId });
+                },
+                direction: 'DOWN',
+                leaveCycleEndPending: true
+            });
+            const [activated] = await tx
+                .select({ status: subscriptions.status, nextChargeAt: subscriptions.nextChargeAt })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: null });
+            const response = await post(row.subscriptionId, row.userId, {
+                billingOptionId: row.targetOptionId
+            });
+            expect(response.status).toBe(409);
+            expect((await response.json()) as object).toMatchObject({
+                error: { code: 'CONFLICT', details: { reason: 'CYCLE_END_PENDING' } }
+            });
+        });
+    });
+
     it('(a) answers 409 GRACE_PERIOD and creates no successor', async () => {
         await withCompositionRollback(async (tx) => {
             const row = await startPlanChangeScenario(tx, {

@@ -88,6 +88,31 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
         expect(result.path).toBe('DOWNGRADE');
     });
 
+    it('rejects a downgrade after real activation while the next charge date is pending', async () => {
+        const seeded = await seedPlanChange({
+            rankRelation: 'HIGHER',
+            leaveCycleEndPending: true
+        });
+        seeded.verticals.setChangeDirection({
+            fromPlanVersionId: seeded.planVersionId,
+            toPlanVersionId: seeded.targetPlanVersionId,
+            direction: 'DOWN'
+        });
+        const [activated] = await getServiceTestDb()
+            .select({ status: subscriptions.status, nextChargeAt: subscriptions.nextChargeAt })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.predecessor.id));
+        expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: null });
+        const mutate = vi.spyOn(seeded.fake, 'changeAmount');
+
+        expect(await requestPlanChange(seeded.input, seeded.ports)).toEqual({
+            path: 'REJECTED',
+            reason: 'CYCLE_END_PENDING'
+        });
+        expect(mutate).not.toHaveBeenCalled();
+        expect(await scheduledChangesOf(seeded.predecessor.id)).toHaveLength(0);
+    });
+
     it('TEST:B8b:17 rejects a MANUAL grace subscription before the same-option result', async () => {
         const seeded = await seedPlanChange({ status: 'GRACE_PERIOD' });
         await getServiceTestDb()

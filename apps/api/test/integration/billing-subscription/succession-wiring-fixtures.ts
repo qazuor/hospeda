@@ -48,6 +48,7 @@ export async function startPlanChangeScenario(
         readonly clock: Clock;
         readonly approve: (authorizationId: string) => Promise<void>;
         readonly direction?: 'UP' | 'DOWN';
+        readonly leaveCycleEndPending?: boolean;
     }
 ) {
     const user = await seedCoverageUser(tx);
@@ -115,12 +116,13 @@ export async function startPlanChangeScenario(
     if (!activated.activated)
         throw new Error('Plan change predecessor did not activate through S2');
     // The first successful recurring charge belongs to a later act; anchor its future cycle date for this route fixture.
-    await tx
-        .update(subscriptions)
-        .set({
-            nextChargeAt: new Date(input.clock.now().getTime() + 30 * 24 * 60 * 60 * 1000)
-        })
-        .where(eq(subscriptions.id, started.subscriptionId));
+    if (!input.leaveCycleEndPending)
+        await tx
+            .update(subscriptions)
+            .set({
+                nextChargeAt: new Date(input.clock.now().getTime() + 30 * 24 * 60 * 60 * 1000)
+            })
+            .where(eq(subscriptions.id, started.subscriptionId));
     return {
         userId: user.userId,
         subscriptionId: started.subscriptionId,
