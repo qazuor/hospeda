@@ -4,7 +4,12 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 4 of 9 — expiry day itself, offset 0 (HOS-1012 §4, T-031).
@@ -29,6 +34,13 @@ export function TrialExpired({
     upgradeUrl,
     productDomain
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
+    const planFragment = plan ? (
+        <>
+            {' '}
+            del plan <strong>{plan}</strong>
+        </>
+    ) : null;
     const formattedEndDate = formatDate({ dateString: trialEndDate });
     const copy = resolveTrialSeriesCopy(productDomain);
 
@@ -39,12 +51,12 @@ export function TrialExpired({
         >
             <Heading>Tu publicación salió del sitio</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
 
             <Text style={styles.paragraph}>
-                Hoy {formattedEndDate} terminó tu prueba gratis del plan <strong>{planName}</strong>{' '}
-                y, como te avisamos, {copy.possessive} dejó de aparecer en Hospeda. Te escribimos
-                para que sepas exactamente qué pasó y no te enteres cuando alguien no te encuentre.
+                Hoy {formattedEndDate} terminó tu prueba gratis{planFragment} y, como te avisamos,{' '}
+                {copy.possessive} dejó de aparecer en Hospeda. Te escribimos para que sepas
+                exactamente qué pasó y no te enteres cuando alguien no te encuentre.
             </Text>
 
             <Section style={styles.alertBox}>

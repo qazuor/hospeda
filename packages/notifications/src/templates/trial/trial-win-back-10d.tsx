@@ -5,7 +5,11 @@ import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 7 of 9 — ten days after expiry (HOS-1012 §4).
@@ -36,7 +40,7 @@ export function TrialWinBack10Days({
         >
             <Heading>Tus fotos y tus datos siguen guardados</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
 
             <Text style={styles.paragraph}>
                 Pasaron diez días desde que tu publicación salió del sitio y queremos sacarte una
