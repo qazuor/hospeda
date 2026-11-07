@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { Actor } from '../../../types/index.js';
 import { cancelAddonComplementsAtProvider, runOrphanhood } from '../addon/addon-instance-a5.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
+import { emitBillingFact } from '../facts/billing-fact-sink.js';
 import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
 import { cancelActiveRejection } from './cancel-active-subscription.service.js';
@@ -22,6 +23,7 @@ import {
     readOpenPauseId,
     readPausedAuthorizationForAct,
     readPausedCancellationIdempotency,
+    resolvePausedCancellationEnd,
     writePausedCancellation,
     writePausedScheduledCancellation
 } from './cancel-paused-subscription-support.js';
@@ -30,7 +32,6 @@ import {
     cancelComplementsByS11Rule,
     cancelDecidedComplementsAtProvider
 } from './complement-s11-rule.js';
-import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
 import {
     noCancellationSeenAnnotation,
     recordCancellationSeen,
@@ -87,9 +88,8 @@ export async function cancelPausedSubscription(
             return { state: 'REJECTED' as const, reason: 'NOT_PAUSED' as const };
         const pauseId = await readOpenPauseId({ tx, subscriptionId: row.id });
         if (!pauseId) return { state: 'REJECTED' as const, reason: 'NO_OPEN_PAUSE' as const };
-        const facts = await readS11ServiceEndFacts({ tx, subscription: row });
-        const credited = facts.creditEndsAt !== null && facts.creditEndsAt > now;
-        const end = credited ? computeS11ServiceEnd({ now, ...facts }) : null;
+        const end = await resolvePausedCancellationEnd({ tx, subscription: row, now });
+        const credited = end.credited;
         if (
             credited &&
             findSubscriptionProhibition({
@@ -99,21 +99,20 @@ export async function cancelPausedSubscription(
             }) !== null
         )
             throw new Error('S22 credit exception is prohibited');
-        const written =
-            credited && end
-                ? await writePausedScheduledCancellation({
-                      tx,
-                      subscriptionId: row.id,
-                      now,
-                      serviceEndsAt: end.serviceEndsAt,
-                      reason: parsed.reason
-                  })
-                : await writePausedCancellation({
-                      tx,
-                      subscriptionId: row.id,
-                      now,
-                      reason: parsed.reason
-                  });
+        const written = credited
+            ? await writePausedScheduledCancellation({
+                  tx,
+                  subscriptionId: row.id,
+                  now,
+                  serviceEndsAt: end.serviceEndsAt,
+                  reason: parsed.reason
+              })
+            : await writePausedCancellation({
+                  tx,
+                  subscriptionId: row.id,
+                  now,
+                  reason: parsed.reason
+              });
         if (!written) return { state: 'LOST_RACE' as const };
         await closeOpenPause({ tx, pauseId, now });
         const decided = credited
@@ -187,10 +186,11 @@ export async function cancelPausedSubscription(
                 authorizationId: link?.providerId ?? null,
                 kind: credited
                     ? ('SCHEDULED_CANCELLATION' as const)
-                    : ('DIRECT_CANCELLATION' as const)
+                    : ('DIRECT_CANCELLATION' as const),
+                actorKind: authority.as === 'OWNER' ? ('USER' as const) : ('ADMIN' as const)
             } satisfies CancelPausedReading,
-            serviceEndsAt: end?.serviceEndsAt ?? now,
-            basis: end?.basis ?? ('NOW' as const),
+            serviceEndsAt: end.serviceEndsAt,
+            basis: end.basis,
             decided,
             cancelled,
             successionClosed
@@ -210,6 +210,35 @@ export async function cancelPausedSubscription(
     }
     const { reading } = committed;
     const vertical = VerticalEnumSchema.safeParse(reading.vertical);
+    if (ports.billingFacts && reading.userId && vertical.success) {
+        const common = {
+            userId: reading.userId,
+            vertical: vertical.data,
+            subscriptionId: reading.subscriptionId,
+            subscriptionClass: 'PRINCIPAL' as const,
+            actorKind: reading.actorKind,
+            occurredAt: now,
+            ...(parsed.reason ? { reason: parsed.reason } : {})
+        };
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact:
+                committed.state === 'SCHEDULED'
+                    ? {
+                          ...common,
+                          kind: 'CANCEL_SCHEDULED',
+                          serviceEndsAt: committed.serviceEndsAt,
+                          basis: 'CREDIT'
+                      }
+                    : {
+                          ...common,
+                          kind: 'SUBSCRIPTION_CANCELLED',
+                          cancelledBy: reading.actorKind,
+                          path: 'DIRECT_FROM_PAUSED',
+                          wasScheduled: false
+                      }
+        });
+    }
     if (reading.userId && vertical.success) {
         try {
             await ports.coverageNotices.emitCoverageChanged({
