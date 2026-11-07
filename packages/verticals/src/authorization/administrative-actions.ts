@@ -36,7 +36,7 @@ export type AdministrativeAction = (typeof ADMINISTRATIVE_ACTIONS)[number];
 /**
  * Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3.
  * Each row is compared with the gate of the route that implements it in
- * `apps/api/test/routes/administrative-action-route-permissions.guard.test.ts` (HOS-1689).
+ * `apps/api/test/routes/administrative-action-route-permissions.*.guard.test.ts` (HOS-1689).
  */
 export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     Record<
@@ -94,7 +94,10 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE],
         pendingOwnPermission: 'V2.3 (HOS-1436)'
     },
-    ACC_19: { permissions: [], pendingOwnPermission: 'B2 (HOS-1515)' },
+    ACC_19: {
+        permissions: [PermissionEnum.BILLING_SET_CYCLE_PRICE],
+        pendingOwnPermission: null
+    },
     ACC_20: { permissions: [], pendingOwnPermission: 'B10 (HOS-1595)' },
     ACC_21: {
         permissions: [PermissionEnum.BILLING_MANAGE_PROMO_CODES],

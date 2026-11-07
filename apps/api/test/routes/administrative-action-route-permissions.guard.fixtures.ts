@@ -1,4 +1,4 @@
-/** HOS-1689: statically compare each administrative action's catalog permission with its bound route gates. */
+/** HOS-1689: shared catalog rows, route bindings and comparators for the administrative-action route-permission guards. */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,6 @@ import {
     ADMINISTRATIVE_ACTIONS,
     type AdministrativeAction
 } from '@repo/verticals';
-import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const partnerApplicationResolutionBinding = (decision: 'approve' | 'reject') => ({
@@ -49,11 +48,13 @@ const readRouteBlock = (file: string, route: string): string => {
     return routeBlock(code, route, file);
 };
 const list = (permissions: readonly PermissionEnum[]): string => permissions.join(', ');
-type ActionRow = {
+/** One catalog row: the permissions it declares and the own permission it still pends. */
+export type ActionRow = {
     readonly permissions: readonly PermissionEnum[];
     readonly pendingOwnPermission: string | null;
 };
-type Binding =
+/** How one route enforces or bypasses an administrative action's permission. */
+export type Binding =
     | { readonly kind: 'required'; readonly file: string; readonly route: string }
     | { readonly kind: 'anyOf'; readonly file: string; readonly route: string }
     | { readonly kind: 'ownershipBypass'; readonly file: string; readonly route: string }
@@ -69,11 +70,13 @@ const manualBinding = (route: string, late = false): Binding => ({
     file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
     route
 });
-type BoundEntry = { readonly bindings: readonly Binding[] };
-type UnboundEntry = { readonly unbound: string };
+/** A catalog action that maps to one or more concrete route bindings. */
+export type BoundEntry = { readonly bindings: readonly Binding[] };
+/** A catalog action that no route binds yet, with the reason it stays unbound. */
+export type UnboundEntry = { readonly unbound: string };
 
 /** Compare a binding with its catalog row; missing exports fail closed. */
-const compareBinding = (args: {
+export const compareBinding = (args: {
     readonly action: AdministrativeAction;
     readonly row: ActionRow;
     readonly binding: Binding;
@@ -136,7 +139,7 @@ const compareBinding = (args: {
 };
 
 /** The table under test, keyed by action, in the catalog's own order. */
-const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | UnboundEntry>> = {
+export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | UnboundEntry>> = {
     ACC_1: { unbound: 'B9b builds it' },
     ACC_2: {
         bindings: [
@@ -335,7 +338,20 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             }
         ]
     },
-    ACC_19: { unbound: 'B2 (HOS-1515) builds it' },
+    ACC_19: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-price/admin/index.ts',
+                route: 'adminPreviewCyclePriceRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-price/admin/index.ts',
+                route: 'adminSetCyclePriceRoute'
+            }
+        ]
+    },
     ACC_20: { unbound: 'B10 (HOS-1595) builds it' },
     ACC_21: {
         bindings: [
@@ -437,64 +453,37 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
 };
 
 /** HOS-1479: the deadline-change routes still use a provisional permission. */
-const KNOWN_MISALIGNED: Readonly<Partial<Record<AdministrativeAction, string>>> = {
+export const KNOWN_MISALIGNED: Readonly<Partial<Record<AdministrativeAction, string>>> = {
     ACC_22: 'Row says [] with pending V6.9 (HOS-1479); both deadline-change routes ask for MAINTENANCE_MODE_WRITE provisionally (Coord-20); the real permission is B13a debt.'
 };
 
-const bindingsOf = (action: AdministrativeAction): readonly Binding[] => {
+/** The shared argument shape of the action-level guard helpers. */
+type ActionArgument = { readonly action: AdministrativeAction };
+
+/** The route bindings of an action; unbound rows yield an empty list. */
+export const bindingsOf = ({ action }: ActionArgument): readonly Binding[] => {
     const entry = ROUTE_BINDINGS[action];
     return 'bindings' in entry ? entry.bindings : [];
 };
 
-const collectDifferences = (action: AdministrativeAction): string[] => {
+/** Every binding of an action that disagrees with its catalog row. */
+export const collectDifferences = ({ action }: ActionArgument): string[] => {
     const row = ADMINISTRATIVE_ACTION_PERMISSIONS[action];
-    return bindingsOf(action)
+    return bindingsOf({ action })
         .map((binding) => compareBinding({ action, row, binding }))
         .filter((difference): difference is string => difference !== null);
 };
 
-const BOUND_ACTIONS: readonly AdministrativeAction[] = ADMINISTRATIVE_ACTIONS.filter(
+/** Catalog actions that have at least one route binding. */
+export const BOUND_ACTIONS: readonly AdministrativeAction[] = ADMINISTRATIVE_ACTIONS.filter(
     (action) => 'bindings' in ROUTE_BINDINGS[action]
 );
 
-const UNBOUND_ROWS: readonly { readonly action: AdministrativeAction; readonly reason: string }[] =
-    ADMINISTRATIVE_ACTIONS.flatMap((action) => {
-        const entry = ROUTE_BINDINGS[action];
-        return 'unbound' in entry ? [{ action, reason: entry.unbound }] : [];
-    });
-
-describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row agrees with its route gate', () => {
-    it('a. covers exactly the 25 catalog actions, in order', () => {
-        expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
-        expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
-    });
-    it('b. checks exactly 53 bindings across 19 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(19);
-        const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(53);
-    });
-    it.each(
-        BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
-    )('c. %s matches its route gate', (action) => {
-        expect(collectDifferences(action)).toEqual([]);
-    });
-    it.each(
-        ADMINISTRATIVE_ACTIONS.filter((action) => action in KNOWN_MISALIGNED)
-    )('d. %s is still misaligned — remove its KNOWN_MISALIGNED entry only once it agrees', (action) => {
-        expect(collectDifferences(action).length).toBeGreaterThan(0);
-    });
-    it('e. every unbound row names a reason and is not silently known-misaligned', () => {
-        expect(UNBOUND_ROWS.length).toBeGreaterThan(0);
-        for (const { action, reason } of UNBOUND_ROWS) {
-            expect(reason.trim().length).toBeGreaterThan(0);
-            expect(action in KNOWN_MISALIGNED).toBe(false);
-        }
-    });
-    it('f. sees the ACC_11 bug it was written for, with a false row, never touching the table', () => {
-        const staleRow: ActionRow = { permissions: [], pendingOwnPermission: 'x' };
-        const differences = bindingsOf('ACC_11')
-            .map((binding) => compareBinding({ action: 'ACC_11', row: staleRow, binding }))
-            .filter((difference): difference is string => difference !== null);
-        expect(differences.length).toBeGreaterThan(0);
-    });
+/** Catalog actions with no route binding, paired with the reason. */
+export const UNBOUND_ROWS: readonly {
+    readonly action: AdministrativeAction;
+    readonly reason: string;
+}[] = ADMINISTRATIVE_ACTIONS.flatMap((action) => {
+    const entry = ROUTE_BINDINGS[action];
+    return 'unbound' in entry ? [{ action, reason: entry.unbound }] : [];
 });
