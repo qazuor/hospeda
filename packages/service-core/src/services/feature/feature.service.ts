@@ -220,6 +220,9 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
         // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
         if (category) where.category = category;
+        // FeatureModel applies no soft-delete default, so a retired catalog row
+        // (data migration 0147) would otherwise reach the public filters.
+        where.deletedAt = null;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         // buildWhereClause cannot handle text[] containment, so we build the
@@ -251,6 +254,9 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
         // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
         if (category) where.category = category;
+        // FeatureModel applies no soft-delete default, so a retired catalog row
+        // (data migration 0147) would otherwise reach the public filters.
+        where.deletedAt = null;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         const additionalConditions = applicableVertical
