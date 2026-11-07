@@ -1,8 +1,12 @@
 /** Shared catalog and result handling for account and pricing plan-change offers. */
-import { type PricingSituationVertical, SubscriptionPlanChangeResponseSchema } from '@repo/schemas';
+import {
+    type PricingSituationVertical,
+    PublicPlanCatalogResponseSchema,
+    SubscriptionPlanChangeResponseSchema
+} from '@repo/schemas';
+import { apiClient } from '@/lib/api/client';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import type { ApiResult } from '@/lib/api/types';
-import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { getPlanName } from '@/lib/billing/plan-name';
 import { SIGNUP_CYCLE_LABEL_KEY } from '@/lib/billing/signup-checkout';
 import { formatPrice } from '@/lib/format-utils';
@@ -40,34 +44,25 @@ export async function loadPlanChangeChoices({
     readonly locale: SupportedLocale;
 }): Promise<readonly PlanChangeChoice[] | null> {
     const [catalog, current] = await Promise.all([
-        fetchPublicPlans({ vertical }),
+        apiClient.get<unknown>({ path: '/api/v1/public/plan-catalog', params: { vertical } }),
         billingSubscriptionApi.read({ subscriptionId })
     ]);
     if (!catalog.ok || !current.ok || current.data.status !== 'ACTIVE') return null;
+    const parsed = PublicPlanCatalogResponseSchema.safeParse(catalog.data);
+    if (!parsed.success || parsed.data.vertical !== vertical) return null;
     const { t } = createTranslations(locale);
-    return catalog.plans.flatMap((plan) => {
-        if (!plan.billingOptions) return [];
+    return parsed.data.plans.flatMap((plan) => {
+        if (!plan.billingOptions.some((option) => option.cycle === 'monthly')) return [];
         const name = getPlanName({
-            plan: { slug: plan.slug, name: plan.name, description: plan.description },
+            plan: { slug: plan.slug, name: plan.name, description: plan.description ?? '' },
             t
         });
-        return [
-            {
-                id: plan.billingOptions.monthly,
-                cycle: 'monthly' as const,
-                amount: plan.monthlyPriceArs
-            },
-            ...(plan.billingOptions.annual && plan.annualPriceArs !== null
-                ? [
-                      {
-                          id: plan.billingOptions.annual,
-                          cycle: 'annual' as const,
-                          amount: plan.annualPriceArs
-                      }
-                  ]
-                : [])
-        ]
-            .filter((option) => option.id !== current.data.billingOptionId)
+        return plan.billingOptions
+            .filter(
+                (option) =>
+                    (option.cycle === 'monthly' || option.cycle === 'annual') &&
+                    option.id !== current.data.billingOptionId
+            )
             .map((option) => ({
                 id: option.id,
                 label: t('account.subscription.mine.planChange.choice', undefined, {
