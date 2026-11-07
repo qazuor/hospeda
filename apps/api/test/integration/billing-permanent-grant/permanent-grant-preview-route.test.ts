@@ -107,6 +107,9 @@ describe('AC:B13a:6 (support) — grant confirmation reads over real routes', ()
         const before = await grantState(principal.ownerId);
         const callsBefore = observed.calls.length;
         const previewResponse = await request(`${BASE}/preview`, 'POST', who, body);
+        expect(await grantState(principal.ownerId)).toEqual(before);
+        expect(await principalStatus(principal.subscriptionId)).toBe('ACTIVE');
+        expect(observed.calls.slice(callsBefore)).toEqual([]);
         expect(previewResponse.status).toBe(200);
         const preview = await data(previewResponse);
         expect(PermanentGrantPreviewResponseSchema.safeParse(preview).success).toBe(true);
@@ -119,9 +122,6 @@ describe('AC:B13a:6 (support) — grant confirmation reads over real routes', ()
             }
         ]);
         expect(preview.convertedAddons).toEqual([]);
-        expect(await grantState(principal.ownerId)).toEqual(before);
-        expect(await principalStatus(principal.subscriptionId)).toBe('ACTIVE');
-        expect(observed.calls.slice(callsBefore)).toEqual([]);
         const act = await request(BASE, 'POST', who, body);
         expect(act.status).toBe(201);
         const result = await data(act);
