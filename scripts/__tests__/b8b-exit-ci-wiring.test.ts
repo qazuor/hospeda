@@ -289,6 +289,25 @@ describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU
             ]
         ])
             expect(titles(read(file)).some((title) => hasId(title, id))).toBe(true);
+        const s6 = read(
+            'packages/service-core/src/services/billing/subscription/suspend-for-chargeback-write.ts'
+        );
+        expect(s6).toContain(
+            '.cutSuccessor({ predecessorSubscriptionId: input.subscriptionId, tx })'
+        );
+        expect(
+            titles(
+                read(
+                    'packages/service-core/test/integration/services/subscription-chargeback-suspension.test.ts'
+                )
+            ).some((title) => hasId(title, 'TEST:B7:7'))
+        ).toBe(true);
+        const s38 = read(
+            'apps/api/test/integration/billing-subscription/scheduled-change-real-applier-wiring.test.ts'
+        );
+        expect(s38).toContain('webhook S7 handles $name scheduled change');
+        expect(s38).toContain('MP5 opens the installment on the destination version');
+        expect(s38).toContain('manual S7 applies the destination and emits CHANGED once');
     });
     it('declares every measured B3/B5/B7/B8a touch with PR and decision (D-1)', () => {
         const actual = measuredTouches()
