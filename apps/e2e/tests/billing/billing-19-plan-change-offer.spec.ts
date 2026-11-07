@@ -189,11 +189,9 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
         page
     }) => {
         if (!world) throw new Error('Expected fake provider world.');
-        world.fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock: world.clock, idNamespace: randomUUID() })
-        });
         const premiumOptionId = await monthlyOptionForSlug('owner-premium');
         const { subscriptionId, article } = await activeFrom({ page, slug: 'owner-basico' });
+        world.fakeServer.provider.restoreLie({ lie: 'M1' });
         let rejectedStatus = 0;
         let rejectedCode = '';
         await page.route(
