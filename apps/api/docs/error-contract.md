@@ -39,6 +39,7 @@ check answers 403 to someone the server never identified.
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
 | Invalid venue business lines | **400** | `VALIDATION_ERROR` (`details.field = businessLines`, `details.reason` is `EMPTY`, `DUPLICATE`, `NOT_IN_VERTICAL`, `NOT_ALLOWED_FOR_TYPE`, `MAX_EXCEEDED` or `EXCLUDED_PAIR`) |
+| Create body touches a section the resulting business lines do not offer (`details.reason = SECTION_ABSENT`) | **400** | `VALIDATION_ERROR` |
 | Reserved listing slug (`details.field = slug`, `details.reason = RESERVED`) | **400** | `VALIDATION_ERROR` |
 | Review dimension vote for an absent bound section (`details.field = rating.<id>`) | **400** | `VALIDATION_ERROR` (`DIMENSION_NOT_APPLICABLE`) |
 | Resource does not exist | **404** | `NOT_FOUND` |
@@ -65,7 +66,7 @@ For an unverified account, an operation on the list runs without the staff permi
 Listing access runs inside business rules (step 6 of the HTTP order), after
 request shape and resource existence or ownership. The route factory wraps the
 validated handler, so an invalid body receives 400 before listing access runs.
-The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order. Step 4b returns 409 `ALREADY_EXISTS` with `details: { reason: 'SECTION_ABSENT', section }` to the owner when a requested section is absent for the listing's business lines; a foreign subject receives 404 `NOT_FOUND`.
+The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order. Step 4b returns 409 `ALREADY_EXISTS` with `details: { reason: 'SECTION_ABSENT', section }` to the owner when a requested section is absent for the listing's business lines; a foreign subject receives 404 `NOT_FOUND`. A create (CREATE) does not run step 4b — there is no stored listing to compare against — so the same inconsistency inside a create body is a 400 `VALIDATION_ERROR` from the service instead.
 
 | Listing decision | HTTP status | `error.code` | Public `error.details` |
 |---|---|---|---|
@@ -176,6 +177,7 @@ so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
 | `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
 | `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
+| `VALIDATION_ERROR` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The admin create form needs the absent section identifier to explain which section the selected business lines do not offer. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
