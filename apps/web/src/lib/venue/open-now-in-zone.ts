@@ -60,6 +60,28 @@ export interface ComputeOpenNowInZoneParams {
     readonly timeZone?: string;
 }
 
+/** Parameters for reading a weekday in a specific IANA time zone. */
+export interface TodayIndexInZoneParams {
+    /** The instant to evaluate. */
+    readonly now: Date;
+    /** IANA zone used to read the weekday. */
+    readonly timeZone: string;
+}
+
+/**
+ * Returns the weekday index (Sunday = 0 through Saturday = 6) in `timeZone`.
+ *
+ * @param params - The instant and IANA time zone.
+ * @returns The weekday index, or `NaN` if Intl returns an unknown weekday.
+ */
+export function todayIndexInZone({ now, timeZone }: TodayIndexInZoneParams): number {
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' })
+        .formatToParts(now)
+        .find((part) => part.type === 'weekday')?.value;
+
+    return weekday === undefined ? Number.NaN : (WEEKDAY_TO_INDEX[weekday] ?? Number.NaN);
+}
+
 /**
  * Computes "open now" using the venue's wall clock instead of the caller's.
  *
@@ -84,18 +106,16 @@ export function computeOpenNowInZone({
         hourCycle: 'h23'
     }).formatToParts(now);
 
-    let weekday = '';
     let hour = Number.NaN;
     let minute = Number.NaN;
 
     for (const part of parts) {
-        if (part.type === 'weekday') weekday = part.value;
-        else if (part.type === 'hour') hour = Number(part.value) % 24;
+        if (part.type === 'hour') hour = Number(part.value) % 24;
         else if (part.type === 'minute') minute = Number(part.value);
     }
 
-    const dayIndex = WEEKDAY_TO_INDEX[weekday];
-    if (dayIndex === undefined || !Number.isFinite(hour) || !Number.isFinite(minute)) {
+    const dayIndex = todayIndexInZone({ now, timeZone });
+    if (!Number.isFinite(dayIndex) || !Number.isFinite(hour) || !Number.isFinite(minute)) {
         return null;
     }
 

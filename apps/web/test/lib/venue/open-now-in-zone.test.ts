@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import type { VenueOpeningHoursEntry } from '../../../src/data/types';
 import {
     computeOpenNowInZone,
+    todayIndexInZone,
     VENUE_OPEN_NOW_TIME_ZONE
 } from '../../../src/lib/venue/open-now-in-zone';
 
@@ -40,6 +41,21 @@ function at(iso: string): Date {
 }
 
 describe('computeOpenNowInZone', () => {
+    it('reads the Buenos Aires weekday across the UTC date boundary', () => {
+        expect(
+            todayIndexInZone({
+                now: at('2026-11-09T02:30:00Z'),
+                timeZone: VENUE_OPEN_NOW_TIME_ZONE
+            })
+        ).toBe(0);
+        expect(
+            todayIndexInZone({
+                now: at('2026-11-09T03:30:00Z'),
+                timeZone: VENUE_OPEN_NOW_TIME_ZONE
+            })
+        ).toBe(1);
+    });
+
     it('pins the venue-zone constant to the schema default', () => {
         expect(VENUE_OPEN_NOW_TIME_ZONE).toBe('America/Argentina/Buenos_Aires');
     });

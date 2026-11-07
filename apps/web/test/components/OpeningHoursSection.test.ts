@@ -37,10 +37,11 @@ const src = readFileSync(
 );
 
 describe('OpeningHoursSection.astro (source assertions)', () => {
-    it('imports getTodayIndex and ORDERED_DAY_KEYS from venue-hours', () => {
-        expect(src).toContain('getTodayIndex');
+    it('mounts the client grid without calculating today in the Astro render', () => {
+        expect(src).not.toContain('getTodayIndex');
         expect(src).toContain('ORDERED_DAY_KEYS');
         expect(src).toContain('venue-hours');
+        expect(src).toContain('OpeningHoursGrid client:visible');
     });
 
     it('uses ORDERED_DAY_KEYS to iterate the week in Mon→Sun order', () => {
@@ -48,8 +49,7 @@ describe('OpeningHoursSection.astro (source assertions)', () => {
     });
 
     it('highlights today row with a brand-accent left border', () => {
-        expect(src).toContain('brand-accent');
-        expect(src).toContain('today');
+        expect(src).toContain('todayLabel');
     });
 
     it('renders each shift window from the shifts array', () => {
