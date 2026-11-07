@@ -10,7 +10,6 @@ import {
     cleanupArrearsRows,
     createApiCardSubscription,
     createSubscriber,
-    ensureDeadlineVersion,
     type FakeWorld
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
@@ -55,7 +54,6 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
     let dialogs: string[] = [];
 
     test.beforeAll(async () => {
-        await ensureDeadlineVersion();
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
