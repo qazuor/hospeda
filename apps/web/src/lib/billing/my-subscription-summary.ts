@@ -36,6 +36,7 @@ export const MY_SUBSCRIPTION_PRICE_SHOWN: Record<OwnSubscriptionStatus, boolean>
     ACTIVE: true,
     GRACE_PERIOD: true,
     SUSPENDED: false,
+    PAUSED: false,
     CANCEL_SCHEDULED: false
 };
 

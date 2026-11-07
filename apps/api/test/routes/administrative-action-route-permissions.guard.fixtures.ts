@@ -70,6 +70,8 @@ const manualBinding = (route: string, late = false): Binding => ({
     file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
     route
 });
+const pauseFile = 'apps/api/src/routes/billing-subscription/admin/pause.ts';
+const pauseBinding = (route: string): Binding => ({ kind: 'required', file: pauseFile, route });
 const grantBinding = (file: string, route: string): Binding => ({
     kind: 'required',
     file: `apps/api/src/routes/billing-permanent-grant/admin/${file}.ts`,
@@ -223,8 +225,10 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
             }
         ]
     },
-    ACC_9: { unbound: 'B8b builds it' },
-    ACC_10: { unbound: 'B8b builds it' },
+    // biome-ignore format: keep the closed route fixture below 500 lines.
+    ACC_9: { bindings: [pauseBinding('adminSubscriptionPausePreviewRoute'), pauseBinding('adminPauseSubscriptionRoute'), pauseBinding('adminResumeSubscriptionRoute')] },
+    // biome-ignore format: keep the closed route fixture below 500 lines.
+    ACC_10: { bindings: [{ kind: 'required', file: 'apps/api/src/routes/billing-subscription/admin/plan-change.ts', route: 'adminPlanChangeRoute' }] },
     ACC_11: {
         bindings: [
             {

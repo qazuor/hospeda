@@ -1,4 +1,3 @@
-import { planCatalogModel } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import {
     ServiceErrorCode,
@@ -12,22 +11,18 @@ import {
     requestPlanChange,
     ServiceError
 } from '@repo/service-core';
-import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
-import { getPlanChangeMirror } from '../../utils/billing-succession-ports';
-import { getClock } from '../../utils/clock';
 import { env } from '../../utils/env';
-import { getPaymentProvider } from '../../utils/payment-provider';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
-import { beforeCancelNotice } from './before-cancel-notice';
+import { buildPlanChangePorts } from './plan-change-ports';
 import { readSubscription } from './read-subscription';
-import { touristVipInheritance } from './tourist-vip-inheritance';
 
 type Rejection = Extract<RequestPlanChangeResult, { path: 'REJECTED' }>['reason'];
-const rejectionAnswer: Readonly<Record<Rejection, { status: 409 | 422; code: string }>> = {
+/** Shared mapping of typed plan-change rejections to HTTP responses. */
+export const rejectionAnswer: Readonly<Record<Rejection, { status: 409 | 422; code: string }>> = {
     GRACE_PERIOD: { status: 409, code: 'CONFLICT' },
     NOT_ACTIVE: { status: 409, code: 'CONFLICT' },
     SCHEDULED_CHANGE_EXISTS: { status: 409, code: 'CONFLICT' },
@@ -63,7 +58,8 @@ const serviceAnswer: Readonly<Record<string, { status: 404 | 409 | 422; code: st
     }
 };
 
-function answer(error: unknown, ctx: Context): Response {
+/** Apply the owner route's service and provider error mapping. */
+export function answer(error: unknown, ctx: Context): Response {
     if (error instanceof ServiceError && error.reason === 'CREATION_NOT_APPLIED')
         return createErrorResponse(
             {
@@ -154,7 +150,6 @@ export const protectedPlanChangeRoute = createProtectedRoute({
         const { billingOptionId, payerEmail, keepSelection } =
             SubscriptionPlanChangeRequestSchema.parse(body);
         try {
-            const inverse = createPlanCatalogInverse({ reader: planCatalogModel });
             const result = await requestPlanChange(
                 {
                     actor: { id: actor.id },
@@ -164,15 +159,7 @@ export const protectedPlanChangeRoute = createProtectedRoute({
                     keepSelection,
                     returnUrl: env.HOSPEDA_SITE_URL
                 },
-                {
-                    provider: getPaymentProvider(),
-                    clock: getClock().clock,
-                    planPolicy: inverse.planPolicy,
-                    changeDirection: inverse.changeDirection,
-                    beforeCancelNotice,
-                    touristVipInheritance,
-                    mirror: await getPlanChangeMirror()
-                }
+                await buildPlanChangePorts()
             );
             if (result.path === 'REJECTED') {
                 const mapped = rejectionAnswer[result.reason];

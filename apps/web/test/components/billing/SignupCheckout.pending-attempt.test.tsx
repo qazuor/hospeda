@@ -55,6 +55,49 @@ afterEach(() => {
 });
 
 describe('TEST:1735:11 pending attempt checkout panel', () => {
+    it('shows the live successor deadline after a blocked start', async () => {
+        api.start.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 409, reason: 'COMMITMENT_TAKEN' }
+        });
+        api.signupNotice.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                plan: { ...pendingAttempt.plan },
+                pendingAttempt: null,
+                blockingCommitment: {
+                    takenBy: 'SUCCESSOR_PENDING',
+                    checkoutDeadline: '2026-10-13T02:30:00.000Z'
+                },
+                vertical: 'accommodation',
+                touristVip: { status: 'NOT_AFFECTED' },
+                trial: { status: 'NOT_RUNNING' }
+            }
+        });
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={null}
+            />
+        );
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        expect(await screen.findByTestId('signup-checkout-rejection')).toHaveTextContent(
+            'Tenés un cambio de plan pendiente de autorización hasta el 12 de octubre de 2026'
+        );
+    });
+
+    it('shows the persisted principal detail in the pending row', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={{ ...pendingAttempt, takenBy: 'LIVE_PRINCIPAL' }}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout-taken-by')).toHaveTextContent(
+            'Ya tenés un alta de suscripción en curso'
+        );
+    });
+
     it('TEST:1759:4 shows the localized plan name of the pending attempt', () => {
         render(
             <SignupCheckout

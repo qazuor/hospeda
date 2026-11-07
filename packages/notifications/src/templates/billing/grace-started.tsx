@@ -10,11 +10,13 @@ export const GRACE_STARTED_SUBJECT = 'No pudimos cobrar tu suscripción';
 export function GraceStarted({
     vertical,
     graceEndDate,
-    subscriptionUrl
+    subscriptionUrl,
+    planChangePending
 }: {
     readonly vertical: string;
     readonly graceEndDate: string;
     readonly subscriptionUrl: string;
+    readonly planChangePending?: boolean;
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
     return (
@@ -32,6 +34,7 @@ export function GraceStarted({
                 Si el cobro no entra antes del {graceEndDate}, tu suscripción se suspende y vas a
                 tener que volver a suscribirte. Mi Suscripción: {subscriptionUrl}
             </Text>
+            {planChangePending ? <Text>Tu cambio de plan sigue pendiente.</Text> : null}
         </EmailLayout>
     );
 }

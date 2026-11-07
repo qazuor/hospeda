@@ -25,6 +25,12 @@ import {
 } from './manual-payment-late';
 import { adminSubscriptionOpenRefundsRoute } from './open-refunds';
 import {
+    adminPauseSubscriptionRoute,
+    adminResumeSubscriptionRoute,
+    adminSubscriptionPausePreviewRoute
+} from './pause';
+import { adminPlanChangeOptionsRoute, adminPlanChangeRoute } from './plan-change';
+import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
 } from './revocation';
@@ -52,7 +58,11 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
             resourceId: found.row.id,
             metadata: { subjectId: found.subjectId }
         });
-        return found.row;
+        return {
+            ...found.row,
+            ...(found.subject ? { subject: found.subject } : {}),
+            ...(found.currentPlan ? { currentPlan: found.currentPlan } : {})
+        };
     }
 });
 
@@ -63,6 +73,11 @@ router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
+router.route('/', adminSubscriptionPausePreviewRoute);
+router.route('/', adminPauseSubscriptionRoute);
+router.route('/', adminResumeSubscriptionRoute);
+router.route('/', adminPlanChangeRoute);
+router.route('/', adminPlanChangeOptionsRoute);
 router.route('/', adminListManualPaymentsRoute);
 router.route('/', adminManualPaymentRegistrationPreviewRoute);
 router.route('/', adminRegisterManualPaymentRoute);

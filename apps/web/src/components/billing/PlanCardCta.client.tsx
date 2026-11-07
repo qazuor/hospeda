@@ -1,5 +1,7 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
+import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
 import { findActiveSubscriptionId, submitPlanChange } from '@/lib/billing/plan-change-offer';
 import {
     loadBillingUnpublishedListing,
@@ -26,17 +28,51 @@ export function PlanCardCta({
     const [result, setResult] = useState<Awaited<ReturnType<typeof loadPricingSituation>> | null>(
         null
     );
-    const { t } = useMemo(() => createTranslations(locale), [locale]);
+    const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
     const [ownsBillingUnpublished, setOwnsBillingUnpublished] = useState(false);
     const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
     const [changeMessage, setChangeMessage] = useState<string | null>(null);
     const [changePending, setChangePending] = useState(false);
+    const [ownerNotice, setOwnerNotice] = useState<{
+        readonly promo: boolean;
+        readonly checkoutOpen: boolean;
+        readonly paymentMethod: 'CARD' | 'MANUAL';
+        readonly courtesyMonths: number;
+    } | null>(null);
     useEffect(() => {
         let active = true;
         void loadPricingSituation({ vertical }).then((situation) => {
             if (!active) return;
             // The primary CTA is never delayed by the extra read (HOS-1977).
             setResult(situation);
+            if (
+                situation.ok &&
+                situation.data.situation === 'SUBSCRIBED' &&
+                ['ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'SUSPENDED'].includes(situation.data.status)
+            ) {
+                void billingSubscriptionApi
+                    .listMine({})
+                    .then((mine) => {
+                        if (!active || !mine.ok) return;
+                        const row = mine.data.subscriptions.find(
+                            (item) => item.vertical === vertical
+                        );
+                        setOwnerNotice(
+                            row
+                                ? {
+                                      promo: row.promo != null,
+                                      checkoutOpen: row.succession?.checkoutOpen === true,
+                                      paymentMethod: row.paymentMethod,
+                                      courtesyMonths: totalCourtesyMonths({
+                                          row,
+                                          deferredCourtesies: mine.data.deferredCourtesies ?? []
+                                      })
+                                  }
+                                : null
+                        );
+                    })
+                    .catch(() => setOwnerNotice(null));
+            }
             // Only worth reading for an unspent trial.
             if (situation.ok && situation.data.situation === 'FIRST_USE') {
                 void loadBillingUnpublishedListing({ vertical }).then((owns) => {
@@ -89,6 +125,8 @@ export function PlanCardCta({
             : view.kind === 'current'
               ? view.changeOptions
               : [];
+    const blockedStatus =
+        result?.ok && result.data.situation === 'SUBSCRIBED' ? result.data.status : null;
     return (
         <div
             data-testid="pricing-card-cta"
@@ -127,24 +165,63 @@ export function PlanCardCta({
             {view.kind === 'current' && (
                 <span>{t('publish.subscribe.currentPlan', undefined, { vertical: label })}</span>
             )}
-            {changeOptionIds.map((id) => (
-                <button
-                    key={id}
-                    type="button"
-                    className={styles.secondary}
-                    data-billing-option-id={id}
-                    onClick={() => setSelectedOptionId(id)}
-                >
-                    {t('account.subscription.mine.planChange.pricingOpen')} ·{' '}
+            {blockedStatus === 'PAUSED' && (
+                <p data-testid="pricing-plan-change-paused">
+                    {t('account.subscription.mine.planChange.reason.paused')}
+                </p>
+            )}
+            {blockedStatus === 'GRACE_PERIOD' && ownerNotice?.paymentMethod && (
+                <p data-testid="pricing-plan-change-grace">
+                    {t(`account.subscription.mine.graceChangePlan.${ownerNotice.paymentMethod}`)}
+                </p>
+            )}
+            {ownerNotice?.checkoutOpen && (
+                <p data-testid="pricing-plan-change-checkout">
                     {t(
-                        SIGNUP_CYCLE_LABEL_KEY[id === billingOptions.monthly ? 'monthly' : 'annual']
+                        blockedStatus === 'SUSPENDED'
+                            ? 'account.subscription.mine.planChange.reason.successionCoverage'
+                            : 'account.subscription.mine.planChange.reason.succession'
                     )}
-                </button>
-            ))}
+                </p>
+            )}
+            {ownerNotice &&
+                !ownerNotice.checkoutOpen &&
+                changeOptionIds.map((id) => (
+                    <button
+                        key={id}
+                        type="button"
+                        className={styles.secondary}
+                        data-billing-option-id={id}
+                        onClick={() => setSelectedOptionId(id)}
+                    >
+                        {t('account.subscription.mine.planChange.pricingOpen')} ·{' '}
+                        {t(
+                            SIGNUP_CYCLE_LABEL_KEY[
+                                id === billingOptions.monthly ? 'monthly' : 'annual'
+                            ]
+                        )}
+                    </button>
+                ))}
             {selectedOptionId && !changeMessage && (
                 <div data-testid="pricing-plan-change-confirm">
                     <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                     <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
+                    {ownerNotice?.promo && (
+                        <p data-testid="pricing-plan-change-promo-warning">
+                            {t('account.subscription.mine.planChange.promoLost')}
+                        </p>
+                    )}
+                    {selectedOptionId !== billingOptions.monthly &&
+                        ownerNotice &&
+                        ownerNotice.courtesyMonths > 0 && (
+                            <p data-testid="pricing-plan-change-courtesy-warning">
+                                {tPlural(
+                                    'account.subscription.mine.planChange.courtesyLost',
+                                    ownerNotice.courtesyMonths,
+                                    { count: ownerNotice.courtesyMonths }
+                                )}
+                            </p>
+                        )}
                     <button
                         type="button"
                         className={styles.primary}

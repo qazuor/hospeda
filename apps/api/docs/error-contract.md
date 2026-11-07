@@ -822,3 +822,45 @@ the permission is rejected before query, params, or body validation.
 The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`. A redemption
 attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
 under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.
+
+### Administrative plan change (ACC:10, HOS-1580)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/plan-change-options`
+uses `billing.changeSubscriptionPlan` and returns the current sellable billing
+options for the subscription vertical, including the current option marker. It
+also includes the subscription's anchored option when its version has left the
+current sellable offer, so the current choice remains identifiable. It
+returns 404 `SUBSCRIPTION_NOT_FOUND` when the row is absent and 403
+`ADMINISTRATIVE_ACTION_FORBIDDEN` when the actor is the subject. Successful
+reads record `BILLING_READ`.
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}` also returns optional
+`subject` identity and `currentPlan` display information from the persisted
+subscription associations.
+
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/plan-change` requires
+`billing.changeSubscriptionPlan`. Its strict body has `billingOptionId`,
+`expectedStatus: ACTIVE`, `confirmed: true`, and an optional note. Rejections
+follow 401 authentication → 403 route permission → 400 body → 404
+`SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal
+to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` → the owner plan-change
+route's typed rejection map. A successful `SUCCESSION` returns the checkout URL
+for the customer to authorize; `DOWNGRADE` and `REGRET` use the owner route's
+outcomes. Only success writes a `BILLING_MUTATION` audit with `ACC_10` and the
+administrator as actor.
+
+### Administrative pause and resume (ACC:9, HOS-1580)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/pause-preview`, `POST /pause`, and `POST /resume` each require `billing.pauseSubscription` at the route factory. Rejections follow 401 authentication → 403 route permission → 400 strict params/body → 404 `SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` when the observed status changed → the typed S8/S10 result. The POST bodies require `confirmed: true` and the observed `expectedStatus`; pause also requires `months` from 1 through 4.
+
+Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `MONTHS_EXHAUSTED` with 409 `CONFLICT`; `NOT_PRINCIPAL`, `MANUAL_PAYER`, `NOT_MONTHLY`, `PLAN_DISALLOWS_PAUSE`, `MONTHS_OUT_OF_RANGE`, and `NO_PROVIDER_LINK` with 422 `VALIDATION_ERROR`. Resume refuses `NOT_PAUSED`, `NO_OPEN_PAUSE`, and `PAUSE_NOT_CUSTOMER_REQUEST` with 409; provider calls are forbidden for a courtesy pause. `NOT_APPLIED` and `LOST_RACE` are 409. Each typed error carries `error.reason` and `error.details.reason`. Provider rejection is 422 `PROVIDER_REJECTED`; transient provider failure is 503 with `Retry-After` when available. The preview records `BILLING_READ`, and only a successful POST records `BILLING_MUTATION` with `administrativeAction: ACC_9` and the admin as actor.
+
+### Owner pause and resume (HOS-1580)
+
+`GET /api/v1/protected/billing-subscription/{subscriptionId}/pause-preview` requires `BILLING_VIEW_OWN` and permits an unverified email for `READ_OWN`. The response reports `offered: false` with the typed S8 refusal reason (and `courtesyEndsAt` for `COURTESY_IN_FORCE`), or `offered: true` with allowed months, the UTC end date per month, remaining quota, and affected recurring addons.
+
+`POST /{subscriptionId}/pause` takes a strict `{ months: 1..4 }` body and returns `PAUSED`, `pauseId`, `expectedEndAt`, and `complements`. `POST /{subscriptionId}/resume` takes a strict empty body and returns `RESUMED` with `nextCharge`. Both POST routes require a verified email. All three resolve ownership before calling the service; an alien id returns 404. The POST routes use the typed S8/S10 rejection mapping above and record `BILLING_MUTATION` only on success, without an administrative action id. A courtesy pause returns 409 `PAUSE_NOT_CUSTOMER_REQUEST` before any provider call.
+
+### Mi Suscripción: cortesía vigente y checkout sucesor (HOS-1580)
+
+`GET /api/v1/protected/billing-subscription/` agrega `liveCourtesyMonths` opcional por suscripción (meses de cortesía no diferida restantes, cero cuando no hay grant vigente) y `succession.checkoutDeadline` opcional (fecha individual de la ventana de autorización de la sucesora; `null` si no se registró). La fecha sólo aparece cuando hay una sucesión con checkout abierto.

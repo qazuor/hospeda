@@ -272,6 +272,19 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:B8b:8, AC:B8b:9, AC:B8b:10, AC:B8b:14, AC:B8b:15, AC:B8b:24.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
+### S16 — Pause, resume and act notices (HOS-1580)
+
+- **Preconditions:** A monthly `ACTIVE` card principal on staging; a test customer and a `SUPER_ADMIN`.
+- **Steps:**
+  1. Pause for one month from Mi Suscripción. Check the confirmation explains the listing and recurring addons, names this customer's end date, and the sandbox preapproval reads `paused`; the listing leaves the public site.
+  2. Resume early. Check the result says only the next charge day and amount, and the sandbox preapproval reads `authorized` with that date.
+  3. Pause again and cancel while `PAUSED`. Check the preview says service ends today and the sandbox preapproval reads `cancelled`.
+  4. As `SUPER_ADMIN`, pause and resume a customer in the panel. Check the mutation audit records `administrativeAction: ACC_9` and the admin actor.
+  5. Change a customer's plan to an upgrade in the panel. Check it returns the checkout, then authorize with the customer's test card.
+- **Expected:** The owner and admin surfaces state the effects and dates before each act; S22 ends the paused service today unless unconsumed credit sets its later end.
+- **Evidence:** Preview and action responses, sandbox provider reads, listing visibility, subscription rows, and audit entries.
+- **Covers:** AC:B8b:22, AC:B8b:25 (TEST:B8b:22, TEST:B8b:25).
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |

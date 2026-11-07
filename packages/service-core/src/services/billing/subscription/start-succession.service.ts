@@ -25,6 +25,7 @@ import {
     type StartSubscriptionPorts,
     type StartSubscriptionResult
 } from './start-subscription.service.js';
+import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 import { resolveSuccessorWindow } from './successor-window.js';
 
 const logger = createLogger('subscription-succession');
@@ -122,7 +123,7 @@ export async function startSuccession(
             planVersionId: choice.planVersionId,
             billingOptionId: choice.id,
             paymentMethod: 'CARD',
-            status: 'PENDING_AUTHORIZATION',
+            status: SUCCESSION_CHECKOUT_OPEN_STATUS,
             class: 'PRINCIPAL',
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
@@ -150,7 +151,7 @@ export async function startSuccession(
             planVersionId: choice.planVersionId,
             billingOptionId: choice.id,
             paymentMethod: 'CARD',
-            status: 'PENDING_AUTHORIZATION',
+            status: SUCCESSION_CHECKOUT_OPEN_STATUS,
             class: 'PRINCIPAL',
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
