@@ -202,9 +202,15 @@ export class FeatureService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: z.infer<typeof SearchFeatureSchema>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
         const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
+        // BaseCrudRead.search strips page/pageSize before this hook and re-publishes
+        // them on ctx.pagination (SPEC-088). Without forwarding them the model applied
+        // its own default and every list was capped at 20 rows, whatever pageSize the
+        // caller asked for.
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -222,7 +228,11 @@ export class FeatureService extends BaseCrudRelatedService<
             ? [sql`${applicableVertical} = ANY(${features.applicableVerticals})`]
             : undefined;
 
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+        const { items, total } = await this.model.findAll(
+            where,
+            { page, pageSize },
+            additionalConditions
+        );
         return { items, total };
     }
 
