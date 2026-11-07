@@ -45,8 +45,8 @@ import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
 const logger = createLogger('addon-instance-a5');
 
-/** The clauses of A5 this cut implements (notas I-8): `GRANT_REVOKED` is Phase 2 (AC:B5:26). */
-export type A5Clause = 'ORPHANED' | 'WITHDRAWN';
+/** Grant revocation triggers the third A5 clause (TRANS:B:A5, `grant_anchor_revoked`, DEC-ADDON-006; HOS-1634). Its scope matrix remains AC:B5:26 (HOS-1630). */
+export type A5Clause = 'ORPHANED' | 'WITHDRAWN' | 'GRANT_REVOKED';
 
 /** The `desde` of A5 (glossary row 18): the two instance states with an authorization that can charge. */
 type A5Origin = 'PENDING_AUTHORIZATION' | 'ACTIVE';
@@ -83,7 +83,7 @@ export type A5Ports = Pick<AddonOrphanhoodPorts, 'addonPolicy' | 'listing'>;
 
 const applySchema = z.object({
     instanceId: z.uuid(),
-    clause: z.enum(['ORPHANED', 'WITHDRAWN']),
+    clause: z.enum(['ORPHANED', 'WITHDRAWN', 'GRANT_REVOKED']),
     s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
@@ -118,7 +118,7 @@ function isA5Origin(status: string): status is A5Origin {
  *
  * @param input.tx - The caller's transaction
  * @param input.instanceId - The addon instance
- * @param input.clause - `ORPHANED` or `WITHDRAWN`
+ * @param input.clause - `ORPHANED`, `WITHDRAWN`, or `GRANT_REVOKED`
  * @param input.now - The instant of the act
  * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;

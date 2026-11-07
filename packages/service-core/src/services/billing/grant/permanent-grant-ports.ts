@@ -8,9 +8,9 @@ import type { CancellationSeenAnnotator } from '../subscription/subscription-bil
 /**
  * Dependencies used by permanent-grant acts.
  *
- * The service enforces the ACC_2 authorization inherited by the future
- * revocation service (AC:B9a:9); revocation must pass
- * `s21Cause: 'GRANT_REVOKED'` to orphanhood when it turns off covered addons.
+ * The services enforce ACC_2 authorization, including `revokePermanentGrant`
+ * in `permanent-grant-revoke.ts` (AC:B9a:9). Revocation passes
+ * `s21Cause: 'GRANT_REVOKED'` to A5 when it turns off covered addons.
  * Coverage notifications and provider ports handle post-commit effects.
  */
 export interface PermanentGrantPorts {

@@ -6,9 +6,9 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause.j
 import { isSystemActor } from '../../../utils/system-actor.js';
 
 /**
- * Shared ACC_2 authorization for permanent grant writes and the future
- * revocation service. Revocation must pass `s21Cause: 'GRANT_REVOKED'` to
- * orphanhood when it turns off addons covered by the grant.
+ * Shared ACC_2 authorization for permanent grant writes, including
+ * `revokePermanentGrant` in `permanent-grant-revoke.ts`, which passes
+ * `s21Cause: 'GRANT_REVOKED'` to A5 for covered addons.
  * @module services/billing/grant/permanent-grant-authorization
  */
 
