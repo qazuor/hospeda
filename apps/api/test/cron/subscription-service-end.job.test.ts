@@ -80,7 +80,7 @@ describe('HOS-1569 subscription-service-end cron (AC:B8a:5)', () => {
         expect(mockBuildPorts).toHaveBeenCalledWith({ reader: mockReader });
         expect(ports.addonPolicy).toBe(mockCoveragePorts.addonPolicy);
         expect(ports.listing).toBe(mockCoveragePorts.listing);
-        expect(ports.successionCloser).toBeUndefined();
+        expect(typeof ports.successionCloser.closeSuccession).toBe('function');
     });
 
     it('(c) processed and errors come from the run summary', async () => {

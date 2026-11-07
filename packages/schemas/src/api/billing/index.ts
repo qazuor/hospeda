@@ -43,6 +43,7 @@ export * from './subscription-cancel.schema.js';
 export * from './subscription-event.schema.js';
 export * from './subscription-open-refunds.schema.js';
 export * from './subscription-pause.schema.js';
+export * from './subscription-plan-change.schema.js';
 export * from './subscription-promo-effect.schema.js';
 export * from './subscription-read.schema.js';
 export * from './subscription-revocation.schema.js';

@@ -64,7 +64,7 @@ describe('HOS-1541 manual installment opening clock (AC:B5:13)', () => {
         });
     });
 
-    it('calls MP5 with a page of 100 and only the clock, policy and fact ports', async () => {
+    it('calls MP5 with a page of 100 and the S38 applier', async () => {
         await manualInstallmentOpenJob.handler(context());
         expect(mockOpen).toHaveBeenCalledTimes(1);
         const [input, ports] = mockOpen.mock.calls[0] ?? [];
@@ -72,7 +72,7 @@ describe('HOS-1541 manual installment opening clock (AC:B5:13)', () => {
         expect(ports.clock).toBe(mockClock);
         expect(ports.planPolicy).toBe(mockPolicy);
         expect(ports.billingFacts).toBe(mockFacts);
-        expect(Object.keys(ports).sort()).toEqual(['billingFacts', 'clock', 'planPolicy']);
+        expect(typeof ports.scheduledChangeApplier.applyScheduledChange).toBe('function');
     });
 
     it('returns the exact service summary', async () => {

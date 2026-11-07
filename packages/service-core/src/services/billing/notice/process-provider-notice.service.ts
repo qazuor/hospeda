@@ -36,7 +36,10 @@ import {
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
 import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
-import { afterSubscriptionActivated } from '../subscription/after-activation-commit.js';
+import {
+    type AfterSubscriptionActivatedPorts,
+    afterSubscriptionActivated
+} from '../subscription/after-activation-commit.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
@@ -106,6 +109,7 @@ export interface ProcessProviderNoticePorts {
     readonly clock: Clock;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
+    readonly successionSettler?: AfterSubscriptionActivatedPorts['successionSettler'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
