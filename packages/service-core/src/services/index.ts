@@ -84,6 +84,7 @@ export * from './billing/grant/permanent-grant.service.js';
 export * from './billing/grant/permanent-grant-authorization.js';
 export * from './billing/grant/permanent-grant-floor.js';
 export * from './billing/grant/permanent-grant-live-anchors.js';
+export * from './billing/grant/permanent-grant-preview.js';
 export * from './billing/grant/permanent-grant-revoke.js';
 export * from './billing/grant/permanent-grant-s13.js';
 export * from './billing/grant/permanent-grant-s20.js';

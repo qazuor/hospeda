@@ -379,7 +379,23 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/anchors/preview"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-permanent-grants/by-beneficiary/:userId"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/preview"
         },
         {
             "method": "POST",

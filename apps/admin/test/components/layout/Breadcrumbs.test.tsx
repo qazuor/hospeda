@@ -69,6 +69,14 @@ const expectTextWithoutLink = (text: string): void => {
 };
 
 describe('Breadcrumbs', () => {
+    it('links the registered permanent grants page with its billing label', () => {
+        routerState.pathname.current = '/billing/permanent-grants';
+        routerState.routesByPath.current = { '/billing/permanent-grants': {} };
+        render(<Breadcrumbs />);
+        expect(
+            screen.getByRole('link', { name: 'admin-menu.billing.permanentGrants' })
+        ).toHaveAttribute('href', '/billing/permanent-grants');
+    });
     beforeEach(() => {
         routerState.pathname.current = '/';
         routerState.routesByPath.current = undefined;

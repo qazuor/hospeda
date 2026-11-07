@@ -22,6 +22,9 @@ function collectRoutes(value: unknown): string[] {
     ];
 }
 describe('IA sidebar routes', () => {
+    it('registers the permanent grants page in the comercial sidebar', () => {
+        expect(collectRoutes(sidebars)).toContain('/billing/permanent-grants');
+    });
     it('resolves every nested sidebar route to a TanStack route file', () => {
         const files = collectFiles(ROUTES_DIR).map((file) => file.slice(ROUTES_DIR.length + 1));
         const routes = collectRoutes(sidebars);

@@ -34,7 +34,10 @@
             "semiannual": "Semestral",
             "annual": "Anual"
         },
-        "actions": { "publish": "Publicar versión nueva", "createPlan": "Crear plan" },
+        "actions": {
+            "publish": "Publicar versión nueva",
+            "createPlan": "Crear plan"
+        },
         "form": {
             "title": "Versión nueva de «{name}»",
             "current": "Versión vigente",
@@ -60,7 +63,11 @@
             "from": "Vigente",
             "to": "Nueva",
             "absent": "(no está)",
-            "kinds": { "entitlement": "Entitlement", "limit": "Limit", "setting": "Ajuste" },
+            "kinds": {
+                "entitlement": "Entitlement",
+                "limit": "Limit",
+                "setting": "Ajuste"
+            },
             "reach_one": "Alcanza a {{count}} cliente anclado.",
             "reach_other": "Alcanza a {{count}} clientes anclados.",
             "noChanges": "No cambia ninguna clave.",
@@ -91,7 +98,10 @@
         "title": "Plazos",
         "intro": "Todo plazo que decide cuándo pasa algo. Sólo SUPER_ADMIN.",
         "clocksRule": "Cambiar un plazo publica una versión nueva de los plazos de su mitad. Los relojes ya arrancados conservan la suya, así que el cambio vale sólo para los relojes que arrancan después.",
-        "sections": { "vertical": "Plazos de verticales", "billing": "Plazos de billing" },
+        "sections": {
+            "vertical": "Plazos de verticales",
+            "billing": "Plazos de billing"
+        },
         "version": "Versión {version}",
         "keyLabel": "Plazo {key}",
         "keys": {
@@ -2169,5 +2179,79 @@
             "TECHNICAL_PROBLEMS": "Tuve problemas técnicos",
             "OTHER": "Otro motivo"
         }
+    },
+    "permanentGrants": {
+        "title": "Grants permanentes",
+        "beneficiary": "ID del beneficiario",
+        "search": "Buscar",
+        "invalidUserId": "Ingresá un UUID válido.",
+        "loading": "Cargando…",
+        "loadError": "No se pudo leer la información.",
+        "noGrant": "Sin grant vivo.",
+        "liveGrant": "Grant vivo",
+        "grant": "Otorgar grant",
+        "anchor": "Anclar vertical",
+        "revoke": "Revocar grant",
+        "vertical": "Vertical",
+        "plan": "Plan",
+        "selectPlan": "Elegí un plan",
+        "catalogError": "No se pudo cargar el catálogo de planes.",
+        "noPlans": "No hay planes vigentes para esta vertical.",
+        "includesAddons": "Incluir complementos",
+        "reason": "Motivo",
+        "preview": "Ver qué va a pasar",
+        "confirmGrant": "Confirmar otorgamiento",
+        "confirmAnchor": "Confirmar anclaje",
+        "confirmRevoke": "Confirmar revocación",
+        "cancel": "Volver",
+        "result": "Acto realizado",
+        "resultGrant": "Grant otorgado: {{id}}",
+        "resultAnchor": "Ancla creada: {{id}}",
+        "resultRevoke": "Revocado el {{date}}",
+        "stoppedCharges": "Cobros que dejan de ocurrir",
+        "stoppedCharge": "La suscripción {{id}} de {{vertical}} deja de cobrarse.",
+        "endingCourtesies": "Cortesías vigentes que terminan",
+        "endingCourtesy": "La cortesía de {{vertical}} termina el {{date}}. En el proveedor pasa de paused a cancelled.",
+        "endingCourtesyAnchor": "La cortesía vigente en esa vertical ({{vertical}}) termina el {{date}}. En el proveedor pasa de paused a cancelled.",
+        "closedBalances": "Saldos de cortesía diferida que se cierran",
+        "closedBalance_one": "Se cierra el saldo de cortesía diferida de {{vertical}}: {{count}} mes. Ese mes no vuelve.",
+        "closedBalance_other": "Se cierra el saldo de cortesía diferida de {{vertical}}: {{count}} meses. Esos meses no vuelven.",
+        "convertedAddons": "Complementos que pasan a $0",
+        "convertedAddon": "{{name}} pasa a costo $0.",
+        "providerEmail": "El cliente recibe el correo del proveedor.",
+        "providerEmailPerPreapproval": "Llega un correo del proveedor por este preapproval.",
+        "noneStopped": "No hay cobros que detener.",
+        "noneCourtesy": "No hay cortesías vigentes que terminar.",
+        "noneBalances": "No hay saldos diferidos que cerrar.",
+        "noneAddons": "Sin complementos para convertir.",
+        "revocationTitle": "La revocación deja al cliente sin servicio",
+        "losingService": "Sin servicio en {{vertical}}.",
+        "noneLosingService": "No hay verticales que pierdan servicio.",
+        "addonsOff": "Complementos que se apagan y no vuelven solos",
+        "addonOff": "{{name}} se apaga y no vuelve solo.",
+        "noneAddonsOff": "Sin complementos que apagar.",
+        "trialNoReturn": "El trial no vuelve.",
+        "oldDebitNoResume": "El débito viejo no se reanuda: el cliente debe autorizar uno nuevo.",
+        "revocationReason": "Motivo de la revocación (se guarda)",
+        "actionError": "No se pudo completar el acto.",
+        "unknownRefusal": "El acto fue rechazado: {{reason}}.",
+        "verticals": {
+            "accommodation": "Alojamiento",
+            "venue": "Comer y salir",
+            "experience": "Experiencias",
+            "tourist": "Turista",
+            "partner": "Partner"
+        },
+        "refusals": {
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para este acto.",
+            "PERMANENT_GRANT_NOT_FOUND": "El grant no existe.",
+            "PERMANENT_GRANT_NOT_LIVE": "El grant ya no está vivo.",
+            "PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED": "La vertical ya está anclada.",
+            "PERMANENT_GRANT_ALREADY_LIVE": "El beneficiario ya tiene un grant vivo.",
+            "PERMANENT_GRANT_REFERENCE_NOT_FOUND": "No se encontró el plan o su versión.",
+            "PERMANENT_GRANT_FLOOR_NOT_CURRENT": "La versión elegida ya no es la vigente.",
+            "INVALID_PERMANENT_GRANT_INPUT": "Los datos del grant no son válidos."
+        },
+        "invalidForm": "Revisá la vertical, el plan vigente y el motivo."
     }
 }
