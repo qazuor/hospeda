@@ -1,6 +1,7 @@
 import { PermissionEnum, VerticalEnum } from '@repo/schemas';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
+import * as routePorts from '../../../src/routes/billing-permanent-grant/admin/ports';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -91,11 +92,13 @@ describe('AC:B13a:6 (support) — preview route actors and refusals', () => {
             role: 'ADMIN',
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
         };
+        const portSpy = vi.spyOn(routePorts, 'buildPermanentGrantPorts');
         for (const route of cases) {
             expect((await request(route.path, route.method, route.body)).status).toBe(401);
             const forbidden = await request(route.path, route.method, route.body, unprivileged);
             expect(forbidden.status).toBe(403);
-            expect((await forbidden.json()).error.code).toBe('FORBIDDEN');
+            expect((await forbidden.json()).error).toMatchObject({ code: 'FORBIDDEN' });
+            expect(portSpy).not.toHaveBeenCalled();
             expect(await grantState(beneficiaryId)).toEqual(baseline);
         }
         for (const route of [
@@ -111,6 +114,23 @@ describe('AC:B13a:6 (support) — preview route actors and refusals', () => {
                 403
             );
         }
+        const neighbour: Actor = {
+            id: await seedGrantUser('preview-auth-neighbour'),
+            role: 'ADMIN',
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.BILLING_CANCEL_SUBSCRIPTION
+            ]
+        };
+        const liveForbidden = await request(
+            `${BASE}/by-beneficiary/${beneficiaryId}`,
+            'GET',
+            undefined,
+            neighbour
+        );
+        expect(liveForbidden.status).toBe(403);
+        expect((await liveForbidden.json()).error.reason).toBeUndefined();
+        portSpy.mockRestore();
         expect(await grantState(beneficiaryId)).toEqual(baseline);
     });
 
