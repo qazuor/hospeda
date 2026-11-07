@@ -123,8 +123,10 @@ function isA5Origin(status: string): status is A5Origin {
  * @param input.now - The instant of the act
  * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
- *   HOS-1546, HOS-1547, HOS-1570) passes them; with the production `ficha` a `LISTING`
- *   instance throws and the caller's act rolls back (notas I-12)
+ *   HOS-1546, HOS-1547, HOS-1570) passes them. The production `ficha` answers for
+ *   an existing listing, including `PURGED`. A missing or soft-deleted listing throws
+ *   `ListingNotFoundError` and rolls back the caller's act; the revocation route returned
+ *   HTTP 500 (`INTERNAL_ERROR`) in the HOS-1630 measurement (notas I-12).
  * @returns The cancelled addon, or `NOT_APPLICABLE`
  * @throws ServiceError when the instance does not exist or left its state under the lock
  */
