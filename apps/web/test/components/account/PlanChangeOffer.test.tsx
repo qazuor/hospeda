@@ -38,7 +38,7 @@ const catalog = {
             entitlements: [],
             limits: {},
             billingOptions: [
-                { id: higherId, cycle: 'monthly', amount: 350000, currency: 'ARS' },
+                { id: higherId, cycle: 'monthly', amount: 350050, currency: 'ARS' },
                 { id: lowerId, cycle: 'annual', amount: 3500000, currency: 'ARS' }
             ]
         }
@@ -102,6 +102,8 @@ async function choose(id: string) {
         higherId,
         lowerId
     ]);
+    expect(items[0]).toHaveTextContent(/Pro.*por mes.*3[.]500,50/u);
+    expect(items[1]).toHaveTextContent(/Pro.*por año.*35[.]000/u);
     fireEvent.click(
         within(items.find((item) => item.getAttribute('data-billing-option-id') === id)!).getByRole(
             'button'

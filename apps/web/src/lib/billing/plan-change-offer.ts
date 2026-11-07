@@ -73,7 +73,11 @@ export async function loadPlanChangeChoices({
                 label: t('account.subscription.mine.planChange.choice', undefined, {
                     plan: name,
                     cycle: t(SIGNUP_CYCLE_LABEL_KEY[option.cycle]),
-                    price: formatPrice({ amount: option.amount / 100, locale })
+                    price: formatPrice({
+                        amount: option.amount / 100,
+                        locale,
+                        showDecimals: option.amount % 100 !== 0
+                    })
                 })
             }));
     });
