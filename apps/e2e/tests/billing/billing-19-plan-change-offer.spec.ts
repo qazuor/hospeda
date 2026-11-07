@@ -38,6 +38,10 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
                 idNamespace: randomUUID(),
                 honestAbout: [
                     {
+                        lie: 'M1',
+                        why: 'TEST:B8b:14 needs the successor first-charge date retained for checkout.'
+                    },
+                    {
                         lie: 'M6',
                         why: 'TEST:B8b:14 observes authorization of the starting subscription.'
                     },
