@@ -2169,5 +2169,27 @@
             "TECHNICAL_PROBLEMS": "Tive problemas técnicos",
             "OTHER": "Outro motivo"
         }
+    },
+    "subscriptionPause": {
+        "title": "Pausar ou retomar assinatura",
+        "customer": "Cliente: {customer}",
+        "loading": "Verificando a pausa…",
+        "invalidId": "Assinatura não encontrada.",
+        "error": "Não foi possível concluir a ação ({reason}). Confira o estado e tente novamente.",
+        "months": "Meses de pausa",
+        "pauseConfirm": "A assinatura de {customer} fica pausada até {date}.",
+        "resumePreview": "A pausa estava prevista até {date}.",
+        "resumeConfirm": "A assinatura de {customer} é retomada hoje. A data da próxima cobrança aparece ao concluir.",
+        "listingEffect": "O anúncio sai do site hoje e volta ao retomar se houver espaço no plano.",
+        "retentionEffect": "Durante a pausa, o anúncio não é arquivado nem apagado e não recebe avisos de retenção; o prazo recomeça ao retomar.",
+        "addonEffect": "Os adicionais desta vertical pausam com o plano; os da conta pausam só se não restar outra vertical compatível.",
+        "addonPaused": "pausa",
+        "addonContinues": "continua",
+        "refusal": "A pausa não pode ser oferecida: {reason}. A cortesia termina em {date}.",
+        "review": "Revisar efeitos",
+        "confirm": "Confirmar ação",
+        "paused": "Pausa registrada até {date}.",
+        "resumed": "Assinatura retomada. Próxima cobrança: {date}.",
+        "chargePending": "aguardando confirmação do provedor"
     }
 }

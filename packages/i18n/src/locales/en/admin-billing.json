@@ -2169,5 +2169,27 @@
             "TECHNICAL_PROBLEMS": "I had technical problems",
             "OTHER": "Other reason"
         }
+    },
+    "subscriptionPause": {
+        "title": "Pause or resume subscription",
+        "customer": "Customer: {customer}",
+        "loading": "Checking pause…",
+        "invalidId": "Subscription not found.",
+        "error": "Could not complete the action ({reason}). Review the status and try again.",
+        "months": "Pause months",
+        "pauseConfirm": "The subscription for {customer} pauses until {date}.",
+        "resumePreview": "The pause was scheduled until {date}.",
+        "resumeConfirm": "The subscription for {customer} resumes today. The next charge date appears after completion.",
+        "listingEffect": "The listing leaves the public site today and returns on resume if the plan has room.",
+        "retentionEffect": "During the pause, the listing is neither archived nor deleted and receives no retention notices; its clock restarts on resume.",
+        "addonEffect": "Addons in this vertical pause with the plan; account addons pause only if no other compatible vertical remains.",
+        "addonPaused": "pauses",
+        "addonContinues": "continues",
+        "refusal": "Pause cannot be offered: {reason}. Courtesy ends: {date}.",
+        "review": "Review effects",
+        "confirm": "Confirm action",
+        "paused": "Paused until {date}.",
+        "resumed": "Subscription resumed. Next charge: {date}.",
+        "chargePending": "awaiting provider confirmation"
     }
 }

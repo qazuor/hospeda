@@ -2169,5 +2169,27 @@
             "TECHNICAL_PROBLEMS": "Tuve problemas técnicos",
             "OTHER": "Otro motivo"
         }
+    },
+    "subscriptionPause": {
+        "title": "Pausar o reanudar suscripción",
+        "customer": "Cliente: {customer}",
+        "loading": "Revisando la pausa…",
+        "invalidId": "La suscripción no existe.",
+        "error": "No se pudo completar la acción ({reason}). Revisá el estado y volvé a intentar.",
+        "months": "Meses de pausa",
+        "pauseConfirm": "La suscripción de {customer} se pausa hasta el {date}.",
+        "resumePreview": "La pausa estaba prevista hasta el {date}.",
+        "resumeConfirm": "La suscripción de {customer} se reanuda hoy. El próximo día de cobro se muestra al terminar.",
+        "listingEffect": "Su ficha sale del sitio hoy y vuelve al reanudar si el cupo del plan alcanza.",
+        "retentionEffect": "Durante la pausa no se archiva ni borra la ficha ni recibe avisos de retención; el reloj vuelve a cero al reanudar.",
+        "addonEffect": "Los complementos de esta vertical se pausan con el plan; los de cuenta sólo si no queda otra vertical compatible.",
+        "addonPaused": "se pausa",
+        "addonContinues": "continúa",
+        "refusal": "No se puede ofrecer la pausa: {reason}. Fin de cortesía: {date}.",
+        "review": "Revisar efectos",
+        "confirm": "Confirmar acción",
+        "paused": "Pausa registrada hasta el {date}.",
+        "resumed": "Suscripción reanudada. Próximo cobro: {date}.",
+        "chargePending": "pendiente de confirmación del proveedor"
     }
 }
