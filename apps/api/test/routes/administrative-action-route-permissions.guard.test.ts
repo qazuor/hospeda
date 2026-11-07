@@ -149,6 +149,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-permanent-grant/admin/anchor.ts',
                 route: 'adminAnchorPermanentGrantRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-permanent-grant/admin/revocation.ts',
+                route: 'adminRevokePermanentGrantRoute'
             }
         ]
     },
@@ -468,10 +473,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-    it('b. checks exactly 53 bindings across 19 bound rows', () => {
+    it('b. checks exactly 54 bindings across 19 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(19);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(53);
+        expect(total).toBe(54);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
