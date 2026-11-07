@@ -46,7 +46,14 @@ export const OwnSubscriptionsResponseSchema = z.object({
                 })
                 .nullable(),
             promo: z.object({ endsAt: z.string().datetime().nullable() }).nullable(),
-            succession: z.object({ checkoutOpen: z.literal(true) }).nullable(),
+            /** Remaining non-deferred courtesy months, using the billing calendar rule. */
+            liveCourtesyMonths: z.number().int().nonnegative().optional(),
+            succession: z
+                .object({
+                    checkoutOpen: z.literal(true),
+                    checkoutDeadline: z.iso.datetime().nullable().optional()
+                })
+                .nullable(),
             plan: OwnSubscriptionPlanSchema,
             nextCharge: OwnSubscriptionNextChargeSchema
         })

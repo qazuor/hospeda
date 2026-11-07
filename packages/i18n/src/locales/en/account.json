@@ -516,6 +516,7 @@
                 "doneCredit": "Your service ends on {{date}}."
             },
             "planChange": {
+                "checkoutDeadline": "You can complete or cancel checkout until {{date}}.",
                 "courtesyLost_one": "You lose 1 courtesy month; you can stay monthly and keep it.",
                 "courtesyLost_other": "You lose {{count}} courtesy months; you can stay monthly and keep them.",
                 "open": "Change plan",

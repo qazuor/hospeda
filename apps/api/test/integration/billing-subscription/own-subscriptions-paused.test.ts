@@ -1,4 +1,5 @@
 import {
+    courtesyGrants,
     eq,
     getDb,
     promoCodes,
@@ -126,6 +127,32 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
         });
     });
 
+    it('reads current courtesy months from the stored grant and returns zero when absent', async () => {
+        const seeded = await seedSelfState('ACTIVE');
+        expect((await listed(seeded.subscriptionId, seeded.ownerId)).liveCourtesyMonths).toBe(0);
+        const [grant] = await getDb()
+            .insert(courtesyGrants)
+            .values({
+                beneficiaryUserId: seeded.ownerId,
+                grantedBy: seeded.ownerId,
+                subscriptionId: seeded.subscriptionId,
+                months: 3,
+                startsAt: NOW,
+                endsAt: new Date('2027-01-05T12:00:00.000Z'),
+                reason: 'HOS-1580 live courtesy route read'
+            })
+            .returning({ id: courtesyGrants.id });
+        if (!grant) throw new Error('Expected grant');
+        cleanup.push(async () => {
+            await getDb().delete(courtesyGrants).where(eq(courtesyGrants.id, grant.id));
+            await getDb()
+                .update(subscriptions)
+                .set({ status: 'CANCELLED' })
+                .where(eq(subscriptions.id, seeded.subscriptionId));
+        });
+        expect((await listed(seeded.subscriptionId, seeded.ownerId)).liveCourtesyMonths).toBe(3);
+    });
+
     it('marks an open successor checkout on the predecessor only', async () => {
         const seeded = await seedSelfState('ACTIVE');
         const [origin] = await getDb()
@@ -133,6 +160,7 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.subscriptionId));
         if (!origin) throw new Error('Expected predecessor');
+        const checkoutDeadline = new Date('2026-11-10T12:00:00.000Z');
         const [successor] = await getDb()
             .insert(subscriptions)
             .values({
@@ -143,7 +171,9 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
                 paymentMethod: 'CARD',
                 class: 'PRINCIPAL',
                 status: 'PENDING_AUTHORIZATION',
-                succeedsId: origin.id
+                succeedsId: origin.id,
+                authorizationWindowDeadlineVersion: 1,
+                authorizationWindowEndsAt: checkoutDeadline
             })
             .returning({ id: subscriptions.id });
         if (!successor) throw new Error('Expected successor');
@@ -159,7 +189,16 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
             await getDb().delete(subscriptions).where(eq(subscriptions.id, successor.id));
         });
         expect((await listed(origin.id, seeded.ownerId)).succession).toEqual({
-            checkoutOpen: true
+            checkoutOpen: true,
+            checkoutDeadline: checkoutDeadline.toISOString()
+        });
+        await getDb()
+            .update(subscriptions)
+            .set({ authorizationWindowEndsAt: null, authorizationWindowDeadlineVersion: null })
+            .where(eq(subscriptions.id, successor.id));
+        expect((await listed(origin.id, seeded.ownerId)).succession).toEqual({
+            checkoutOpen: true,
+            checkoutDeadline: null
         });
         await getDb()
             .update(subscriptions)

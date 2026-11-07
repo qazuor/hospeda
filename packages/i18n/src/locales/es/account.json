@@ -516,6 +516,7 @@
                 "doneCredit": "Tu servicio termina el {{date}}."
             },
             "planChange": {
+                "checkoutDeadline": "Podés terminar o cancelar el checkout hasta el {{date}}.",
                 "courtesyLost_one": "Perdés 1 mes de cortesía; podés seguir en mensual y conservarlo.",
                 "courtesyLost_other": "Perdés {{count}} meses de cortesía; podés seguir en mensual y conservarlos.",
                 "open": "Cambiar de plan",

@@ -841,3 +841,7 @@ Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `M
 `GET /api/v1/protected/billing-subscription/{subscriptionId}/pause-preview` requires `BILLING_VIEW_OWN` and permits an unverified email for `READ_OWN`. The response reports `offered: false` with the typed S8 refusal reason (and `courtesyEndsAt` for `COURTESY_IN_FORCE`), or `offered: true` with allowed months, the UTC end date per month, remaining quota, and affected recurring addons.
 
 `POST /{subscriptionId}/pause` takes a strict `{ months: 1..4 }` body and returns `PAUSED`, `pauseId`, `expectedEndAt`, and `complements`. `POST /{subscriptionId}/resume` takes a strict empty body and returns `RESUMED` with `nextCharge`. Both POST routes require a verified email. All three resolve ownership before calling the service; an alien id returns 404. The POST routes use the typed S8/S10 rejection mapping above and record `BILLING_MUTATION` only on success, without an administrative action id. A courtesy pause returns 409 `PAUSE_NOT_CUSTOMER_REQUEST` before any provider call.
+
+### Mi Suscripción: cortesía vigente y checkout sucesor (HOS-1580)
+
+`GET /api/v1/protected/billing-subscription/` agrega `liveCourtesyMonths` opcional por suscripción (meses de cortesía no diferida restantes, cero cuando no hay grant vigente) y `succession.checkoutDeadline` opcional (fecha individual de la ventana de autorización de la sucesora; `null` si no se registró). La fecha sólo aparece cuando hay una sucesión con checkout abierto.

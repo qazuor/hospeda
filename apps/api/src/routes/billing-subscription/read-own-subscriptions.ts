@@ -19,6 +19,7 @@ import {
 import { createLogger } from '@repo/logger';
 import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import {
+    computeCourtesyBalanceMonths,
     createCutExpectedAmountPolicy,
     isSuccessionCheckoutOpen,
     PAID_AFTER_CANCELLATION_TEMPLATE,
@@ -104,7 +105,8 @@ export async function readOwnSubscriptions(userId: string) {
                   .select({
                       id: subscriptions.id,
                       status: subscriptions.status,
-                      succeedsId: subscriptions.succeedsId
+                      succeedsId: subscriptions.succeedsId,
+                      authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt
                   })
                   .from(subscriptions)
                   .where(inArray(subscriptions.id, successorIds));
@@ -140,7 +142,37 @@ export async function readOwnSubscriptions(userId: string) {
             recurringAddonsCut: parsed.data.recurringAddonsCut
         });
     }
+    const liveCourtesy =
+        ids.length === 0
+            ? []
+            : await getDb()
+                  .select({
+                      subscriptionId: courtesyGrants.subscriptionId,
+                      startsAt: courtesyGrants.startsAt,
+                      endsAt: courtesyGrants.endsAt
+                  })
+                  .from(courtesyGrants)
+                  .where(
+                      and(
+                          inArray(courtesyGrants.subscriptionId, ids),
+                          isNull(courtesyGrants.balanceMonths),
+                          isNull(courtesyGrants.balanceClosedAt)
+                      )
+                  );
     const now = getClock().clock.now();
+    const liveCourtesyBySubscription = new Map<string, number>();
+    for (const grant of liveCourtesy) {
+        if (grant.startsAt > now || grant.endsAt <= now) continue;
+        const { months } = computeCourtesyBalanceMonths({
+            startsAt: grant.startsAt,
+            endsAt: grant.endsAt,
+            now
+        });
+        liveCourtesyBySubscription.set(
+            grant.subscriptionId,
+            (liveCourtesyBySubscription.get(grant.subscriptionId) ?? 0) + months
+        );
+    }
     const expectedAmountPolicy = createCutExpectedAmountPolicy();
     return Promise.all(
         rows.map(async (row) => {
@@ -221,9 +253,14 @@ export async function readOwnSubscriptions(userId: string) {
                           }
                         : null,
                 promo: livePromos.length > 0 ? { endsAt: null } : null,
+                liveCourtesyMonths: liveCourtesyBySubscription.get(row.id) ?? 0,
                 succession:
                     successor?.succeedsId === row.id && isSuccessionCheckoutOpen(successor.status)
-                        ? { checkoutOpen: true as const }
+                        ? {
+                              checkoutOpen: true as const,
+                              checkoutDeadline:
+                                  successor.authorizationWindowEndsAt?.toISOString() ?? null
+                          }
                         : null
             };
         })

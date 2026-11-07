@@ -46,10 +46,18 @@ describe('MySubscriptions SSR block', () => {
             )
         ).toEqual([
             'data-testid="my-subscription-plan-change-checkout"',
+            'data-testid="my-subscription-plan-change-deadline"',
             'data-testid="my-subscription-plan-change-coverage"',
             'data-testid="my-subscription-plan-change-paused"',
             'data-testid="my-subscription-plan-change-grace"'
         ]);
+    });
+    it('passes current and deferred courtesy months to the plan offer and shows the successor deadline', () => {
+        expect(source).toContain(
+            '(row.liveCourtesyMonths ?? 0) + result.deferredCourtesies.filter'
+        );
+        expect(source).toContain('row.succession?.checkoutDeadline');
+        expect(source).toContain('date: date(row.succession.checkoutDeadline)');
     });
     it('renders deferred courtesy balances with plural wording and the payment condition', () => {
         expect(source).toContain('result?.deferredCourtesies.map((c) =>');

@@ -80,6 +80,29 @@ describe('self cancellation schemas', () => {
             }).success
         ).toBe(true);
     });
+    it('accepts additive current courtesy and individual checkout deadline, including absence', () => {
+        const base = { ...ownRow, paidAfterCancellation: null };
+        const parse = (row: Record<string, unknown>) =>
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [row]
+            }).success;
+        expect(parse(base)).toBe(true);
+        expect(
+            parse({
+                ...base,
+                liveCourtesyMonths: 3,
+                succession: {
+                    checkoutOpen: true,
+                    checkoutDeadline: '2026-11-10T12:00:00.000Z'
+                }
+            })
+        ).toBe(true);
+        expect(parse({ ...base, liveCourtesyMonths: -1 })).toBe(false);
+        expect(
+            parse({ ...base, succession: { checkoutOpen: true, checkoutDeadline: 'invalid' } })
+        ).toBe(false);
+    });
     it('accepts an empty or populated deferred courtesy list', () => {
         expect(OwnSubscriptionsResponseSchema.safeParse(ownSubscriptions).success).toBe(true);
         expect(
