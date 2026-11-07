@@ -31,13 +31,15 @@ export async function seedCourtesyPrincipal(
         readonly pauseAcknowledgesOnly?: boolean;
         readonly resumeAcknowledgesOnly?: boolean;
         readonly onPause?: () => Promise<void>;
+        readonly onResume?: () => Promise<void>;
         readonly userId?: string;
     } = {}
 ) {
     const harness = providerHarness({
         pauseAcknowledgesOnly: input.pauseAcknowledgesOnly,
         resumeAcknowledgesOnly: input.resumeAcknowledgesOnly,
-        onPause: input.onPause
+        onPause: input.onPause,
+        onResume: input.onResume
     });
     const principal = await seedPausePrincipal({
         harness,

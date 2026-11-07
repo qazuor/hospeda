@@ -36,7 +36,7 @@ const grant = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>) =>
     grantTemporaryCourtesy(
         {
             subscriptionId: s.subscriptionId,
-            months: 2,
+            months: 4,
             grantedBy: s.userId,
             reason: 'S10 revoke test'
         },
@@ -135,7 +135,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:14 courtesy revocation is
             .select({ endsAt: courtesyGrants.endsAt })
             .from(courtesyGrants)
             .where(eq(courtesyGrants.subscriptionId, s.subscriptionId));
-        expect(courtesy?.endsAt).toEqual(new Date('2026-12-14T12:00:00.000Z'));
+        expect(courtesy?.endsAt).toEqual(new Date('2027-02-14T12:00:00.000Z'));
         const marks = await db
             .select({ reason: reconciliationMarks.reason })
             .from(reconciliationMarks)
@@ -171,5 +171,53 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:14 courtesy revocation is
         const calls = [...s.harness.calls];
         expect(await revoke(s)).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'NOT_IN_COURTESY' });
         expect(s.harness.calls).toEqual(calls);
+    });
+    it('rechecks the courtesy reason under lock after the provider call', async () => {
+        let subscriptionId = '';
+        const s = await seedCourtesyPrincipal({
+            onResume: async () => {
+                // Simulate another writer changing the open pause after the initial read.
+                await db
+                    .update(subscriptionPauses)
+                    .set({ reason: 'CUSTOMER_REQUEST' })
+                    .where(
+                        and(
+                            eq(subscriptionPauses.subscriptionId, subscriptionId),
+                            isNull(subscriptionPauses.actualEndAt)
+                        )
+                    );
+            }
+        });
+        subscriptionId = s.subscriptionId;
+        // A long live courtesy keeps this race fixture outside concurrent due-pause sweeps.
+        expect(
+            (
+                await grantTemporaryCourtesy(
+                    {
+                        subscriptionId: s.subscriptionId,
+                        months: 1000,
+                        grantedBy: s.userId,
+                        reason: 'S10 reason race'
+                    },
+                    s.ports
+                )
+            ).outcome
+        ).toBe('GRANTED');
+        expect(await revoke(s)).toEqual({ outcome: 'LOST_RACE' });
+        const [row] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, s.subscriptionId));
+        expect(row?.status).toBe('PAUSED');
+        const [pause] = await db
+            .select({ reason: subscriptionPauses.reason })
+            .from(subscriptionPauses)
+            .where(
+                and(
+                    eq(subscriptionPauses.subscriptionId, s.subscriptionId),
+                    isNull(subscriptionPauses.actualEndAt)
+                )
+            );
+        expect(pause?.reason).toBe('CUSTOMER_REQUEST');
     });
 });

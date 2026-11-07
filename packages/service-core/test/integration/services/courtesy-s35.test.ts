@@ -22,14 +22,14 @@ const complements = {
 };
 const grant = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>) =>
     grantTemporaryCourtesy(
-        { subscriptionId: s.subscriptionId, months: 2, grantedBy: s.userId, reason: 'S35 test' },
+        { subscriptionId: s.subscriptionId, months: 4, grantedBy: s.userId, reason: 'S35 test' },
         s.ports
     );
 const forfeit = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>, confirmed?: boolean) =>
     forfeitCourtesyAndPause(
         {
             subscriptionId: s.subscriptionId,
-            requestedMonths: 2,
+            requestedMonths: 4,
             courtesyForfeitConfirmed: confirmed
         },
         { ...s.ports, planPolicy: pausePlanPolicy(), complements }
@@ -93,7 +93,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S35 courtesy forfeit', 
         const result = await forfeit(s, true);
         expect(result).toMatchObject({
             outcome: 'PAUSED',
-            expectedEndAt: new Date('2026-12-14T12:00:00.000Z')
+            expectedEndAt: new Date('2027-02-14T12:00:00.000Z')
         });
         const pauses = await db
             .select()
@@ -107,9 +107,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S35 courtesy forfeit', 
             pauses.filter((p) => p.reason === 'CUSTOMER_REQUEST' && p.actualEndAt === null)
         ).toMatchObject([
             {
-                requestedMonths: 2,
+                requestedMonths: 4,
                 startsAt: courtesyNow,
-                expectedEndAt: new Date('2026-12-14T12:00:00.000Z')
+                expectedEndAt: new Date('2027-02-14T12:00:00.000Z')
             }
         ]);
         const [courtesy] = await db
@@ -129,7 +129,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S35 courtesy forfeit', 
             now: courtesyNow
         });
         expect(after.pausesInWindow).toBe(before.pausesInWindow + 1);
-        expect(after.monthsInWindow).toBe(before.monthsInWindow + 2);
+        expect(after.monthsInWindow).toBe(before.monthsInWindow + 4);
         expect(s.harness.calls).toEqual(calls);
     });
     it('refuses a principal that is active', async () => {
@@ -158,7 +158,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S35 courtesy forfeit', 
         const result = await forfeitCourtesyAndPause(
             {
                 subscriptionId: s.subscriptionId,
-                requestedMonths: 2,
+                requestedMonths: 4,
                 courtesyForfeitConfirmed: true
             },
             { ...s.ports, planPolicy: pausePlanPolicy(), complements: seeded.policy }
