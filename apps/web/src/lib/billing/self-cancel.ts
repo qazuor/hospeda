@@ -7,8 +7,13 @@ import type { z } from 'zod';
 import type { SupportedLocale } from '@/lib/i18n';
 import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 
-export type OwnSubscriptionStatus = 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED' | 'CANCEL_SCHEDULED';
-export const CANCELLATION_OFFERED: Record<OwnSubscriptionStatus | 'PAUSED', boolean> = {
+export type OwnSubscriptionStatus =
+    | 'ACTIVE'
+    | 'GRACE_PERIOD'
+    | 'SUSPENDED'
+    | 'CANCEL_SCHEDULED'
+    | 'PAUSED';
+export const CANCELLATION_OFFERED: Record<OwnSubscriptionStatus, boolean> = {
     ACTIVE: true,
     GRACE_PERIOD: true,
     SUSPENDED: true,

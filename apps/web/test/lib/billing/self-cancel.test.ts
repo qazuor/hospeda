@@ -32,7 +32,8 @@ describe('self-cancel helpers', () => {
             ACTIVE: true,
             GRACE_PERIOD: true,
             SUSPENDED: true,
-            CANCEL_SCHEDULED: false
+            CANCEL_SCHEDULED: false,
+            PAUSED: false
         });
         expect(END_LINE_KEY).toEqual({
             ACTIVE: 'account.subscription.cancel.activeEnds',
