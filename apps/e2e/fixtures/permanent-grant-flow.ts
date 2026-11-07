@@ -5,6 +5,64 @@ import type { FakeProviderServer } from '@repo/payments/fake-server';
 import { deferOrCloseCourtesy } from '../../../packages/service-core/src/services/billing/subscription/succession-close-writes.ts';
 import { execSQL, getDbPool } from './db-helpers.ts';
 
+// The E2E seed clears the production addon catalog. Keep these catalog rows
+// across cases because addon_version is immutable and cannot be deleted.
+const complementCatalog = [
+    {
+        addonId: 'b13a0000-0000-4000-8000-000000000001',
+        versionId: 'b13a0000-0000-4000-8000-000000000002',
+        productId: 'b13a0000-0000-4000-8000-000000000003',
+        slug: 'e2e-b13a-complement-1',
+        name: 'E2E complement 1'
+    },
+    {
+        addonId: 'b13a0000-0000-4000-8000-000000000004',
+        versionId: 'b13a0000-0000-4000-8000-000000000005',
+        productId: 'b13a0000-0000-4000-8000-000000000006',
+        slug: 'e2e-b13a-complement-2',
+        name: 'E2E complement 2'
+    }
+] as const;
+
+async function ensureComplementProduct(index: number): Promise<{
+    readonly id: string;
+    readonly version_id: string;
+}> {
+    const catalog = complementCatalog[index];
+    if (!catalog) throw new Error(`Unknown complement catalog index ${index}.`);
+    await execSQL(
+        `INSERT INTO addon (id, slug, name) VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
+        [catalog.addonId, catalog.slug, catalog.name]
+    );
+    await execSQL(
+        `INSERT INTO addon_version (id, addon_id, validity, scope_type)
+         VALUES ($1, $2, 'WHILE_SUBSCRIPTION_ALIVE', 'VERTICAL_SUBSCRIPTION')
+         ON CONFLICT DO NOTHING`,
+        [catalog.versionId, catalog.addonId]
+    );
+    await execSQL(
+        `INSERT INTO addon_product
+         (id, addon_id, version_id, price, currency, charge_kind, cycle, compatible_verticals)
+         VALUES ($1, $2, $3, 5000, 'ARS', 'PERIODICO', 'monthly', ARRAY['accommodation']::varchar[])
+         ON CONFLICT DO NOTHING`,
+        [catalog.productId, catalog.addonId, catalog.versionId]
+    );
+    const [product] = await execSQL<{ id: string; version_id: string }>(
+        `SELECT ap.id, ap.version_id FROM addon_product ap
+         JOIN addon a ON a.id = ap.addon_id
+         JOIN addon_version av ON av.id = ap.version_id
+         WHERE ap.id = $1 AND a.id = $2 AND a.slug = $3 AND av.id = $4
+           AND av.validity = 'WHILE_SUBSCRIPTION_ALIVE'
+           AND av.scope_type = 'VERTICAL_SUBSCRIPTION'
+           AND ap.charge_kind = 'PERIODICO' AND ap.cycle = 'monthly'
+           AND 'accommodation' = ANY(ap.compatible_verticals)`,
+        [catalog.productId, catalog.addonId, catalog.slug, catalog.versionId]
+    );
+    if (!product) throw new Error('Expected idempotent E2E complement catalog product.');
+    return product;
+}
+
 /** Open the grant screen and surface an SSR failure before waiting for hydration. */
 export async function openPermanentGrantsScreen(args: {
     readonly page: Page;
@@ -105,14 +163,16 @@ export async function seedDeferredCourtesy(args: {
 
 /**
  * No E2E purchase route creates complements (H-J). This SQL follows seedS20Addon:
- * live fake preapproval, ACTIVE COMPLEMENTO, provider link, compatible addon and
- * version/product, then an ACTIVE instance targeting the vertical subscription.
+ * live fake preapproval, ACTIVE COMPLEMENTO, provider link, retained compatible
+ * addon product, then an ACTIVE instance targeting the vertical subscription.
  */
 export async function seedTwoComplements(args: {
     readonly userId: string;
     readonly vertical: string;
     readonly fakeServer: FakeProviderServer;
 }): Promise<readonly { readonly authorizationId: string; readonly instanceId: string }[]> {
+    if (args.vertical !== 'accommodation')
+        throw new Error('The retained E2E complement catalog is for accommodation.');
     const [principal] = await execSQL<{ id: string }>(
         `SELECT id FROM subscription WHERE user_id = $1 AND vertical = $2 AND class = 'PRINCIPAL'
          ORDER BY created_at DESC LIMIT 1`,
@@ -121,6 +181,7 @@ export async function seedTwoComplements(args: {
     if (!principal) throw new Error('Expected principal subscription for complements.');
     const seeded: { authorizationId: string; instanceId: string }[] = [];
     for (let index = 0; index < 2; index++) {
+        const product = await ensureComplementProduct(index);
         const { authorizationId } = await args.fakeServer.provider.authorize({
             reference: randomUUID(),
             amount: { amountMinor: 500000, currency: 'ARS' },
@@ -141,33 +202,11 @@ export async function seedTwoComplements(args: {
              VALUES ($1, 'MERCADO_PAGO', $2)`,
             [complement.id, authorizationId]
         );
-        const [addon] = await execSQL<{ id: string }>(
-            `INSERT INTO addon (slug, name) VALUES ($1, $2) RETURNING id`,
-            [
-                `e2e-b13a-${args.userId.replaceAll('-', '')}-${randomUUID().slice(0, 8)}`,
-                `E2E complement ${index + 1}`
-            ]
-        );
-        if (!addon) throw new Error('Expected addon.');
-        const [version] = await execSQL<{ id: string }>(
-            `INSERT INTO addon_version (addon_id, validity, scope_type)
-             VALUES ($1, 'WHILE_SUBSCRIPTION_ALIVE', 'VERTICAL_SUBSCRIPTION') RETURNING id`,
-            [addon.id]
-        );
-        if (!version) throw new Error('Expected addon version.');
-        const [product] = await execSQL<{ id: string }>(
-            `INSERT INTO addon_product
-             (addon_id, version_id, price, currency, charge_kind, cycle, compatible_verticals)
-             VALUES ($1, $2, 5000, 'ARS', 'PERIODICO', 'monthly', ARRAY[$3]::varchar[])
-             RETURNING id`,
-            [addon.id, version.id, args.vertical]
-        );
-        if (!product) throw new Error('Expected addon product.');
         const [instance] = await execSQL<{ id: string }>(
             `INSERT INTO addon_instance
              (product_id, addon_version_id, owner_id, target_id, status, complement_subscription_id, starts_at)
              VALUES ($1, $2, $3, $4, 'ACTIVE', $5, NOW()) RETURNING id`,
-            [product.id, version.id, args.userId, principal.id, complement.id]
+            [product.id, product.version_id, args.userId, principal.id, complement.id]
         );
         if (!instance) throw new Error('Expected addon instance.');
         seeded.push({ authorizationId, instanceId: instance.id });
@@ -175,42 +214,50 @@ export async function seedTwoComplements(args: {
     return seeded;
 }
 
-/** Delete only rows belonging to these test users, in foreign-key order. */
+/** Remove this test's sweep candidates before deleting their dependent rows. */
 export async function cleanupPermanentGrantE2eRows(args: {
     readonly userIds: readonly string[];
 }): Promise<void> {
     if (args.userIds.length === 0) return;
     const ids = [args.userIds];
-    const addonRows = await execSQL<{ id: string }>(
-        `SELECT id FROM addon WHERE slug LIKE ANY($1::text[])`,
-        [args.userIds.map((id) => `e2e-b13a-${id.replaceAll('-', '')}-%`)]
+    const failures: unknown[] = [];
+    const attempt = async (query: string): Promise<void> => {
+        try {
+            await execSQL(query, ids);
+        } catch (error) {
+            failures.push(error);
+        }
+    };
+    // The sweep joins provider_link for both deferred retries and terminal returns.
+    // Remove it first so a later cleanup error cannot expose this test to other specs.
+    await attempt(
+        `DELETE FROM provider_link WHERE subscription_id IN
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
     );
-    const addonIds = addonRows.map((row) => row.id);
-    await execSQL(
+    // The zero-call addon check scans live instances without joining provider_link.
+    await attempt(
+        `UPDATE addon_instance SET status = 'CANCELLED'
+         WHERE owner_id = ANY($1::uuid[]) AND status IN ('ACTIVE', 'PENDING_AUTHORIZATION')`
+    );
+    await attempt('DELETE FROM email_outbox WHERE recipient_user_id = ANY($1::uuid[])');
+    await attempt(
         `DELETE FROM reconciliation_mark WHERE addon_instance_id IN
-         (SELECT id FROM addon_instance WHERE owner_id = ANY($1::uuid[]))`,
-        ids
+         (SELECT id FROM addon_instance WHERE owner_id = ANY($1::uuid[]))`
     );
-    await execSQL('DELETE FROM addon_instance WHERE owner_id = ANY($1::uuid[])', ids);
-    await execSQL(
+    await attempt('DELETE FROM addon_instance WHERE owner_id = ANY($1::uuid[])');
+    await attempt(
         `DELETE FROM reconciliation_mark WHERE subscription_id IN
-         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
-        ids
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
     );
-    if (addonIds.length > 0) {
-        await execSQL('DELETE FROM addon_product WHERE addon_id = ANY($1::uuid[])', [addonIds]);
-        await execSQL('DELETE FROM addon_version WHERE addon_id = ANY($1::uuid[])', [addonIds]);
-        await execSQL('DELETE FROM addon WHERE id = ANY($1::uuid[])', [addonIds]);
-    }
-    await execSQL('DELETE FROM courtesy_grant WHERE beneficiary_user_id = ANY($1::uuid[])', ids);
-    await execSQL(
+    await attempt('DELETE FROM courtesy_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
+    await attempt(
         `DELETE FROM subscription_pause WHERE subscription_id IN
-         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
-        ids
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
     );
-    await execSQL(
-        'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))',
-        ids
+    await attempt(
+        'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))'
     );
-    await execSQL('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])', ids);
+    await attempt('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
+    if (failures.length > 0)
+        throw new AggregateError(failures, 'Permanent grant E2E cleanup failed.');
 }
