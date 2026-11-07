@@ -39,6 +39,12 @@ describe('MySubscriptions SSR block', () => {
         expect(article).toContain("row.status === 'ACTIVE' && <PlanChangeOffer client:visible");
         expect(article).toContain('subscriptionId={row.id}');
         expect(article).toContain('vertical={row.vertical as PricingSituationVertical}');
+        expect([...article.matchAll(/<PlanChangeOffer client:visible/gu)]).toHaveLength(1);
+        expect(
+            [...article.matchAll(/data-testid="my-subscription-plan-change-[^"]+"/gu)].map(
+                ([attribute]) => attribute
+            )
+        ).toEqual(['data-testid="my-subscription-plan-change-grace"']);
     });
     it('renders deferred courtesy balances with plural wording and the payment condition', () => {
         expect(source).toContain('result?.deferredCourtesies.map((c) =>');

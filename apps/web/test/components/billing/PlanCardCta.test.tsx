@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
 
@@ -20,6 +20,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     resetPricingSituationCacheForTests();
 });
+afterEach(() => vi.unstubAllGlobals());
 
 const componentSource = readFileSync(
     resolve(__dirname, '../../../src/components/billing/PlanCardCta.client.tsx'),
@@ -78,7 +79,56 @@ describe('PlanCardCta', () => {
         );
         expect(init.method).toBe('POST');
         expect(JSON.parse(init.body as string)).toEqual({ billingOptionId: 'm2' });
-        vi.unstubAllGlobals();
+    });
+    it('TEST:B8b:14 follows the SUCCESSION checkout URL from the pricing card', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        const subscriptionId = '123e4567-e89b-42d3-a456-426614174000';
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [{ id: subscriptionId, vertical: 'accommodation', status: 'ACTIVE' }]
+            }
+        });
+        const assigned = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { pathname: '/es/planes/anfitriones/precios/', assign: assigned }
+        });
+        const checkoutUrl = 'https://payments-fake.invalid/checkout/pricing-successor';
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                success: true,
+                data: {
+                    outcome: 'SUCCESSION',
+                    subscriptionId: '123e4567-e89b-42d3-a456-426614174099',
+                    checkoutUrl,
+                    firstChargeAt: '2026-12-05T03:00:00.000Z',
+                    creditDays: 10
+                }
+            })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await waitFor(() => expect(assigned).toHaveBeenCalledWith(checkoutUrl));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
     it('TEST:1758:4 renders checkout links with stacked button styles', () => {
         expect(componentSource).toContain(

@@ -36,7 +36,7 @@ export function PlanChangeOffer({ subscriptionId, vertical, locale }: PlanChange
         setState('choices');
     }
 
-    async function confirm() {
+    async function submitSelectedPlanChange() {
         if (!selected) return;
         setState('pending');
         const result = await submitPlanChange({
@@ -112,7 +112,7 @@ export function PlanChangeOffer({ subscriptionId, vertical, locale }: PlanChange
                     <button
                         type="button"
                         className={styles.primary}
-                        onClick={() => void confirm()}
+                        onClick={() => void submitSelectedPlanChange()}
                     >
                         {t('account.subscription.mine.planChange.confirm')}
                     </button>
