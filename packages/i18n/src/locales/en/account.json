@@ -486,6 +486,7 @@
                 "error": "We couldn't change your plan. Please try again.",
                 "reason": {
                     "grace": "You have an outstanding payment. Settle it before changing plans.",
+                    "cycleEndPending": "Your next charge date is still being confirmed. Please try changing plans later.",
                     "window": "The date when you can change plans has not arrived yet.",
                     "windowDate": "You can change plans from {{date}}.",
                     "same": "You already have that billing option.",

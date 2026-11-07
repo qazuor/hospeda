@@ -182,6 +182,34 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
             )
         );
     });
+    it('shows the pending next charge date copy for a 409 rejection', async () => {
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: catalog });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response(
+                {
+                    success: false,
+                    error: {
+                        code: 'CONFLICT',
+                        message: 'Plan change rejected',
+                        details: { reason: 'CYCLE_END_PENDING' }
+                    }
+                },
+                409
+            );
+        });
+        await choose(higherId);
+        await waitFor(() =>
+            expect(screen.getByTestId('plan-change-result')).toHaveTextContent(
+                'La fecha del próximo cobro todavía se está confirmando. Intentá cambiar de plan más tarde.'
+            )
+        );
+    });
     it('shows the localized provider rejection when creation was not applied', async () => {
         fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url.includes('/api/v1/public/plan-catalog'))

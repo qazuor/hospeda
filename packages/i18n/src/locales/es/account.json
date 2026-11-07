@@ -486,6 +486,7 @@
                 "error": "No pudimos cambiar el plan. Intentá de nuevo.",
                 "reason": {
                     "grace": "Tenés un pago pendiente. Regularizalo para poder cambiar de plan.",
+                    "cycleEndPending": "La fecha del próximo cobro todavía se está confirmando. Intentá cambiar de plan más tarde.",
                     "window": "Todavía no llegó la fecha en que podés cambiar de plan.",
                     "windowDate": "Podés cambiar de plan desde el {{date}}.",
                     "same": "Ya tenés esa opción de facturación.",

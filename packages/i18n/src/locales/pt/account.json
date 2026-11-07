@@ -486,6 +486,7 @@
                 "error": "Não conseguimos mudar seu plano. Tente novamente.",
                 "reason": {
                     "grace": "Você tem um pagamento pendente. Regularize-o para mudar de plano.",
+                    "cycleEndPending": "A data da próxima cobrança ainda está sendo confirmada. Tente mudar de plano mais tarde.",
                     "window": "A data em que você pode mudar de plano ainda não chegou.",
                     "windowDate": "Você pode mudar de plano a partir de {{date}}.",
                     "same": "Você já tem essa opção de cobrança.",

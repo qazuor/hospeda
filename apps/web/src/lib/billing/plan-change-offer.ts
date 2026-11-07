@@ -163,12 +163,14 @@ export function planChangeErrorMessage({
     const key =
         reason === 'GRACE_PERIOD'
             ? 'grace'
-            : reason === 'CHANGE_WINDOW_TOO_SHORT' || reason === 'SUCCESSION_WINDOW_TOO_SHORT'
-              ? 'window'
-              : reason === 'NO_CHANGE'
-                ? 'same'
-                : reason === 'SCHEDULED_CHANGE_EXISTS' || reason === 'MIGRATION_CHANGE_QUEUED'
-                  ? 'scheduled'
-                  : 'other';
+            : reason === 'CYCLE_END_PENDING'
+              ? 'cycleEndPending'
+              : reason === 'CHANGE_WINDOW_TOO_SHORT' || reason === 'SUCCESSION_WINDOW_TOO_SHORT'
+                ? 'window'
+                : reason === 'NO_CHANGE'
+                  ? 'same'
+                  : reason === 'SCHEDULED_CHANGE_EXISTS' || reason === 'MIGRATION_CHANGE_QUEUED'
+                    ? 'scheduled'
+                    : 'other';
     return t(`account.subscription.mine.planChange.reason.${key}`);
 }
