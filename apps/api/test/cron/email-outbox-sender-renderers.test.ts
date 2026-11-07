@@ -476,25 +476,25 @@ describe('TEST:V9b:10 the production outbox sender renders retention notices', (
     });
 });
 
-describe('TEST:B9b:5 AC:B9b:5 the production sender renders promo-ending mail', () => {
-    it('(a) resolves billing.promo-ending through its registered renderer', async () => {
+describe('TEST:B9b:5 and TEST:B9b:14 production billing mail renderers', () => {
+    it('resolves promo-ending and courtesy-revoked through their registered renderers', async () => {
         const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
         const result = await render({
             row: row('billing.promo-ending', {
-                subscriptionId: 'sub-private',
-                redemptionId: 'redemption-private',
-                vertical: 'accommodation',
                 planName: 'Plan premium',
                 lastDiscountedChargeDate: '2026-10-20',
                 amountAfterMinor: 80000,
-                currency: 'ARS',
-                daysBefore: 7,
-                deadlinesVersion: 1
+                currency: 'ARS'
             })
         });
         const html = renderToStaticMarkup(result.react);
         expect(result.subject).toBe(PROMO_ENDING_SUBJECT);
         expect(html).toContain('20 de octubre de 2026');
         expect(html).toContain('$800,00');
+        const courtesy = await render({
+            row: row('billing.courtesy-revoked', { nextChargeOn: '2026-11-14' })
+        });
+        expect(courtesy.subject).toBe('Tu cortesía terminó');
+        expect(renderToStaticMarkup(courtesy.react)).toContain('14 de noviembre de 2026');
     });
 });

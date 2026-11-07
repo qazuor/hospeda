@@ -31,6 +31,7 @@ import {
 import type { PartnerClaimSecretIssuer } from '@repo/notifications';
 import {
     BrevoEmailTransport,
+    createBillingCourtesyRenderers,
     createBillingGraceReminderRenderers,
     createBillingManualPaymentRenderers,
     createBillingPromoRenderers,
@@ -100,6 +101,7 @@ export function buildOutboxSenderRender(input: {
             ...createBillingRenewalRenderers({ siteUrl: input.siteUrl }),
             ...createBillingGraceReminderRenderers({ siteUrl: input.siteUrl }),
             ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
+            ...createBillingCourtesyRenderers(),
             ...createBillingReconciliationRenderers({
                 siteUrl: input.siteUrl,
                 readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,

@@ -2,8 +2,10 @@ import { type Clock, VerticalSchema } from '@repo/billing-verticals-contract';
 import {
     and,
     billingOptions,
+    courtesyGrants,
     eq,
     getDb,
+    gt,
     isNull,
     providerLinks,
     subscriptionPauses,
@@ -26,17 +28,26 @@ import {
 } from './apply-scheduled-change.service.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
+import { enqueueCourtesyRevokedNotice } from './courtesy-revoked-notice.js';
 import { confirmPrincipalResume } from './resume-subscription-provider.js';
 import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const logger = createLogger('resume-subscription-s10');
-const inputSchema = z.strictObject({ subscriptionId: z.uuid(), cause: z.enum(['TERM', 'EARLY']) });
+const inputSchema = z.strictObject({
+    subscriptionId: z.uuid(),
+    cause: z.enum(['TERM', 'EARLY', 'COURTESY_REVOKED'])
+});
 
 /** Outcome of the S10 principal resume transition. */
 export type ResumeSubscriptionResult =
     | {
           readonly outcome: 'NOT_APPLICABLE';
-          readonly reason: 'NOT_PRINCIPAL' | 'NOT_PAUSED' | 'NO_OPEN_PAUSE' | 'NO_PROVIDER_LINK';
+          readonly reason:
+              | 'NOT_PRINCIPAL'
+              | 'NOT_PAUSED'
+              | 'NO_OPEN_PAUSE'
+              | 'NO_PROVIDER_LINK'
+              | 'NOT_IN_COURTESY';
       }
     | { readonly outcome: 'NOT_APPLIED' | 'LOST_RACE' }
     | {
@@ -48,20 +59,42 @@ export type ResumeSubscriptionResult =
               readonly currency: string;
           } | null;
           readonly complements: ResumeComplementsSummary;
+          readonly courtesyGrantId?: string;
           readonly scheduledChange?: Extract<ApplyScheduledChangeResult, { outcome: 'APPLIED' }>;
       };
 
+type ExistingResumeResult =
+    | Exclude<ResumeSubscriptionResult, { readonly outcome: 'NOT_APPLICABLE' }>
+    | {
+          readonly outcome: 'NOT_APPLICABLE';
+          readonly reason: 'NOT_PRINCIPAL' | 'NOT_PAUSED' | 'NO_OPEN_PAUSE' | 'NO_PROVIDER_LINK';
+      };
+
+type ResumePorts = {
+    readonly provider: PaymentProvider;
+    readonly clock: Clock;
+    readonly complements: ComplementPolicyPorts;
+    readonly coverageNotices?: CoverageNotices;
+    readonly expectedAmount?: ExpectedAmountPolicy;
+    readonly surplusStep?: SurplusStep;
+};
+
 /** Runs S10 for a due or early principal return, confirming card state before locking the row. */
-export async function resumeSubscription(
+export function resumeSubscription(
     input: { readonly subscriptionId: string; readonly cause: 'TERM' | 'EARLY' },
-    ports: {
-        readonly provider: PaymentProvider;
-        readonly clock: Clock;
-        readonly complements: ComplementPolicyPorts;
-        readonly coverageNotices?: CoverageNotices;
-        readonly expectedAmount?: ExpectedAmountPolicy;
-        readonly surplusStep?: SurplusStep;
-    }
+    ports: ResumePorts
+): Promise<ExistingResumeResult>;
+/** Runs S10 for an administrator's temporary courtesy revocation. */
+export function resumeSubscription(
+    input: { readonly subscriptionId: string; readonly cause: 'COURTESY_REVOKED' },
+    ports: ResumePorts
+): Promise<ResumeSubscriptionResult>;
+export async function resumeSubscription(
+    input: {
+        readonly subscriptionId: string;
+        readonly cause: 'TERM' | 'EARLY' | 'COURTESY_REVOKED';
+    },
+    ports: ResumePorts
 ): Promise<ResumeSubscriptionResult> {
     const value = inputSchema.parse(input);
     const db = getDb();
@@ -80,7 +113,7 @@ export async function resumeSubscription(
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_PRINCIPAL' };
     if (principal.status !== 'PAUSED') return { outcome: 'NOT_APPLICABLE', reason: 'NOT_PAUSED' };
     const [openPause] = await db
-        .select({ id: subscriptionPauses.id })
+        .select({ id: subscriptionPauses.id, reason: subscriptionPauses.reason })
         .from(subscriptionPauses)
         .where(
             and(
@@ -90,6 +123,8 @@ export async function resumeSubscription(
         )
         .limit(1);
     if (!openPause) return { outcome: 'NOT_APPLICABLE', reason: 'NO_OPEN_PAUSE' };
+    if (value.cause === 'COURTESY_REVOKED' && openPause.reason !== 'COURTESY')
+        return { outcome: 'NOT_APPLICABLE', reason: 'NOT_IN_COURTESY' };
     let providerNextChargeAt: Date | null = null;
     if (principal.paymentMethod === 'CARD') {
         const [link] = await db
@@ -124,7 +159,7 @@ export async function resumeSubscription(
             .limit(1);
         if (locked?.class !== 'PRINCIPAL' || locked.status !== 'PAUSED') return null;
         const [pause] = await tx
-            .select({ id: subscriptionPauses.id })
+            .select({ id: subscriptionPauses.id, reason: subscriptionPauses.reason })
             .from(subscriptionPauses)
             .where(
                 and(
@@ -134,6 +169,7 @@ export async function resumeSubscription(
             )
             .limit(1);
         if (!pause) return null;
+        if (value.cause === 'COURTESY_REVOKED' && pause.reason !== 'COURTESY') return null;
         let nextChargeAt = providerNextChargeAt;
         if (locked.paymentMethod === 'MANUAL') {
             if (!locked.billingOptionId) throw new Error('Manual principal lacks billing option');
@@ -163,16 +199,46 @@ export async function resumeSubscription(
             .update(subscriptionPauses)
             .set({ actualEndAt: now })
             .where(eq(subscriptionPauses.id, pause.id));
+        let courtesyGrantId: string | undefined;
+        if (value.cause === 'COURTESY_REVOKED') {
+            const [grant] = await tx
+                .select({ id: courtesyGrants.id })
+                .from(courtesyGrants)
+                .where(
+                    and(
+                        eq(courtesyGrants.subscriptionId, locked.id),
+                        isNull(courtesyGrants.balanceMonths),
+                        gt(courtesyGrants.endsAt, now)
+                    )
+                )
+                .limit(1);
+            if (!grant) throw new Error('S10 courtesy grant missing');
+            courtesyGrantId = grant.id;
+            await tx
+                .update(courtesyGrants)
+                .set({ endsAt: now })
+                .where(eq(courtesyGrants.id, grant.id));
+        }
         const scheduledChange = await applyScheduledChangeInTx({
             subscriptionId: value.subscriptionId,
             now,
             tx
         });
         if (!row.userId || !row.vertical) throw new Error('Principal lacks owner or vertical');
+        if (value.cause === 'COURTESY_REVOKED')
+            await enqueueCourtesyRevokedNotice({
+                tx,
+                subscriptionId: locked.id,
+                userId: row.userId,
+                vertical: row.vertical,
+                pauseId: pause.id,
+                nextChargeAt: nextChargeAt ?? locked.nextChargeAt
+            });
         return {
             userId: row.userId,
             vertical: row.vertical,
             nextChargeAt,
+            courtesyGrantId,
             scheduledChange: scheduledChange.outcome === 'APPLIED' ? scheduledChange : undefined
         };
     });
@@ -249,6 +315,7 @@ export async function resumeSubscription(
         nextChargeAt: written.nextChargeAt,
         nextCharge,
         complements,
+        ...(written.courtesyGrantId ? { courtesyGrantId: written.courtesyGrantId } : {}),
         ...(written.scheduledChange ? { scheduledChange: written.scheduledChange } : {})
     };
 }

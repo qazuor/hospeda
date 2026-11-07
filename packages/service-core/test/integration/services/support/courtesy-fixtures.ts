@@ -1,4 +1,11 @@
-import { eq, inArray, permanentGrants, permanentGrantVerticals, users } from '@repo/db';
+import {
+    emailOutbox,
+    eq,
+    inArray,
+    permanentGrants,
+    permanentGrantVerticals,
+    users
+} from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import {
     anchorPermanentGrantVertical,
@@ -14,6 +21,7 @@ import { currentFloorPolicy, grantSignerActor, seedGrantPlan } from './permanent
 export const courtesyNow = new Date('2026-10-14T12:00:00.000Z');
 const grantIds: string[] = [];
 const actorIds: string[] = [];
+const courtesyUserIds: string[] = [];
 
 /** Creates an isolated principal and the fake provider used by the real courtesy service. */
 export async function seedCourtesyPrincipal(
@@ -21,12 +29,14 @@ export async function seedCourtesyPrincipal(
         readonly manual?: boolean;
         readonly annual?: boolean;
         readonly pauseAcknowledgesOnly?: boolean;
+        readonly resumeAcknowledgesOnly?: boolean;
         readonly onPause?: () => Promise<void>;
         readonly userId?: string;
     } = {}
 ) {
     const harness = providerHarness({
         pauseAcknowledgesOnly: input.pauseAcknowledgesOnly,
+        resumeAcknowledgesOnly: input.resumeAcknowledgesOnly,
         onPause: input.onPause
     });
     const principal = await seedPausePrincipal({
@@ -35,6 +45,7 @@ export async function seedCourtesyPrincipal(
         paymentMethod: input.manual ? 'MANUAL' : 'CARD',
         userId: input.userId
     });
+    courtesyUserIds.push(principal.userId);
     const calls: string[] = [];
     const provider = new Proxy(harness.provider, {
         get(target, property, receiver) {
@@ -42,6 +53,13 @@ export async function seedCourtesyPrincipal(
                 return async (input: { readonly authorizationId: string }) => {
                     calls.push(`pause:${input.authorizationId}`);
                     return target.pause(input);
+                };
+            if (property === 'resume')
+                return async (request: { readonly authorizationId: string }) => {
+                    calls.push(`resume:${request.authorizationId}`);
+                    if (input.resumeAcknowledgesOnly)
+                        return { accepted: true as const, resourceId: request.authorizationId };
+                    return target.resume(request);
                 };
             if (property === 'readAuthorization')
                 return async (input: { readonly authorizationId: string }) => {
@@ -123,6 +141,11 @@ export async function createPermanentAnchor(
 
 /** Removes rows created by courtesy fixtures without changing other test populations. */
 export async function retireCourtesyFixtures(): Promise<void> {
+    const usersToRetire = courtesyUserIds.splice(0);
+    if (usersToRetire.length)
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(inArray(emailOutbox.recipientUserId, usersToRetire));
     await retirePauseRows();
     const ids = grantIds.splice(0);
     if (ids.length) {

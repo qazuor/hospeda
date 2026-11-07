@@ -150,6 +150,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/promo/promo-ending-notice.ts': [
         'billing.promo-ending'
     ],
+    'packages/service-core/src/services/billing/subscription/courtesy-revoked-notice.ts': [
+        'billing.courtesy-revoked'
+    ],
     'packages/service-core/src/services/billing/subscription/signup-declined-notice.ts': [
         'billing.signup-declined'
     ],
