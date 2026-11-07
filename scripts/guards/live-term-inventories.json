@@ -211,6 +211,13 @@
             "why": "AC:B9a:7 (HOS-1634): revocar lee las instancias vivas tituladas por sus anclas."
         },
         {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview.ts",
+            "symbol": "previewPermanentGrantRevocation",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:7 (HOS-1634): la vista previa de revocación lee las instancias tituladas por las anclas y aplica el mismo filtro de estados vivos (PENDING_AUTHORIZATION, ACTIVE) que revokePermanentGrant."
+        },
+        {
             "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
             "symbol": "reanchorSubscriptionsToVersion",
             "row": null,
@@ -387,6 +394,13 @@
             "symbol": "closeDeferredCourtesyBalances",
             "row": 9,
             "why": "S13 cierra el saldo diferido en las verticales que el acto ancla (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview-read.ts",
+            "symbol": "readPermanentGrantEffects",
+            "row": 4,
+            "subject": "courtesy_grant",
+            "why": "La vista previa lee balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
         },
         {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
