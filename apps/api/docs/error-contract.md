@@ -505,11 +505,19 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 
 `POST /api/v1/admin/billing-permanent-grants`,
 `POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` and
-`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation` answer
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation`,
+`POST /api/v1/admin/billing-permanent-grants/preview`,
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors/preview`,
+`GET /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation` and
+`GET /api/v1/admin/billing-permanent-grants/by-beneficiary/{userId}` answer
 typed rejections with their `reason`. The mapping lives in
 `src/routes/billing-permanent-grant/admin/rejections.ts` as an exhaustive
 `Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
 breaks the typecheck.
+
+The three previews reject for the same reasons, in the same order, as their
+corresponding acts and write nothing. The live-grant read only rejects for
+permission (besides request-shape validation) and writes nothing.
 
 | `reason` | Status | `error.code` |
 |---|---:|---|
