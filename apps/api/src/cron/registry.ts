@@ -50,6 +50,7 @@ import {
     subscriptionRenewalNoticeJob,
     subscriptionScheduledChangeJob,
     subscriptionServiceEndJob,
+    subscriptionSuccessionReevaluationJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
     viewMonthlyRollupJob
@@ -97,6 +98,7 @@ export const cronJobs: CronJobDefinition[] = [
     subscriptionServiceEndJob,
     subscriptionPauseEndJob,
     subscriptionScheduledChangeJob,
+    subscriptionSuccessionReevaluationJob,
     subscriptionRenewalNoticeJob,
     subscriptionGraceReminderJob,
     subscriptionWindowExpiryJob,

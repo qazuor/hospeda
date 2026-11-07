@@ -137,6 +137,7 @@ export async function seedPlanChange(input: {
     readonly sourceCycle?: BillingCycle;
     readonly targetCycle?: BillingCycle;
     readonly paymentMethod?: 'CARD' | 'MANUAL';
+    readonly leaveCycleEndPending?: boolean;
 }) {
     const choice = await seedSuccessionChoice();
     let predecessorBillingOptionId = choice.predecessorBillingOptionId;
@@ -199,13 +200,15 @@ export async function seedPlanChange(input: {
         status: input.status ?? 'ACTIVE',
         paymentMethod: input.paymentMethod,
         providerState: input.providerState ?? 'active',
-        honestAboutM1: true
+        honestAboutM1: true,
+        activateThroughService: input.leaveCycleEndPending
     });
     const nextChargeAt = input.nextChargeAt ?? new Date('2026-11-11T13:00:00.000Z');
-    await getServiceTestDb()
-        .update(subscriptions)
-        .set({ nextChargeAt })
-        .where(eq(subscriptions.id, seeded.predecessor.id));
+    if (!input.leaveCycleEndPending)
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ nextChargeAt })
+            .where(eq(subscriptions.id, seeded.predecessor.id));
     if (input.status === 'PAUSED')
         await getServiceTestDb()
             .insert(subscriptionPauses)

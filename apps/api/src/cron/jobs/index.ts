@@ -59,6 +59,7 @@ export { subscriptionPauseEndJob } from './subscription-pause-end.job.js';
 export { subscriptionRenewalNoticeJob } from './subscription-renewal-notice.job.js';
 export { subscriptionScheduledChangeJob } from './subscription-scheduled-change.job.js';
 export { subscriptionServiceEndJob } from './subscription-service-end.job.js';
+export { subscriptionSuccessionReevaluationJob } from './subscription-succession-reevaluation.job.js';
 export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';
 export { trialMachineExpiryJob } from './trial-machine-expiry.job.js';
 export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';

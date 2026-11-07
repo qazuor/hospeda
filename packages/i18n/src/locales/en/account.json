@@ -469,7 +469,32 @@
         "mine": {
             "title": "Your subscriptions",
             "empty": "You have no current subscriptions.",
-            "planChangeUnavailable": "You can't change plans yet: cancel at the end of the period and subscribe again.",
+            "planChange": {
+                "open": "Change plan",
+                "heading": "Choose another plan",
+                "choice": "{{plan}} · {{cycle}} · {{price}}",
+                "loading": "Loading plans...",
+                "confirmHeading": "How the change works",
+                "confirmCheckout": "If authorization is needed, you'll go to Mercado Pago checkout; your current plan continues until you authorize.",
+                "confirmScheduled": "If the change is scheduled, you'll see the exact date when the new plan starts.",
+                "confirm": "Confirm change",
+                "back": "Back",
+                "pending": "Processing the change...",
+                "pricingOpen": "Change to this plan",
+                "downgrade": "Your plan changes on {{date}}.",
+                "regret": "We cancelled the scheduled plan change.",
+                "error": "We couldn't change your plan. Please try again.",
+                "reason": {
+                    "grace": "You have an outstanding payment. Settle it before changing plans.",
+                    "cycleEndPending": "Your next charge date is still being confirmed. Please try changing plans later.",
+                    "window": "The date when you can change plans has not arrived yet.",
+                    "windowDate": "You can change plans from {{date}}.",
+                    "same": "You already have that billing option.",
+                    "scheduled": "You already have a scheduled plan change.",
+                    "providerNotApplied": "Mercado Pago couldn't apply the change. Your current plan remains active. Please try again later.",
+                    "other": "This change isn't available now. Check your subscription and try again."
+                }
+            },
             "graceChangePlan": {
                 "CARD": "You can't change plans while you have a payment pending. Get your subscription up to date by changing the card you pay with on Mercado Pago (the charge is retried right away); once your subscription is up to date, you'll be able to make changes to your plan.",
                 "MANUAL": "You can't change plans while you have a payment pending. Get your subscription up to date by paying your installment; once your subscription is up to date, you'll be able to make changes to your plan."

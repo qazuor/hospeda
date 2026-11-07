@@ -174,6 +174,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Apply due scheduled subscription changes (HOS-1577, AC:B8b:15).'
     },
     {
+        name: 'subscription-succession-reevaluation',
+        displayName: 'Reevaluación de sucesiones',
+        category: 'billing',
+        schedule: '33 * * * *',
+        description: 'Retry succession predecessor cancellation and deferred courtesy (HOS-1579).'
+    },
+    {
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',

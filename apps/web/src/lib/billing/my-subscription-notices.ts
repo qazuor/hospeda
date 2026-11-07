@@ -1,16 +1,3 @@
-import type { OwnSubscriptionStatus } from './self-cancel';
-
-/** Shared AU notice text; B8b removes it and HOS-1621 reuses it on pricing (AC:B13a:7). */
-export const PLAN_CHANGE_UNAVAILABLE_KEY = 'account.subscription.mine.planChangeUnavailable';
-
-/** Statuses that show the cut's plan-change notice. */
-export const PLAN_CHANGE_UNAVAILABLE: Record<OwnSubscriptionStatus, boolean> = {
-    ACTIVE: true,
-    GRACE_PERIOD: false,
-    SUSPENDED: false,
-    CANCEL_SCHEDULED: false
-};
-
 /** Grace-period copy for blocking plan changes by payment method. */
 export const GRACE_PLAN_CHANGE_KEY: Record<'CARD' | 'MANUAL', string> = {
     CARD: 'account.subscription.mine.graceChangePlan.CARD',

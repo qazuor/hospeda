@@ -89,7 +89,12 @@ describe('subscription-window-expiry cron', () => {
             coverageNotices: getCoverageNotices(),
             billingFacts: getAnalyticsFactSink(),
             changeDirection: expect.any(Function),
-            complements: mockComplementPorts
+            complements: mockComplementPorts,
+            successionCloser: expect.objectContaining({ closeSuccession: expect.any(Function) }),
+            successionSettler: expect.any(Function),
+            scheduledChangeApplier: expect.objectContaining({
+                applyScheduledChange: expect.any(Function)
+            })
         });
         expect(mockExpire).toHaveBeenCalledWith(100, {
             provider: mockProvider,
@@ -99,7 +104,12 @@ describe('subscription-window-expiry cron', () => {
             coverageNotices: getCoverageNotices(),
             billingFacts: getAnalyticsFactSink(),
             changeDirection: expect.any(Function),
-            complements: mockComplementPorts
+            complements: mockComplementPorts,
+            successionCloser: expect.objectContaining({ closeSuccession: expect.any(Function) }),
+            successionSettler: expect.any(Function),
+            scheduledChangeApplier: expect.objectContaining({
+                applyScheduledChange: expect.any(Function)
+            })
         });
         expect(mockSweep).toHaveBeenCalledWith(100, {
             provider: mockProvider,
