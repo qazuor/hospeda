@@ -1352,6 +1352,13 @@
       "when": 1793940934459,
       "tag": "0192_chemical_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1794083748553,
+      "tag": "0193_fancy_arclight",
+      "breakpoints": true
     }
   ]
 }
