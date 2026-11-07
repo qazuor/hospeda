@@ -256,6 +256,26 @@ describe('TEST:B8b:22 AC:B8b:22 administrative action 9 routes', () => {
         expect(row?.status).toBe('PAUSED');
     });
 
+    it('refuses a second pause with a stale ACTIVE confirmation', async () => {
+        const seeded = await seedEligible();
+        const first = await post(seeded.subscriptionId, 'pause', pauseBody);
+        expect(first.status).toBe(200);
+        audit.mockClear();
+        const stale = await post(seeded.subscriptionId, 'pause', pauseBody);
+        expect(await errorOf(stale)).toEqual({
+            status: 409,
+            code: 'CONFLICT',
+            reason: 'ADMINISTRATIVE_ACTION_STATE_CHANGED',
+            details: { reason: 'ADMINISTRATIVE_ACTION_STATE_CHANGED' }
+        });
+        const [row] = await getDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        expect(row?.status).toBe('PAUSED');
+        expect(mutationAudits()).toEqual([]);
+    });
+
     it('resumes a customer pause and records the complete admin audit event', async () => {
         const seeded = await seedEligible();
         const paused = await post(seeded.subscriptionId, 'pause', pauseBody);
