@@ -125,7 +125,9 @@ describe('displayWeight HTTP schema validation (US-06)', () => {
         // 4aa8ff2e3 (feat(schemas): i18n catalog name/description).
         const baseInput = {
             name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
-            slug: 'test-feature'
+            slug: 'test-feature',
+            // Required since HOS-2058 N+1 made features.category NOT NULL.
+            category: 'LOCATION'
         };
 
         it('should accept displayWeight of 75', () => {
