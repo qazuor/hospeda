@@ -439,6 +439,10 @@ jobs:
       # live term must be queried completely and with the correct subject's status set.
       - name: Check live succession terms and subject sets (GUARD:G-R1-E)
         run: pnpm check:live-term-inventories
+      # GUARD:G-R1-C (HOS-1579, AC:B8b:21). Its own step, like every guard here.
+      # The two close links and the three retained effects must stay together.
+      - name: Check succession close completeness (GUARD:G-R1-C)
+        run: pnpm check:succession-close
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.

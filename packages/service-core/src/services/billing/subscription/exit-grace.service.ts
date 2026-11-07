@@ -23,6 +23,11 @@ import {
     type LatePaymentFailedCondition,
     lateRejectionDetail
 } from './late-payment-conditions';
+import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
+import {
+    type ScheduledChangeApplier,
+    unimplementedScheduledChangeApplier
+} from './subscription-billing-ports';
 import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('exit-grace');
@@ -55,6 +60,8 @@ export interface ExitGracePorts {
     readonly markPayments?: ReconciliationMarkPayments;
     readonly actorType?: 'provider' | 'job';
     readonly billingFacts?: BillingFactSink;
+    /** S38's interface; defaults to the unwired applier when a due change exists. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 /**
@@ -273,10 +280,22 @@ export async function exitGraceOnCreditedPayment(
     }
 
     const reactivatedAt = ports.clock.now();
-    const reactivated = await reactivateFromGrace({
-        subscriptionId: subscription.id,
-        now: reactivatedAt,
-        paymentId: payment.id
+    const reactivated = await getDb().transaction(async (tx) => {
+        const didReactivate = await reactivateFromGrace({
+            subscriptionId: subscription.id,
+            now: reactivatedAt,
+            paymentId: payment.id,
+            tx
+        });
+        if (didReactivate)
+            await applyOverdueScheduledChangeOnReturn(
+                { subscriptionId: subscription.id, now: ports.clock.now(), tx },
+                {
+                    scheduledChangeApplier:
+                        ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
+                }
+            );
+        return didReactivate;
     });
     if (!reactivated) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
     const vertical = VerticalEnumSchema.safeParse(subscription.vertical);

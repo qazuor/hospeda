@@ -1,5 +1,16 @@
-import { type ReconciliationMarkReason, reconciliationMarkModel } from '@repo/db';
+import type { Clock } from '@repo/billing-verticals-contract';
+import {
+    eq,
+    getDb,
+    type ReconciliationMarkReason,
+    reconciliationMarkModel,
+    subscriptions
+} from '@repo/db';
 import { ServiceError } from '../../../../types';
+import type {
+    S12ChargebackInput,
+    S12ChargebackResult
+} from '../../subscription/service-end-s12-chargeback';
 import {
     type SuspendForChargebackInput,
     type SuspendForChargebackPorts,
@@ -36,6 +47,13 @@ export interface ChargebackDetectionResult {
     readonly markId?: string;
     /** S6's result when the optional chargeback suspension port is wired. */
     readonly suspension?: SuspendForChargebackResult;
+    /** S12's second-event result when the optional service-end port is wired. */
+    readonly serviceEnd?: S12ChargebackResult;
+}
+
+/** Optional S12 dispatcher for a scheduled principal's chargeback. */
+export interface ChargebackServiceEnd {
+    run(input: S12ChargebackInput): Promise<S12ChargebackResult>;
 }
 
 /** Optional S6 dispatcher; the default detection retains the mark-only behavior. */
@@ -68,6 +86,8 @@ export interface ChargebackDetection {
 export function createChargebackDetection(ports: {
     readonly markPayments?: ReconciliationMarkPayments;
     readonly suspension?: ChargebackSuspension;
+    readonly serviceEnd?: ChargebackServiceEnd;
+    readonly clock?: Clock;
 }): ChargebackDetection {
     return {
         async detect(input) {
@@ -91,11 +111,30 @@ export function createChargebackDetection(ports: {
                     occurrenceId: payment.id
                 });
             };
+            const serviceEnd = async (alreadyMarked: boolean) => {
+                if (!ports.serviceEnd) return undefined;
+                const [row] = await getDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscriptionId))
+                    .limit(1);
+                if (
+                    row?.status !== 'CANCEL_SCHEDULED' &&
+                    !(alreadyMarked && row?.status === 'CANCELLED')
+                )
+                    return undefined;
+                return ports.serviceEnd.run({
+                    subscriptionId,
+                    paymentId: payment.id,
+                    now: ports.clock?.now() ?? new Date()
+                });
+            };
             // S12 by its second event belongs to HOS-1633 (AC:B8a:7).
             if (alreadyHung)
                 return {
                     outcome: 'ALREADY_MARKED',
-                    ...(ports.suspension ? { suspension: await suspend() } : {})
+                    ...(ports.suspension ? { suspension: await suspend() } : {}),
+                    ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(true) } : {})
                 };
             try {
                 const opened = await openReconciliationMark(
@@ -111,13 +150,15 @@ export function createChargebackDetection(ports: {
                 return {
                     outcome: 'MARKED',
                     markId: opened.mark.id,
-                    ...(ports.suspension ? { suspension: await suspend() } : {})
+                    ...(ports.suspension ? { suspension: await suspend() } : {}),
+                    ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(false) } : {})
                 };
             } catch (error) {
                 if (error instanceof ServiceError && error.reason === MARK_PAYMENT_ALREADY_HUNG)
                     return {
                         outcome: 'ALREADY_MARKED',
-                        ...(ports.suspension ? { suspension: await suspend() } : {})
+                        ...(ports.suspension ? { suspension: await suspend() } : {}),
+                        ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(true) } : {})
                     };
                 throw error;
             }

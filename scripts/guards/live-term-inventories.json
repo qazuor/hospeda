@@ -1,6 +1,20 @@
 {
     "fila_viva": [
         {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "subject": "subscription",
+            "why": "AC:B9a:14: consumer 17 reads live principal and complement subscriptions under a live permanent grant."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/grant-fan-out-check.ts",
+            "symbol": "hasS20Candidate",
+            "row": 17,
+            "subject": "addon_instance",
+            "why": "AC:B9a:14: S20 half reads only pending or active addon instances before marking a live complement."
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
             "symbol": "cutSuccessorWrites",
             "row": null,
@@ -226,6 +240,12 @@
         }
     ],
     "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "why": "AC:B9a:14: consumer 17 scans only unrevoked permanent grants with at least one vertical anchor."
+        },
         {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
             "symbol": "revokePermanentGrant",

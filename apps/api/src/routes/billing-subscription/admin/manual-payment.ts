@@ -28,6 +28,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
+import { settleSuccessionAfterActivation } from '../../../utils/billing-succession-ports';
 import { getClock } from '../../../utils/clock';
 import { getCoverageNotices } from '../../../utils/listing-access/coverage-notices';
 import { getPaymentProvider } from '../../../utils/payment-provider';
@@ -217,7 +218,8 @@ export const adminRegisterManualPaymentRoute = createAdminRoute({
                             changeDirection: createPlanCatalogInverse({ reader: planCatalogModel })
                                 .changeDirection,
                             coverageNotices,
-                            billingFacts
+                            billingFacts,
+                            successionSettler: settleSuccessionAfterActivation
                         })
                 }
             );

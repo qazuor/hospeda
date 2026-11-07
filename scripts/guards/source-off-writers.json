@@ -286,6 +286,14 @@
         "reason": "S12 moves a PRINCIPAL CANCEL_SCHEDULED whose service_ends_at passed to CANCELLED (AC:B8a:5); the coverage notice is emitted after commit by emitServiceEndRemoved."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12-chargeback.ts",
+        "symbol": "applyS12ByChargeback",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "AC:B8a:7 ends a CANCEL_SCHEDULED principal immediately after a credited chargeback; emitServiceEndRemoved sends the coverage notice after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
         "symbol": "applyS12ToComplement",
         "table": "subscriptions",

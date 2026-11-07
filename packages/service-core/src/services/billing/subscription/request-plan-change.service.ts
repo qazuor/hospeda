@@ -73,6 +73,7 @@ export type RequestPlanChangeResult =
               | 'SCHEDULED_CHANGE_EXISTS'
               | 'NOT_ACTIVE'
               | 'MIGRATION_CHANGE_QUEUED'
+              | 'CYCLE_END_PENDING'
               | 'KEEP_SELECTION_INVALID';
       };
 
@@ -204,13 +205,7 @@ export async function requestPlanChange(
                   })
                 : surplus;
         const effectiveAt = origin.subscription.nextChargeAt;
-        if (!effectiveAt)
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Subscription has no cycle end',
-                undefined,
-                'PLAN_CHANGE_NO_CYCLE_END'
-            );
+        if (!effectiveAt) return { path: 'REJECTED', reason: 'CYCLE_END_PENDING' };
         if (!origin.providerId)
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,

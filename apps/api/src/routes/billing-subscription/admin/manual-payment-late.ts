@@ -25,6 +25,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { buildComplementPolicyPorts } from '../../../utils/billing-complement-ports';
+import { createScheduledChangeCollector } from '../../../utils/billing-succession-ports';
 import { getClock } from '../../../utils/clock';
 import { getCoverageNotices } from '../../../utils/listing-access/coverage-notices';
 import { getPaymentProvider } from '../../../utils/payment-provider';
@@ -146,6 +147,7 @@ export const adminRegisterLateManualPaymentRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const input = LateManualPaymentBodySchema.parse(body);
         const subscriptionId = params.subscriptionId as string;
+        const collector = createScheduledChangeCollector();
         try {
             const clock = getClock().clock;
             const coverageNotices = getCoverageNotices();
@@ -161,6 +163,7 @@ export const adminRegisterLateManualPaymentRoute = createAdminRoute({
                     clock,
                     coverageNotices,
                     billingFacts,
+                    scheduledChangeApplier: collector.applier,
                     complementPorts: {
                         provider: getPaymentProvider(),
                         beforeCancelNotice,
@@ -169,6 +172,7 @@ export const adminRegisterLateManualPaymentRoute = createAdminRoute({
                     }
                 }
             );
+            await collector.finish();
             auditLog({
                 auditEvent: AuditEventType.BILLING_MUTATION,
                 actorId: actor.id,
@@ -190,6 +194,7 @@ export const adminRegisterLateManualPaymentRoute = createAdminRoute({
                 reimputedFrom: result.reimputedFrom?.toISOString() ?? null
             };
         } catch (error) {
+            collector.discard();
             return answerRejection({ error, ctx });
         }
     }

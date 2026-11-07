@@ -2,6 +2,7 @@ import { planCatalogModel } from '@repo/db';
 import { openDueManualInstallments } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
+import { createScheduledChangeCollector } from '../../utils/billing-succession-ports.js';
 import { getClock } from '../../utils/clock.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -24,15 +25,18 @@ export const manualInstallmentOpenJob: CronJobDefinition = {
                 details: { dryRun: true }
             };
         }
+        const collector = createScheduledChangeCollector();
         try {
             const summary = await openDueManualInstallments(
                 { pageSize: 100 },
                 {
                     clock: getClock().clock,
                     planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy,
-                    billingFacts: getAnalyticsFactSink()
+                    billingFacts: getAnalyticsFactSink(),
+                    scheduledChangeApplier: collector.applier
                 }
             );
+            await collector.finish();
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Manual installment opening completed', { ...summary, durationMs });
             return {
@@ -44,6 +48,7 @@ export const manualInstallmentOpenJob: CronJobDefinition = {
                 details: { ...summary }
             };
         } catch (error) {
+            collector.discard();
             const message = error instanceof Error ? error.message : String(error);
             logger.error('Manual installment opening failed', { error: message });
             return {

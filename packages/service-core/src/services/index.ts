@@ -281,6 +281,7 @@ export * from './billing/subscription/scheduled-change-surplus-step.js';
 export * from './billing/subscription/send-grace-reminders.service.js';
 export * from './billing/subscription/send-renewal-notices.service.js';
 export * from './billing/subscription/service-end-s12.js';
+export * from './billing/subscription/service-end-s12-chargeback.js';
 export * from './billing/subscription/signup-confirmed-notice.js';
 export * from './billing/subscription/signup-declined-notice.js';
 export * from './billing/subscription/start-manual-subscription.service.js';

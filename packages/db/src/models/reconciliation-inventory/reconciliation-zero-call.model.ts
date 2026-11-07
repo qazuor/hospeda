@@ -1,10 +1,26 @@
-import { and, asc, eq, gt, inArray, isNotNull, isNull, notExists, notInArray } from 'drizzle-orm';
+import {
+    and,
+    asc,
+    eq,
+    exists,
+    gt,
+    inArray,
+    isNotNull,
+    isNull,
+    notExists,
+    notInArray,
+    or
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { getDb } from '../../client.ts';
 import {
     courtesyGrants,
     type SelectCourtesyGrant
 } from '../../schemas/vertical/courtesy-grant.dbschema.ts';
+import {
+    permanentGrants,
+    permanentGrantVerticals
+} from '../../schemas/vertical/permanent-grant.dbschema.ts';
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
@@ -58,8 +74,124 @@ export interface FindSubscriptionIdsWithoutLiveSuccessorInput {
     readonly tx?: DrizzleClient;
 }
 
-/** Read-only queries that supply the first, second, and sixth zero-call checks. */
+/** Input for one keyset page of live subscriptions beneath live grant anchors. */
+export interface ListLiveRowsUnderLiveGrantAnchorsPageInput {
+    /** Exclusive subscription id cursor. */
+    readonly afterSubscriptionId?: string;
+    /** Maximum number of subscription rows. */
+    readonly limit: number;
+    /** Optional transaction client. */
+    readonly tx?: DrizzleClient;
+}
+
+/** Candidate subscription and its live grant scope for the third zero-call check. */
+export interface LiveRowUnderLiveGrantAnchor {
+    readonly subscriptionId: string;
+    readonly userId: string;
+    readonly class: 'PRINCIPAL' | 'COMPLEMENTO';
+    readonly vertical: string;
+    readonly permanentGrantId: string;
+    readonly includesAddons: boolean;
+    readonly anchoredVerticals: readonly string[];
+}
+
+/** Read-only queries that supply the first, second, third, and sixth zero-call checks. */
 export class ReconciliationZeroCallModel {
+    /**
+     * Lists consumer 17 of NUCLEO/01 §2.4 for B/09 §3's third zero-call check.
+     * This read filters live principals to anchored verticals and live complements to grants
+     * including addons. The caller applies S20's finer instance and target predicate.
+     *
+     * @param input Page limit, exclusive subscription cursor, and optional transaction.
+     * @returns Candidate rows ordered by subscription id, with sorted anchor verticals.
+     */
+    async listLiveRowsUnderLiveGrantAnchorsPage(
+        input: ListLiveRowsUnderLiveGrantAnchorsPageInput
+    ): Promise<readonly LiveRowUnderLiveGrantAnchor[]> {
+        const db = input.tx ?? getDb();
+        const anchor = alias(permanentGrantVerticals, 'candidate_anchor');
+        const rows = await db
+            .select({
+                subscriptionId: subscriptions.id,
+                userId: subscriptions.userId,
+                class: subscriptions.class,
+                vertical: subscriptions.vertical,
+                permanentGrantId: permanentGrants.id,
+                includesAddons: permanentGrants.includesAddons
+            })
+            .from(subscriptions)
+            .innerJoin(permanentGrants, eq(permanentGrants.beneficiaryUserId, subscriptions.userId))
+            .where(
+                and(
+                    inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES]),
+                    isNotNull(subscriptions.userId),
+                    isNotNull(subscriptions.vertical),
+                    isNull(permanentGrants.revokedAt),
+                    exists(
+                        db
+                            .select({ id: anchor.id })
+                            .from(anchor)
+                            .where(eq(anchor.permanentGrantId, permanentGrants.id))
+                    ),
+                    or(
+                        and(
+                            eq(subscriptions.class, 'PRINCIPAL'),
+                            exists(
+                                db
+                                    .select({ id: anchor.id })
+                                    .from(anchor)
+                                    .where(
+                                        and(
+                                            eq(anchor.permanentGrantId, permanentGrants.id),
+                                            eq(anchor.vertical, subscriptions.vertical)
+                                        )
+                                    )
+                            )
+                        ),
+                        and(
+                            eq(subscriptions.class, 'COMPLEMENTO'),
+                            eq(permanentGrants.includesAddons, true)
+                        )
+                    ),
+                    input.afterSubscriptionId === undefined
+                        ? undefined
+                        : gt(subscriptions.id, input.afterSubscriptionId)
+                )
+            )
+            .orderBy(asc(subscriptions.id))
+            .limit(input.limit);
+        if (rows.length === 0) return [];
+        const grantIds = [...new Set(rows.map(({ permanentGrantId }) => permanentGrantId))];
+        const anchors = await db
+            .select({
+                permanentGrantId: permanentGrantVerticals.permanentGrantId,
+                vertical: permanentGrantVerticals.vertical
+            })
+            .from(permanentGrantVerticals)
+            .where(inArray(permanentGrantVerticals.permanentGrantId, grantIds))
+            .orderBy(asc(permanentGrantVerticals.vertical));
+        const byGrant = new Map<string, string[]>();
+        for (const row of anchors) {
+            const verticals = byGrant.get(row.permanentGrantId) ?? [];
+            verticals.push(row.vertical);
+            byGrant.set(row.permanentGrantId, verticals);
+        }
+        return rows.map((row) => {
+            if (
+                !row.userId ||
+                !row.vertical ||
+                (row.class !== 'PRINCIPAL' && row.class !== 'COMPLEMENTO')
+            )
+                throw new Error('Invalid live grant candidate subscription');
+            return {
+                ...row,
+                userId: row.userId,
+                vertical: row.vertical,
+                class: row.class,
+                anchoredVerticals: byGrant.get(row.permanentGrantId) ?? []
+            };
+        });
+    }
     /**
      * Lists keyset pages of live successor subscriptions whose predecessor is no longer live.
      * "Live" means the six states in LIVE_SUBSCRIPTION_STATUSES; the successor is the subject

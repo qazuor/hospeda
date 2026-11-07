@@ -56,10 +56,10 @@ describe('HOS-1579 AC:B8b:8 / AC:B8b:24 plan change route wiring', () => {
         ).toBe(true);
     });
 
-    it('keeps the plan change route in HOS-1579 (owner Q3)', () => {
+    it('requires the HOS-1579 route for AC:B8b:8', () => {
         expect(
             requestsPlanChange,
             'la ruta de cambio de plan es de HOS-1579 (owner Q3); si la estás agregando, este test y el guard se actualizan en ese PR'
-        ).toBe(false);
+        ).toBe(true);
     });
 });
