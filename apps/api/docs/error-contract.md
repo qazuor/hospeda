@@ -474,8 +474,9 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 
 ## Permanent grant rejections (B9a.2, ACC:2)
 
-`POST /api/v1/admin/billing-permanent-grants` and
-`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` answer
+`POST /api/v1/admin/billing-permanent-grants`,
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` and
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation` answer
 typed rejections with their `reason`. The mapping lives in
 `src/routes/billing-permanent-grant/admin/rejections.ts` as an exhaustive
 `Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
@@ -496,8 +497,14 @@ The floor is validated with `políticaDePlan(v).vigente` before writing.
 
 The permission is the route scope (`billing.grantComplimentary`); the service
 decides the action permission, subject, system actor and `actor = subject`, so a
-403 can come from the route or the service. Revocation does not have a route yet
-(B9a.6, Fase 2).
+403 can come from the route or the service.
+
+Revoking checks its rejections in this order: 401 without a session, 403 from the
+route permission (before reading the grant, so a missing id is still 403), 400 for
+a bad path UUID, a blank reason or an extra body key, 404 for a missing grant, 403
+from the service for the beneficiary or a system actor, then 422
+`PERMANENT_GRANT_NOT_LIVE` for an already revoked grant. No new reason is added:
+the mapping table above is exhaustive.
 
 ## Actions 3 and 4 manual payment rejections
 
