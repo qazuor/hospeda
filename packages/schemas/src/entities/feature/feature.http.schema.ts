@@ -70,10 +70,10 @@ export const FeatureCreateHttpSchema = z.object({
     /** Verticals this feature is applicable to (SPEC-266). */
     applicableVerticals: z.array(ApplicableVerticalSchema).min(1).default(['accommodation']),
     /**
-     * Feature category (HOS-2058). Nullable while `features.category` is
-     * nullable (release N of the expand/contract); `null` clears it.
+     * Feature category (HOS-2058). Required on create: `features.category` is
+     * NOT NULL. The update schema derives an optional (never nullable) field.
      */
-    category: FeatureCategoryEnumSchema.nullish(),
+    category: FeatureCategoryEnumSchema,
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
     isAvailable: httpBodyBoolean().default(true),
@@ -143,7 +143,7 @@ export function httpToDomainFeatureCreate(
         slug: httpData.slug,
         description: httpData.description,
         applicableVerticals: httpData.applicableVerticals,
-        ...(httpData.category === undefined ? {} : { category: httpData.category }),
+        category: httpData.category,
         icon: httpData.icon,
         isBuiltin: false, // Default value
         isFeatured: false, // Default value

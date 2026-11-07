@@ -2,8 +2,11 @@
  * HOS-2058 -- catalog model: feature category and accommodation-amenity
  * relation attributes (`scope`, `availability`).
  *
- * Release N of an expand/contract: every new field is nullable/optional, and
- * NULL means "not declared". These tests pin that contract at the schema layer.
+ * Expand/contract: release N added every field nullable/optional (NULL means
+ * "not declared"). Release N+1 makes `features.category` NOT NULL, so the
+ * feature category is required on the stored entity and on create, and an
+ * update may omit it but never clear it. The relation attributes stay nullable.
+ * These tests pin that contract at the schema layer.
  */
 import { describe, expect, it } from 'vitest';
 import { AccommodationPublicSchema } from '../../../src/entities/accommodation/accommodation.access.schema.js';
@@ -27,6 +30,7 @@ import {
 } from '../../../src/entities/feature/feature.crud.schema.js';
 import {
     FeatureCreateHttpSchema,
+    FeatureUpdateHttpSchema,
     httpToDomainFeatureCreate,
     httpToDomainFeatureUpdate
 } from '../../../src/entities/feature/feature.http.schema.js';
@@ -47,14 +51,11 @@ describe('FeatureSchema.category (HOS-2058)', () => {
         expect(result.success).toBe(true);
     });
 
-    it('stays optional and nullable in release N', () => {
-        const { category: _omit, ...withoutCategory } = {
-            ...createValidFeature(),
-            category: undefined
-        };
-        expect(FeatureSchema.safeParse(withoutCategory).success).toBe(true);
+    it('is required and non-nullable since release N+1', () => {
+        const { category: _omit, ...withoutCategory } = createValidFeature();
+        expect(FeatureSchema.safeParse(withoutCategory).success).toBe(false);
         expect(FeatureSchema.safeParse({ ...createValidFeature(), category: null }).success).toBe(
-            true
+            false
         );
     });
 
@@ -80,9 +81,16 @@ describe('feature create/update domain input category (HOS-2058, admin routes)',
         );
     });
 
-    it('the update input accepts a category change and a clear to null', () => {
+    it('the strict create input rejects a missing or null category (N+1)', () => {
+        const base = { applicableVerticals: ['accommodation'] };
+        expect(FeatureCreateInputSchema.safeParse(base).success).toBe(false);
+        expect(FeatureCreateInputSchema.safeParse({ ...base, category: null }).success).toBe(false);
+    });
+
+    it('the update input accepts a category change or omission, never a clear to null', () => {
         expect(FeatureUpdateInputSchema.safeParse({ category: 'ACCESS' }).success).toBe(true);
-        expect(FeatureUpdateInputSchema.safeParse({ category: null }).success).toBe(true);
+        expect(FeatureUpdateInputSchema.safeParse({}).success).toBe(true);
+        expect(FeatureUpdateInputSchema.safeParse({ category: null }).success).toBe(false);
     });
 });
 
@@ -90,6 +98,16 @@ describe('feature create/update HTTP category (HOS-2058, reused dead field)', ()
     it('validates category against FeatureCategoryEnum', () => {
         expect(FeatureCreateHttpSchema.safeParse({ category: 'LOCATION' }).success).toBe(true);
         expect(FeatureCreateHttpSchema.safeParse({ category: 'beach' }).success).toBe(false);
+    });
+
+    it('requires category on the HTTP create body (N+1)', () => {
+        expect(FeatureCreateHttpSchema.safeParse({}).success).toBe(false);
+        expect(FeatureCreateHttpSchema.safeParse({ category: null }).success).toBe(false);
+    });
+
+    it('lets the HTTP update body omit category but not null it', () => {
+        expect(FeatureUpdateHttpSchema.safeParse({}).success).toBe(true);
+        expect(FeatureUpdateHttpSchema.safeParse({ category: null }).success).toBe(false);
     });
 
     it('passes category through to the domain create and update inputs', () => {

@@ -26,6 +26,8 @@ const createFeatureEntityFields = () => {
             ['accommodation', 'venue', 'experience'] as const,
             { min: 1, max: 3 }
         ),
+        // HOS-2058 N+1: `features.category` is NOT NULL.
+        category: faker.helpers.enumValue(FeatureCategoryEnum),
         icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
         isBuiltin: faker.datatype.boolean(),
         isFeatured: faker.datatype.boolean()
@@ -44,6 +46,7 @@ export const createMinimalFeature = () => ({
     id: faker.string.uuid(),
     slug: faker.lorem.slug(3),
     applicableVerticals: ['accommodation'] as const,
+    category: FeatureCategoryEnum.LOCATION,
     lifecycleState: 'ACTIVE',
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
@@ -267,6 +270,7 @@ export const createFeatureListOutput = () => {
             slug: faker.lorem.slug(3),
             description: { es: descEs, en: descEs, pt: descEs },
             applicableVerticals: ['accommodation'] as const,
+            category: faker.helpers.enumValue(FeatureCategoryEnum),
             icon: faker.lorem.word(),
             isBuiltin: faker.datatype.boolean(),
             isFeatured: faker.datatype.boolean(),
