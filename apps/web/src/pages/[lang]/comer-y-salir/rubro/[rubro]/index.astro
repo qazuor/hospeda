@@ -61,10 +61,11 @@ import {
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
+    markVenueFilterOptionsDegraded,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 import { ORGANIZATION_INFO } from '@/lib/constants';
 
@@ -179,7 +180,7 @@ const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
 // shows that poorer sidebar. `null` makes the narrowing fail closed.
 const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
 if (!filterOptionsResult.ok) {
-    markResponseDegraded({ locals: Astro.locals });
+    markVenueFilterOptionsDegraded({ locals: Astro.locals });
 }
 
 const hasError = !result.ok;

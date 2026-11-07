@@ -124,7 +124,7 @@ describe('comer-y-salir/index.astro', () => {
         });
 
         it('degrades the response when the options read fails', () => {
-            expect(src).toContain('markResponseDegraded(');
+            expect(src).toContain('markVenueFilterOptionsDegraded(');
             expect(src).toContain('filterOptionsResult.ok');
         });
 

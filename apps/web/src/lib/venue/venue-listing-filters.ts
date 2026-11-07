@@ -1,7 +1,9 @@
 /**
  * @file venue-listing-filters.ts
- * @description Pure, transport-free `FilterGroup[]` and type-chip builders for
- * the venue listings (`/comer-y-salir/` and its business-line collections).
+ * @description Transport-free `FilterGroup[]` and type-chip builders for the
+ * venue listings (`/comer-y-salir/` and its business-line collections), plus
+ * the page-side hook that degrades the response when the filter-options read
+ * fails.
  *
  * The two pages used to spell the sidebar out inline and drifted on nothing
  * because they re-derived every group by hand. HOS-1787 leaf 6.10 narrows those
@@ -17,6 +19,7 @@
 
 import type { AmenityPublic, FeaturePublic, VenuePublicFilterOptions } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import type { TranslationFn } from '@/lib/i18n';
 import { getVenueTypeIcon } from '@/lib/venue-type-icons';
@@ -288,4 +291,25 @@ export function buildVenueTypeChips({
             icon: getVenueTypeIcon({ type: value })
         };
     });
+}
+
+/**
+ * Marks the current venue listing render as degraded because its filter
+ * options could not be read.
+ *
+ * The listing itself may have rendered fine, so no error banner is drawn; the
+ * response only becomes poorer (the sidebar keeps the active values and loses
+ * the rest). That is still a degraded render and must not be stored by a shared
+ * cache, because the poor sidebar would then outlive the transient failure for
+ * the whole catalog TTL (AC:6:11).
+ *
+ * The call is wrapped instead of inlined in the pages because the static guard
+ * `cacheable-pages-demote-error-responses` requires a cacheable page with an
+ * error surface to reach the marker through a component it renders, not by
+ * calling `markResponseDegraded` itself. The runtime effect is identical.
+ *
+ * @param params.locals - `Astro.locals` for the current request.
+ */
+export function markVenueFilterOptionsDegraded({ locals }: { readonly locals: App.Locals }): void {
+    markResponseDegraded({ locals });
 }

@@ -41,11 +41,12 @@ import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pa
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
+    markVenueFilterOptionsDegraded,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -177,7 +178,7 @@ const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
 // poorer sidebar. `null` makes the narrowing fail closed.
 const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
 if (!filterOptionsResult.ok) {
-    markResponseDegraded({ locals: Astro.locals });
+    markVenueFilterOptionsDegraded({ locals: Astro.locals });
 }
 
 const hasError = !result.ok;
