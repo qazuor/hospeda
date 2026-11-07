@@ -515,9 +515,7 @@ typed rejections with their `reason`. The mapping lives in
 `Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
 breaks the typecheck.
 
-The three previews reject for the same reasons, in the same order, as their
-corresponding acts and write nothing. The live-grant read only rejects for
-permission (besides request-shape validation) and writes nothing.
+The three previews reject for the same reasons, in the same order, as their corresponding acts (including 403 from the service when the actor is the beneficiary); the live-grant read only rejects for permission (besides request-shape validation), so a permitted beneficiary can read their grant, and all four routes write nothing.
 
 | `reason` | Status | `error.code` |
 |---|---:|---|

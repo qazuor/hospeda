@@ -403,6 +403,12 @@
             "why": "La vista previa lee balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
         },
         {
+            "file": "packages/schemas/src/api/billing/permanent-grant-preview.schema.ts",
+            "symbol": "closedDeferredBalances",
+            "row": 34,
+            "why": "El contrato de la vista previa expone balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
+        },
+        {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
             "symbol": "balanceMonths",
             "row": 4,
