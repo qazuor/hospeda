@@ -156,6 +156,19 @@ afterAll(closeServiceTestPool);
 beforeEach(() => {
     providerCalls = 0;
     listingVertical = V;
+    const original = reconciliationZeroCallModel.listLiveRowsUnderLiveGrantAnchorsPage.bind(
+        reconciliationZeroCallModel
+    );
+    vi.spyOn(
+        reconciliationZeroCallModel,
+        'listLiveRowsUnderLiveGrantAnchorsPage'
+    ).mockImplementation(async (input) => {
+        const candidates = await original({ ...input, limit: 10_000 });
+        const ownIds = new Set(subjects);
+        return candidates
+            .filter(({ subscriptionId }) => ownIds.has(subscriptionId))
+            .slice(0, input.limit);
+    });
     vi.spyOn(
         reconciliationZeroCallModel,
         'listOpenSuccessionsOnDeadPredecessorsPage'
