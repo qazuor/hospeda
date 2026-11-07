@@ -98,11 +98,9 @@ describe('TEST:V4:22 the production outbox sender renders the trial campaign mai
         }
     });
 });
-
 describe('TEST:B3:34 the production outbox sender renders signup notices', () => {
     const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
     const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
-
     const payloadFor = (template: string): Record<string, unknown> => {
         if (template === 'billing.signup-confirmed')
             return {
@@ -134,7 +132,6 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
             return { subscriptionId, serviceEndsAt: '2026-10-12T12:00:00.000Z' };
         return { subscriptionId };
     };
-
     it.each([
         [
             'billing.signup-confirmed',
@@ -214,7 +211,6 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         for (const phrase of expected) expect(html).toContain(phrase);
         expect(html).not.toContain(subscriptionId);
     });
-
     it('renders scheduled cancellation without a service end date using the existing copy', async () => {
         const result = await render({
             row: row('billing.scheduled-cancellation', { subscriptionId })
@@ -224,7 +220,6 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         expect(html).not.toContain('El servicio sigue hasta el 12 de octubre');
     });
 });
-
 describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the production sender', () => {
     const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
     const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
@@ -277,7 +272,6 @@ describe('TEST:1623:4 AC:B13a:17 paid-after-cancellation renders through the pro
         expect(html).not.toContain('private-paid-subscription');
     });
 });
-
 describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listing notices (HOS-1492)', () => {
     const listingId = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
     const readListingNames = async ({ ids }: { readonly ids: readonly string[] }) =>
@@ -286,7 +280,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         siteUrl: 'https://hospeda.test',
         readListingNames
     });
-
     it('registers every template constant that @repo/verticals enqueues', () => {
         expect([
             PRICE_ALERT_CLOSED_TEMPLATE,
@@ -306,7 +299,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
             'verticals.listing-restitution'
         ]);
     });
-
     it.each([
         [
             PRICE_ALERT_CLOSED_TEMPLATE,
@@ -394,7 +386,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         for (const phrase of expected.split('|')) expect(html).toContain(phrase);
         expect(html).not.toContain(listingId);
     });
-
     it('never says the listing was approved when the lift left a fix request (HOS-1997)', async () => {
         const result = await render({
             row: row(LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE, {
@@ -410,7 +401,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         expect(html).not.toContain('aprobada');
         expect(html).toContain('El pedido de arreglo sigue abierto');
     });
-
     it('gives no unpublish advice for a quota-less lift (no quotaFull flag)', async () => {
         const result = await render({
             row: row(LISTING_MODERATION_LIFTED_TEMPLATE, {
@@ -424,7 +414,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         expect(renderToStaticMarkup(result.react)).not.toContain('despublicá otra ficha');
     });
 });
-
 describe('TEST:V6:36 the production outbox sender renders the on-archive notice', () => {
     const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
     const listingId = '3f0d3c2e-5a7b-4c1d-9e8f-0a1b2c3d4e5f';
