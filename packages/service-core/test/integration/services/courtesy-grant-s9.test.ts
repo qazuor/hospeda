@@ -4,6 +4,7 @@ import {
     courtesyGrants,
     eq,
     isNull,
+    permanentGrantVerticals,
     planVersions,
     reconciliationMarks,
     subscriptionPauses,
@@ -21,6 +22,7 @@ import {
     retireCourtesyFixtures,
     seedCourtesyPrincipal
 } from './support/courtesy-fixtures.js';
+import { seedGrantPlan } from './support/permanent-grant-fixtures.js';
 
 const db = getServiceTestDb();
 const grant = async (s: Awaited<ReturnType<typeof seedCourtesyPrincipal>>, months = 2) =>
@@ -176,6 +178,37 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:7 temporary courtesy S9',
         const a = await createPermanentAnchor();
         const s = await seedCourtesyPrincipal({ userId: a.userId });
         expect(await grant(s)).toEqual({ outcome: 'REFUSED', reason: 'LIVE_GRANT_ANCHOR' });
+    });
+    it('marks a race when a live anchor appears during the provider pause', async () => {
+        const a = await createPermanentAnchor({ vertical: 'venue' });
+        const plan = await seedGrantPlan(db, 'accommodation');
+        const s = await seedCourtesyPrincipal({
+            userId: a.userId,
+            onPause: async () => {
+                // Race fixture: insert the anchor after the first check, without running S13 cancellation.
+                await db.insert(permanentGrantVerticals).values({
+                    permanentGrantId: a.grantId,
+                    vertical: 'accommodation',
+                    ...plan
+                });
+            }
+        });
+        expect(await grant(s)).toEqual({ outcome: 'LOST_RACE' });
+        const [row] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, s.subscriptionId));
+        expect(row?.status).toBe('ACTIVE');
+        const marks = await db
+            .select({ reason: reconciliationMarks.reason })
+            .from(reconciliationMarks)
+            .where(
+                and(
+                    eq(reconciliationMarks.subscriptionId, s.subscriptionId),
+                    isNull(reconciliationMarks.liftedAt)
+                )
+            );
+        expect(marks).toEqual([{ reason: 'TRANSICION_NO_DECLARADA' }]);
     });
     it('grants after the permanent anchor was revoked', async () => {
         const a = await createPermanentAnchor({ revoked: true });

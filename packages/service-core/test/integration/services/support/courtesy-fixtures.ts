@@ -21,10 +21,14 @@ export async function seedCourtesyPrincipal(
         readonly manual?: boolean;
         readonly annual?: boolean;
         readonly pauseAcknowledgesOnly?: boolean;
+        readonly onPause?: () => Promise<void>;
         readonly userId?: string;
     } = {}
 ) {
-    const harness = providerHarness({ pauseAcknowledgesOnly: input.pauseAcknowledgesOnly });
+    const harness = providerHarness({
+        pauseAcknowledgesOnly: input.pauseAcknowledgesOnly,
+        onPause: input.onPause
+    });
     const principal = await seedPausePrincipal({
         harness,
         cycle: input.annual ? 'annual' : 'monthly',
