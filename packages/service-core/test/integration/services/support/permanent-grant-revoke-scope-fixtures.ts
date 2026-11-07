@@ -1,18 +1,5 @@
 import type { ListingResponse } from '@repo/billing-verticals-contract';
-import {
-    addonProducts,
-    addons,
-    addonVersions,
-    billingOptions,
-    emailOutbox,
-    eq,
-    inArray,
-    payments,
-    plans,
-    planVersions,
-    providerLinks,
-    subscriptions
-} from '@repo/db';
+import { emailOutbox, inArray, payments, providerLinks, subscriptions } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { vi } from 'vitest';
@@ -41,9 +28,6 @@ type Scope = 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
 const seeded: Array<{
     readonly userIds: string[];
     readonly principalIds: string[];
-    readonly planVersionIds: string[];
-    readonly grantPlanId: string;
-    readonly productIds: string[];
 }> = [];
 
 /** Commit a real grant over one titled addon; all ids belong to this worker's cleanup. */
@@ -58,15 +42,13 @@ export async function createScopeRevokeScenario(input: {
     const other = await seedCoverageUser(db);
     const userIds = [beneficiary.userId, signer.userId, other.userId];
     const principalIds: string[] = [];
-    const planVersionIds: string[] = [];
-    const productIds: string[] = [];
     const fake = new FakePaymentProvider({
         idNamespace: crypto.randomUUID(),
         clock: { now: () => revokeNow }
     });
+    const cancel = vi.spyOn(fake, 'cancel');
     const seedPrincipal = async (vertical: VerticalEnum, withProvider: boolean) => {
         const plan = await seedCoveragePlanVersion(db, vertical);
-        planVersionIds.push(plan.planVersionId);
         const principal = await seedCoverageSubscription(db, {
             userId: beneficiary.userId,
             vertical,
@@ -124,7 +106,6 @@ export async function createScopeRevokeScenario(input: {
                 ? [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE]
                 : [VerticalEnum.ACCOMMODATION]
     });
-    productIds.push(addon.productId);
     const untitledAddon = input.withUntitledAddon
         ? await seedS20Addon({
               fake,
@@ -135,7 +116,6 @@ export async function createScopeRevokeScenario(input: {
               compatibleVerticals: [VerticalEnum.VENUE]
           })
         : undefined;
-    if (untitledAddon) productIds.push(untitledAddon.productId);
     const emitCoverageChanged = vi.fn(
         async (_event: {
             readonly userId: string;
@@ -158,13 +138,7 @@ export async function createScopeRevokeScenario(input: {
         orphanhood: { addonPolicy: addonPolicyFromTx(db), listing }
     };
     const grantPlan = await seedGrantPlan(db, VerticalEnum.ACCOMMODATION);
-    seeded.push({
-        userIds,
-        principalIds,
-        planVersionIds,
-        grantPlanId: grantPlan.planId,
-        productIds
-    });
+    seeded.push({ userIds, principalIds });
     const grant = await grantPermanentGrant(
         {
             beneficiaryUserId: beneficiary.userId,
@@ -186,6 +160,7 @@ export async function createScopeRevokeScenario(input: {
         targetPrincipalId,
         payingPrincipalId,
         fake,
+        cancel,
         ports,
         listing,
         emitCoverageChanged
@@ -208,27 +183,5 @@ export async function retireScopeRevokeScenarios(): Promise<void> {
         }
         await db.delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, row.userIds));
         await retirePermanentGrantRows(row.userIds);
-        for (const productId of row.productIds) {
-            const [product] = await db
-                .select({ addonId: addonProducts.addonId, versionId: addonProducts.versionId })
-                .from(addonProducts)
-                .where(eq(addonProducts.id, productId));
-            if (!product) continue;
-            await db.delete(addonProducts).where(eq(addonProducts.id, productId));
-            await db.delete(addonVersions).where(eq(addonVersions.id, product.versionId));
-            await db.delete(addons).where(eq(addons.id, product.addonId));
-        }
-        for (const versionId of row.planVersionIds) {
-            const [version] = await db
-                .select({ planId: planVersions.planId })
-                .from(planVersions)
-                .where(eq(planVersions.id, versionId));
-            if (!version) continue;
-            await db.delete(billingOptions).where(eq(billingOptions.planVersionId, versionId));
-            await db.delete(planVersions).where(eq(planVersions.id, versionId));
-            await db.delete(plans).where(eq(plans.id, version.planId));
-        }
-        await db.delete(planVersions).where(eq(planVersions.planId, row.grantPlanId));
-        await db.delete(plans).where(eq(plans.id, row.grantPlanId));
     }
 }
