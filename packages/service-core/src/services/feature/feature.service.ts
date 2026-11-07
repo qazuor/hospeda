@@ -339,9 +339,11 @@ export class FeatureService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 await this._canAddFeatureToAccommodation(actor);
                 const { accommodationId, featureId, comments } = validatedParams;
-                // Verify feature exists
+                // Verify feature exists AND is live: `findOne` does not filter
+                // `deletedAt`, and this adds a NEW link, so a retired catalog row
+                // is refused like a missing one (HOS-2067).
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
-                if (!feature) {
+                if (!feature || feature.deletedAt) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
                 const accommodation = await this.accommodationModel.findOne({
