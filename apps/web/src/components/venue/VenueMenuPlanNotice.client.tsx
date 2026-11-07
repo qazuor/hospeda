@@ -35,13 +35,20 @@ export interface VenueMenuPlanNoticeProps {
     readonly gate: Exclude<ListingPlanGate, 'open'>;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
+    /** Catalog plan name for the proactive menu upsell, when available. */
+    readonly planName?: string | null;
 }
 
 /**
  * Renders the locked-menu reason, plus a link to the plans page when only a
  * plan change can unlock it.
  */
-export function VenueMenuPlanNotice({ id, gate, locale }: VenueMenuPlanNoticeProps): JSX.Element {
+export function VenueMenuPlanNotice({
+    id,
+    gate,
+    locale,
+    planName
+}: VenueMenuPlanNoticeProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const textByGate: Readonly<Record<VenueMenuPlanNoticeProps['gate'], () => string>> = {
@@ -51,10 +58,16 @@ export function VenueMenuPlanNotice({ id, gate, locale }: VenueMenuPlanNoticePro
                 'La carta se habilita cuando publiques tu ficha.'
             ),
         plan: () =>
-            t(
-                'venue.owner.editor.menuManager.locked',
-                'Tu carta completa está disponible desde el plan Profesional.'
-            )
+            planName
+                ? t(
+                      'venue.owner.editor.menuManager.locked',
+                      'Tu carta completa está disponible desde el plan {{plan}}.',
+                      { plan: planName }
+                  )
+                : t(
+                      'venue.owner.editor.menuManager.lockedNoPlan',
+                      'Tu carta completa está disponible en un plan pago.'
+                  )
     };
     const showPlansLink: Readonly<Record<VenueMenuPlanNoticeProps['gate'], boolean>> = {
         preTrial: false,

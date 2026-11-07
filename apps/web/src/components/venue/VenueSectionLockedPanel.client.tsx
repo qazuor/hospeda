@@ -29,6 +29,22 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './VenueSectionLockedPanel.module.css';
 
+type UpsellTranslator = (key: string, fallback?: string, params?: { plan: string }) => string;
+
+/** Render a catalog-plan message or its neutral fallback for a gated feature. */
+export function translateUpsell(input: {
+    readonly t: UpsellTranslator;
+    readonly planName: string | null | undefined;
+    readonly key: string;
+    readonly fallback: string;
+    readonly noPlanKey: string;
+    readonly noPlanFallback: string;
+}): string {
+    return input.planName
+        ? input.t(input.key, input.fallback, { plan: input.planName })
+        : input.t(input.noPlanKey, input.noPlanFallback);
+}
+
 /**
  * The state a section manager receives from its page.
  *
@@ -49,6 +65,10 @@ export interface VenueSectionLockedPanelProps {
     readonly messageKey: string;
     /** Spanish fallback for {@link messageKey}. */
     readonly messageFallback: string;
+    /** Localized name of the cheapest catalog plan that unlocks this section. */
+    readonly planName?: string | null;
+    /** Spanish fallback used when no sellable catalog plan unlocks this section. */
+    readonly noPlanMessageFallback?: string;
     /** i18n key of the pre-trial wording ("unlocks when you publish"). */
     readonly preTrialMessageKey: string;
     /** Spanish fallback for {@link preTrialMessageKey}. */
@@ -75,6 +95,8 @@ export function VenueSectionLockedPanel({
     locale,
     messageKey,
     messageFallback,
+    planName,
+    noPlanMessageFallback,
     preTrialMessageKey,
     preTrialMessageFallback,
     sectionLabel,
@@ -101,7 +123,11 @@ export function VenueSectionLockedPanel({
                 <p className={styles.text}>
                     {gate === 'preTrial'
                         ? t(preTrialMessageKey, preTrialMessageFallback)
-                        : t(messageKey, messageFallback)}
+                        : planName
+                          ? t(messageKey, messageFallback, { plan: planName })
+                          : noPlanMessageFallback
+                            ? t(`${messageKey}NoPlan`, noPlanMessageFallback)
+                            : t(messageKey, messageFallback)}
                     {gate === 'plan' ? (
                         <>
                             {' '}

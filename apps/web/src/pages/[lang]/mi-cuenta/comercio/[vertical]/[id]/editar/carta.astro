@@ -34,6 +34,8 @@ import { VenueMenuManager } from '@/components/venue/VenueMenuManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 import { readListingMenuUrl } from '@/lib/listing/listing-editor-detail';
 
@@ -46,6 +48,8 @@ if (resolution.error) return resolution.error;
 
 const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
+const plans = await fetchAudiencePlans({ audience: 'venue' });
+const upsellPlans = resolveVenueUpsellPlans({ plans, t });
 
 // HOS-1854. The section state is read from the map the resolver already
 // fetched; the page never asks the API for it again.
@@ -88,5 +92,6 @@ const menuUrl = readListingMenuUrl({ detail });
 		locale={locale}
 		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
 		menuUrl={menuUrl}
+		upsellPlans={upsellPlans}
 	/>
 </ListingEditorSectionLayout>

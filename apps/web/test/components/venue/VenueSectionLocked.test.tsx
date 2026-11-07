@@ -27,7 +27,11 @@ import { getEntitlementsCached } from '@/lib/entitlements-cache';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string, fallback?: string) => fallback ?? key,
+        t: (key: string, fallback?: string, params?: Record<string, string>) =>
+            (fallback ?? key).replace(
+                /\{\{(\w+)\}\}/g,
+                (_match: string, name: string) => params?.[name] ?? `{{${name}}}`
+            ),
         tPlural: (key: string) => key
     })
 }));
@@ -146,6 +150,25 @@ async function confirmVaciar(): Promise<void> {
 }
 
 describe('VenueMenuManager — a locked section is read-only and can be emptied (TEST:5.2:1)', () => {
+    it('uses neutral upsell copy without a catalog plan name', async () => {
+        mockGet.mockResolvedValue(LOADED_MENU as never);
+
+        render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+                upsellPlans={{ menu: null, itemPhotos: null, translations: null }}
+            />
+        );
+
+        const notice = await screen.findByTestId('venue-section-locked-notice');
+        expect(notice).toHaveTextContent('Tu carta completa está disponible en un plan pago.');
+        expect(notice).not.toHaveTextContent('{{plan}}');
+        expect(notice).not.toHaveTextContent('Profesional');
+        expect(within(notice).getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
+
     it('shows the stored carta without inputs, the upsell on the first render, and sends an empty PUT', async () => {
         mockGet.mockResolvedValue(LOADED_MENU as never);
 
@@ -154,6 +177,11 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
                 listingId={LISTING_ID}
                 locale="es"
                 sectionState="locked"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -173,9 +201,7 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
         expect(screen.queryByRole('button', { name: 'Agregar plato' })).toBeNull();
 
         // Proactive: the refusal was never needed.
-        expect(screen.getByTestId('venue-section-locked-notice')).toHaveTextContent(
-            /plan Profesional/
-        );
+        expect(screen.getByTestId('venue-section-locked-notice')).toHaveTextContent(/plan Plan X/);
         expect(mockPut).not.toHaveBeenCalled();
 
         await confirmVaciar();
