@@ -232,6 +232,7 @@
             "menuManager": {
                 "title": "Menu",
                 "intro": "Enter your menu dish by dish, or upload a photo or a PDF of it. You can use both, and neither is required.",
+                "lockedIntro": "Show your menu on your listing.",
                 "fileTitle": "Menu photo or PDF",
                 "filePdf": "View the PDF",
                 "fileImage": "View the photo",

@@ -232,6 +232,7 @@
             "menuManager": {
                 "title": "Cardápio",
                 "intro": "Carregue o cardápio prato a prato ou envie uma foto ou um PDF dele. Você pode usar as duas formas, e nenhuma é obrigatória.",
+                "lockedIntro": "Mostre o cardápio na sua ficha.",
                 "fileTitle": "Foto ou PDF do cardápio",
                 "filePdf": "Ver o PDF",
                 "fileImage": "Ver a foto",
