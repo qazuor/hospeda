@@ -365,6 +365,16 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Route response, provider read, subscription rows and cron panel.
 - **Covers:** AC:B8b:8, AC:B8b:24.
 
+### P7 — Real pause and resume (HOS-1580, HOS-1581)
+
+- **Preconditions:** The owner's production account has an `ACTIVE` monthly card subscription that allows a pause.
+- **Steps:**
+  1. Pause for one month from Mi Suscripción with the owner's card; read the real preapproval as `paused`.
+  2. Resume early; compare the date shown on screen with the real preapproval, which reads `authorized` with that next charge date.
+- **Expected:** The preapproval moves from `paused` to `authorized`, and its next charge date matches the screen.
+- **Evidence:** Owner screen, subscription and pause rows, and read-only provider preapproval reads.
+- **Covers:** AC:B8b:22, AC:B8b:23, AC:B8b:26; TEST:B8b:25, TEST:B8b:26.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -382,6 +392,8 @@ the staging part, executed before merging the phase branch to `staging`, and a p
 own to the phase, with the owner's card and an approved amount, after the phase reaches production.
 The B9b slice that went to cut (HOS-1588, HOS-1589, HOS-1591) added its item to Part 1; B9b phase 2 (temporary courtesy: pause and resumption, HOS-1590/HOS-1592) adds its own.
 B8b (HOS-1579) added S15 to staging and P6 to production.
+B8b phase 2 (HOS-1411) is covered by S15, S16 and P6/P7; courtesy pause follows in HOS-1590.
+The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains active) is verified with HOS-1592.
 
 ## Related
 
