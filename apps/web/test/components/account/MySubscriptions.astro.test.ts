@@ -54,7 +54,7 @@ describe('MySubscriptions SSR block', () => {
     });
     it('passes current and deferred courtesy months to the plan offer and shows the successor deadline', () => {
         expect(source).toContain(
-            '(row.liveCourtesyMonths ?? 0) + result.deferredCourtesies.filter'
+            'totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })'
         );
         expect(source).toContain('row.succession?.checkoutDeadline');
         expect(source).toContain('date: date(row.succession.checkoutDeadline)');

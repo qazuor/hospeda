@@ -12,7 +12,8 @@ import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { CANCELLATION_OFFERED, formatSelfCancelDate, GRACE_NOTICE, resolveScheduledRenewal } from '@/lib/billing/self-cancel';
 import {
     DEFERRED_COURTESY_KEY,
-    GRACE_PLAN_CHANGE_KEY
+    GRACE_PLAN_CHANGE_KEY,
+    totalCourtesyMonths
 } from '@/lib/billing/my-subscription-notices';
 import { resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -47,7 +48,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                 {summary.priceLine && <p class={styles.line} data-testid="my-subscription-price">{summary.priceLine}</p>}
                 {summary.nextChargeLine && <p class={styles.line} data-testid="my-subscription-next-charge">{summary.nextChargeLine}</p>}
                 {row.status === 'ACTIVE' && <PauseOffer client:visible subscriptionId={row.id} locale={locale} />}
-                {row.status === 'ACTIVE' && row.succession?.checkoutOpen ? <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p> : row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={(row.liveCourtesyMonths ?? 0) + result.deferredCourtesies.filter((courtesy) => courtesy.vertical === row.vertical).reduce((total, courtesy) => total + courtesy.balanceMonths, 0)} />}
+                {row.status === 'ACTIVE' && row.succession?.checkoutOpen ? <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p> : row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })} />}
                 {row.succession?.checkoutDeadline && <p class={styles.line} data-testid="my-subscription-plan-change-deadline">{t('account.subscription.mine.planChange.checkoutDeadline', undefined, { date: date(row.succession.checkoutDeadline) })}</p>}
                 {row.status === 'SUSPENDED' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-coverage">{t('account.subscription.mine.planChange.reason.successionCoverage')}</p>}
                 {row.status === 'PAUSED' && row.pause?.expectedEndAt && <p class={styles.line}>{t('account.subscription.mine.pause.expectedEnd', undefined, { date: date(row.pause.expectedEndAt) })}</p>}

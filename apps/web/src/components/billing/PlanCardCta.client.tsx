@@ -1,6 +1,7 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
 import { findActiveSubscriptionId, submitPlanChange } from '@/lib/billing/plan-change-offer';
 import {
     loadBillingUnpublishedListing,
@@ -62,14 +63,10 @@ export function PlanCardCta({
                                       promo: row.promo != null,
                                       checkoutOpen: row.succession?.checkoutOpen === true,
                                       paymentMethod: row.paymentMethod,
-                                      courtesyMonths:
-                                          mine.data.deferredCourtesies
-                                              ?.filter((courtesy) => courtesy.vertical === vertical)
-                                              .reduce(
-                                                  (total, courtesy) =>
-                                                      total + courtesy.balanceMonths,
-                                                  0
-                                              ) ?? 0
+                                      courtesyMonths: totalCourtesyMonths({
+                                          row,
+                                          deferredCourtesies: mine.data.deferredCourtesies ?? []
+                                      })
                                   }
                                 : null
                         );

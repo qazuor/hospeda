@@ -146,6 +146,56 @@ describe('PlanCardCta', () => {
             'Perdés 2 meses de cortesía; podés seguir en mensual y conservarlos.'
         );
     });
+    it.each([
+        { liveCourtesyMonths: 3, deferredBalanceMonths: 0, total: 3 },
+        { liveCourtesyMonths: 3, deferredBalanceMonths: 2, total: 5 }
+    ])('TEST:B8b:25 includes $liveCourtesyMonths live and $deferredBalanceMonths deferred courtesy months once in pricing', async ({
+        liveCourtesyMonths,
+        deferredBalanceMonths,
+        total
+    }) => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'ACTIVE',
+                        promo: null,
+                        succession: null,
+                        paymentMethod: 'CARD',
+                        liveCourtesyMonths
+                    }
+                ],
+                deferredCourtesies: deferredBalanceMonths
+                    ? [{ vertical: 'accommodation', balanceMonths: deferredBalanceMonths }]
+                    : []
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: 'a2' }}
+            />
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: /Cambiar a este plan · por año/ })
+        );
+        expect(screen.getByTestId('pricing-plan-change-courtesy-warning').textContent).toBe(
+            `Perdés ${total} meses de cortesía; podés seguir en mensual y conservarlos.`
+        );
+    });
     it('TEST:B8b:25 explains the paused pricing state', async () => {
         pricingSituation.mockResolvedValue({
             ok: true,
