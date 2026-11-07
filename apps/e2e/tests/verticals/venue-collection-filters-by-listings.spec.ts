@@ -121,13 +121,25 @@ async function createVenue({
     return { id, slug };
 }
 
+/**
+ * Display weight for the fixture catalog rows. It MUST stay inside the
+ * schema range (`displayWeight` is `.min(1).max(100)` on both
+ * `AmenitySchema` and `FeatureSchema`). The column has no CHECK, so SQL accepts
+ * anything, but the public catalog routes validate every item against
+ * `*PublicSchema`. One out-of-range row turns the whole
+ * `/api/v1/public/{amenities,features}` list into a 500. The page then renders
+ * an empty sidebar, and every other spec reading those catalogs fails while
+ * the row exists.
+ */
+const FIXTURE_DISPLAY_WEIGHT = 100;
+
 /** Inserts a venue-scoped amenity with a token-unique slug. */
 async function createAmenity({ token }: { readonly token: string }): Promise<string> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO amenities (slug, type, applicable_verticals, display_weight)
-         VALUES ($1, 'ENTERTAINMENT', '{venue}', 1000000)
+         VALUES ($1, 'ENTERTAINMENT', '{venue}', $2)
          RETURNING id`,
-        [`e2e-${token}-amenity`]
+        [`e2e-${token}-amenity`, FIXTURE_DISPLAY_WEIGHT]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAmenity: insert returned no id');
@@ -144,9 +156,9 @@ async function createFeature({
 }): Promise<string> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO features (slug, applicable_verticals, display_weight)
-         VALUES ($1, '{venue}', 1000000)
+         VALUES ($1, '{venue}', $2)
          RETURNING id`,
-        [`e2e-${token}-${suffix}`]
+        [`e2e-${token}-${suffix}`, FIXTURE_DISPLAY_WEIGHT]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createFeature: insert returned no id');
@@ -347,6 +359,27 @@ test.describe('AC:6:11 venue collections only offer filters with published listi
         expect(cafeOptions.featureIds).toContain(featureX2);
         expect(cafeOptions.featureIds).not.toContain(featureX1);
         expect(cafeOptions.amenityIds).not.toContain(amenityC1);
+
+        // The sidebar is the catalog narrowed by the options above, so the
+        // catalog read the pages make must serve the fixture rows. A failure
+        // here names the real cause instead of timing out the HTML poll below.
+        const catalogQuery = '?applicableVertical=venue&pageSize=100';
+        for (const [path, ids] of [
+            ['features', [featureX1, featureX2]],
+            ['amenities', [amenityC1]]
+        ] as const) {
+            const catalogResponse = await request.get(
+                `${API_URL}/api/v1/public/${path}${catalogQuery}`
+            );
+            expect(catalogResponse.status(), `GET /${path}${catalogQuery}`).toBe(200);
+            const catalogBody = (await catalogResponse.json()) as {
+                readonly data?: { readonly items?: readonly { readonly id?: string }[] };
+            };
+            const catalogIds = (catalogBody.data?.items ?? []).map((item) => item.id);
+            for (const id of ids) {
+                expect(catalogIds, `/${path} catalog serves ${id}`).toContain(id);
+            }
+        }
 
         // ── 4. HTML: the serialized sidebar carries only the collection values
         // The pages read the amenity/feature catalogs through the SSR in-process
