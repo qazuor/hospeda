@@ -112,7 +112,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
         readonly subscriptionId: string;
         readonly billingOptionId: string;
         readonly planName: 'Básico' | 'Premium';
-        readonly cycleName: 'Mensual' | 'Anual';
+        readonly cycleName: 'por mes' | 'por año';
         readonly worldName: string;
     }) {
         const article = articleFor(args.page, args.subscriptionId);
@@ -185,7 +185,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
         readonly authorizationId: string;
         readonly targetOptionId: string;
         readonly planName: 'Básico' | 'Premium';
-        readonly cycleName: 'Mensual' | 'Anual';
+        readonly cycleName: 'por mes' | 'por año';
         readonly adminCookie: string;
         readonly email: string;
     }) {
@@ -322,7 +322,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             ...current,
             targetOptionId,
             planName: 'Premium',
-            cycleName: 'Mensual',
+            cycleName: 'por mes',
             adminCookie: current.admin.sessionCookie,
             email: current.user.email
         });
@@ -353,7 +353,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId,
             planName: 'Básico',
-            cycleName: 'Mensual',
+            cycleName: 'por mes',
             worldName: 'downgrade'
         });
         await confirmation.getByRole('button', { name: 'Confirmar cambio' }).click();
@@ -427,7 +427,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             ...current,
             targetOptionId,
             planName: 'Básico',
-            cycleName: 'Anual',
+            cycleName: 'por año',
             adminCookie: current.admin.sessionCookie,
             email: current.user.email
         });
