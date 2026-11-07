@@ -1,11 +1,15 @@
 import {
+    applyS12ByChargeback,
     type ChargebackDetection,
     createChargebackDetection,
     createChargebackSuspension,
+    createSuccessorCutter,
     providerLinkCancellationSeen,
     type ReconciliationMarkPayments
 } from '@repo/service-core';
 import { beforeCancelNotice } from '../routes/billing-subscription/before-cancel-notice';
+import { getAnalyticsFactSink } from './analytics/analytics-facts';
+import { buildComplementPolicyPorts } from './billing-complement-ports';
 import { getClock } from './clock';
 import { buildBillingCoveragePorts } from './listing-access/billing-coverage';
 import { createBootstrapCoverageReader } from './listing-access/bootstrap-coverage-reader';
@@ -37,16 +41,37 @@ export function buildChargebackDetection(input: {
     const { addonPolicy, listing } = buildBillingCoveragePorts({
         reader: createBootstrapCoverageReader()
     }).ports;
+    const clock = getClock().clock;
+    const provider = getPaymentProvider();
+    const coverageNotices = getCoverageNotices();
+    const orphanhood = buildComplementPolicyPorts();
+    const successorCutter = createSuccessorCutter({ clock, orphanhood });
+    const billingFacts = getAnalyticsFactSink();
     return createChargebackDetection({
         markPayments: input.markPayments,
+        clock,
         suspension: createChargebackSuspension({
-            provider: getPaymentProvider(),
-            clock: getClock().clock,
+            provider,
+            clock,
             beforeCancelNotice,
-            coverageNotices: getCoverageNotices(),
+            coverageNotices,
             orphanhood: { addonPolicy, listing },
             complements: { addonPolicy, listing },
             cancellationSeen: providerLinkCancellationSeen
-        })
+        }),
+        serviceEnd: {
+            run: (request) =>
+                applyS12ByChargeback(request, {
+                    successorCutter,
+                    orphanhood,
+                    provider,
+                    beforeCancelNotice,
+                    coverageNotices,
+                    billingFacts,
+                    complements: orphanhood,
+                    cancellationSeen: providerLinkCancellationSeen,
+                    clock
+                })
+        }
     });
 }
