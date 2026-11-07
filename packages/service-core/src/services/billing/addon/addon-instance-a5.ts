@@ -1,7 +1,8 @@
 /**
  * A5 (TRANS:B:A5; AC:B5:25), its LOCAL half: an addon instance in `PENDING_AUTHORIZATION` or
- * `ACTIVE` goes to `CANCELLED` because it is withdrawn or became orphaned (notas I-8; the third
- * clause, the grant revocation, is Phase 2). In the SAME transaction `S21` closes its complement
+ * `ACTIVE` goes to `CANCELLED` because it is withdrawn, became orphaned (notas I-8), or the grant
+ * whose anchor titled it was revoked (third clause, `GRANT_REVOKED`, called by
+ * `revokePermanentGrant`; DEC-ADDON-006; HOS-1634, HOS-1630). In the SAME transaction `S21` closes its complement
  * subscription and, when `S21` wrote it now and it has a card provider link, the decision to
  * cancel its preapproval is recorded as `A5` (notas I-5): that one preapproval is the only call.
  * Order: `closeSuccessionIfPredecessor` → {@link runOrphanhood} (in the act's `tx`) → commit →
@@ -45,7 +46,7 @@ import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
 const logger = createLogger('addon-instance-a5');
 
-/** Grant revocation triggers the third A5 clause (TRANS:B:A5, `grant_anchor_revoked`, DEC-ADDON-006; HOS-1634). Its scope matrix remains AC:B5:26 (HOS-1630). */
+/** Grant revocation triggers the third A5 clause (TRANS:B:A5, `grant_anchor_revoked`, DEC-ADDON-006; HOS-1634). TEST:B5:13 covers its scope matrix in `permanent-grant-revoke-scopes.test.ts` (real path) and `addon-instance-a5-grant-revoked.test.ts` (seeded rows). */
 export type A5Clause = 'ORPHANED' | 'WITHDRAWN' | 'GRANT_REVOKED';
 
 /** The `desde` of A5 (glossary row 18): the two instance states with an authorization that can charge. */
