@@ -1,5 +1,6 @@
 import type { DrizzleClient, SelectSubscription } from '@repo/db';
 import {
+    and,
     buildEmailDedupKey,
     buildEventOccurrence,
     emailOutboxModel,
@@ -8,7 +9,7 @@ import {
     users
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { isSuccessionCheckoutOpen } from './succession-in-progress.js';
+import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 
 const logger = createLogger('grace-started-notice');
 
@@ -42,12 +43,16 @@ export async function enqueueGraceStartedNotice(
 
     const template = GRACE_STARTED_TEMPLATE;
     const successors = await tx
-        .select({ status: subscriptions.status })
+        .select({ id: subscriptions.id })
         .from(subscriptions)
-        .where(eq(subscriptions.succeedsId, subscription.id));
-    const planChangePending = successors.some((successor) =>
-        isSuccessionCheckoutOpen(successor.status)
-    );
+        .where(
+            and(
+                eq(subscriptions.succeedsId, subscription.id),
+                eq(subscriptions.status, SUCCESSION_CHECKOUT_OPEN_STATUS)
+            )
+        )
+        .limit(1);
+    const planChangePending = successors.length > 0;
     const dedupKey = buildEmailDedupKey({
         recipient: userId,
         template,

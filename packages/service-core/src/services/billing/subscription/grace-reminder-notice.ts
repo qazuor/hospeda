@@ -2,9 +2,9 @@ import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
-import { desc, eq, lte } from 'drizzle-orm';
+import { and, desc, eq, lte } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
-import { isSuccessionCheckoutOpen } from './succession-in-progress.js';
+import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 
 const logger = createLogger('grace-reminder-notice');
 /** Outbox template key used for grace reminder emails. */
@@ -140,12 +140,16 @@ export async function applyGraceReminder(input: {
         targetDate: milestone.targetDate
     });
     const successors = await input.tx
-        .select({ status: db.subscriptions.status })
+        .select({ id: db.subscriptions.id })
         .from(db.subscriptions)
-        .where(eq(db.subscriptions.succeedsId, row.id));
-    const planChangePending = successors.some((successor) =>
-        isSuccessionCheckoutOpen(successor.status)
-    );
+        .where(
+            and(
+                eq(db.subscriptions.succeedsId, row.id),
+                eq(db.subscriptions.status, SUCCESSION_CHECKOUT_OPEN_STATUS)
+            )
+        )
+        .limit(1);
+    const planChangePending = successors.length > 0;
     const queued = await db.emailOutboxModel.enqueue(
         {
             recipientUserId: row.userId,
