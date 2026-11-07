@@ -535,6 +535,7 @@
                 "promoLost": "Se você mudar de plano, perde sua promoção: o novo valor não tem desconto e o código não pode ser usado de novo.",
                 "reason": {
                     "succession": "Conclua ou cancele o checkout aberto antes de mudar de plano.",
+                    "successionCoverage": "Conclua ou cancele o checkout aberto. Sua assinatura anterior já não dá cobertura; seus anúncios voltam quando você autorizar a mudança.",
                     "lastCharge": "Sua última cobrança não entrou. Atualize seu cartão no Mercado Pago para mudar de plano.",
                     "paused": "Retome sua assinatura para mudar de plano.",
                     "grace": "Você tem um pagamento pendente. Regularize-o para mudar de plano.",

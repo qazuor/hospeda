@@ -47,7 +47,7 @@ export function PlanCardCta({
             if (
                 situation.ok &&
                 situation.data.situation === 'SUBSCRIBED' &&
-                ['ACTIVE', 'GRACE_PERIOD', 'PAUSED'].includes(situation.data.status)
+                ['ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'SUSPENDED'].includes(situation.data.status)
             ) {
                 void billingSubscriptionApi
                     .listMine({})
@@ -180,7 +180,11 @@ export function PlanCardCta({
             )}
             {ownerNotice?.checkoutOpen && (
                 <p data-testid="pricing-plan-change-checkout">
-                    {t('account.subscription.mine.planChange.reason.succession')}
+                    {t(
+                        blockedStatus === 'SUSPENDED'
+                            ? 'account.subscription.mine.planChange.reason.successionCoverage'
+                            : 'account.subscription.mine.planChange.reason.succession'
+                    )}
                 </p>
             )}
             {ownerNotice &&

@@ -322,7 +322,6 @@ describe('PlanCardCta', () => {
             '/es/suscriptores/checkout/?opcion=a1'
         );
     });
-
     it('renders exact monthly and annual checkout links from the shared situation read', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(
@@ -351,7 +350,6 @@ describe('PlanCardCta', () => {
             screen.getByRole('link', { name: 'Suscribirme con pago anual' }).className
         ).toBeTruthy();
     });
-
     it('shares one request across two cards in the same vertical', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(

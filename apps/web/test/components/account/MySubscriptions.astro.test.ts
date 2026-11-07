@@ -46,6 +46,7 @@ describe('MySubscriptions SSR block', () => {
             )
         ).toEqual([
             'data-testid="my-subscription-plan-change-checkout"',
+            'data-testid="my-subscription-plan-change-coverage"',
             'data-testid="my-subscription-plan-change-paused"',
             'data-testid="my-subscription-plan-change-grace"'
         ]);
@@ -67,6 +68,9 @@ describe('MySubscriptions SSR block', () => {
         expect(article).toContain("row.status === 'PAUSED' && <PausedCancel client:visible");
         expect(article).toContain("row.status === 'PAUSED' && row.pause?.expectedEndAt");
         expect(source).toContain("PAUSED: 'account.subscription.mine.status.PAUSED'");
+        expect(article).toContain(
+            'row.status === \'SUSPENDED\' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-coverage"'
+        );
     });
     it('shows empty only when subscriptions and deferred courtesies are both empty', () => {
         expect(source).toContain(

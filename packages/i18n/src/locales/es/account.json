@@ -535,6 +535,7 @@
                 "promoLost": "Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.",
                 "reason": {
                     "succession": "Terminá o cancelá el checkout que tenés abierto para cambiar de plan.",
+                    "successionCoverage": "Terminá o cancelá el checkout que tenés abierto. Tu suscripción anterior ya no da cobertura; tus fichas vuelven cuando autorices el cambio.",
                     "lastCharge": "Tu último cobro no entró. Actualizá tu tarjeta en Mercado Pago para poder cambiar de plan.",
                     "paused": "Reanudá tu suscripción para cambiar de plan.",
                     "grace": "Tenés un pago pendiente. Regularizalo para poder cambiar de plan.",

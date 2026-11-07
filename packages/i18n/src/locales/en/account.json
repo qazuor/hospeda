@@ -535,6 +535,7 @@
                 "promoLost": "If you change plans, you lose your promotion: the new amount has no discount and the code cannot be redeemed again.",
                 "reason": {
                     "succession": "Finish or cancel your open checkout before changing plans.",
+                    "successionCoverage": "Finish or cancel your open checkout. Your previous subscription no longer provides coverage; your listings return when you authorize the change.",
                     "lastCharge": "Your last charge did not go through. Update your card in Mercado Pago to change plans.",
                     "paused": "Resume your subscription to change plans.",
                     "grace": "You have an outstanding payment. Settle it before changing plans.",
