@@ -575,7 +575,7 @@ export class VenueReviewService extends BaseCrudService<
 
     /**
      * Lists reviews for the admin moderation queue, optionally filtered by
-     * moderation state.
+     * moderation state and venue listing.
      *
      * Unlike the public search ({@link _executeSearch}, which force-filters to
      * ACTIVE + APPROVED), this surfaces PENDING and REJECTED reviews so a
@@ -584,10 +584,16 @@ export class VenueReviewService extends BaseCrudService<
      * `lifecycleState`, whereas the moderation UI needs to filter by
      * `moderationState`.
      *
+     * `venueId` (HOS-2051) scopes the queue to one venue listing: the
+     * per-listing moderation panel passes its own listing's id, so its
+     * moderator only sees reviews for that listing. When omitted, every
+     * listing's reviews are returned (the global moderation view).
+     *
      * Permission: `VENUE_MODERATE_REVIEW`.
      *
      * @param actor - The admin actor performing the listing.
-     * @param params - Optional moderation-state filter and pagination.
+     * @param params - Optional moderation-state filter, venue listing filter
+     *   and pagination.
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the paginated review list.
      */
@@ -595,6 +601,7 @@ export class VenueReviewService extends BaseCrudService<
         actor: Actor,
         params: {
             moderationState?: ModerationStatusEnum;
+            venueId?: string;
             page?: number;
             pageSize?: number;
         } = {},
@@ -617,6 +624,9 @@ export class VenueReviewService extends BaseCrudService<
             const where: Record<string, unknown> = { deletedAt: null };
             if (params.moderationState) {
                 where.moderationState = params.moderationState;
+            }
+            if (params.venueId) {
+                where.venueId = params.venueId;
             }
 
             const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);

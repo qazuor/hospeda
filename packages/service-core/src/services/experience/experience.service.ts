@@ -30,6 +30,7 @@
 
 import {
     AmenityModel,
+    buildSearchCondition,
     type ExperienceMediaModel,
     type ExperienceModel,
     experienceMediaModel,
@@ -492,6 +493,7 @@ export class ExperienceService extends BaseListingService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            q,
             amenities: _amenities,
             features: _features,
             minRating: _minRating,
@@ -513,6 +515,11 @@ export class ExperienceService extends BaseListingService<
         // (mirroring EventService/AccommodationService), otherwise findAllWithRelations
         // builds no ORDER BY and the public listing's sort dropdown is a silent no-op
         // (BETA-119).
+        const searchCondition =
+            q && q.trim().length > 0
+                ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
+                : undefined;
+        const additionalConditions = searchCondition ? [searchCondition] : undefined;
         const result = await this.model.findAllWithRelations(
             { destination: true, owner: true },
             {
@@ -526,7 +533,7 @@ export class ExperienceService extends BaseListingService<
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },
-            undefined,
+            additionalConditions,
             ctx?.tx
         );
         return result as unknown as PaginatedListOutput<Experience>; // TYPE-WORKAROUND: base list result narrowed to the experience entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
@@ -550,6 +557,7 @@ export class ExperienceService extends BaseListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            q,
             amenities: _amenities,
             features: _features,
             minRating: _minRating,
@@ -559,6 +567,11 @@ export class ExperienceService extends BaseListingService<
             ...scalarFilters
         } = params;
 
+        const searchCondition =
+            q && q.trim().length > 0
+                ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
+                : undefined;
+
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
         const count = await this.model.count(
@@ -567,7 +580,9 @@ export class ExperienceService extends BaseListingService<
                 deletedAt: null,
                 publicationStatus: PublicationStatusEnum.PUBLISHED
             },
-            { tx: ctx?.tx }
+            searchCondition
+                ? { additionalConditions: [searchCondition], tx: ctx?.tx }
+                : { tx: ctx?.tx }
         );
         return { count };
     }
