@@ -163,6 +163,10 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // Checkbox GROUPS — many controls, one key, no single focus target.
     amenityIds: 'checkbox group in AmenitiesSection',
     featureIds: 'checkbox group in AmenitiesSection',
+    // Business lines are a checkbox group too (one key, many controls). The owner
+    // editor gains it in HOS-1787 leaf 5.6; it stays exempt afterwards for the same
+    // reason as amenityIds.
+    businessLines: 'checkbox group of business lines',
     // A bare toggle with no id: it gates priceFrom/priceUnit rather than
     // carrying its own validation message.
     isPriceOnRequest: 'unlabelled toggle, carries no error of its own',
@@ -170,8 +174,23 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // renamed (HOS-784 stage 2), carries no validation of its own, and is never
     // persisted. There is no invalid state to focus, and the control does not
     // exist at all in the state this suite renders.
-    refreshSlugFromName: 'conditional opt-in, carries no error of its own'
+    refreshSlugFromName: 'conditional opt-in, carries no error of its own',
+    // HOS-1787 leaf 5.3 / DEC-FAC-062 — the menu link moved out of `price` into
+    // the carta. `VenueMenuLinkField` still renders the same `ce-menuUrl` id,
+    // but it is mounted by the carta route, not by `ListingEditor`.
+    menuUrl: 'edited by the carta section, not the price form'
 };
+
+/**
+ * Exempt keys that still render a GROUP CONTAINER at their derived id.
+ *
+ * `businessLines` is a checkbox group: its `<fieldset>` carries the derived id
+ * (HOS-1787 leaf 5.6) but is not a focusable single control, so the focus move
+ * has nothing to land on there — exactly the reason it stays in
+ * `NO_SINGLE_CONTROL`. Asserted to be a non-focusable `<fieldset>` instead of
+ * "nothing at all".
+ */
+const GROUP_CONTAINER_KEYS = new Set(['businessLines']);
 
 const SCHEMA_BY_VERTICAL = {
     venue: VenueOwnerUpdateInputSchema,
@@ -264,8 +283,21 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
                 renderEditor(vertical);
 
                 for (const key of allKeysFor(vertical).filter((k) => k in NO_SINGLE_CONTROL)) {
+                    const element = document.getElementById(idFor(key));
+
+                    if (GROUP_CONTAINER_KEYS.has(key) && vertical === 'venue') {
+                        expect(element?.tagName, `"${key}" should render a group container`).toBe(
+                            'FIELDSET'
+                        );
+                        expect(
+                            isFocusableControl(element as HTMLElement),
+                            `"${key}" is exempt, so its container must not take focus.`
+                        ).toBe(false);
+                        continue;
+                    }
+
                     expect(
-                        document.getElementById(idFor(key)),
+                        element,
                         `"${key}" is listed as having no single control, but id "${idFor(key)}" ` +
                             'resolves. Remove it from NO_SINGLE_CONTROL so it gets covered.'
                     ).toBeNull();

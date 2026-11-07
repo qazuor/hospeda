@@ -113,8 +113,8 @@ const commonBrochureFields = {
  *
  * No `contactInfo`: `VenuePublicSchema` does not pick it, so neither does
  * this — a phone number on the printed sheet would be a fact the public page
- * does not carry. `menuUrl` and `socialNetworks` are how a restaurant publishes
- * contact on this platform, and both ARE public.
+ * does not carry. `menuUrl` is projected only while the menu section is
+ * available; social networks remain public fields from the venue schema.
  */
 export const VenueBrochureSourceSchema = z.object({
     ...commonBrochureFields,

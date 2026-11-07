@@ -381,7 +381,7 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     newPlanName?: string;
     /**
      * The subscription's billing vertical (HOS-1283) — the raw
-     * `billing_subscriptions.product_domain` string (`'accommodation'`,
+     * product-domain string supplied by the caller (`'accommodation'`,
      * `'venue'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
      * pre-domain row), never the `@repo/schemas` enum: this package does not
      * depend on `@repo/schemas` (see {@link PartnerMentionEntryPayload}'s doc).
@@ -447,7 +447,7 @@ export interface TrialSeriesPayload extends BaseNotificationPayload {
     upgradeUrl: string;
     /**
      * The trial's billing vertical (HOS-1283) — the raw
-     * `billing_subscriptions.product_domain` string, never the `@repo/schemas`
+     * product-domain string supplied by the caller, never the `@repo/schemas`
      * enum (this package does not depend on it, see
      * {@link PartnerMentionEntryPayload}'s doc). Every one of the nine
      * templates uses it to render vertical-appropriate copy instead of always

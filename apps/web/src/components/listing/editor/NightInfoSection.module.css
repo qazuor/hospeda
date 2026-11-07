@@ -1,0 +1,25 @@
+/**
+ * Layout-only additions for the nightInfo editor section (HOS-1787 leaf 5.1).
+ *
+ * Colors, spacing and the card chrome come from `editor-fields.module.css`;
+ * this file only arranges the three locale inputs of each note side by side on
+ * wide viewports and keeps the price hint attached to its field.
+ */
+
+.priceField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.noteGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+    .noteGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

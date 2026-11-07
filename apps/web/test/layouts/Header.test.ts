@@ -64,6 +64,12 @@ describe('Header.astro — file structure', () => {
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 describe('Header.astro — navigation', () => {
+    it('adds the catalog collections to the venue item and renders the desktop submenu', () => {
+        expect(src).toContain('buildVenueCollectionNavItems({ locale, t })');
+        expect(src).toContain('children: buildVenueCollectionNavItems');
+        expect(src).toContain('<HeaderNavSubmenu');
+    });
+
     it('defines the 5 expected nav links', () => {
         expect(src).toContain('nav.accommodations');
         expect(src).toContain('nav.destinations');

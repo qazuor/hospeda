@@ -17,13 +17,12 @@
                 "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
                 "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
-                "apps/web/src/lib/facet-slugs.ts": 2,
+                "apps/web/src/lib/facet-slugs.ts": 3,
                 "apps/web/src/lib/filters/events-filter-groups.ts": 2,
                 "apps/web/src/lib/filters/facet-config.ts": 1,
                 "apps/web/src/lib/filters/toggle-query-param.ts": 2,
                 "apps/web/src/lib/post-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/pages/[lang]/eventos/index.astro": 2,
-                "apps/web/src/pages/[lang]/index.astro": 1,
                 "apps/web/src/pages/[lang]/publicaciones/index.astro": 5,
                 "apps/web/src/styles/css-var-themes.css": 2,
                 "apps/web/test/components/shared/cards/utils/postCategoryIcon.test.ts": 4,
@@ -327,7 +326,9 @@
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.GASTRONOMY.description": 0,
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.GASTRONOMY.pageTitle": 1,
                 "packages/i18n/src/locales/pt/event.json#listPage.gastronomy": 1,
-                "packages/i18n/src/locales/pt/footer.json#categoryGastronomy": 1
+                "packages/i18n/src/locales/pt/footer.json#categoryGastronomy": 1,
+                "packages/i18n/src/locales/es/venue.json#owner.businessLines.food.label": 1,
+                "packages/i18n/src/locales/pt/venue.json#owner.businessLines.food.label": 1
             }
         },
         "b": {
@@ -411,7 +412,7 @@
             }
         }
     },
-    "historyCount": 93,
+    "historyCount": 96,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "40d6ee32fd61dfc170cd36f12716e6af115ae539547bd78e19307fa761a2bf45"
+    "ledgerFingerprint": "88e2b33e0eaafd47b977a8148c3672585fc03b9c740e2bfc557bc33ff366c52e"
 }

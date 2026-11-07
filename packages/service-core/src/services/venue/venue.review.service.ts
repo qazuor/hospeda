@@ -26,18 +26,26 @@ import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
 import {
     type CountResponse,
     LifecycleStatusEnum,
+    type ListingSectionId,
+    type ListingSectionState,
     ModerationStatusEnum,
     PermissionEnum,
     type PublicationStatusEnum,
+    REVIEW_RULES,
     ServiceErrorCode,
     type VenueReview,
     type VenueReviewCreateInput,
     VenueReviewCreateInputSchema,
     VenueReviewUpdateInputSchema,
     type VenueSearch,
-    VenueSearchSchema
+    VenueSearchSchema,
+    validateReviewDimensions
 } from '@repo/schemas';
-import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import {
+    readListingAccessFacts,
+    resolveListingSectionPresence,
+    resolveResourceStep
+} from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -79,11 +87,16 @@ export interface VenueReviewModerateInput {
  * @param input - The validated create input.
  * @returns The effective scalar rating to persist as `averageRating`.
  */
-function computeEffectiveRating(input: VenueReviewCreateInput): number {
+export function computeEffectiveRating(input: VenueReviewCreateInput): number {
     const breakdown = input.rating;
     if (breakdown) {
-        const mean =
-            (breakdown.food + breakdown.service + breakdown.ambiance + breakdown.value) / 4;
+        const dimensions = REVIEW_RULES.venue.dimensions;
+        const voted = dimensions.flatMap(({ id }) => {
+            const value = breakdown[id];
+            return value === undefined ? [] : [value];
+        });
+        if (voted.length === 0) return input.overallRating;
+        const mean = voted.reduce((sum, value) => sum + value, 0) / voted.length;
         return Math.round(mean * 100) / 100;
     }
     return input.overallRating;
@@ -298,6 +311,39 @@ export class VenueReviewService extends BaseCrudService<
             }).allowed
         ) {
             throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
+        }
+        if (data.rating) {
+            const facts = readListingAccessFacts({ entity: venue });
+            const requested = REVIEW_RULES.venue.dimensions.flatMap((dimension) =>
+                'boundSection' in dimension ? [dimension.boundSection] : []
+            );
+            const presence = resolveListingSectionPresence({
+                vertical: 'venue',
+                businessLines: facts?.businessLines ?? [],
+                requested
+            });
+            const sectionStates = new Map<
+                ListingSectionId<'venue'>,
+                { state: ListingSectionState }
+            >(
+                [...presence].map(([id, absent]) => [
+                    id as ListingSectionId<'venue'>,
+                    { state: absent ? 'absent' : 'available' }
+                ])
+            );
+            const validation = validateReviewDimensions({
+                vertical: 'venue',
+                sectionStates,
+                rating: data.rating
+            });
+            if (!validation.ok && validation.reason === 'DIMENSION_NOT_APPLICABLE') {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Review dimension is not applicable to this listing.',
+                    { field: validation.field, reason: validation.reason },
+                    validation.reason
+                );
+            }
         }
         const existing = await this.model.findOne({
             userId: actor.id,
@@ -529,7 +575,7 @@ export class VenueReviewService extends BaseCrudService<
 
     /**
      * Lists reviews for the admin moderation queue, optionally filtered by
-     * moderation state.
+     * moderation state and venue listing.
      *
      * Unlike the public search ({@link _executeSearch}, which force-filters to
      * ACTIVE + APPROVED), this surfaces PENDING and REJECTED reviews so a
@@ -538,10 +584,16 @@ export class VenueReviewService extends BaseCrudService<
      * `lifecycleState`, whereas the moderation UI needs to filter by
      * `moderationState`.
      *
+     * `venueId` (HOS-2051) scopes the queue to one venue listing: the
+     * per-listing moderation panel passes its own listing's id, so its
+     * moderator only sees reviews for that listing. When omitted, every
+     * listing's reviews are returned (the global moderation view).
+     *
      * Permission: `VENUE_MODERATE_REVIEW`.
      *
      * @param actor - The admin actor performing the listing.
-     * @param params - Optional moderation-state filter and pagination.
+     * @param params - Optional moderation-state filter, venue listing filter
+     *   and pagination.
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the paginated review list.
      */
@@ -549,6 +601,7 @@ export class VenueReviewService extends BaseCrudService<
         actor: Actor,
         params: {
             moderationState?: ModerationStatusEnum;
+            venueId?: string;
             page?: number;
             pageSize?: number;
         } = {},
@@ -571,6 +624,9 @@ export class VenueReviewService extends BaseCrudService<
             const where: Record<string, unknown> = { deletedAt: null };
             if (params.moderationState) {
                 where.moderationState = params.moderationState;
+            }
+            if (params.venueId) {
+                where.venueId = params.venueId;
             }
 
             const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
@@ -675,19 +731,12 @@ export class VenueReviewService extends BaseCrudService<
                 ctx?.tx
             );
 
-            // Extract the rating breakdown from each APPROVED review row. When a
-            // review has no per-dimension breakdown, fall back to its scalar
-            // `overallRating` for every dimension so it still contributes its
-            // true score to the listing aggregate instead of dragging it to 0.
             const ratingRows = approvedReviews.map((r) => {
                 const raw = r as Record<string, unknown>;
                 const rating = raw.rating as Record<string, number | null> | null | undefined;
-                const fallback = (raw.overallRating as number | undefined) ?? null;
                 return {
-                    food: rating?.food ?? fallback,
-                    service: rating?.service ?? fallback,
-                    ambiance: rating?.ambiance ?? fallback,
-                    value: rating?.value ?? fallback
+                    ...(rating ?? {}),
+                    overallRating: raw.overallRating as number | null | undefined
                 };
             });
 

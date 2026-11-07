@@ -1,16 +1,19 @@
 /**
- * AI-chat context assembler for VENUE listings (HOS-400).
+ * AI-chat context assembler for VENUE listings (HOS-400, neutralized by HOS-1864).
  *
- * The restaurant counterpart of `accommodation-ai-context.ts`. It answers a
- * different set of questions and therefore carries different fields: what the
- * venue cooks, when it opens, what is on the carta and roughly what it costs.
+ * The venue counterpart of `accommodation-ai-context.ts`. A venue is a place to
+ * eat or to go out — a restaurant, a café, a bar, a pub or a nightclub — so this
+ * assembler carries the fields a visitor asks about: what kind of place it is,
+ * when it opens, what is on the carta, what entry costs, the dress code, the
+ * minimum age and roughly what it costs.
  *
  * ## What is in here that the accommodation assembler does not have
  *
- * The carta, the menú del día and the venue agenda are ENTITLEMENT-GATED
- * content: the public routes withhold them from an owner whose plan does not
- * grant the key, and the service-core readers do not. So this assembler gates
- * them too, from the capability flag the ROUTE resolved for the owner.
+ * The carta, the menú del día, the venue agenda and the `nightInfo` section are
+ * ENTITLEMENT- AND BUSINESS-LINE-GATED content: the public routes withhold them
+ * from an owner whose plan does not grant the key, and the service-core readers
+ * do not. So this assembler gates them too, from the section availability the
+ * route resolved for the listing — never from the venue type or the vertical.
  *
  * Today that gate never fires — every venue or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
@@ -37,6 +40,7 @@ import {
     truncate
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
+import { toVenueNightContext, type VenueNightContext } from './venue-night-context.js';
 
 // ---------------------------------------------------------------------------
 // Context size caps
@@ -107,14 +111,16 @@ export interface VenueContextMenuItem {
  * @param venue - The venue row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
- * @param includeMenu - Whether the owner has `manage_venue_menu`.
+ * @param includeMenu - Whether the menu section is available.
+ * @param night - The resolved `nightInfo` section, or `null`/omitted when absent.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
     venue: VenueContextRow,
     faqs: ReadonlyArray<VenueContextFaq>,
     menuItems: ReadonlyArray<VenueContextMenuItem>,
-    includeMenu: boolean
+    includeMenu: boolean,
+    night?: VenueNightContext | null
 ): string {
     const cappedFaqs = faqs.slice(0, VENUE_CONTEXT_FAQ_MAX);
     const cappedItems = includeMenu ? menuItems.slice(0, VENUE_CONTEXT_MENU_ITEM_MAX) : [];
@@ -128,8 +134,8 @@ export function buildVenueMarkdownContext(
     const lines: string[] = [
         OWNER_DATA_DIRECTIVE,
         '',
-        `## Restaurante: ${fenceOwnerValue(venue.name)}`,
-        `**Tipo de cocina**: ${venue.type}`,
+        `## Local: ${fenceOwnerValue(venue.name)}`,
+        `**Tipo de local**: ${venue.type}`,
         `**Resumen**: ${fenceOwnerValue(venue.summary)}`
     ];
 
@@ -197,9 +203,48 @@ export function buildVenueMarkdownContext(
             'La carta y los precios son los que el local guardó por última vez, no datos en vivo.'
         );
     } else if (includeMenu && venue.menuUrl) {
-        // No structured carta reached us — either the venue has none, or its
-        // plan does not grant it. Either way the link is public information.
-        lines.push('', '### Carta', 'El local publica su carta en un enlace externo.');
+        // An available menu may consist only of the external link.
+        lines.push(
+            '',
+            '### Carta',
+            `El local publica su carta en: ${fenceOwnerValue(venue.menuUrl)}`
+        );
+    }
+
+    // --- Night out info (HOS-1864) ---
+    // Closed enums, the age and the legal text stay unfenced; only the two
+    // owner-authored notes are fenced, like the description above.
+    if (night) {
+        lines.push('', '### Info para salir');
+        if (night.minAge !== null) {
+            lines.push(`**Edad mínima**: ${night.minAge}`);
+        }
+        if (night.legalNotice) {
+            lines.push(`**Aviso legal**: ${night.legalNotice}`);
+        }
+        if (night.entryLabel) {
+            lines.push(`**Entrada**: ${night.entryLabel}`);
+        }
+        if (night.entryPriceFrom !== null) {
+            lines.push(`**Precio de entrada desde**: $${night.entryPriceFrom}`);
+        }
+        if (night.dressCodeLabel) {
+            lines.push(`**Código de vestimenta**: ${night.dressCodeLabel}`);
+        }
+        if (night.entryNote) {
+            lines.push(
+                OWNER_DATA_DELIMITER_START,
+                sanitizeOwnerDelimiters(night.entryNote),
+                OWNER_DATA_DELIMITER_END
+            );
+        }
+        if (night.dressCodeNote) {
+            lines.push(
+                OWNER_DATA_DELIMITER_START,
+                sanitizeOwnerDelimiters(night.dressCodeNote),
+                OWNER_DATA_DELIMITER_END
+            );
+        }
     }
 
     // --- FAQs (owner free text — fenced) ---
@@ -252,7 +297,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
  * Secondary reads (FAQs, carta) degrade to empty lists with a logged warning —
  * a chat request must not fail because one relation is unavailable.
  *
- * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
+ * @param input - Actor, entity id, resolved prompt, locale and listing states.
  * @returns The context block, system message and venue name.
  */
 export async function assembleVenueContext(
@@ -272,7 +317,13 @@ export async function assembleVenueContext(
             menuUrl: venues.menuUrl,
             openingHours: venues.openingHours,
             averageRating: venues.averageRating,
-            reviewsCount: venues.reviewsCount
+            reviewsCount: venues.reviewsCount,
+            entryKind: venues.entryKind,
+            entryNoteI18n: venues.entryNoteI18n,
+            entryPriceFrom: venues.entryPriceFrom,
+            minAge: venues.minAge,
+            dressCode: venues.dressCode,
+            dressCodeNoteI18n: venues.dressCodeNoteI18n
         })
         .from(venues)
         .where(and(eq(venues.id, entityId), isNull(venues.deletedAt)))
@@ -288,11 +339,21 @@ export async function assembleVenueContext(
         safeLoadMenuItems(entityId)
     ]);
 
+    // Availability comes from the section map, never from the venue type or the
+    // business lines (G-FAC-03, G-FAC-05). `nightInfo` may be `absent` for a
+    // food-only line or `locked` by an entitlement; both resolve to `null`.
+    const night = toVenueNightContext({
+        row: venue,
+        available: input.listingSections.get('nightInfo')?.state === 'available',
+        locale
+    });
+
     const contextBlock = buildVenueMarkdownContext(
         venue,
         faqs,
         menuItems,
-        input.ownerCapabilities.manageVenueMenu === true
+        input.listingSections.get('menu')?.state === 'available',
+        night
     );
 
     return {

@@ -51,7 +51,7 @@ const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.ast
 const ALL_SECTIONS = [
     ...new Map(
         (['venue', 'experience'] as const)
-            .flatMap((vertical) => buildListingEditorSections({ vertical }))
+            .flatMap((vertical) => buildListingEditorSections({ vertical, sectionStates: {} }))
             .map((section) => [section.slug, section] as const)
     ).values()
 ];
@@ -102,7 +102,7 @@ describe('venue/experience editor routes — one file per section', () => {
         // The nav builds hrefs from slugs, and a slug with no file is a 404
         // reached from a link the editor drew itself — invisible to typecheck.
         for (const vertical of ['venue', 'experience'] as const) {
-            for (const section of buildListingEditorSections({ vertical })) {
+            for (const section of buildListingEditorSections({ vertical, sectionStates: {} })) {
                 expect(
                     ROUTE_FILES,
                     `${vertical}: the nav links to "${section.slug}" and no route renders it`

@@ -74,11 +74,23 @@ export const useModerateExperienceReviewMutation = () =>
     experienceHooks.useModerateReviewMutation();
 
 /**
- * Query hook to fetch reviews pending moderation for experience listings.
+ * Query hook to fetch reviews pending moderation for one experience listing.
  *
- * @param params - Optional pagination and filter params
+ * `experienceId` is required (HOS-2051): the per-listing moderation panel
+ * passes its own listing's id, so the list is scoped to that listing
+ * server-side (`GET /api/v1/admin/experiences/reviews?status=PENDING&experienceId=…`).
+ * Making it a compile-time requirement stops a panel from silently listing
+ * every experience's pending reviews again.
+ *
+ * @param params - `experienceId` (required) plus optional pagination
  * @returns TanStack Query `UseQueryResult`
  */
-export const useExperiencePendingReviewsQuery = (
-    params?: Parameters<typeof experienceHooks.usePendingReviewsQuery>[0]
-) => experienceHooks.usePendingReviewsQuery(params);
+export const useExperiencePendingReviewsQuery = ({
+    experienceId,
+    page,
+    pageSize
+}: {
+    readonly experienceId: string;
+    readonly page?: number;
+    readonly pageSize?: number;
+}) => experienceHooks.usePendingReviewsQuery({ page, pageSize, filters: { experienceId } });

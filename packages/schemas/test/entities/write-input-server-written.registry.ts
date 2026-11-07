@@ -324,6 +324,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     media menuUrl name nameI18n openingHours ownerId priceRange rating reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos
+                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
                 `)
             },
             {
@@ -334,6 +335,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
                     socialNetworks summary summaryI18n tags translationMeta type videos
+                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
                 `)
             },
             {
@@ -344,6 +346,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange richDescription richDescriptionI18n seo
                     socialNetworks summary summaryI18n tags type videos
+                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
                 `)
             },
             {
@@ -354,6 +357,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     contactInfo description descriptionI18n destinationId menuUrl name nameI18n
                     openingHours priceRange richDescription richDescriptionI18n socialNetworks
                     summary summaryI18n type videos
+                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
                 `)
             }
         ]

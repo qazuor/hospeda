@@ -21,7 +21,7 @@ export interface RenewalReminderProps {
     renewalDate?: string;
     /**
      * The subscription's billing vertical (HOS-1283) — the raw
-     * `billing_subscriptions.product_domain` string, or `null`/`undefined` on
+     * product-domain string supplied by the caller, or `null`/`undefined` on
      * a pre-domain row. `RENEWAL_REMINDER` fires for an active subscription in
      * ANY vertical (`notification-schedule.job.ts` does not scope its sweep to
      * accommodation), so the closing line below used to tell every venue,

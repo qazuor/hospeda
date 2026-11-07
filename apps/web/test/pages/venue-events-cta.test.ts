@@ -52,7 +52,7 @@ const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
 const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
 
-describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
+describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('imports the dedicated CTA component', () => {
         expect(VENUE_PAGE).toContain(
             "import VenueEventsCta from '@/components/venue/VenueEventsCta.astro'"
@@ -91,13 +91,16 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     });
 
     it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {
-        expect(VENUE_PAGE).toContain('{showEventsCta && <VenueEventsCta locale={locale} />}');
+        // HOS-1787 6.1: the CTA is a conditional registry block now.
+        expect(VENUE_PAGE).toMatch(/Component:\s*VenueEventsCta,\s*props:\s*\{\s*locale\s*\}/);
+        expect(VENUE_PAGE).toContain('...(showEventsCta ? [{ Component: VenueEventsCta');
+        expect(VENUE_PAGE).not.toContain('href={');
     });
 
     it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
-        const amenitiesIdx = VENUE_PAGE.indexOf('<AmenitiesGrid');
-        const ctaIdx = VENUE_PAGE.indexOf('<VenueEventsCta');
-        const contactIdx = VENUE_PAGE.indexOf('<VenueContactBlock');
+        const amenitiesIdx = VENUE_PAGE.indexOf('Component: AmenitiesGrid');
+        const ctaIdx = VENUE_PAGE.indexOf('Component: VenueEventsCta');
+        const contactIdx = VENUE_PAGE.indexOf('Component: VenueContactBlock');
 
         expect(amenitiesIdx).toBeGreaterThan(-1);
         expect(ctaIdx).toBeGreaterThan(amenitiesIdx);

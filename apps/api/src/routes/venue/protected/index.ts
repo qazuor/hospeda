@@ -49,6 +49,7 @@ import { protectedRemoveVenueMediaRoute } from './removeMedia';
 import { protectedReorderVenueFaqsRoute } from './reorderFaqs';
 import { protectedReorderVenueMediaRoute } from './reorderMedia';
 import { protectedVenueReportFixedRoute } from './reportFixed';
+import { protectedGetVenueSectionStatesRoute } from './sectionStates';
 import { protectedSetFeaturedVenueMediaRoute } from './setFeaturedMedia';
 import { protectedVenueSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishVenueRoute } from './unpublish';
@@ -100,6 +101,7 @@ app.route('/', protectedGetVenueQrCodeRoute);
 // GET /{id}/menu — read the carta. NOT entitlement-gated: every venue
 // tier sees its own menu, and only writing the structured half is paid.
 app.route('/', protectedGetVenueMenuRoute);
+app.route('/', protectedGetVenueSectionStatesRoute);
 
 // PUT /{id}/menu — replace the structured carta. Gated on
 // MANAGE_VENUE_MENU (venue-pro and above).

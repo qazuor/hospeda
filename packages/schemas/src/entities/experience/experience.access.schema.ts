@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { BUSINESS_LINES } from '../../catalog/business-lines.js';
+import type { BusinessLineValue } from '../../catalog/listing-catalog.types.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import {
@@ -7,6 +9,19 @@ import {
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
+
+/**
+ * Experience business-line values in catalog order, as the non-empty tuple
+ * `z.enum` requires.
+ *
+ * Derived from {@link BUSINESS_LINES} so the protected response schema that
+ * validates the persisted `business_lines` column cannot drift from the
+ * catalog. Mirrors `VENUE_BUSINESS_LINE_VALUES`; the venue tuple cannot be
+ * reused because it is narrowed to the venue union.
+ */
+const EXPERIENCE_BUSINESS_LINE_VALUES = BUSINESS_LINES.experience.map(
+    (line) => line.value
+) as unknown as readonly [BusinessLineValue<'experience'>, ...BusinessLineValue<'experience'>[]];
 
 /**
  * Experience Access Schemas — Three-Tier Response Projection
@@ -386,6 +401,24 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
     featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * HOS-1787 leaf 5.7 — the business lines this experience is assigned to.
+     *
+     * The shared publish gate (`resolveListingCompleteness`) requires
+     * `businessLines`, but `ExperienceSchema` does not declare the column, so
+     * without this projection the protected read strips it and the owner's hub
+     * reports a missing field the experience editor cannot set. The DB column
+     * is NOT NULL with a `cardinality(...) >= 1` CHECK; `.optional()` still
+     * keeps a partial projection parsing, matching `VenueProtectedSchema`.
+     */
+    businessLines: z
+        .array(
+            z.enum(EXPERIENCE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+        .optional(),
     /**
      * Whether the provider's CURRENT experience plan grants
      * `manage_experience_directions` (HOS-1049).

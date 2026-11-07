@@ -18,7 +18,7 @@
  * Tested endpoint: GET /api/v1/admin/venues/reviews
  */
 
-import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -98,6 +98,37 @@ describe('Admin VenueReview List — moderation status filter (SPEC-259 regressi
         };
     }
 
+    /**
+     * Builds a complete PENDING review the route's `VenueReviewSchema` accepts.
+     * Overrides let each case set its own breakdown.
+     */
+    function pendingReview(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+        const now = new Date('2026-01-01T00:00:00.000Z');
+        return {
+            id: crypto.randomUUID(),
+            venueId: crypto.randomUUID(),
+            userId: null,
+            title: 'A review title',
+            content: 'A review content long enough to pass validation.',
+            rating: { food: 4, service: 5 },
+            averageRating: 4.5,
+            overallRating: 4.5,
+            reviewerName: 'Reviewer',
+            moderatedById: null,
+            moderatedAt: null,
+            moderationReason: null,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.PENDING,
+            createdAt: now,
+            updatedAt: now,
+            createdById: null,
+            updatedById: null,
+            deletedAt: null,
+            deletedById: null,
+            ...overrides
+        };
+    }
+
     beforeAll(() => {
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -139,6 +170,44 @@ describe('Admin VenueReview List — moderation status filter (SPEC-259 regressi
             Record<string, unknown>
         ];
         expect(params.moderationState).toBeUndefined();
+    });
+
+    it('returns the review rating breakdown so the moderation panel can show it', async () => {
+        mockRef.listForModeration = vi.fn().mockResolvedValue({
+            data: {
+                items: [pendingReview({ rating: { food: 4, service: 5 } })],
+                total: 1
+            }
+        });
+
+        const res = await app.request(`${base}?status=PENDING`, {
+            headers: makeHeaders(adminActor)
+        });
+
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as {
+            data: { items: Array<{ rating?: unknown }> };
+        };
+        expect(body.data.items[0]?.rating).toEqual({ food: 4, service: 5 });
+    });
+
+    it('returns a review without a breakdown with no rating', async () => {
+        mockRef.listForModeration = vi.fn().mockResolvedValue({
+            data: {
+                items: [pendingReview({ rating: null })],
+                total: 1
+            }
+        });
+
+        const res = await app.request(`${base}?status=PENDING`, {
+            headers: makeHeaders(adminActor)
+        });
+
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as {
+            data: { items: Array<{ rating?: unknown }> };
+        };
+        expect(body.data.items[0]?.rating ?? null).toBeNull();
     });
 
     it('rejects an invalid status value before reaching the handler', async () => {

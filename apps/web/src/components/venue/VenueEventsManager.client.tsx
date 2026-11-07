@@ -35,13 +35,34 @@
 
 import { VENUE_EVENTS_MAX_ENTRIES } from '@repo/schemas';
 import type { JSX } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
+import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { EventDraft } from '@/lib/venue/venue-event-draft';
 import { VenueEventEntryCard } from './VenueEventEntryCard.client';
 import styles from './VenueEventsManager.module.css';
+import {
+    translateUpsell,
+    VenueSectionLockedPanel,
+    type VenueSectionState
+} from './VenueSectionLockedPanel.client';
+
+/** The entitlement the venue agenda write requires. */
+const VENUE_EVENTS_ENTITLEMENT = 'manage_venue_events';
+
+/**
+ * Catalog-plan wording for the venue agenda upsell. Shared by the proactive
+ * panel and the runtime 403 so the two can never disagree.
+ */
+const VENUE_EVENTS_UPSELL_COPY = {
+    key: 'venue.owner.editor.venueEventsManager.locked',
+    fallback: 'Mantener una agenda de eventos está disponible desde el plan {{plan}}.',
+    noPlanKey: 'venue.owner.editor.venueEventsManager.lockedNoPlan',
+    noPlanFallback: 'Mantener una agenda de eventos está disponible en un plan pago.'
+} as const;
 
 /** One agenda entry, as the API returns it. */
 interface VenueEventRow {
@@ -73,6 +94,13 @@ export interface VenueEventsManagerProps {
      * up inside the island.
      */
     readonly weekdayLabels: readonly string[];
+    /**
+     * The resolved state of this listing's `venueEvents` section (HOS-1854).
+     * A locked section is read-only and shows its upsell on first render.
+     */
+    readonly sectionState?: VenueSectionState;
+    /** Localized name of the cheapest catalog plan that unlocks this section. */
+    readonly upsellPlanName?: string | null;
 }
 
 const EMPTY_DRAFT: EventDraft = {
@@ -106,7 +134,9 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
 export function VenueEventsManager({
     listingId,
     locale,
-    weekdayLabels
+    weekdayLabels,
+    sectionState = 'available',
+    upsellPlanName
 }: VenueEventsManagerProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
@@ -114,6 +144,14 @@ export function VenueEventsManager({
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
+    /** HOS-1854. See {@link VenueDailySpecialsManager} for the same wiring. */
+    const { gate: readGate } = useListingPlanGate({
+        vertical: 'venue',
+        entitlementKey: VENUE_EVENTS_ENTITLEMENT
+    });
+    const isSectionLocked = sectionState === 'locked';
+    const lockedGate: Exclude<ListingPlanGate, 'open'> = readGate === 'open' ? 'plan' : readGate;
+    const planNoticeId = useId();
 
     const basePath = `/api/v1/protected/venues/${listingId}/events`;
 
@@ -121,11 +159,14 @@ export function VenueEventsManager({
     // The panel reads its own state rather than receiving it from the SSR
     // page, for the same reason `VenueMenuManager` does: the agenda is not
     // part of the listing payload the editor is built from.
+    //
+    // Protected read, same reason as `VenueMenuManager` (HOS-1854): without the
+    // session cookie the API answers 401 and a locked section renders empty.
     useEffect(() => {
         let cancelled = false;
 
         void (async () => {
-            const result = await apiClient.get<EventsEnvelope>({ path: basePath });
+            const result = await apiClient.getProtected<EventsEnvelope>({ path: basePath });
             if (cancelled) {
                 return;
             }
@@ -239,10 +280,7 @@ export function VenueEventsManager({
         if (result.error.status === 403) {
             setIsLocked(true);
             setMessage(
-                t(
-                    'venue.owner.editor.venueEventsManager.locked',
-                    'Mantener una agenda de eventos está disponible desde el plan Profesional.'
-                )
+                translateUpsell({ t, planName: upsellPlanName, ...VENUE_EVENTS_UPSELL_COPY })
             );
             return;
         }
@@ -250,7 +288,36 @@ export function VenueEventsManager({
         setMessage(
             t('venue.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
         );
-    }, [basePath, entries, t]);
+    }, [basePath, entries, t, upsellPlanName]);
+
+    /**
+     * HOS-1854. Empties a locked agenda through the API's `delete` intent: an
+     * empty `events` array classifies the write as a deletion (DEC-FAC-041),
+     * authorized even on a locked section.
+     */
+    const clearEvents = useCallback(async (): Promise<boolean> => {
+        setState('saving');
+        setMessage(null);
+
+        const result = await apiClient.put<EventsEnvelope>({
+            path: basePath,
+            body: { events: [] }
+        });
+        setState('idle');
+
+        if (!result.ok) {
+            setMessage(
+                t('venue.owner.editor.lockedSection.vaciarError', 'No se pudo vaciar la sección.')
+            );
+            return false;
+        }
+
+        setEntries([]);
+        setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
+        return true;
+    }, [basePath, t]);
+
+    const vaciar = useSectionVaciar({ clear: clearEvents });
 
     const busy = state !== 'idle';
     const atMax = entries.length >= VENUE_EVENTS_MAX_ENTRIES;
@@ -270,66 +337,137 @@ export function VenueEventsManager({
                 )}
             </p>
 
-            {entries.map((entry, index) => (
-                <VenueEventEntryCard
-                    // Index-keyed on purpose: a draft row has no id, and the
-                    // whole list is re-submitted as a document.
-                    // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                    key={`event-${index}`}
-                    entry={entry}
-                    index={index}
-                    t={t}
-                    weekdayLabels={weekdayLabels}
-                    onPatch={patchEntry}
-                    onMove={moveEntry}
-                    onRemove={removeEntry}
-                    onSetRecurrence={setRecurrence}
-                />
-            ))}
-
-            <button
-                type="button"
-                className={styles.secondaryButton}
-                disabled={atMax}
-                onClick={addEntry}
-            >
-                {t('venue.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
-            </button>
-
-            {atMax ? (
-                <p className={styles.intro}>
-                    {/*
-                     * `tPlural`, not `t`: the sentence interpolates a count next
-                     * to a noun, so at `max = 1` a single form would read
-                     * "máximo de 1 eventos". The ceiling is 30 today and the
-                     * singular is unreachable — which is exactly why it is
-                     * wired now rather than left for whoever lowers it.
-                     */}
-                    {tPlural(
-                        'venue.owner.editor.venueEventsManager.maxReached',
-                        VENUE_EVENTS_MAX_ENTRIES,
-                        { max: VENUE_EVENTS_MAX_ENTRIES }
+            {isSectionLocked ? (
+                <VenueSectionLockedPanel
+                    id={planNoticeId}
+                    gate={lockedGate}
+                    locale={locale}
+                    messageKey="venue.owner.editor.venueEventsManager.locked"
+                    messageFallback="Mantener una agenda de eventos está disponible desde el plan {{plan}}."
+                    noPlanMessageFallback="Mantener una agenda de eventos está disponible en un plan pago."
+                    planName={upsellPlanName}
+                    preTrialMessageKey="venue.owner.editor.venueEventsManager.lockedPreTrial"
+                    preTrialMessageFallback="La agenda de eventos se habilita cuando publiques tu ficha."
+                    sectionLabel={t(
+                        'venue.owner.editor.venueEventsManager.title',
+                        'Agenda del local'
                     )}
-                </p>
-            ) : null}
+                    hasData={entries.length > 0}
+                    vaciar={vaciar}
+                >
+                    {entries.length === 0 ? (
+                        <p className={styles.intro}>
+                            {t(
+                                'venue.owner.editor.lockedSection.empty',
+                                'No hay datos cargados en esta sección.'
+                            )}
+                        </p>
+                    ) : (
+                        entries.map((entry, index) => (
+                            <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
+                                key={`locked-event-${index}`}
+                                className={styles.card}
+                            >
+                                <p className={styles.readOnlyName}>{entry.title}</p>
+                                {entry.description ? (
+                                    <p className={styles.intro}>{entry.description}</p>
+                                ) : null}
+                                <p className={styles.intro}>
+                                    {entry.recurrence === 'weekly'
+                                        ? t(
+                                              'venue.owner.editor.venueEventsManager.recurrenceWeekly',
+                                              'Todas las semanas'
+                                          )
+                                        : t(
+                                              'venue.owner.editor.venueEventsManager.recurrenceOnce',
+                                              'Un solo día'
+                                          )}
+                                    {entry.recurrence === 'weekly'
+                                        ? ` · ${weekdayLabels[entry.weekday] ?? ''}`
+                                        : entry.date
+                                          ? ` · ${entry.date}`
+                                          : ''}
+                                    {` · ${entry.startTime}${
+                                        entry.endTime ? ` – ${entry.endTime}` : ''
+                                    }`}
+                                </p>
+                                {entry.isActive ? null : (
+                                    <p className={styles.readOnlyNote}>
+                                        {t(
+                                            'venue.owner.editor.lockedSection.inactive',
+                                            'No se muestra'
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </VenueSectionLockedPanel>
+            ) : (
+                <>
+                    {entries.map((entry, index) => (
+                        <VenueEventEntryCard
+                            // Index-keyed on purpose: a draft row has no id, and the
+                            // whole list is re-submitted as a document.
+                            // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                            key={`event-${index}`}
+                            entry={entry}
+                            index={index}
+                            t={t}
+                            weekdayLabels={weekdayLabels}
+                            onPatch={patchEntry}
+                            onMove={moveEntry}
+                            onRemove={removeEntry}
+                            onSetRecurrence={setRecurrence}
+                        />
+                    ))}
 
-            {/*
-             * `type="button"`, like every control here: this panel lives
-             * INSIDE the editor's <form>, and a submit button would save the
-             * listing instead of the agenda.
-             */}
-            <button
-                type="button"
-                className={styles.primaryButton}
-                disabled={busy || isLocked}
-                onClick={() => {
-                    void saveEvents();
-                }}
-            >
-                {state === 'saving'
-                    ? t('venue.owner.editor.venueEventsManager.saving', 'Guardando…')
-                    : t('venue.owner.editor.venueEventsManager.save', 'Guardar agenda')}
-            </button>
+                    <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        disabled={atMax}
+                        onClick={addEntry}
+                    >
+                        {t('venue.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
+                    </button>
+
+                    {atMax ? (
+                        <p className={styles.intro}>
+                            {/*
+                             * `tPlural`, not `t`: the sentence interpolates a count next
+                             * to a noun, so at `max = 1` a single form would read
+                             * "máximo de 1 eventos". The ceiling is 30 today and the
+                             * singular is unreachable — which is exactly why it is
+                             * wired now rather than left for whoever lowers it.
+                             */}
+                            {tPlural(
+                                'venue.owner.editor.venueEventsManager.maxReached',
+                                VENUE_EVENTS_MAX_ENTRIES,
+                                { max: VENUE_EVENTS_MAX_ENTRIES }
+                            )}
+                        </p>
+                    ) : null}
+
+                    {/*
+                     * `type="button"`, like every control here: this panel lives
+                     * INSIDE the editor's <form>, and a submit button would save the
+                     * listing instead of the agenda.
+                     */}
+                    <button
+                        type="button"
+                        className={styles.primaryButton}
+                        disabled={busy || isLocked}
+                        onClick={() => {
+                            void saveEvents();
+                        }}
+                    >
+                        {state === 'saving'
+                            ? t('venue.owner.editor.venueEventsManager.saving', 'Guardando…')
+                            : t('venue.owner.editor.venueEventsManager.save', 'Guardar agenda')}
+                    </button>
+                </>
+            )}
 
             {message ? (
                 <p

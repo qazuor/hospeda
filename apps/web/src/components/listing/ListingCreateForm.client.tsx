@@ -38,27 +38,20 @@
  * of the create page).
  */
 
-import type { ExperienceOwnerCreateInput, VenueOwnerCreateInput } from '@repo/schemas';
-import {
-    ExperienceOwnerCreateInputSchema,
-    ExperiencePriceUnitEnum,
-    ExperienceTypeEnum,
-    requirePricingUnlessOnRequest,
-    VenueOwnerCreateInputSchema,
-    VenueTypeEnum
-} from '@repo/schemas';
+import { ExperiencePriceUnitEnum, resolveBusinessLineOptions } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
+import { MinAgeField } from '@/components/listing/editor/MinAgeField.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
-import { resolveExperienceTypeLabel } from '@/lib/experience/type-labels';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { createOwnerListing } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { buildUrl } from '@/lib/urls';
-import { resolveVenueTypeLabel } from '@/lib/venue/type-labels';
 import styles from './ListingCreateForm.module.css';
 
 export interface ListingCreateFormProps {
@@ -80,39 +73,7 @@ export interface ListingCreateFormProps {
     readonly destinationsLoadFailed?: boolean;
 }
 
-const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
-const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
-
-/** Fields this form collects for venue — a subset of the real create schema. */
-const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
-    name: true,
-    type: true,
-    summary: true,
-    description: true,
-    destinationId: true
-});
-
-/**
- * Fields this form collects for experience — a subset of the real create schema.
- *
- * The pick is taken from the PLAIN create schema and the cross-field pricing
- * rule is re-applied afterwards, deliberately in that order: Zod 4 throws
- * `.pick() cannot be used on object schemas containing refinements`, so picking
- * from `ExperienceOwnerCreateInputCheckedSchema` would crash this module on
- * load. Re-applying the shared predicate keeps the client and the server
- * enforcing the same rule from one definition instead of two (H-156).
- */
-const EXPERIENCE_FORM_SCHEMA = ExperienceOwnerCreateInputSchema.pick({
-    name: true,
-    type: true,
-    summary: true,
-    description: true,
-    destinationId: true,
-    priceFrom: true,
-    priceUnit: true,
-    isPriceOnRequest: true
-}).superRefine(requirePricingUnlessOnRequest);
 
 /**
  * ListingCreateForm — owner self-service listing create island.
@@ -125,10 +86,10 @@ export function ListingCreateForm({
     destinationsLoadFailed = false
 }: ListingCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const config = LISTING_VERTICAL_FORM_CONFIG[vertical];
 
-    const schema = vertical === 'venue' ? VENUE_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
-        schema,
+        schema: config.formSchema,
         t
     });
 
@@ -142,9 +103,20 @@ export function ListingCreateForm({
     const [priceFromCents, setPriceFromCents] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
+    // HOS-1787 leaf 5.6 — business lines. The selection starts empty and the
+    // type's `preselect` fills it when the owner picks a type. `minAge` is the
+    // type's `fieldDefaults.minAge` suggestion (BOLICHE → 18), editable and
+    // clearable, and travels in the create body when the owner leaves it set.
+    const [businessLines, setBusinessLines] = useState<readonly string[]>([]);
+    const [businessLinesTouched, setBusinessLinesTouched] = useState(false);
+    const [minAge, setMinAge] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const typeOptions = vertical === 'venue' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const typeOptions = config.typeOptions;
+    const typeDefaults = config.showsBusinessLines
+        ? config.resolveBusinessLineDefaults(listingType)
+        : { preselect: [], fieldDefaults: {} };
+    const showMinAge = typeof typeDefaults.fieldDefaults.minAge === 'number';
 
     // HOS-820: "comercio" is the name of the internal module venue and
     // experience share — not a word an excursion, a boat trip or a tour guide
@@ -153,21 +125,40 @@ export function ListingCreateForm({
     // being created follow the vertical instead of the module. Deliberately out
     // of scope: the account sidebar's "Mi comercio", which is one shared entry
     // across both verticals and needs a neutral term rather than a branch.
-    const nameLabel =
-        vertical === 'venue'
-            ? t('listing.owner.create.fields.name.venue', 'Nombre del comercio')
-            : t('listing.owner.create.fields.name.experience', 'Nombre de la experiencia');
-    const submitLabel =
-        vertical === 'venue'
-            ? t('listing.owner.create.submit.venue', 'Crear comercio')
-            : t('listing.owner.create.submit.experience', 'Crear experiencia');
-    const createErrorMessage =
-        vertical === 'venue'
-            ? t('listing.owner.create.error.venue', 'No pudimos crear el comercio. Probá de nuevo.')
-            : t(
-                  'listing.owner.create.error.experience',
-                  'No pudimos crear la experiencia. Probá de nuevo.'
-              );
+    const nameLabel = t(config.labels.nameKey, config.labels.nameFallback);
+    const submitLabel = t(config.labels.submitKey, config.labels.submitFallback);
+    const createErrorMessage = t(config.labels.createErrorKey, config.labels.createErrorFallback);
+
+    /**
+     * Applies the new type's preselection and field defaults.
+     *
+     * An owner-touched selection survives a type change only when the new type
+     * still admits every selected line; otherwise the type's `preselect` wins,
+     * so a HELADERIA never starts with `nightlife` selected.
+     */
+    function handleTypeChange(nextType: string): void {
+        setListingType(nextType);
+        if (!config.showsBusinessLines) return;
+
+        const defaults = config.resolveBusinessLineDefaults(nextType);
+        const resolved = resolveBusinessLineOptions({
+            vertical,
+            type: nextType,
+            selected: businessLines
+        });
+        const stillAllowed = resolved
+            .filter((option) => option.selected && !option.reason)
+            .map((option) => option.value);
+        const keepTouched =
+            businessLinesTouched &&
+            businessLines.length !== 0 &&
+            stillAllowed.length === businessLines.length;
+
+        setBusinessLines(keepTouched ? stillAllowed : [...defaults.preselect]);
+        setMinAge(
+            typeof defaults.fieldDefaults.minAge === 'number' ? defaults.fieldDefaults.minAge : null
+        );
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
@@ -186,7 +177,7 @@ export function ListingCreateForm({
             destinationId: destinationId || undefined
         };
 
-        if (vertical === 'experience') {
+        if (config.showsPriceFields) {
             // HOS-1943: "a consultar" stores no price, never a fake 0 that
             // reads as "$0". Same reasoning as the unit just below.
             basePayload.priceFrom = isPriceOnRequest ? null : (priceFromCents ?? undefined);
@@ -196,6 +187,11 @@ export function ListingCreateForm({
             // and "charged per person" all at once.
             basePayload.priceUnit = isPriceOnRequest ? null : priceUnit || undefined;
             basePayload.isPriceOnRequest = isPriceOnRequest;
+        }
+
+        if (config.showsBusinessLines) {
+            basePayload.businessLines = [...businessLines];
+            basePayload.minAge = minAge;
         }
 
         const parsed = validate(basePayload);
@@ -210,19 +206,7 @@ export function ListingCreateForm({
         // input type — every field the subset omits is optional/defaulted
         // server-side (see the module doc), but TS cannot see that equivalence
         // across the two distinct zod object types.
-        const created = await createOwnerListing(
-            vertical === 'venue'
-                ? {
-                      vertical: 'venue',
-                      // TYPE-WORKAROUND: narrow form-subset → full owner-create input (see above).
-                      data: parsed.data as unknown as VenueOwnerCreateInput
-                  }
-                : {
-                      vertical: 'experience',
-                      // TYPE-WORKAROUND: narrow form-subset → full owner-create input (see above).
-                      data: parsed.data as unknown as ExperienceOwnerCreateInput
-                  }
-        );
+        const created = await createOwnerListing(config.buildCreatePayload(parsed.data));
 
         if (created.ok) {
             window.location.href = buildUrl({
@@ -276,7 +260,7 @@ export function ListingCreateForm({
                     id="cc-type"
                     className={styles.input}
                     value={listingType}
-                    onChange={(event) => setListingType(event.target.value)}
+                    onChange={(event) => handleTypeChange(event.target.value)}
                     aria-invalid={fieldErrors.type ? 'true' : 'false'}
                     aria-describedby={fieldErrors.type ? fieldErrorId('type') : undefined}
                     required
@@ -287,9 +271,7 @@ export function ListingCreateForm({
                             key={opt}
                             value={opt}
                         >
-                            {vertical === 'experience'
-                                ? resolveExperienceTypeLabel({ t, type: opt })
-                                : resolveVenueTypeLabel({ t, type: opt })}
+                            {config.resolveTypeLabel({ t, type: opt })}
                         </option>
                     ))}
                 </select>
@@ -297,7 +279,38 @@ export function ListingCreateForm({
                     id={fieldErrorId('type')}
                     message={fieldErrors.type}
                 />
+                {config.showsTypeDescription && listingType ? (
+                    <p
+                        className={styles.hint}
+                        aria-live="polite"
+                    >
+                        {t(`venue.typeDescriptions.${listingType}`, '')}
+                    </p>
+                ) : null}
             </div>
+
+            {config.showsBusinessLines && listingType ? (
+                <BusinessLinesField
+                    locale={locale}
+                    vertical={vertical}
+                    type={listingType}
+                    selected={businessLines}
+                    onChange={(next) => {
+                        setBusinessLines(next);
+                        setBusinessLinesTouched(true);
+                    }}
+                    errors={fieldErrors}
+                />
+            ) : null}
+
+            {config.showsBusinessLines && showMinAge ? (
+                <MinAgeField
+                    locale={locale}
+                    value={minAge}
+                    onChange={setMinAge}
+                    error={fieldErrors.minAge}
+                />
+            ) : null}
 
             <div className={styles.field}>
                 <label
@@ -414,7 +427,7 @@ export function ListingCreateForm({
                 </div>
             )}
 
-            {vertical === 'experience' && (
+            {config.showsPriceFields && (
                 <div className={styles.field}>
                     <label className={styles.checkbox}>
                         <input

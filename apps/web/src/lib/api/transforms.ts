@@ -53,6 +53,11 @@ import {
 } from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
 import { SEO_SOURCE_LOCALE } from '../seo';
+import { toVenueNightInfo } from '../venue/night-info';
+import {
+    parsePublicDimensionRatings,
+    parsePublicReviewSectionStates
+} from '../venue/review-dimensions-view';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -3051,6 +3056,9 @@ export function toVenueDetailPageProps({
         // re-applies either.
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),
+        nightInfo: toVenueNightInfo({ item, locale }),
+        rating: parsePublicDimensionRatings(item.rating),
+        reviewSectionStates: parsePublicReviewSectionStates(item.reviewSectionStates),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {

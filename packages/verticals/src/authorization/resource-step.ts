@@ -8,6 +8,7 @@ import {
 export interface ListingAccessFacts {
     readonly ownerId: string | null;
     readonly publicationStatus: PublicationStatusEnum | null;
+    readonly businessLines?: readonly string[];
 }
 
 export type StepOutcome<TReason extends string> =

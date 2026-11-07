@@ -24,8 +24,8 @@
             "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
             "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión",
             "venue-basico": "quien recién publica su local y quiere estar en el mapa",
-            "venue-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
-            "venue-premium": "quien maneja el local con carta en varios idiomas y atención constante",
+            "venue-pro": "quien ya tiene clientela y quiere mantener su ficha al día",
+            "venue-premium": "quien maneja un local con mucho movimiento y público que habla varios idiomas",
             "experience-basico": "quien empieza a ofrecer sus salidas y quiere darse a conocer",
             "experience-pro": "quien recibe visitantes seguido y necesita explicar bien cómo llegar",
             "experience-premium": "quien vive de las salidas y quiere entregar certificados y atención permanente",
@@ -95,10 +95,10 @@
             },
             "venue": {
                 "title": "Publicar mi local en Comer y salir",
-                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local que quiera aparecer en la guía.",
+                "audience": "Para todo local donde se come o se sale (bares, cafés, parrillas, boliches y más) que quiera aparecer en la guía.",
                 "cta": "Ver planes de Comer y salir",
                 "highlights": {
-                    "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
+                    "item1": "Ficha con fotos, horarios, datos de contacto y lo que ofrecés.",
                     "item2": "Aparecé en la guía de Comer y salir que consultan los viajeros.",
                     "item3": "Precio mensual fijo, sin comisión por consulta ni reserva."
                 }
@@ -232,7 +232,7 @@
         "empty": "Planes no disponibles en este momento.",
         "cardsHeading": "Comparativa de planes para Comer y salir",
         "pageTitle": "Precios para publicar tu local en Comer y salir",
-        "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
+        "pageDescription": "Mirá cuánto sale publicar tu local para comer o salir en Hospeda.",
         "ctaLabel": "Empezar"
     },
     "experience": {

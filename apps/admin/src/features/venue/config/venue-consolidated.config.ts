@@ -5,8 +5,12 @@
  * Assembles the shared listing sections (identity + operational) and injects
  * a venue-specific section in between that covers:
  *   - type (VenueTypeEnum SELECT)
+ *   - businessLines (catalog-driven, required when the vertical offers a choice)
  *   - priceRange (PriceRangeEnum SELECT, optional)
- *   - menuUrl (TEXT, optional — URL field)
+ *
+ * The online-menu link is NOT part of this form (HOS-1874): it belongs to the
+ * paid menu section and is managed through the owner surface, not the admin.
+ * Nor does the form expose the nightlife section, whose fields the owner edits.
  *
  * Used by both the view/edit flow (`EntityPageBase`) and the create flow
  * (`EntityCreatePageBase`).
@@ -17,26 +21,21 @@ import { PermissionEnum, PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     ConsolidatedEntityConfig,
+    ConsolidatedFieldConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
 import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
+import { getVenueBusinessLineOptions, hasBusinessLineChoice } from './venue-business-lines';
 
 // ---------------------------------------------------------------------------
 // Venue-specific field options
 // ---------------------------------------------------------------------------
 
 /** SELECT options for the venue type field. */
-const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: VenueTypeEnum.BAR, label: 'Bar' },
-    { value: VenueTypeEnum.CAFE, label: 'Café' },
-    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
-] as const;
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 /** SELECT options for the price-range tier field. */
 const PRICE_RANGE_OPTIONS = [
@@ -55,17 +54,50 @@ const PRICE_RANGE_OPTIONS = [
  * identity and operational sections.
  *
  * Fields:
- *  - `type`       — Venue sub-category (SELECT, required).
- *  - `priceRange` — Price-range tier (SELECT, optional).
- *  - `menuUrl`    — Online menu URL (TEXT, optional).
+ *  - `type`         — Venue sub-category (SELECT, required).
+ *  - `businessLines` — Catalog-driven lines (required when offered).
+ *  - `priceRange`   — Price-range tier (SELECT, optional).
  *
  * @returns A `ConsolidatedSectionConfig` for venue-specific fields.
  */
-function createVenueSpecificSection(): ConsolidatedSectionConfig {
+function createVenueSpecificSection(
+    t: ReturnType<typeof useTranslations>['t']
+): ConsolidatedSectionConfig {
+    const businessLineOptions = getVenueBusinessLineOptions({ t });
+    // The catalog decides whether the venue vertical offers a choice at all.
+    const businessLinesFields: ConsolidatedFieldConfig[] = hasBusinessLineChoice({
+        options: businessLineOptions
+    })
+        ? [
+              {
+                  id: 'businessLines',
+                  type: FieldTypeEnum.BUSINESS_LINES,
+                  required: true,
+                  modes: ['view', 'edit', 'create'],
+                  label: t('venue.owner.businessLines.legend'),
+                  permissions: {
+                      view: [PermissionEnum.VENUE_VIEW_ALL],
+                      edit: [PermissionEnum.VENUE_EDIT_ALL]
+                  },
+                  typeConfig: {
+                      vertical: 'venue',
+                      typeFieldId: 'type'
+                  },
+                  // View mode reuses the generic multi-select renderer, which
+                  // joins the selected labels; the catalog options carry them.
+                  modeConfig: {
+                      view: {
+                          type: FieldTypeEnum.SELECT_MULTIPLE,
+                          typeConfig: { options: businessLineOptions }
+                      }
+                  }
+              }
+          ]
+        : [];
     return {
         id: 'venue-specific',
         title: 'Detalles de Gastronomía',
-        description: 'Tipo de establecimiento, rango de precios y menú online',
+        description: 'Tipo de establecimiento y rango de precios',
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
@@ -79,7 +111,11 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 required: true,
                 modes: ['view', 'edit', 'create'],
                 label: 'Tipo de Establecimiento',
-                description: 'Categoría gastronómica del comercio',
+                descriptionForValue: (value) =>
+                    typeof value === 'string' &&
+                    Object.values(VenueTypeEnum).includes(value as VenueTypeEnum)
+                        ? t(`admin-entities.venue.typeDescriptions.${value as VenueTypeEnum}`)
+                        : undefined,
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
                     view: [PermissionEnum.VENUE_VIEW_ALL],
@@ -87,12 +123,13 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
-                    options: VENUE_TYPE_OPTIONS as unknown as {
-                        value: string;
-                        label: string;
-                    }[]
+                    options: VENUE_TYPE_OPTIONS.map(({ value, labelKey }) => ({
+                        value,
+                        label: t(labelKey as `admin-entities.venue.types.${VenueTypeEnum}`)
+                    }))
                 }
             },
+            ...businessLinesFields,
             {
                 id: 'priceRange',
                 type: FieldTypeEnum.SELECT,
@@ -112,22 +149,6 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                         label: string;
                     }[]
                 }
-            },
-            {
-                id: 'menuUrl',
-                type: FieldTypeEnum.TEXT,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'URL del Menú Online',
-                description: 'Enlace al menú digital del establecimiento (https://…)',
-                placeholder: 'https://tu-restaurante.com/menu',
-                permissions: {
-                    view: [PermissionEnum.VENUE_VIEW_ALL],
-                    edit: [PermissionEnum.VENUE_EDIT_ALL]
-                },
-                typeConfig: {
-                    maxLength: 500
-                }
             }
         ]
     };
@@ -142,7 +163,7 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
  *
  * Section order:
  *  1. Listing identity section (shared — name, slug, summary, description, …)
- *  2. Venue-specific section (type, priceRange, menuUrl)
+ *  2. Venue-specific section (type, businessLines, priceRange)
  *  3. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
@@ -156,7 +177,7 @@ export const createVenueConsolidatedConfig = (
 ): ConsolidatedEntityConfig => ({
     sections: [
         createListingIdentitySection('venue'),
-        createVenueSpecificSection(),
+        createVenueSpecificSection(t),
         createListingOperationalSection('venue')
     ],
     metadata: {

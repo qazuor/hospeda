@@ -62,7 +62,7 @@ const EXPERIENCE_INFO = read('components/experience/ExperienceInfo.astro');
 const VENUE_PRESENTATION = read('pages/[lang]/presentacion/comer-y-salir/index.astro');
 const EXPERIENCE_PRESENTATION = read('pages/[lang]/presentacion/experiencias/index.astro');
 
-describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () => {
+describe('comer-y-salir/[slug].astro — mounts the catalog grids (HOS-1072)', () => {
     it('imports the shared grids instead of declaring per-vertical copies', () => {
         expect(VENUE_PRESENTATION).not.toContain('AmenitiesGrid');
         expect(VENUE_PAGE).toContain(
@@ -78,14 +78,15 @@ describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () 
         // `private_events` excluded ONLY when the dedicated events CTA renders
         // in its place (see `apps/web/test/pages/venue-events-cta.test.ts`)
         // — still the listing's own amenities, not a different source.
-        expect(VENUE_PAGE).toContain(
-            '<AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />'
+        // HOS-1787 6.1: the grids are registry blocks now, not literal tags.
+        expect(VENUE_PAGE).toMatch(
+            /Component:\s*AmenitiesGrid,\s*props:\s*\{\s*amenities:\s*amenitiesForGrid,\s*lang:\s*locale\s*\}/
         );
     });
 
     it("binds FeaturesGrid to the listing's features, with no accommodation-only smoking flag", () => {
-        expect(VENUE_PAGE).toContain(
-            '<FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />'
+        expect(VENUE_PAGE).toMatch(
+            /Component:\s*FeaturesGrid,\s*props:\s*\{\s*features:\s*venue\.features,\s*smokingAllowed:\s*null,\s*lang:\s*locale\s*\}/
         );
     });
 });

@@ -61,6 +61,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { resolveListingSections } from '@repo/verticals';
 import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
@@ -74,7 +75,6 @@ import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
-import { readEffectiveKeys } from '../../../utils/listing-access/user-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
@@ -105,12 +105,6 @@ const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
     venue: VerticalEnum.VENUE,
     experience: VerticalEnum.EXPERIENCE
-} as const;
-
-const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
-    accommodation: [],
-    venue: ['manage_venue_menu'],
-    experience: ['manage_experience_directions']
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
@@ -260,12 +254,14 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         } as const;
         const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];
         const rows = await db
-            .select({ ownerId: listingTable.ownerId })
+            .select({ ownerId: listingTable.ownerId, businessLines: listingTable.businessLines })
             .from(listingTable)
             .where(eq(listingTable.id, entityId))
             .limit(1);
 
-        const ownerRow = rows[0] as { ownerId: string } | undefined;
+        const ownerRow = rows[0] as
+            | { ownerId: string; businessLines?: readonly string[] | null }
+            | undefined;
         if (!ownerRow) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, `${entityType} not found.`, {
                 entityId
@@ -298,12 +294,24 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitMessage: 'accommodations.aiChat.consumerLimitReached'
         });
 
-        const ownerCapabilities = await readEffectiveKeys({
-            userId: ownerId,
-            vertical: ownerVertical,
-            keys: OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE[entityType],
-            effectiveSetSnapshot: ownerEffectiveSet
-        });
+        const listingSections = (() => {
+            switch (entityType) {
+                case 'venue':
+                case 'experience':
+                    return resolveListingSections({
+                        vertical: entityType,
+                        businessLines: ownerRow.businessLines ?? [],
+                        effective: ownerEffectiveSet,
+                        userId: ownerId
+                    }).sections;
+                case 'accommodation':
+                    return new Map();
+                default: {
+                    const exhaustive: never = entityType;
+                    throw new Error(`Unsupported chat entity type: ${exhaustive}`);
+                }
+            }
+        })();
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
@@ -329,10 +337,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             entityId,
             resolvedPrompt,
             locale,
-            ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities.manage_venue_menu === true,
-                manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
-            }
+            listingSections
         });
 
         const aiService = await createConfiguredAiService();

@@ -46,6 +46,8 @@ export interface MenuTranslationFieldsProps {
      */
     readonly locked: boolean;
     readonly locale: SupportedLocale;
+    /** Catalog plan name for the translation upsell, when available. */
+    readonly planName?: string | null;
     readonly onChange: (patch: MenuTranslationPatch) => void;
 }
 
@@ -64,6 +66,7 @@ export function VenueMenuTranslationFields({
     hasDescription,
     locked,
     locale,
+    planName,
     onChange
 }: MenuTranslationFieldsProps): JSX.Element {
     const { t } = createTranslations(locale);
@@ -78,10 +81,16 @@ export function VenueMenuTranslationFields({
             </summary>
             {locked && (
                 <p className={styles.translationsLockedHint}>
-                    {t(
-                        'venue.owner.editor.menuManager.translationLockedHint',
-                        'Disponible en el plan Premium. Borrá el inglés y el portugués para guardar la carta en español.'
-                    )}
+                    {planName
+                        ? t(
+                              'venue.owner.editor.menuManager.translationLockedHint',
+                              'Disponible desde el plan {{plan}}. Borrá el inglés y el portugués para guardar la carta en español.',
+                              { plan: planName }
+                          )
+                        : t(
+                              'venue.owner.editor.menuManager.translationLockedHintNoPlan',
+                              'Disponible en un plan pago. Borrá el inglés y el portugués para guardar la carta en español.'
+                          )}
                 </p>
             )}
             <div className={styles.translationsGrid}>

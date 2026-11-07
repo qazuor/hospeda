@@ -51,7 +51,8 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
         const [row] = assembleListingNoticeRows({
             listings: [{ id: ID, publicationStatus: S.ARCHIVED, deletionAnnouncedAt: T1 }],
             events,
-            fixRequests: []
+            fixRequests: [],
+            businessLinesChanges: []
         });
 
         // Assert
@@ -61,6 +62,7 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
         expect(row?.deletionAnnouncedAt).toEqual(T1);
         expect(row?.lastLift).toBeNull();
         expect(row?.openFixRequest).toBeNull();
+        expect(row?.lastBusinessLinesChange).toBeNull();
     });
 
     it('follows the lift chain of one transaction by status, not by order (PB13 then PB3)', () => {
@@ -86,7 +88,8 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
         const [row] = assembleListingNoticeRows({
             listings: [{ id: ID, publicationStatus: S.PUBLISHED, deletionAnnouncedAt: null }],
             events,
-            fixRequests: []
+            fixRequests: [],
+            businessLinesChanges: []
         });
 
         // Assert
@@ -104,7 +107,8 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
         const [row] = assembleListingNoticeRows({
             listings: [{ id: ID, publicationStatus: S.PURGED, deletionAnnouncedAt: null }],
             events,
-            fixRequests: []
+            fixRequests: [],
+            businessLinesChanges: []
         });
 
         // Assert
@@ -131,7 +135,8 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
                 { id: OTHER, publicationStatus: S.PUBLISHED, deletionAnnouncedAt: null }
             ],
             events: [],
-            fixRequests: [fix]
+            fixRequests: [fix],
+            businessLinesChanges: []
         });
 
         // Assert
@@ -158,7 +163,8 @@ describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
         const [row] = assembleListingNoticeRows({
             listings: [{ id: ID, publicationStatus: S.PUBLISHED, deletionAnnouncedAt: null }],
             events,
-            fixRequests: []
+            fixRequests: [],
+            businessLinesChanges: []
         });
 
         // Assert

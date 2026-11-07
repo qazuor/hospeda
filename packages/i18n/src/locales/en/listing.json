@@ -99,7 +99,8 @@
                 "contactSocial": "Contact and social",
                 "menu": "Menu",
                 "dailySpecials": "Today's menu",
-                "venueEvents": "Events"
+                "venueEvents": "Events",
+                "nightInfo": "Night out info"
             },
             "sections": {
                 "type": "Category",
@@ -227,6 +228,9 @@
             "noChanges": "No changes to save",
             "success": "Changes saved.",
             "error": "Changes could not be saved. Please try again.",
+            "errors": {
+                "sectionAbsent": "That section no longer applies to your venue's business lines."
+            },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
                 "featured": "Featured image",
@@ -273,11 +277,40 @@
                     "faqs_other": "{{count}} questions",
                     "selected_one": "{{count}} selected",
                     "selected_other": "{{count}} selected",
-                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}",
+                    "lockedWithData_one": "Locked by your plan · {{count}} item saved (not published)",
+                    "lockedWithData_other": "Locked by your plan · {{count}} items saved (not published)",
+                    "lockedEmpty": "Locked by your plan"
+                },
+                "hidden": {
+                    "title": "Saved but hidden by your business lines",
+                    "intro": "These sections are not shown because your current business lines do not include them. Their data is still saved: if you add the line back, it returns.",
+                    "count_one": "{{count}} saved item",
+                    "count_other": "{{count}} saved items"
                 }
+            },
+            "lockedNotice": {
+                "plan_one": "You have {{count}} saved item that is not published: your plan does not include {{section}}.",
+                "plan_other": "You have {{count}} saved items that are not published: your plan does not include {{section}}."
             },
             "amenities": {
                 "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
+            },
+            "nightInfo": {
+                "entryPriceFrom": "Price from (in pesos)",
+                "entryNoteLabel": "Note (es/en/pt)",
+                "dressCodeNoteLabel": "Dress code note (es/en/pt)",
+                "notInformed": "Not informed",
+                "priceUpdatedAt": "Updated {{month}}",
+                "localeEs": "Spanish",
+                "localeEn": "English",
+                "localePt": "Portuguese"
+            },
+            "errorPage": {
+                "title": "We could not load the editor",
+                "description": "We could not read your listing section states. Please try again in a few minutes.",
+                "retry": "Try again",
+                "back": "Back to my listings"
             }
         },
         "checklist": {
@@ -288,6 +321,7 @@
                 "destinationId": "City / Destination",
                 "ownerId": "Owner",
                 "type": "Category",
+                "businessLines": "Business lines",
                 "featuredImage": "Main photo",
                 "contactInfo": "A contact detail (phone or email)",
                 "openingHours": "Opening hours",
@@ -427,6 +461,15 @@
             "draftIsYours": "Publishing it is up to you.",
             "fixRequestOpen": "The fix request is still open."
         },
-        "surplusTitle": "Listing unpublished by your plan limit"
+        "surplusTitle": "Listing unpublished by your plan limit",
+        "businessLinesChanged": {
+            "title": "Support changed the business lines of this listing",
+            "added": "Added: {{lines}}.",
+            "removed": "Removed: {{lines}}.",
+            "shownSections": "Now visible: {{sections}}.",
+            "hiddenSections": "No longer visible: {{sections}}.",
+            "nothingDeleted": "Nothing was deleted: whatever you saved in a hidden section comes back if you restore the line.",
+            "changedAt": "Change from {{date}}."
+        }
     }
 }

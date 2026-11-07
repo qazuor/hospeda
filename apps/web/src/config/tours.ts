@@ -17,11 +17,25 @@ export interface TourStepConfig {
     readonly align?: 'start' | 'center' | 'end';
 }
 
+/**
+ * HOS-1856: the account page a tour belongs to. A tour's steps live on ONE
+ * page, so a controller mounted on a different page must not consume it. Before
+ * this field existed, `/mi-cuenta/` ran `web.venue.welcome` with only the two
+ * steps present in the dashboard and marked it seen, so the venue owner never
+ * reached its `/mi-cuenta/comercio/` steps.
+ *
+ * - `dashboard` — `/{lang}/mi-cuenta/`
+ * - `comercio` — `/{lang}/mi-cuenta/comercio/`
+ */
+export type TourPage = 'dashboard' | 'comercio';
+
 export interface TourConfig {
     readonly id: string;
     readonly version: number;
     readonly roles: ReadonlyArray<string>;
     readonly trigger: 'auto-first-visit';
+    /** The page this tour's steps live on (HOS-1856). */
+    readonly page: TourPage;
     readonly steps: ReadonlyArray<TourStepConfig>;
 }
 
@@ -56,6 +70,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // signup used to match NO tour at all.
         roles: ['USER'],
         trigger: 'auto-first-visit',
+        page: 'dashboard',
         steps: [
             {
                 id: 'greeting',
@@ -117,6 +132,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // first.
         roles: ['HOST', 'ADMIN', 'SUPER_ADMIN', 'CLIENT_MANAGER'],
         trigger: 'auto-first-visit',
+        page: 'dashboard',
         steps: [
             {
                 id: 'greeting',
@@ -167,6 +183,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // A venue owner does not acquire the experience tour.
         roles: ['VENUE_OWNER'],
         trigger: 'auto-first-visit',
+        page: 'comercio',
         steps: [
             {
                 id: 'greeting',
@@ -227,6 +244,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // minus the venue-only QR step.
         roles: ['EXPERIENCE_OWNER'],
         trigger: 'auto-first-visit',
+        page: 'comercio',
         steps: [
             {
                 id: 'greeting',
@@ -276,6 +294,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // accepts for a mid-flight permission change.
         roles: ['EDITOR'],
         trigger: 'auto-first-visit',
+        page: 'dashboard',
         steps: [
             {
                 id: 'greeting',
@@ -319,6 +338,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // instead of one that highlights an element that does not exist.
         roles: ['SPONSOR'],
         trigger: 'auto-first-visit',
+        page: 'dashboard',
         steps: [
             {
                 id: 'greeting',
@@ -384,19 +404,27 @@ export function getWelcomeToursForRoles({
  * suppress the rest, which is deliberate: "I don't need to see this one in
  * detail" is not the same statement as "never show me anything again".
  *
- * @param params - `{ roles, hasSeen }` (RO-RO): every role the user holds,
- *   and the `hasSeen` predicate from `useTourState()`.
- * @returns The next tour to run, or `undefined` when every matching tour has
- *   already been seen (or none match at all).
+ * HOS-1856: `page` narrows the candidates to the tours whose steps live on the
+ * page the controller is mounted on. Priority and HOS-788 chaining are
+ * preserved WITHIN that page: the same priority order, one unseen tour per
+ * call, and the next one surfaces after `markSeen`.
+ *
+ * @param params - `{ roles, hasSeen, page }` (RO-RO): every role the user
+ *   holds, the `hasSeen` predicate from `useTourState()`, and the page the
+ *   controller is mounted on.
+ * @returns The next tour to run on that page, or `undefined` when every
+ *   matching tour has already been seen (or none match at all).
  */
 export function getNextPendingWelcomeTour({
     roles,
-    hasSeen
+    hasSeen,
+    page
 }: {
     readonly roles: readonly string[] | null;
     readonly hasSeen: (input: { tourId: string; version: number }) => boolean;
+    readonly page: TourPage;
 }): TourConfig | undefined {
-    return getWelcomeToursForRoles({ roles }).find(
-        (tour) => !hasSeen({ tourId: tour.id, version: tour.version })
-    );
+    return getWelcomeToursForRoles({ roles })
+        .filter((tour) => tour.page === page)
+        .find((tour) => !hasSeen({ tourId: tour.id, version: tour.version }));
 }

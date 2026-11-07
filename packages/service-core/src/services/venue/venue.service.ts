@@ -30,6 +30,8 @@
 
 import {
     AmenityModel,
+    buildSearchCondition,
+    buildVenueBusinessLineCondition,
     buildVenueCatalogConditions,
     FeatureModel,
     rVenueAmenityModel,
@@ -45,6 +47,7 @@ import {
     PublicationStatusEnum,
     ServiceErrorCode,
     type Venue,
+    type VenueAdminCreateInput,
     VenueAdminCreateInputSchema,
     VenueAdminSearchSchema,
     type VenueOwnerUpdateInput,
@@ -54,6 +57,7 @@ import {
     type VenueUpdateInput,
     VenueUpdateInputSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
@@ -71,7 +75,9 @@ import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { assertVenueCreateSectionsPresent } from './venue.create-sections';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
+import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
     checkVenueCanAdminList,
     checkVenueCanCreate,
@@ -440,6 +446,7 @@ export class VenueService extends BaseListingService<
      *
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
      * `ownerId`, `isFeatured`.
+     * `q` applies a text filter across the service's searchable columns.
      *
      * `amenities` / `features` are junction-table filters and are applied as
      * `additionalConditions` built by `@repo/db`'s
@@ -470,6 +477,8 @@ export class VenueService extends BaseListingService<
             sortOrder: _sortOrder,
             amenities,
             features,
+            businessLine,
+            q,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -477,7 +486,12 @@ export class VenueService extends BaseListingService<
             ...scalarFilters
         } = params;
 
-        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
+        const catalogConditions = this.buildPublicSearchConditions({
+            amenities,
+            features,
+            businessLine,
+            q
+        });
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
@@ -533,6 +547,8 @@ export class VenueService extends BaseListingService<
             sortOrder: _sortOrder,
             amenities,
             features,
+            businessLine,
+            q,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -540,11 +556,14 @@ export class VenueService extends BaseListingService<
             ...scalarFilters
         } = params;
 
-        // Mirror _executeSearch, INCLUDING the catalog conditions: a count that
-        // ignored the apto filter would report a total for a different result set
-        // than the one being paginated, so page 2 of "sin TACC" would exist and be
-        // empty.
-        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
+        // Keep catalog, business-line, and text filters identical to the page
+        // query: the total must describe the same intersection as its items.
+        const catalogConditions = this.buildPublicSearchConditions({
+            amenities,
+            features,
+            businessLine,
+            q
+        });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
@@ -559,6 +578,29 @@ export class VenueService extends BaseListingService<
         return { count };
     }
 
+    /** Builds the shared public venue search conditions for page and count. */
+    private buildPublicSearchConditions({
+        amenities,
+        features,
+        businessLine,
+        q
+    }: Pick<VenueSearch, 'amenities' | 'features' | 'businessLine' | 'q'>): SQL[] {
+        const conditions = buildVenueCatalogConditions({ amenities, features });
+        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
+        if (businessLineCondition) conditions.push(businessLineCondition);
+
+        if (q && q.trim().length > 0) {
+            const searchCondition = buildSearchCondition(
+                q,
+                this.getSearchableColumns(),
+                this.model.getTable()
+            );
+            if (searchCondition) conditions.push(searchCondition);
+        }
+
+        return conditions;
+    }
+
     /**
      * Admin search — inherits owner-scoping from the base class.
      *
@@ -566,13 +608,116 @@ export class VenueService extends BaseListingService<
      * `ownerId`) are plain scalars that the generic admin search
      * builder handles natively via the where-clause builder.
      *
+     * `businessLine` is the exception (HOS-1787 leaf 7.1): the column is
+     * `text[]`, so the generic builder would emit `eq(text[], 'food')` — a
+     * runtime error or an empty page. It is pulled out of `entityFilters` and
+     * composed as an `additionalCondition` by `@repo/db`'s
+     * {@link buildVenueBusinessLineCondition}, which uses `@>` and the GIN
+     * index. The service never compares the value itself (G-FAC-03): the
+     * schema already constrained it to the catalog.
+     *
      * @param params - Admin search parameters assembled by `adminList()`.
      * @returns Paginated list with owner-scoping and public projections applied.
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<Record<string, unknown>>
     ): Promise<PaginatedListOutput<Venue>> {
-        return super._executeAdminSearch(params);
+        const { businessLine, ...entityFilters } = params.entityFilters;
+        const extraConditions = [...(params.extraConditions ?? [])];
+
+        if (typeof businessLine === 'string') {
+            const condition = buildVenueBusinessLineCondition({ businessLine });
+            if (condition) extraConditions.push(condition);
+        }
+
+        return super._executeAdminSearch({
+            ...params,
+            entityFilters,
+            extraConditions
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // nightInfo section hooks (HOS-1846 / DEC-FAC-058)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Pre-create hook for the `nightInfo` section.
+     *
+     * Delegates to {@link BaseListingService._beforeCreate} (destination
+     * validation, business-line resolution, slug generation, junction capture),
+     * rejects a body that touches a section its resulting business lines do not
+     * offer (HOS-2052, 400 `VALIDATION_ERROR` `SECTION_ABSENT`), and then applies
+     * the section's server-side rules: a create carries no stored row, so a
+     * non-null price stamps `entryPriceUpdatedAt` now, and a price with a
+     * non-`paid` kind is a 400 instead of a database CHECK 500.
+     *
+     * The section-presence check runs AFTER the base hook so an invalid
+     * business-line selection keeps its own `BUSINESS_LINES_INVALID` failure,
+     * and BEFORE the `nightInfo` patch so an inconsistent body is rejected
+     * before any section data is resolved.
+     *
+     * @param data - Validated create input.
+     * @param actor - The actor performing the create.
+     * @param ctx - Service execution context.
+     * @returns The base patch merged with the resolved `nightInfo` patch.
+     * @throws {ServiceError} `VALIDATION_ERROR` for an absent touched section or
+     *   an invalid price/kind pair.
+     */
+    protected override async _beforeCreate(
+        data: VenueAdminCreateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Venue>> {
+        const base = (await super._beforeCreate(data, actor, ctx)) as Partial<Venue> & {
+            businessLines?: readonly string[];
+        };
+        assertVenueCreateSectionsPresent({
+            body: data as Record<string, unknown>,
+            businessLines: base.businessLines ?? []
+        });
+        const nightInfo = resolveVenueNightInfoPatch({
+            body: data as Record<string, unknown>,
+            now: new Date()
+        });
+        return { ...base, ...nightInfo };
+    }
+
+    /**
+     * Pre-update hook for the `nightInfo` section.
+     *
+     * Delegates to {@link BaseListingService._beforeUpdate} (business-line and
+     * destination re-validation, junction capture) and then applies the
+     * section's rules against the STORED row: the price date moves only when
+     * the price changes, leaving `paid` erases price and date, and an explicit
+     * price with a non-`paid` kind is a 400.
+     *
+     * The row id comes from `ctx.hookState.updateId`, set by the listing base
+     * `update()` before the hook pipeline — the same snapshot precedent as
+     * `DestinationService._beforeUpdate`.
+     *
+     * @param data - Validated update input.
+     * @param actor - The actor performing the update.
+     * @param ctx - Service execution context (carries `tx` and `hookState`).
+     * @returns The base patch merged with the resolved `nightInfo` patch.
+     * @throws {ServiceError} `VALIDATION_ERROR` for an invalid price/kind pair.
+     */
+    protected override async _beforeUpdate(
+        data: VenueUpdateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Venue>> {
+        const base = await super._beforeUpdate(data, actor, ctx);
+        const updateId = (ctx.hookState as { updateId?: string } | undefined)?.updateId;
+        const current = updateId
+            ? ((await this.model.findById(updateId, ctx.tx)) as VenueNightInfoCurrent | null)
+            : null;
+        const nightInfo = resolveVenueNightInfoPatch({
+            body: data as Record<string, unknown>,
+            current,
+            now: new Date()
+        });
+        return { ...base, ...nightInfo };
     }
 
     // -----------------------------------------------------------------------

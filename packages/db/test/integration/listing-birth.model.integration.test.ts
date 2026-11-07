@@ -84,6 +84,7 @@ describe('listing birth model integration (TEST:V6:19)', () => {
                     summary: 'Summary',
                     description: 'Description',
                     type: 'RESTAURANT',
+                    businessLines: ['food'],
                     ownerId: user.id,
                     destinationId: destination.id
                 } as Partial<Venue>,

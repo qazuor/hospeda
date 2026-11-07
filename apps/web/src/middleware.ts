@@ -501,11 +501,29 @@ async function runMiddlewarePipeline(
     // from inside a rewrite, eventually producing Astro's 508 Loop Detected.
     // Leave nested 404s raw so the outermost pass renders the custom page once.
     //
+    // HOS-1868: the `response.body === null` guard is not cosmetic — it is what
+    // stops a 508, and it mirrors the condition Astro itself uses to reroute an
+    // empty error response (`REROUTABLE_STATUS_CODES` + `body === null` in
+    // `astro/dist/core/routing/handler.js`). Without it, a pagination shim's
+    // `Astro.rewrite` that lands on a page returning `Response(null, {404})`
+    // produces TWO error rewrites for one request:
+    //   1. the inner rewrite pass rewrites the body-less 404 to `/404` and
+    //      returns that rendered page (status 404, non-null body);
+    //   2. the outer pass receives it, sees status 404 again and rewrites a
+    //      SECOND time — the third rewrite of the request.
+    // Astro's loop counter (`handleMiddleware` increments it per pass) then
+    // reaches 4 and the request dies with `508 Loop Detected`. Skipping already
+    // rendered 404 bodies means an error page is produced exactly once.
+    //
+    // Every page 404 producer in this app returns `Response(null, { status: 404 })`,
+    // so this loses nothing; the only non-null 404s are endpoint routes with
+    // file extensions, which Step 1's `isStaticAssetRoute()` already skips.
+    //
     // The rewritten response is assigned to `response` and FALLS THROUGH to
     // Steps 9-11 instead of returning (HOS-263): an early `return` here skipped
     // the CSP header, the noindex `X-Robots-Tag` and the cache-tag handling, so
     // every error page shipped without a policy.
-    if (response.status === 404 && !isNestedPass) {
+    if (response.status === 404 && response.body === null && !isNestedPass) {
         response = await context.rewrite('/404');
     }
 
@@ -533,7 +551,14 @@ async function runMiddlewarePipeline(
     // `new Response(null, { status: 410 })` with no headers — a future 410
     // producer that attaches headers (e.g. Cache-Control) would silently lose
     // them here.
-    if (response.status === 410 && !isNestedPass) {
+    //
+    // HOS-1868: same `body === null` guard as Step 8 and for the same reason. A
+    // 410 reached through an inner rewrite already carries the rendered `/404`
+    // body; rewriting it again from the outer pass was the other half of the
+    // 508 double-rewrite. A body-less 410 (the only kind this app produces) is
+    // unaffected. HOS-2015 adds the `isNestedPass` half: nested passes leave the
+    // response raw so only the outermost pass renders the error page.
+    if (response.status === 410 && response.body === null && !isNestedPass) {
         const rendered = await context.rewrite('/404');
         response = new Response(rendered.body, {
             status: 410,

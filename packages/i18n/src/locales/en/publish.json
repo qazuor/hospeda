@@ -44,12 +44,12 @@
     "venue": {
         "meta": {
             "title": "Publish your venue on Food & nightlife",
-            "description": "List your restaurant, bar, grill or food truck on Hospeda and reach the travellers looking for somewhere to eat in the Litoral region."
+            "description": "List your venue on Hospeda and reach travellers looking for places to eat or go out in the Litoral region."
         },
         "hero": {
-            "tagline": "For food and drink venues",
+            "tagline": "For places to eat, drink or go out",
             "title": "List your venue and let people find it",
-            "body": "Start here with the basics: your venue's name, what kind it is and which destination it's in. Photos, menu and opening hours come later, from your dashboard."
+            "body": "Start here with the basics: your venue’s name, what kind it is and which destination it’s in. Add photos, food or drinks, and opening hours later from your dashboard."
         },
         "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first venue.",
         "trialCallout_other": "Try Hospeda free for {{trialDays}} days, no card needed. The trial starts on its own when you publish your first venue.",
@@ -60,22 +60,22 @@
             },
             "step2": {
                 "title": "Complete your listing",
-                "desc": "Add photos, menu, opening hours and contact details from the dashboard, at your own pace."
+                "desc": "Add photos, food or drinks, opening hours and contact details from the dashboard, at your own pace."
             },
             "step3": {
                 "title": "You go live",
-                "desc": "Your venue shows up in the Food & nightlife catalogue and diners in the area find you."
+                "desc": "Your venue appears in the Food & nightlife catalogue and visitors in the area find you."
             }
         },
         "benefits": {
             "title": "What you get",
             "item1": {
                 "title": "Seen by people already here",
-                "desc": "Thousands of travellers look for somewhere to eat in Concepción del Uruguay and the Litoral region every month."
+                "desc": "Thousands of travellers look for places to eat or go out in Concepción del Uruguay and the Litoral region every month."
             },
             "item2": {
                 "title": "The listing is yours",
-                "desc": "Change the menu, the photos and the opening hours whenever you want, without asking anyone."
+                "desc": "Update your venue information, photos and opening hours whenever you want."
             },
             "item3": {
                 "title": "No fee per enquiry",

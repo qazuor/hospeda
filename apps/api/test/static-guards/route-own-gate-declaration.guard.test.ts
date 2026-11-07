@@ -40,10 +40,7 @@ import {
 } from '../../src/middlewares/route-gate-descriptor';
 import { adminListVenuesRoute } from '../../src/routes/venue/admin/list';
 import { adminVenueOptionsRoute } from '../../src/routes/venue/admin/options';
-import { protectedGetVenueDailySpecialsRoute } from '../../src/routes/venue/protected/getDailySpecials';
-import { protectedGetVenueEventsRoute } from '../../src/routes/venue/protected/getEvents';
 import { protectedGetVenueMediaRoute } from '../../src/routes/venue/protected/getMedia';
-import { protectedGetVenueMenuRoute } from '../../src/routes/venue/protected/getMenu';
 import { validateApiEnv } from '../../src/utils/env';
 
 /** Hono's `RouterRoute` shape as exposed on `app.routes`. */
@@ -151,12 +148,7 @@ interface RouteSubApp {
  * resolved against the mounted app, so a rename of the segment cannot leave
  * these entries pointing at nothing.
  */
-const VENUE_NO_OWN_GATE_ROUTES: readonly RouteSubApp[] = [
-    protectedGetVenueMenuRoute,
-    protectedGetVenueDailySpecialsRoute,
-    protectedGetVenueEventsRoute,
-    protectedGetVenueMediaRoute
-];
+const VENUE_NO_OWN_GATE_ROUTES: readonly RouteSubApp[] = [protectedGetVenueMediaRoute];
 const VENUE_BASELINE_ONLY_ADMIN_ROUTES: readonly RouteSubApp[] = [
     adminListVenuesRoute,
     adminVenueOptionsRoute

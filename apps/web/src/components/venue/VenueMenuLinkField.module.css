@@ -1,0 +1,50 @@
+/* VenueMenuLinkField.module.css — HOS-1787 leaf 5.3 */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.input {
+    width: 100%;
+    max-width: 32rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+}
+
+.saveButton {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.5rem 0.875rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+}
+
+.saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.message {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}

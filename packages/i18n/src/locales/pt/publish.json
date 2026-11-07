@@ -44,12 +44,12 @@
     "venue": {
         "meta": {
             "title": "Publique seu estabelecimento no Comer e sair",
-            "description": "Cadastre a ficha do seu restaurante, bar, churrascaria ou food truck na Hospeda e alcance os viajantes que procuram onde comer no litoral."
+            "description": "Publique seu estabelecimento na Hospeda e alcance viajantes que procuram um lugar para comer ou sair no litoral."
         },
         "hero": {
             "tagline": "Para estabelecimentos no Comer e sair",
             "title": "Publique seu estabelecimento e seja encontrado",
-            "body": "Comece aqui pelo básico: o nome do seu estabelecimento, que tipo é e em qual destino fica. As fotos, o cardápio e os horários você preenche depois, no seu painel."
+            "body": "Comece pelo básico: o nome do seu estabelecimento, que tipo é e em qual destino fica. Depois, adicione fotos, opções de comida ou bebida e horários pelo seu painel."
         },
         "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica seu primeiro estabelecimento.",
         "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica seu primeiro estabelecimento.",
@@ -60,7 +60,7 @@
             },
             "step2": {
                 "title": "Complete sua ficha",
-                "desc": "Some fotos, cardápio, horários e formas de contato pelo painel, no seu ritmo."
+                "desc": "Adicione fotos, opções de comida ou bebida, horários e formas de contato pelo painel, no seu ritmo."
             },
             "step3": {
                 "title": "Você entra no ar",
@@ -71,11 +71,11 @@
             "title": "O que você leva",
             "item1": {
                 "title": "Visto por quem já está aqui",
-                "desc": "Milhares de viajantes procuram todo mês onde comer em Concepción del Uruguay e no litoral de Entre Ríos."
+                "desc": "Milhares de viajantes procuram todo mês um lugar para comer ou sair em Concepción del Uruguay e no litoral de Entre Ríos."
             },
             "item2": {
                 "title": "A ficha é sua",
-                "desc": "Você muda o cardápio, as fotos e os horários quando quiser, sem pedir permissão a ninguém."
+                "desc": "Atualize as informações do seu estabelecimento, as fotos e os horários quando quiser."
             },
             "item3": {
                 "title": "Sem comissão por consulta",

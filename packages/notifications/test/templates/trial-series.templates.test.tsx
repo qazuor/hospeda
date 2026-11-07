@@ -237,7 +237,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
         expect(venue).toContain('publicaste tu local');
         expect(venue).not.toContain('tu alojamiento');
         expect(venue).not.toContain('cuántas camas tiene');
-        expect(venue).toContain('el nombre del local');
+        expect(venue).toContain('qué ofrecés en tu local');
     });
 
     it('trial-ending-5d: swaps the saved-items line', () => {
@@ -246,7 +246,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
         const experience = renderToStaticMarkup(TrialEnding5Days(experienceProps));
 
         expect(accommodation).toContain('tus servicios y tus datos');
-        expect(venue).toContain('tu menú, tus horarios y tus datos');
+        expect(venue).toContain('tus horarios y tus datos');
         expect(venue).not.toContain('tus servicios y tus datos');
         expect(experience).toContain('tu descripción, tus horarios y tus datos');
     });
@@ -272,7 +272,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
 
         expect(venue).toContain('tu local dejó de aparecer');
         expect(venue).not.toContain('tu alojamiento dejó de aparecer');
-        expect(venue).toContain('menú, horarios, ubicación y datos de contacto');
+        expect(venue).toContain('descripción, horarios, ubicación y datos de contacto');
     });
 
     it('trial-win-back-1d: "ayer" names the right vertical', () => {
@@ -286,7 +286,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
         const venue = renderToStaticMarkup(TrialWinBack5Days(venueProps));
 
         expect(accommodation).toContain('buscando dónde quedarse');
-        expect(venue).toContain('buscando dónde comer');
+        expect(venue).toContain('buscando dónde comer o salir');
         expect(venue).not.toContain('dónde quedarse');
         expect(venue).toContain('tu local no aparece');
         expect(venue).not.toContain('tu alojamiento no aparece');
@@ -297,8 +297,34 @@ describe('vertical-aware copy (HOS-1283)', () => {
         const venue = renderToStaticMarkup(TrialWinBack10Days(venueProps));
 
         expect(accommodation).toContain('Descripción y servicios');
-        expect(venue).toContain('Descripción y menú');
+        expect(venue).toContain('Descripción y horarios');
         expect(venue).not.toContain('Descripción y servicios');
+    });
+
+    it('all nine venue renders use neutral Comer y salir copy for a boliche owner', () => {
+        const bolicheProps: TrialSeriesEmailProps = {
+            ...props,
+            recipientName: 'Boliche La Noche',
+            productDomain: 'venue'
+        };
+        const venueSeries = [
+            TrialEnding10Days,
+            TrialEnding5Days,
+            TrialEnding1Day,
+            TrialExpired,
+            TrialWinBack1Day,
+            TrialWinBack5Days,
+            TrialWinBack10Days,
+            TrialWinBack30Days,
+            TrialWinBack60Days
+        ];
+        const prohibited = /menú|menu|platos|carta|comensales|gastronómic|dónde comer(?! o salir)/i;
+
+        for (const template of venueSeries) {
+            const html = renderToStaticMarkup(template(bolicheProps));
+            expect(html).toContain('Boliche La Noche');
+            expect(html).not.toMatch(prohibited);
+        }
     });
 
     it('an omitted productDomain renders byte-identical to the original accommodation copy', () => {

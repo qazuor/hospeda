@@ -1,0 +1,19 @@
+---
+/**
+ * @file [page].astro
+ * @description Pagination shim for a venue business-line collection. Validates
+ * the page param, redirects page 1 to the canonical collection URL and rewrites
+ * page N to the collection with `?page=N`.
+ *
+ * The collection page itself resolves the `[rubro]` segment and answers 404 for
+ * an unknown line, so an invalid segment rewritten here still ends in a 404
+ * rather than a silently empty listing. The whole decision lives in
+ * `handlePaginationRoute` (HOS-1797).
+ */
+import { handlePaginationRoute } from '@/lib/listing/listing-pagination';
+
+return handlePaginationRoute({
+	astro: Astro,
+	basePath: `/${Astro.params.lang}/comer-y-salir/rubro/${Astro.params.rubro}/`,
+});
+---

@@ -168,6 +168,13 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'menuFileKind', // [BLANK] venue
     'openingHours', // [BLANK] venue, experience + [§1.2] "horarios"
     'priceRange', // [BLANK] venue
+    'entryKind', // [BLANK] venue
+    'entryNoteI18n', // [BLANK] venue
+    'entryPriceFrom', // [BLANK] venue
+    'entryPriceUpdatedAt', // [BLANK] venue (server-managed, still content)
+    'minAge', // [BLANK] venue
+    'dressCode', // [BLANK] venue
+    'dressCodeNoteI18n', // [BLANK] venue
     'priceFrom', // [BLANK] experience
     'priceUnit', // [BLANK] experience
     'isPriceOnRequest', // [BLANK] experience

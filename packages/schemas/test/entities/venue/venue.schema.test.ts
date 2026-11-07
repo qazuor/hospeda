@@ -26,7 +26,7 @@ import {
 describe('VenueSchema', () => {
     describe('Valid Data', () => {
         it('should validate a complete valid venue listing', () => {
-            const data = createValidVenue();
+            const data = { ...createValidVenue(), rating: { food: { average: 4, count: 2 } } };
             expect(() => VenueSchema.parse(data)).not.toThrow();
 
             const result = VenueSchema.parse(data);

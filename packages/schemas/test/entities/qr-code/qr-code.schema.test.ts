@@ -20,6 +20,7 @@ import {
     QrCodeRenderOptionsPatchSchema,
     QrCodeRenderOptionsSchema,
     QrCodeScanSchema,
+    QrCodeScanWindowSchema,
     QrCodeSlugSchema,
     QrCodeSourceEnum,
     QrCodeUpdateHttpSchema,
@@ -516,5 +517,20 @@ describe('the update schemas carry the render patch, not the full document', () 
         ['HTTP', QrCodeUpdateHttpSchema]
     ])('%s update: the slug is refused, not ignored', (_label, schema) => {
         expect(schema.safeParse({ slug: 'Rena2ed4' }).success).toBe(false);
+    });
+});
+
+describe('QrCodeScanWindowSchema (HOS-1787 leaf 5.7)', () => {
+    it('accepts the 90d window used by the business-line removal notice', () => {
+        expect(QrCodeScanWindowSchema.safeParse('90d').success).toBe(true);
+    });
+
+    it('still accepts the original 7d and 30d windows', () => {
+        expect(QrCodeScanWindowSchema.safeParse('7d').success).toBe(true);
+        expect(QrCodeScanWindowSchema.safeParse('30d').success).toBe(true);
+    });
+
+    it('rejects any other window', () => {
+        expect(QrCodeScanWindowSchema.safeParse('180d').success).toBe(false);
     });
 });

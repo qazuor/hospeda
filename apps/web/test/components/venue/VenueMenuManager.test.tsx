@@ -30,7 +30,13 @@ vi.mock('../../../src/components/venue/VenueMenuManager.module.css', () => ({
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, string>) =>
+            (fallback ?? key).replace(
+                /\{\{(\w+)\}\}/g,
+                (_match: string, name: string) => params?.[name] ?? `{{${name}}}`
+            )
+    })
 }));
 
 vi.mock('../../../src/lib/env', () => ({
@@ -40,6 +46,7 @@ vi.mock('../../../src/lib/env', () => ({
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
+        getProtected: vi.fn(),
         put: vi.fn(),
         delete: vi.fn()
     }
@@ -80,7 +87,7 @@ function effectiveSet(keys: readonly string[]): EntitlementsData {
 /** What a Profesional owner's read holds for the menu. */
 const ENTITLED = effectiveSet(['manage_venue_menu']);
 
-const mockGet = vi.mocked(apiClient.get);
+const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
 
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
@@ -157,6 +164,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -180,6 +192,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -247,6 +264,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -306,6 +328,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -316,9 +343,7 @@ describe('VenueMenuManager (HOS-895)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
 
         await waitFor(() => {
-            expect(screen.getByTestId('venue-menu-plan-notice')).toHaveTextContent(
-                /plan Profesional/
-            );
+            expect(screen.getByTestId('venue-menu-plan-notice')).toHaveTextContent(/plan Plan X/);
         });
 
         // The photo/PDF upload needs the SAME entitlement, so the notice must not
@@ -343,6 +368,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -404,6 +434,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
 
@@ -414,7 +449,7 @@ describe('VenueMenuManager (HOS-895)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
 
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/plan Premium/);
+            expect(screen.getByRole('status')).toHaveTextContent(/plan Plan Fotos/);
         });
 
         // And Save stays usable. The way out of this refusal is to remove the
@@ -594,6 +629,11 @@ describe('menu plan gate', () => {
             <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
+                upsellPlans={{
+                    menu: 'Plan X',
+                    itemPhotos: 'Plan Fotos',
+                    translations: 'Plan Traducciones'
+                }}
             />
         );
     }
@@ -627,7 +667,7 @@ describe('menu plan gate', () => {
         renderPanel();
 
         const notice = await screen.findByTestId('venue-menu-plan-notice');
-        expect(notice).toHaveTextContent('está disponible desde el plan Profesional');
+        expect(notice).toHaveTextContent('está disponible desde el plan Plan X');
         expect(notice).not.toHaveTextContent('cuando publiques');
     });
 
@@ -637,7 +677,7 @@ describe('menu plan gate', () => {
         const { container } = renderPanel();
 
         const notice = await screen.findByTestId('venue-menu-plan-notice');
-        expect(notice).toHaveTextContent('está disponible desde el plan Profesional');
+        expect(notice).toHaveTextContent('está disponible desde el plan Plan X');
         expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
             'href',
             expect.stringContaining('planes/comer-y-salir/precios')
@@ -658,7 +698,7 @@ describe('menu plan gate', () => {
         pickPdf(input);
 
         expect(await screen.findByTestId('venue-menu-plan-notice')).toHaveTextContent(
-            /plan Profesional/
+            /plan Plan X/
         );
         expect(screen.queryByText('No se pudo subir el archivo del menú.')).toBeNull();
         expect(input).toBeDisabled();
@@ -738,7 +778,7 @@ describe('menu plan gate', () => {
         fireEvent.click(await screen.findByRole('button', { name: 'Eliminar' }));
 
         expect(await screen.findByTestId('venue-menu-plan-notice')).toHaveTextContent(
-            /plan Profesional/
+            /plan Plan X/
         );
         expect(screen.queryByText('No se pudo eliminar el archivo del menú.')).toBeNull();
     });

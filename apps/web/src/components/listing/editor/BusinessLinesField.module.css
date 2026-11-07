@@ -1,0 +1,96 @@
+/**
+ * Business-line checkbox group (HOS-1787 leaf 5.6).
+ *
+ * Tokens only; no Tailwind. Matches the listing editor's field primitives and
+ * the create form's label/input language.
+ */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.legend {
+    padding: 0;
+    font-family: var(--font-heading, var(--font-sans));
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+}
+
+@media (min-width: 640px) {
+    .options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.625rem);
+    background: var(--core-card, var(--core-background));
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease;
+}
+
+.option:hover {
+    border-color: var(--brand-primary, var(--core-foreground));
+    background: var(--surface-warm, var(--core-card, var(--core-background)));
+}
+
+.option input {
+    margin-top: 0.15rem;
+    accent-color: var(--brand-primary, var(--core-foreground));
+}
+
+.option input:disabled {
+    cursor: not-allowed;
+}
+
+.optionText {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.optionLabel {
+    font-weight: 600;
+}
+
+.hint {
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+}
+
+.suggested {
+    margin-top: var(--space-2, 0.5rem);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+    border-radius: var(--radius-pill, 999px);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}

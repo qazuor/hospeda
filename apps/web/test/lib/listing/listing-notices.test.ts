@@ -314,6 +314,32 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(views).toEqual([]);
     });
 
+    it('TEST:7.3:11 renders the business-lines change through buildListingNoticeViews', () => {
+        // Act
+        const views = buildListingNoticeViews({
+            locale: 'es',
+            t: es.t,
+            tPlural: es.tPlural,
+            item: item({
+                kind: 'BUSINESS_LINES_CHANGED',
+                at: '2026-10-10T12:00:00.000Z',
+                addedLines: ['nightlife'],
+                removedLines: [],
+                shownSections: ['nightInfo'],
+                hiddenSections: []
+            })
+        });
+        const text = views.map((view) => [view.title, ...view.lines].join('\n')).join('\n');
+
+        // Assert
+        expect(views[0]?.kind).toBe('BUSINESS_LINES_CHANGED');
+        expect(views[0]?.title).toBe('Soporte cambió los rubros de esta ficha');
+        expect(text).toContain('Agregó: ');
+        expect(text).toContain('Ahora se ven: ');
+        expect(text).toContain('Cambio del 10 de octubre de 2026.');
+        expect(text).not.toContain('Quitó:');
+    });
+
     it('speaks every locale (en and pt) for row 20', () => {
         // Arrange
         const en = createTranslations('en');

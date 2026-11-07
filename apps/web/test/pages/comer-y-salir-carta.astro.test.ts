@@ -50,13 +50,12 @@ describe('carta.astro — 404 guards', () => {
         expect(cartaSrc).toContain('!result.ok');
     });
 
-    it('404s a venue with no menu content at all (neither carta nor file)', () => {
-        expect(cartaSrc).toContain('hasMenuContent');
-        expect(cartaSrc).toMatch(/menuSections\?\.length\s*\?\?\s*0\)\s*>\s*0/);
-        expect(cartaSrc).toContain('venue.menuFileUrl && venue.menuFileKind');
-        expect(cartaSrc).toMatch(
-            /if\s*\(!hasMenuContent\)\s*\{\s*\n\s*return new Response\(null, \{ status: 404 \}\);/
-        );
+    it('uses the pure redirect helper and preserves its manual 302 response', () => {
+        expect(cartaSrc).toContain("import { decideCartaPage } from '@/lib/venue/carta-redirect'");
+        expect(cartaSrc).toContain('decideCartaPage({ listing: venue, listingUrl })');
+        expect(cartaSrc).toContain('status: cartaDecision.status');
+        expect(cartaSrc).not.toContain('Astro.redirect');
+        expect(cartaSrc).not.toMatch(/status\s*:\s*301/);
     });
 });
 
@@ -116,6 +115,12 @@ describe('carta.astro — SEO (canonical to listing, noindex, out of sitemap by 
         expect(cartaSrc).toContain('canonicalPath={listingUrl}');
         expect(cartaSrc).toMatch(/const listingPath = `comer-y-salir\/\$\{venue\.slug\}`/);
         expect(cartaSrc).toContain('buildUrl({ locale, path: listingPath })');
+    });
+
+    it('builds a manual temporary redirect with no-store headers', () => {
+        expect(cartaSrc).toContain('new Headers(Astro.response.headers)');
+        expect(cartaSrc).toContain('redirectHeaders.set(name, value)');
+        expect(cartaSrc).toContain('status: cartaDecision.status');
     });
 
     it('links back to the full listing', () => {

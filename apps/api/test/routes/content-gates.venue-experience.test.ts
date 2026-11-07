@@ -3,6 +3,7 @@ import {
     PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode,
+    VenueTypeEnum,
     VerticalEnum
 } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
@@ -29,7 +30,7 @@ import { protectedAddVenueFaqRoute } from '../../src/routes/venue/protected/addF
 import { protectedAddVenueFeaturedMediaRoute } from '../../src/routes/venue/protected/addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from '../../src/routes/venue/protected/addMedia';
 import { protectedGetVenueBrochureRoute } from '../../src/routes/venue/protected/brochure';
-import { protectedDeleteVenueMenuFileRoute } from '../../src/routes/venue/protected/deleteMenuFile';
+import { protectedCreateVenueListingRoute } from '../../src/routes/venue/protected/create';
 import { protectedPatchVenueRoute } from '../../src/routes/venue/protected/patch';
 import { protectedPutVenueDailySpecialsRoute } from '../../src/routes/venue/protected/putDailySpecials';
 import { protectedPutVenueEventsRoute } from '../../src/routes/venue/protected/putEvents';
@@ -54,8 +55,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     VenueService: class {
+        model = { update: vi.fn().mockResolvedValue(undefined) };
         getById = mocks.service;
         updateOwn = mocks.service;
+        createForOwner = mocks.service;
         addMedia = mocks.service;
         addFeaturedMedia = mocks.service;
     },
@@ -73,7 +76,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     removeExperienceFaq: mocks.service,
     updateExperienceFaq: mocks.service,
     reorderExperienceFaqs: mocks.service,
-    replaceVenueMenu: mocks.service,
+    replaceVenueMenu: vi.fn().mockResolvedValue({
+        data: { sections: [], file: null, externalUrl: null }
+    }),
     replaceVenueDailySpecials: mocks.service,
     replaceVenueEvents: mocks.service,
     issueExperienceCertificate: mocks.service,
@@ -104,10 +109,31 @@ const mediaAdd = { url: 'https://example.com/photo.jpg' };
 const mediaUpdate = { caption: 'Updated photo' };
 const mediaReorder = { orderedIds: [MEDIA] };
 const patchBody = { name: 'Updated listing' };
-const menuPlain = { sections: [] };
-const specials = { specials: [] };
-const events = { events: [] };
+const menuPlain = { sections: [{ name: 'Entradas', items: [{ name: 'Empanada' }] }] };
+const specials = {
+    specials: [{ title: 'Menú del día', validFrom: '2026-10-10', validUntil: '2026-10-10' }]
+};
+const events = {
+    events: [
+        { title: 'Música en vivo', recurrence: 'once', date: '2026-10-10', startTime: '20:00' }
+    ]
+};
 const certificate = { recipientName: 'Jane Guest', completedAt: '2026-10-10' };
+const validVenueResponse = {
+    id: LISTING,
+    slug: 'local-cafe',
+    name: 'Local Cafe',
+    type: VenueTypeEnum.CAFE,
+    summary: 'A welcoming local cafe.',
+    description: 'A detailed description of this local cafe for visitors.',
+    destinationId: '00000000-0000-4000-a000-000000000002',
+    ownerId: OWNER_A,
+    publicationStatus: PublicationStatusEnum.DRAFT,
+    createdAt: new Date('2026-10-10T00:00:00.000Z'),
+    updatedAt: new Date('2026-10-10T00:00:00.000Z'),
+    createdById: OWNER_A,
+    updatedById: OWNER_A
+};
 const baseSource = {
     type: 'BASE',
     reference: { kind: 'PLAN_VERSION', planVersionId: 'basic' },
@@ -224,15 +250,6 @@ const cases = [
         file: 'venue/uploadMenuFile',
         route: protectedUploadVenueMenuFileRoute,
         method: 'POST',
-        path: '/{id}/menu-file',
-        body: undefined,
-        key: 'manage_venue_menu',
-        vertical: VerticalEnum.VENUE
-    },
-    {
-        file: 'venue/deleteMenuFile',
-        route: protectedDeleteVenueMenuFileRoute,
-        method: 'DELETE',
         path: '/{id}/menu-file',
         body: undefined,
         key: 'manage_venue_menu',
@@ -420,7 +437,7 @@ const cases = [
     }
 ] as const;
 type Case = (typeof cases)[number];
-function configureSet(owner: string, keys: readonly string[]): void {
+function configureSet(owner: string, keys: readonly string[], vertical = VerticalEnum.VENUE): void {
     mocks.effectiveSet.mockImplementation(
         async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
@@ -445,7 +462,12 @@ function configureSet(owner: string, keys: readonly string[]): void {
         ]
     });
     mocks.loadFacts.mockResolvedValue({
-        facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.PUBLISHED },
+        // Keep fixture business lines valid for each catalog vertical.
+        facts: {
+            ownerId: owner,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            businessLines: vertical === VerticalEnum.VENUE ? ['food'] : ['standard']
+        },
         ownerId: owner
     });
 }
@@ -489,10 +511,15 @@ beforeEach(() => {
 
 describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
-        configureSet(
-            OWNER_A,
-            row.key.startsWith('edit_') ? [] : [`edit_${row.vertical.toLowerCase()}_info`]
-        );
+        // Every row here writes content; the empty-body and file deletes, which pass
+        // without the section key, are covered by `venue/protected/menu-section-access.test.ts`.
+        const initialKeys =
+            row.file === 'venue/uploadMenuItemPhoto'
+                ? ['edit_venue_info', 'manage_venue_menu']
+                : row.key.startsWith('edit_')
+                  ? []
+                  : [`edit_${row.vertical.toLowerCase()}_info`];
+        configureSet(OWNER_A, initialKeys, row.vertical);
         const denied = await request(row);
         expect(denied.status, row.file).toBe(403);
         expect((await denied.json()).error).toMatchObject({
@@ -513,7 +540,7 @@ describe('TEST:V5:31 venue and experience content gates', () => {
             'issue_experience_certificate',
             'download_listing_pdf'
         ];
-        configureSet(OWNER_B, full);
+        configureSet(OWNER_B, full, row.vertical);
         const allowed = await request(row, OWNER_B);
         const allowedBody = await allowed
             .clone()
@@ -526,7 +553,7 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         });
     });
     it.each(cases)('$file preserves guest, shape and foreign-owner priority', async (row) => {
-        configureSet(OWNER_A, []);
+        configureSet(OWNER_A, [], row.vertical);
         expect((await request(row, '00000000-0000-4000-8000-000000000000')).status).toBe(401);
         expect((await request(row, OWNER_A, 'bad-id')).status).toBe(400);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
@@ -548,6 +575,20 @@ describe('TEST:V5:31 venue and experience content gates', () => {
             ).status
         ).toBe(404);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+    it('requires the menu section key to upload a dish photo', async () => {
+        const row = cases.find((item) => item.file === 'venue/uploadMenuItemPhoto');
+        if (!row) throw new Error('Menu item photo route missing');
+        configureSet(OWNER_A, ['edit_venue_info', 'menu_item_photos']);
+
+        const denied = await request(row);
+
+        expect(denied.status).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'manage_venue_menu' }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
     });
     it('requires dish-photo and translation keys only when the validated menu carries them', async () => {
         const row = cases.find((item) => item.file === 'venue/putMenu');
@@ -582,18 +623,86 @@ describe('TEST:V5:31 venue and experience content gates', () => {
     it('requires directions only when the patch includes meetingPointDirections', async () => {
         const row = cases.find((item) => item.file === 'experience/patch');
         if (!row) throw new Error('Experience patch route missing');
-        configureSet(OWNER_A, ['edit_experience_info']);
-        expect(
-            (
-                await (
-                    await request(row, OWNER_A, LISTING, { meetingPointDirections: ['Go north'] })
-                ).json()
-            ).error
-        ).toMatchObject({
+        configureSet(OWNER_A, ['edit_experience_info'], VerticalEnum.EXPERIENCE);
+        const directionsResponse = await request(row, OWNER_A, LISTING, {
+            meetingPointDirections: ['Go north']
+        });
+        expect((await directionsResponse.json()).error).toMatchObject({
             code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             details: { entitlementKey: 'manage_experience_directions' }
         });
         const plain = await request(row);
         expect((await plain.json()).error?.code).not.toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
+    });
+    it('checks venue PATCH sections against resulting business lines and treats null as deletion', async () => {
+        const row = cases.find((item) => item.file === 'venue/patch');
+        if (!row) throw new Error('Venue patch route missing');
+        configureSet(OWNER_A, ['edit_venue_info', 'manage_venue_menu']);
+        mocks.loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: OWNER_A,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                businessLines: ['nightlife']
+            },
+            ownerId: OWNER_A
+        });
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
+        const adding = await request(row, OWNER_A, LISTING, {
+            businessLines: ['food'],
+            menuUrl: 'https://example.com/menu'
+        });
+        expect(adding.status).toBe(200);
+
+        const removing = await request(row, OWNER_A, LISTING, {
+            businessLines: ['nightlife'],
+            menuUrl: 'https://example.com/menu'
+        });
+        expect(removing.status).toBe(409);
+        expect((await removing.json()).error).toMatchObject({
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+
+        configureSet(OWNER_A, ['edit_venue_info']);
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
+        const clearing = await request(row, OWNER_A, LISTING, { menuUrl: null, entryKind: null });
+        expect(clearing.status).toBe(200);
+        expect((await clearing.json()).error?.details?.entitlementKey).not.toBe(
+            'manage_venue_menu'
+        );
+    });
+    it('uses type preselection for venue CREATE section presence', async () => {
+        configureSet(OWNER_A, ['manage_venue_menu'], VerticalEnum.VENUE);
+        const app = new Hono<AppBindings>();
+        app.use((ctx, next) => {
+            ctx.set('actor', {
+                id: OWNER_A,
+                roles: [RoleEnum.ADMIN],
+                permissions: Object.values(PermissionEnum),
+                emailVerified: true
+            });
+            return next();
+        });
+        app.route('/case', protectedCreateVenueListingRoute);
+        const create = (type: VenueTypeEnum) =>
+            app.request('/case', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Local',
+                    summary: 'A good local venue summary.',
+                    description: 'A detailed description of this local venue for visitors.',
+                    destinationId: '00000000-0000-4000-a000-000000000002',
+                    type,
+                    menuUrl: 'https://example.com/menu'
+                })
+            });
+        const boliche = await create(VenueTypeEnum.BOLICHE);
+        expect(boliche.status).toBe(409);
+        expect((await boliche.json()).error).toMatchObject({
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
+        const cafe = await create(VenueTypeEnum.CAFE);
+        expect(cafe.status).toBe(201);
     });
 });

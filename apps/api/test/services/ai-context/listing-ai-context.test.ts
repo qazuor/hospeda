@@ -6,6 +6,8 @@
  * fence and list rendering) all live in the pure half.
  */
 
+import { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet, resolveListingSections } from '@repo/verticals';
 import { describe, expect, it } from 'vitest';
 import {
     buildExperienceMarkdownContext,
@@ -209,6 +211,52 @@ describe('buildVenueMarkdownContext', () => {
             false
         );
         expect(block).not.toContain('Paid dish');
+        expect(block).not.toContain('example.test/menu');
+    });
+
+    it('includes an external menu link only when the menu section is available', () => {
+        const url = 'https://example.test/menu';
+        const available = buildVenueMarkdownContext({ ...VENUE, menuUrl: url }, [], [], true);
+        const unavailable = buildVenueMarkdownContext({ ...VENUE, menuUrl: url }, [], [], false);
+
+        expect(available).toContain('### Carta');
+        expect(available).toContain(url);
+        expect(unavailable).not.toContain('### Carta');
+        expect(unavailable).not.toContain(url);
+    });
+
+    it('does not expose stored menu data for a nightlife-only venue even with the menu key', () => {
+        const effective = rehydrateEffectiveSet({
+            version: 1,
+            userId: 'owner',
+            vertical: VerticalEnum.VENUE,
+            hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
+            entries: [{ key: 'manage_venue_menu', value: 1, strategy: 'MAX' }]
+        });
+        const states = resolveListingSections({
+            vertical: 'venue',
+            businessLines: ['nightlife'],
+            effective,
+            userId: 'owner'
+        }).sections;
+        const block = buildVenueMarkdownContext(
+            { ...VENUE, menuUrl: 'https://example.test/menu' },
+            [],
+            [
+                {
+                    sectionName: null,
+                    name: 'Stored dish',
+                    description: null,
+                    priceCents: 100,
+                    isAvailable: true
+                }
+            ],
+            states.get('menu')?.state === 'available'
+        );
+
+        expect(block).not.toContain('### Carta');
+        expect(block).not.toContain('Stored dish');
         expect(block).not.toContain('example.test/menu');
     });
 });

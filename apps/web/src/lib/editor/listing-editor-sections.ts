@@ -10,11 +10,9 @@
  * venue and experience editors now mirror `accommodation-editor-sections.ts`
  * and the nav, the hub and the breadcrumbs all derive from the registries.
  *
- * This file holds what the two verticals have IN COMMON: the sections both have,
- * the group order and the group headings, and the registry factory. The sections
- * only one vertical has live in `venue-editor-sections.ts` and
- * `experience-editor-sections.ts`; `listing-editor-registry.ts` picks between
- * them by vertical.
+ * This file holds what the two verticals have IN COMMON: the group order, the
+ * group headings, and the registry factory. The sections themselves are derived
+ * from the catalog in `listing-editor-registry.ts` since HOS-1787 leaf 5.1.
  *
  * No section uses a runtime `visibilityKey`. The amenities page was the
  * candidate — `AmenitiesSection` renders nothing when both catalogs come back
@@ -29,63 +27,33 @@
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
-/** Sections every venue and experience listing has, in nav order. */
-export const LISTING_SHARED_EDITOR_SECTIONS: readonly EditorSection[] = [
-    {
-        id: 'basicInfo',
-        slug: 'datos',
-        group: 'property',
-        labelKey: 'listing.owner.editor.sectionNav.basicInfo'
-    },
-    {
-        id: 'openingHours',
-        slug: 'horarios',
-        group: 'property',
-        labelKey: 'listing.owner.editor.sectionNav.openingHours'
-    },
-    {
-        id: 'price',
-        slug: 'precio',
-        group: 'property',
-        labelKey: 'listing.owner.editor.sectionNav.price'
-    },
-    {
-        id: 'amenities',
-        slug: 'servicios',
-        group: 'property',
-        labelKey: 'listing.owner.editor.sectionNav.amenities'
-    },
-    {
-        id: 'media',
-        slug: 'fotos',
-        group: 'content',
-        labelKey: 'listing.owner.editor.sectionNav.media'
-    },
-    {
-        id: 'contact',
-        slug: 'contacto',
-        group: 'content',
-        // Not `sectionNav.contactInfo` — this page absorbs the former standalone
-        // "Redes sociales" section too, exactly as the accommodation editor's
-        // `contacto` page does, so the label has to cover both.
-        labelKey: 'listing.owner.editor.sectionNav.contactSocial'
-    },
-    {
-        id: 'faqs',
-        slug: 'preguntas',
-        group: 'content',
-        labelKey: 'listing.owner.editor.sectionNav.faqs'
-    },
-    {
-        id: 'translations',
-        slug: 'traducciones',
-        group: 'management',
-        labelKey: 'listing.owner.editor.sectionNav.translations'
-    }
-];
-
 /** Group order for rendering. */
 export const LISTING_EDITOR_SECTION_GROUPS = ['property', 'content', 'management'] as const;
+
+/**
+ * The two verticals the shared listing editor serves, as a lookup.
+ *
+ * Accommodation keeps its own editor (`resolve-editor-page.ts`) until child 8.
+ * A record rather than `vertical === 'venue' || vertical === 'experience'`:
+ * G-FAC-05 (leaf 5.8) forbids the editor from deciding by a vertical literal.
+ */
+export const LISTING_EDITOR_VERTICALS: Readonly<Record<VenueOrExperience, true>> = {
+    venue: true,
+    experience: true
+};
+
+/**
+ * Whether a route's `vertical` segment is one the shared listing editor knows.
+ *
+ * The route param arrives as a plain string, so this is also the type guard that
+ * narrows it to `VenueOrExperience` without comparing against a literal.
+ *
+ * @param value - The raw `[vertical]` route segment, possibly absent.
+ * @returns `true` when the editor serves that vertical.
+ */
+export function isListingEditorVertical(value: string | undefined): value is VenueOrExperience {
+    return value !== undefined && Object.hasOwn(LISTING_EDITOR_VERTICALS, value);
+}
 
 /**
  * i18n key for each group heading.

@@ -28,6 +28,7 @@ function completeListing(
         destinationId: '11111111-1111-4111-8111-111111111111',
         ownerId: 'owner-1',
         type: 'RESTAURANT',
+        businessLines: ['food'],
         media: { featuredImage: { url: 'https://cdn.test/a.jpg' } },
         contactInfo: { mobilePhone: '+54 9 11 1234 5678' },
         openingHours: {
@@ -78,6 +79,69 @@ describe('resolveListingEditorSectionStatuses — neutral lines', () => {
 
         expect(statuses.faqs?.params).toEqual({ count: 3 });
         expect(statuses.amenities?.params).toEqual({ count: 11 });
+    });
+});
+
+describe('resolveListingEditorSectionStatuses — locked sections (HOS-1854, TEST:5.2:2)', () => {
+    function resolveLocked(
+        lockedSections: Readonly<Record<string, number | null>>,
+        listing: ListingCompletenessListing = completeListing()
+    ) {
+        return resolveListingEditorSectionStatuses({
+            input: {
+                vertical: 'venue',
+                listing,
+                photoCount: 0,
+                faqCount: 0,
+                selectedCatalogCount: 0,
+                lockedSections
+            }
+        });
+    }
+
+    it('should say how much is stored when a locked section has data', () => {
+        // DEC-FAC-025: a downgrade keeps the owner's carta. "Bloqueada por tu
+        // plan" alone would read the same with 40 dishes as with none.
+        expect(resolveLocked({ menu: 3 }).menu).toEqual({
+            labelKey: 'listing.owner.editor.hub.status.lockedWithData',
+            tone: 'locked',
+            params: { count: 3 }
+        });
+    });
+
+    it('should use the empty line when a locked section holds nothing', () => {
+        expect(resolveLocked({ menu: 0 }).menu).toEqual({
+            labelKey: 'listing.owner.editor.hub.status.lockedEmpty',
+            tone: 'locked'
+        });
+    });
+
+    it('should keep an available section as it was', () => {
+        const statuses = resolveLocked({}, completeListing());
+
+        expect(statuses.menu).toBeUndefined();
+        expect(statuses.dailySpecials).toBeUndefined();
+        expect(statuses.venueEvents).toBeUndefined();
+    });
+
+    it('should let a publish blocker win over the locked line', () => {
+        // H-101: a section that cannot publish for a missing field is a to-do,
+        // not a plan limit. The blocking line must stay on top.
+        const statuses = resolveLocked({ media: 6 }, completeListing({ media: null }));
+
+        expect(statuses.media?.tone).toBe('blocking');
+        expect(statuses.media?.missingRequirementLabelKeys).toEqual([
+            'listing.owner.checklist.field.featuredImage'
+        ]);
+    });
+
+    it('should render a failed read WITHOUT a count, never as zero', () => {
+        // A `null` count is "could not read", not "empty". The line keeps the
+        // neutral locked wording and fabricates no number.
+        expect(resolveLocked({ menu: null }).menu).toEqual({
+            labelKey: 'listing.owner.editor.hub.status.lockedEmpty',
+            tone: 'locked'
+        });
     });
 });
 

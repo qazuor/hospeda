@@ -151,6 +151,8 @@ describe('venueListConfig', () => {
         for (const val of Object.values(VenueTypeEnum)) {
             expect(optionValues).toContain(val);
         }
+        expect(optionValues).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...optionValues].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('priceRange filter options cover all PriceRangeEnum values', () => {
@@ -191,11 +193,11 @@ describe('createVenueConsolidatedConfig', () => {
         expect(ids).toContain('ownerId');
     });
 
-    it('venue-specific section contains type, priceRange, and menuUrl fields', () => {
+    it('venue-specific section contains type and priceRange, and no menuUrl', () => {
         const ids = config.sections[1]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('type');
         expect(ids).toContain('priceRange');
-        expect(ids).toContain('menuUrl');
+        expect(ids).not.toContain('menuUrl');
     });
 
     it('type field is required and uses SELECT type', () => {
@@ -208,12 +210,6 @@ describe('createVenueConsolidatedConfig', () => {
         const priceRangeField = config.sections[1]?.fields.find((f) => f.id === 'priceRange');
         expect(priceRangeField?.required).toBe(false);
         expect(priceRangeField?.type).toBe(FieldTypeEnum.SELECT);
-    });
-
-    it('menuUrl field is optional and uses TEXT type', () => {
-        const menuUrlField = config.sections[1]?.fields.find((f) => f.id === 'menuUrl');
-        expect(menuUrlField?.required).toBe(false);
-        expect(menuUrlField?.type).toBe(FieldTypeEnum.TEXT);
     });
 
     it('venue-specific section is visible in view, edit, and create modes', () => {

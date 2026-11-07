@@ -58,7 +58,7 @@ const DETAIL_PAGES: ReadonlyArray<{
     {
         name: 'venue detail',
         file: 'comer-y-salir/[slug].astro',
-        typedComponent: 'RestaurantJsonLd',
+        typedComponent: 'VenueJsonLd',
         extras: ['BreadcrumbJsonLd']
     },
     {
@@ -147,6 +147,12 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
                         expect(src).toMatch(/faqSections\.length\s*>\s*0[\s\S]*?<FAQPageJsonLd/);
                     });
                 }
+                if (page.name === 'venue detail') {
+                    it('passes projected menu presence through hasMenu', () => {
+                        expect(src).toContain('buildRestaurantHasMenu({');
+                        expect(src).toContain('hasMenu={jsonLdHasMenu}');
+                    });
+                }
             });
         }
     });
@@ -223,12 +229,14 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
             expect(componentSrc).toContain("'@context': 'https://schema.org'");
         });
 
-        it('RestaurantJsonLd component references schema.org context', () => {
-            const componentSrc = readFileSync(
-                resolve(__dirname, '../../src/components/seo/RestaurantJsonLd.astro'),
+        it('VenueJsonLd component references schema.org context', () => {
+            // Since HOS-1787 6.1 the component delegates its shape to the pure
+            // builder in lib/seo, which owns `@context` and the `@type` lookup.
+            const builderSrc = readFileSync(
+                resolve(__dirname, '../../src/lib/seo/venue-jsonld.ts'),
                 'utf8'
             );
-            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+            expect(builderSrc).toContain("'@context': 'https://schema.org'");
         });
 
         it('TouristAttractionJsonLd component references schema.org context', () => {

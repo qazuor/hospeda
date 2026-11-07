@@ -44,12 +44,12 @@
     "venue": {
         "meta": {
             "title": "Publicá tu local en Comer y salir",
-            "description": "Cargá la ficha de tu restaurante, bar, parrilla o food truck en Hospeda y llegá a los viajeros que buscan dónde comer en el litoral."
+            "description": "Publicá tu local en Hospeda y llegá a quienes buscan un lugar para comer o salir en el litoral."
         },
         "hero": {
             "tagline": "Para locales en Comer y salir",
             "title": "Publicá tu local y que te encuentren",
-            "body": "Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Las fotos, el menú y los horarios los cargás después, desde tu panel."
+            "body": "Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Después podés sumar fotos, carta o barra y horarios desde tu panel."
         },
         "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primer local.",
         "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primer local.",
@@ -60,22 +60,22 @@
             },
             "step2": {
                 "title": "Completá tu ficha",
-                "desc": "Sumá fotos, menú, horarios y formas de contacto desde el panel, a tu ritmo."
+                "desc": "Sumá fotos, carta o barra, horarios y formas de contacto desde el panel, a tu ritmo."
             },
             "step3": {
                 "title": "Salís publicado",
-                "desc": "Tu local aparece en el catálogo de Comer y salir y los comensales de la zona te encuentran."
+                "desc": "Tu local aparece en el catálogo de Comer y salir y quienes visitan la zona te encuentran."
             }
         },
         "benefits": {
             "title": "Lo que te llevás",
             "item1": {
                 "title": "Te ven los que ya están acá",
-                "desc": "Miles de viajeros buscan cada mes dónde comer en Concepción del Uruguay y el litoral entrerriano."
+                "desc": "Miles de viajeros buscan cada mes un lugar para comer o salir en Concepción del Uruguay y el litoral entrerriano."
             },
             "item2": {
                 "title": "La ficha es tuya",
-                "desc": "Cambiás el menú, las fotos y los horarios cuando quieras, sin pedirle permiso a nadie."
+                "desc": "Actualizá la información de tu local, las fotos y los horarios cuando quieras."
             },
             "item3": {
                 "title": "Sin comisión por consulta",

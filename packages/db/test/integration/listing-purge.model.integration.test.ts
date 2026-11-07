@@ -41,7 +41,10 @@ async function createListing(
             tx
         );
     if (vertical === 'venue')
-        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+        return new VenueModel().create(
+            { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+            tx
+        );
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 
@@ -174,6 +177,46 @@ describe.each([
                 sql`SELECT id FROM ${sql.identifier(mediaTable.table)} WHERE id = ${otherMedia.rows[0]?.id}`
             );
             expect(otherMediaRow.rows).toHaveLength(1);
+        });
+    });
+
+    it('TEST:4.3:1 blanks the venue nightInfo columns (AC:4:9, PB12)', async () => {
+        if (vertical !== 'venue') return;
+        await withTestTransaction(async (tx) => {
+            const owner = testData.user();
+            const destination = testData.destination();
+            await tx.insert(users).values(owner);
+            await tx.insert(destinations).values(destination);
+            const listing = await createListing(tx, vertical, owner.id, destination.id);
+            const note = { es: 'Gratis hasta la 1', en: 'Free until 1am', pt: 'Grátis até 1h' };
+            await tx.execute(sql`
+                UPDATE venues SET type = 'BOLICHE', business_lines = ARRAY['nightlife']::text[],
+                    entry_kind = 'paid', entry_note_i18n = ${JSON.stringify(note)}::jsonb,
+                    entry_price_from = 1500, entry_price_updated_at = '2026-10-01T12:00:00.000Z',
+                    min_age = 18, dress_code = 'smart_casual',
+                    dress_code_note_i18n = ${JSON.stringify(note)}::jsonb
+                WHERE id = ${listing.id}`);
+
+            await listingPurgeModel.purgeListingContent({
+                tx,
+                vertical,
+                listingId: listing.id,
+                at: new Date('2026-10-12T12:00:00.000Z')
+            });
+
+            const stored = await tx.execute(sql`
+                SELECT entry_kind, entry_note_i18n, entry_price_from, entry_price_updated_at,
+                    min_age, dress_code, dress_code_note_i18n
+                FROM venues WHERE id = ${listing.id}`);
+            expect(stored.rows[0]).toEqual({
+                entry_kind: null,
+                entry_note_i18n: null,
+                entry_price_from: null,
+                entry_price_updated_at: null,
+                min_age: null,
+                dress_code: null,
+                dress_code_note_i18n: null
+            });
         });
     });
 

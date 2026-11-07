@@ -36,7 +36,7 @@ export interface TrialSeriesEmailProps {
     readonly upgradeUrl: string;
     /**
      * The trial's billing vertical (HOS-1283) — the raw
-     * `billing_subscriptions.product_domain` string, e.g. `'accommodation'` /
+     * product-domain string supplied by the caller, e.g. `'accommodation'` /
      * `'venue'` / `'experience'`, or `null`/`undefined` on a pre-domain
      * row. Every template that names a listing, its photos, or what shows up
      * in a search resolves this via `resolveTrialSeriesCopy`

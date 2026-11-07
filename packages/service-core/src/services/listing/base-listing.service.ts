@@ -26,10 +26,17 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    BUSINESS_LINE_RULES,
+    BUSINESS_LINES_INVALID_REASON,
     DestinationTypeEnum,
+    isReservedListingSlug,
+    normalizeBusinessLines,
     type PermissionEnum,
+    REVIEW_RULES,
     RoleGrantReason,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VerticalValue,
+    validateBusinessLines
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
@@ -44,6 +51,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
@@ -55,6 +63,7 @@ import {
     verticalPermission
 } from './listing.permissions';
 import type { ListingHookState } from './listing.types';
+import { assertBusinessLinesChangeOnly } from './listing-business-lines-change';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
 import {
@@ -62,6 +71,21 @@ import {
     assertSupportCreateIsDraft,
     assertSupportEditContentOnly
 } from './listing-support-edit';
+
+/** Resolves the catalog preselection for a create request without validating its options. */
+export function resolveBusinessLinesOnCreate(args: {
+    readonly vertical: keyof typeof BUSINESS_LINE_RULES;
+    readonly type: string;
+    readonly businessLines?: string[];
+}): string[] | undefined {
+    if (args.businessLines !== undefined) return args.businessLines;
+    const rules = BUSINESS_LINE_RULES as Record<
+        string,
+        { readonly typeRules: Record<string, { readonly preselect: readonly string[] }> }
+    >;
+    const preselect = rules[args.vertical]?.typeRules[args.type]?.preselect;
+    return preselect ? [...preselect] : undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -577,6 +601,39 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        const listingVertical = this.entityName as VerticalValue;
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
+        let businessLines = resolveBusinessLinesOnCreate({
+            vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+            type: String(payload.type),
+            businessLines: payload.businessLines as string[] | undefined
+        });
+        if (businessLines) {
+            const validation = validateBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                type: String(payload.type),
+                businessLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    },
+                    BUSINESS_LINES_INVALID_REASON
+                );
+            }
+            businessLines = normalizeBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                businessLines: businessLines as never
+            });
+        }
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -603,13 +660,16 @@ export abstract class BaseListingService<
             const name = payload.name as string;
             const model = this.model;
             const slug = await createUniqueSlug(name, async (candidate) => {
+                if (isReservedListingSlug({ vertical: listingVertical, slug: candidate })) {
+                    return true;
+                }
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
-            return { slug } as Partial<TEntity>;
+            return { slug, ...(businessLines ? { businessLines } : {}) } as Partial<TEntity>;
         }
 
-        return {} as Partial<TEntity>;
+        return (businessLines ? { businessLines } : {}) as Partial<TEntity>;
     }
 
     // -----------------------------------------------------------------------
@@ -715,8 +775,18 @@ export abstract class BaseListingService<
         const payload = data as Record<string, unknown>;
         // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
         assertSupportEditContentOnly({ data: payload });
+        // ACC:27 (HOS-1875): an action-27 update writes business lines and nothing else.
+        assertBusinessLinesChangeOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
+        const listingVertical = this.entityName as VerticalValue;
+        let current: TEntity | null = null;
+
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (slugWasProvided && typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
@@ -725,7 +795,7 @@ export abstract class BaseListingService<
 
         const updateId = typedCtx.hookState?.updateId;
         if (updateId) {
-            const current = await this.model.findById(updateId, ctx.tx);
+            current = await this.model.findById(updateId, ctx.tx);
             if (typedCtx.hookState !== undefined) {
                 // HOS-1499: the row before the edit, for the event's old values.
                 typedCtx.hookState.ownerActBefore = current ?? null;
@@ -747,11 +817,47 @@ export abstract class BaseListingService<
                 typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
                     payload.name as string,
                     async (candidate) => {
+                        if (
+                            isReservedListingSlug({
+                                vertical: listingVertical,
+                                slug: candidate
+                            })
+                        ) {
+                            return true;
+                        }
                         const existing = await this.model.findOne({ slug: candidate });
-                        return !!existing && existing.id !== current.id;
+                        return !!existing && existing.id !== current?.id;
                     }
                 );
             }
+        }
+
+        if (Object.hasOwn(payload, 'businessLines') || Object.hasOwn(payload, 'type')) {
+            const vertical = this.entityName as keyof typeof BUSINESS_LINE_RULES;
+            const resultingType = String(payload.type ?? current?.type ?? '');
+            const resultingLines = (payload.businessLines ??
+                current?.businessLines ??
+                []) as string[];
+            const validation = validateBusinessLines({
+                vertical,
+                type: resultingType,
+                businessLines: resultingLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    },
+                    BUSINESS_LINES_INVALID_REASON
+                );
+            }
+            payload.businessLines = normalizeBusinessLines({
+                vertical,
+                businessLines: resultingLines as never
+            });
         }
 
         // (c) Capture junction IDs into hookState
@@ -998,12 +1104,9 @@ export abstract class BaseListingService<
      */
     public async recomputeRating(
         listingId: string,
-        ratingRows: readonly {
-            readonly food?: number | null;
-            readonly service?: number | null;
-            readonly ambiance?: number | null;
-            readonly value?: number | null;
-        }[],
+        ratingRows: readonly (Partial<Record<string, number | null>> & {
+            readonly overallRating?: number | null;
+        })[],
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity | null>> {
         try {
@@ -1018,26 +1121,50 @@ export abstract class BaseListingService<
                 return { data: updated as TEntity };
             }
 
-            const sum = { food: 0, service: 0, ambiance: 0, value: 0 };
-            for (const row of ratingRows) {
-                sum.food += row.food ?? 0;
-                sum.service += row.service ?? 0;
-                sum.ambiance += row.ambiance ?? 0;
-                sum.value += row.value ?? 0;
-            }
-
-            const granular = {
-                food: Math.round((sum.food / count) * 100) / 100,
-                service: Math.round((sum.service / count) * 100) / 100,
-                ambiance: Math.round((sum.ambiance / count) * 100) / 100,
-                value: Math.round((sum.value / count) * 100) / 100
+            const rules = REVIEW_RULES[this._revalidationEntityType] as {
+                readonly dimensionAveraging: 'votedOnly' | 'legacyNullAsZero';
+                readonly dimensions: readonly { readonly id: string }[];
             };
-
-            const averageRating =
-                Math.round(
-                    ((granular.food + granular.service + granular.ambiance + granular.value) / 4) *
-                        100
-                ) / 100;
+            const dimensions = rules.dimensions;
+            const granular: Record<string, { average: number; count: number } | number> = {};
+            let averageRating: number;
+            if (rules.dimensionAveraging === 'legacyNullAsZero') {
+                const sums = new Map<string, number>(dimensions.map(({ id }) => [id, 0]));
+                for (const row of ratingRows)
+                    for (const { id } of dimensions)
+                        sums.set(id, (sums.get(id) ?? 0) + (row[id] ?? 0));
+                for (const { id } of dimensions)
+                    granular[id] = Math.round(((sums.get(id) ?? 0) / count) * 100) / 100;
+                averageRating =
+                    Math.round(
+                        (dimensions.reduce<number>(
+                            (total, { id }) => total + (granular[id] as number),
+                            0
+                        ) /
+                            dimensions.length) *
+                            100
+                    ) / 100;
+            } else {
+                for (const { id } of dimensions) {
+                    const votes = ratingRows.flatMap((row) =>
+                        row[id] == null ? [] : [row[id] as number]
+                    );
+                    if (votes.length > 0)
+                        granular[id] = {
+                            average:
+                                Math.round(
+                                    (votes.reduce((a, b) => a + b, 0) / votes.length) * 100
+                                ) / 100,
+                            count: votes.length
+                        };
+                }
+                averageRating =
+                    Math.round(
+                        (ratingRows.reduce((sum, row) => sum + (row.overallRating ?? 0), 0) /
+                            count) *
+                            100
+                    ) / 100;
+            }
 
             const updated = await this.model.update(
                 { id: listingId },

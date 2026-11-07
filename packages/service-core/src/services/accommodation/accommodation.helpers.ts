@@ -1,5 +1,10 @@
 import { AccommodationModel } from '@repo/db';
-import { ACCOMMODATION_SLUG_MAX_LENGTH, type Accommodation } from '@repo/schemas';
+import {
+    ACCOMMODATION_SLUG_MAX_LENGTH,
+    type Accommodation,
+    isReservedListingSlug,
+    VerticalEnum
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
@@ -108,6 +113,9 @@ export async function generateSlug(
     return createUniqueSlug(
         baseString,
         async (slug) => {
+            if (isReservedListingSlug({ vertical: VerticalEnum.ACCOMMODATION, slug })) {
+                return true;
+            }
             const exists = await model.findOne({ slug });
             return (
                 !!exists &&

@@ -22,8 +22,11 @@
  * a wall of "not included".
  */
 
+import type { IconProps } from '@repo/icons';
 import { EntitlementKeyEnum, LimitKeyEnum } from '@repo/schemas';
+import type { ComponentType } from 'react';
 import { isUnlimitedLimit } from './plan-card-delta';
+import { buildCatalogComparisonGroup } from './plan-comparison-catalog-rows';
 export type YesNo = 'yes' | 'no';
 
 export interface LimitCell {
@@ -57,12 +60,24 @@ export interface AllNoCell {
 export type RowCellDef = LimitCell | EntitlementCell | AllNoCell;
 export type CellRendered = YesNo | 'unlimited' | number;
 
+/** A business line that owns a generated row, as returned by `@repo/schemas`. */
+export interface LineMark {
+    /** Internal business-line value (`venue.owner.businessLines.<value>.label`). */
+    readonly value: string;
+    /** Public URL slug of the business line's collection. */
+    readonly urlSlug: string;
+}
+
 export interface RowConfig {
     readonly id: string;
     readonly labelKey: string;
     readonly cell: RowCellDef;
     readonly status: 'available' | 'upcoming';
     readonly noteKey?: string | undefined;
+    /** Decorative icon; generated rows carry it, curated rows use the shared map. */
+    readonly icon?: ComponentType<IconProps> | undefined;
+    /** Business lines that own the row's section; absent on common rows. */
+    readonly lineMarks?: readonly LineMark[] | undefined;
 }
 
 export interface GroupConfig {
@@ -350,46 +365,6 @@ export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     }
 ];
 
-/** The carta, and everything that hangs off it. The venue differentiator. */
-export const VENUE_MENU_ROWS: readonly RowConfig[] = [
-    {
-        id: 'venueMenu',
-        labelKey: 'billing.comparison.row.venueMenu',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_MENU },
-        status: 'available'
-    },
-    {
-        id: 'venueDailySpecial',
-        labelKey: 'billing.comparison.row.venueDailySpecial',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL },
-        status: 'available'
-    },
-    {
-        id: 'venueEvents',
-        labelKey: 'billing.comparison.row.venueEvents',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_EVENTS },
-        status: 'available'
-    },
-    {
-        id: 'menuItemPhotos',
-        labelKey: 'billing.comparison.row.menuItemPhotos',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MENU_ITEM_PHOTOS },
-        status: 'available'
-    },
-    {
-        id: 'multilingualMenu',
-        labelKey: 'billing.comparison.row.multilingualMenu',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU },
-        status: 'available'
-    },
-    {
-        id: 'menuQrScanMetrics',
-        labelKey: 'billing.comparison.row.menuQrScanMetrics',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MENU_QR_SCAN_METRICS },
-        status: 'available'
-    }
-];
-
 /** What an experience tier lets its provider publish and maintain. */
 export const EXPERIENCE_LISTING_ROWS: readonly RowConfig[] = [
     {
@@ -420,12 +395,6 @@ export const EXPERIENCE_LISTING_ROWS: readonly RowConfig[] = [
 
 /** What the dearer experience tiers add for the visitor who books the outing. */
 export const EXPERIENCE_SERVICE_ROWS: readonly RowConfig[] = [
-    {
-        id: 'experienceDirections',
-        labelKey: 'billing.comparison.row.experienceDirections',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_EXPERIENCE_DIRECTIONS },
-        status: 'available'
-    },
     {
         id: 'experienceCertificate',
         labelKey: 'billing.comparison.row.experienceCertificate',
@@ -467,7 +436,7 @@ function listingExtrasRows({
 
 export const VENUE_GROUPS: readonly GroupConfig[] = [
     { id: 'venueListing', rows: VENUE_LISTING_ROWS },
-    { id: 'venueMenu', rows: VENUE_MENU_ROWS },
+    buildCatalogComparisonGroup({ vertical: 'venue' }),
     {
         id: 'listingExtras',
         rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_VENUE_PER_MONTH })
@@ -476,6 +445,7 @@ export const VENUE_GROUPS: readonly GroupConfig[] = [
 
 export const EXPERIENCE_GROUPS: readonly GroupConfig[] = [
     { id: 'experienceListing', rows: EXPERIENCE_LISTING_ROWS },
+    buildCatalogComparisonGroup({ vertical: 'experience' }),
     { id: 'experienceService', rows: EXPERIENCE_SERVICE_ROWS },
     {
         id: 'listingExtras',

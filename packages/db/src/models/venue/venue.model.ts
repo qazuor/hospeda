@@ -1,12 +1,16 @@
 import type { Venue } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
+import { rVenueAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
 import { venues } from '../../schemas/venue/venue.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { withListingBirthColumns } from '../listing/listing-birth.ts';
+import { buildVenueBusinessLineCondition } from './venue-business-line-filter.ts';
 
 /**
  * Search input for venue listings (basic subset — expand as routes are built).
@@ -183,6 +187,57 @@ export class VenueModel extends BaseModelImpl<Venue> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'findIdsByOwnerId', ctx, err);
             throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
+
+    /**
+     * Finds distinct public filter values for a collection. Visibility matches
+     * VenueService._executeSearch in `packages/service-core/src/services/venue/venue.service.ts`.
+     */
+    async findPublicFilterOptions(
+        params: { readonly businessLine?: string },
+        tx?: DrizzleClient
+    ): Promise<{
+        types: string[];
+        amenityIds: string[];
+        featureIds: string[];
+    }> {
+        const db = this.getClient(tx);
+        const ctx = { params };
+        const where = and(
+            isNull(venues.deletedAt),
+            eq(venues.publicationStatus, PublicationStatusEnum.PUBLISHED),
+            buildVenueBusinessLineCondition({ businessLine: params.businessLine })
+        );
+        try {
+            const [types, amenities, features] = await Promise.all([
+                db.selectDistinct({ type: venues.type }).from(venues).where(where),
+                db
+                    .selectDistinct({ amenityId: rVenueAmenity.amenityId })
+                    .from(rVenueAmenity)
+                    .innerJoin(venues, eq(venues.id, rVenueAmenity.venueId))
+                    .where(where),
+                db
+                    .selectDistinct({ featureId: rVenueFeature.featureId })
+                    .from(rVenueFeature)
+                    .innerJoin(venues, eq(venues.id, rVenueFeature.venueId))
+                    .where(where)
+            ]);
+            const result = {
+                types: types.map((row) => row.type),
+                amenityIds: amenities.map((row) => row.amenityId),
+                featureIds: features.map((row) => row.featureId)
+            };
+            logQuery(this.entityName, 'findPublicFilterOptions', ctx, {
+                types: result.types.length,
+                amenityIds: result.amenityIds.length,
+                featureIds: result.featureIds.length
+            });
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findPublicFilterOptions', ctx, err);
+            throw new DbError(this.entityName, 'findPublicFilterOptions', ctx, err.message);
         }
     }
 }

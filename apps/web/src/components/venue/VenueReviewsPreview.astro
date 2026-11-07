@@ -1,0 +1,211 @@
+---
+/**
+ * @file VenueReviewsPreview.astro
+ * @description Reviews preview for the venue detail page (HOS-1787 leaf 6.1).
+ *
+ * Extracted from `comer-y-salir/[slug].astro` so the page can stay below the
+ * 500-line limit while its body follows the catalog order. Reviews are not a
+ * catalog section: they render after the last section, next to the review form.
+ *
+ * Self-hides when the venue has no reviews, exactly as the inline block did.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
+import type { ResolvedDimensionAverage } from '@/lib/venue/review-dimensions-view';
+
+interface Props {
+    readonly reviews: readonly VenueReviewPublicItem[];
+    readonly totalReviews: number;
+    readonly reviewsCount: number;
+    readonly locale: SupportedLocale;
+    /**
+     * Dimensions with at least one vote, from `resolveDimensionAverages`.
+     * Empty when no dimension has votes; the block below is skipped then.
+     */
+    readonly dimensionRatings: readonly ResolvedDimensionAverage[];
+}
+
+const { reviews, totalReviews, reviewsCount, locale, dimensionRatings } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+if (reviewsCount <= 0) return;
+---
+
+<section class="venue-detail__reviews">
+    <h2 class="venue-detail__section-title">
+        {t('venue.detail.reviews.title', 'Reseñas')}
+    </h2>
+    {dimensionRatings.length > 0 && (
+        <div class="venue-detail__dimension-averages">
+            <h3 class="venue-detail__dimension-title">
+                {t('review.dimensionAverages.title')}
+            </h3>
+            <ul class="venue-detail__dimension-list">
+                {dimensionRatings.map((dimension) => (
+                    <li class="venue-detail__dimension-item">
+                        <span class="venue-detail__dimension-label">
+                            {t(dimension.labelKey)}
+                        </span>
+                        <span class="venue-detail__dimension-average">
+                            {dimension.average.toFixed(1)}
+                        </span>
+                        <span class="venue-detail__dimension-votes">
+                            {tPlural('review.dimensionAverages.votes', dimension.count)}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    )}
+    {reviews.length === 0 ? (
+        <p class="venue-detail__reviews-empty">
+            {t(
+                'venue.detail.reviews.empty',
+                'Todavía no hay reseñas. ¡Sé el primero en opinar!'
+            )}
+        </p>
+    ) : (
+        <ul class="venue-detail__reviews-list">
+            {reviews.slice(0, 3).map((review) => (
+                <li class="venue-detail__review-item">
+                    <p class="venue-detail__review-author">
+                        {review.user?.name ?? t('common.anonymous')}
+                    </p>
+                    {review.averageRating != null && (
+                        <span class="venue-detail__review-rating">
+                            ★ {review.averageRating.toFixed(1)}
+                        </span>
+                    )}
+                    {review.content && (
+                        <p class="venue-detail__review-content">{review.content}</p>
+                    )}
+                </li>
+            ))}
+            {totalReviews > 3 && (
+                <p class="venue-detail__reviews-more">
+                    {tPlural('venue.detail.reviews.more', totalReviews - 3)}
+                </p>
+            )}
+        </ul>
+    )}
+</section>
+
+<style>
+    .venue-detail__section-title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .venue-detail__reviews-empty {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        margin: 0;
+    }
+
+    .venue-detail__reviews-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .venue-detail__review-item {
+        padding: var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .venue-detail__review-author {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--core-foreground);
+        margin: 0 0 4px;
+    }
+
+    .venue-detail__review-rating {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--rating-star);
+        font-weight: 500;
+    }
+
+    .venue-detail__review-content {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--core-muted-foreground);
+        margin: 6px 0 0;
+    }
+
+    .venue-detail__reviews-more {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        font-weight: 500;
+        margin: 0;
+        padding: var(--space-2, 8px) 0;
+    }
+
+    .venue-detail__dimension-averages {
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .venue-detail__dimension-title {
+        font-family: var(--font-heading);
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .venue-detail__dimension-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .venue-detail__dimension-item {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-3, 12px);
+        padding: var(--space-2, 8px) var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .venue-detail__dimension-label {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        flex: 1;
+    }
+
+    .venue-detail__dimension-average {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--rating-star);
+    }
+
+    .venue-detail__dimension-votes {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        color: var(--core-muted-foreground);
+    }
+</style>

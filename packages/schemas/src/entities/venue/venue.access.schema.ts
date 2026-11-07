@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import {
@@ -94,7 +95,19 @@ export const VenuePublicSchema = VenueSchema.pick({
     socialNetworks: true,
 
     // Opening hours (public)
-    openingHours: true
+    openingHours: true,
+
+    // nightInfo (public, HOS-1849 / 4.5). Presence is decided by the public
+    // projector: when the section is not `available` it removes all seven
+    // fields, so this pick is safe and the web reads their absence as "do not
+    // render". `entryPriceUpdatedAt` is server-managed but still public data.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    entryPriceUpdatedAt: true,
+    minAge: true,
+    dressCode: true,
+    dressCodeNoteI18n: true
 }).extend({
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
@@ -103,6 +116,27 @@ export const VenuePublicSchema = VenueSchema.pick({
      * exposed here. Defaults to `false` for a read that did not derive it.
      */
     isFeatured: z.boolean().default(false),
+    /**
+     * Server-resolved fact for the `nightInfo` heading (DEC-FAC-050, HOS-1849):
+     * true when more than one of the listing's business lines owns a section
+     * that is not `absent`. The web component asks this and never compares
+     * business lines (G-FAC-03). Optional because list reads of other
+     * verticals never derive it.
+     */
+    multiLine: z.boolean().optional(),
+    /**
+     * Server-resolved state of the sections a review dimension is bound to
+     * (DEC-FAC-072, HOS-1866 / 6.6). Only the bound sections are published, and
+     * only `absent` or `available`: a `locked` section is published as
+     * `available` so the public, cacheable page never reveals the owner's plan.
+     * The web offers a bound dimension unless its section is `absent` and never
+     * compares business lines (G-FAC-03). Optional because a payload cached
+     * before this field shipped, or a list read of another vertical, never
+     * derives it; absent means "unknown", not "all sections available".
+     */
+    reviewSectionStates: z
+        .record(z.string(), z.object({ state: z.enum(['absent', 'available']) }))
+        .optional(),
     /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich
@@ -269,6 +303,15 @@ export const VenueProtectedSchema = VenueSchema.pick({
     menuFileUrl: true,
     menuFileKind: true,
     openingHours: true,
+    // HOS-1846: the nightInfo section, read by the owner editor (sub-spec 5).
+    // Public exposure is HOS-1849 (4.5) and deliberately not added here.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    entryPriceUpdatedAt: true,
+    minAge: true,
+    dressCode: true,
+    dressCodeNoteI18n: true,
 
     // Protected: ownership
     ownerId: true,
@@ -320,7 +363,23 @@ export const VenueProtectedSchema = VenueSchema.pick({
      */
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
-    featureIds: z.array(z.string().uuid()).optional()
+    featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * HOS-1787 leaf 5.6 — the business lines this venue is assigned to.
+     *
+     * Read by the owner editor's basic-info section so the selector opens with
+     * the listing's current state. Optional because not every protected read
+     * loads the column (a partial projection must still parse); the DB column
+     * itself is NOT NULL.
+     */
+    businessLines: z
+        .array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+        .optional()
 });
 
 /** TypeScript type for {@link VenueProtectedSchema}. */
@@ -350,7 +409,25 @@ export const VenueAdminSchema = VenueSchema.extend({
      */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
-    contactInfo: ContactInfoReadSchema.nullish()
+    contactInfo: ContactInfoReadSchema.nullish(),
+    /**
+     * HOS-1787 leaf 7.1 — the business lines the venue is assigned to.
+     *
+     * Declared here (and inherited by {@link VenueAdminListItemSchema}) so the
+     * admin read paths do NOT strip the column: the response projection drops
+     * every field the response schema does not declare, which made the admin
+     * editor open empty and a save send `[]`. Optional for the same reason as
+     * {@link VenueProtectedSchema.businessLines}: a partial projection must
+     * still parse; the DB column itself is NOT NULL.
+     */
+    businessLines: z
+        .array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+        .optional()
 });
 
 /** TypeScript type for {@link VenueAdminSchema}. */

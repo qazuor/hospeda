@@ -18,6 +18,7 @@ import {
     RecurrenceTypeEnum,
     RoleEnum,
     TagColorEnum,
+    VenueTypeEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { config as envConfig } from 'dotenv';
@@ -58,6 +59,7 @@ const AllEnums = {
     RecurrenceTypeEnum,
     RoleEnum,
     TagColorEnum,
+    VenueTypeEnum,
     VisibilityEnum
 };
 
