@@ -162,6 +162,20 @@
             "spec": ".hoja/notas.md:2"
         },
         {
+            "file": "packages/service-core/src/services/venue/venue.create-sections.ts",
+            "symbol": "assertVenueCreateSectionsPresent",
+            "count": 1,
+            "category": "editor",
+            "spec": "apps/api/docs/error-contract.md:42"
+        },
+        {
+            "file": "packages/service-core/src/services/venue/venue.service.ts",
+            "symbol": "_beforeCreate",
+            "count": 1,
+            "category": "editor",
+            "spec": "apps/api/docs/error-contract.md:42"
+        },
+        {
             "file": "apps/web/src/lib/forms/field-errors.ts",
             "symbol": "apiErrorToFieldErrors",
             "count": 1,

@@ -75,6 +75,7 @@ import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { assertVenueCreateSectionsPresent } from './venue.create-sections';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
 import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
@@ -644,23 +645,37 @@ export class VenueService extends BaseListingService<
      * Pre-create hook for the `nightInfo` section.
      *
      * Delegates to {@link BaseListingService._beforeCreate} (destination
-     * validation, slug generation, junction capture) and then applies the
-     * section's server-side rules: a create carries no stored row, so a
+     * validation, business-line resolution, slug generation, junction capture),
+     * rejects a body that touches a section its resulting business lines do not
+     * offer (HOS-2052, 400 `VALIDATION_ERROR` `SECTION_ABSENT`), and then applies
+     * the section's server-side rules: a create carries no stored row, so a
      * non-null price stamps `entryPriceUpdatedAt` now, and a price with a
      * non-`paid` kind is a 400 instead of a database CHECK 500.
+     *
+     * The section-presence check runs AFTER the base hook so an invalid
+     * business-line selection keeps its own `BUSINESS_LINES_INVALID` failure,
+     * and BEFORE the `nightInfo` patch so an inconsistent body is rejected
+     * before any section data is resolved.
      *
      * @param data - Validated create input.
      * @param actor - The actor performing the create.
      * @param ctx - Service execution context.
      * @returns The base patch merged with the resolved `nightInfo` patch.
-     * @throws {ServiceError} `VALIDATION_ERROR` for an invalid price/kind pair.
+     * @throws {ServiceError} `VALIDATION_ERROR` for an absent touched section or
+     *   an invalid price/kind pair.
      */
     protected override async _beforeCreate(
         data: VenueAdminCreateInput,
         actor: Actor,
         ctx: ServiceContext
     ): Promise<Partial<Venue>> {
-        const base = await super._beforeCreate(data, actor, ctx);
+        const base = (await super._beforeCreate(data, actor, ctx)) as Partial<Venue> & {
+            businessLines?: readonly string[];
+        };
+        assertVenueCreateSectionsPresent({
+            body: data as Record<string, unknown>,
+            businessLines: base.businessLines ?? []
+        });
         const nightInfo = resolveVenueNightInfoPatch({
             body: data as Record<string, unknown>,
             now: new Date()
