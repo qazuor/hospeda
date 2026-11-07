@@ -182,4 +182,35 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
             )
         );
     });
+    it('shows the client-local available date from a 409 change-window rejection', async () => {
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: catalog });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response(
+                {
+                    success: false,
+                    error: {
+                        code: 'CONFLICT',
+                        message: 'Rejected',
+                        details: {
+                            reason: 'CHANGE_WINDOW_TOO_SHORT',
+                            availableFrom: '2026-12-05T03:00:00.000Z'
+                        }
+                    }
+                },
+                409
+            );
+        });
+        await choose(higherId);
+        await waitFor(() =>
+            expect(screen.getByTestId('plan-change-result')).toHaveTextContent(
+                '5 de diciembre de 2026'
+            )
+        );
+    });
 });

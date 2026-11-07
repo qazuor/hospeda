@@ -487,6 +487,7 @@
                 "reason": {
                     "grace": "Tenés un pago pendiente. Regularizalo para poder cambiar de plan.",
                     "window": "Todavía no llegó la fecha en que podés cambiar de plan.",
+                    "windowDate": "Podés cambiar de plan desde el {{date}}.",
                     "same": "Ya tenés esa opción de facturación.",
                     "scheduled": "Ya tenés un cambio de plan programado.",
                     "other": "No se puede hacer este cambio ahora. Revisá tu suscripción e intentá de nuevo."

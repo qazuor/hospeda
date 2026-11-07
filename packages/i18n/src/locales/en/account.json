@@ -487,6 +487,7 @@
                 "reason": {
                     "grace": "You have an outstanding payment. Settle it before changing plans.",
                     "window": "The date when you can change plans has not arrived yet.",
+                    "windowDate": "You can change plans from {{date}}.",
                     "same": "You already have that billing option.",
                     "scheduled": "You already have a scheduled plan change.",
                     "other": "This change isn't available now. Check your subscription and try again."

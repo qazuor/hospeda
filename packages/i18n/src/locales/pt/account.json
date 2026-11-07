@@ -487,6 +487,7 @@
                 "reason": {
                     "grace": "Você tem um pagamento pendente. Regularize-o para mudar de plano.",
                     "window": "A data em que você pode mudar de plano ainda não chegou.",
+                    "windowDate": "Você pode mudar de plano a partir de {{date}}.",
                     "same": "Você já tem essa opção de cobrança.",
                     "scheduled": "Você já tem uma mudança de plano agendada.",
                     "other": "Esta mudança não está disponível agora. Verifique sua assinatura e tente novamente."

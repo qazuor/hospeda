@@ -142,6 +142,19 @@ export function planChangeErrorMessage({
     const details = result.error.details;
     const reason =
         details && typeof details === 'object' && 'reason' in details ? details.reason : null;
+    if (
+        reason === 'CHANGE_WINDOW_TOO_SHORT' &&
+        details &&
+        typeof details === 'object' &&
+        'availableFrom' in details &&
+        typeof details.availableFrom === 'string'
+    ) {
+        const date = formatNoticeInstant({ iso: details.availableFrom, locale });
+        if (date)
+            return t('account.subscription.mine.planChange.reason.windowDate', undefined, {
+                date
+            });
+    }
     const key =
         reason === 'GRACE_PERIOD'
             ? 'grace'
