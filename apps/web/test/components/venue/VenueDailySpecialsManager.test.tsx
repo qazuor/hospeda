@@ -30,7 +30,13 @@ vi.mock('../../../src/components/venue/VenueDailySpecialsManager.module.css', ()
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, string>) =>
+            (fallback ?? key).replace(
+                /\{\{(\w+)\}\}/g,
+                (_match: string, name: string) => params?.[name] ?? `{{${name}}}`
+            )
+    })
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({
@@ -199,12 +205,86 @@ describe('VenueDailySpecialsManager', () => {
         // Act
         fireEvent.click(screen.getByText('Guardar menú del día'));
 
-        // Assert
+        // Assert — no plan name was passed, so the neutral variant must show.
         expect(
-            await screen.findByText('El menú del día está disponible desde el plan Profesional.')
+            await screen.findByText('El menú del día está disponible en un plan pago.')
         ).toBeTruthy();
         // And NOT the generic error, which is the whole distinction.
         expect(screen.queryByText('No se pudo guardar el menú del día.')).toBeNull();
+    });
+
+    it('names the catalog plan in the proactive locked upsell', async () => {
+        // AC:G:10. The page resolves the cheapest catalog plan that unlocks the
+        // section and passes its localized name down; the panel must render it.
+        // Arrange
+        mockGet.mockResolvedValue(LOADED);
+
+        // Act
+        render(
+            <VenueDailySpecialsManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+                upsellPlanName="Plan X"
+            />
+        );
+
+        // Assert
+        const notice = await screen.findByTestId('venue-section-locked-notice');
+        expect(notice).toHaveTextContent('Plan X');
+        expect(notice).not.toHaveTextContent('{{plan}}');
+        expect(notice).not.toHaveTextContent('Profesional');
+    });
+
+    it('uses the neutral variant when the catalog yields no plan', async () => {
+        // AC:G:11. A failed catalog read and a vertical with no sellable plan
+        // both arrive as `null`; neither may name a plan or leak the placeholder.
+        // Arrange
+        mockGet.mockResolvedValue(LOADED);
+
+        // Act
+        render(
+            <VenueDailySpecialsManager
+                listingId={LISTING_ID}
+                locale="es"
+                sectionState="locked"
+                upsellPlanName={null}
+            />
+        );
+
+        // Assert
+        const notice = await screen.findByTestId('venue-section-locked-notice');
+        expect(notice).toHaveTextContent('El menú del día está disponible en un plan pago.');
+        expect(notice).not.toHaveTextContent('{{plan}}');
+        expect(notice).not.toHaveTextContent('Profesional');
+    });
+
+    it('names the catalog plan in the runtime 403 upsell', async () => {
+        // AC:G:10 with the section `available` on load: the upsell still has to
+        // name the plan when the API refuses the save at runtime.
+        // Arrange
+        mockGet.mockResolvedValue(LOADED);
+        mockPut.mockResolvedValue({
+            ok: false as const,
+            error: { status: 403, message: 'forbidden' }
+        });
+        render(
+            <VenueDailySpecialsManager
+                listingId={LISTING_ID}
+                locale="es"
+                upsellPlanName="Plan X"
+            />
+        );
+        await screen.findByDisplayValue('Milanesa a la napolitana');
+
+        // Act
+        fireEvent.click(screen.getByText('Guardar menú del día'));
+
+        // Assert
+        expect(
+            await screen.findByText('El menú del día está disponible desde el plan Plan X.')
+        ).toBeTruthy();
+        expect(screen.queryByText(/\{\{plan\}\}/)).toBeNull();
     });
 
     it('shows the generic error for a non-403 failure', async () => {

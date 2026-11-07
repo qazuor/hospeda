@@ -340,9 +340,11 @@ describe('VenueDailySpecialsManager — a locked section is read-only and can be
         expect(screen.queryByRole('button', { name: 'Guardar menú del día' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Agregar plato del día' })).toBeNull();
 
+        // No plan name prop in this render, so the neutral variant must show.
         expect(screen.getByTestId('venue-section-locked-notice')).toHaveTextContent(
-            /plan Profesional/
+            'El menú del día está disponible en un plan pago.'
         );
+        expect(screen.getByTestId('venue-section-locked-notice')).not.toHaveTextContent('{{plan}}');
         expect(mockPut).not.toHaveBeenCalled();
 
         await confirmVaciar();
@@ -385,9 +387,11 @@ describe('VenueEventsManager — a locked section is read-only and can be emptie
         expect(screen.queryByRole('button', { name: 'Guardar agenda' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Agregar evento' })).toBeNull();
 
+        // No plan name prop in this render, so the neutral variant must show.
         expect(screen.getByTestId('venue-section-locked-notice')).toHaveTextContent(
-            /plan Profesional/
+            'Mantener una agenda de eventos está disponible en un plan pago.'
         );
+        expect(screen.getByTestId('venue-section-locked-notice')).not.toHaveTextContent('{{plan}}');
         expect(mockPut).not.toHaveBeenCalled();
 
         await confirmVaciar();

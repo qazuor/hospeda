@@ -315,7 +315,8 @@
                 "saving": "Saving…",
                 "saved": "Today's menu saved.",
                 "saveError": "Today's menu could not be saved.",
-                "locked": "Today's menu is available from the Professional plan.",
+                "locked": "Today's menu is available starting with the {{plan}} plan.",
+                "lockedNoPlan": "Today's menu is available on a paid plan.",
                 "lockedPreTrial": "Today's menu unlocks when you publish your listing.",
                 "expired": "Expired — not being shown.",
                 "scheduled": "Scheduled — not shown yet."
@@ -346,7 +347,8 @@
                 "saving": "Saving…",
                 "saved": "Schedule saved.",
                 "saveError": "The schedule could not be saved.",
-                "locked": "Keeping a venue schedule is available from the Professional plan onwards.",
+                "locked": "Keeping a venue schedule is available starting with the {{plan}} plan.",
+                "lockedNoPlan": "Keeping a venue schedule is available on a paid plan.",
                 "lockedPreTrial": "The venue schedule unlocks when you publish your listing."
             },
             "lockedSection": {

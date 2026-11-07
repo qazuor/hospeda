@@ -4,12 +4,18 @@ import { describe, expect, it } from 'vitest';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
 const LOCALES_DIR = path.resolve(__dirname, '../../../../../packages/i18n/src/locales');
-const VENUE_EDITOR_BLOCKS = ['owner.editor.menuManager'] as const;
+const VENUE_EDITOR_BLOCKS = [
+    'owner.editor.menuManager',
+    'owner.editor.dailySpecials',
+    'owner.editor.venueEventsManager'
+] as const;
 const COMPONENT_FALLBACK_FILES = [
     '../../../src/components/venue/VenueMenuManager.client.tsx',
     '../../../src/components/venue/VenueMenuPlanNotice.client.tsx',
     '../../../src/components/venue/VenueMenuTranslationFields.client.tsx',
-    '../../../src/components/venue/VenueSectionLockedPanel.client.tsx'
+    '../../../src/components/venue/VenueSectionLockedPanel.client.tsx',
+    '../../../src/components/venue/VenueDailySpecialsManager.client.tsx',
+    '../../../src/components/venue/VenueEventsManager.client.tsx'
 ] as const;
 
 function readJson(filePath: string): Record<string, unknown> {

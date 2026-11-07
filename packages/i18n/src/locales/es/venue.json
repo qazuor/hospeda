@@ -315,7 +315,8 @@
                 "saving": "Guardando…",
                 "saved": "Menú del día guardado.",
                 "saveError": "No se pudo guardar el menú del día.",
-                "locked": "El menú del día está disponible desde el plan Profesional.",
+                "locked": "El menú del día está disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "El menú del día está disponible en un plan pago.",
                 "lockedPreTrial": "El menú del día se habilita cuando publiques tu ficha.",
                 "expired": "Ya venció — no se está mostrando.",
                 "scheduled": "Programado — todavía no se muestra."
@@ -346,7 +347,8 @@
                 "saving": "Guardando…",
                 "saved": "Agenda guardada.",
                 "saveError": "No se pudo guardar la agenda.",
-                "locked": "Mantener una agenda de eventos está disponible desde el plan Profesional.",
+                "locked": "Mantener una agenda de eventos está disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "Mantener una agenda de eventos está disponible en un plan pago.",
                 "lockedPreTrial": "La agenda de eventos se habilita cuando publiques tu ficha."
             },
             "lockedSection": {
