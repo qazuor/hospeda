@@ -74,6 +74,23 @@ describe('FeatureService.search', () => {
         expect(featureModelMock.findAll).not.toHaveBeenCalled();
     });
 
+    it('should forward the requested page and pageSize to the model (regression)', async () => {
+        // Arrange — before the fix the model was called with no pagination, so its
+        // 20-row default capped every list: GET /public/features?pageSize=100
+        // returned 20 items while reporting totalPages=1.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            applicableVertical: 'accommodation',
+            page: 2,
+            pageSize: 100
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 100 });
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         featureModelMock.findAll.mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, searchParams);

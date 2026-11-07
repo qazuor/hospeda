@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "139-amenity-bed-and-bath-conditioner",
+    "slug": "conditioner",
+    "description": {
+        "es": "Acondicionador para los huéspedes",
+        "en": "Conditioner for guests",
+        "pt": "Condicionador para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "BED_AND_BATH",
+    "icon": "SoapDispenserIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

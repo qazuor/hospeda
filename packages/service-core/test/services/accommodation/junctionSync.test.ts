@@ -27,6 +27,10 @@ import type {
 } from '@repo/db';
 import { DestinationTypeEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import {
+    syncAmenityJunction,
+    syncFeatureJunction
+} from '../../../src/services/accommodation/accommodation.junction-sync';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 
 /**
@@ -696,5 +700,117 @@ describe('AccommodationService amenityAttributes (HOS-2058)', () => {
             ServiceErrorCode.VALIDATION_ERROR
         );
         expect(rAmenityModel.update).not.toHaveBeenCalled();
+    });
+});
+
+// ─── HOS-2067: retired (soft-deleted) catalog ids ────────────────────────────
+
+describe('accommodation junction sync: retired catalog ids (HOS-2067)', () => {
+    const ACC_ID = '11111111-1111-4111-8111-111111111111';
+    const RETIRED = 'aaaaaaaa-aaaa-4aaa-8aaa-0000000000a1';
+    const KEPT = 'aaaaaaaa-aaaa-4aaa-8aaa-0000000000b2';
+
+    /** Catalog stub returning `RETIRED` as soft-deleted and `KEPT` as live. */
+    const retiringCatalog = () => ({
+        findByIds: vi.fn(async (ids: readonly string[]) =>
+            ids.map((id) => ({ id, deletedAt: id === RETIRED ? new Date() : null }))
+        )
+    });
+
+    const junction = (key: 'amenityId' | 'featureId', linked: readonly string[]) => ({
+        findAll: vi.fn(async () => ({
+            items: linked.map((id) => ({ accommodationId: ACC_ID, [key]: id })),
+            total: linked.length
+        })),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({}),
+        hardDelete: vi.fn().mockResolvedValue(1)
+    });
+
+    it('rejects a NEW retired amenity id; the live relation is not deleted', async () => {
+        // Arrange: stale form re-sends the retired id and omits the live one
+        const rel = junction('amenityId', [KEPT]);
+
+        // Act + Assert
+        await expect(
+            syncAmenityJunction({
+                accommodationId: ACC_ID,
+                amenityIds: [RETIRED],
+                junctionModel: rel as unknown as RAccommodationAmenityModel,
+                amenityModel: retiringCatalog() as unknown as AmenityModel,
+                tx: mockTx
+            })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: `amenity retired: ${RETIRED}`
+        });
+        expect(rel.hardDelete).not.toHaveBeenCalled();
+        expect(rel.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps an already-linked retired amenity relation', async () => {
+        // Arrange
+        const rel = junction('amenityId', [RETIRED]);
+
+        // Act
+        await syncAmenityJunction({
+            accommodationId: ACC_ID,
+            amenityIds: [RETIRED, KEPT],
+            junctionModel: rel as unknown as RAccommodationAmenityModel,
+            amenityModel: retiringCatalog() as unknown as AmenityModel,
+            tx: mockTx
+        });
+
+        // Assert
+        expect(rel.hardDelete).not.toHaveBeenCalled();
+        expect(rel.create).toHaveBeenCalledTimes(1);
+        expect(rel.create).toHaveBeenCalledWith(
+            { accommodationId: ACC_ID, amenityId: KEPT, isOptional: false },
+            mockTx
+        );
+        expect(rel.create).not.toHaveBeenCalledWith(
+            expect.objectContaining({ amenityId: RETIRED }),
+            expect.anything()
+        );
+    });
+
+    it('rejects a NEW retired feature id and writes nothing', async () => {
+        // Arrange
+        const rel = junction('featureId', [KEPT]);
+
+        // Act + Assert
+        await expect(
+            syncFeatureJunction({
+                accommodationId: ACC_ID,
+                featureIds: [RETIRED],
+                junctionModel: rel as unknown as RAccommodationFeatureModel,
+                featureModel: retiringCatalog() as unknown as FeatureModel,
+                tx: mockTx
+            })
+        ).rejects.toMatchObject({ message: `feature retired: ${RETIRED}` });
+        expect(rel.hardDelete).not.toHaveBeenCalled();
+        expect(rel.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps an already-linked retired feature relation', async () => {
+        // Arrange
+        const rel = junction('featureId', [RETIRED]);
+
+        // Act
+        await syncFeatureJunction({
+            accommodationId: ACC_ID,
+            featureIds: [RETIRED],
+            junctionModel: rel as unknown as RAccommodationFeatureModel,
+            featureModel: retiringCatalog() as unknown as FeatureModel,
+            tx: mockTx
+        });
+
+        // Assert
+        expect(rel.hardDelete).not.toHaveBeenCalledWith(
+            expect.objectContaining({ featureId: expect.arrayContaining([RETIRED]) }),
+            expect.anything()
+        );
+        expect(rel.hardDelete).not.toHaveBeenCalled();
+        expect(rel.create).not.toHaveBeenCalled();
     });
 });

@@ -161,12 +161,16 @@ function resolveDesiredAttributes({
  *   an amenity that is not linked throws `VALIDATION_ERROR` before any write.
  *   Only rows whose values actually change are updated.
  *
- * Validation: every ID in `amenityIds` must exist in the `amenities` catalog.
- * An unknown ID throws `ServiceError(VALIDATION_ERROR)` which rolls back the
- * surrounding transaction — no partial writes occur.
+ * Validation: every ID in `amenityIds` must be a live row of the `amenities`
+ * catalog. An unknown ID, or a RETIRED (soft-deleted) one the accommodation
+ * does not already have linked, throws `ServiceError(VALIDATION_ERROR)` which
+ * rolls back the surrounding transaction: no partial writes occur. Retired ids
+ * are rejected rather than dropped because a stale form carrying one also lacks
+ * the replacement relation a data migration created, and the exact-set diff
+ * would delete it (HOS-2067). An already-linked retired id is kept as is.
  *
  * @param input - {@link SyncAmenityJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown,
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown or newly retired,
  *   or when `amenityAttributes` names an amenity that is not linked.
  */
 export async function syncAmenityJunction({
@@ -180,16 +184,6 @@ export async function syncAmenityJunction({
     // undefined → leave untouched (R-1 regression contract)
     if (amenityIds === undefined && amenityAttributes === undefined) return;
 
-    // Validate all supplied IDs exist before touching any rows.
-    if (amenityIds !== undefined && amenityIds.length > 0) {
-        await validateCatalogIds({
-            ids: amenityIds,
-            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
-            entityLabel: 'amenity',
-            tx
-        });
-    }
-
     // Fetch ALL current junction rows for this accommodation (HOS-321: this
     // must not be truncated by the model's default page size — see
     // `readAllJunctionRows`).
@@ -199,6 +193,19 @@ export async function syncAmenityJunction({
         sortBy: 'amenityId',
         tx
     });
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so a retired catalog id the accommodation already has linked is tolerated
+    // (HOS-2067); a retired id it does not have is rejected.
+    if (amenityIds !== undefined && amenityIds.length > 0) {
+        await validateCatalogIds({
+            ids: amenityIds,
+            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
+            entityLabel: 'amenity',
+            alreadyLinkedIds: new Set(existing.map((row) => row.amenityId)),
+            tx
+        });
+    }
     const existingById = new Map(existing.map((row) => [row.amenityId, row]));
     const existingIds = new Set(existingById.keys());
     const targetIds = amenityIds === undefined ? existingIds : new Set(amenityIds);
@@ -272,12 +279,15 @@ export async function syncAmenityJunction({
  *     - Missing rows are inserted with `hostReWriteName = null`, `comments = null`.
  *   Operation is idempotent.
  *
- * Validation: every ID in `featureIds` must exist in the `features` catalog.
- * An unknown ID throws `ServiceError(VALIDATION_ERROR)` which rolls back the
- * surrounding transaction — no partial writes occur.
+ * Validation: every ID in `featureIds` must be a live row of the `features`
+ * catalog. An unknown ID, or a RETIRED (soft-deleted) one the accommodation
+ * does not already have linked, throws `ServiceError(VALIDATION_ERROR)` which
+ * rolls back the surrounding transaction: no partial writes occur. See
+ * {@link syncAmenityJunction} for why retired ids are rejected, not dropped
+ * (HOS-2067).
  *
  * @param input - {@link SyncFeatureJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown or newly retired.
  */
 export async function syncFeatureJunction({
     accommodationId,
@@ -289,16 +299,6 @@ export async function syncFeatureJunction({
     // undefined → leave untouched (R-1 regression contract)
     if (featureIds === undefined) return;
 
-    // Validate all supplied IDs exist before touching any rows.
-    if (featureIds.length > 0) {
-        await validateCatalogIds({
-            ids: featureIds,
-            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
-            entityLabel: 'feature',
-            tx
-        });
-    }
-
     // Fetch ALL current junction rows for this accommodation (HOS-321: this
     // must not be truncated by the model's default page size — see
     // `readAllJunctionRows`).
@@ -308,6 +308,18 @@ export async function syncFeatureJunction({
         sortBy: 'featureId',
         tx
     });
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so an already-linked retired feature is tolerated (HOS-2067).
+    if (featureIds.length > 0) {
+        await validateCatalogIds({
+            ids: featureIds,
+            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
+            entityLabel: 'feature',
+            alreadyLinkedIds: new Set(existing.map((row) => row.featureId)),
+            tx
+        });
+    }
     const existingIds = new Set(existing.map((row) => row.featureId));
     const targetIds = new Set(featureIds);
 

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "114-amenity-entertainment-streaming-services",
+    "slug": "streaming_services",
+    "description": {
+        "es": "Cuentas de streaming disponibles para los huéspedes",
+        "en": "Streaming accounts available to guests",
+        "pt": "Contas de streaming disponíveis para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SmartTvIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

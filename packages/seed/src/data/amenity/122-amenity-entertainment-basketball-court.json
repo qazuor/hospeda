@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "122-amenity-entertainment-basketball-court",
+    "slug": "basketball_court",
+    "description": {
+        "es": "Cancha de básquet para los huéspedes",
+        "en": "Basketball court for guests",
+        "pt": "Quadra de basquete para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SportsCenterIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

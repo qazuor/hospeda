@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "118-amenity-entertainment-soccer-field",
+    "slug": "soccer_field",
+    "description": {
+        "es": "Cancha de fútbol para los huéspedes",
+        "en": "Soccer field for guests",
+        "pt": "Campo de futebol para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SoccerFieldIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

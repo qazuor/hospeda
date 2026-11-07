@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "146-amenity-climate-control-underfloor-heating",
+    "slug": "underfloor_heating",
+    "description": {
+        "es": "Calefacción por losa radiante en toda la casa",
+        "en": "Underfloor heating throughout the house",
+        "pt": "Aquecimento por piso radiante em toda a casa"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "CLIMATE_CONTROL",
+    "icon": "HeatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}
