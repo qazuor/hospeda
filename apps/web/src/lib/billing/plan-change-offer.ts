@@ -132,6 +132,16 @@ export function planChangeErrorMessage({
     readonly locale: SupportedLocale;
 }): string {
     const { t } = createTranslations(locale);
+    if (
+        result.error.status === 502 &&
+        result.error.code === 'PROVIDER_ERROR' &&
+        (result.error.reason === 'CREATION_NOT_APPLIED' ||
+            (result.error.details &&
+                typeof result.error.details === 'object' &&
+                'reason' in result.error.details &&
+                result.error.details.reason === 'CREATION_NOT_APPLIED'))
+    )
+        return t('account.subscription.mine.planChange.reason.providerNotApplied');
     if (result.error.status !== 409 && result.error.status !== 422)
         return t('account.subscription.mine.planChange.error');
     const details = result.error.details;

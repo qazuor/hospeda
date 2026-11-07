@@ -182,6 +182,36 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
             )
         );
     });
+    it('shows the localized provider rejection when creation was not applied', async () => {
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: catalog });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response(
+                {
+                    success: false,
+                    error: {
+                        code: 'PROVIDER_ERROR',
+                        reason: 'CREATION_NOT_APPLIED',
+                        message: 'Payment provider did not apply the requested authorization',
+                        details: { reason: 'CREATION_NOT_APPLIED' }
+                    }
+                },
+                502
+            );
+        });
+        await choose(higherId);
+        await waitFor(() =>
+            expect(screen.getByTestId('plan-change-result')).toHaveTextContent(
+                'Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente.'
+            )
+        );
+        expect(assigned).not.toHaveBeenCalled();
+    });
     it('shows the client-local available date from a 409 change-window rejection', async () => {
         fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url.includes('/api/v1/public/plan-catalog'))

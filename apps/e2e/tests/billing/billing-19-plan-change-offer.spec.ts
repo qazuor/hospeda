@@ -169,4 +169,42 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
         expect(effectiveAt).toBeTruthy();
         await expect(result).toContainText(formatMarketDate(new Date(effectiveAt)));
     });
+
+    test('M1 creation mismatch shows the provider rejection and keeps the current plan', async ({
+        page
+    }) => {
+        if (!world) throw new Error('Expected fake provider world.');
+        world.fakeServer.useProvider({
+            provider: new FakePaymentProvider({ clock: world.clock, idNamespace: randomUUID() })
+        });
+        const premiumOptionId = await monthlyOptionForSlug('owner-premium');
+        const { subscriptionId, article } = await activeFrom({ page, slug: 'owner-basico' });
+        let rejectedStatus = 0;
+        let rejectedCode = '';
+        await page.route(
+            (url) =>
+                url.pathname ===
+                `/api/v1/protected/billing-subscription/${subscriptionId}/plan-change`,
+            async (route) => {
+                const response = await route.fetch();
+                const body = await response.json();
+                rejectedStatus = response.status();
+                rejectedCode = body.error?.code ?? '';
+                await route.fulfill({ response });
+            }
+        );
+        await article.getByRole('button', { name: /cambiar de plan/i }).click();
+        await article.locator(`li[data-billing-option-id="${premiumOptionId}"] button`).click();
+        await article.getByRole('button', { name: 'Confirmar cambio' }).click();
+        await expect(article.getByTestId('plan-change-result')).toContainText(
+            'Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente.'
+        );
+        expect(rejectedStatus).toBe(502);
+        expect(rejectedCode).toBe('PROVIDER_ERROR');
+        const rows = await execSQL<{ status: string }>(
+            'SELECT status FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(rows[0]?.status).toBe('ACTIVE');
+    });
 });

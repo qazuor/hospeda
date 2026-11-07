@@ -490,6 +490,7 @@
                     "windowDate": "Podés cambiar de plan desde el {{date}}.",
                     "same": "Ya tenés esa opción de facturación.",
                     "scheduled": "Ya tenés un cambio de plan programado.",
+                    "providerNotApplied": "Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente. Intentá de nuevo más tarde.",
                     "other": "No se puede hacer este cambio ahora. Revisá tu suscripción e intentá de nuevo."
                 }
             },

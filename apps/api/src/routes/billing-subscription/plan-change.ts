@@ -63,6 +63,17 @@ const serviceAnswer: Readonly<Record<string, { status: 404 | 409 | 422; code: st
 };
 
 function answer(error: unknown, ctx: Context): Response {
+    if (error instanceof ServiceError && error.reason === 'CREATION_NOT_APPLIED')
+        return createErrorResponse(
+            {
+                code: ServiceErrorCode.PROVIDER_ERROR,
+                message: 'Payment provider did not apply the requested authorization',
+                reason: 'CREATION_NOT_APPLIED',
+                details: { reason: 'CREATION_NOT_APPLIED' }
+            },
+            ctx,
+            502
+        );
     if (error instanceof ServiceError && error.reason) {
         const mapped = serviceAnswer[error.reason];
         if (mapped)

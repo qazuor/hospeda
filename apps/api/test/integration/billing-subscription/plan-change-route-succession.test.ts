@@ -8,7 +8,7 @@ import {
 import { MercadoPagoPaymentProvider } from '@repo/payments';
 import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
 import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
-import { SubscriptionPlanChangeResponseSchema } from '@repo/schemas';
+import { ServiceErrorCode, SubscriptionPlanChangeResponseSchema } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { suspendForArrears } from '../../../../../packages/service-core/src/services/billing/subscription/suspend-for-arrears.service';
@@ -234,12 +234,47 @@ describe('TEST:B8b:8 TEST:B8b:24 succession declared through the route', () => {
             expect(successor?.firstChargeAt?.getTime()).toBeGreaterThan(
                 successor?.authorizationWindowEndsAt?.getTime() ?? Number.MAX_VALUE
             );
+            const creation = server
+                .requests()
+                .filter((request) => request.method === 'POST' && request.path === '/preapproval')
+                .at(-1);
+            const recurring = (creation?.body as { auto_recurring?: { start_date?: string } })
+                ?.auto_recurring;
+            expect(recurring?.start_date).toBe(successor?.firstChargeAt?.toISOString());
             expect(predecessor?.status).toBe('ACTIVE');
             expect(
                 (await fake.readAuthorization({ authorizationId: row.authorizationId })).snapshot
                     .status
             ).toBe('active');
         });
+    });
+
+    it('returns a typed provider rejection when M1 drops the successor creation fields', async () => {
+        const lyingFake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        server.useProvider({ provider: lyingFake });
+        try {
+            await withCompositionRollback(async (tx) => {
+                const row = await startPlanChangeScenario(tx, {
+                    provider,
+                    clock,
+                    approve: async (authorizationId) => {
+                        await lyingFake.approve({ authorizationId });
+                    }
+                });
+                const response = await post(row.subscriptionId, row.userId, row.targetOptionId);
+                expect(response.status, await response.clone().text()).toBe(502);
+                const body = (await response.json()) as {
+                    error: { code: string; reason: string; details: { reason: string } };
+                };
+                expect(body.error).toMatchObject({
+                    code: ServiceErrorCode.PROVIDER_ERROR,
+                    reason: 'CREATION_NOT_APPLIED',
+                    details: { reason: 'CREATION_NOT_APPLIED' }
+                });
+            });
+        } finally {
+            server.useProvider({ provider: fake });
+        }
     });
 
     it('(d) rejects a second upgrade while succession is in progress', async () => {
