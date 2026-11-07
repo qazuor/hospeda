@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { eq, subscriptions } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { CancellationReasonEnum } from '@repo/schemas';
+import ts from 'typescript';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { cancelPausedSubscription } from '../../../src/services/billing/subscription/cancel-paused-subscription.service.js';
@@ -37,6 +39,42 @@ afterEach(retirePausedCancellationRows);
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:25 S22 committed analytics facts', () => {
+    it('emits only after the awaited S22 transaction expression has completed', () => {
+        const source = readFileSync(
+            new URL(
+                '../../../src/services/billing/subscription/cancel-paused-subscription.service.ts',
+                import.meta.url
+            ),
+            'utf8'
+        );
+        const file = ts.createSourceFile(
+            'cancel-paused-subscription.service.ts',
+            source,
+            ts.ScriptTarget.Latest,
+            true
+        );
+        let transactionEnd = -1;
+        const emissionPositions: number[] = [];
+        const visit = (node: ts.Node): void => {
+            if (
+                ts.isCallExpression(node) &&
+                ts.isPropertyAccessExpression(node.expression) &&
+                node.expression.name.text === 'transaction'
+            )
+                transactionEnd = node.end;
+            if (
+                ts.isCallExpression(node) &&
+                ts.isIdentifier(node.expression) &&
+                node.expression.text === 'emitBillingFact'
+            )
+                emissionPositions.push(node.pos);
+            ts.forEachChild(node, visit);
+        };
+        visit(file);
+        expect(transactionEnd).toBeGreaterThan(0);
+        expect(emissionPositions).toHaveLength(1);
+        expect(emissionPositions[0]).toBeGreaterThan(transactionEnd);
+    });
     it('emits the complete DIRECT_FROM_PAUSED fact for a direct cancellation', async () => {
         const fake = fakeProvider();
         const seeded = await seedPausedCancellation({ fake });
