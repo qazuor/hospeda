@@ -393,6 +393,7 @@ own to the phase, with the owner's card and an approved amount, after the phase 
 The B9b slice that went to cut (HOS-1588, HOS-1589, HOS-1591) added its item to Part 1; B9b phase 2 (temporary courtesy: pause and resumption, HOS-1590/HOS-1592) adds its own.
 B8b (HOS-1579) added S15 to staging and P6 to production.
 B8b phase 2 (HOS-1411) is covered by S15, S16 and P6/P7; courtesy pause follows in HOS-1590.
+The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains active) is verified with HOS-1592.
 
 ## Related
 

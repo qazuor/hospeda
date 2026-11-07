@@ -12,7 +12,16 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = (file: string): string => readFileSync(path.join(root, file), 'utf8');
 const exists = (file: string): boolean => existsSync(path.join(root, file));
 const self = fileURLToPath(import.meta.url);
-const B8_TO_B8B = [1, 2, 3, 4, 5, 6, 7, 9] as const;
+const EXPECTED_B8_MAP = [
+    { clause: 1, tests: ['TEST:B8b:7'] },
+    { clause: 2, tests: ['TEST:B8b:16'] },
+    { clause: 3, tests: ['TEST:B8b:4'] },
+    { clause: 4, tests: ['TEST:B8b:5'] },
+    { clause: 5, tests: ['TEST:B8b:11'] },
+    { clause: 6, tests: ['TEST:B8b:11', 'TEST:B8b:12', 'TEST:B8b:10'] },
+    { clause: 7, tests: ['TEST:B8b:17'] },
+    { clause: 9, tests: ['TEST:B8a:4', 'TEST:B8b:5'] }
+] as const;
 const B8_MAP = [
     {
         clause: 1,
@@ -70,7 +79,15 @@ const B8_MAP = [
         ]
     }
 ] as const;
-const DEFERRED = { tests: ['TEST:B8b:25 (cortesía)'], issue: 'HOS-1590', phase: 'fase-2' } as const;
+const DEFERRED_CASES = [
+    { tests: ['TEST:B8b:25 (cortesía)'], issue: 'HOS-1590', phase: 'fase-2' },
+    {
+        test: 'TEST:B8b:25 (fila 5: pausa negada con cortesía vigente)',
+        case: 'PM-374',
+        issue: 'HOS-1592',
+        phase: 'fase-2'
+    }
+] as const;
 const FROM_EMPTY = {
     test: 'TEST:B8b:23',
     file: 'packages/db/test/integration/b8b-schema-from-empty.test.ts'
@@ -212,7 +229,7 @@ function measuredTouches(): { file: string; pr: string }[] {
 // TEST:B8b:23: static part of the B8b exit; the DB and real integration tests run separately.
 describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU gone, e2e in P0, suite collected (HOS-1581)', () => {
     it('maps LISTA:B8 clauses 1-7 and 9 to titled evidence, without repetition', () => {
-        expect(B8_MAP.map(({ clause }) => clause)).toEqual(B8_TO_B8B);
+        expect(B8_MAP.map(({ clause, tests }) => ({ clause, tests }))).toEqual(EXPECTED_B8_MAP);
         const missing = B8_MAP.flatMap((entry) => {
             const files = [entry.file, ...('otherFiles' in entry ? entry.otherFiles : [])];
             return entry.tests.filter(
@@ -225,7 +242,7 @@ describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU
         });
         expect(missing).toEqual([]);
     });
-    it('finds TEST:B8b:1..27 in test titles and declares exactly the courtesy deferral', () => {
+    it('finds TEST:B8b:1..27 in test titles and declares both phase-2 deferrals', () => {
         const roots = [
             'packages/service-core/test',
             'packages/db/test',
@@ -241,9 +258,16 @@ describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU
             (id) => !treeTitles.some((title) => hasId(title, id))
         );
         expect(missing).toEqual([]);
-        expect(DEFERRED).toEqual({
+        expect(DEFERRED_CASES).toHaveLength(2);
+        expect(DEFERRED_CASES).toContainEqual({
             tests: ['TEST:B8b:25 (cortesía)'],
             issue: 'HOS-1590',
+            phase: 'fase-2'
+        });
+        expect(DEFERRED_CASES).toContainEqual({
+            test: 'TEST:B8b:25 (fila 5: pausa negada con cortesía vigente)',
+            case: 'PM-374',
+            issue: 'HOS-1592',
             phase: 'fase-2'
         });
     });
