@@ -33,7 +33,7 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.6.1",
+        "@types/node": "^26.6.5",
         "@types/pg": "^8.21.0",
         "@vitest/coverage-v8": "^5.0.5",
         "pg": "^8.22.0",
