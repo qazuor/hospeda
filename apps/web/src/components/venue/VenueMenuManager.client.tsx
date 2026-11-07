@@ -909,10 +909,15 @@ export function VenueMenuManager({
         >
             <h2 className={styles.heading}>{t('venue.owner.editor.menuManager.title', 'Carta')}</h2>
             <p className={styles.intro}>
-                {t(
-                    'venue.owner.editor.menuManager.intro',
-                    'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
-                )}
+                {isSectionLocked
+                    ? t(
+                          'venue.owner.editor.menuManager.lockedIntro',
+                          'Mostrá tu carta en tu ficha.'
+                      )
+                    : t(
+                          'venue.owner.editor.menuManager.intro',
+                          'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
+                      )}
             </p>
 
             {isSectionLocked ? (

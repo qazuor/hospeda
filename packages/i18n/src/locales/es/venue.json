@@ -232,6 +232,7 @@
             "menuManager": {
                 "title": "Carta",
                 "intro": "Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.",
+                "lockedIntro": "Mostrá tu carta en tu ficha.",
                 "fileTitle": "Foto o PDF del menú",
                 "filePdf": "Ver el PDF",
                 "fileImage": "Ver la foto",
