@@ -1,16 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
 
 const pricingSituation = vi.hoisted(() => vi.fn());
 const listingNotices = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/api/endpoints-protected', () => ({
-    billingSubscriptionApi: { pricingSituation },
-    publishApi: { listingNotices }
-}));
+const listMine = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/api/endpoints-protected', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/lib/api/endpoints-protected')>();
+    return {
+        ...actual,
+        billingSubscriptionApi: { ...actual.billingSubscriptionApi, pricingSituation, listMine },
+        publishApi: { listingNotices }
+    };
+});
 beforeEach(() => {
     vi.clearAllMocks();
     resetPricingSituationCacheForTests();
@@ -26,6 +31,55 @@ const cssSource = readFileSync(
 );
 
 describe('PlanCardCta', () => {
+    it('TEST:B8b:14 posts the selected ACTIVE pricing option to the protected route', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        const subscriptionId = '123e4567-e89b-42d3-a456-426614174000';
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [{ id: subscriptionId, vertical: 'accommodation', status: 'ACTIVE' }]
+            }
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 409,
+            json: async () => ({
+                success: false,
+                error: {
+                    code: 'CONFLICT',
+                    message: 'Rejected',
+                    details: { reason: 'GRACE_PERIOD' }
+                }
+            })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toContain(
+            `/api/v1/protected/billing-subscription/${subscriptionId}/plan-change`
+        );
+        expect(init.method).toBe('POST');
+        expect(JSON.parse(init.body as string)).toEqual({ billingOptionId: 'm2' });
+        vi.unstubAllGlobals();
+    });
     it('TEST:1758:4 renders checkout links with stacked button styles', () => {
         expect(componentSource).toContain(
             "className={cycle === 'monthly' ? styles.primary : styles.secondary}"

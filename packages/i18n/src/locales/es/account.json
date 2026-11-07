@@ -469,7 +469,29 @@
         "mine": {
             "title": "Tus suscripciones",
             "empty": "No tenés suscripciones vigentes.",
-            "planChangeUnavailable": "Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.",
+            "planChange": {
+                "open": "Cambiar de plan",
+                "heading": "Elegí otro plan",
+                "choice": "{{plan}} · {{cycle}} · {{price}}",
+                "loading": "Cargando planes...",
+                "confirmHeading": "Así funciona el cambio",
+                "confirmCheckout": "Si el cambio requiere autorización, vas a ir al checkout de Mercado Pago; tu plan actual sigue hasta que autorices.",
+                "confirmScheduled": "Si el cambio se programa, vas a ver la fecha exacta desde la que rige el plan nuevo.",
+                "confirm": "Confirmar cambio",
+                "back": "Volver",
+                "pending": "Procesando el cambio...",
+                "pricingOpen": "Cambiar a este plan",
+                "downgrade": "Tu plan cambia el {{date}}.",
+                "regret": "Cancelamos el cambio de plan programado.",
+                "error": "No pudimos cambiar el plan. Intentá de nuevo.",
+                "reason": {
+                    "grace": "Tenés un pago pendiente. Regularizalo para poder cambiar de plan.",
+                    "window": "Todavía no llegó la fecha en que podés cambiar de plan.",
+                    "same": "Ya tenés esa opción de facturación.",
+                    "scheduled": "Ya tenés un cambio de plan programado.",
+                    "other": "No se puede hacer este cambio ahora. Revisá tu suscripción e intentá de nuevo."
+                }
+            },
             "graceChangePlan": {
                 "CARD": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo cambiando la tarjeta con la que pagás en Mercado Pago (el cobro se reintenta en el momento) y, con la suscripción al día, vas a poder hacer cambios en tu plan.",
                 "MANUAL": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo pagando tu cuota y, con la suscripción al día, vas a poder hacer cambios en tu plan."

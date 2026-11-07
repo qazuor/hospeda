@@ -28,6 +28,19 @@ import {
 } from '../../../src/lib/api/endpoints-protected';
 
 describe('TEST:1730:5c billing subscription client', () => {
+    it('TEST:B8b:14 submits only the selected option to the protected plan-change route', async () => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: { outcome: 'REGRET', amountMinor: 0 } });
+        const result = await billingSubscriptionApi.requestPlanChange({
+            subscriptionId: 'subscription-1',
+            billingOptionId: 'option-2'
+        });
+        expect(result).toEqual({ ok: true, data: { outcome: 'REGRET', amountMinor: 0 } });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing-subscription/subscription-1/plan-change',
+            body: { billingOptionId: 'option-2' }
+        });
+    });
     it('posts the selected option and declared payer email exactly', async () => {
         postProtected.mockReset();
         postProtected.mockResolvedValue({ ok: true, data: {} });

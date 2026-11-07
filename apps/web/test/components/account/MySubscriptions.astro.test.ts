@@ -34,9 +34,11 @@ describe('MySubscriptions SSR block', () => {
         );
     });
 
-    it('shows the unavailable plan-change notice through its status record', () => {
-        expect(source).toContain('PLAN_CHANGE_UNAVAILABLE[row.status]');
-        expect(source).toContain('data-testid="my-subscription-plan-change-unavailable"');
+    it('TEST:B8b:14 mounts the plan-change offer only for ACTIVE rows', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        expect(article).toContain("row.status === 'ACTIVE' && <PlanChangeOffer client:visible");
+        expect(article).toContain('subscriptionId={row.id}');
+        expect(article).toContain('vertical={row.vertical as PricingSituationVertical}');
     });
     it('renders deferred courtesy balances with plural wording and the payment condition', () => {
         expect(source).toContain('result?.deferredCourtesies.map((c) =>');

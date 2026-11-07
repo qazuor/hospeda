@@ -469,7 +469,29 @@
         "mine": {
             "title": "Suas assinaturas",
             "empty": "Você não tem assinaturas vigentes.",
-            "planChangeUnavailable": "Ainda não é possível mudar de plano: cancele no fim do período e assine de novo.",
+            "planChange": {
+                "open": "Mudar de plano",
+                "heading": "Escolha outro plano",
+                "choice": "{{plan}} · {{cycle}} · {{price}}",
+                "loading": "Carregando planos...",
+                "confirmHeading": "Como funciona a mudança",
+                "confirmCheckout": "Se precisar de autorização, você irá ao checkout do Mercado Pago; seu plano atual continua até você autorizar.",
+                "confirmScheduled": "Se a mudança for agendada, você verá a data exata em que o novo plano começa.",
+                "confirm": "Confirmar mudança",
+                "back": "Voltar",
+                "pending": "Processando a mudança...",
+                "pricingOpen": "Mudar para este plano",
+                "downgrade": "Seu plano muda em {{date}}.",
+                "regret": "Cancelamos a mudança de plano agendada.",
+                "error": "Não conseguimos mudar seu plano. Tente novamente.",
+                "reason": {
+                    "grace": "Você tem um pagamento pendente. Regularize-o para mudar de plano.",
+                    "window": "A data em que você pode mudar de plano ainda não chegou.",
+                    "same": "Você já tem essa opção de cobrança.",
+                    "scheduled": "Você já tem uma mudança de plano agendada.",
+                    "other": "Esta mudança não está disponível agora. Verifique sua assinatura e tente novamente."
+                }
+            },
             "graceChangePlan": {
                 "CARD": "Você não pode mudar de plano enquanto tiver um pagamento pendente. Regularize sua assinatura trocando o cartão usado no Mercado Pago (a cobrança será tentada novamente na hora); quando a assinatura estiver em dia, você poderá fazer alterações no seu plano.",
                 "MANUAL": "Você não pode mudar de plano enquanto tiver um pagamento pendente. Regularize sua assinatura pagando sua parcela; quando a assinatura estiver em dia, você poderá fazer alterações no seu plano."
