@@ -18,6 +18,15 @@ import {
 } from '../../../../packages/verticals/src/publication/purge-notices';
 import { buildOutboxSenderRender } from '../../src/cron/jobs/email-outbox-sender.job.js';
 
+const chargebackPayload = (subscriptionId: string) => ({
+    subscriptionId,
+    vertical: 'accommodation',
+    paymentMethod: 'CARD',
+    touristVipLost: true,
+    oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
+    chargedBackPayment: { amountMinor: 1800000, currency: 'ARS', chargedOn: '2026-11-06' },
+    courtesyEnded: false
+});
 function row(template: string, payload: Record<string, unknown>): EmailOutboxRow {
     return {
         id: 'outbox-test',
@@ -120,20 +129,7 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
                 promoLost: true
             };
-        if (template === 'billing.chargeback-suspension')
-            return {
-                subscriptionId,
-                vertical: 'accommodation',
-                paymentMethod: 'CARD',
-                touristVipLost: true,
-                oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
-                chargedBackPayment: {
-                    amountMinor: 1800000,
-                    currency: 'ARS',
-                    chargedOn: '2026-11-06'
-                },
-                courtesyEnded: false
-            };
+        if (template === 'billing.chargeback-suspension') return chargebackPayload(subscriptionId);
         if (template === 'billing.scheduled-cancellation')
             return { subscriptionId, serviceEndsAt: '2026-10-12T12:00:00.000Z' };
         return { subscriptionId };
@@ -242,34 +238,18 @@ describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the
     };
     const payloadOf = (kind: string) => {
         if (kind === 'ARREARS_SUSPENSION') return arrearsPayload;
-        if (kind === 'CHARGEBACK_SUSPENSION')
-            return {
-                subscriptionId,
-                vertical: 'accommodation',
-                paymentMethod: 'CARD',
-                touristVipLost: true,
-                oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
-                chargedBackPayment: {
-                    amountMinor: 1800000,
-                    currency: 'ARS',
-                    chargedOn: '2026-11-06'
-                },
-                courtesyEnded: false
-            };
+        if (kind === 'CHARGEBACK_SUSPENSION') return chargebackPayload(subscriptionId);
         return { subscriptionId };
     };
-
     it.each(
         Object.entries(BEFORE_CANCEL_TEMPLATE_BY_KIND)
     )('%s renders %s with a subject (a kind without a renderer turns this red, Coord-283)', async (kind, template) => {
         // Act
         const result = await render({ row: row(template, payloadOf(kind)) });
-
         // Assert
         expect(result.subject.trim()).not.toBe('');
         expect(renderToStaticMarkup(result.react)).not.toContain(subscriptionId);
     });
-
     it('only AUTHORIZATION_EXPIRED says the pending authorization expired', async () => {
         // Act
         const saying: string[] = [];
@@ -277,12 +257,10 @@ describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the
             const result = await render({ row: row(template, payloadOf(kind)) });
             if (result.subject === 'Tu autorización pendiente venció') saying.push(kind);
         }
-
         // Assert
         expect(saying).toStrictEqual(['AUTHORIZATION_EXPIRED']);
     });
 });
-
 describe('TEST:1623:4 AC:B13a:17 paid-after-cancellation renders through the production sender', () => {
     it('renders the enqueued notice with the market date and addon consequence', async () => {
         const result = await buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' })({
