@@ -43,6 +43,17 @@ describe('AmenityService.count', () => {
         expect(result.data?.count).toBe(1);
     });
 
+    it('should not count soft-deleted (retired) amenities (regression)', async () => {
+        // Arrange — the count must agree with search, or `total` overstates the page.
+        asMock(amenityModelMock.count).mockResolvedValue(1);
+
+        // Act
+        await service.count(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(asMock(amenityModelMock.count).mock.calls[0]?.[0]).toEqual({ deletedAt: null });
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(amenityModelMock.count).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, countParams);
