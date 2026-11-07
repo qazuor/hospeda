@@ -168,7 +168,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Services and amenities**, each checked amenity has **Details**: you can say whether it is private or shared, and whether it is available year-round or seasonal. Guests see it on your listing. Features are now grouped by category, and there are new amenity groups such as Parking, Laundry and Wellness.',
             pt: 'Em **Serviços e comodidades**, cada comodidade marcada tem **Detalhes**: você pode informar se é de uso privativo ou compartilhado e se está disponível o ano todo ou na temporada. Os hóspedes veem isso no anúncio. Além disso, as características agora estão organizadas por categoria e há novos grupos de comodidades, como Estacionamento, Lavanderia e Bem-estar.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4157
     {
@@ -185,7 +185,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the accommodation listing, the **Services** filter shows every accommodation amenity, and only those: no options are missing and restaurant or experience amenities no longer appear.',
             pt: 'Na listagem de hospedagens, o filtro de **Serviços** mostra todas as comodidades de hospedagem, e só elas: não faltam opções e as de restaurantes ou experiências não aparecem mais.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4143
     {
@@ -203,7 +203,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **My account → Subscription**, your free trial card now has a "Choose your plan" button that takes you straight to the plans for that listing, even after the trial has ended.',
             pt: 'Em **Minha conta → Assinatura**, o cartão do seu teste grátis agora tem o botão «Escolha seu plano», que leva direto aos planos desse anúncio, inclusive quando o teste já terminou.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4144
     {
@@ -220,7 +220,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you subscribe, the email field explains that Mercado Pago only accepts payment from the account with that email. It comes filled in with your Hospeda email: change it only if you use a different one in Mercado Pago.',
             pt: 'Ao assinar, o campo de email explica que o Mercado Pago só aceita o pagamento da conta com esse email. Ele já vem com o email da sua conta Hospeda: altere apenas se você usa outro no Mercado Pago.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4109
     {
@@ -238,7 +238,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If your plan allows fewer properties than you have listed, the ones you published most recently stay published when you subscribe — the same ones that were live during your trial.',
             pt: 'Se o seu plano permite menos hospedagens do que você cadastrou, ao contratá-lo continuam publicadas as que você publicou mais recentemente, as mesmas que já estavam no ar durante o teste.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4111, #4132
     {
@@ -255,7 +255,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In listings, on the home page and on the map, cards for properties with no price show “Price on request” and a **Check availability** button that takes you to the listing. Every card shows the price and the button at the same height.',
             pt: 'Nas listagens, na página inicial e no mapa, os cartões de hospedagens sem preço mostram “Preço sob consulta” e um botão **Consultar disponibilidade** que leva ao anúncio. Todos os cartões mostram o preço e o botão na mesma altura.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4116
     {
@@ -273,7 +273,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you are about to list your first property, in **Publish** you can paste the link to your listing on another site and we fill in the form with that information for you to review. You no longer need a plan for that.',
             pt: 'Se você está prestes a publicar sua primeira hospedagem, em **Publicar** você pode colar o link do seu anúncio em outro site e preenchemos o cadastro com esses dados para você revisar. Não pedimos mais um plano para isso.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4112
     {
@@ -291,7 +291,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Contact and social**, you can enter your phone and WhatsApp with spaces, dashes, brackets, the leading 0 or the 15, for example `3442 45-2345` or `+54 9 3442 45-2345`. We save it in a single format. If the number is not valid, we tell you how to write it.',
             pt: 'Em **Contato e redes**, você pode informar o telefone e o WhatsApp com espaços, hífens, parênteses, o 0 ou o 15, por exemplo `3442 45-2345` ou `+54 9 3442 45-2345`. Guardamos tudo em um único formato. Se o número não for válido, dizemos como escrevê-lo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4110
     {
@@ -309,7 +309,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Your plan’s photo cap now counts the gallery only. With a cap of 15, you can have your main photo plus 15 more, and the **Photos** counter shows that same number.',
             pt: 'O limite de fotos do seu plano conta só a galeria. Com um limite de 15, você pode ter a foto principal e mais 15, e o contador de **Fotos** mostra esse mesmo número.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4113, #4133
     {
@@ -327,7 +327,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Photos**, saving a photo’s texts now closes the panel on its own, with no prompts in between, so you can fill them in one after another. If you leave the section with photos that have no description, we let you know so you can fill them in right away or carry on.',
             pt: 'Em **Fotos**, ao salvar os textos de uma foto o painel fecha sozinho, sem avisos no meio, para você completá-las uma após a outra. Se você sair da seção com fotos sem descrição, avisamos para você completá-las na hora ou seguir assim mesmo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4114
     {
@@ -345,7 +345,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Photos**, the **Videos** section takes YouTube, Vimeo or Dailymotion links on every plan, including the free trial. The video shows on your public listing.',
             pt: 'Em **Fotos**, a seção **Vídeos** aceita links do YouTube, Vimeo ou Dailymotion em todos os planos, incluído o teste grátis. O vídeo aparece no seu anúncio público.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4009, #4097
     {
@@ -363,7 +363,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **My business**, food and experience listings marked "Unpublished by your plan" now show a **Publish again** button.',
             pt: 'Em **Meu negócio**, os anúncios de gastronomia e de experiências marcados como «Não publicado pelo seu plano» agora mostram o botão **Publicar de novo**.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4001, #4098
     {
@@ -380,7 +380,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you open a listing page that no longer exists, such as page 99 of stays, you now see the "Page not found" page instead of an error or an empty list.',
             pt: 'Se você abrir uma página de listagem que não existe mais, como a 99 de hospedagens, agora vê a página «Página não encontrada» em vez de um erro ou de uma lista vazia.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4020
     {
@@ -398,7 +398,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If a moderated listing is approved again and your quota is full, it stays approved but unpublished, and your already published listings stay visible. To publish it, unpublish another one.',
             pt: 'Se uma ficha moderada for aprovada de novo e sua cota estiver cheia, ela fica aprovada mas sem publicar, e suas fichas já publicadas continuam visíveis. Para publicá-la, despublique outra.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4006
     {
@@ -416,7 +416,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In the admin panel, the moderation terms list opens again with its pagination, instead of showing an error.',
             pt: 'No painel de administração, a lista de termos de moderação volta a abrir com sua paginação, em vez de mostrar um erro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4029
     {
@@ -434,7 +434,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The toolbar and writing area of the text editor for listings, posts and events now use dark mode colors, without the white block it had before.',
             pt: 'A barra de ferramentas e a área de escrita do editor de texto de fichas, notas e eventos agora usam as cores do modo escuro, sem o bloco branco de antes.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4000
     {
@@ -452,7 +452,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If saving your accommodation sends a value that cannot be saved that way, you now get an error naming the field, instead of seeing "saved" when nothing was saved. Capacity, location and price data are saved as usual.',
             pt: 'Se ao salvar sua acomodação for enviado um dado que não pode ser salvo dessa forma, agora você recebe um erro que nomeia o campo, em vez de ver "salvo" sem que nada tenha sido salvo. Os dados de capacidade, localização e preço são salvos como sempre.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4031
     {
@@ -469,7 +469,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'The public accommodation list now respects the filter by price **currency** and by **listing date** (from and to). Combined with the type, they return only the accommodations that match everything.',
             pt: 'A lista pública de acomodações agora respeita o filtro por **moeda** do preço e por **data de cadastro** (desde e até). Combinados com o tipo, devolvem apenas as acomodações que atendem a tudo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #3898
     {
