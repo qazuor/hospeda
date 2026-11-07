@@ -76,6 +76,8 @@ export {
     projectVenuePublic,
     projectVenuePublicList
 } from './venue.projections';
+// Public filter options backed by published listings.
+export { getVenuePublicFilterOptions } from './venue.public-filter-options';
 // Review service
 export {
     type VenueReviewModerateInput,
