@@ -95,7 +95,7 @@ describe('ACC_10 admin plan change screen', () => {
             es.subscriptionPlanChange.destination
         ) as HTMLSelectElement;
         expect(select.options).toHaveLength(2);
-        expect(select.textContent).not.toContain('Plan Base');
+        expect(Array.from(select.options, (option) => option.value)).toEqual(['', targetId]);
         fireEvent.change(select, { target: { value: targetId } });
         fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.note), {
             target: { value: 'Cliente aceptó' }
