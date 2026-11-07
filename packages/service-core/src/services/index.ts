@@ -247,6 +247,7 @@ export { reevaluateRetainedPayments } from './billing/subscription/expire-author
 export * from './billing/subscription/expire-manual-grace.service.js';
 export * from './billing/subscription/grace-reminder-notice.js';
 export * from './billing/subscription/grace-started-notice.js';
+export * from './billing/subscription/grant-temporary-courtesy.service.js';
 export * from './billing/subscription/late-payment-conditions.js';
 export * from './billing/subscription/manual-grace-entry.js';
 export * from './billing/subscription/manual-installment-opening.js';

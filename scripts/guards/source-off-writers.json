@@ -469,5 +469,21 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-2037 moves a live subscription to an additive, price-neutral twin version; status and coverage periods are untouched, so no coverage source turns off."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+        "symbol": "grantTemporaryCourtesy",
+        "table": "courtesyGrants",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S34 extends the live courtesy grant and S9 inserts it in the transaction that opens the COURTESY pause (AC:B9b:7-8)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+        "symbol": "grantTemporaryCourtesy",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S9 changes the ACTIVE principal to PAUSED while opening the COURTESY source; coverage change is emitted after commit (AC:B9b:7)."
     }
 ]
