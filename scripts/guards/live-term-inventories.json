@@ -470,6 +470,20 @@
             "row": null,
             "why": "S34 reads balanceMonths null to select the non-deferred live courtesy grant on this subscription (AC:B9b:8).",
             "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/forfeit-courtesy-pause.service.ts",
+            "symbol": "forfeitCourtesyAndPause",
+            "row": null,
+            "why": "S35 selects the live non-deferred courtesy grant before ending it when the customer confirms forfeiture (AC:B9b:8).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+            "symbol": "resumeSubscription",
+            "row": null,
+            "why": "The third S10 event selects the live non-deferred courtesy grant before revocation (AC:B9b:13).",
+            "subject": "courtesy_grant"
         }
     ]
 }
