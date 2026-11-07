@@ -11,6 +11,7 @@ import {
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
+import { buildChargebackDetection } from '../../utils/billing-chargeback-detection';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import {
     getSuccessionCloser,
@@ -49,6 +50,9 @@ import { touristVipInheritance } from '../billing-subscription/tourist-vip-inher
  *   `LIVE_PREAPPROVAL_ON_CLOSED_ROW` (H-7). The unknown preapproval is not a grid
  *   cell: the receiver itself hands it to `handleUnknownAuthorization`.
  * HOS-1589 (AC:B9b:4/5) registers the production promo counter and S30 ports.
+ * `chargebacks` is the complete chargeback detection of the API (HOS-1631,
+ * AC:B7:10): the receiver hands it to `recordChargeFact`, so a `charged_back`
+ * charge notice runs S6 as well as opening the reason-17 mark.
  *
  * S18 is registered for the receiver and its cancellation delegates. S38 is
  * supplied per delivery so its post-commit effects belong to that delivery.
@@ -91,6 +95,8 @@ export function buildMercadoPagoNoticePorts(input?: {
         ...(input?.scheduledChangeApplier
             ? { scheduledChangeApplier: input.scheduledChangeApplier }
             : {}),
+        // AC:B7:10: a `charged_back` charge notice runs S6 and opens reason 17.
+        chargebacks: buildChargebackDetection({ markPayments }),
         confirmedRefunds: confirmedRefundsForNotice,
         complements,
         delegates: createProviderNoticeMirrorDelegates({

@@ -41,6 +41,7 @@ import {
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
+import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
@@ -429,7 +430,8 @@ function paymentCredited(row: EmailOutboxRow) {
 }
 
 /**
- * Renderers for the notices emitted by the subscription signup flow, plus the
+ * Renderers for the notices emitted by the subscription signup flow, plus S6's
+ * chargeback suspension notice (AC:B7:10), and the
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
  * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), the
  * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
@@ -443,6 +445,7 @@ export function createBillingSignupRenderers(input: {
 }): Readonly<Record<string, OutboxMailRenderer>> {
     const subscriptionUrl = `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}`;
     return {
+        ...createBillingChargebackRenderers({ subscriptionUrl }),
         'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
         'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
