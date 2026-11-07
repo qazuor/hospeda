@@ -12,6 +12,7 @@
  * The model is mocked here; row-level behaviour is the real-DB integration suite.
  */
 
+import { venues } from '@repo/db';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../../src/types';
@@ -40,6 +41,7 @@ class MockVenueModel {
     findById = vi.fn();
     findOne = vi.fn();
     count = vi.fn();
+    getTable = vi.fn(() => venues);
 }
 
 const guestActor: Actor = {
@@ -136,5 +138,70 @@ describe('VenueService public search: businessLine filter (HOS-1787 6.8)', () =>
         const [call] = asMock(mockModel.findAllWithRelations).mock.calls;
 
         expect(searchConditions(call)).toBeUndefined();
+    });
+});
+
+describe('VenueService public search: q filter (HOS-2055)', () => {
+    let mockModel: MockVenueModel;
+    let service: VenueService;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockModel = new MockVenueModel();
+        mockModel.findAllWithRelations.mockResolvedValue({ items: [], total: 0 });
+        mockModel.count.mockResolvedValue(0);
+        service = new VenueService({});
+        Object.defineProperty(service, 'model', { value: mockModel });
+    });
+
+    it('applies q only as an additional condition to search and count', async () => {
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, guestActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount({ page: 1, pageSize: 10 }, guestActor, {});
+        const baseSearchCall = asMock(mockModel.findAllWithRelations).mock.calls[0] as unknown[];
+        const baseCountCall = asMock(mockModel.count).mock.calls[0] as unknown[];
+
+        const params = { page: 1, pageSize: 10, q: 'parrilla' };
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(params, guestActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount(params, guestActor, {});
+
+        const searchCall = asMock(mockModel.findAllWithRelations).mock.calls[1] as unknown[];
+        const countCall = asMock(mockModel.count).mock.calls[1] as unknown[];
+        expect(Object.hasOwn(searchWhere(searchCall), 'q')).toBe(false);
+        expect(Object.hasOwn(countCall[0] as object, 'q')).toBe(false);
+        expect(searchConditions(searchCall)?.length ?? 0).toBe(
+            (searchConditions(baseSearchCall)?.length ?? 0) + 1
+        );
+        expect(
+            (countCall[1] as { additionalConditions: unknown[] }).additionalConditions
+        ).toHaveLength(
+            (baseCountCall[1] as { additionalConditions: unknown[] }).additionalConditions.length +
+                1
+        );
+    });
+
+    it('ignores whitespace-only q', async () => {
+        const params = { page: 1, pageSize: 10, q: '   ' };
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(params, guestActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount(params, guestActor, {});
+
+        const searchCall = asMock(mockModel.findAllWithRelations).mock.calls[0] as unknown[];
+        const countCall = asMock(mockModel.count).mock.calls[0] as unknown[];
+        expect(Object.hasOwn(searchWhere(searchCall), 'q')).toBe(false);
+        expect(searchConditions(searchCall)).toBeUndefined();
+        expect((countCall[1] as { additionalConditions: unknown[] }).additionalConditions).toEqual(
+            []
+        );
     });
 });

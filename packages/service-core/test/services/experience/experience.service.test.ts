@@ -19,6 +19,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import { experiences } from '@repo/db';
 import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
@@ -140,7 +141,7 @@ function makeExperienceModel(entity: Experience | null = null) {
         findWithRelations: vi.fn().mockResolvedValue(entity),
         findOneWithRelations: vi.fn().mockResolvedValue(entity),
         count: vi.fn().mockResolvedValue(0),
-        getTable: vi.fn(),
+        getTable: vi.fn(() => experiences),
         raw: vi.fn()
     };
 }
@@ -531,6 +532,62 @@ describe('ExperienceService search filter forwarding', () => {
             expect.objectContaining({ deletedAt: null }),
             expect.anything()
         );
+    });
+});
+
+describe('ExperienceService public search: q filter (HOS-2055)', () => {
+    it('applies q only as an additional condition to search and count', async () => {
+        const service = makeService();
+        const model = (service as AnyService).model;
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount({ page: 1, pageSize: 10 }, staffActor, {});
+        const baseSearchCall = model.findAllWithRelations.mock.calls[0] as unknown[];
+        const baseCountCall = model.count.mock.calls[0] as unknown[];
+        const params = { page: 1, pageSize: 10, q: 'parrilla' };
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(params, staffActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount(params, staffActor, {});
+
+        const searchCall = model.findAllWithRelations.mock.calls[1] as unknown[];
+        const countCall = model.count.mock.calls[1] as unknown[];
+        expect(Object.hasOwn(searchCall[1] as object, 'q')).toBe(false);
+        expect(Object.hasOwn(countCall[0] as object, 'q')).toBe(false);
+        expect((searchCall[3] as unknown[] | undefined)?.length ?? 0).toBe(
+            ((baseSearchCall[3] as unknown[] | undefined)?.length ?? 0) + 1
+        );
+        expect(
+            (countCall[1] as { additionalConditions: unknown[] }).additionalConditions
+        ).toHaveLength(
+            ((baseCountCall[1] as { additionalConditions?: unknown[] }).additionalConditions
+                ?.length ?? 0) + 1
+        );
+    });
+
+    it('does not add a condition for whitespace-only q', async () => {
+        const service = makeService();
+        const model = (service as AnyService).model;
+        const params = { page: 1, pageSize: 10, q: '   ' };
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(params, staffActor, {});
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount(params, staffActor, {});
+
+        const searchCall = model.findAllWithRelations.mock.calls[0] as unknown[];
+        const countCall = model.count.mock.calls[0] as unknown[];
+        expect(Object.hasOwn(searchCall[1] as object, 'q')).toBe(false);
+        expect(searchCall[3]).toBeUndefined();
+        expect(countCall[1]).toEqual({ tx: undefined });
     });
 });
 
