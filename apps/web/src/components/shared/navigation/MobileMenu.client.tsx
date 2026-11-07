@@ -67,6 +67,7 @@ import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import { clearThemeSyncMarker } from '@/lib/theme';
 import styles from './MobileMenu.module.css';
 import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
+import { MobileMenuNavList } from './MobileMenuNavList.client';
 
 // ---------------------------------------------------------------------------
 // Localized texts for the auth section
@@ -100,6 +101,7 @@ interface NavItem {
     readonly label: string;
     /** Destination href for the link. */
     readonly href: string;
+    readonly children?: readonly { readonly label: string; readonly href: string }[];
 }
 
 /** Props for the MobileMenu component. */
@@ -501,20 +503,11 @@ export function MobileMenu({
                 aria-label={t('nav.mainNavigation', 'Main navigation')}
                 className={styles.nav}
             >
-                <ul className={styles.navList}>
-                    {navItems.map((item) => (
-                        <li key={item.href}>
-                            <a
-                                href={item.href}
-                                onClick={handleLinkClick}
-                                tabIndex={isOpen ? 0 : -1}
-                                className={styles.navLink}
-                            >
-                                {item.label}
-                            </a>
-                        </li>
-                    ))}
-                </ul>
+                <MobileMenuNavList
+                    navItems={navItems}
+                    isOpen={isOpen}
+                    onLinkClick={handleLinkClick}
+                />
             </nav>
 
             {/* Auth section — Publicar submenu, user row + curated accordion, or guest sign-in */}

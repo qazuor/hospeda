@@ -17,13 +17,12 @@
                 "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
                 "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
-                "apps/web/src/lib/facet-slugs.ts": 2,
+                "apps/web/src/lib/facet-slugs.ts": 3,
                 "apps/web/src/lib/filters/events-filter-groups.ts": 2,
                 "apps/web/src/lib/filters/facet-config.ts": 1,
                 "apps/web/src/lib/filters/toggle-query-param.ts": 2,
                 "apps/web/src/lib/post-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/pages/[lang]/eventos/index.astro": 2,
-                "apps/web/src/pages/[lang]/index.astro": 1,
                 "apps/web/src/pages/[lang]/publicaciones/index.astro": 5,
                 "apps/web/src/styles/css-var-themes.css": 2,
                 "apps/web/test/components/shared/cards/utils/postCategoryIcon.test.ts": 4,
@@ -415,5 +414,5 @@
     },
     "historyCount": 94,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "85496b7e1f3a12dbb7105e692c34ae7f71bffbd14bc98b826520817c1d8a1b61"
+    "ledgerFingerprint": "88e2b33e0eaafd47b977a8148c3672585fc03b9c740e2bfc557bc33ff366c52e"
 }

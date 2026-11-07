@@ -377,5 +377,21 @@
         "FOOD_TRUCK": "Food prepared and served from a vehicle.",
         "PUB": "Bar format centered on draft beer and a pub atmosphere.",
         "BOLICHE": "Nightclub focused exclusively on nighttime entertainment."
+    },
+    "collections": {
+        "nightlife": {
+            "pageTitle": "Nightclubs, bars and pubs in {{destino}}",
+            "description": "Discover nightclubs, bars and pubs for a night out in {{destino}}.",
+            "heading": "Nightclubs, bars and pubs",
+            "intro": "Places to go out at night in {{destino}}.",
+            "ogTagline": "For a night out"
+        },
+        "food": {
+            "pageTitle": "Where to eat in {{destino}}",
+            "description": "Discover restaurants, cafés and places to eat in {{destino}}.",
+            "heading": "Where to eat",
+            "intro": "Places to eat in {{destino}}.",
+            "ogTagline": "Where to eat"
+        }
     }
 }

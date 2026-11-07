@@ -377,5 +377,21 @@
         "FOOD_TRUCK": "Comida preparada y servida desde un vehículo.",
         "PUB": "Formato de bar con cerveza tirada y ambiente de pub.",
         "BOLICHE": "Discoteca o club nocturno que funciona sólo de noche."
+    },
+    "collections": {
+        "nightlife": {
+            "pageTitle": "Boliches, bares y pubs en {{destino}}",
+            "description": "Descubrí boliches, bares y pubs para salir de noche en {{destino}}.",
+            "heading": "Boliches, bares y pubs",
+            "intro": "Lugares para salir de noche en {{destino}}.",
+            "ogTagline": "Para salir de noche"
+        },
+        "food": {
+            "pageTitle": "Dónde comer en {{destino}}",
+            "description": "Descubrí restaurantes, cafés y lugares para comer en {{destino}}.",
+            "heading": "Dónde comer",
+            "intro": "Lugares para comer en {{destino}}.",
+            "ogTagline": "Dónde comer"
+        }
     }
 }
