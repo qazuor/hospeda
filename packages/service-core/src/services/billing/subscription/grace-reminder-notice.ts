@@ -4,6 +4,7 @@ import { BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { desc, eq, lte } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
+import { isSuccessionCheckoutOpen } from './succession-in-progress.js';
 
 const logger = createLogger('grace-reminder-notice');
 /** Outbox template key used for grace reminder emails. */
@@ -138,6 +139,13 @@ export async function applyGraceReminder(input: {
         milestone: `grace:-${milestone.daysBefore}d`,
         targetDate: milestone.targetDate
     });
+    const successors = await input.tx
+        .select({ status: db.subscriptions.status })
+        .from(db.subscriptions)
+        .where(eq(db.subscriptions.succeedsId, row.id));
+    const planChangePending = successors.some((successor) =>
+        isSuccessionCheckoutOpen(successor.status)
+    );
     const queued = await db.emailOutboxModel.enqueue(
         {
             recipientUserId: row.userId,
@@ -149,7 +157,8 @@ export async function applyGraceReminder(input: {
                 graceEndsAt: row.endsAt.toISOString(),
                 daysBefore: milestone.daysBefore,
                 deadlinesVersion: version.version,
-                paymentMethod: row.paymentMethod
+                paymentMethod: row.paymentMethod,
+                ...(planChangePending ? { planChangePending: true } : {})
             },
             dedupKey: db.buildEmailDedupKey({
                 recipient: row.userId,

@@ -20,7 +20,8 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
         !Number.isInteger(data.deadlinesVersion) ||
         typeof data.deadlinesVersion !== 'number' ||
         data.deadlinesVersion <= 0 ||
-        (paymentMethod !== 'CARD' && paymentMethod !== 'MANUAL')
+        (paymentMethod !== 'CARD' && paymentMethod !== 'MANUAL') ||
+        (data.planChangePending !== undefined && typeof data.planChangePending !== 'boolean')
     )
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
     const endDate = new Date(data.graceEndsAt);
@@ -35,6 +36,7 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
                 daysBefore={data.daysBefore}
                 subscriptionUrl={`${siteUrl}/es/mi-cuenta/suscripcion/`}
                 paymentMethod={paymentMethod}
+                planChangePending={data.planChangePending === true}
             />
         )
     };
