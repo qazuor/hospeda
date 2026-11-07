@@ -40,6 +40,14 @@ const readBilling = (locale: Locale): Record<string, unknown> => {
 const NEW_KEYS = ['subscription', 'subscriptionCancellation', 'subscriptionRevocation'] as const;
 
 describe('subscription breadcrumb label maps', () => {
+    it('maps permanent grants to its translated billing key (AC:B13a:6)', () => {
+        expect(breadcrumbLabels['/billing/permanent-grants']).toBe(
+            'admin-menu.billing.permanentGrants'
+        );
+        for (const locale of LOCALES) {
+            expect(readBilling(locale).permanentGrants).toEqual(expect.any(String));
+        }
+    });
     it('maps /billing/subscriptions to the existing subscriptions key', () => {
         expect(breadcrumbLabels['/billing/subscriptions']).toBe('admin-menu.billing.subscriptions');
     });

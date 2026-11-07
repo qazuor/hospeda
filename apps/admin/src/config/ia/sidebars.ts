@@ -651,6 +651,15 @@ const comercialSidebar: SidebarInput = {
             route: '/billing/plan-catalog',
             permissions: ['MAINTENANCE_MODE_WRITE'],
             onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'permanent-grants',
+            label: { es: 'Grants permanentes', en: 'Permanent grants', pt: 'Grants permanentes' },
+            icon: 'DollarSignIcon',
+            route: '/billing/permanent-grants',
+            permissions: ['BILLING_GRANT_COMPLIMENTARY'],
+            onMissing: 'hide'
         }
     ]
 };
