@@ -1,6 +1,7 @@
 import { endScheduledServices, providerLinkCancellationSeen } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
+import { getSuccessionCloser } from '../../utils/billing-succession-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage.js';
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
@@ -12,7 +13,7 @@ import type { CronJobDefinition } from '../types.js';
  * HOS-1569 / AC:B8a:5-6: every 15 minutes, S12 on every `CANCEL_SCHEDULED` row whose end of
  * service passed — principals and their orphanhood first, then the complements left. The
  * `políticaDeAddon` and `ficha` ports come from `buildBillingCoveragePorts`, so the job inherits
- * the real `ficha` once it is registered; no succession closer is registered (it fails closed).
+ * the real `ficha` once it is registered; S18 closes a dead predecessor.
  */
 export const subscriptionServiceEndJob: CronJobDefinition = {
     name: 'subscription-service-end',
@@ -51,7 +52,8 @@ export const subscriptionServiceEndJob: CronJobDefinition = {
                     coverageNotices: getCoverageNotices(),
                     addonPolicy,
                     listing,
-                    cancellationSeen: providerLinkCancellationSeen
+                    cancellationSeen: providerLinkCancellationSeen,
+                    successionCloser: getSuccessionCloser()
                 }
             );
             const processed = summary.principals.cancelled + summary.complements.cancelled;

@@ -159,6 +159,25 @@ describe('TEST:B3:44 M1: creation can discard what was sent', () => {
         expect(read.snapshot.cadence).toEqual(sent.cadence);
         expect(read.snapshot.firstChargeAt).toBe(sent.firstChargeAt);
     });
+
+    it('restores M1 for a successor creation without changing the existing authorization', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'fixture signup' }]
+        });
+        const origin = await fake.authorize(sent);
+        fake.restoreLie({ lie: 'M1' });
+        const successor = await fake.authorize({ ...sent, reference: 'sub-2' });
+
+        expect(
+            (await fake.readAuthorization({ authorizationId: origin.authorizationId })).snapshot
+                .firstChargeAt
+        ).toBe(sent.firstChargeAt);
+        expect(
+            (await fake.readAuthorization({ authorizationId: successor.authorizationId })).snapshot
+                .firstChargeAt
+        ).toBeNull();
+    });
 });
 
 describe('TEST:B3:44 M9: a future first charge gets a provider-added free period', () => {

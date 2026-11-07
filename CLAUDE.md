@@ -339,7 +339,8 @@ file there is named after its job. The billing and verticals jobs are:
   `listing-remote-deletion-retry`, `listing-retention-pass`.
 - **Trial:** `trial-machine-expiry`.
 - **Subscriptions:** `subscription-window-expiry`, `subscription-service-end`,
-  `subscription-grace-reminder`, `subscription-renewal-notice`.
+  `subscription-succession-reevaluation`, `subscription-grace-reminder`,
+  `subscription-renewal-notice`.
 - **Payments and reconciliation:** `payment-window-expiry`,
   `billing-creations-sweep`, `billing-reconciliation-sweep`,
   `billing-reconciliation-summary`.

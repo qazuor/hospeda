@@ -27,6 +27,7 @@ import {
     protectedCancelSubscriptionRoute
 } from './cancellation';
 import { protectedPendingAttemptCancellationRoute } from './pending-attempt-cancellation';
+import { protectedPlanChangeRoute } from './plan-change';
 import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
@@ -220,5 +221,6 @@ readRouter.route('/', protectedReadOwnSubscriptionsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
 readRouter.route('/', protectedCancellationPreviewRoute);
 readRouter.route('/', protectedCancelSubscriptionRoute);
+readRouter.route('/', protectedPlanChangeRoute);
 
 export { readRouter as protectedBillingSubscriptionReadRoutes };
