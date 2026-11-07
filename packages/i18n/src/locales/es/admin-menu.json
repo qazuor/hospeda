@@ -75,7 +75,8 @@
         "webhookEvents": "Eventos de Webhook",
         "subscription": "Suscripción",
         "subscriptionCancellation": "Baja",
-        "subscriptionRevocation": "Revocación"
+        "subscriptionRevocation": "Revocación",
+        "permanentGrants": "Grants permanentes"
     },
     "notifications": "Notificaciones",
     "access": {

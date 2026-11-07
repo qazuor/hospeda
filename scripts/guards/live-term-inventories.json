@@ -1,6 +1,20 @@
 {
     "fila_viva": [
         {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "subject": "subscription",
+            "why": "AC:B9a:14: consumer 17 reads live principal and complement subscriptions under a live permanent grant."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/grant-fan-out-check.ts",
+            "symbol": "hasS20Candidate",
+            "row": 17,
+            "subject": "addon_instance",
+            "why": "AC:B9a:14: S20 half reads only pending or active addon instances before marking a live complement."
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
             "symbol": "cutSuccessorWrites",
             "row": null,
@@ -211,6 +225,13 @@
             "why": "AC:B9a:7 (HOS-1634): revocar lee las instancias vivas tituladas por sus anclas."
         },
         {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview.ts",
+            "symbol": "previewPermanentGrantRevocation",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:7 (HOS-1634): la vista previa de revocación lee las instancias tituladas por las anclas y aplica el mismo filtro de estados vivos (PENDING_AUTHORIZATION, ACTIVE) que revokePermanentGrant."
+        },
+        {
             "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
             "symbol": "reanchorSubscriptionsToVersion",
             "row": null,
@@ -219,6 +240,12 @@
         }
     ],
     "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "why": "AC:B9a:14: consumer 17 scans only unrevoked permanent grants with at least one vertical anchor."
+        },
         {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
             "symbol": "revokePermanentGrant",
@@ -387,6 +414,19 @@
             "symbol": "closeDeferredCourtesyBalances",
             "row": 9,
             "why": "S13 cierra el saldo diferido en las verticales que el acto ancla (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview-read.ts",
+            "symbol": "readPermanentGrantEffects",
+            "row": 4,
+            "subject": "courtesy_grant",
+            "why": "La vista previa lee balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/schemas/src/api/billing/permanent-grant-preview.schema.ts",
+            "symbol": "closedDeferredBalances",
+            "row": 34,
+            "why": "El contrato de la vista previa expone balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
         },
         {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",

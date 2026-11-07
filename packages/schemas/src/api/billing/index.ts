@@ -25,6 +25,7 @@ export * from './partner-billing-setup.schema.js';
 export * from './payer-email.schema.js';
 export * from './payment-reconciliation.schema.js';
 export * from './permanent-grant.schema.js';
+export * from './permanent-grant-preview.schema.js';
 export * from './plan-change.schema.js';
 export * from './pricing-situation.schema.js';
 export * from './promo-code.schema.js';

@@ -72,6 +72,11 @@ const manualBinding = (route: string, late = false): Binding => ({
 });
 const pauseFile = 'apps/api/src/routes/billing-subscription/admin/pause.ts';
 const pauseBinding = (route: string): Binding => ({ kind: 'required', file: pauseFile, route });
+const grantBinding = (file: string, route: string): Binding => ({
+    kind: 'required',
+    file: `apps/api/src/routes/billing-permanent-grant/admin/${file}.ts`,
+    route
+});
 /** A catalog action that maps to one or more concrete route bindings. */
 export type BoundEntry = { readonly bindings: readonly Binding[] };
 /** A catalog action that no route binds yet, with the reason it stays unbound. */
@@ -145,21 +150,13 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
     ACC_1: { unbound: 'B9b builds it' },
     ACC_2: {
         bindings: [
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/grant.ts',
-                route: 'adminGrantPermanentGrantRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/anchor.ts',
-                route: 'adminAnchorPermanentGrantRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-permanent-grant/admin/revocation.ts',
-                route: 'adminRevokePermanentGrantRoute'
-            }
+            grantBinding('grant', 'adminGrantPermanentGrantRoute'),
+            grantBinding('anchor', 'adminAnchorPermanentGrantRoute'),
+            grantBinding('revocation', 'adminRevokePermanentGrantRoute'),
+            grantBinding('grant-preview', 'adminPreviewPermanentGrantRoute'),
+            grantBinding('anchor-preview', 'adminPreviewPermanentGrantAnchorRoute'),
+            grantBinding('revocation', 'adminPermanentGrantRevocationPreviewRoute'),
+            grantBinding('live', 'adminLivePermanentGrantRoute')
         ]
     },
     ACC_3: {
