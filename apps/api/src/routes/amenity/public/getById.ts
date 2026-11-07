@@ -2,7 +2,7 @@
  * Public amenity detail endpoint
  * Returns a single amenity by ID
  */
-import { AmenityIdSchema, AmenityPublicSchema } from '@repo/schemas';
+import { AmenityIdSchema, AmenityPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -31,6 +31,12 @@ export const publicGetAmenityByIdRoute = createPublicRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // getById applies no soft-delete filter (the admin restore path relies on
+        // that), so a retired catalog row must be hidden here, on the public route.
+        if (result.data?.deletedAt) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
         }
 
         return result.data;

@@ -2,7 +2,7 @@
  * Public get feature by ID endpoint
  * Returns a single feature by its ID
  */
-import { FeatureIdSchema, FeaturePublicSchema } from '@repo/schemas';
+import { FeatureIdSchema, FeaturePublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -31,6 +31,12 @@ export const publicGetFeatureByIdRoute = createPublicRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // getById applies no soft-delete filter (the admin restore path relies on
+        // that), so a retired catalog row must be hidden here, on the public route.
+        if (result.data?.deletedAt) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
         }
 
         return result.data;
