@@ -25,26 +25,35 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  * — and (b) validates and forwards it to the handler. It is then mapped to a
  * `moderationState` filter via the dedicated `listForModeration` service
  * method, NOT the base `adminList` `status` param (which means `lifecycleState`).
+ *
+ * `venueId` (HOS-2051) narrows the list to one venue listing: the per-listing
+ * moderation panel sends the id of its own listing, so a moderator opening
+ * venue A sees only A's reviews. It is a filter, not a requirement — without
+ * it the list keeps returning every listing, as the global moderation view
+ * expects. Non-UUID values are rejected with 400 VALIDATION_ERROR.
  */
 export const adminListVenueReviewsRoute = createAdminListRoute({
     method: 'get',
     path: '/',
     summary: 'List all venue reviews (admin)',
     description:
-        'Returns a paginated list of all venue reviews with full admin details, including pending and rejected reviews.',
+        'Returns a paginated list of all venue reviews with full admin details, including pending and rejected reviews. Accepts an optional `venueId` filter to narrow the list to one venue listing.',
     tags: ['Venue Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestQuery: {
-        status: z.nativeEnum(ModerationStatusEnum).optional()
+        status: z.nativeEnum(ModerationStatusEnum).optional(),
+        venueId: z.string().uuid().optional()
     },
     responseSchema: VenueReviewSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
         const moderationState = (query as { status?: ModerationStatusEnum } | undefined)?.status;
+        const venueId = (query as { venueId?: string } | undefined)?.venueId;
 
         const result = await venueReviewService.listForModeration(actor, {
             moderationState,
+            venueId,
             page,
             pageSize
         });

@@ -24,17 +24,26 @@ const experienceReviewService = new ExperienceReviewService({ logger: apiLogger 
  * always sends `status=PENDING`). It is declared in `requestQuery` so the
  * factory whitelists and validates it, then mapped to `moderationState` before
  * `adminList` — the base `status` param means lifecycle state and has no PENDING.
+ *
+ * `experienceId` (HOS-2051) narrows the list to one experience listing: the
+ * per-listing moderation panel sends the id of its own listing, so a moderator
+ * opening experience A sees only A's reviews. Declared here so the factory
+ * whitelists and validates it (non-UUID → 400 VALIDATION_ERROR); the handler
+ * forwards it to `adminList` unmodified, where
+ * `ExperienceReviewAdminSearchSchema` applies the filter. It is a filter, not
+ * a requirement — without it the list keeps returning every listing.
  */
 export const adminListExperienceReviewsRoute = createAdminListRoute({
     method: 'get',
     path: '/',
     summary: 'List all experience reviews (admin)',
     description:
-        'Returns a paginated list of all experience reviews with full admin details, including pending and rejected reviews.',
+        'Returns a paginated list of all experience reviews with full admin details, including pending and rejected reviews. Accepts an optional `experienceId` filter to narrow the list to one experience listing.',
     tags: ['Experience Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.EXPERIENCE_MODERATE_REVIEW]],
     requestQuery: {
-        status: z.nativeEnum(ModerationStatusEnum).optional()
+        status: z.nativeEnum(ModerationStatusEnum).optional(),
+        experienceId: z.string().uuid().optional()
     },
     responseSchema: ExperienceReviewSchema,
     handler: async (ctx, _params, _body, query) => {

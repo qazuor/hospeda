@@ -30,6 +30,7 @@
 
 import {
     AmenityModel,
+    buildSearchCondition,
     buildVenueBusinessLineCondition,
     buildVenueCatalogConditions,
     FeatureModel,
@@ -56,6 +57,7 @@ import {
     type VenueUpdateInput,
     VenueUpdateInputSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
@@ -443,6 +445,7 @@ export class VenueService extends BaseListingService<
      *
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
      * `ownerId`, `isFeatured`.
+     * `q` applies a text filter across the service's searchable columns.
      *
      * `amenities` / `features` are junction-table filters and are applied as
      * `additionalConditions` built by `@repo/db`'s
@@ -474,6 +477,7 @@ export class VenueService extends BaseListingService<
             amenities,
             features,
             businessLine,
+            q,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -481,13 +485,12 @@ export class VenueService extends BaseListingService<
             ...scalarFilters
         } = params;
 
-        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
-        // HOS-1787 leaf 6.8: `business_lines` is `text[]`, so it cannot ride the
-        // scalar spread (the generic builder would emit `eq(text[], 'food')`).
-        // It is composed as an additional `@>` condition, in the search and the
-        // count alike, so the pagination total matches the filtered page.
-        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
-        if (businessLineCondition) catalogConditions.push(businessLineCondition);
+        const catalogConditions = this.buildPublicSearchConditions({
+            amenities,
+            features,
+            businessLine,
+            q
+        });
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
@@ -544,6 +547,7 @@ export class VenueService extends BaseListingService<
             amenities,
             features,
             businessLine,
+            q,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -551,15 +555,14 @@ export class VenueService extends BaseListingService<
             ...scalarFilters
         } = params;
 
-        // Mirror _executeSearch, INCLUDING the catalog conditions: a count that
-        // ignored the apto filter would report a total for a different result set
-        // than the one being paginated, so page 2 of "sin TACC" would exist and be
-        // empty.
-        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
-        // Mirrors the search: the same `businessLine` condition, so a collection
-        // page N that exists always has items (HOS-1787 leaf 6.8).
-        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
-        if (businessLineCondition) catalogConditions.push(businessLineCondition);
+        // Keep catalog, business-line, and text filters identical to the page
+        // query: the total must describe the same intersection as its items.
+        const catalogConditions = this.buildPublicSearchConditions({
+            amenities,
+            features,
+            businessLine,
+            q
+        });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
@@ -572,6 +575,29 @@ export class VenueService extends BaseListingService<
             { additionalConditions: catalogConditions, tx: ctx?.tx }
         );
         return { count };
+    }
+
+    /** Builds the shared public venue search conditions for page and count. */
+    private buildPublicSearchConditions({
+        amenities,
+        features,
+        businessLine,
+        q
+    }: Pick<VenueSearch, 'amenities' | 'features' | 'businessLine' | 'q'>): SQL[] {
+        const conditions = buildVenueCatalogConditions({ amenities, features });
+        const businessLineCondition = buildVenueBusinessLineCondition({ businessLine });
+        if (businessLineCondition) conditions.push(businessLineCondition);
+
+        if (q && q.trim().length > 0) {
+            const searchCondition = buildSearchCondition(
+                q,
+                this.getSearchableColumns(),
+                this.model.getTable()
+            );
+            if (searchCondition) conditions.push(searchCondition);
+        }
+
+        return conditions;
     }
 
     /**
