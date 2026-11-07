@@ -15,6 +15,12 @@
  * catalog ID throws `ServiceError(VALIDATION_ERROR)` which rolls back the
  * entire transaction — no partial writes occur.
  *
+ * HOS-2067: a RETIRED (soft-deleted) catalog id is treated like an unknown one
+ * unless the entity already has it linked. It is rejected, never dropped: the
+ * sync is exact-set, so a stale form carrying a retired id also lacks the
+ * replacement relation a data migration created, and the diff would delete it.
+ * An already-linked retired id is kept as is.
+ *
  * @module listing.junction-sync
  */
 
@@ -30,7 +36,10 @@ import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sy
  * validator. HOS-321: batch lookup, not one `findById` per id.
  */
 interface CatalogModel {
-    findByIds: (ids: readonly string[], tx?: DrizzleClient) => Promise<readonly { id: string }[]>;
+    findByIds: (
+        ids: readonly string[],
+        tx?: DrizzleClient
+    ) => Promise<readonly { id: string; deletedAt?: Date | string | null }[]>;
 }
 
 /**
@@ -121,7 +130,7 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
  *   Operation is idempotent.
  *
  * @param input - {@link SyncListingAmenityJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown or newly retired.
  *
  * @example
  * ```ts
@@ -144,16 +153,6 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
     // undefined → no-op (three-way contract)
     if (amenityIds === undefined) return;
 
-    // Validate all supplied IDs before touching any rows.
-    if (amenityIds.length > 0) {
-        await validateCatalogIds({
-            ids: amenityIds,
-            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
-            entityLabel: 'amenity',
-            tx
-        });
-    }
-
     // Fetch ALL current junction rows for this entity (HOS-321: an unpaginated
     // `findAll` silently truncates at the model's 20-row default page, which
     // makes the exact-set diff re-insert rows past page 1 — a composite-PK
@@ -164,6 +163,19 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
         sortBy: 'amenityId' as keyof TRow & string,
         tx
     });
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so a retired catalog id the entity already has linked is tolerated
+    // (HOS-2067); a retired id it does not have is rejected.
+    if (amenityIds.length > 0) {
+        await validateCatalogIds({
+            ids: amenityIds,
+            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
+            entityLabel: 'amenity',
+            alreadyLinkedIds: new Set(existing.map((row) => row.amenityId as string)),
+            tx
+        });
+    }
     const existingIds = new Set(existing.map((row) => row.amenityId as string));
     const targetIds = new Set(amenityIds);
 
@@ -188,7 +200,7 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
  * {@link syncListingAmenityJunction}, adapted for feature IDs.
  *
  * @param input - {@link SyncListingFeatureJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown or newly retired.
  */
 export async function syncListingFeatureJunction<TRow extends Record<string, unknown>>(
     input: SyncListingFeatureJunctionInput<TRow>
@@ -198,16 +210,6 @@ export async function syncListingFeatureJunction<TRow extends Record<string, unk
     // undefined → no-op (three-way contract)
     if (featureIds === undefined) return;
 
-    // Validate all supplied IDs before touching any rows.
-    if (featureIds.length > 0) {
-        await validateCatalogIds({
-            ids: featureIds,
-            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
-            entityLabel: 'feature',
-            tx
-        });
-    }
-
     // Fetch ALL current junction rows for this entity — see the amenity
     // counterpart for why an unpaginated read corrupts the diff.
     const existing = await readAllJunctionRows<TRow>({
@@ -216,6 +218,19 @@ export async function syncListingFeatureJunction<TRow extends Record<string, unk
         sortBy: 'featureId' as keyof TRow & string,
         tx
     });
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so a retired catalog id the entity already has linked is tolerated
+    // (HOS-2067); a retired id it does not have is rejected.
+    if (featureIds.length > 0) {
+        await validateCatalogIds({
+            ids: featureIds,
+            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
+            entityLabel: 'feature',
+            alreadyLinkedIds: new Set(existing.map((row) => row.featureId as string)),
+            tx
+        });
+    }
     const existingIds = new Set(existing.map((row) => row.featureId as string));
     const targetIds = new Set(featureIds);
 
