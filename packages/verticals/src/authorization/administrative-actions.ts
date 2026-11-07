@@ -36,7 +36,7 @@ export type AdministrativeAction = (typeof ADMINISTRATIVE_ACTIONS)[number];
 /**
  * Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3.
  * Each row is compared with the gate of the route that implements it in
- * `apps/api/test/routes/administrative-action-route-permissions.guard.test.ts` (HOS-1689).
+ * `apps/api/test/routes/administrative-action-route-permissions.*.guard.test.ts` (HOS-1689).
  */
 export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     Record<
