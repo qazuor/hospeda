@@ -93,7 +93,9 @@ export const DOMAIN_EVENT_TYPES = [
     /** An accredited payment was charged below the expected amount (corrida 2). */
     'reconciliation.undercharge_detected',
     /** A completed pause gave net days (corrida 2). */
-    'reconciliation.pause_gift_detected'
+    'reconciliation.pause_gift_detected',
+    /** The previous and new amount of one billing option set by admin action 19 (HOS-1515). */
+    'billing_option.price_set'
 ] as const;
 
 /** One type of the closed domain event catalog. */

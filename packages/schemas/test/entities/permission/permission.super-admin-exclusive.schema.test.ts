@@ -18,7 +18,8 @@ describe('SUPER_ADMIN_EXCLUSIVE_PERMISSIONS', () => {
             PermissionEnum.MAINTENANCE_MODE_WRITE,
             PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
             PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
-            PermissionEnum.BILLING_MANAGE_PROMO_CODES
+            PermissionEnum.BILLING_MANAGE_PROMO_CODES,
+            PermissionEnum.BILLING_SET_CYCLE_PRICE
         ]);
     });
 

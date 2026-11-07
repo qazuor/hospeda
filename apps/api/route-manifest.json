@@ -382,6 +382,14 @@
             "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-prices"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-prices/preview"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-promo-codes"
         },
