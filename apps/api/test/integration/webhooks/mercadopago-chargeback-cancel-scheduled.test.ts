@@ -1,29 +1,116 @@
 /** TEST:B8a:7: a real charged-back payment ends its scheduled principal through API roots. */
+import { randomUUID } from 'node:crypto';
 import {
     and,
+    billingDeadlineVersions,
     emailOutbox,
     eq,
     getDb,
     payments,
+    planCatalogModel,
     reconciliationMarkPayments,
     reconciliationMarks,
     subscriptions
 } from '@repo/db';
-import { FAKE_NOTICE_DELAY_MS } from '@repo/payments/fake';
+import { MercadoPagoPaymentProvider } from '@repo/payments';
+import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
+import { startFakeProviderServer } from '@repo/payments/fake-server';
+import { startSuccession } from '@repo/service-core';
+import { createAdjustableClock } from '@repo/test-clock';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { initApp } from '../../../src/app';
+import { billingReconciliationSweepJob } from '../../../src/cron/jobs/billing-reconciliation-sweep.job';
+import type { CronJobContext } from '../../../src/cron/types';
+import { beforeCancelNotice } from '../../../src/routes/billing-subscription/before-cancel-notice';
+import { touristVipInheritance } from '../../../src/routes/billing-subscription/tourist-vip-inheritance';
+import { getClock } from '../../../src/utils/clock';
+import { validateApiEnv } from '../../../src/utils/env';
+import { getPaymentProvider } from '../../../src/utils/payment-provider';
+import { testDb } from '../../e2e/setup/test-database';
 import { presetSelfCancelNotice } from '../billing-subscription/self-cancel-fixtures';
 import {
+    createLifter,
+    createSignupOption,
+    createSubjects,
     postDelivery,
     retireSubjects,
+    SIGNING_KEY,
     signedNotice,
     signup
 } from './mercadopago-delegates-fixtures';
-import { startPeriodChargesFixture } from './mercadopago-period-charges-fixtures';
 
-let fixture: Awaited<ReturnType<typeof startPeriodChargesFixture>>;
+const START = new Date('2026-10-12T12:00:00.000Z');
+let fixture: Awaited<ReturnType<typeof startFixture>>;
+
+async function startFixture() {
+    process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = SIGNING_KEY;
+    await testDb.setup();
+    validateApiEnv();
+    const clock = createAdjustableClock({ start: START });
+    const fake = new FakePaymentProvider({
+        clock,
+        idNamespace: randomUUID(),
+        honestAbout: [{ lie: 'M1', why: 'S1 successor first-charge schedule must be preserved' }]
+    });
+    const subjects = createSubjects();
+    const server = await startFakeProviderServer({ provider: fake, clock });
+    const app = initApp({
+        clock,
+        paymentProvider: new MercadoPagoPaymentProvider({
+            clock,
+            baseUrl: server.url,
+            accessToken: 'test-token'
+        })
+    });
+    await getDb()
+        .insert(billingDeadlineVersions)
+        .values({
+            version: 1,
+            values: {
+                '10': { cardHours: 72, manualDays: 7 },
+                '11': { noticeDays: 60, contactDays: [30, 7] },
+                '12': { noticeDays: 60, contactDays: [30, 7] },
+                '13': { daysBefore: [5, 1] },
+                '14': { daysBefore: 7 },
+                '15': { hoursRemaining: 24 },
+                '16': { days: 7 },
+                '17': { days: 7 },
+                '18': { days: 180 },
+                '19': { minutes: 60 }
+            }
+        })
+        .onConflictDoNothing();
+    const billingOptionId = await createSignupOption();
+    const lifterId = await createLifter();
+    return {
+        app,
+        billingOptionId,
+        clock,
+        fake,
+        subjects,
+        lifterId,
+        async runSweep() {
+            const ctx: CronJobContext = {
+                logger: { info() {}, warn() {}, error() {}, debug() {} },
+                startedAt: clock.now(),
+                runId: randomUUID(),
+                correlationId: randomUUID(),
+                dryRun: false,
+                newCycle: true
+            };
+            return billingReconciliationSweepJob.handler(ctx);
+        },
+        async stop() {
+            await server.close();
+            await testDb.teardown();
+        }
+    };
+}
 
 beforeAll(async () => {
-    fixture = await startPeriodChargesFixture();
+    fixture = await startFixture();
 });
 afterEach(async () => {
     vi.restoreAllMocks();
@@ -94,6 +181,62 @@ async function scheduledChargeback() {
     return { ...created, chargeId: charge.chargeId, scheduledEnd: scheduled!.serviceEndsAt! };
 }
 
+async function realSuccessor(created: Awaited<ReturnType<typeof scheduledChargeback>>) {
+    const [predecessor] = await getDb()
+        .select({ billingOptionId: subscriptions.billingOptionId })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, created.subscriptionId));
+    if (!predecessor?.billingOptionId) throw new Error('Predecessor billing option missing');
+    const successor = await startSuccession(
+        {
+            predecessorSubscriptionId: created.subscriptionId,
+            userId: created.userId,
+            billingOptionId: predecessor.billingOptionId,
+            returnUrl: 'https://hospeda.test/es/planes/'
+        },
+        {
+            provider: getPaymentProvider(),
+            clock: getClock().clock,
+            planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy,
+            beforeCancelNotice,
+            touristVipInheritance
+        }
+    );
+    fixture.subjects.subscriptions.add(successor.subscriptionId);
+    return successor;
+}
+
+async function expectSuccessorCut(
+    successor: Awaited<ReturnType<typeof realSuccessor>>,
+    cancel: {
+        readonly mock: { readonly calls: readonly (readonly [{ authorizationId: string }])[] };
+    }
+) {
+    const [row] = await getDb()
+        .select({ status: subscriptions.status, succeedsId: subscriptions.succeedsId })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, successor.subscriptionId));
+    expect(row).toEqual({ status: 'ABANDONED', succeedsId: expect.any(String) });
+    expect(row?.succeedsId).toBe(successor.predecessorId);
+    expect(
+        cancel.mock.calls.filter(([input]) => input.authorizationId === successor.authorizationId)
+    ).toHaveLength(1);
+}
+
+async function deliverSuccessorCutNotice(userId: string) {
+    await getDb()
+        .update(emailOutbox)
+        .set({ status: 'sent' })
+        .where(
+            and(
+                eq(emailOutbox.recipientUserId, userId),
+                eq(emailOutbox.template, 'billing.successor-cut-cancel')
+            )
+        );
+    await fixture.runSweep();
+    await fixture.runSweep();
+}
+
 async function expectS12Settled(created: Awaited<ReturnType<typeof scheduledChargeback>>) {
     const [row] = await getDb()
         .select({ status: subscriptions.status, serviceEndsAt: subscriptions.serviceEndsAt })
@@ -142,6 +285,7 @@ async function expectS12Settled(created: Awaited<ReturnType<typeof scheduledChar
 describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment', () => {
     it('the signed payment webhook rereads the charge and runs S12', async () => {
         const created = await scheduledChargeback();
+        const successor = await realSuccessor(created);
         const cancel = vi.spyOn(fixture.fake, 'cancel');
         const pause = vi.spyOn(fixture.fake, 'pause');
         const resume = vi.spyOn(fixture.fake, 'resume');
@@ -150,8 +294,11 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         const approve = vi.spyOn(fixture.fake, 'approve');
 
         await deliver('payment', created.chargeId, '2');
+        await fixture.runSweep();
+        await deliverSuccessorCutNotice(created.userId);
 
         await expectS12Settled(created);
+        await expectSuccessorCut(successor, cancel);
         expect(
             cancel.mock.calls.filter(([input]) => input.authorizationId === created.authorizationId)
         ).toHaveLength(0);
@@ -180,6 +327,7 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
 
     it('the real credited-payments sweep rereads the same state and runs S12', async () => {
         const created = await scheduledChargeback();
+        const successor = await realSuccessor(created);
         const cancel = vi.spyOn(fixture.fake, 'cancel');
         const pause = vi.spyOn(fixture.fake, 'pause');
         const resume = vi.spyOn(fixture.fake, 'resume');
@@ -188,8 +336,10 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         const approve = vi.spyOn(fixture.fake, 'approve');
 
         await fixture.runSweep();
+        await deliverSuccessorCutNotice(created.userId);
 
         await expectS12Settled(created);
+        await expectSuccessorCut(successor, cancel);
         expect(
             cancel.mock.calls.filter(([input]) => input.authorizationId === created.authorizationId)
         ).toHaveLength(0);
