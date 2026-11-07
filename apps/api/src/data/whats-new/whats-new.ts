@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4200
+    {
+        id: '2026-11-07-publish-bars-and-boliches-in-comer-y-salir',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Publicá tu bar o tu boliche en Comer y salir',
+            en: 'List your bar or nightclub in Comer y salir',
+            pt: 'Publique seu bar ou sua balada no Comer y salir'
+        },
+        body: {
+            es: 'Al cargar tu local elegís sus rubros, **Gastronomía** y **Noche**, y te preseleccionamos los que corresponden a su tipo. Los locales de noche suman la sección **Info para salir** (entrada, edad mínima y código de vestimenta) y aparecen en la nueva colección **Noche** de Comer y salir. Si sacás un rubro, te avisamos qué deja de verse, y tus datos quedan guardados por si lo volvés a agregar.',
+            en: 'When you add your venue you choose its business lines, **Food** and **Nightlife**, and we preselect the ones that fit its type. Nightlife venues get the **Night out info** section (entry, minimum age and dress code) and appear in the new **Nightlife** collection in Comer y salir. If you remove a business line, we tell you what stops being shown, and your data stays saved in case you add it back.',
+            pt: 'Ao cadastrar seu local, você escolhe os ramos, **Gastronomia** e **Noite**, e pré-selecionamos os que combinam com o tipo. Os locais noturnos ganham a seção **Info para sair** (entrada, idade mínima e traje) e aparecem na nova coleção **Noite** do Comer y salir. Se você tirar um ramo, avisamos o que deixa de aparecer, e seus dados ficam salvos caso você o adicione de novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4161
     {
         id: '2026-11-06-amenity-details-and-feature-categories',
