@@ -65,7 +65,7 @@ async function hasS20Candidate(
         const { scopeType } = await orphanhood.addonPolicy({
             addonVersionId: instance.addonVersionId
         });
-        let targetVertical: string | undefined;
+        let targetVertical: string | null | undefined;
         switch (scopeType) {
             case 'VERTICAL_SUBSCRIPTION': {
                 if (instance.targetId === null) throw new Error('S20 vertical addon has no target');
@@ -74,9 +74,7 @@ async function hasS20Candidate(
                     .from(subscriptions)
                     .where(eq(subscriptions.id, instance.targetId));
                 if (!target) throw new Error('S20 vertical addon target is missing');
-                if (target.vertical === null)
-                    throw new Error('S20 vertical addon target has no vertical');
-                targetVertical = target.vertical ?? undefined;
+                targetVertical = target.vertical;
                 break;
             }
             case 'LISTING': {
