@@ -53,10 +53,13 @@ describe('OpeningHoursGrid', () => {
     });
 
     it('hydrates server markup without console errors', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-11-09T02:30:00Z'));
         const html = renderToString(<OpeningHoursGrid {...props} />);
         const host = document.createElement('div');
         host.innerHTML = html;
         document.body.append(host);
+        vi.setSystemTime(new Date('2026-11-09T03:30:00Z'));
         const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         let root: ReturnType<typeof hydrateRoot> | undefined;
         await act(async () => {
