@@ -22,6 +22,7 @@ import {
     monthlyOptionForSlug,
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
+import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
 test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
@@ -101,7 +102,7 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
         });
-        expect(sweep.success).toBe(true);
+        expect(sweep.success, JSON.stringify(await describeSweepCandidates())).toBe(true);
         const synced = await execSQL<{ next_charge_at: Date | null }>(
             'SELECT next_charge_at FROM subscription WHERE id = $1',
             [subscriptionId]

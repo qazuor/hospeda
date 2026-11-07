@@ -28,6 +28,7 @@ import {
 } from '../../fixtures/permanent-grant-flow.ts';
 import { cancellationRequestsFor, useAdminSession } from '../../fixtures/revocation-flow.ts';
 import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
+import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
 const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:18000';
 const GRANT_CANCEL_SUBJECT = 'Tu suscripción ya no se cobra';
@@ -57,6 +58,15 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
     let world: FakeWorld | null = null;
     let userIds: string[] = [];
     let dialogs: string[] = [];
+
+    async function logForeignSweepCandidates(stage: string): Promise<void> {
+        // biome-ignore lint/suspicious/noConsole: The CI log is the runtime evidence for this sweep.
+        console.log(
+            `[sweep-candidates] ${stage} ${JSON.stringify(
+                await describeSweepCandidates({ excludeUserIds: userIds })
+            )}`
+        );
+    }
 
     test.beforeAll(async () => {
         const clock = createAdjustableClock({ start: new Date() });
@@ -166,6 +176,7 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
             [subscriber.user.id]
         );
         expect(notice?.status).toBe('pending');
+        await logForeignSweepCandidates('before email-outbox-sender');
         await runCron({
             jobName: 'email-outbox-sender',
             adminCookie: subscriber.admin.sessionCookie
@@ -186,10 +197,12 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
                 return sent?.status;
             })
             .toBe('sent');
+        await logForeignSweepCandidates('after email-outbox-sender');
         await runCron({
             jobName: 'billing-deferred-cancellation-retry',
             adminCookie: subscriber.admin.sessionCookie
         });
+        await logForeignSweepCandidates('after billing-deferred-cancellation-retry');
         await expect
             .poll(
                 () =>
@@ -388,6 +401,7 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
             )
         ).toHaveLength(complements.length);
         expect(pendingNotices.every(({ status }) => status === 'pending')).toBe(true);
+        await logForeignSweepCandidates('before email-outbox-sender');
         await runCron({
             jobName: 'email-outbox-sender',
             adminCookie: subscriber.admin.sessionCookie
@@ -413,10 +427,12 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
                 return notices.filter(({ status }) => status === 'sent').length;
             })
             .toBe(1 + complements.length);
+        await logForeignSweepCandidates('after email-outbox-sender');
         await runCron({
             jobName: 'billing-deferred-cancellation-retry',
             adminCookie: subscriber.admin.sessionCookie
         });
+        await logForeignSweepCandidates('after billing-deferred-cancellation-retry');
         await expect
             .poll(
                 () =>
