@@ -220,7 +220,7 @@ const revokeOwn = {
 };
 
 /**
- * Seed one ACTIVE USER addon instance with a live complement subscription, in
+ * Seed one ACTIVE USER or LISTING addon instance with a live complement subscription, in
  * the same row order as `@repo/service-core`'s S20 fixtures (that helper is not
  * importable from `apps/api`). The grant's S20 conversion titles it.
  */
@@ -229,7 +229,11 @@ export async function seedGrantRevokeAddon(input: {
     readonly userId: string;
     readonly vertical: string;
     readonly compatibleVerticals: readonly string[];
+    readonly scopeType?: 'USER' | 'LISTING';
+    readonly targetId?: string;
 }): Promise<{ readonly instanceId: string; readonly complementId: string }> {
+    if (input.scopeType === 'LISTING' && !input.targetId)
+        throw new Error('LISTING addon requires targetId');
     const authorization = await input.fake.authorize({
         reference: crypto.randomUUID(),
         amount: { amountMinor: 500000, currency: 'ARS' },
@@ -271,7 +275,7 @@ export async function seedGrantRevokeAddon(input: {
             addonId: addon.id,
             validity: 'WHILE_SUBSCRIPTION_ALIVE',
             validityDays: null,
-            scopeType: 'USER'
+            scopeType: input.scopeType ?? 'USER'
         })
         .returning({ id: addonVersions.id });
     if (!version) throw new Error('Expected revoke addon version');
@@ -294,7 +298,7 @@ export async function seedGrantRevokeAddon(input: {
             productId: product.id,
             addonVersionId: version.id,
             ownerId: input.userId,
-            targetId: null,
+            targetId: input.scopeType === 'LISTING' ? input.targetId : null,
             status: 'ACTIVE',
             complementSubscriptionId: complement.id,
             startsAt: new Date('2026-10-03T10:00:00.000Z')
@@ -307,6 +311,20 @@ export async function seedGrantRevokeAddon(input: {
     revokeOwn.versionIds.push(version.id);
     revokeOwn.addonIds.push(addon.id);
     return { instanceId: instance.id, complementId: complement.id };
+}
+
+/** Create an owned, published accommodation for the production listing inverse. */
+export async function seedOwnedAccommodationListing(userId: string): Promise<string> {
+    const destinationId = await createVerticalDestination();
+    revokeOwn.destinationIds.push(destinationId);
+    const listingId = await createListing({
+        ownerId: userId,
+        destinationId,
+        status: PublicationStatusEnum.PUBLISHED,
+        complete: true
+    });
+    revokeOwn.listingIds.push(listingId);
+    return listingId;
 }
 
 /**
