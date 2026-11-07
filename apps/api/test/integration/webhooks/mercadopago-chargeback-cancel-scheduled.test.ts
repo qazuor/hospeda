@@ -145,6 +145,9 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         const cancel = vi.spyOn(fixture.fake, 'cancel');
         const pause = vi.spyOn(fixture.fake, 'pause');
         const resume = vi.spyOn(fixture.fake, 'resume');
+        const changeAmount = vi.spyOn(fixture.fake, 'changeAmount');
+        const changeCard = vi.spyOn(fixture.fake, 'changeCard');
+        const approve = vi.spyOn(fixture.fake, 'approve');
 
         await deliver('payment', created.chargeId, '2');
 
@@ -158,6 +161,21 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         expect(
             resume.mock.calls.filter(([input]) => input.authorizationId === created.authorizationId)
         ).toHaveLength(0);
+        expect(
+            changeAmount.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
+        ).toHaveLength(0);
+        expect(
+            changeCard.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
+        ).toHaveLength(0);
+        expect(
+            approve.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
+        ).toHaveLength(0);
     });
 
     it('the real credited-payments sweep rereads the same state and runs S12', async () => {
@@ -165,6 +183,9 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         const cancel = vi.spyOn(fixture.fake, 'cancel');
         const pause = vi.spyOn(fixture.fake, 'pause');
         const resume = vi.spyOn(fixture.fake, 'resume');
+        const changeAmount = vi.spyOn(fixture.fake, 'changeAmount');
+        const changeCard = vi.spyOn(fixture.fake, 'changeCard');
+        const approve = vi.spyOn(fixture.fake, 'approve');
 
         await fixture.runSweep();
 
@@ -177,6 +198,21 @@ describe('TEST:B8a:7 scheduled cancellation is ended by a charged-back payment',
         ).toHaveLength(0);
         expect(
             resume.mock.calls.filter(([input]) => input.authorizationId === created.authorizationId)
+        ).toHaveLength(0);
+        expect(
+            changeAmount.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
+        ).toHaveLength(0);
+        expect(
+            changeCard.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
+        ).toHaveLength(0);
+        expect(
+            approve.mock.calls.filter(
+                ([input]) => input.authorizationId === created.authorizationId
+            )
         ).toHaveLength(0);
     });
 });
