@@ -1,5 +1,5 @@
 import type { FeatureModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { FeatureCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
@@ -16,6 +16,7 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 const input = {
     slug: 'test-feature',
     applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
+    category: FeatureCategoryEnum.LOCATION,
     icon: '⭐',
     description: {
         es: 'A test feature desc ok',
@@ -100,12 +101,24 @@ describe('FeatureService.create', () => {
         const minimalInput = {
             slug: 'minimal-feature',
             applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
+            category: FeatureCategoryEnum.LOCATION,
             isFeatured: false
         };
         const result = await service.create(actor, minimalInput);
         expectSuccess(result);
         expect(result.data?.icon).toBeUndefined();
         expect(result.data?.description).toBeUndefined();
+    });
+
+    it('should return VALIDATION_ERROR when category is missing or null (HOS-2058 N+1)', async () => {
+        const { category: _omit, ...withoutCategory } = input;
+        // @ts-expect-error category is required since features.category is NOT NULL
+        const missing = await service.create(actor, withoutCategory);
+        expectValidationError(missing);
+        // @ts-expect-error null is not a FeatureCategoryEnum value
+        const nulled = await service.create(actor, { ...input, category: null });
+        expectValidationError(nulled);
+        expect(featureModelMock.create).not.toHaveBeenCalled();
     });
 
     it('should reject null for required fields', async () => {

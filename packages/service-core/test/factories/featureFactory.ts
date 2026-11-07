@@ -1,5 +1,5 @@
 import type { Feature, FeatureIdType, UserIdType } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { FeatureCategoryEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -23,6 +23,8 @@ export class FeatureFactoryBuilder {
                 pt: 'A test feature description'
             },
             applicableVerticals: ['accommodation'],
+            // HOS-2058 N+1: `features.category` is NOT NULL.
+            category: FeatureCategoryEnum.LOCATION,
             icon: '⭐',
             isBuiltin: false,
             isFeatured: false,

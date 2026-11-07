@@ -129,7 +129,7 @@ describe('TEST:V6:13 PB12 purge rows by vertical', () => {
                 .returning({ id: amenities.id });
             const [feature] = await tx
                 .insert(features)
-                .values({ slug: `pb12-${crypto.randomUUID()}` })
+                .values({ slug: `pb12-${crypto.randomUUID()}`, category: 'LOCATION' })
                 .returning({ id: features.id });
             const [tag] = await tx
                 .insert(tags)

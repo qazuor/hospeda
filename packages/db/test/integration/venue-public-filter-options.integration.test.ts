@@ -35,7 +35,8 @@ describe('VenueModel.findPublicFilterOptions', () => {
                 [feature1, feature2, feature3].map((id) => ({
                     id,
                     slug: `filter-${id}`,
-                    applicableVerticals: ['venue']
+                    applicableVerticals: ['venue'],
+                    category: 'CUISINE' as const
                 }))
             );
             const insertVenue = async (
