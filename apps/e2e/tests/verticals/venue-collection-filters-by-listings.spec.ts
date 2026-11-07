@@ -200,6 +200,32 @@ async function getHtml({
     return response.text();
 }
 
+/**
+ * Fetches a page until its SSR HTML contains `needle`, outlasting the SSR
+ * catalog cache (60 s). Returns the HTML that contained it.
+ */
+async function waitForHtmlContaining({
+    request,
+    path,
+    needle
+}: {
+    readonly request: import('@playwright/test').APIRequestContext;
+    readonly path: string;
+    readonly needle: string;
+}): Promise<string> {
+    let html = '';
+    await expect
+        .poll(
+            async () => {
+                html = await getHtml({ request, path });
+                return html.includes(needle);
+            },
+            { message: `${path} never served ${needle}`, timeout: 90_000, intervals: [5_000] }
+        )
+        .toBe(true);
+    return html;
+}
+
 test.describe('AC:6:11 venue collections only offer filters with published listings @p0 @verticals', () => {
     const userIds: string[] = [];
     const venueIds: string[] = [];
@@ -323,12 +349,23 @@ test.describe('AC:6:11 venue collections only offer filters with published listi
         expect(cafeOptions.amenityIds).not.toContain(amenityC1);
 
         // ── 4. HTML: the serialized sidebar carries only the collection values
-        const bolicheHtml = await getHtml({ request, path: bolichePath });
-        expect(bolicheHtml).toContain(featureX1);
+        // The pages read the amenity/feature catalogs through the SSR in-process
+        // cache (`SSR_PUBLIC_CACHE_TTL_MS`, 60 s), so a catalog row created a
+        // moment ago only reaches the sidebar once that entry expires. Poll for
+        // the positive value first: it proves the catalog refreshed, which is
+        // what makes the negative assertions after it meaningful.
+        const bolicheHtml = await waitForHtmlContaining({
+            request,
+            path: bolichePath,
+            needle: featureX1
+        });
         expect(bolicheHtml).not.toContain(featureX2);
 
-        const cafeHtml = await getHtml({ request, path: cafePath });
-        expect(cafeHtml).toContain(featureX2);
+        const cafeHtml = await waitForHtmlContaining({
+            request,
+            path: cafePath,
+            needle: featureX2
+        });
         expect(cafeHtml).not.toContain(featureX1);
 
         // ── 5. Type chips: never a type the collection cannot contain ────────
@@ -339,8 +376,11 @@ test.describe('AC:6:11 venue collections only offer filters with published listi
         expect(bolicheHtml).toContain(`?type=${VenueTypeEnum.BOLICHE}`);
 
         // ── 6. The general listing still offers every published value ────────
-        const generalHtml = await getHtml({ request, path: '/es/comer-y-salir/' });
-        expect(generalHtml).toContain(featureX1);
+        const generalHtml = await waitForHtmlContaining({
+            request,
+            path: '/es/comer-y-salir/',
+            needle: featureX1
+        });
         expect(generalHtml).toContain(featureX2);
     });
 });
