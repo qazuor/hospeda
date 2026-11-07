@@ -118,15 +118,20 @@ async function insertSoftDeletedAmenity(
     `);
 }
 
-/** Inserts an alive feature row with the given verticals. */
+/**
+ * Inserts an alive feature row with the given verticals and category.
+ * `features.category` is NOT NULL since HOS-2058 N+1, so every row declares one.
+ */
 async function insertFeature(
     tx: DrizzleClient,
     slug: string,
-    verticals: readonly string[]
+    verticals: readonly string[],
+    category: string
 ): Promise<void> {
     await tx.execute(sql`
-        INSERT INTO features (slug, applicable_verticals, is_builtin, is_featured, display_weight)
-        VALUES (${slug}, ${toPgTextArray(verticals)}::text[], false, false, 50)
+        INSERT INTO features
+            (slug, applicable_verticals, category, is_builtin, is_featured, display_weight)
+        VALUES (${slug}, ${toPgTextArray(verticals)}::text[], ${category}::feature_category_enum, false, false, 50)
     `);
 }
 
@@ -274,22 +279,24 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
         });
     });
 
-    it('categorizes a pre-existing feature that has no category yet', async () => {
+    it('skips a pre-existing categorized feature with nothing to categorize (HOS-2058 N+1)', async () => {
         await withRollback(async (tx) => {
-            // Arrange: a usable dj_sets row created before features.category existed.
+            // Arrange: a usable dj_sets row. Since features.category is NOT NULL, a
+            // row without a category can no longer exist, so the fill branch has
+            // nothing to match.
             await clearNightRows(tx);
-            await insertFeature(tx, 'dj_sets', ['venue']);
+            await insertFeature(tx, 'dj_sets', ['venue'], 'ACTIVITIES');
 
             // Act
             const result = await nightCatalogItems.up(await buildCtx(tx));
 
-            // Assert: skipped as a row, but its category is filled in.
+            // Assert: skipped as a row, category unchanged.
             expect(result.counts).toEqual({
                 amenitiesCreated: 3,
                 amenitiesSkipped: 0,
                 featuresCreated: 1,
                 featuresSkipped: 1,
-                featuresCategorized: 1
+                featuresCategorized: 0
             });
             const rows = await readFeatureRows(tx, 'dj_sets');
             expect(rows).toHaveLength(1);
@@ -301,8 +308,7 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
         await withRollback(async (tx) => {
             // Arrange: an admin already filed karaoke under another category.
             await clearNightRows(tx);
-            await insertFeature(tx, 'karaoke', ['venue']);
-            await tx.execute(sql`UPDATE features SET category = 'AUDIENCE' WHERE slug = 'karaoke'`);
+            await insertFeature(tx, 'karaoke', ['venue'], 'AUDIENCE');
 
             // Act
             const result = await nightCatalogItems.up(await buildCtx(tx));
@@ -318,7 +324,7 @@ describe('HOS-1867: 0135-hos1867-night-catalog-items (integration)', () => {
         await withRollback(async (tx) => {
             // Arrange: a hand-created karaoke scoped to accommodations only.
             await clearNightRows(tx);
-            await insertFeature(tx, 'karaoke', ['accommodation']);
+            await insertFeature(tx, 'karaoke', ['accommodation'], 'ACTIVITIES');
 
             // Act + Assert: it must fail loudly, not skip the slug forever.
             await expect(nightCatalogItems.up(await buildCtx(tx))).rejects.toThrow(/karaoke/);

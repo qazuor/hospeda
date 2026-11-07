@@ -35,7 +35,7 @@
                 "DIETARY",
                 "LANGUAGE"
             ],
-            "description": "Feature category (HOS-2058). Optional while features.category is nullable"
+            "description": "Feature category (HOS-2058). Required: features.category is NOT NULL"
         },
         "applicableVerticals": {
             "type": "array",
@@ -70,6 +70,14 @@
             "description": "Lifecycle state of the feature"
         }
     },
-    "required": ["id", "slug", "isBuiltin", "isFeatured", "lifecycleState", "applicableVerticals"],
+    "required": [
+        "id",
+        "slug",
+        "isBuiltin",
+        "isFeatured",
+        "lifecycleState",
+        "applicableVerticals",
+        "category"
+    ],
     "additionalProperties": false
 }
