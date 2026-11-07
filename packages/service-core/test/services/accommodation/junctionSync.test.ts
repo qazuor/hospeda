@@ -764,6 +764,14 @@ describe('accommodation junction sync: retired catalog ids (HOS-2067)', () => {
         // Assert
         expect(rel.hardDelete).not.toHaveBeenCalled();
         expect(rel.create).toHaveBeenCalledTimes(1);
+        expect(rel.create).toHaveBeenCalledWith(
+            { accommodationId: ACC_ID, amenityId: KEPT, isOptional: false },
+            mockTx
+        );
+        expect(rel.create).not.toHaveBeenCalledWith(
+            expect.objectContaining({ amenityId: RETIRED }),
+            expect.anything()
+        );
     });
 
     it('rejects a NEW retired feature id and writes nothing', async () => {
@@ -798,6 +806,10 @@ describe('accommodation junction sync: retired catalog ids (HOS-2067)', () => {
         });
 
         // Assert
+        expect(rel.hardDelete).not.toHaveBeenCalledWith(
+            expect.objectContaining({ featureId: expect.arrayContaining([RETIRED]) }),
+            expect.anything()
+        );
         expect(rel.hardDelete).not.toHaveBeenCalled();
         expect(rel.create).not.toHaveBeenCalled();
     });
