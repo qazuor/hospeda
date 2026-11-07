@@ -121,22 +121,23 @@ export async function seedPreviewCourtesy(input: {
     const startsAt = new Date(previewNow.getTime() - 86_400_000);
     const endsAt = new Date(previewNow.getTime() + 86_400_000);
     if (input.authorizationId) await input.fake.pause({ authorizationId: input.authorizationId });
-    let courtesyGrantId: string | null = null;
-    if (input.reason !== 'CUSTOMER_REQUEST') {
-        const [courtesy] = await db
-            .insert(courtesyGrants)
-            .values({
-                beneficiaryUserId: input.userId,
-                grantedBy: input.adminId,
-                subscriptionId: input.subscriptionId,
-                months: 1,
-                startsAt,
-                endsAt,
-                reason: 'preview courtesy'
-            })
-            .returning({ id: courtesyGrants.id });
-        courtesyGrantId = courtesy?.id ?? null;
-    }
+    // A customer-request pause may coexist with a historical, already-ended courtesy row.
+    const [courtesy] = await db
+        .insert(courtesyGrants)
+        .values({
+            beneficiaryUserId: input.userId,
+            grantedBy: input.adminId,
+            subscriptionId: input.subscriptionId,
+            months: 1,
+            startsAt:
+                input.reason === 'CUSTOMER_REQUEST'
+                    ? new Date(startsAt.getTime() - 86_400_000)
+                    : startsAt,
+            endsAt: input.reason === 'CUSTOMER_REQUEST' ? startsAt : endsAt,
+            reason: 'preview courtesy'
+        })
+        .returning({ id: courtesyGrants.id });
+    const courtesyGrantId = courtesy?.id ?? null;
     await db
         .update(subscriptions)
         .set({ status: 'PAUSED' })
