@@ -14,7 +14,10 @@ import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sin
 import type { CoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
-import { afterSubscriptionActivated } from './after-activation-commit.js';
+import {
+    type AfterSubscriptionActivatedPorts,
+    afterSubscriptionActivated
+} from './after-activation-commit.js';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { exitGraceOnCreditedPayment } from './exit-grace.service';
@@ -35,6 +38,7 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly coverageNotices?: CoverageNotices;
     readonly billingFacts?: BillingFactSink;
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
+    readonly successionSettler?: AfterSubscriptionActivatedPorts['successionSettler'];
     /**
      * S18's interface (B8b), handed to S2 for branch 1 (AC:B7:25): when the
      * activated successor's predecessor holds an S19 retention. Defaults to

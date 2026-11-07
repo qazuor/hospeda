@@ -107,7 +107,7 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly ledger: FakeLedger;
     private readonly orders: FakeOrders;
     private readonly clock: Clock;
-    private readonly honest: ReadonlySet<string>;
+    private readonly honest: Set<string>;
     private readonly simulating: ReadonlySet<string>;
     private readonly without: ReadonlySet<string>;
     private readonly usedPaymentTokens = new Set<string>();
@@ -130,7 +130,7 @@ export class FakePaymentProvider implements PaymentProvider {
             }
         }
         this.clock = parsed.clock;
-        this.honest = parsed.honest;
+        this.honest = new Set(parsed.honest);
         this.simulating = parsed.simulating;
         this.without = parsed.without;
         this.outbox = new FakeOutbox({
@@ -140,6 +140,11 @@ export class FakePaymentProvider implements PaymentProvider {
         });
         this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
         this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
+    }
+
+    /** Restore a measured lie after an honest fixture setup, without replacing its ledger. */
+    restoreLie(args: { readonly lie: FakeLieId }): void {
+        this.honest.delete(args.lie);
     }
 
     /**

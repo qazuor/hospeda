@@ -1,5 +1,6 @@
 import { providerLinkCancellationSeen } from '@repo/service-core';
 import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
+import { getSuccessionCloser } from '../../utils/billing-succession-ports';
 import { getClock } from '../../utils/clock';
 import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage';
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader';
@@ -20,6 +21,7 @@ export function buildSelfCancellationPorts() {
         billingFacts: getAnalyticsFactSink(),
         complements: { addonPolicy, listing },
         orphanhood: { addonPolicy, listing },
-        cancellationSeen: providerLinkCancellationSeen
+        cancellationSeen: providerLinkCancellationSeen,
+        successionCloser: getSuccessionCloser()
     };
 }

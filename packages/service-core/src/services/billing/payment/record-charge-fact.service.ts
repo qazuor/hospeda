@@ -249,7 +249,8 @@ export async function recordChargeFact(
                     clock: ports.clock,
                     markPayments: ports.markPayments,
                     actorType: ports.actorType,
-                    billingFacts: ports.billingFacts
+                    billingFacts: ports.billingFacts,
+                    scheduledChangeApplier: ports.scheduledChangeApplier
                 }
             );
             if (

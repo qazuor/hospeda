@@ -259,6 +259,19 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Cloudinary's 404 response; public page response after the S5 cache procedure; read-only Partner, `domain_event` and billing queries with no logo URL; action 24 preview and result.
 - **Covers:** AC:V8b:6; TEST:V8b:6 (real provider through this staging smoke).
 
+### S15 — Plan change by route (HOS-1579)
+
+- **Preconditions:** A monthly `ACTIVE` principal subscription with a card on staging and two plans in its vertical.
+- **Steps:**
+  1. Upgrade through `POST /api/v1/protected/billing-subscription/{subscriptionId}/plan-change`. Check the sandbox checkout amount and the credited future first charge. Abandon checkout; the old subscription remains `ACTIVE` and continues billing.
+  2. Repeat and authorize. Confirm the “Your plan change is active” email arrives before Mercado Pago's cancellation email. The old subscription and preapproval are cancelled, the successor is `ACTIVE`, and an old addon now belongs to it.
+  3. Downgrade. Read the new preapproval amount immediately; capabilities remain until `next_charge_at`.
+  4. EX-33: Confirm checkout preserves the future first charge date. If it resets that date, compensation cannot run and the person pays twice (DEC-SUB-006).
+- **Expected:** The route chooses the direction and preserves the predecessor until the successor is authorized.
+- **Evidence:** Route responses, fake or sandbox provider reads, subscription and addon rows, email order and cron runs.
+- **Covers:** AC:B8b:8, AC:B8b:9, AC:B8b:10, AC:B8b:14, AC:B8b:15, AC:B8b:24.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -329,6 +342,16 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Covers:** Cron schedules on production, the first day (includes
   `billing-reconciliation-sweep` and `subscription-renewal-notice`).
 
+### P6 — Real plan change
+
+- **Preconditions:** The owner's production account has an `ACTIVE` card subscription and an approved upgrade amount.
+- **Steps:**
+  1. Confirm `subscription-succession-reevaluation` is present in the cron panel and runs without rows.
+  2. Repeat S15 step 2 with the owner's card and approved amount; inspect both subscriptions and the provider's cancellation read.
+- **Expected:** The successor activates before the predecessor closes.
+- **Evidence:** Route response, provider read, subscription rows and cron panel.
+- **Covers:** AC:B8b:8, AC:B8b:24.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -345,6 +368,7 @@ Each later phase extends this checklist with its own items ([GATE:FP.2](../../sc
 the staging part, executed before merging the phase branch to `staging`, and a production 5c
 own to the phase, with the owner's card and an approved amount, after the phase reaches production.
 The B9b slice that went to cut (HOS-1588, HOS-1589, HOS-1591) added its item to Part 1; B9b phase 2 (temporary courtesy: pause and resumption, HOS-1590/HOS-1592) adds its own.
+B8b (HOS-1579) added S15 to staging and P6 to production.
 
 ## Related
 

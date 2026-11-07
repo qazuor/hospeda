@@ -2,8 +2,7 @@ import { type PricingSituationResponse, PublicationStatusEnum } from '@repo/sche
 import { describe, expect, it } from 'vitest';
 import {
     hasBillingUnpublishedListing,
-    PLAN_CHANGE_UNAVAILABLE_KEY,
-    PRICING_PLAN_CHANGE_NOTICE,
+    PRICING_PLAN_CHANGE_OFFER,
     resolvePlanCardCta,
     resolvePlanCardTrialOffer
 } from '../../../src/lib/billing/pricing-situation';
@@ -47,7 +46,7 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
         });
         expect(result.kind).toBe('current');
         if (result.kind === 'current')
-            expect(result.showsPlanChangeNotice).toBe(status === 'ACTIVE');
+            expect(result.changeOptions).toEqual(status === 'ACTIVE' ? ['annual-a'] : []);
     });
 
     it('TEST:1735:14 offers all checkout options during a pending authorization', () => {
@@ -93,7 +92,10 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
             planVersionId: 'version-a',
             billingOptionId: 'monthly-a'
         };
-        expect(resolve(active, 'version-b').kind).toBe('planChangeUnavailable');
+        expect(resolve(active, 'version-b')).toEqual({
+            kind: 'planChange',
+            optionIds: ['annual-a']
+        });
         const mismatchedCard = resolvePlanCardCta({
             locale: 'es',
             vertical: 'accommodation',
@@ -103,7 +105,7 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
             },
             result: { ok: true, data: active }
         });
-        expect(mismatchedCard.kind).toBe('planChangeUnavailable');
+        expect(mismatchedCard).toEqual({ kind: 'none' });
     });
 
     it('builds monthly and annual checkout links from their exact option ids', () => {
@@ -148,13 +150,19 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
         ).toBe('none');
     });
 
-    it('shows the AU notice only for ACTIVE', () => {
+    it('TEST:B8b:14 offers changes only for ACTIVE', () => {
         expect(
-            Object.entries(PRICING_PLAN_CHANGE_NOTICE)
+            Object.entries(PRICING_PLAN_CHANGE_OFFER)
                 .filter(([, value]) => value)
                 .map(([key]) => key)
         ).toEqual(['ACTIVE']);
-        expect(PLAN_CHANGE_UNAVAILABLE_KEY).toBe('account.subscription.mine.planChangeUnavailable');
+        const grace: PricingSituationResponse = {
+            situation: 'SUBSCRIBED',
+            status: 'GRACE_PERIOD',
+            planVersionId: 'version-a',
+            billingOptionId: 'monthly-a'
+        };
+        expect(resolve(grace, 'version-b')).toEqual({ kind: 'none' });
     });
 });
 

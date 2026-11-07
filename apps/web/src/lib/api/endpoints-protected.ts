@@ -53,7 +53,8 @@ import {
     type OwnSubscriptionsResponseSchema,
     type PartnerClaimResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
-    type SubscriptionCancellationResponseSchema
+    type SubscriptionCancellationResponseSchema,
+    type SubscriptionPlanChangeResponseSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
@@ -5604,6 +5605,19 @@ export const promoCodeApi = {
 };
 
 export const billingSubscriptionApi = {
+    /** Request a change to one owned subscription through the protected route. */
+    requestPlanChange({
+        subscriptionId,
+        billingOptionId
+    }: {
+        readonly subscriptionId: string;
+        readonly billingOptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionPlanChangeResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/plan-change`,
+            body: { billingOptionId }
+        });
+    },
     /** Read the backend-resolved pricing situation for one vertical. */
     pricingSituation({
         vertical,

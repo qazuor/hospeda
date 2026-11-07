@@ -9,6 +9,7 @@ import {
     ensureDeadlineVersion,
     type FakeWorld,
     recordCreditedCycle,
+    runCron,
     WEB_URL
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
@@ -22,7 +23,7 @@ import {
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
 
-test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clock', () => {
+test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
     test.setTimeout(300_000);
     let world: FakeWorld | null = null;
@@ -65,7 +66,9 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         }
     });
 
-    test('TEST:B13a:6 shows the literal AU notice and no plan-change control', async ({ page }) => {
+    test('TEST:B13a:6 TEST:B8b:14 offers changing an ACTIVE plan with the original notices intact', async ({
+        page
+    }) => {
         if (!world) throw new Error('Expected fake provider world.');
         const subscriber = await createSubscriber();
         userIds.push(subscriber.user.id, subscriber.admin.id);
@@ -86,6 +89,24 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
             subscriptionId,
             authorizationId
         });
+        // The provider advanced its calendar after the credited cycle. The real
+        // reconciliation sweep copies that date into the subscription row.
+        const nextChargeAt = (
+            await world.fakeServer.provider.readAuthorization({
+                authorizationId
+            })
+        ).snapshot.nextChargeAt;
+        if (!nextChargeAt) throw new Error('Expected a future provider charge after the cycle.');
+        const sweep = await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        expect(sweep.success).toBe(true);
+        const synced = await execSQL<{ next_charge_at: Date | null }>(
+            'SELECT next_charge_at FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(synced[0]?.next_charge_at?.toISOString()).toBe(nextChargeAt);
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const subscription = page.locator(
@@ -94,17 +115,13 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         await expect(subscription).toContainText('Básico');
         await expect(subscription).toContainText('Alojamiento');
         await expect(subscription.getByTestId('my-subscription-price')).toContainText('por mes');
-        const notice = subscription.getByTestId('my-subscription-plan-change-unavailable');
-        await expect(notice).toBeVisible();
-        await expect(notice).toHaveText(
-            'Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.'
-        );
-        await expect(subscription.getByRole('button', { name: /cambiar (de )?plan/i })).toHaveCount(
-            0
-        );
-        await expect(subscription.getByRole('link', { name: /cambiar (de )?plan/i })).toHaveCount(
-            0
-        );
+        await expect(subscription.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
+        await expect(subscription.locator('p')).toHaveText([
+            'Alojamiento',
+            'Activa',
+            /por mes/,
+            /Próximo cobro:/
+        ]);
     });
 
     test('TEST:B13a:7 shows a deferred balance with its condition until it closes', async ({
