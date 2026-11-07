@@ -35,7 +35,10 @@ describe('self cancellation schemas', () => {
             currency: 'ARS',
             cycle: 'monthly'
         },
-        nextCharge: null
+        nextCharge: null,
+        pause: null,
+        promo: null,
+        succession: null
     };
     it('requires paidAfterCancellation and accepts null or the addon outcome', () => {
         expect(
@@ -56,6 +59,26 @@ describe('self cancellation schemas', () => {
                 subscriptions: [ownRow]
             }).success
         ).toBe(false);
+    });
+    it('accepts a paused owner row with pause, promo and open checkout fields', () => {
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [
+                    {
+                        ...ownRow,
+                        status: 'PAUSED',
+                        paidAfterCancellation: null,
+                        pause: {
+                            reason: 'CUSTOMER_REQUEST',
+                            expectedEndAt: '2026-11-05T12:00:00.000Z'
+                        },
+                        promo: { endsAt: null },
+                        succession: { checkoutOpen: true }
+                    }
+                ]
+            }).success
+        ).toBe(true);
     });
     it('accepts an empty or populated deferred courtesy list', () => {
         expect(OwnSubscriptionsResponseSchema.safeParse(ownSubscriptions).success).toBe(true);

@@ -27,6 +27,14 @@ export const AdminSubscriptionPausePreviewResponseSchema = z.strictObject({
     offered: z.boolean(),
     reason: z.string().optional(),
     courtesyEndsAt: z.string().datetime().optional(),
+    months: z.strictObject({ min: z.literal(1), max: z.number().int().min(1).max(4) }).optional(),
+    expectedEndAtByMonths: z.record(z.string(), z.string().datetime()).optional(),
+    addons: z
+        .strictObject({
+            vertical: z.array(z.string()),
+            account: z.array(z.strictObject({ name: z.string(), pauses: z.boolean() }))
+        })
+        .optional(),
     quota: z.strictObject({
         pausesLeft: z.number().int().nonnegative(),
         monthsLeft: z.number().int().nonnegative()

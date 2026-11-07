@@ -2607,7 +2607,19 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/pause"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/pause-preview"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/billing-subscription/:subscriptionId/plan-change"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/resume"
         },
         {
             "method": "GET",

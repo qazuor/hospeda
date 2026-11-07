@@ -184,12 +184,15 @@ describe('TEST:B8b:22 AC:B8b:22 administrative action 9 routes', () => {
         const seeded = await seedEligible();
         const response = await get(seeded.subscriptionId);
         expect(response.status).toBe(200);
-        expect((await response.json()).data).toEqual({
+        expect((await response.json()).data).toMatchObject({
             subscriptionId: seeded.subscriptionId,
             status: 'ACTIVE',
             offered: true,
             quota: { pausesLeft: 3, monthsLeft: 8 },
-            openPause: null
+            openPause: null,
+            months: { min: 1, max: 4 },
+            expectedEndAtByMonths: { 1: expect.any(String), 4: expect.any(String) },
+            addons: { vertical: [], account: [] }
         });
         expect(audit).toHaveBeenCalledWith({
             auditEvent: AuditEventType.BILLING_READ,

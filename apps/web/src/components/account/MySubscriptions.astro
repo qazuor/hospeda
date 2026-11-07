@@ -20,7 +20,7 @@ interface Props { readonly locale: SupportedLocale; readonly result: OwnSubscrip
 const { locale, result } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 const date = (iso: string) => formatSelfCancelDate({ iso, locale }) ?? '';
-const STATUS_KEY = { ACTIVE: 'account.subscription.mine.status.ACTIVE', GRACE_PERIOD: 'account.subscription.mine.status.GRACE_PERIOD', SUSPENDED: 'account.subscription.mine.status.SUSPENDED', CANCEL_SCHEDULED: 'account.subscription.mine.status.CANCEL_SCHEDULED' } as const;
+const STATUS_KEY = { ACTIVE: 'account.subscription.mine.status.ACTIVE', GRACE_PERIOD: 'account.subscription.mine.status.GRACE_PERIOD', SUSPENDED: 'account.subscription.mine.status.SUSPENDED', CANCEL_SCHEDULED: 'account.subscription.mine.status.CANCEL_SCHEDULED', PAUSED: 'account.subscription.mine.status.SUSPENDED' } as const;
 const statusKey = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
     if (row.status === 'CANCEL_SCHEDULED') return resolveScheduledRenewal({ row }).statusKey;
     return STATUS_KEY[row.status];

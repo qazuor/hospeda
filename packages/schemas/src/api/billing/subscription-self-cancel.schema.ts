@@ -32,13 +32,21 @@ export const OwnSubscriptionsResponseSchema = z.object({
         z.object({
             id: z.string().uuid(),
             vertical: z.string(),
-            status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED']),
+            status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED']),
             paymentMethod: z.enum(['CARD', 'MANUAL']),
             serviceEndsAt: z.string().datetime().nullable(),
             graceEndsAt: z.string().datetime().nullable(),
             createdAt: z.string().datetime(),
             /** A payment arrived after cancellation was already requested; addon billing outcome. */
             paidAfterCancellation: z.object({ recurringAddonsCut: z.boolean() }).nullable(),
+            pause: z
+                .object({
+                    reason: z.enum(['CUSTOMER_REQUEST', 'COURTESY']),
+                    expectedEndAt: z.string().datetime().nullable()
+                })
+                .nullable(),
+            promo: z.object({ endsAt: z.string().datetime().nullable() }).nullable(),
+            succession: z.object({ checkoutOpen: z.literal(true) }).nullable(),
             plan: OwnSubscriptionPlanSchema,
             nextCharge: OwnSubscriptionNextChargeSchema
         })

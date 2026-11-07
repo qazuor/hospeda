@@ -8,11 +8,12 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 
 export type OwnSubscriptionStatus = 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED' | 'CANCEL_SCHEDULED';
-export const CANCELLATION_OFFERED: Record<OwnSubscriptionStatus, boolean> = {
+export const CANCELLATION_OFFERED: Record<OwnSubscriptionStatus | 'PAUSED', boolean> = {
     ACTIVE: true,
     GRACE_PERIOD: true,
     SUSPENDED: true,
-    CANCEL_SCHEDULED: false
+    CANCEL_SCHEDULED: false,
+    PAUSED: false
 };
 export const END_LINE_KEY: Record<'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED', string> = {
     ACTIVE: 'account.subscription.cancel.activeEnds',

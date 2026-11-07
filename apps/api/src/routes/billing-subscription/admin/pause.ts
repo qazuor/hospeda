@@ -1,4 +1,4 @@
-import { and, courtesyGrants, eq, getDb, gt, isNull, subscriptionPauses } from '@repo/db';
+import { and, eq, getDb, isNull, subscriptionPauses } from '@repo/db';
 import {
     AdminSubscriptionPauseParamsSchema,
     AdminSubscriptionPausePreviewResponseSchema,
@@ -9,9 +9,9 @@ import {
     PermissionEnum
 } from '@repo/schemas';
 import {
-    canPause,
     PAUSE_LIMITS,
     pauseSubscription,
+    previewPause,
     readPauseQuota,
     resumeSubscription
 } from '@repo/service-core';
@@ -48,18 +48,17 @@ export const adminSubscriptionPausePreviewRoute = createAdminRoute({
         try {
             const found = await subjectFor({ subscriptionId, actorId: actor.id });
             const ports = buildPausePorts();
-            const eligible = await canPause({ subscriptionId, requestedMonths: 1 }, ports);
+            const preview = await previewPause({ subscriptionId }, ports);
             const now = ports.clock.now();
             const quota =
-                eligible.quota ??
-                (found.row.userId && found.row.vertical
+                found.row.userId && found.row.vertical
                     ? await readPauseQuota({
                           tx: getDb(),
                           userId: found.row.userId,
                           vertical: found.row.vertical,
                           now
                       })
-                    : { pausesInWindow: 0, monthsInWindow: 0 });
+                    : { pausesInWindow: 0, monthsInWindow: 0 };
             const [openPause] = await getDb()
                 .select({
                     reason: subscriptionPauses.reason,
@@ -73,19 +72,6 @@ export const adminSubscriptionPausePreviewRoute = createAdminRoute({
                     )
                 )
                 .limit(1);
-            const [courtesy] =
-                !eligible.allowed && eligible.reason === 'COURTESY_IN_FORCE'
-                    ? await getDb()
-                          .select({ endsAt: courtesyGrants.endsAt })
-                          .from(courtesyGrants)
-                          .where(
-                              and(
-                                  eq(courtesyGrants.subscriptionId, subscriptionId),
-                                  gt(courtesyGrants.endsAt, now)
-                              )
-                          )
-                          .limit(1)
-                    : [];
             auditLog({
                 auditEvent: AuditEventType.BILLING_READ,
                 actorId: actor.id,
@@ -96,16 +82,31 @@ export const adminSubscriptionPausePreviewRoute = createAdminRoute({
             return {
                 subscriptionId,
                 status: found.row.status,
-                offered: eligible.allowed,
-                ...(eligible.allowed ? {} : { reason: eligible.reason }),
-                ...(courtesy ? { courtesyEndsAt: courtesy.endsAt.toISOString() } : {}),
-                quota: {
-                    pausesLeft: Math.max(0, PAUSE_LIMITS.maxPausesPerWindow - quota.pausesInWindow),
-                    monthsLeft: Math.max(
-                        0,
-                        PAUSE_LIMITS.maxAccumulatedMonths - quota.monthsInWindow
-                    )
-                },
+                offered: preview.offered,
+                ...(preview.offered
+                    ? {
+                          months: preview.months,
+                          expectedEndAtByMonths: preview.expectedEndAtByMonths,
+                          addons: preview.addons
+                      }
+                    : {
+                          reason: preview.reason,
+                          ...(preview.courtesyEndsAt
+                              ? { courtesyEndsAt: preview.courtesyEndsAt }
+                              : {})
+                      }),
+                quota: preview.offered
+                    ? preview.quota
+                    : {
+                          pausesLeft: Math.max(
+                              0,
+                              PAUSE_LIMITS.maxPausesPerWindow - quota.pausesInWindow
+                          ),
+                          monthsLeft: Math.max(
+                              0,
+                              PAUSE_LIMITS.maxAccumulatedMonths - quota.monthsInWindow
+                          )
+                      },
                 openPause: openPause
                     ? {
                           reason: openPause.reason,
