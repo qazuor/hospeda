@@ -15,16 +15,16 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
     )('c. %s matches its route gate', (action) => {
-        expect(collectDifferences(action)).toEqual([]);
+        expect(collectDifferences({ action })).toEqual([]);
     });
     it.each(
         ADMINISTRATIVE_ACTIONS.filter((action) => action in KNOWN_MISALIGNED)
     )('d. %s is still misaligned — remove its KNOWN_MISALIGNED entry only once it agrees', (action) => {
-        expect(collectDifferences(action).length).toBeGreaterThan(0);
+        expect(collectDifferences({ action }).length).toBeGreaterThan(0);
     });
     it('f. sees the ACC_11 bug it was written for, with a false row, never touching the table', () => {
         const staleRow: ActionRow = { permissions: [], pendingOwnPermission: 'x' };
-        const differences = bindingsOf('ACC_11')
+        const differences = bindingsOf({ action: 'ACC_11' })
             .map((binding) => compareBinding({ action: 'ACC_11', row: staleRow, binding }))
             .filter((difference): difference is string => difference !== null);
         expect(differences.length).toBeGreaterThan(0);

@@ -16,7 +16,7 @@ it('a. covers exactly the 25 catalog actions, in order', () => {
 });
 it('b. checks exactly 55 bindings across 20 bound rows', () => {
     expect(BOUND_ACTIONS).toHaveLength(20);
-    const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
+    const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf({ action }).length, 0);
     expect(total).toBe(55);
 });
 it('e. every unbound row names a reason and is not silently known-misaligned', () => {

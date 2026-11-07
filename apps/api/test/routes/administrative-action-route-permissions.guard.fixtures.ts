@@ -48,10 +48,12 @@ const readRouteBlock = (file: string, route: string): string => {
     return routeBlock(code, route, file);
 };
 const list = (permissions: readonly PermissionEnum[]): string => permissions.join(', ');
+/** One catalog row: the permissions it declares and the own permission it still pends. */
 export type ActionRow = {
     readonly permissions: readonly PermissionEnum[];
     readonly pendingOwnPermission: string | null;
 };
+/** How one route enforces or bypasses an administrative action's permission. */
 export type Binding =
     | { readonly kind: 'required'; readonly file: string; readonly route: string }
     | { readonly kind: 'anyOf'; readonly file: string; readonly route: string }
@@ -68,7 +70,9 @@ const manualBinding = (route: string, late = false): Binding => ({
     file: `apps/api/src/routes/billing-subscription/admin/manual-payment${late ? '-late' : ''}.ts`,
     route
 });
+/** A catalog action that maps to one or more concrete route bindings. */
 export type BoundEntry = { readonly bindings: readonly Binding[] };
+/** A catalog action that no route binds yet, with the reason it stays unbound. */
 export type UnboundEntry = { readonly unbound: string };
 
 /** Compare a binding with its catalog row; missing exports fail closed. */
@@ -453,22 +457,29 @@ export const KNOWN_MISALIGNED: Readonly<Partial<Record<AdministrativeAction, str
     ACC_22: 'Row says [] with pending V6.9 (HOS-1479); both deadline-change routes ask for MAINTENANCE_MODE_WRITE provisionally (Coord-20); the real permission is B13a debt.'
 };
 
-export const bindingsOf = (action: AdministrativeAction): readonly Binding[] => {
+/** The shared argument shape of the action-level guard helpers. */
+type ActionArgument = { readonly action: AdministrativeAction };
+
+/** The route bindings of an action; unbound rows yield an empty list. */
+export const bindingsOf = ({ action }: ActionArgument): readonly Binding[] => {
     const entry = ROUTE_BINDINGS[action];
     return 'bindings' in entry ? entry.bindings : [];
 };
 
-export const collectDifferences = (action: AdministrativeAction): string[] => {
+/** Every binding of an action that disagrees with its catalog row. */
+export const collectDifferences = ({ action }: ActionArgument): string[] => {
     const row = ADMINISTRATIVE_ACTION_PERMISSIONS[action];
-    return bindingsOf(action)
+    return bindingsOf({ action })
         .map((binding) => compareBinding({ action, row, binding }))
         .filter((difference): difference is string => difference !== null);
 };
 
+/** Catalog actions that have at least one route binding. */
 export const BOUND_ACTIONS: readonly AdministrativeAction[] = ADMINISTRATIVE_ACTIONS.filter(
     (action) => 'bindings' in ROUTE_BINDINGS[action]
 );
 
+/** Catalog actions with no route binding, paired with the reason. */
 export const UNBOUND_ROWS: readonly {
     readonly action: AdministrativeAction;
     readonly reason: string;
