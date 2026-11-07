@@ -4,7 +4,12 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 1 of 9 — ten days before the trial ends (HOS-1012 §4).
@@ -25,6 +30,8 @@ export function TrialEnding10Days({
     productDomain,
     verticals
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
+    const planFragment = plan ? ` del plan ${plan}` : '';
     const formattedEndDate = formatDate({ dateString: trialEndDate });
     const copy = resolveTrialSeriesCopy(productDomain);
 
@@ -35,7 +42,7 @@ export function TrialEnding10Days({
         >
             <Heading>¿Cómo venís con tu publicación?</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.
@@ -75,8 +82,8 @@ export function TrialEnding10Days({
             </Section>
 
             <Text style={styles.footerNote}>
-                Tu prueba gratis del plan {planName} termina el {formattedEndDate}. Te vamos a
-                avisar antes.
+                Tu prueba gratis{planFragment} termina el {formattedEndDate}. Te vamos a avisar
+                antes.
             </Text>
         </EmailLayout>
     );

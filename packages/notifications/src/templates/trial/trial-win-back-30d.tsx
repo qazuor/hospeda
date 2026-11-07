@@ -3,7 +3,11 @@ import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 8 of 9 — a month after expiry (HOS-1012 §4).
@@ -38,7 +42,7 @@ export function TrialWinBack30Days({
         >
             <Heading>¿Retomamos tu publicación?</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.
