@@ -140,11 +140,15 @@ describe('AC:B13a:6 (support) — grant confirmation reads over real routes', ()
             permanentGrantId: result.permanentGrantId,
             anchors: [anchor]
         });
+        const beforeRevoke = await grantState(principal.ownerId);
+        const callsBeforeRevoke = observed.calls.length;
         const revokePreviewResponse = await request(
             `${BASE}/${result.permanentGrantId}/revocation`,
             'GET',
             who
         );
+        expect(await grantState(principal.ownerId)).toEqual(beforeRevoke);
+        expect(observed.calls.slice(callsBeforeRevoke)).toEqual([]);
         expect(revokePreviewResponse.status).toBe(200);
         const revokePreview = await data(revokePreviewResponse);
         expect(PermanentGrantRevocationPreviewResponseSchema.safeParse(revokePreview).success).toBe(
@@ -157,15 +161,16 @@ describe('AC:B13a:6 (support) — grant confirmation reads over real routes', ()
             trialReturns: false,
             oldDebitResumes: false
         });
-        const beforeRevoke = await grantState(principal.ownerId);
         expect(
             beforeRevoke.grants.find(({ id }) => id === result.permanentGrantId)?.revokedAt
         ).toBeNull();
-        expect(await grantState(principal.ownerId)).toEqual(beforeRevoke);
         const revoke = await request(`${BASE}/${result.permanentGrantId}/revocation`, 'POST', who, {
             reason: 'Confirmed after preview'
         });
         expect(revoke.status).toBe(200);
+        const revoked = await data(revoke);
+        expect(revoked.revokedVerticals).toEqual(revokePreview.verticalsLosingService);
+        expect(revoked.cancelledAddonInstanceIds).toEqual([]);
         expect(
             (await data(await request(`${BASE}/by-beneficiary/${principal.ownerId}`, 'GET', who)))
                 .grant
