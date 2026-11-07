@@ -20,9 +20,18 @@ const payload = {
 function textLines(courtesyEnded: boolean): string[] {
     const rendered = renderer({ row: row({ template, payload: { ...payload, courtesyEnded } }) });
     const html = renderToStaticMarkup(rendered.react);
-    return [...html.matchAll(/<p[^>]*>(.*?)<\/p>/g)].map((match) =>
-        match[1]!.replace(/<[^>]*>/g, '')
-    );
+    return [...html.matchAll(/<p[^>]*>(.*?)<\/p>/g)].map((match) => stripTags(match[1]!));
+}
+
+/** Removes tags until none is left, so a nested fragment cannot survive one pass. */
+function stripTags(markup: string): string {
+    let text = markup;
+    let previous: string;
+    do {
+        previous = text;
+        text = text.replace(/<[^>]*>/g, '');
+    } while (text !== previous);
+    return text.replace(/[<>]/g, '');
 }
 
 describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
