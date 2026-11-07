@@ -9,6 +9,7 @@ export async function describeSweepCandidates(
     args: {
         readonly excludeUserIds?: readonly string[];
         readonly includeUserIds?: readonly string[];
+        readonly includeProviderIds?: readonly string[];
     } = {}
 ) {
     const rows = await execSQL<{
@@ -92,9 +93,11 @@ export async function describeSweepCandidates(
                AND eo.payload->>'subscriptionId' = c.id::text
          ) notice ON true
          WHERE NOT COALESCE(c.user_id = ANY($1::uuid[]), false)
-           AND ($2::uuid[] IS NULL OR c.user_id = ANY($2::uuid[]))
+           AND ($2::uuid[] IS NULL AND $3::text[] IS NULL
+                OR c.user_id = ANY($2::uuid[])
+                OR c.provider_id = ANY($3::text[]))
          ORDER BY c.pass, c.id`,
-        [args.excludeUserIds ?? [], args.includeUserIds ?? null]
+        [args.excludeUserIds ?? [], args.includeUserIds ?? null, args.includeProviderIds ?? null]
     );
     const now = Date.now();
     return rows.map((row) => {

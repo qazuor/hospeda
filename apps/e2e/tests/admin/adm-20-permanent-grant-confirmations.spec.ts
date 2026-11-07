@@ -58,6 +58,7 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
     let world: FakeWorld | null = null;
     let userIds: string[] = [];
     let dialogs: string[] = [];
+    let providerNamespace: string | null = null;
 
     async function logForeignSweepCandidates(stage: string): Promise<void> {
         // biome-ignore lint/suspicious/noConsole: The CI log is the runtime evidence for this sweep.
@@ -68,12 +69,18 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
         );
     }
 
-    test.beforeAll(async () => {
+    test.beforeEach(async ({ page }) => {
+        dialogs = [];
+        page.on('dialog', async (dialog) => {
+            dialogs.push(dialog.message());
+            await dialog.dismiss();
+        });
         const clock = createAdjustableClock({ start: new Date() });
+        providerNamespace = randomUUID();
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
                 clock,
-                idNamespace: randomUUID(),
+                idNamespace: providerNamespace,
                 honestAbout: [
                     {
                         lie: 'M6',
@@ -94,28 +101,28 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
 
     test.afterEach(async () => {
         try {
-            await cleanupPermanentGrantE2eRows({ userIds });
+            // No later case may advance this provider's queued notices after its links are gone.
+            await world?.fakeServer.close();
+            const providerIds = providerNamespace
+                ? (
+                      await execSQL<{ provider_id: string }>(
+                          'SELECT provider_id FROM provider_link WHERE provider_id LIKE $1',
+                          [`fake-auth-${providerNamespace}-%`]
+                      )
+                  ).map(({ provider_id }) => provider_id)
+                : [];
+            await cleanupPermanentGrantE2eRows({ userIds, providerIds });
         } finally {
             try {
                 await cleanupArrearsRows({ userIds });
             } finally {
+                await world?.mailCapture.close().catch(() => undefined);
+                world = null;
+                providerNamespace = null;
                 userIds = [];
                 expect(dialogs, 'native dialogs are forbidden').toEqual([]);
             }
         }
-    });
-
-    test.afterAll(async () => {
-        await world?.mailCapture.close().catch(() => undefined);
-        await world?.fakeServer.close().catch(() => undefined);
-    });
-
-    test.beforeEach(async ({ page }) => {
-        dialogs = [];
-        page.on('dialog', async (dialog) => {
-            dialogs.push(dialog.message());
-            await dialog.dismiss();
-        });
     });
 
     test('current courtesy ends; no addons are listed; revocation requires and stores a reason', async ({

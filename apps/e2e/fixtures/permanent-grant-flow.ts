@@ -218,9 +218,18 @@ export async function seedTwoComplements(args: {
 /** Remove this test's sweep candidates before deleting their dependent rows. */
 export async function cleanupPermanentGrantE2eRows(args: {
     readonly userIds: readonly string[];
+    readonly providerIds: readonly string[];
 }): Promise<void> {
-    if (args.userIds.length === 0) return;
-    const ids = [args.userIds];
+    if (args.userIds.length === 0 && args.providerIds.length === 0) return;
+    const tombstoneIds = (
+        await execSQL<{ id: string }>(
+            `SELECT s.id FROM subscription s
+             JOIN provider_link pl ON pl.subscription_id = s.id
+             WHERE s.class = 'LAPIDA' AND pl.provider_id = ANY($1::text[])`,
+            [args.providerIds]
+        )
+    ).map(({ id }) => id);
+    const ids = [args.userIds, args.providerIds, tombstoneIds];
     const failures: unknown[] = [];
     const attempt = async (query: string): Promise<void> => {
         try {
@@ -229,6 +238,37 @@ export async function cleanupPermanentGrantE2eRows(args: {
             failures.push(error);
         }
     };
+    // A late authorization notice can create a recipientless tombstone. Remove
+    // its mutable dependencies before its link and subscription; domain_event stays.
+    const tombstones = 'SELECT unnest($3::uuid[])';
+    await attempt(
+        `DELETE FROM reconciliation_mark_payment WHERE mark_id IN
+         (SELECT id FROM reconciliation_mark WHERE subscription_id IN (${tombstones}))`
+    );
+    await attempt(
+        `DELETE FROM succession_retained_payment WHERE subscription_id IN (${tombstones})`
+    );
+    await attempt(
+        `DELETE FROM receipt WHERE payment_id IN
+         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`
+    );
+    await attempt(
+        `DELETE FROM refund WHERE payment_id IN
+         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`
+    );
+    await attempt(`DELETE FROM reconciliation_mark WHERE subscription_id IN (${tombstones})`);
+    await attempt(`DELETE FROM covered_period WHERE subscription_id IN (${tombstones})`);
+    await attempt(`DELETE FROM payment WHERE subscription_id IN (${tombstones})`);
+    await attempt(`DELETE FROM subscription_pause WHERE subscription_id IN (${tombstones})`);
+    // Both deletes must share a statement: the deferred tombstone/link guard
+    // rejects a tombstone left without its link at commit.
+    await attempt(
+        `WITH deleted_links AS (
+             DELETE FROM provider_link WHERE subscription_id IN (${tombstones})
+             RETURNING subscription_id
+         )
+         DELETE FROM subscription WHERE id IN (SELECT subscription_id FROM deleted_links)`
+    );
     // The sweep joins provider_link for both deferred retries and terminal returns.
     // Remove it first so a later cleanup error cannot expose this test to other specs.
     await attempt(
@@ -259,8 +299,21 @@ export async function cleanupPermanentGrantE2eRows(args: {
         'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))'
     );
     await attempt('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
-    // Check the same global populations, narrowed to this case's users.
-    const leaked = await describeSweepCandidates({ includeUserIds: args.userIds });
+    const survivingTombstones = await execSQL<{ id: string }>(
+        'SELECT id FROM subscription WHERE id = ANY($1::uuid[])',
+        [tombstoneIds]
+    );
+    if (survivingTombstones.length > 0)
+        failures.push(
+            new Error(
+                `Permanent grant tombstones survived cleanup: ${JSON.stringify(survivingTombstones)}`
+            )
+        );
+    // Check the same global populations, narrowed to this case's users and authorizations.
+    const leaked = await describeSweepCandidates({
+        includeUserIds: args.userIds,
+        includeProviderIds: args.providerIds
+    });
     if (leaked.length > 0)
         failures.push(
             new Error(
