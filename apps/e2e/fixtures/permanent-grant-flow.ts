@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { Page } from '@playwright/test';
+import { courtesyGrants, eq, getDb, initializeDb } from '@repo/db';
 import type { FakeProviderServer } from '@repo/payments/fake-server';
-import { execSQL } from './db-helpers.ts';
+import { deferOrCloseCourtesy } from '../../../packages/service-core/src/services/billing/subscription/succession-close-writes.ts';
+import { execSQL, getDbPool } from './db-helpers.ts';
 
 /** Open the grant screen and surface an SSR failure before waiting for hydration. */
 export async function openPermanentGrantsScreen(args: {
@@ -51,6 +53,35 @@ export async function seedCurrentCourtesy(args: {
          VALUES ($1, 'COURTESY', 3, $2, $3, NULL)`,
         [args.subscriptionId, clock.now, args.endsAt]
     );
+}
+
+/** Convert a seeded current courtesy into its deferred S18 balance. */
+export async function deferCurrentCourtesy(args: {
+    readonly subscriptionId: string;
+    readonly successorBillingOptionId: string;
+}): Promise<{ readonly courtesyGrantId: string; readonly balanceMonths: number }> {
+    initializeDb(getDbPool());
+    const courtesy = await getDb().transaction(async (tx) => {
+        const outcome = await deferOrCloseCourtesy({
+            predecessorId: args.subscriptionId,
+            successorBillingOptionId: args.successorBillingOptionId,
+            now: new Date(),
+            tx
+        });
+        if (outcome !== 'DEFERRED') throw new Error(`Expected deferred courtesy; got ${outcome}.`);
+        const [row] = await tx
+            .select({
+                id: courtesyGrants.id,
+                balanceMonths: courtesyGrants.balanceMonths,
+                balanceClosedAt: courtesyGrants.balanceClosedAt
+            })
+            .from(courtesyGrants)
+            .where(eq(courtesyGrants.subscriptionId, args.subscriptionId));
+        if (!row || row.balanceMonths === null || row.balanceClosedAt !== null)
+            throw new Error('Expected an open courtesy balance after S18 deferral.');
+        return { courtesyGrantId: row.id, balanceMonths: row.balanceMonths };
+    });
+    return courtesy;
 }
 
 /** Seed the deferred balance explicitly required by TEST:B13a:5. */

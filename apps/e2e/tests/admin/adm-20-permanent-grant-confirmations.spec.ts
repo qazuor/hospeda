@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type Page, test } from '@playwright/test';
 import { FakePaymentProvider } from '@repo/payments/fake';
+import { PermanentGrantCreateResponseSchema } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import esBilling from '../../../../packages/i18n/src/locales/es/admin-billing.json' with {
     type: 'json'
@@ -18,6 +19,7 @@ import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import {
     cleanupPermanentGrantE2eRows,
+    deferCurrentCourtesy,
     openPermanentGrantsScreen,
     seedCurrentCourtesy,
     seedDeferredCourtesy,
@@ -179,6 +181,67 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
             [grant.id]
         );
         expect(stored?.revocation_reason).toBe('TEST:B13a:5 audit reason');
+    });
+
+    test('grant closes the deferred courtesy balance and names its months', async ({ page }) => {
+        if (!world) throw new Error('Expected fake provider world.');
+        const subscriber = await createSubscriber();
+        userIds.push(subscriber.user.id, subscriber.admin.id);
+        const billingOptionId = await monthlyOptionForSlug('owner-basico');
+        const card = await createApiCardSubscription({ user: subscriber.user, billingOptionId });
+        await activateCardSubscription({
+            fakeServer: world.fakeServer,
+            subscriptionId: card.subscriptionId
+        });
+        await seedCurrentCourtesy({
+            ...card,
+            fakeServer: world.fakeServer,
+            endsAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+        });
+        const { courtesyGrantId, balanceMonths } = await deferCurrentCourtesy({
+            subscriptionId: card.subscriptionId,
+            successorBillingOptionId: billingOptionId
+        });
+        expect(balanceMonths).toBeGreaterThan(0);
+
+        await seedCookieConsent(page);
+        await useAdminSession({ page, admin: subscriber.admin, adminUrl: ADMIN_URL });
+        await openPermanentGrantsScreen({ page, adminUrl: ADMIN_URL, userId: subscriber.user.id });
+        await previewGrant(page, 'accommodation', false);
+        const confirmation = page.getByTestId('permanent-grant-confirmation');
+        await expect(confirmation.getByTestId('permanent-grant-closed-balances')).toContainText(
+            (balanceMonths === 1 ? copy.closedBalance_one : copy.closedBalance_other)
+                .replace('{{vertical}}', copy.verticals.accommodation)
+                .replace('{{count}}', String(balanceMonths))
+        );
+        const grantResponsePromise = page.waitForResponse(
+            (response) =>
+                response.request().method() === 'POST' &&
+                response.url().endsWith('/api/v1/admin/billing-permanent-grants')
+        );
+        await confirmation.getByTestId('permanent-grant-confirm-submit').click();
+        const grantResponse = await grantResponsePromise;
+        expect(grantResponse.status()).toBe(201);
+        const grantResult = PermanentGrantCreateResponseSchema.parse(
+            ((await grantResponse.json()) as { data: unknown }).data
+        );
+        expect(grantResult.closedCourtesyIds).toContain(courtesyGrantId);
+        await expect(page.getByTestId('permanent-grant-result')).toContainText(
+            copy.resultGrant.split('{{id}}')[0]!
+        );
+        const [closed] = await execSQL<{
+            balance_months: number | null;
+            balance_closed_at: Date | null;
+            close_reason: string | null;
+        }>(
+            'SELECT balance_months, balance_closed_at, close_reason FROM courtesy_grant WHERE id = $1',
+            [courtesyGrantId]
+        );
+        expect(closed).toMatchObject({
+            balance_months: balanceMonths,
+            balance_closed_at: expect.any(Date),
+            close_reason: 'GRANT_PERMANENTE_OTORGADO'
+        });
     });
 
     test('anchoring closes three deferred months and names provider mail per preapproval', async ({
