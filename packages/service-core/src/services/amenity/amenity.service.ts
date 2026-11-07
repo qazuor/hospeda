@@ -429,9 +429,11 @@ export class AmenityService extends BaseCrudRelatedService<
                     scope,
                     availability
                 } = validatedParams;
-                // Verify amenity exists
+                // Verify amenity exists AND is live: `findOne` does not filter
+                // `deletedAt`, and this adds a NEW link, so a retired catalog row
+                // is refused like a missing one (HOS-2067).
                 const amenity = await this.model.findOne({ id: amenityId as AmenityId });
-                if (!amenity) {
+                if (!amenity || amenity.deletedAt) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
                 }
                 const accommodation = await this.accommodationModel.findOne({

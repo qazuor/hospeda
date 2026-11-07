@@ -293,3 +293,115 @@ describe('syncListingFeatureJunction', () => {
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2067: retired (soft-deleted) catalog ids
+// ---------------------------------------------------------------------------
+
+/** Catalog stub whose `retiredIds` come back soft-deleted, like a real `findByIds`. */
+function makeRetiringCatalogModel(retiredIds: string[], live: string[] = [UUID_A, UUID_B, UUID_C]) {
+    return {
+        findByIds: vi.fn().mockImplementation((ids: readonly string[]) =>
+            Promise.resolve(
+                ids
+                    .filter((id) => live.includes(id) || retiredIds.includes(id))
+                    .map((id) => ({
+                        id,
+                        deletedAt: retiredIds.includes(id) ? new Date() : null
+                    }))
+            )
+        )
+    };
+}
+
+describe('listing junction sync: retired catalog ids (HOS-2067)', () => {
+    it('rejects a NEW retired amenity id and writes nothing', async () => {
+        // Arrange: the listing already has B; the stale form sends A (retired) without B
+        const junctionModel = makeJunctionModel([UUID_B]);
+        const amenityModel = makeRetiringCatalogModel([UUID_A]);
+
+        // Act + Assert
+        await expect(
+            syncListingAmenityJunction({
+                entityId: ENTITY_ID,
+                entityFkColumn: FK_COL,
+                amenityIds: [UUID_A],
+                junctionModel,
+                amenityModel,
+                tx: fakeTx
+            })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: `amenity retired: ${UUID_A}`
+        });
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+        expect(junctionModel.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps an amenity relation whose catalog row is retired but already linked', async () => {
+        // Arrange: A is linked and retired; B is new and live
+        const junctionModel = makeJunctionModel([UUID_A]);
+        const amenityModel = makeRetiringCatalogModel([UUID_A]);
+
+        // Act
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A, UUID_B],
+            junctionModel,
+            amenityModel,
+            tx: fakeTx
+        });
+
+        // Assert
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+        expect(junctionModel.create).toHaveBeenCalledTimes(1);
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_B },
+            fakeTx
+        );
+    });
+
+    it('rejects a NEW retired feature id and writes nothing', async () => {
+        // Arrange
+        const junctionModel = makeFeatureJunctionModel([UUID_B]);
+        const featureModel = makeRetiringCatalogModel([UUID_A]);
+
+        // Act + Assert
+        await expect(
+            syncListingFeatureJunction({
+                entityId: ENTITY_ID,
+                entityFkColumn: FK_COL,
+                featureIds: [UUID_A],
+                junctionModel,
+                featureModel,
+                tx: fakeTx
+            })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: `feature retired: ${UUID_A}`
+        });
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+        expect(junctionModel.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps a feature relation whose catalog row is retired but already linked', async () => {
+        // Arrange
+        const junctionModel = makeFeatureJunctionModel([UUID_A]);
+        const featureModel = makeRetiringCatalogModel([UUID_A]);
+
+        // Act
+        await syncListingFeatureJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            featureIds: [UUID_A],
+            junctionModel,
+            featureModel,
+            tx: fakeTx
+        });
+
+        // Assert
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+        expect(junctionModel.create).not.toHaveBeenCalled();
+    });
+});

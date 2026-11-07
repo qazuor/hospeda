@@ -154,41 +154,75 @@ export async function readAllJunctionRows<TRow>({
 export interface ValidateCatalogIdsInput {
     /** UUIDs to validate against the catalog. */
     readonly ids: readonly string[];
-    /** Catalog batch lookup (e.g. `amenityModel.findByIds`). */
+    /**
+     * Catalog batch lookup (e.g. `amenityModel.findByIds`). Rows MAY carry
+     * `deletedAt`: `BaseModel.findByIds` does not filter soft-deleted rows, so
+     * the lookup itself cannot tell a live catalog item from a retired one.
+     */
     readonly findByIds: (
         ids: readonly string[],
         tx?: DrizzleClient
-    ) => Promise<readonly { id: string }[]>;
+    ) => Promise<readonly { id: string; deletedAt?: Date | string | null }[]>;
     /** Human-readable name for error messages ("amenity" / "feature"). */
     readonly entityLabel: string;
+    /**
+     * Catalog ids the listing ALREADY has linked. A retired id in this set is
+     * tolerated (see {@link validateCatalogIds}); a retired id outside it is
+     * rejected. Omit when the write only ever adds links.
+     */
+    readonly alreadyLinkedIds?: ReadonlySet<string>;
     /** Transaction client passed through to the catalog lookup. */
     readonly tx: DrizzleClient;
 }
 
 /**
- * Validates that every ID in `ids` exists in the catalog, in ONE query.
- * Throws `ServiceError(VALIDATION_ERROR)` naming the first unknown ID so the
+ * Validates that every ID in `ids` is a live catalog row, in ONE query.
+ * Throws `ServiceError(VALIDATION_ERROR)` naming the first offending ID so the
  * surrounding transaction rolls back with no partial writes.
  *
+ * Two kinds of offender, told apart by the message:
+ *  - unknown: no catalog row at all, `${entityLabel} not found: <id>`;
+ *  - retired: the row is soft-deleted (HOS-2067), `${entityLabel} retired: <id>`.
+ *
+ * Retired ids are rejected, NOT silently dropped, because the sync is
+ * exact-set: a stale form that still carries a retired id (e.g. `shared_patio`,
+ * merged into `patio` by a data migration) also lacks the replacement relation
+ * the migration created, so dropping the id would still let the sync delete it.
+ *
+ * A retired id the listing already has linked (`alreadyLinkedIds`) is
+ * tolerated and the relation is kept as is, so a later admin soft-delete never
+ * makes every listing that uses that item unsaveable.
+ *
  * @param input - {@link ValidateCatalogIdsInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any ID is unknown or
+ *   retired-and-not-already-linked.
  */
 export async function validateCatalogIds({
     ids,
     findByIds,
     entityLabel,
+    alreadyLinkedIds,
     tx
 }: ValidateCatalogIdsInput): Promise<void> {
     if (ids.length === 0) return;
 
-    const found = new Set((await findByIds(ids, tx)).map((row) => row.id));
-    // Report the first unknown ID in the caller's order so the message is
+    const rows = await findByIds(ids, tx);
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    // Report the first offender in the caller's order so the message is
     // reproducible regardless of how the DB ordered the result set.
-    const missing = ids.find((id) => !found.has(id));
-    if (missing !== undefined) {
-        throw new ServiceError(
-            ServiceErrorCode.VALIDATION_ERROR,
-            `${entityLabel} not found: ${missing}`
-        );
+    for (const id of ids) {
+        const row = byId.get(id);
+        if (row === undefined) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `${entityLabel} not found: ${id}`
+            );
+        }
+        if (row.deletedAt && !alreadyLinkedIds?.has(id)) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `${entityLabel} retired: ${id}`
+            );
+        }
     }
 }
