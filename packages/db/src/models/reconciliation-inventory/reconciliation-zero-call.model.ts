@@ -95,7 +95,7 @@ export interface LiveRowUnderLiveGrantAnchor {
     readonly anchoredVerticals: readonly string[];
 }
 
-/** Read-only queries that supply the first, second, and sixth zero-call checks. */
+/** Read-only queries that supply the first, second, third, and sixth zero-call checks. */
 export class ReconciliationZeroCallModel {
     /**
      * Lists consumer 17 of NUCLEO/01 §2.4 for B/09 §3's third zero-call check.
