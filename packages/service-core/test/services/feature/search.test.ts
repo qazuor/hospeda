@@ -52,7 +52,10 @@ describe('FeatureService.search', () => {
         });
 
         expectSuccess(result);
-        expect(featureModelMock.findAll.mock.calls[0]?.[0]).toEqual({ category: 'VIEW' });
+        expect(featureModelMock.findAll.mock.calls[0]?.[0]).toEqual({
+            category: 'VIEW',
+            deletedAt: null
+        });
     });
 
     it('should not filter by category when absent', async () => {
@@ -89,6 +92,23 @@ describe('FeatureService.search', () => {
 
         // Assert
         expect(featureModelMock.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 100 });
+    });
+
+    it('should exclude soft-deleted (retired) features (regression)', async () => {
+        // Arrange — FeatureModel.findAll applies no soft-delete default, so before the
+        // fix GET /public/features also returned the features retired by data
+        // migration 0147, and the public filters rendered them as raw-slug chips.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            applicableVertical: 'accommodation',
+            page: 1,
+            pageSize: 100
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[0]).toEqual({ deletedAt: null });
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
