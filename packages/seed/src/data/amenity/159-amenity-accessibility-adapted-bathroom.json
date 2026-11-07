@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "159-amenity-accessibility-adapted-bathroom",
+    "slug": "adapted_bathroom",
+    "description": {
+        "es": "Baño adaptado para personas con movilidad reducida",
+        "en": "Bathroom adapted for people with reduced mobility",
+        "pt": "Banheiro adaptado para pessoas com mobilidade reduzida"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ACCESSIBILITY",
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "167-amenity-wellness-hydromassage-bathtub",
+    "slug": "hydromassage_bathtub",
+    "description": {
+        "es": "Bañera con hidromasaje en el baño, distinta de un jacuzzi",
+        "en": "Hydromassage bathtub in the bathroom, not a jacuzzi",
+        "pt": "Banheira de hidromassagem no banheiro, diferente de uma jacuzzi"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "WELLNESS",
+    "icon": "JacuzziIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

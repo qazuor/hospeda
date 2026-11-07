@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "150-amenity-outdoors-gazebo",
+    "slug": "gazebo",
+    "description": {
+        "es": "Gazebo en el exterior",
+        "en": "Outdoor gazebo",
+        "pt": "Gazebo na área externa"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "CoveredGalleryIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

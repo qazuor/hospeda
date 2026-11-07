@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "165-amenity-services-vehicle-rental",
+    "slug": "vehicle_rental",
+    "description": {
+        "es": "Alquiler de autos, motos o bicicletas para recorrer la zona",
+        "en": "Rental of cars, motorbikes or bicycles to explore the area",
+        "pt": "Aluguel de carros, motos ou bicicletas para explorar a região"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SERVICES",
+    "icon": "CarIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

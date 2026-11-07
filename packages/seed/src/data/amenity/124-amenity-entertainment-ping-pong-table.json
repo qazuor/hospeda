@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "124-amenity-entertainment-ping-pong-table",
+    "slug": "ping_pong_table",
+    "description": {
+        "es": "Mesa de ping-pong con paletas",
+        "en": "Ping-pong table with paddles",
+        "pt": "Mesa de pingue-pongue com raquetes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "BoardGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

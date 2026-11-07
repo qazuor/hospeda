@@ -68,6 +68,26 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         });
     });
 
+    it('should throw NOT_FOUND and create no relation if the feature is soft-deleted (HOS-2067)', async () => {
+        // Arrange: `findOne` does not filter deletedAt, so a retired row comes back
+        (featureModel.findOne as Mock).mockResolvedValueOnce({
+            ...feature,
+            deletedAt: new Date('2026-11-01T00:00:00Z')
+        });
+        // Everything else is valid, so only the retired check can refuse.
+        (accommodationModel.findOne as Mock).mockResolvedValueOnce(accommodation);
+        (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
+
+        // Act
+        const result = await service.addFeatureToAccommodation(actorWithPerms, validInput);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(result.error?.message).toMatch(/not found/i);
+        expect(accommodationModel.findOne as Mock).not.toHaveBeenCalled();
+        expect(relatedModel.create as Mock).not.toHaveBeenCalled();
+    });
+
     it('should throw NOT_FOUND if feature does not exist', async () => {
         (featureModel.findOne as Mock).mockResolvedValueOnce(null); // Feature does not exist
 

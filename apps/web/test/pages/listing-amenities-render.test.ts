@@ -129,8 +129,10 @@ describe('vertical presentation pages — the third surface (HOS-1071 rule)', ()
     });
 
     it('gastronomia lists those traits among what the owner edits alone', () => {
-        expect(VENUE_PRESENTATION).toContain(
-            'lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>'
+        // The cells may carry attributes (`data-label`, for the phone card layout);
+        // what is frozen is the text and that the next cell says the owner edits it.
+        expect(VENUE_PRESENTATION).toMatch(
+            /lo que ofrece el local, contacto y redes<\/td><td[^>]*><strong>Vos, cuando quieras<\/strong>/
         );
     });
 
@@ -140,8 +142,8 @@ describe('vertical presentation pages — the third surface (HOS-1071 rule)', ()
     });
 
     it('experiencias lists it among what the provider edits alone', () => {
-        expect(EXPERIENCE_PRESENTATION).toContain(
-            'qué incluye, contacto y redes</td><td><strong>Vos, cuando quieras</strong>'
+        expect(EXPERIENCE_PRESENTATION).toMatch(
+            /qué incluye, contacto y redes<\/td><td[^>]*><strong>Vos, cuando quieras<\/strong>/
         );
     });
 });

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "116-amenity-entertainment-hammocks",
+    "slug": "hammocks",
+    "description": {
+        "es": "Hamacas paraguayas o de jardín",
+        "en": "Garden or rope hammocks",
+        "pt": "Redes de descanso para o jardim"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "RelaxationAreaIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

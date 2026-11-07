@@ -54,8 +54,10 @@ export const OTHER_CATEGORY_KEY = '__other__';
  * Spanish fallback label.
  *
  * `GENERAL_APPLIANCES` deliberately reads "Equipamiento" here and in
- * `accommodations.amenityCategories.generalAppliances`, while the admin panel
- * keeps "Electrodomesticos" (HOS-823). The enum value is a catch-all: it groups
+ * `accommodations.amenityCategories.generalAppliances`, and since HOS-2059 the
+ * admin panel reads the same word (`admin-entities.types.amenity.generalAppliances`,
+ * `admin-filters.amenityType.generalAppliances`); before that it said
+ * "Electrodomesticos" (HOS-823). The enum value is a catch-all: it groups
  * bikes, pet policy and an experience's included gear, none of which is an
  * appliance (parking used to live here too, until HOS-2058 gave it its own
  * PARKING type). On an experience listing that heading was the most misleading

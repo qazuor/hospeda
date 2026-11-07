@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "149-amenity-general-appliances-tankless-water-heater",
+    "slug": "tankless_water_heater",
+    "description": {
+        "es": "Calefón para el agua caliente",
+        "en": "Tankless heater for hot water",
+        "pt": "Aquecedor de passagem para a água quente"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "GENERAL_APPLIANCES",
+    "icon": "HeatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

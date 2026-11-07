@@ -717,19 +717,19 @@ describe('HOS-111 T-009 — pets / smoking / A/C / river-beach-front NL coverage
             expect(result).toContain('river_front');
         });
 
-        it('matchFeatureTerms("frente al balneario", "es") → spa_front', () => {
+        it('matchFeatureTerms("frente al balneario", "es") → balneario_front', () => {
             const result = matchFeatureTerms('frente al balneario', 'es');
-            expect(result).toContain('spa_front');
+            expect(result).toContain('balneario_front');
         });
 
-        it('matchFeatureTerms("spa front", "en") → spa_front', () => {
+        it('matchFeatureTerms("spa front", "en") → balneario_front', () => {
             const result = matchFeatureTerms('spa front', 'en');
-            expect(result).toContain('spa_front');
+            expect(result).toContain('balneario_front');
         });
 
-        it('matchFeatureTerms("frente ao balneário", "pt") → spa_front', () => {
+        it('matchFeatureTerms("frente ao balneário", "pt") → balneario_front', () => {
             const result = matchFeatureTerms('frente ao balneário', 'pt');
-            expect(result).toContain('spa_front');
+            expect(result).toContain('balneario_front');
         });
     });
 });

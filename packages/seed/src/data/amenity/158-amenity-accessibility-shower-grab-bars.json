@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "158-amenity-accessibility-shower-grab-bars",
+    "slug": "shower_grab_bars",
+    "description": {
+        "es": "Barrales de apoyo en la ducha",
+        "en": "Grab bars in the shower",
+        "pt": "Barras de apoio no chuveiro"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ACCESSIBILITY",
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

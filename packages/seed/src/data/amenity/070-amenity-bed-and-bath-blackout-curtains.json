@@ -8,7 +8,7 @@
         "pt": "Cortinas blackout"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "BED_AND_BATH",
+    "type": "GENERAL_APPLIANCES",
     "icon": "BlackoutCurtainsIcon",
     "isBuiltin": false,
     "isFeatured": false,

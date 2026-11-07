@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "132-amenity-kitchen-gas-burner",
+    "slug": "gas_burner",
+    "description": {
+        "es": "Quemador a gas para cocinar",
+        "en": "Gas burner for cooking",
+        "pt": "Fogareiro a gás para cozinhar"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "StoveIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

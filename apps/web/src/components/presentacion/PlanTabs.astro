@@ -1,0 +1,57 @@
+---
+/**
+ * @file PlanTabs.astro
+ * @description Plan switcher for the tier tables of the `/presentacion/*`
+ * pages. On a phone a three-plan comparison does not fit (the feature column
+ * eats the width and the last plan is cut off), so below 40rem the table shows
+ * the feature column plus ONE plan, picked with these tabs. Every row stays,
+ * including the ones the picked plan does not include (`—`), so the reader
+ * still sees what a higher plan adds.
+ *
+ * NO JAVASCRIPT. The tabs are native radio buttons (keyboard arrows and screen
+ * readers work out of the box) and `presentacion.css` hides the other plan
+ * columns with `:checked ~ .tablewrap` sibling selectors. That is why the
+ * radios, the tab bar and the slotted `.tablewrap` must stay SIBLINGS, in that
+ * order: do not wrap the slot.
+ *
+ * Desktop and print always show the full table — a PDF export of a
+ * presentation must carry every plan.
+ *
+ * Supports up to three plans (the CSS writes one rule per position).
+ */
+
+interface Props {
+	/** Unique id within the page; names the radio group. */
+	readonly id: string;
+	/** Plan names, in the table's column order. */
+	readonly plans: readonly string[];
+	/** Zero-based index of the plan shown first. */
+	readonly selected?: number;
+}
+
+const { id, plans, selected = 0 } = Astro.props;
+---
+
+<div class="plantabs">
+	{
+		plans.map((_plan, index) => (
+			<input
+				class="plantabs__radio"
+				type="radio"
+				name={`plantabs-${id}`}
+				id={`plantabs-${id}-${index}`}
+				checked={index === selected}
+			/>
+		))
+	}
+	<div class="plantabs__bar">
+		{
+			plans.map((plan, index) => (
+				<label class="plantabs__tab" for={`plantabs-${id}-${index}`}>
+					{plan}
+				</label>
+			))
+		}
+	</div>
+	<slot />
+</div>

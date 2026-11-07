@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "120-amenity-entertainment-tennis-court",
+    "slug": "tennis_court",
+    "description": {
+        "es": "Cancha de tenis para los huéspedes",
+        "en": "Tennis court for guests",
+        "pt": "Quadra de tênis para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SportsCenterIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

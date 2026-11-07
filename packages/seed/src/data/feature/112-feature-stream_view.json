@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "112-feature-stream_view",
+    "slug": "stream_view",
+    "category": "VIEW",
+    "description": {
+        "es": "Vista al arroyo desde el alojamiento",
+        "en": "Stream view from the property",
+        "pt": "Vista para o riacho a partir da hospedagem"
+    },
+    "applicableVerticals": ["accommodation"],
+    "icon": "RiverViewIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}
