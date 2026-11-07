@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "134-amenity-kitchen-oven",
+    "slug": "oven",
+    "description": {
+        "es": "Horno para cocinar",
+        "en": "Oven for cooking",
+        "pt": "Forno para cozinhar"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "StoveIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

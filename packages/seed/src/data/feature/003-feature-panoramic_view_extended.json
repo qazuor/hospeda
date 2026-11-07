@@ -8,7 +8,7 @@
         "en": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
         "pt": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "PanoramicViewIcon",
     "isBuiltin": true,
     "isFeatured": false,

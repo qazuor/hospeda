@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "166-amenity-laundry-clothesline",
+    "slug": "clothesline",
+    "description": {
+        "es": "Tendedero para secar la ropa",
+        "en": "Clothesline for drying clothes",
+        "pt": "Varal para secar a roupa"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "LAUNDRY",
+    "icon": "ShirtIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

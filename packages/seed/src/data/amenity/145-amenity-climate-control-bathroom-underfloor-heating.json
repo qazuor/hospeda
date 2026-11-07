@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "145-amenity-climate-control-bathroom-underfloor-heating",
+    "slug": "bathroom_underfloor_heating",
+    "description": {
+        "es": "Calefacción por losa radiante en los baños",
+        "en": "Underfloor heating in the bathrooms",
+        "pt": "Aquecimento por piso radiante nos banheiros"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "CLIMATE_CONTROL",
+    "icon": "HeatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

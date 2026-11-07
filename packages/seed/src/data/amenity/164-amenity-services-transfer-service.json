@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "164-amenity-services-transfer-service",
+    "slug": "transfer_service",
+    "description": {
+        "es": "Traslado desde y hacia terminales, aeropuertos o puntos de interés",
+        "en": "Transfers to and from terminals, airports or points of interest",
+        "pt": "Traslado de e para terminais, aeroportos ou pontos de interesse"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SERVICES",
+    "icon": "TransferServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

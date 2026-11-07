@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "129-amenity-kitchen-full-tableware",
+    "slug": "full_tableware",
+    "description": {
+        "es": "Vajilla completa para todos los huéspedes",
+        "en": "Full tableware for every guest",
+        "pt": "Louça completa para todos os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "UtensilsIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

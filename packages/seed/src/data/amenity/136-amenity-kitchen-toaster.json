@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "136-amenity-kitchen-toaster",
+    "slug": "toaster",
+    "description": {
+        "es": "Tostadora eléctrica",
+        "en": "Electric toaster",
+        "pt": "Torradeira elétrica"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "KitchenIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -46,8 +46,8 @@
  *    `resolveListingCompleteness`, so the claim cannot pass by being merely well-worded. They moved
  *    section (they used to own "Cómo te van a contactar") but not a character.
  *  - THE "LO QUE CAMBIÁS SOLO Y LO QUE NO" TABLE: `test/pages/listing-amenities-render.test.ts`
- *    asserts its first row verbatim, ending `qué incluye, contacto y redes</td><td><strong>Vos,
- *    cuando quieras</strong>`. It is a PRODUCT guard (HOS-1071): every vertical presentation must
+ *    asserts its first row, ending `qué incluye, contacto y redes</td><td …><strong>Vos,
+ *    cuando quieras</strong>` (the cells may carry attributes such as `data-label`). It is a PRODUCT guard (HOS-1071): every vertical presentation must
  *    tell the owner what they change alone, and gastronomía keeps the twin table. Dissolving this
  *    section into the others is what broke it. The original's THIRD row was wrong and is now two:
  *    the owner CAN change the slug (`listing/editor/BasicInfoSection.client.tsx` — opt-in checkbox
@@ -92,6 +92,10 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
+import PlanTabs from '@/components/presentacion/PlanTabs.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -136,21 +140,23 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
 		noindex
 		nofollow
 	/>
-	<link
-		slot="head"
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
-	/>
 
 <PresentationThemeToggle />
 
 <div class="wrap">
 
+  <PresentationBrandBar />
+
   <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
     <p class="eyebrow">Hospeda &middot; Experiencias</p>
     <h1>Publicá lo que le ofertás al turista</h1>
     <div class="rule"></div>
     <p class="masthead__lede">Kayak, cabalgatas, pesca, avistaje de aves, visitas guiadas, paseos en lancha, termas, talleres. El que reserva alojamiento en el Litoral entra a Hospeda a decidir <strong>qué va a hacer los días que se queda</strong>. Ahí es donde conviene que estés.</p>
+    </div>
+    <HospedinFigure pose="vamos" placement="hero" say="¡Mostremos lo tuyo!" />
+    </div>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Comisión</span>
@@ -242,33 +248,35 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
   <section>
     <div class="sec-head">
       <p class="eyebrow">Los planes</p>
-      <h2>Tres planes, según cuántas salidas tengas y cuánto quieras mostrar</h2>
+      <h2>Tres planes, según cuánto quieras publicar</h2>
     </div>
-    <p>La cuota es fija en los tres. No es un cargo por salida ni por pasajero: no hay comisión ni cargo por consulta. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez meses y tenés doce</strong>. Los valores del día están siempre publicados en <a href={buildUrl({ locale, path: 'planes/experiencias/precios' })}>el sitio</a>.</p>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">&nbsp;</th>
-            <th scope="col">Básico</th>
-            <th scope="col">Profesional</th>
-            <th scope="col">Premium</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Experiencias publicadas</td><td class="mono">1</td><td class="mono">5</td><td class="mono">10</td></tr>
-          <tr><td>Fotos por experiencia</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
-          <tr><td>Punto de encuentro en la ficha</td><td>sí</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Mapa del punto de encuentro y cómo llegar</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Certificado para quien hizo la salida</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p>La cuota es fija en los tres y no depende de cuánto vendas: no es un cargo por reserva ni por cliente, y no hay comisión ni cargo por consulta. Lo que cambia de un plan a otro es cuántas experiencias publicás, sean salidas, alquileres, clases o lo que ofrezcas, y con qué herramientas las mostrás. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez meses y tenés doce</strong>. Los valores del día están siempre publicados en <a href={buildUrl({ locale, path: 'planes/experiencias/precios' })}>el sitio</a>.</p>
+    <PlanTabs id="experiencias-planes" plans={['Básico', 'Profesional', 'Premium']} selected={1}>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">&nbsp;</th>
+              <th scope="col">Básico</th>
+              <th scope="col">Profesional</th>
+              <th scope="col">Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Experiencias publicadas</td><td class="mono">1</td><td class="mono">5</td><td class="mono">10</td></tr>
+            <tr><td>Fotos por experiencia</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
+            <tr><td>Punto de encuentro en la ficha</td><td>sí</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Mapa del punto de encuentro y cómo llegar</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Certificado para quien hizo la salida</td><td>—</td><td>sí</td><td>sí</td></tr>
+            <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
+            <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </PlanTabs>
     <p class="subhead"><strong>En los tres planes</strong> entran: editar toda tu ficha cuando quieras, publicarla vos mismo y las estadísticas de visitas. Se cambia de plan desde tu cuenta, para arriba y también para abajo, sin llamar a nadie.</p>
     <div class="notice">
-      <h3>Además, sos turista VIP sin pagar nada más.</h3>
+      <h3>Además, sos turista VIP en Hospeda 100% bonificado.</h3>
       <p>Hospeda tiene una <strong>cuenta paga para viajeros</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas, recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de los anfitriones</strong>.</p>
       <p><strong>Con cualquiera de los tres planes eso viene incluido.</strong> No es un descuento ni una promoción: el plan trae adentro el paquete completo de turista VIP. Cuando salís vos a recorrer la zona, usás el sitio con todo desbloqueado.</p>
     </div>
@@ -279,16 +287,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       <p class="eyebrow">Para crecer sin cambiar de plan</p>
       <h2>Complementos</h2>
     </div>
-    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de plan</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o una experiencia más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
+    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de nivel</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o una experiencia más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
     <p>Hay de dos tipos. Los que se cobran <strong>por mes</strong> duran mientras dure tu suscripción y los sacás cuando quieras. Los de <strong>una sola vez</strong> valen por un período fijo y se aplican a una sola ficha. Estos son los que hay para vos:</p>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Complemento</th><th scope="col">Qué te da</th><th scope="col">Cómo se cobra</th></tr>
         </thead>
         <tbody>
-          <tr><td>Destacar tu experiencia por 7 o 30 días</td><td>Tu experiencia aparece destacada en los resultados durante 7 o 30 días.</td><td>Por única vez</td></tr>
-          <tr><td>1 experiencia más</td><td>Una experiencia más por encima del tope de tu plan.</td><td>Por mes</td></tr>
+          <tr><td data-label="Complemento">Destacar tu experiencia por 7 o 30 días</td><td data-label="Qué te da">Tu experiencia aparece destacada en los resultados durante 7 o 30 días.</td><td data-label="Cómo se cobra">Por única vez</td></tr>
+          <tr><td data-label="Complemento">1 experiencia más</td><td data-label="Qué te da">Una experiencia más por encima del tope de tu plan.</td><td data-label="Cómo se cobra">Por mes</td></tr>
         </tbody>
       </table>
     </div>
@@ -309,7 +317,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       <li><span class="tick">&rarr;</span><span><strong>Recomendado junto a alojamientos cercanos.</strong> Tu experiencia aparece en las fichas de los alojamientos de la zona.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Reservas o turnos.</strong> Que quien se interesa deje pedido su lugar en una salida.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Galerías de fotos por fecha.</strong> Las fotos de cada salida, para que se las lleve quien la hizo. <em>Hoy, desde Premium.</em></span></li>
-      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Aparecé entre los beneficios que recibe el turista.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Podés formar parte de un grupo de comercios que brindan beneficios al turista que visita tu ciudad.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Mapa del punto de encuentro y cómo llegar.</strong> Que el turista llegue sin llamarte. <em>Hoy, desde Profesional.</em></span></li>
       <li><span class="tick">&rarr;</span><span><strong>Certificado para quien hizo la salida.</strong> Un comprobante de que la hizo. <em>Hoy, desde Profesional.</em></span></li>
       <li><span class="tick">&rarr;</span><span><strong>Tu ficha en PDF con QR.</strong> Para imprimir y repartir. <em>Hoy, desde Premium.</em></span></li>
@@ -401,16 +409,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       <p class="eyebrow">Quién manda sobre qué</p>
       <h2>Lo que cambiás solo y lo que no</h2>
     </div>
-    <div class="tablewrap">
+    <div class="tablewrap tablewrap--stack">
       <table>
         <thead>
           <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
         </thead>
         <tbody>
-          <tr><td>Nombre, descripción, fotos, precio, horarios, qué incluye, contacto y redes</td><td><strong>Vos, cuando quieras</strong></td></tr>
-          <tr><td>Tus preguntas frecuentes</td><td><strong>Vos</strong></td></tr>
-          <tr><td>La dirección web de tu ficha</td><td><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
-          <tr><td>Si tu experiencia aparece destacada</td><td><strong>Vos</strong>.</td></tr>
+          <tr><td data-label="Dato">Nombre, descripción, fotos, precio, horarios, qué incluye, contacto y redes</td><td data-label="Quién lo cambia"><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td data-label="Dato">Tus preguntas frecuentes</td><td data-label="Quién lo cambia"><strong>Vos</strong></td></tr>
+          <tr><td data-label="Dato">La dirección web de tu ficha</td><td data-label="Quién lo cambia"><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
+          <tr><td data-label="Dato">Si tu experiencia aparece destacada</td><td data-label="Quién lo cambia"><strong>Vos</strong>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -445,6 +453,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
   </section>
 
   <footer class="close">
+    <HospedinFigure pose="saludando" placement="close" />
     <h2>Probalo</h2>
     <p>Cargar la experiencia es gratis y no te compromete. Recién decidís cuando la querés publicar, y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.</p>
     <a class="cta" href={ctaHref}>{ctaLabel}</a>
@@ -461,6 +470,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       hoy y pueden cambiar; los del momento están siempre publicados en el sitio.
     </div>
   </footer>
+
+
+  <PresentationFooter />
 
 </div>
 

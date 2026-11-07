@@ -195,9 +195,7 @@
     },
     "featureIds": [
         "030-feature-full_rental",
-        "043-feature-internal_parking",
         "002-feature-spa_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -217,7 +215,8 @@
         "038-amenity-accessibility-elevator",
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
-        "043-amenity-safety-fire-extinguisher"
+        "043-amenity-safety-fire-extinguisher",
+        "017-amenity-general-appliances-parking"
     ],
     "faqs": [],
     "iaData": [],

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "153-amenity-outdoors-outdoor-chairs",
+    "slug": "outdoor_chairs",
+    "description": {
+        "es": "Sillas para el exterior",
+        "en": "Chairs for outdoor use",
+        "pt": "Cadeiras para a área externa"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "OutdoorFurnitureIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

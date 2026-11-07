@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "119-amenity-entertainment-volleyball-court",
+    "slug": "volleyball_court",
+    "description": {
+        "es": "Cancha de vóley para los huéspedes",
+        "en": "Volleyball court for guests",
+        "pt": "Quadra de vôlei para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SportsCenterIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

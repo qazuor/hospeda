@@ -54,15 +54,50 @@ const result = await accommodationService.create(ctx, data);
 
 ### Amenity
 
-A feature or facility offered by an accommodation (e.g., WiFi, pool, parking).
+Something the guest **uses** during the stay: WiFi, a pool, a kitchen, a grill,
+parking. Amenities live in the `amenities` catalog table and are linked to a
+listing through `r_accommodation_amenity` (or the venue/experience twins). The
+link can say whether the amenity is `private` or `shared` (`scope`), whether it
+is available `year_round` or `seasonal` (`availability`), and whether it costs
+extra.
+
+Amenities, features and policies follow one rule (HOS-2059, decision D-1):
+
+| Catalog | Answers | Examples |
+|---------|---------|----------|
+| **Amenity** | What the guest **USES** | `wifi`, `pool`, `full_kitchen`, `bbq_grill`, `laundry_service` |
+| **Feature** | What the place **IS** | `river_view`, `river_access`, `river_front`, `silent_environment` |
+| **Policy** | A **rule** of the place | check-in time, pets, smoking (HOS-2060) |
+
+A concept belongs to exactly one catalog. "Shared kitchen" is not a second
+amenity: it is `full_kitchen` with `scope = shared`. A slug present in both the
+amenity and the feature seed catalogs fails CI
+(`pnpm check:catalog-slug-single-table`).
 
 **Example**:
 
 ```typescript
-const amenities = ['wifi', 'pool', 'parking', 'kitchen'];
+const amenities = ['wifi', 'pool', 'parking', 'full_kitchen'];
 ```
 
 **Related**: Accommodation, Feature
+
+### Feature
+
+What a place **is**, as opposed to what the guest uses there (see the D-1 rule
+under Amenity): its view, its access to the river, its location, its style, its
+audience. Features live in the `features` catalog table, carry a `category`
+(`LOCATION`, `VIEW`, `ACCESS`, `STYLE`, `AUDIENCE`, ...) that groups them on the
+public detail page, and are linked through `r_accommodation_feature`, where the
+host can rename the item (`hostReWriteName`) or add `comments`.
+
+**Example**:
+
+```typescript
+const features = ['river_view', 'river_access', 'balneario_front'];
+```
+
+**Related**: Accommodation, Amenity
 
 ### CRUD Operations
 

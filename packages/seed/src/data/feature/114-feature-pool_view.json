@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "114-feature-pool_view",
+    "slug": "pool_view",
+    "category": "VIEW",
+    "description": {
+        "es": "Vista a la pileta desde el alojamiento",
+        "en": "Pool view from the property",
+        "pt": "Vista para a piscina a partir da hospedagem"
+    },
+    "applicableVerticals": ["accommodation"],
+    "icon": "PoolIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

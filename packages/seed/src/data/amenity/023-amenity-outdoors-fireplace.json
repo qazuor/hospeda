@@ -8,7 +8,7 @@
         "pt": "Chimenea funcional"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "OUTDOORS",
+    "type": "CLIMATE_CONTROL",
     "icon": "FireplaceIcon",
     "isBuiltin": false,
     "isFeatured": true,

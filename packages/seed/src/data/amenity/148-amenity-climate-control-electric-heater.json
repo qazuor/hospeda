@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "148-amenity-climate-control-electric-heater",
+    "slug": "electric_heater",
+    "description": {
+        "es": "Calefactor eléctrico portátil o fijo",
+        "en": "Portable or fixed electric heater",
+        "pt": "Aquecedor elétrico portátil ou fixo"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "CLIMATE_CONTROL",
+    "icon": "HeatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

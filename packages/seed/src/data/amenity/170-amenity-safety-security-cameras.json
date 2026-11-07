@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "170-amenity-safety-security-cameras",
+    "slug": "security_cameras",
+    "description": {
+        "es": "Cámaras de seguridad en los exteriores",
+        "en": "Security cameras outdoors",
+        "pt": "Câmeras de segurança nas áreas externas"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SAFETY",
+    "icon": "Security24hIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

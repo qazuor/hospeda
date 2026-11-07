@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "128-amenity-entertainment-bluetooth-speaker",
+    "slug": "bluetooth_speaker",
+    "description": {
+        "es": "Parlante para escuchar música",
+        "en": "Speaker for playing music",
+        "pt": "Caixa de som para ouvir música"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SmartHomeIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

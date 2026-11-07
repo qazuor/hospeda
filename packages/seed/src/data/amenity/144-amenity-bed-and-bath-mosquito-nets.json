@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "144-amenity-bed-and-bath-mosquito-nets",
+    "slug": "mosquito_nets",
+    "description": {
+        "es": "Mosquiteros o tela mosquitera en las aberturas",
+        "en": "Mosquito nets or screens on the openings",
+        "pt": "Mosquiteiros ou telas nas aberturas"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "BED_AND_BATH",
+    "icon": "ShieldIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

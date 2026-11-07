@@ -429,6 +429,11 @@ jobs:
       # (catalog enum members and catalog accessor arguments) is in the key catalog.
       - name: Check every key used in code is in the key catalog (GUARD:G3)
         run: pnpm check:catalog-key-usage
+      # HOS-2059 G-5. Its own step, like every guard here. No slug exists as both
+      # an amenity and a feature in the seed catalog (amenity = what the guest
+      # USES, feature = what the place IS).
+      - name: Check no catalog slug is both an amenity and a feature (HOS-2059)
+        run: pnpm check:catalog-slug-single-table
       # GUARD:G1 (HOS-1431, AC:V1:5). Its own step. Retires the HOS-1079 shell
       # guard on binary vertical ternaries, whose rule it widens.
       - name: Check every vertical carries its Axis-2 item and no binary vertical ternary (GUARD:G1)

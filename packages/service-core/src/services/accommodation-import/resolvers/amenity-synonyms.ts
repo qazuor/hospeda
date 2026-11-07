@@ -34,8 +34,8 @@
  *   playground, crib, high_chair, bicycles, kayaks, first_aid_kit,
  *   smoke_detector, fire_extinguisher, safe, room_service, daily_cleaning,
  *   laundry_service, luggage_storage, bar, restaurant, coworking_space,
- *   river_access, river_view, panoramic_view, organic_garden, outdoor_furniture,
- *   beach_equipment, fishing_equipment, outdoor_kitchen, shared_kitchen,
+ *   organic_garden, outdoor_furniture,
+ *   beach_equipment, fishing_equipment, outdoor_kitchen,
  *   relaxation_area, security_parking, water_heater, international_adapters
  *
  * @module services/accommodation-import/resolvers/amenity-synonyms
@@ -503,21 +503,14 @@ export const AMENITY_SYNONYMS: ReadonlyMap<string, string> = new Map<string, str
             ['espacio de trabajo', 'coworking_space'],
 
             // ----------------------------------------------------------------
-            // Outdoor / vistas
+            // Outdoor
             // ----------------------------------------------------------------
-            ['acceso al rio', 'river_access'],
-            ['acceso directo al rio', 'river_access'],
-            ['river access', 'river_access'],
-            ['frente al rio', 'river_access'],
-
-            ['vista al rio', 'river_view'],
-            ['river view', 'river_view'],
-            ['vista rio', 'river_view'],
-
-            ['vista panoramica', 'panoramic_view'],
-            ['panoramic view', 'panoramic_view'],
-            ['vistas panoramicas', 'panoramic_view'],
-
+            // HOS-2059: river access, river view and panoramic view are
+            // FEATURES now (what the place IS), not amenities, so they no
+            // longer resolve here and flow to `unresolved` for host review.
+            // The shared kitchen merged into `full_kitchen` with a `shared`
+            // scope, which this slug-only map cannot express, so it is not
+            // mapped either.
             ['jardin organico', 'organic_garden'],
             ['huerta organica', 'organic_garden'],
             ['organic garden', 'organic_garden'],
@@ -533,9 +526,6 @@ export const AMENITY_SYNONYMS: ReadonlyMap<string, string> = new Map<string, str
             ['cocina exterior', 'outdoor_kitchen'],
             ['cocina al aire libre', 'outdoor_kitchen'],
             ['outdoor kitchen', 'outdoor_kitchen'],
-
-            ['cocina compartida', 'shared_kitchen'],
-            ['shared kitchen', 'shared_kitchen'],
 
             ['zona de relax', 'relaxation_area'],
             ['relaxation area', 'relaxation_area'],

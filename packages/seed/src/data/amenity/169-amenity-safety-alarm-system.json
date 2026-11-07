@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "169-amenity-safety-alarm-system",
+    "slug": "alarm_system",
+    "description": {
+        "es": "Sistema de alarma",
+        "en": "Alarm system",
+        "pt": "Sistema de alarme"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "SAFETY",
+    "icon": "ShieldIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

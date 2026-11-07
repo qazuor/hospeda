@@ -1,0 +1,162 @@
+---
+/**
+ * @file presentacion/index.astro
+ * @description Index of the commercial presentations: one entry per
+ * `/presentacion/<audience>/` page, so the owner has a single place to pick the
+ * one to send.
+ *
+ * It follows the same rules as the presentations it lists (see
+ * `presentacion/aliados/index.astro` for the full reasoning): `noindex,
+ * nofollow` and out of the sitemap (the `/presentacion/` prefix is already in
+ * `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS), Spanish copy under every
+ * locale by design, `StandaloneLayout` with no site chrome, and the shared
+ * `presentacion.css` stylesheet.
+ *
+ * @route /{lang}/presentacion/
+ * @rendering SSR + Cloudflare cache (matches the presentations)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+import '@/styles/presentacion.css';
+import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import HospedinFigure, { type HospedinPose } from '@/components/presentacion/HospedinFigure.astro';
+import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
+import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+/** One presentation listed on this index. */
+interface PresentationEntry {
+	readonly slug: string;
+	readonly name: string;
+	readonly audience: string;
+	readonly headline: string;
+	/** The Hospedín pose that page's masthead uses, so the card previews it. */
+	readonly pose: HospedinPose;
+}
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+/** Every `/presentacion/<slug>/` page, in the order they are listed. */
+const PRESENTATIONS: readonly PresentationEntry[] = [
+	{
+		slug: 'alojamientos',
+		name: 'Alojamientos',
+		audience: 'Cabañas, casas, departamentos, hoteles y complejos',
+		headline: 'Publicá tu alojamiento en Hospeda',
+		pose: 'telefono'
+	},
+	{
+		slug: 'comer-y-salir',
+		name: 'Comer y salir',
+		audience: 'Restaurantes, bares, cafés, cervecerías y boliches',
+		headline: 'Tu local donde se planea el viaje',
+		pose: 'senalando'
+	},
+	{
+		slug: 'experiencias',
+		name: 'Experiencias',
+		audience: 'Excursiones, paseos, alquileres, clases y actividades',
+		headline: 'Publicá lo que le ofertás al turista',
+		pose: 'vamos'
+	},
+	{
+		slug: 'proveedores',
+		name: 'Proveedores',
+		audience: 'Oficios y servicios para los anfitriones',
+		headline: 'Sumate como proveedor de servicios',
+		pose: 'lamparita'
+	},
+	{
+		slug: 'aliados',
+		name: 'Aliados',
+		audience: 'Comercios, municipios, instituciones y organizaciones',
+		headline: 'Acompañá al turismo del Litoral',
+		pose: 'te-explico'
+	},
+	{
+		slug: 'editores',
+		name: 'Editores',
+		audience: 'Quienes escriben notas y cargan la agenda',
+		headline: 'Contá el Litoral que conocés',
+		pose: 'camara'
+	}
+] as const;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: hardcoded copy, same class and tag as the presentations.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentaciones"
+		description="Las presentaciones de Hospeda para cada tipo de negocio y colaborador."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+
+<PresentationThemeToggle />
+
+<div class="wrap">
+
+  <PresentationBrandBar />
+
+  <header class="masthead">
+    <div class="masthead__grid">
+    <div class="masthead__text">
+    <p class="eyebrow">Hospeda &middot; Presentaciones</p>
+    <h1>Presentaciones</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      Una presentación para cada tipo de negocio o colaborador. Elegí la que corresponde y
+      compartí su enlace.
+    </p>
+    </div>
+    <HospedinFigure pose="saludando" placement="hero" say="¡Hola! Elegí la tuya" />
+    </div>
+  </header>
+
+  <section>
+    <ul class="deck">
+      {PRESENTATIONS.map((entry) => {
+        const href = buildUrl({ locale, path: `presentacion/${entry.slug}` });
+        return (
+          <li class="deck__item">
+            <a class="deck__card" href={href}>
+              <HospedinFigure pose={entry.pose} placement="card" />
+              <span class="deck__body">
+                <span class="deck__name">{entry.name}</span>
+                <span class="deck__headline">{entry.headline}</span>
+                <span class="deck__audience">{entry.audience}</span>
+                <span class="deck__url">hospeda.com.ar/presentacion/<wbr />{entry.slug}</span>
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+
+  <PresentationFooter />
+
+</div>
+</StandaloneLayout>
