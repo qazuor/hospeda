@@ -212,6 +212,28 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
         );
         expect(assigned).not.toHaveBeenCalled();
     });
+    it('shows a useful error when the plan-change POST returns 500', async () => {
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: catalog });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response(
+                { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal error' } },
+                500
+            );
+        });
+        await choose(lowerId);
+        await waitFor(() =>
+            expect(screen.getByTestId('plan-change-result')).toHaveTextContent(
+                'No pudimos cambiar el plan. Intentá de nuevo.'
+            )
+        );
+        expect(assigned).not.toHaveBeenCalled();
+    });
     it('shows the client-local available date from a 409 change-window rejection', async () => {
         fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
             if (url.includes('/api/v1/public/plan-catalog'))
