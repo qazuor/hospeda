@@ -817,6 +817,19 @@ The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`.
 attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
 under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.
 
+### Administrative plan change (ACC:10, HOS-1580)
+
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/plan-change` requires
+`billing.changeSubscriptionPlan`. Its strict body has `billingOptionId`,
+`expectedStatus: ACTIVE`, `confirmed: true`, and an optional note. Rejections
+follow 401 authentication → 403 route permission → 400 body → 404
+`SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal
+to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` → the owner plan-change
+route's typed rejection map. A successful `SUCCESSION` returns the checkout URL
+for the customer to authorize; `DOWNGRADE` and `REGRET` use the owner route's
+outcomes. Only success writes a `BILLING_MUTATION` audit with `ACC_10` and the
+administrator as actor.
+
 ### Administrative pause and resume (ACC:9, HOS-1580)
 
 `GET /api/v1/admin/billing-subscription/{subscriptionId}/pause-preview`, `POST /pause`, and `POST /resume` each require `billing.pauseSubscription` at the route factory. Rejections follow 401 authentication → 403 route permission → 400 strict params/body → 404 `SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` when the observed status changed → the typed S8/S10 result. The POST bodies require `confirmed: true` and the observed `expectedStatus`; pause also requires `months` from 1 through 4.

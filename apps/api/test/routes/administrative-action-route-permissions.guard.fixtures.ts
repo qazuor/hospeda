@@ -230,7 +230,8 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
     },
     // biome-ignore format: keep the closed route fixture below 500 lines.
     ACC_9: { bindings: [pauseBinding('adminSubscriptionPausePreviewRoute'), pauseBinding('adminPauseSubscriptionRoute'), pauseBinding('adminResumeSubscriptionRoute')] },
-    ACC_10: { unbound: 'B8b builds it' },
+    // biome-ignore format: keep the closed route fixture below 500 lines.
+    ACC_10: { bindings: [{ kind: 'required', file: 'apps/api/src/routes/billing-subscription/admin/plan-change.ts', route: 'adminPlanChangeRoute' }] },
     ACC_11: {
         bindings: [
             {

@@ -29,6 +29,7 @@ import {
     adminResumeSubscriptionRoute,
     adminSubscriptionPausePreviewRoute
 } from './pause';
+import { adminPlanChangeRoute } from './plan-change';
 import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
@@ -71,6 +72,7 @@ router.route('/', adminCancelSubscriptionRoute);
 router.route('/', adminSubscriptionPausePreviewRoute);
 router.route('/', adminPauseSubscriptionRoute);
 router.route('/', adminResumeSubscriptionRoute);
+router.route('/', adminPlanChangeRoute);
 router.route('/', adminListManualPaymentsRoute);
 router.route('/', adminManualPaymentRegistrationPreviewRoute);
 router.route('/', adminRegisterManualPaymentRoute);
