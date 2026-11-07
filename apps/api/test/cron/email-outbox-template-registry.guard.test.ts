@@ -159,6 +159,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/paid-after-cancellation-notice.ts': [
         'billing.paid-after-cancellation'
     ],
+    'packages/service-core/src/services/billing/subscription/service-end-s12-chargeback.ts': [
+        'billing.chargeback-suspension'
+    ],
     'packages/service-core/src/services/billing/payment/credit-payment.service.ts': [
         'billing.payment-credited'
     ],

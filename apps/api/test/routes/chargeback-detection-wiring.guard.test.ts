@@ -9,6 +9,7 @@
  * - a root that assembles the ports in a helper with another name;
  * - a `...ports` spread that brings `chargebacks` from somewhere else;
  * - a dynamic call (a variable holding the primitive, `Reflect.apply`, etc.).
+ * - whether S12's service-end implementation changes behavior after composition.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -135,6 +136,11 @@ const FILES = sourceFiles(SRC).map((file) => ({
 }));
 
 describe('TEST:B7:7 AC:B7:10 the four production roots pass the chargeback detection', () => {
+    it('AC:B8a:7 adds the S12 serviceEnd port to the shared builder', () => {
+        const source = FILES.find((file) => file.path === BUILDER)?.source;
+        expect(source).toContain('serviceEnd: {');
+        expect(source).toContain('applyS12ByChargeback(request, {');
+    });
     it.each(ROOTS)('$root wires chargebacks in $file', ({ file, calls }) => {
         const source = FILES.find((candidate) => candidate.path === file)?.source;
         expect(source, `${file} is missing`).toBeDefined();
