@@ -469,7 +469,55 @@
         "mine": {
             "title": "Your subscriptions",
             "empty": "You have no current subscriptions.",
+            "pause": {
+                "open": "Pause subscription",
+                "pending": "Processing pause...",
+                "error": "We could not complete the pause. Check your subscription and try again.",
+                "months": "Pause length",
+                "monthCount_one": "1 month",
+                "monthCount_other": "{{count}} months",
+                "expectedEnd": "Pause expected to end on {{date}}.",
+                "confirmation": "If you confirm, your subscription will be paused until {{date}}.",
+                "listing": "Your listing leaves the public site today. It returns automatically when you resume if your plan has capacity. During the pause it is not archived, deleted or sent retention notices; the clock stops and starts from zero when you return.",
+                "addonsVertical": "Recurring add-ons for this vertical pause for the same months and return with the plan:",
+                "addonPauses": "{{name}} pauses because no other compatible vertical remains active.",
+                "addonContinues": "{{name}} stays active because another compatible vertical remains.",
+                "confirm": "Confirm pause",
+                "done": "Your subscription is paused until {{date}}.",
+                "reason": {
+                    "COURTESY_IN_FORCE": "You have a courtesy period until {{date}}; you cannot pause while it lasts.",
+                    "NOT_PRINCIPAL": "This subscription cannot be paused.",
+                    "NOT_ACTIVE": "Your subscription must be active to pause it.",
+                    "MANUAL_PAYER": "Pausing is unavailable for manual payments.",
+                    "NOT_MONTHLY": "Pausing is only available for monthly plans.",
+                    "PLAN_DISALLOWS_PAUSE": "Your plan does not allow pauses.",
+                    "MONTHS_OUT_OF_RANGE": "Choose a valid pause length.",
+                    "PAUSE_COUNT_EXHAUSTED": "You have used all available pauses.",
+                    "MONTHS_EXHAUSTED": "You have used all available pause months.",
+                    "other": "Pausing is unavailable now."
+                }
+            },
+            "resume": {
+                "open": "Resume subscription",
+                "confirmation": "Your subscription resumes today and we will show you the next charge date.",
+                "confirm": "Confirm resume",
+                "pending": "Resuming...",
+                "error": "We could not resume your subscription. Try again.",
+                "done": "We will charge you on {{date}}: {{amount}}."
+            },
+            "pausedCancel": {
+                "today": "If you confirm, service ends today, not at the end of a period.",
+                "creditEnd": "If you confirm, service continues until the credit ends on {{date}}.",
+                "courtesyLost_one": "You lose 1 remaining courtesy month.",
+                "courtesyLost_other": "You lose {{count}} remaining courtesy months.",
+                "confirm": "Confirm cancellation",
+                "error": "We could not complete the cancellation. Reload and try again.",
+                "doneToday": "Service ended today.",
+                "doneCredit": "Your service ends on {{date}}."
+            },
             "planChange": {
+                "courtesyLost_one": "You lose 1 courtesy month; you can stay monthly and keep it.",
+                "courtesyLost_other": "You lose {{count}} courtesy months; you can stay monthly and keep them.",
                 "open": "Change plan",
                 "heading": "Choose another plan",
                 "choice": "{{plan}} · {{cycle}} · {{price}}",
@@ -484,7 +532,11 @@
                 "downgrade": "Your plan changes on {{date}}.",
                 "regret": "We cancelled the scheduled plan change.",
                 "error": "We couldn't change your plan. Please try again.",
+                "promoLost": "If you change plans, you lose your promotion: the new amount has no discount and the code cannot be redeemed again.",
                 "reason": {
+                    "succession": "Finish or cancel your open checkout before changing plans.",
+                    "lastCharge": "Your last charge did not go through. Update your card in Mercado Pago to change plans.",
+                    "paused": "Resume your subscription to change plans.",
                     "grace": "You have an outstanding payment. Settle it before changing plans.",
                     "cycleEndPending": "Your next charge date is still being confirmed. Please try changing plans later.",
                     "window": "The date when you can change plans has not arrived yet.",
@@ -506,6 +558,7 @@
             "status": {
                 "ACTIVE": "Active",
                 "GRACE_PERIOD": "Payment pending",
+                "PAUSED": "Paused",
                 "SUSPENDED": "Suspended",
                 "CANCEL_SCHEDULED": "Cancellation requested",
                 "NOT_RENEWING": "Not renewing"

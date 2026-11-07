@@ -114,6 +114,116 @@ async function choose(id: string) {
 }
 
 describe('TEST:B8b:14 PlanChangeOffer', () => {
+    it('TEST:B8b:25 shows the complete promo loss before confirming', async () => {
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+                promo
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        fireEvent.click(within(list).getAllByRole('button')[0]);
+        expect(screen.getByTestId('plan-change-promo-warning').textContent).toBe(
+            'Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.'
+        );
+    });
+    it('TEST:B8b:25 discloses deferred courtesy months for a nonmonthly destination', async () => {
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+                courtesyMonths={2}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        fireEvent.click(within(list).getAllByRole('button')[1]);
+        expect(screen.getByTestId('plan-change-courtesy-warning').textContent).toBe(
+            'Perdés 2 meses de cortesía; podés seguir en mensual y conservarlos.'
+        );
+    });
+    it('TEST:B8b:25 reads quarterly choices from the catalog and discloses courtesy loss', async () => {
+        const quarterly = '123e4567-e89b-42d3-a456-426614174004';
+        const expanded = structuredClone(catalog);
+        expanded.plans[1].billingOptions.push({
+            id: quarterly,
+            cycle: 'quarterly',
+            amount: 900000,
+            currency: 'ARS'
+        });
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: expanded });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response({
+                success: true,
+                data: {
+                    outcome: 'DOWNGRADE',
+                    effectiveAt: '2026-12-05T03:00:00.000Z',
+                    amountMinor: 250000,
+                    surplus: { applicable: false }
+                }
+            });
+        });
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+                courtesyMonths={1}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        const choice = within(list).getByText(/Pro.*por trimestre/u);
+        fireEvent.click(choice);
+        expect(screen.getByTestId('plan-change-courtesy-warning').textContent).toBe(
+            'Perdés 1 mes de cortesía; podés seguir en mensual y conservarlo.'
+        );
+    });
+    it.each([
+        [
+            'SUCCESSION_IN_PROGRESS',
+            'Terminá o cancelá el checkout que tenés abierto para cambiar de plan.'
+        ],
+        [
+            'LAST_CHARGE_NOT_ENTERED',
+            'Tu último cobro no entró. Actualizá tu tarjeta en Mercado Pago para poder cambiar de plan.'
+        ],
+        [
+            'PREAPPROVAL_NOT_AUTHORIZED',
+            'Tu último cobro no entró. Actualizá tu tarjeta en Mercado Pago para poder cambiar de plan.'
+        ]
+    ])('TEST:B8b:25 explains %s', async (reason, message) => {
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/api/v1/public/plan-catalog'))
+                return response({ success: true, data: catalog });
+            if (init?.method === 'GET')
+                return response({
+                    success: true,
+                    data: { status: 'ACTIVE', billingOptionId: currentId }
+                });
+            return response(
+                {
+                    success: false,
+                    error: { code: 'CONFLICT', message: 'Rejected', details: { reason } }
+                },
+                409
+            );
+        });
+        await choose(higherId);
+        await waitFor(() =>
+            expect(screen.getByTestId('plan-change-result').textContent).toBe(message)
+        );
+    });
     it('posts the selected option and shows the client-local downgrade date', async () => {
         await choose(lowerId);
         await waitFor(() =>

@@ -469,7 +469,55 @@
         "mine": {
             "title": "Suas assinaturas",
             "empty": "Você não tem assinaturas vigentes.",
+            "pause": {
+                "open": "Pausar assinatura",
+                "pending": "Processando a pausa...",
+                "error": "Não conseguimos concluir a pausa. Verifique sua assinatura e tente novamente.",
+                "months": "Meses de pausa",
+                "monthCount_one": "1 mês",
+                "monthCount_other": "{{count}} meses",
+                "expectedEnd": "Pausa prevista até {{date}}.",
+                "confirmation": "Se você confirmar, sua assinatura ficará pausada até {{date}}.",
+                "listing": "Seu anúncio sai do site público hoje. Ele volta automaticamente quando você retomar, se houver capacidade no plano. Durante a pausa, ele não é arquivado nem excluído e não recebe avisos de retenção; o relógio para e recomeça do zero na volta.",
+                "addonsVertical": "Os complementos recorrentes desta vertical pausam pelos mesmos meses e voltam com o plano:",
+                "addonPauses": "{{name}} pausa porque não resta outra vertical compatível ativa.",
+                "addonContinues": "{{name}} continua ativo porque resta outra vertical compatível.",
+                "confirm": "Confirmar pausa",
+                "done": "Sua assinatura ficou pausada até {{date}}.",
+                "reason": {
+                    "COURTESY_IN_FORCE": "Você tem um período de cortesia até {{date}}; enquanto durar, não pode pausar.",
+                    "NOT_PRINCIPAL": "Esta assinatura não pode ser pausada.",
+                    "NOT_ACTIVE": "A assinatura precisa estar ativa para ser pausada.",
+                    "MANUAL_PAYER": "A pausa não está disponível para pagamento manual.",
+                    "NOT_MONTHLY": "A pausa só está disponível para planos mensais.",
+                    "PLAN_DISALLOWS_PAUSE": "Seu plano não permite pausas.",
+                    "MONTHS_OUT_OF_RANGE": "Escolha um período de pausa válido.",
+                    "PAUSE_COUNT_EXHAUSTED": "Você já usou as pausas disponíveis.",
+                    "MONTHS_EXHAUSTED": "Você já usou os meses de pausa disponíveis.",
+                    "other": "A pausa não está disponível agora."
+                }
+            },
+            "resume": {
+                "open": "Retomar assinatura",
+                "confirmation": "Sua assinatura volta hoje e mostramos o dia da próxima cobrança.",
+                "confirm": "Confirmar retomada",
+                "pending": "Retomando...",
+                "error": "Não conseguimos retomar sua assinatura. Tente novamente.",
+                "done": "Vamos cobrar em {{date}}: {{amount}}."
+            },
+            "pausedCancel": {
+                "today": "Se você confirmar, o serviço termina hoje, não no fim de um período.",
+                "creditEnd": "Se você confirmar, o serviço continua até o fim do crédito, em {{date}}.",
+                "courtesyLost_one": "Você perde 1 mês de cortesia restante.",
+                "courtesyLost_other": "Você perde {{count}} meses de cortesia restantes.",
+                "confirm": "Confirmar cancelamento",
+                "error": "Não conseguimos concluir o cancelamento. Recarregue e tente novamente.",
+                "doneToday": "O serviço terminou hoje.",
+                "doneCredit": "Seu serviço termina em {{date}}."
+            },
             "planChange": {
+                "courtesyLost_one": "Você perde 1 mês de cortesia; pode continuar no mensal e mantê-lo.",
+                "courtesyLost_other": "Você perde {{count}} meses de cortesia; pode continuar no mensal e mantê-los.",
                 "open": "Mudar de plano",
                 "heading": "Escolha outro plano",
                 "choice": "{{plan}} · {{cycle}} · {{price}}",
@@ -484,7 +532,11 @@
                 "downgrade": "Seu plano muda em {{date}}.",
                 "regret": "Cancelamos a mudança de plano agendada.",
                 "error": "Não conseguimos mudar seu plano. Tente novamente.",
+                "promoLost": "Se você mudar de plano, perde sua promoção: o novo valor não tem desconto e o código não pode ser usado de novo.",
                 "reason": {
+                    "succession": "Conclua ou cancele o checkout aberto antes de mudar de plano.",
+                    "lastCharge": "Sua última cobrança não entrou. Atualize seu cartão no Mercado Pago para mudar de plano.",
+                    "paused": "Retome sua assinatura para mudar de plano.",
                     "grace": "Você tem um pagamento pendente. Regularize-o para mudar de plano.",
                     "cycleEndPending": "A data da próxima cobrança ainda está sendo confirmada. Tente mudar de plano mais tarde.",
                     "window": "A data em que você pode mudar de plano ainda não chegou.",
@@ -506,6 +558,7 @@
             "status": {
                 "ACTIVE": "Ativa",
                 "GRACE_PERIOD": "Pagamento pendente",
+                "PAUSED": "Pausada",
                 "SUSPENDED": "Suspensa",
                 "CANCEL_SCHEDULED": "Cancelamento solicitado",
                 "NOT_RENEWING": "Não será renovada"

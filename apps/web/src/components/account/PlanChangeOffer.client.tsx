@@ -13,11 +13,19 @@ export interface PlanChangeOfferProps {
     readonly subscriptionId: string;
     readonly vertical: PricingSituationVertical;
     readonly locale: SupportedLocale;
+    readonly promo?: boolean;
+    readonly courtesyMonths?: number;
 }
 
 /** List other choices, confirm the consequences, and display the server outcome. */
-export function PlanChangeOffer({ subscriptionId, vertical, locale }: PlanChangeOfferProps) {
-    const { t } = createTranslations(locale);
+export function PlanChangeOffer({
+    subscriptionId,
+    vertical,
+    locale,
+    promo = false,
+    courtesyMonths = 0
+}: PlanChangeOfferProps) {
+    const { t, tPlural } = createTranslations(locale);
     const [state, setState] = useState<
         'closed' | 'loading' | 'choices' | 'confirm' | 'pending' | 'done' | 'error'
     >('closed');
@@ -109,6 +117,20 @@ export function PlanChangeOffer({ subscriptionId, vertical, locale }: PlanChange
                     <p>{selected.label}</p>
                     <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                     <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
+                    {promo && (
+                        <p data-testid="plan-change-promo-warning">
+                            {t('account.subscription.mine.planChange.promoLost')}
+                        </p>
+                    )}
+                    {selected.cycle !== 'monthly' && courtesyMonths > 0 && (
+                        <p data-testid="plan-change-courtesy-warning">
+                            {tPlural(
+                                'account.subscription.mine.planChange.courtesyLost',
+                                courtesyMonths,
+                                { count: courtesyMonths }
+                            )}
+                        </p>
+                    )}
                     <button
                         type="button"
                         className={styles.primary}

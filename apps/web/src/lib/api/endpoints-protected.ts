@@ -52,6 +52,9 @@ import {
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnSubscriptionsResponseSchema,
     type PartnerClaimResponseSchema,
+    type SelfSubscriptionPausePreviewResponseSchema,
+    type SelfSubscriptionPauseResponseSchema,
+    type SelfSubscriptionResumeResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
     type SubscriptionCancellationResponseSchema,
     type SubscriptionPlanChangeResponseSchema
@@ -5605,6 +5608,40 @@ export const promoCodeApi = {
 };
 
 export const billingSubscriptionApi = {
+    /** Read the owner's pause eligibility and consequences. */
+    pausePreview({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionPausePreviewResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/pause-preview`
+        });
+    },
+    /** Pause an owned subscription for whole months. */
+    pause({
+        subscriptionId,
+        months
+    }: {
+        readonly subscriptionId: string;
+        readonly months: number;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionPauseResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/pause`,
+            body: { months }
+        });
+    },
+    /** Resume an owned customer-request pause. */
+    resume({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionResumeResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/resume`,
+            body: {}
+        });
+    },
     /** Request a change to one owned subscription through the protected route. */
     requestPlanChange({
         subscriptionId,
