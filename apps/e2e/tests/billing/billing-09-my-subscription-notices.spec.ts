@@ -9,6 +9,7 @@ import {
     ensureDeadlineVersion,
     type FakeWorld,
     recordCreditedCycle,
+    runCron,
     WEB_URL
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
@@ -88,18 +89,24 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
             subscriptionId,
             authorizationId
         });
-        // The provider advanced its calendar after the credited cycle. Mirror that
-        // future date before asserting the conditional next-charge line.
+        // The provider advanced its calendar after the credited cycle. The real
+        // reconciliation sweep copies that date into the subscription row.
         const nextChargeAt = (
             await world.fakeServer.provider.readAuthorization({
                 authorizationId
             })
         ).snapshot.nextChargeAt;
         if (!nextChargeAt) throw new Error('Expected a future provider charge after the cycle.');
-        await execSQL('UPDATE subscription SET next_charge_at = $2 WHERE id = $1', [
-            subscriptionId,
-            nextChargeAt
-        ]);
+        const sweep = await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        expect(sweep.success).toBe(true);
+        const synced = await execSQL<{ next_charge_at: Date | null }>(
+            'SELECT next_charge_at FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(synced[0]?.next_charge_at?.toISOString()).toBe(nextChargeAt);
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const subscription = page.locator(
