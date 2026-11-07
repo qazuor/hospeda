@@ -356,7 +356,19 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             cycleName: 'por mes',
             worldName: 'downgrade'
         });
+        // The queue row is written by the plan-change request; read it only after
+        // that response has arrived, never right after the click.
+        const planChangeResponse = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname ===
+                    `/api/v1/protected/billing-subscription/${current.subscriptionId}/plan-change` &&
+                response.request().method() === 'POST'
+        );
         await confirmation.getByRole('button', { name: 'Confirmar cambio' }).click();
+        expect(
+            (await planChangeResponse).ok(),
+            'TEST:B8b:26 downgrade: plan-change request succeeds.'
+        ).toBe(true);
         const [scheduled] = await execSQL<{ effective_at: Date; target_billing_option_id: string }>(
             'SELECT effective_at, target_billing_option_id FROM subscription_scheduled_change WHERE subscription_id = $1',
             [current.subscriptionId]
