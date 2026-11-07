@@ -9,6 +9,7 @@ export const PermanentGrantPreviewResponseSchema = z.object({
             vertical: VerticalEnumSchema,
             status: z.enum([
                 'ACTIVE',
+                'PENDING_AUTHORIZATION',
                 'GRACE_PERIOD',
                 'PAUSED',
                 'SUSPENDED',
