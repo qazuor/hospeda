@@ -11,7 +11,8 @@ import {
     cleanupArrearsRows,
     createApiCardSubscription,
     createSubscriber,
-    type FakeWorld
+    type FakeWorld,
+    runCron
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
@@ -29,6 +30,8 @@ import { cancellationRequestsFor, useAdminSession } from '../../fixtures/revocat
 import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
 
 const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:18000';
+const GRANT_CANCEL_SUBJECT = 'Tu suscripción ya no se cobra';
+const ADDON_CANCEL_SUBJECT = 'Tu addon ya no se cobra';
 const copy = esBilling.permanentGrants;
 const marketDay = (date: Date) =>
     new Intl.DateTimeFormat('es', {
@@ -109,6 +112,8 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
         page
     }) => {
         if (!world) throw new Error('Expected fake provider world.');
+        const fakeServer = world.fakeServer;
+        const mailCapture = world.mailCapture;
         const subscriber = await createSubscriber();
         userIds.push(subscriber.user.id, subscriber.admin.id);
         const card = await createApiCardSubscription({
@@ -161,6 +166,39 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
             [subscriber.user.id]
         );
         expect(notice?.status).toBe('pending');
+        await runCron({
+            jobName: 'email-outbox-sender',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        await mailCapture.waitForMail({
+            to: subscriber.user.email,
+            subject: GRANT_CANCEL_SUBJECT,
+            timeoutMs: 30_000
+        });
+        await expect
+            .poll(async () => {
+                const [sent] = await execSQL<{ status: string }>(
+                    `SELECT status FROM email_outbox
+                 WHERE recipient_user_id = $1 AND template = 'billing.permanent-grant-cancel'
+                 ORDER BY created_at DESC LIMIT 1`,
+                    [subscriber.user.id]
+                );
+                return sent?.status;
+            })
+            .toBe('sent');
+        await runCron({
+            jobName: 'billing-deferred-cancellation-retry',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        await expect
+            .poll(
+                () =>
+                    cancellationRequestsFor({
+                        requests: fakeServer.requests(),
+                        authorizationId: card.authorizationId
+                    }).length
+            )
+            .toBe(1);
         await expect(page.getByTestId('permanent-grant-live')).toBeVisible();
         const [grant] = await execSQL<{ id: string }>(
             'SELECT id FROM permanent_grant WHERE beneficiary_user_id = $1 AND revoked_at IS NULL',
@@ -255,6 +293,8 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
         page
     }) => {
         if (!world) throw new Error('Expected fake provider world.');
+        const fakeServer = world.fakeServer;
+        const mailCapture = world.mailCapture;
         const subscriber = await createSubscriber();
         userIds.push(subscriber.user.id, subscriber.admin.id);
         await seedCookieConsent(page);
@@ -333,5 +373,68 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
                 authorizationId: card.authorizationId
             })
         ).toHaveLength(0);
+        const pendingNotices = await execSQL<{ template: string; status: string }>(
+            `SELECT template, status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template IN
+               ('billing.permanent-grant-cancel', 'billing.permanent-grant-addon-cancel')`,
+            [subscriber.user.id]
+        );
+        expect(
+            pendingNotices.filter(({ template }) => template === 'billing.permanent-grant-cancel')
+        ).toEqual([{ template: 'billing.permanent-grant-cancel', status: 'pending' }]);
+        expect(
+            pendingNotices.filter(
+                ({ template }) => template === 'billing.permanent-grant-addon-cancel'
+            )
+        ).toHaveLength(complements.length);
+        expect(pendingNotices.every(({ status }) => status === 'pending')).toBe(true);
+        await runCron({
+            jobName: 'email-outbox-sender',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        await expect
+            .poll(() => {
+                const mails = mailCapture.mailsTo({ to: subscriber.user.email });
+                return {
+                    principal: mails.filter(({ subject }) => subject === GRANT_CANCEL_SUBJECT)
+                        .length,
+                    addons: mails.filter(({ subject }) => subject === ADDON_CANCEL_SUBJECT).length
+                };
+            })
+            .toEqual({ principal: 1, addons: complements.length });
+        await expect
+            .poll(async () => {
+                const notices = await execSQL<{ status: string }>(
+                    `SELECT status FROM email_outbox
+                 WHERE recipient_user_id = $1 AND template IN
+                   ('billing.permanent-grant-cancel', 'billing.permanent-grant-addon-cancel')`,
+                    [subscriber.user.id]
+                );
+                return notices.filter(({ status }) => status === 'sent').length;
+            })
+            .toBe(1 + complements.length);
+        await runCron({
+            jobName: 'billing-deferred-cancellation-retry',
+            adminCookie: subscriber.admin.sessionCookie
+        });
+        await expect
+            .poll(
+                () =>
+                    cancellationRequestsFor({
+                        requests: fakeServer.requests(),
+                        authorizationId: card.authorizationId
+                    }).length
+            )
+            .toBe(1);
+        for (const complement of complements)
+            await expect
+                .poll(
+                    () =>
+                        cancellationRequestsFor({
+                            requests: fakeServer.requests(),
+                            authorizationId: complement.authorizationId
+                        }).length
+                )
+                .toBe(1);
     });
 });
