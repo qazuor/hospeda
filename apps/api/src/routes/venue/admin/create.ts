@@ -57,7 +57,12 @@ export const adminCreateVenueRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message, result.error.details);
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                result.error.details,
+                result.error.reason
+            );
         }
 
         return result.data;
