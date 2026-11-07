@@ -3927,6 +3927,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/venues/filter-options"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/venues/slug/:slug"
         },
         {

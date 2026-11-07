@@ -11,6 +11,7 @@ import { publicGetVenuesByDestinationRoute } from './getByDestination';
 import { publicGetVenueByIdRoute } from './getById';
 import { publicGetVenueBySlugRoute } from './getBySlug';
 import { publicGetVenueFaqsRoute } from './getFaqs';
+import { publicGetVenueFilterOptionsRoute } from './getFilterOptions';
 import { publicListVenueReviewsRoute } from './getReviews';
 import { publicListVenuesRoute } from './list';
 
@@ -24,6 +25,9 @@ app.route('/', publicGetVenuesByDestinationRoute);
 
 // GET / — List venue listings.
 app.route('/', publicListVenuesRoute);
+
+// GET /filter-options — Must be before /:id.
+app.route('/', publicGetVenueFilterOptionsRoute);
 
 // GET /:id — Get by ID (catch-all param route).
 app.route('/', publicGetVenueByIdRoute);
