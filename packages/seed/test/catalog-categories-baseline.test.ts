@@ -4,8 +4,9 @@
  * Dual-write (HOS-25): a fresh DB gets `features.category` and the moved
  * amenity `type` from the JSON fixtures; an already-seeded DB gets them from
  * 0146. This reads both off disk and fails if they drift, and checks the seed
- * JSON schemas still validate the enum values (and keep `category` optional so
- * fixtures added by other in-flight work keep validating).
+ * JSON schemas still validate the enum values. Since release N+1 made
+ * `features.category` NOT NULL, every feature fixture must declare one (a fresh
+ * DB runs migrate before seed, so a fixture without it would fail the insert).
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -77,20 +78,19 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
     });
 
     it('every backfilled slug has a fixture that declares its category', () => {
-        // Scoped to the backfill on purpose: features added by other in-flight
-        // work (e.g. dj_sets/karaoke from HOS-1787) may land without a category
-        // while the column is nullable, and must not break this test.
+        // Scoped to the backfill; the test below covers every fixture.
         const bySlug = new Map(fixtures.map((fixture) => [fixture.slug, fixture]));
         for (const slug of liveCategoryBySlug.keys()) {
             expect(bySlug.get(slug)?.category, slug).toBeDefined();
         }
     });
 
-    it('every fixture that declares a category uses a FeatureCategoryEnum value', () => {
+    it('every fixture declares a FeatureCategoryEnum category (NOT NULL since N+1)', () => {
         const valid = new Set<string>(Object.values(FeatureCategoryEnum));
+        expect(fixtures.length).toBeGreaterThan(0);
         for (const fixture of fixtures) {
-            if (fixture.category === undefined) continue;
-            expect(valid.has(fixture.category), fixture.slug).toBe(true);
+            expect(fixture.category, fixture.slug).toBeDefined();
+            expect(valid.has(fixture.category ?? ''), fixture.slug).toBe(true);
         }
     });
 
@@ -101,10 +101,10 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
         }
     });
 
-    it('feature.schema.json validates category against the enum and keeps it optional', () => {
+    it('feature.schema.json validates category against the enum and requires it (N+1)', () => {
         const schema = readSchema('feature.schema.json');
         expect(schema.properties.category?.enum).toEqual(Object.values(FeatureCategoryEnum));
-        expect(schema.required).not.toContain('category');
+        expect(schema.required).toContain('category');
     });
 });
 

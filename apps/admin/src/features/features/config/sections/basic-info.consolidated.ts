@@ -10,9 +10,10 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
  * `applicableVerticals` added as a required checkbox-group field (min 1 vertical).
  *
  * HOS-2058: `category` (`FeatureCategoryEnum`) groups the feature on the public
- * listing and in the host editor. Optional while `features.category` is
- * nullable; the select is not clearable because the update schema rejects an
- * empty string, and NULL only exists for rows nobody has classified yet.
+ * listing and in the host editor. Required since release N+1 made
+ * `features.category` NOT NULL: the create form cannot submit without it
+ * (`FeatureCreateInputSchema` rejects a missing value) and the select is not
+ * clearable because the update schema rejects both an empty string and NULL.
  */
 
 /** Spanish labels for `FeatureCategoryEnum`, in the canonical display order. */
@@ -79,7 +80,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         {
             id: 'category',
             type: FieldTypeEnum.SELECT,
-            required: false,
+            required: true,
             modes: ['view', 'edit', 'create'],
             label: 'Categoría',
             description:

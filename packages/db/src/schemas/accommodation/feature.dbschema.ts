@@ -15,11 +15,10 @@ export const features = pgTable('features', {
     displayWeight: integer('display_weight').notNull().default(50),
     applicableVerticals: text('applicable_verticals').array().notNull().default([]),
     /**
-     * HOS-2058: catalog category. NULLABLE in release N (expand/contract):
-     * data-migration 0146 backfills every seeded row by slug, and release N+1
-     * makes it NOT NULL.
+     * HOS-2058: catalog category. Added nullable in release N and backfilled
+     * by data-migration 0146; NOT NULL since release N+1 (expand/contract).
      */
-    category: FeatureCategoryPgEnum('category'),
+    category: FeatureCategoryPgEnum('category').notNull(),
     lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

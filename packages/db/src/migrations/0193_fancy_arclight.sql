@@ -1,0 +1,1 @@
+ALTER TABLE "features" ALTER COLUMN "category" SET NOT NULL;

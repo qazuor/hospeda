@@ -39,6 +39,9 @@ export const FeatureCreateInputSchema = z
             })
             .min(1, { message: 'zodError.feature.applicableVerticals.min' }),
 
+        /** Feature category (HOS-2058). Required: `features.category` is NOT NULL. */
+        category: FeatureCategoryEnumSchema,
+
         // Optional fields
         slug: z
             .string({
@@ -52,9 +55,6 @@ export const FeatureCreateInputSchema = z
             .optional(),
 
         description: i18nText({ min: 10, max: 500 }).optional(),
-
-        /** Feature category (HOS-2058). Nullable while `features.category` is nullable. */
-        category: FeatureCategoryEnumSchema.nullish(),
 
         icon: z
             .string({

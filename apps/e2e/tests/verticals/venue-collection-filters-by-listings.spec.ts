@@ -155,8 +155,8 @@ async function createFeature({
     readonly suffix: string;
 }): Promise<string> {
     const rows = await execSQL<{ id: string }>(
-        `INSERT INTO features (slug, applicable_verticals, display_weight)
-         VALUES ($1, '{venue}', $2)
+        `INSERT INTO features (slug, applicable_verticals, display_weight, category)
+         VALUES ($1, '{venue}', $2, 'CUISINE')
          RETURNING id`,
         [`e2e-${token.toLowerCase()}-${suffix}`, FIXTURE_DISPLAY_WEIGHT]
     );
