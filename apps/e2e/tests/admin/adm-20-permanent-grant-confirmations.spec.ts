@@ -49,7 +49,7 @@ async function previewGrant(page: Page, vertical: string, includesAddons: boolea
     await expect(page.getByTestId('permanent-grant-confirmation')).toBeVisible();
 }
 
-test.describe('TEST:B13a:5 — the permanent grant confirmations say what happens (AC:B13a:6) @p0 @admin @billing', () => {
+test.describe('TEST:B13a:5 — the permanent grant confirmations say what happens (AC:B13a:6) @p0 @admin @billing @clock', () => {
     test.setTimeout(300_000);
     let world: FakeWorld | null = null;
     let userIds: string[] = [];
@@ -146,14 +146,21 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
                 requests: world.fakeServer.requests(),
                 authorizationId: card.authorizationId
             })
-        ).toHaveLength(1);
+        ).toHaveLength(0);
         expect(
             (
                 await world.fakeServer.provider.readAuthorization({
                     authorizationId: card.authorizationId
                 })
             ).snapshot.status
-        ).toBe('cancelled');
+        ).toBe('paused');
+        const [notice] = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.permanent-grant-cancel'
+             ORDER BY created_at DESC LIMIT 1`,
+            [subscriber.user.id]
+        );
+        expect(notice?.status).toBe('pending');
         await expect(page.getByTestId('permanent-grant-live')).toBeVisible();
         const [grant] = await execSQL<{ id: string }>(
             'SELECT id FROM permanent_grant WHERE beneficiary_user_id = $1 AND revoked_at IS NULL',
@@ -319,12 +326,12 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
                     requests: world.fakeServer.requests(),
                     authorizationId: complement.authorizationId
                 })
-            ).toHaveLength(1);
+            ).toHaveLength(0);
         expect(
             cancellationRequestsFor({
                 requests: world.fakeServer.requests(),
                 authorizationId: card.authorizationId
             })
-        ).toHaveLength(1);
+        ).toHaveLength(0);
     });
 });

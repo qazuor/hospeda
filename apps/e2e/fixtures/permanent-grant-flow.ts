@@ -93,8 +93,8 @@ export async function seedDeferredCourtesy(args: {
     const [row] = await execSQL<{ id: string }>(
         `INSERT INTO courtesy_grant
          (beneficiary_user_id, granted_by, subscription_id, months, starts_at, ends_at, reason, balance_months)
-         SELECT $1, $1, subscription.id, $3, NOW(), NOW() + ($3 * INTERVAL '1 month'),
-                'TEST:B13a:5 deferred courtesy', $3
+         SELECT $1, $1, subscription.id, $3::integer, NOW(), NOW() + ($3::integer * INTERVAL '1 month'),
+                'TEST:B13a:5 deferred courtesy', $3::integer
          FROM subscription WHERE user_id = $1 AND vertical = $2 AND class = 'PRINCIPAL'
          ORDER BY created_at DESC LIMIT 1 RETURNING id`,
         [args.userId, args.vertical, args.balanceMonths]
