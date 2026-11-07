@@ -48,7 +48,11 @@ const B8_MAP = [
         clause: 6,
         acs: ['AC:B8b:11', 'AC:B8b:12', 'AC:B8b:10'],
         tests: ['TEST:B8b:11', 'TEST:B8b:12', 'TEST:B8b:10'],
-        file: 'packages/service-core/test/integration/services/subscription-reissue-courtesy-s9.test.ts'
+        file: 'packages/service-core/test/integration/services/subscription-reissue-courtesy-s9.test.ts',
+        otherFiles: [
+            'packages/service-core/test/integration/services/subscription-succession-dies-alone.test.ts',
+            'packages/service-core/test/integration/services/subscription-succession-close-s18.test.ts'
+        ]
     },
     {
         clause: 7,
@@ -60,7 +64,10 @@ const B8_MAP = [
         clause: 9,
         acs: ['AC:B8a:4', 'AC:B8b:5'],
         tests: ['TEST:B8a:4', 'TEST:B8b:5'],
-        file: 'packages/service-core/test/integration/services/subscription-cancel-active-credit.test.ts'
+        file: 'packages/service-core/test/integration/services/subscription-cancel-active-credit.test.ts',
+        otherFiles: [
+            'packages/service-core/test/integration/services/subscription-cancel-paused-s22.test.ts'
+        ]
     }
 ] as const;
 const DEFERRED = { tests: ['TEST:B8b:25 (cortesía)'], issue: 'HOS-1590', phase: 'fase-2' } as const;
@@ -206,31 +213,17 @@ function measuredTouches(): { file: string; pr: string }[] {
 describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU gone, e2e in P0, suite collected (HOS-1581)', () => {
     it('maps LISTA:B8 clauses 1-7 and 9 to titled evidence, without repetition', () => {
         expect(B8_MAP.map(({ clause }) => clause)).toEqual(B8_TO_B8B);
-        const missing = B8_MAP.flatMap(({ file, tests }) => {
-            const fileTitles = exists(file) ? titles(read(file)) : [];
-            return tests.some((id) => fileTitles.some((title) => hasId(title, id))) ? [] : [file];
+        const missing = B8_MAP.flatMap((entry) => {
+            const files = [entry.file, ...('otherFiles' in entry ? entry.otherFiles : [])];
+            return entry.tests.filter(
+                (id) =>
+                    !files.some(
+                        (file) =>
+                            exists(file) && titles(read(file)).some((title) => hasId(title, id))
+                    )
+            );
         });
         expect(missing).toEqual([]);
-        // Clause 6 and 9 each need two evidence files for their two distinct effects.
-        for (const [file, id] of [
-            [
-                'packages/service-core/test/integration/services/subscription-succession-dies-alone.test.ts',
-                'TEST:B8b:11'
-            ],
-            [
-                'packages/service-core/test/integration/services/subscription-succession-close-s18.test.ts',
-                'TEST:B8b:10'
-            ],
-            [
-                'packages/service-core/test/integration/services/subscription-cancel-paused-s22.test.ts',
-                'TEST:B8b:5'
-            ],
-            [
-                'packages/service-core/test/integration/services/subscription-cancel-active-credit.test.ts',
-                'TEST:B8a:4'
-            ]
-        ])
-            expect(titles(read(file)).some((title) => hasId(title, id))).toBe(true);
     });
     it('finds TEST:B8b:1..27 in test titles and declares exactly the courtesy deferral', () => {
         const roots = [
