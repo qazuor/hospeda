@@ -52,6 +52,34 @@ const renderPreview = (
     );
 
 describe('AC:B13a:6 — grant and anchor confirmations (support for TEST:B13a:5)', () => {
+    it('shows the provider email only for stopped charges flagged for email', () => {
+        const withEmail = '11111111-1111-4111-8111-111111111111';
+        const withoutEmail = '22222222-2222-4222-8222-222222222222';
+        renderPreview({
+            ...empty,
+            stoppedCharges: [
+                {
+                    subscriptionId: withEmail,
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    status: 'ACTIVE',
+                    providerEmail: true
+                },
+                {
+                    subscriptionId: withoutEmail,
+                    vertical: VerticalEnum.VENUE,
+                    status: 'ACTIVE',
+                    providerEmail: false
+                }
+            ]
+        });
+
+        const section = within(screen.getByTestId('permanent-grant-stopped-charges'));
+        expect(section.getByText(new RegExp(withEmail))).toHaveTextContent(/correo del proveedor/);
+        expect(section.getByText(new RegExp(withoutEmail))).not.toHaveTextContent(
+            /correo del proveedor/
+        );
+    });
+
     it('says a current courtesy ends on its date and the provider emails only when flagged', () => {
         const row = {
             subscriptionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
