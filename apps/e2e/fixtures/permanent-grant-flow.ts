@@ -229,37 +229,48 @@ export async function cleanupPermanentGrantE2eRows(args: {
             [args.providerIds]
         )
     ).map(({ id }) => id);
-    const ids = [args.userIds, args.providerIds, tombstoneIds];
     const failures: unknown[] = [];
-    const attempt = async (query: string): Promise<void> => {
+    // PostgreSQL cannot infer the type of a bound parameter the statement never
+    // references, so every statement receives exactly the one array it reads ($1).
+    const attempt = async (query: string, params: ReadonlyArray<unknown>): Promise<void> => {
         try {
-            await execSQL(query, ids);
+            await execSQL(query, params);
         } catch (error) {
             failures.push(error);
         }
     };
     // A late authorization notice can create a recipientless tombstone. Remove
     // its mutable dependencies before its link and subscription; domain_event stays.
-    const tombstones = 'SELECT unnest($3::uuid[])';
+    const tombstones = 'SELECT unnest($1::uuid[])';
     await attempt(
         `DELETE FROM reconciliation_mark_payment WHERE mark_id IN
-         (SELECT id FROM reconciliation_mark WHERE subscription_id IN (${tombstones}))`
+         (SELECT id FROM reconciliation_mark WHERE subscription_id IN (${tombstones}))`,
+        [tombstoneIds]
     );
     await attempt(
-        `DELETE FROM succession_retained_payment WHERE subscription_id IN (${tombstones})`
+        `DELETE FROM succession_retained_payment WHERE subscription_id IN (${tombstones})`,
+        [tombstoneIds]
     );
     await attempt(
         `DELETE FROM receipt WHERE payment_id IN
-         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`
+         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`,
+        [tombstoneIds]
     );
     await attempt(
         `DELETE FROM refund WHERE payment_id IN
-         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`
+         (SELECT id FROM payment WHERE subscription_id IN (${tombstones}))`,
+        [tombstoneIds]
     );
-    await attempt(`DELETE FROM reconciliation_mark WHERE subscription_id IN (${tombstones})`);
-    await attempt(`DELETE FROM covered_period WHERE subscription_id IN (${tombstones})`);
-    await attempt(`DELETE FROM payment WHERE subscription_id IN (${tombstones})`);
-    await attempt(`DELETE FROM subscription_pause WHERE subscription_id IN (${tombstones})`);
+    await attempt(`DELETE FROM reconciliation_mark WHERE subscription_id IN (${tombstones})`, [
+        tombstoneIds
+    ]);
+    await attempt(`DELETE FROM covered_period WHERE subscription_id IN (${tombstones})`, [
+        tombstoneIds
+    ]);
+    await attempt(`DELETE FROM payment WHERE subscription_id IN (${tombstones})`, [tombstoneIds]);
+    await attempt(`DELETE FROM subscription_pause WHERE subscription_id IN (${tombstones})`, [
+        tombstoneIds
+    ]);
     // Both deletes must share a statement: the deferred tombstone/link guard
     // rejects a tombstone left without its link at commit.
     await attempt(
@@ -267,38 +278,51 @@ export async function cleanupPermanentGrantE2eRows(args: {
              DELETE FROM provider_link WHERE subscription_id IN (${tombstones})
              RETURNING subscription_id
          )
-         DELETE FROM subscription WHERE id IN (SELECT subscription_id FROM deleted_links)`
+         DELETE FROM subscription WHERE id IN (SELECT subscription_id FROM deleted_links)`,
+        [tombstoneIds]
     );
     // The sweep joins provider_link for both deferred retries and terminal returns.
     // Remove it first so a later cleanup error cannot expose this test to other specs.
     await attempt(
         `DELETE FROM provider_link WHERE subscription_id IN
-         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
+        [args.userIds]
     );
     // The zero-call addon check scans live instances without joining provider_link.
     await attempt(
         `UPDATE addon_instance SET status = 'CANCELLED'
-         WHERE owner_id = ANY($1::uuid[]) AND status IN ('ACTIVE', 'PENDING_AUTHORIZATION')`
+         WHERE owner_id = ANY($1::uuid[]) AND status IN ('ACTIVE', 'PENDING_AUTHORIZATION')`,
+        [args.userIds]
     );
-    await attempt('DELETE FROM email_outbox WHERE recipient_user_id = ANY($1::uuid[])');
+    await attempt('DELETE FROM email_outbox WHERE recipient_user_id = ANY($1::uuid[])', [
+        args.userIds
+    ]);
     await attempt(
         `DELETE FROM reconciliation_mark WHERE addon_instance_id IN
-         (SELECT id FROM addon_instance WHERE owner_id = ANY($1::uuid[]))`
+         (SELECT id FROM addon_instance WHERE owner_id = ANY($1::uuid[]))`,
+        [args.userIds]
     );
-    await attempt('DELETE FROM addon_instance WHERE owner_id = ANY($1::uuid[])');
+    await attempt('DELETE FROM addon_instance WHERE owner_id = ANY($1::uuid[])', [args.userIds]);
     await attempt(
         `DELETE FROM reconciliation_mark WHERE subscription_id IN
-         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
+        [args.userIds]
     );
-    await attempt('DELETE FROM courtesy_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
+    await attempt('DELETE FROM courtesy_grant WHERE beneficiary_user_id = ANY($1::uuid[])', [
+        args.userIds
+    ]);
     await attempt(
         `DELETE FROM subscription_pause WHERE subscription_id IN
-         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`
+         (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
+        [args.userIds]
     );
     await attempt(
-        'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))'
+        'DELETE FROM permanent_grant_vertical WHERE permanent_grant_id IN (SELECT id FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[]))',
+        [args.userIds]
     );
-    await attempt('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])');
+    await attempt('DELETE FROM permanent_grant WHERE beneficiary_user_id = ANY($1::uuid[])', [
+        args.userIds
+    ]);
     const survivingTombstones = await execSQL<{ id: string }>(
         'SELECT id FROM subscription WHERE id = ANY($1::uuid[])',
         [tombstoneIds]
