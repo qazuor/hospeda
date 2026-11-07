@@ -55,6 +55,67 @@ function driverStepElements(): readonly unknown[] {
     return (config?.steps ?? []).map((step) => step.element);
 }
 
+/** The popover description of the step anchored on `selector`, as handed to driver.js. */
+function driverStepDescription({ selector }: { readonly selector: string }): string | undefined {
+    const config = driverMock.mock.calls[0]?.[0] as
+        | {
+              readonly steps?: readonly {
+                  readonly element?: unknown;
+                  readonly popover?: { readonly description?: string };
+              }[];
+          }
+        | undefined;
+    return config?.steps?.find((step) => step.element === selector)?.popover?.description;
+}
+
+describe('TourController — listing step copy without a menu (HOS-2073)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        hasNextStepMock.mockReturnValue(true);
+    });
+
+    afterEach(() => {
+        cleanup();
+        document.body.innerHTML = '';
+    });
+
+    it('does not mention the menu in the listing step when the venue-qr anchor is absent', async () => {
+        mountAnchors({ withVenueQr: false });
+
+        render(
+            <TourController
+                locale="es"
+                userRoles={['VENUE_OWNER']}
+                page="comercio"
+            />
+        );
+
+        await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
+
+        const description = driverStepDescription({ selector: '[data-tour="comercio-listings"]' });
+        expect(description).toBeTruthy();
+        expect(description).not.toMatch(/men[uú]/i);
+    });
+
+    it('keeps the menu mention in the listing step when the venue-qr anchor is present', async () => {
+        mountAnchors({ withVenueQr: true });
+
+        render(
+            <TourController
+                locale="es"
+                userRoles={['VENUE_OWNER']}
+                page="comercio"
+            />
+        );
+
+        await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
+
+        expect(driverStepDescription({ selector: '[data-tour="comercio-listings"]' })).toMatch(
+            /men[uú]/i
+        );
+    });
+});
+
 describe('TourController — steps without a destination (HOS-1856)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
