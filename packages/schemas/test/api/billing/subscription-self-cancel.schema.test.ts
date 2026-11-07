@@ -178,13 +178,20 @@ describe('self cancellation schemas', () => {
             { ...base, origin: 'ACTIVE', serviceEndsAt: new Date().toISOString() },
             { ...base, origin: 'GRACE_PERIOD', graceEndsAt: new Date().toISOString() },
             { ...base, origin: 'SUSPENDED' },
-            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() }
+            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() },
+            {
+                ...base,
+                origin: 'PAUSED',
+                serviceEndsAt: new Date().toISOString(),
+                basis: 'NOW',
+                courtesyMonthsLost: 2
+            }
         ])
             expect(SubscriptionCancellationPreviewResponseSchema.safeParse(value).success).toBe(
                 true
             );
     });
-    it('rejects unknown origins, addon effects and malformed ids', () => {
+    it('rejects incomplete paused previews, unknown addon effects and malformed ids (AC:B8b:25)', () => {
         expect(
             SubscriptionCancellationPreviewResponseSchema.safeParse({ origin: 'PAUSED' }).success
         ).toBe(false);

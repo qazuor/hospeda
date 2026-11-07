@@ -1,4 +1,4 @@
-import { eq, getDb, subscriptions } from '@repo/db';
+import { eq, getDb, subscriptionPauses, subscriptions } from '@repo/db';
 import { CancellationReasonEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -23,6 +23,7 @@ import {
 const clock = routeClock();
 const fake = routeFake(clock);
 let app: ReturnType<typeof initApp>;
+const pausedIds: string[] = [];
 const headers = (id: string) => actorHeaders({ id, role: 'USER', permissions: [] });
 const adminHeaders = (id: string) =>
     actorHeaders({
@@ -42,6 +43,8 @@ beforeAll(async () => {
 beforeEach(() => clock.set(NOW));
 afterEach(async () => {
     resetAnalyticsFactSinkForTests();
+    for (const id of pausedIds.splice(0))
+        await getDb().delete(subscriptionPauses).where(eq(subscriptionPauses.subscriptionId, id));
     await retireSelfCancelRows();
 });
 afterAll(async () => {
@@ -50,6 +53,47 @@ afterAll(async () => {
 });
 
 describe('TEST:1878:11, TEST:1878:21, TEST:1878:23 cancellation analytics', () => {
+    it('TEST:B8b:25 emits DIRECT_FROM_PAUSED through the owner route', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'PAUSED' })
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        await getDb()
+            .insert(subscriptionPauses)
+            .values({
+                subscriptionId: seeded.subscriptionId,
+                reason: 'CUSTOMER_REQUEST',
+                requestedMonths: 1,
+                startsAt: NOW,
+                expectedEndAt: new Date('2026-11-05T12:00:00.000Z')
+            });
+        pausedIds.push(seeded.subscriptionId);
+        const capture = vi.fn();
+        setAnalyticsFactSinkForTests(createAnalyticsFactSink({ capture }));
+        const response = await app.request(url(seeded.subscriptionId), {
+            method: 'POST',
+            headers: { ...headers(seeded.ownerId), 'content-type': 'application/json' },
+            body: JSON.stringify({ reason: CancellationReasonEnum.SEASONAL_PAUSE })
+        });
+        expect(response.status).toBe(200);
+        const [row] = await getDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        expect(row?.status).toBe('CANCELLED');
+        expect(capture).toHaveBeenCalledTimes(1);
+        expect(capture.mock.calls[0]?.[0]).toMatchObject({
+            name: 'billing_subscription_cancelled',
+            distinctId: seeded.ownerId,
+            properties: {
+                path: 'DIRECT_FROM_PAUSED',
+                was_scheduled: false,
+                cancelled_by: 'USER',
+                reason: 'SEASONAL_PAUSE'
+            }
+        });
+    });
     it('persists S11 reason and emits the committed scheduled fact', async () => {
         const seeded = await seedSelfActive(fake, clock);
         const capture = vi.fn();

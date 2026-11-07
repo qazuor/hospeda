@@ -100,6 +100,16 @@ export const SubscriptionCancellationPreviewResponseSchema = z.discriminatedUnio
         subscriptionId: z.string().uuid(),
         vertical: z.string(),
         paymentMethod: z.enum(['CARD', 'MANUAL']),
+        origin: z.literal('PAUSED'),
+        serviceEndsAt: z.string().datetime(),
+        basis: z.enum(['NOW', 'CREDIT']),
+        courtesyMonthsLost: z.number().int().nonnegative(),
+        addons: z.array(CancellationPreviewAddonSchema)
+    }),
+    z.object({
+        subscriptionId: z.string().uuid(),
+        vertical: z.string(),
+        paymentMethod: z.enum(['CARD', 'MANUAL']),
         origin: z.literal('CANCEL_SCHEDULED'),
         serviceEndsAt: z.string().datetime(),
         addons: z.array(CancellationPreviewAddonSchema)
