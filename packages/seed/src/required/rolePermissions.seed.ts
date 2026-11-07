@@ -375,6 +375,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
         PermissionEnum.BILLING_MANAGE_PROMO_CODES,
         PermissionEnum.BILLING_SET_CYCLE_PRICE,
+        PermissionEnum.BILLING_PAUSE_SUBSCRIPTION,
+        PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN,
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 

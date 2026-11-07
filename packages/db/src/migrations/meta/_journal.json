@@ -1415,6 +1415,13 @@
       "when": 1793999853188,
       "tag": "0201_hos1515_cycle_price",
       "breakpoints": true
+    },
+    {
+      "idx": 202,
+      "version": "7",
+      "when": 1794047311654,
+      "tag": "0202_vengeful_frog_thor",
+      "breakpoints": true
     }
   ]
 }

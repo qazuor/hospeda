@@ -76,8 +76,11 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
         pendingOwnPermission: null
     },
-    ACC_9: { permissions: [], pendingOwnPermission: 'B8b' },
-    ACC_10: { permissions: [], pendingOwnPermission: 'B8b' },
+    ACC_9: { permissions: [PermissionEnum.BILLING_PAUSE_SUBSCRIPTION], pendingOwnPermission: null },
+    ACC_10: {
+        permissions: [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN],
+        pendingOwnPermission: null
+    },
     ACC_11: {
         permissions: [PermissionEnum.TRIAL_EXTEND],
         pendingOwnPermission: null
