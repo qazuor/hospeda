@@ -31,8 +31,7 @@ function amenity({ id, slug }: { readonly id: string; readonly slug: string }): 
         applicableVerticals: ['venue'],
         type: 'ENTERTAINMENT',
         isFeatured: false,
-        displayWeight: 100,
-        lifecycleState: 'ACTIVE'
+        displayWeight: 100
     } as unknown as AmenityPublic;
 }
 
@@ -46,8 +45,7 @@ function feature({ id, slug }: { readonly id: string; readonly slug: string }): 
         category: null,
         isFeatured: false,
         isBuiltin: false,
-        displayWeight: 100,
-        lifecycleState: 'ACTIVE'
+        displayWeight: 100
     } as unknown as FeaturePublic;
 }
 
