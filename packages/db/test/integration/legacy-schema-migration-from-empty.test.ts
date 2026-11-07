@@ -125,7 +125,9 @@ function isOldBillingPermission(value: string): boolean {
         value === 'billing.declareManualUnpaid' ||
         value === 'billing.grantComplimentary' ||
         // HOS-1591 action 21 is new billing, not a legacy billing permission.
-        value === 'billing.managePromoCodes'
+        value === 'billing.managePromoCodes' ||
+        // HOS-1515 action 19 is new billing, not a legacy billing permission.
+        value === 'billing.setCyclePrice'
     )
         return false;
     return (

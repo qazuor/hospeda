@@ -108,6 +108,35 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
 
+### Cycle price (ACC:19, HOS-1515)
+
+`POST /api/v1/admin/billing-prices/preview` previews the confirmation;
+`POST /api/v1/admin/billing-prices` confirms and sets the price. The route checks
+401 authentication, then 403 route permission (`FORBIDDEN`; actors other than
+`SUPER_ADMIN` lack the exclusive permission), then 400 input shape
+(`VALIDATION_ERROR`). Business rejections follow this order: 404 unknown plan
+version; 422 non-sellable version; 422 below provider minimum; 422 above provider
+maximum; 422 cycle no longer than grace; 409 version with customers; 409 price
+changed since preview; 422 unchanged price. A `current=false` version remains
+eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
+422 if it reaches the handler after route validation.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PLAN_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PLAN_VERSION_NOT_SELLABLE` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_PRICE_BELOW_PROVIDER_MINIMUM` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_PRICE_ABOVE_PROVIDER_MAXIMUM` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_NOT_LONGER_THAN_GRACE` | 422 | `VALIDATION_ERROR` |
+| `PLAN_VERSION_HAS_CUSTOMERS` | 409 | `ALREADY_EXISTS` |
+| `CYCLE_PRICE_CHANGED_SINCE_PREVIEW` | 409 | `ALREADY_EXISTS` |
+| `CYCLE_PRICE_UNCHANGED` | 422 | `VALIDATION_ERROR` |
+| `INVALID_CYCLE_PRICE_INPUT` | 422 | `VALIDATION_ERROR` |
+
+This PR proposes these messages and codes (BS); a separate documentation PR
+records them in the spec after merge.
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a

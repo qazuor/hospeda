@@ -330,9 +330,13 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
             expect(action).toContain('pendingOwnPermission: null');
         });
         it('the route guard no longer carries the retired placeholder for this leaf', () => {
-            const guard = read(
-                'apps/api/test/routes/administrative-action-route-permissions.guard.test.ts'
-            );
+            const guard = [
+                'apps/api/test/routes/administrative-action-route-permissions.guard.fixtures.ts',
+                'apps/api/test/routes/administrative-action-route-permissions.alignment.guard.test.ts',
+                'apps/api/test/routes/administrative-action-route-permissions.catalog.guard.test.ts'
+            ]
+                .map((path) => read(path))
+                .join('\n');
             // This is the sole narrow absence assertion: this leaf removed this exact placeholder.
             expect(guard).not.toContain('B9b (HOS-1591) builds it');
         });
