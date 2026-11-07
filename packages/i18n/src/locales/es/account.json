@@ -355,6 +355,11 @@
         }
     },
     "subscription": {
+        "signupTakenBy": {
+            "livePrincipal": "Ya tenés un alta de suscripción en curso en esta vertical.",
+            "successor": "Tenés un cambio de plan pendiente de autorización.",
+            "successorDeadline": "Tenés un cambio de plan pendiente de autorización hasta el {{date}}"
+        },
         "loading": "Cargando suscripción...",
         "loadError": "Error al cargar la suscripción",
         "retry": "Reintentar",

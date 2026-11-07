@@ -355,6 +355,11 @@
         }
     },
     "subscription": {
+        "signupTakenBy": {
+            "livePrincipal": "You already have a subscription signup in progress for this category.",
+            "successor": "You have a plan change awaiting authorization.",
+            "successorDeadline": "You have a plan change awaiting authorization until {{date}}"
+        },
         "loading": "Loading subscription...",
         "loadError": "Error loading subscription",
         "retry": "Retry",

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
+import { CommitmentTakenBySchema } from './subscription-start.schema.js';
 
 /**
  * The trial half shown before signup: a running trial exposes its end date and
@@ -31,9 +32,17 @@ export const SignupNoticeResponseSchema = z.object({
                 cycle: BillingCycleSchema
             }),
             checkoutUrl: z.url().nullable(),
+            takenBy: CommitmentTakenBySchema.optional(),
             authorizationWindowEndsAt: z.iso.datetime()
         })
     ]),
+    /** Optional detail of the live row blocking a fresh signup. */
+    blockingCommitment: z
+        .object({
+            takenBy: CommitmentTakenBySchema,
+            checkoutDeadline: z.iso.datetime().nullable()
+        })
+        .optional(),
     /** Vertical selected by the billing option. */
     vertical: VerticalEnumSchema,
     /** Tourist VIP status after a suspended plan holder returns to service. */

@@ -1,3 +1,4 @@
+import { SignupNoticeResponseSchema } from '@repo/schemas';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
@@ -76,6 +77,7 @@ export function SignupCheckout({
     const [activePendingAttempt, setActivePendingAttempt] = useState(
         manualPaymentOnly ? null : pendingAttempt
     );
+    const [successorDeadline, setSuccessorDeadline] = useState<string | null | undefined>();
     const [pendingAttemptCancelled, setPendingAttemptCancelled] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [payerEmail, setPayerEmail] = useState(accountEmail);
@@ -104,6 +106,20 @@ export function SignupCheckout({
                         const notice = await billingSubscriptionApi.signupNotice({
                             billingOptionId
                         });
+                        const parsed = notice.ok
+                            ? SignupNoticeResponseSchema.safeParse(notice.data)
+                            : null;
+                        if (
+                            parsed?.success &&
+                            parsed.data.blockingCommitment?.takenBy === 'SUCCESSOR_PENDING'
+                        ) {
+                            setSuccessorDeadline(parsed.data.blockingCommitment.checkoutDeadline);
+                            setView({
+                                state: 'rejected',
+                                rejection: resolveSignupRejection({ error: result.error })
+                            });
+                            return;
+                        }
                         const found = resolveSignupPendingAttempt({ result: notice });
                         if (found) {
                             setActivePendingAttempt(found);
@@ -381,7 +397,22 @@ export function SignupCheckout({
                     data-reason={rejected.reason}
                     role="alert"
                 >
-                    <p>{t(rejected.messageKey)}</p>
+                    <p>
+                        {successorDeadline !== undefined && rejected.reason === 'COMMITMENT_TAKEN'
+                            ? successorDeadline
+                                ? t(
+                                      'account.subscription.signupTakenBy.successorDeadline',
+                                      undefined,
+                                      {
+                                          date: formatSignupWindowEnd({
+                                              iso: successorDeadline,
+                                              locale
+                                          })
+                                      }
+                                  )
+                                : t('account.subscription.signupTakenBy.successor')
+                            : t(rejected.messageKey)}
+                    </p>
                     {rejected.showPlansLink && (
                         <a
                             data-testid="signup-checkout-plans-link"

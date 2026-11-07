@@ -1,7 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { LiveCommitment } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { ServiceErrorCode } from '@repo/schemas';
+import { type CommitmentTakenBy, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import type { StartSubscriptionResult } from './start-subscription.service';
@@ -92,11 +92,16 @@ export function readResumableCheckoutUrl(input: {
 }
 
 /** The today's 409 for an occupied commitment slot (H11). */
-export function commitmentTaken(): ServiceError {
+export function commitmentTaken(commitment?: LiveCommitment): ServiceError {
+    const takenBy: CommitmentTakenBy | undefined = commitment
+        ? commitment.subscription.succeedsId === null
+            ? 'LIVE_PRINCIPAL'
+            : 'SUCCESSOR_PENDING'
+        : undefined;
     return new ServiceError(
         ServiceErrorCode.ALREADY_EXISTS,
         'A subscription commitment already exists',
-        undefined,
+        takenBy === undefined ? undefined : { takenBy },
         'COMMITMENT_TAKEN'
     );
 }
@@ -155,15 +160,17 @@ export async function resolveLiveCommitmentReuse(input: {
     | { readonly kind: 'RECREATE'; readonly rejectedKey: string }
 > {
     const { subscription } = input.commitment;
-    if (subscription.status !== 'PENDING_AUTHORIZATION') throw commitmentTaken();
-    if (subscription.billingOptionId !== input.billingOptionId) throw commitmentTaken();
+    if (subscription.status !== 'PENDING_AUTHORIZATION') throw commitmentTaken(input.commitment);
+    if (subscription.billingOptionId !== input.billingOptionId)
+        throw commitmentTaken(input.commitment);
     // A live manual commitment occupies the slot; it is not a card creation in progress.
-    if (subscription.paymentMethod === 'MANUAL') throw commitmentTaken();
+    if (subscription.paymentMethod === 'MANUAL') throw commitmentTaken(input.commitment);
     const key = input.commitment.idempotencyKey;
     if (!key || key.completedAt === null) throw previousAttemptInProgress();
     const windowEndsAt = subscription.authorizationWindowEndsAt;
-    if (!windowEndsAt) throw commitmentTaken();
-    if (input.clock.now().getTime() >= windowEndsAt.getTime()) throw commitmentTaken();
+    if (!windowEndsAt) throw commitmentTaken(input.commitment);
+    if (input.clock.now().getTime() >= windowEndsAt.getTime())
+        throw commitmentTaken(input.commitment);
     const parsed = AppliedAuthorizationResultSchema.safeParse(key.result);
     if (parsed.success) {
         const declared = subscription.declaredPayerEmail?.trim().toLowerCase();
@@ -192,9 +199,9 @@ export async function resolveLiveCommitmentReuse(input: {
                 { subscriptionId: subscription.id, idempotencyKey: key.key },
                 'Rejected creation unexpectedly has a provider link'
             );
-            throw commitmentTaken();
+            throw commitmentTaken(input.commitment);
         }
         return { kind: 'RECREATE', rejectedKey: key.key };
     }
-    throw commitmentTaken();
+    throw commitmentTaken(input.commitment);
 }

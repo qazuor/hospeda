@@ -355,6 +355,11 @@
         }
     },
     "subscription": {
+        "signupTakenBy": {
+            "livePrincipal": "Você já tem uma adesão de assinatura em andamento nesta categoria.",
+            "successor": "Você tem uma mudança de plano aguardando autorização.",
+            "successorDeadline": "Você tem uma mudança de plano aguardando autorização até {{date}}"
+        },
         "loading": "Carregando assinatura...",
         "loadError": "Erro ao carregar assinatura",
         "retry": "Tentar novamente",

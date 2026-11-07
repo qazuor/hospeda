@@ -55,6 +55,10 @@ export type StartSubscriptionRejectionReason = z.infer<
     typeof StartSubscriptionRejectionReasonSchema
 >;
 
+/** Describes the persisted live row occupying a commitment slot. */
+export const CommitmentTakenBySchema = z.enum(['SUCCESSOR_PENDING', 'LIVE_PRINCIPAL']);
+export type CommitmentTakenBy = z.infer<typeof CommitmentTakenBySchema>;
+
 export const StartSubscriptionResponseSchema = z.strictObject({
     subscriptionId: z.uuid(),
     authorizationId: z.string().min(1),
