@@ -15,8 +15,13 @@
  * (`CATALOG_MERGES`, `FEATURE_SLUG_RENAMES`) and, for the house rules that
  * became `policies` with no survivor row,
  * `0154-hos-2060-retire-policy-catalog-rows.ts` (HOS-2060), whose landings go
- * to the accommodation search instead, and
- * `0155-hos-2061-venue-experience-catalog-curation.ts` (HOS-2061). This table is their public-URL
+ * to the accommodation search instead.
+ *
+ * `0155-hos-2061-venue-experience-catalog-curation.ts` (HOS-2061) adds NO
+ * entry on purpose: none of the four rows it retires ever applied to
+ * accommodation, so none had a landing here, and a 404 stays the honest
+ * answer. Every target must be a live accommodation-applicable row of the
+ * seed baseline (`catalog-retired-slugs.test.ts` enforces it). This table is their public-URL
  * counterpart, and `legacy-redirects.ts` resolves it as a 301.
  *
  * @module lib/catalog-retired-slugs
@@ -56,11 +61,7 @@ export const RETIRED_AMENITY_SLUG_TARGETS: Readonly<Record<string, CatalogLandin
     pet_friendly: PETS_SEARCH,
     smoke_free: searchLanding(),
     accepts_cards: searchLanding(),
-    private_events: searchLanding(),
-    // HOS-2061 (data-migration 0155): reservations are a venue policy now.
-    accepts_reservations: searchLanding(),
-    // HOS-2061 (0155): an offer profile, so it moved to the feature table.
-    happy_hour: featureLanding('happy_hour')
+    private_events: searchLanding()
 };
 
 /** Retired or renamed FEATURE slugs (`/alojamientos/caracteristicas/{slug}/`) and their survivor. */
@@ -84,11 +85,7 @@ export const RETIRED_FEATURE_SLUG_TARGETS: Readonly<Record<string, CatalogLandin
     pet_friendly_area: PETS_SEARCH,
     autonomous_checkin: searchLanding(),
     minimum_stay_required: searchLanding(),
-    smoking_area: searchLanding(),
-    // HOS-2061 (data-migration 0155): merged into the cross-vertical audience row.
-    kid_friendly: featureLanding('family_friendly'),
-    // HOS-2061 (0155): private groups are an experience policy now.
-    private_available: searchLanding()
+    smoking_area: searchLanding()
 };
 
 /**
