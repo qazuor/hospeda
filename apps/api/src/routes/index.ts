@@ -54,6 +54,7 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
+import { protectedAddonPurchaseRoutes } from './billing-addon/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
 import { adminBillingPermanentGrantRoutes } from './billing-permanent-grant/admin/index.js';
 import { adminBillingPriceRoutes } from './billing-price/admin/index.js';
@@ -526,6 +527,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
         app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+        app.route('/api/v1/protected/billing/addons', protectedAddonPurchaseRoutes);
         app.route('/api/v1/protected/billing/promo-codes', protectedBillingPromoRoutes);
         app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 

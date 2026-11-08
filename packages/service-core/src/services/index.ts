@@ -73,6 +73,7 @@ export * from './billing/addon/purchase-addon-complement.js';
 export * from './billing/addon/purchase-addon-eligibility.js';
 export * from './billing/addon/purchase-addon-ports.js';
 export * from './billing/addon/purchase-addon-types.js';
+export * from './billing/addon/read-addon-purchase.js';
 export * from './billing/addon/scheduled-downgrade-addon-notice.js';
 export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';

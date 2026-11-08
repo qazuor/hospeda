@@ -2663,6 +2663,14 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/billing/addons/purchases"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/purchases/:orderRequestId"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/billing/promo-codes/redeem"
         },
         {
