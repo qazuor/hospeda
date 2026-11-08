@@ -525,7 +525,7 @@
         },
         "venue-premium": {
             "name": "Premium",
-            "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and AI chat."
+            "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and many more AI chat queries."
         },
         "experience-basico": {
             "name": "Basic",
@@ -537,7 +537,7 @@
         },
         "experience-premium": {
             "name": "Premium",
-            "description": "All of the above plus the downloadable PDF listing and AI chat."
+            "description": "All of the above plus the downloadable PDF listing and many more AI chat queries."
         },
         "partner-silver": {
             "name": "Silver",
@@ -784,7 +784,7 @@
         "max_ai_text_improve_per_month": "How many times a month you can ask the AI to improve your texts. The quota resets at the start of each month.",
         "max_ai_chat_per_month": "How many questions the AI can answer about your places each month. Once spent, it comes back the following month.",
         "max_ai_chat_consumer_per_month": "How many questions you can ask the AI assistant each month. Once spent, the quota resets the following month.",
-        "max_ai_chat_venue_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
+        "max_ai_chat_venue_per_month": "How many questions the AI can answer about your venue each month. Once spent, it comes back the following month.",
         "max_ai_chat_experience_per_month": "How many questions the AI can answer about your experience each month. Once spent, it comes back the following month.",
         "max_ai_search_per_month": "How many AI searches you can run each month. Once spent, you keep using the regular search until the following month.",
         "max_ai_support_per_month": "How many questions a month you can ask the AI support assistant. The quota resets at the start of each month.",

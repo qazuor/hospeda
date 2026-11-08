@@ -525,7 +525,7 @@
         },
         "venue-premium": {
             "name": "Premium",
-            "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y chat con IA."
+            "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y muchas más consultas al chat con IA."
         },
         "experience-basico": {
             "name": "Básico",
@@ -537,7 +537,7 @@
         },
         "experience-premium": {
             "name": "Premium",
-            "description": "Todo lo anterior con la ficha descargable en PDF y el chat con IA."
+            "description": "Todo lo anterior con la ficha descargable en PDF y muchas más consultas al chat con IA."
         },
         "partner-silver": {
             "name": "Silver",
