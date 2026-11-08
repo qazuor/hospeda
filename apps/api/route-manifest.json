@@ -2674,6 +2674,10 @@
             "path": "/api/v1/protected/billing/addons/free-choices"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/offers"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/billing/addons/purchases"
         },
