@@ -15,7 +15,7 @@
  * from the catalog in `listing-editor-registry.ts` since HOS-1787 leaf 5.1.
  *
  * No section uses a runtime `visibilityKey`. The amenities page was the
- * candidate — `AmenitiesSection` renders nothing when both catalogs come back
+ * candidate — the amenities section (`CatalogPicker`, HOS-2061) renders nothing when both catalogs come back
  * empty — but answering that on the nav would mean fetching both catalogs on
  * ALL eleven pages to decide whether to draw one link. The accommodation editor
  * makes the same trade (its `servicios` entry is unconditional and only its own

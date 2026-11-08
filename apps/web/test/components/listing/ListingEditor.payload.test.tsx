@@ -911,3 +911,66 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
     });
 });
+
+describe('ListingEditor — amenity relation attributes (HOS-2061)', () => {
+    const POOL = '33333333-3333-4333-8333-333333333333';
+    const GRILL = '44444444-4444-4444-8444-444444444444';
+    const catalog = [
+        { id: POOL, slug: 'pool', category: 'OUTDOORS' },
+        { id: GRILL, slug: 'grill', category: 'OUTDOORS' }
+    ];
+
+    beforeEach(() => {
+        mockPatch.mockReset();
+        mockPatch.mockResolvedValue({ ok: true, data: {} });
+        vi.mocked(addToast).mockClear();
+    });
+
+    function renderAmenities(vertical: 'venue' | 'experience', overrides = {}) {
+        return render(
+            <ListingEditor
+                vertical={vertical}
+                sectionId="amenities"
+                listingId="abc"
+                locale="es"
+                initialData={buildListing({
+                    amenityIds: [POOL],
+                    amenityAttributes: [{ amenityId: POOL, scope: 'shared', availability: null }],
+                    ...overrides
+                })}
+                destinations={destinationOptions}
+                amenities={catalog}
+                features={[]}
+            />
+        );
+    }
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('%s: seeds the declared attribute and sends only the changed list', async (vertical) => {
+        // Arrange
+        renderAmenities(vertical);
+        expect(screen.getByRole('radio', { name: 'Compartido' })).toBeChecked();
+
+        // Act
+        fireEvent.click(screen.getByRole('radio', { name: 'De temporada' }));
+        fireEvent.click(saveButton());
+
+        // Assert
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [{ amenityId: POOL, scope: 'shared', availability: 'seasonal' }]
+        });
+    });
+
+    it('sends amenityIds and no attributes for a newly checked amenity with nothing declared', async () => {
+        renderAmenities('venue', { amenityAttributes: [] });
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /grill/i }));
+        fireEvent.click(saveButton());
+
+        const body = await wireBody();
+        expect(body).toEqual({ amenityIds: [POOL, GRILL] });
+    });
+});

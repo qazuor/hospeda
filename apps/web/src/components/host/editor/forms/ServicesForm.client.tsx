@@ -17,6 +17,10 @@
  * by amenity id, and the wire wants a list of the CHECKED amenities only,
  * compared by value against the baseline.
  *
+ * HOS-2061: the amenities/features are rendered by the shared `CatalogPicker`
+ * (featured first, search, per-category accordions), the same component the
+ * venue/experience editor uses.
+ *
  * HOS-2060: the page also carries the house-rules panel, because the catalog
  * puts `policies` in the amenities section. Its keys travel as a `policies`
  * PATCH object through the same `extendPayload` — every key except
@@ -25,8 +29,10 @@
  */
 
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
+import { CatalogPicker } from '@/components/shared/catalog-picker/CatalogPicker.client';
 import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import {
     buildListingPoliciesPatch,
     LISTING_BASE_POLICY_KEYS,
@@ -34,12 +40,12 @@ import {
     setListingPolicy
 } from '@/lib/listing/listing-policies';
 import { ActionBar } from '../ActionBar.client';
-import { AmenitiesSection } from '../AmenitiesSection.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
 import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
 import { ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
+import pickerSectionStyles from './ServicesForm.module.css';
 
 /**
  * The fields this page owns. Nothing else can reach the PATCH body, except
@@ -100,6 +106,7 @@ export function ServicesForm({
     amenities,
     features
 }: ServicesFormProps) {
+    const { t } = createTranslations(locale);
     const form = useAccommodationSectionForm({
         locale,
         accommodationId,
@@ -137,15 +144,27 @@ export function ServicesForm({
             noValidate
         >
             <div className={styles.card}>
-                <AmenitiesSection
-                    locale={locale}
-                    data={form.values}
-                    amenities={amenities}
-                    features={features}
-                    onToggleAmenity={(id) => toggle('amenityIds', id)}
-                    onToggleFeature={(id) => toggle('featureIds', id)}
-                    onChangeAmenityAttribute={setAttribute}
-                />
+                <fieldset className={pickerSectionStyles.section}>
+                    <legend className={pickerSectionStyles.sectionTitle}>
+                        {t('host.properties.editor.section.amenities', 'Servicios y comodidades')}
+                    </legend>
+                    <CatalogPicker
+                        locale={locale}
+                        amenitiesTitle={t('host.properties.editor.field.amenities', 'Comodidades')}
+                        featuresTitle={t(
+                            'host.properties.editor.field.features',
+                            'Características'
+                        )}
+                        amenities={amenities}
+                        features={features}
+                        selectedAmenityIds={new Set(form.values.amenityIds)}
+                        selectedFeatureIds={new Set(form.values.featureIds)}
+                        onToggleAmenity={(id) => toggle('amenityIds', id)}
+                        onToggleFeature={(id) => toggle('featureIds', id)}
+                        amenityAttributes={form.values.amenityAttributes}
+                        onChangeAmenityAttribute={setAttribute}
+                    />
+                </fieldset>
             </div>
 
             <div className={styles.card}>

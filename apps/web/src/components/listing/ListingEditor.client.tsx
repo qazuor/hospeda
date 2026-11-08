@@ -50,10 +50,12 @@ import {
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
+import { buildAmenityAttributesPayload } from '@/components/host/editor/amenity-attributes-payload';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { resolveBusinessLinesFieldError } from '@/components/listing/editor/BusinessLinesField.client';
+import { extractAmenityAttributes } from '@/lib/api/amenity-attributes';
 import { apiClient } from '@/lib/api/client';
-import type { AmenityData } from '@/lib/api/types';
+import type { AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
 import { createListingEditorRegistry } from '@/lib/editor/listing-editor-sections';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
@@ -392,6 +394,22 @@ function buildPatchPayload({
     if (!sameSet(current.featureIds, baseline.featureIds)) {
         payload.featureIds = [...current.featureIds];
     }
+    // HOS-2061: the same `amenityAttributes` contract as the accommodation
+    // editor — only the CHECKED amenities with a declaration, sent only when
+    // the effective list changed by value.
+    Object.assign(
+        payload,
+        buildAmenityAttributesPayload({
+            values: {
+                amenityIds: [...current.amenityIds],
+                amenityAttributes: current.amenityAttributes
+            },
+            baseline: {
+                amenityIds: [...baseline.amenityIds],
+                amenityAttributes: baseline.amenityAttributes
+            }
+        })
+    );
 
     Object.assign(payload, VERTICAL_PATCH_FIELDS[vertical]({ current, baseline }));
 
@@ -710,6 +728,10 @@ export function ListingEditor({
         // experience cancellation text / private groups.
         policies: parseListingPolicyValues({ raw: data.policies }),
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
+        // HOS-2061: declared scope/availability read back by the protected getById.
+        amenityAttributes: extractAmenityAttributes(
+            data.amenityAttributes as readonly Record<string, unknown>[] | undefined
+        ),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
         i18nValues: parseListingI18nValues(data),
@@ -774,6 +796,31 @@ export function ListingEditor({
         });
         setStatus({ kind: 'idle' });
     }, []);
+
+    /** Sets one declared attribute of a checked amenity (HOS-2061). */
+    const changeAmenityAttribute = useCallback(
+        <K extends keyof AmenityAttributeValue>(
+            amenityId: string,
+            field: K,
+            value: AmenityAttributeValue[K]
+        ) => {
+            setFormData((prev) => ({
+                ...prev,
+                amenityAttributes: {
+                    ...prev.amenityAttributes,
+                    [amenityId]: {
+                        ...(prev.amenityAttributes[amenityId] ?? {
+                            scope: null,
+                            availability: null
+                        }),
+                        [field]: value
+                    }
+                }
+            }));
+            setStatus({ kind: 'idle' });
+        },
+        []
+    );
 
     const toggleFeature = useCallback((id: string) => {
         setFormData((prev) => {
@@ -1042,6 +1089,7 @@ export function ListingEditor({
                 onSocialChange: updateSocial,
                 onToggleAmenity: toggleAmenity,
                 onToggleFeature: toggleFeature,
+                onChangeAmenityAttribute: changeAmenityAttribute,
                 onI18nChange: handleI18nChange,
                 shouldOfferSlugRefresh,
                 listingId

@@ -360,8 +360,34 @@ describe('transformAmenityList', () => {
         const result = transformAmenityList({ items: raw });
 
         expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({ id: 'am-1', slug: 'wifi', category: 'connectivity' });
-        expect(result[1]).toEqual({ id: 'am-2', slug: 'pool', category: 'leisure' });
+        expect(result[0]).toEqual({
+            id: 'am-1',
+            slug: 'wifi',
+            category: 'connectivity',
+            isFeatured: false
+        });
+        expect(result[1]).toEqual({
+            id: 'am-2',
+            slug: 'pool',
+            category: 'leisure',
+            isFeatured: false
+        });
+    });
+
+    it('should carry isFeatured and displayWeight for the featured-first picker (HOS-2061)', () => {
+        const raw = [
+            { id: 'am-4', slug: 'pool', type: 'OUTDOORS', isFeatured: true, displayWeight: 90 }
+        ];
+
+        const result = transformAmenityList({ items: raw });
+
+        expect(result[0]).toEqual({
+            id: 'am-4',
+            slug: 'pool',
+            category: 'OUTDOORS',
+            isFeatured: true,
+            displayWeight: 90
+        });
     });
 
     it('should handle empty input', () => {

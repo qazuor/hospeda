@@ -1870,13 +1870,15 @@ export function toEventDetailProps({
 
 // --- Accommodation Editor Transforms (SPEC-208) ---
 
+import {
+    extractAmenityAttributes,
+    toAmenityAvailability,
+    toAmenityScope
+} from './amenity-attributes';
 import type {
     AccommodationEditData,
     AccommodationVideoEntry,
-    AmenityAttributeValue,
-    AmenityAvailabilityValue,
     AmenityData,
-    AmenityScopeValue,
     DestinationData,
     MediaImage
 } from './types';
@@ -2111,42 +2113,6 @@ function extractIdList(
         .filter((id) => id.length > 0);
 }
 
-/** Narrows a raw value to a declared amenity scope, or `null`. */
-function toAmenityScope(value: unknown): AmenityScopeValue | null {
-    return value === 'private' || value === 'shared' ? value : null;
-}
-
-/** Narrows a raw value to a declared amenity availability, or `null`. */
-function toAmenityAvailability(value: unknown): AmenityAvailabilityValue | null {
-    return value === 'year_round' || value === 'seasonal' ? value : null;
-}
-
-/**
- * Reads the HOS-2058 relation attributes off the protected amenity rows into a
- * map keyed by amenity id. Rows with nothing declared are left out, so the
- * map only ever holds real declarations.
- *
- * @param items - The `amenities` array of the protected accommodation read
- * @returns Declared scope/availability per amenity id
- */
-function extractAmenityAttributes(
-    items: readonly (Record<string, unknown> | string)[] | undefined
-): Readonly<Record<string, AmenityAttributeValue>> {
-    const result: Record<string, AmenityAttributeValue> = {};
-    if (!items) return result;
-    for (const entry of items) {
-        if (typeof entry === 'string') continue;
-        const nested = entry.amenity as Record<string, unknown> | undefined;
-        const id = String(entry.amenityId ?? nested?.id ?? entry.id ?? '');
-        if (id.length === 0) continue;
-        const scope = toAmenityScope(entry.scope);
-        const availability = toAmenityAvailability(entry.availability);
-        if (scope === null && availability === null) continue;
-        result[id] = { scope, availability };
-    }
-    return result;
-}
-
 /**
  * Transforms a list of raw amenity or feature catalog objects into AmenityData[].
  *
@@ -2179,7 +2145,10 @@ export function transformAmenityList({
         return {
             id: String(item.id ?? ''),
             slug,
-            category: rawCategory == null ? null : String(rawCategory)
+            category: rawCategory == null ? null : String(rawCategory),
+            // HOS-2061: featured-first ordering in the catalog picker.
+            isFeatured: item.isFeatured === true,
+            ...(typeof item.displayWeight === 'number' ? { displayWeight: item.displayWeight } : {})
         };
     });
 }

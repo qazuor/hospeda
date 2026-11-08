@@ -13,7 +13,6 @@
 import type { JSX } from 'react';
 import { MeetingPointSection } from '@/components/experience/MeetingPointSection.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
-import { AmenitiesSection } from '@/components/listing/editor/AmenitiesSection.client';
 import { BasicInfoSection } from '@/components/listing/editor/BasicInfoSection.client';
 import { ContactSection } from '@/components/listing/editor/ContactSection.client';
 import type {
@@ -36,13 +35,21 @@ import {
     type ListingI18nValues,
     ListingTranslationPanel
 } from '@/components/listing/ListingTranslationPanel.client';
+import type { AmenityAttributeChange } from '@/components/shared/catalog-picker/AmenityAttributeControls.client';
+import { CatalogPicker } from '@/components/shared/catalog-picker/CatalogPicker.client';
 import type { AmenityData } from '@/lib/api/types';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { LISTING_BASE_POLICY_KEYS, type ListingPolicyKey } from '@/lib/listing/listing-policies';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import fieldStyles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
+
+/** Resolves one key for a renderer that has only the locale in hand. */
+function translate(locale: SupportedLocale, key: string, fallback: string): string {
+    return createTranslations(locale).t(key, fallback);
+}
 
 /** Everything a section renderer can need, supplied once by `ListingEditor`. */
 export interface ListingSectionRenderContext {
@@ -61,6 +68,8 @@ export interface ListingSectionRenderContext {
     readonly onSocialChange: (key: keyof SocialValues, value: string) => void;
     readonly onToggleAmenity: (id: string) => void;
     readonly onToggleFeature: (id: string) => void;
+    /** Sets one declared scope/availability of a checked amenity (HOS-2061). */
+    readonly onChangeAmenityAttribute: AmenityAttributeChange;
     readonly onI18nChange: (values: ListingI18nValues) => void;
     readonly shouldOfferSlugRefresh: boolean;
     /** UUID of the listing, forwarded to sections that read listing-scoped data. */
@@ -159,15 +168,36 @@ export const LISTING_SECTION_RENDERERS: Readonly<
     ),
     amenities: (context) => (
         <>
-            <AmenitiesSection
-                locale={context.locale}
-                amenities={context.amenities}
-                features={context.features}
-                selectedAmenityIds={context.data.amenityIds}
-                selectedFeatureIds={context.data.featureIds}
-                onToggleAmenity={context.onToggleAmenity}
-                onToggleFeature={context.onToggleFeature}
-            />
+            {/* HOS-2061: the shared picker the accommodation editor uses too. It
+                renders nothing when both catalogs are empty, and so does this block. */}
+            {(context.amenities.length > 0 || context.features.length > 0) && (
+                <section
+                    className={fieldStyles.section}
+                    id="editor-amenities"
+                >
+                    <CatalogPicker
+                        locale={context.locale}
+                        amenitiesTitle={translate(
+                            context.locale,
+                            'listing.owner.editor.sections.amenities',
+                            'Servicios'
+                        )}
+                        featuresTitle={translate(
+                            context.locale,
+                            'listing.owner.editor.sections.features',
+                            'Características'
+                        )}
+                        amenities={context.amenities}
+                        features={context.features}
+                        selectedAmenityIds={context.data.amenityIds}
+                        selectedFeatureIds={context.data.featureIds}
+                        onToggleAmenity={context.onToggleAmenity}
+                        onToggleFeature={context.onToggleFeature}
+                        amenityAttributes={context.data.amenityAttributes}
+                        onChangeAmenityAttribute={context.onChangeAmenityAttribute}
+                    />
+                </section>
+            )}
             {/* HOS-2060: `policies` lives in the amenities section of the catalog. */}
             <section
                 className={fieldStyles.section}

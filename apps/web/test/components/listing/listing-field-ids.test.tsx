@@ -165,8 +165,11 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     descriptionI18n: 'translation panel, not a field control',
     richDescriptionI18n: 'translation panel, not a field control',
     // Checkbox GROUPS — many controls, one key, no single focus target.
-    amenityIds: 'checkbox group in AmenitiesSection',
-    featureIds: 'checkbox group in AmenitiesSection',
+    amenityIds: 'checkbox group in CatalogPicker',
+    // HOS-2061: per-amenity radio GROUPS (scope + availability for every
+    // checked amenity), one key, no single focus target.
+    amenityAttributes: 'per-amenity radio groups in CatalogPicker',
+    featureIds: 'checkbox group in CatalogPicker',
     // Business lines are a checkbox group too (one key, many controls). The owner
     // editor gains it in HOS-1787 leaf 5.6; it stays exempt afterwards for the same
     // reason as amenityIds.

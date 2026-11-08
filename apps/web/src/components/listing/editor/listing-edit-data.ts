@@ -9,6 +9,7 @@
  */
 
 import type { I18nText, OpeningHours } from '@repo/schemas';
+import type { AmenityAttributeValue } from '@/lib/api/types';
 import type { ListingPolicyValues } from '@/lib/listing/listing-policies';
 import type { ListingI18nValues } from '../ListingTranslationPanel.client';
 
@@ -171,6 +172,12 @@ export interface ListingEditData {
      */
     readonly policies: ListingPolicyValues;
     readonly amenityIds: ReadonlySet<string>;
+    /**
+     * Declared scope/availability per amenity id (HOS-2061). Kept for
+     * unchecked amenities too, so re-checking restores a declaration; only
+     * checked amenities are ever sent (`buildAmenityAttributesPayload`).
+     */
+    readonly amenityAttributes: Readonly<Record<string, AmenityAttributeValue>>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: ListingI18nValues;
     readonly refreshSlugFromName: boolean;
