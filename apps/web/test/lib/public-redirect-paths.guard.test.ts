@@ -131,7 +131,7 @@ describe('HOS-1156 — every login-gate exemption is a pure redirect', () => {
 
 describe('G-FAC-R2 — retired venue routes resolve in one hop', () => {
     it('has one redirect for each retired URL family, to a real page and no further redirect', () => {
-        expect(RETIRED_ROUTE_REDIRECT_STATUS).toBe(302);
+        expect(RETIRED_ROUTE_REDIRECT_STATUS).toBe(301);
         const sources = [
             `/es${RETIRED_VENUE_URL_PREFIXES[0]}/sample/carta/`,
             `/es${RETIRED_VENUE_URL_PREFIXES[1]}/precios/`,

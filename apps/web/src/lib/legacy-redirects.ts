@@ -43,7 +43,7 @@ import {
     POST_CATEGORY_LEGACY_ENGLISH_SLUGS
 } from './facet-slugs';
 
-export const RETIRED_ROUTE_REDIRECT_STATUS = 302 as const;
+export const RETIRED_ROUTE_REDIRECT_STATUS = 301 as const;
 const LEGACY_VENUE_SEGMENT = ['gastro', 'nomy'].join('');
 export const RETIRED_VENUE_URL_PREFIXES = [
     '/gastronomia',
@@ -119,8 +119,8 @@ function resolveLegacyFacetSlugPath({
 export interface LegacyRedirectTarget {
     /** The fully-resolved destination path, WITHOUT the query string — the caller appends it. */
     readonly target: string;
-    /** `308` preserves the request method (used only by the messages alias); every other alias is a plain `301`. */
-    readonly status: 301 | 302 | 308;
+    /** `308` preserves the request method (used only by the messages alias); every other alias is a plain `301` (retired venue routes since HOS-1956, previously 302 during the soak). */
+    readonly status: 301 | 308;
 }
 
 /**

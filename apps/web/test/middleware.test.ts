@@ -640,6 +640,26 @@ describe('middleware onRequest — H-110 legacy English facet-landing slugs redi
         });
     });
 
+    describe('retired venue URLs answer a permanent single hop and keep the query (HOS-1956)', () => {
+        it.each([
+            `/es${RETIRED_VENUE_URL_PREFIXES[0]}/sample/carta/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[1]}/precios/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[3]}/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[4]}/abc/editar/`
+        ])('301s %s once, with the query string', async (pathname) => {
+            const context = createContext({ pathname: `${pathname}?utm_source=qr` });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            const [target, status] = context.redirect.mock.calls[0] as [string, number];
+            expect(status).toBe(301);
+            expect(target.endsWith('?utm_source=qr')).toBe(true);
+            expect(target).toMatch(/comer-y-salir|comercio\/venue/);
+        });
+    });
+
     describe('a legacy link missing its trailing slash ALSO resolves in ONE hop (H-110 — Step 3 composes too)', () => {
         it('resolves /alojamientos/tipo/cabin (no trailing slash) directly to the canonical Spanish landing in a single redirect', async () => {
             const context = createContext({ pathname: '/es/alojamientos/tipo/cabin' });
@@ -1117,7 +1137,7 @@ describe('middleware — retired venue URLs preserve query in one redirect', () 
         expect(context.redirect).toHaveBeenCalledTimes(1);
         expect(context.redirect).toHaveBeenCalledWith(
             '/es/mi-cuenta/comercio/venue/abc/editar/fotos/?x=1',
-            302
+            301
         );
     });
 });
