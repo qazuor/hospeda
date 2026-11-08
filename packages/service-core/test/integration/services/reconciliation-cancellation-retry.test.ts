@@ -472,7 +472,7 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
             fake,
             status: 'CANCELLED',
             class: 'COMPLEMENTO',
-            transition: 'A6'
+            transition: 'S21'
         });
         const a3 = await decided({
             fake,
@@ -491,7 +491,7 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
             ({ subscriptionId }) => subscriptionId === a6.id
         );
         expect(failures).toHaveLength(1);
-        expect(failures[0]?.message).toContain('A6');
+        expect(failures[0]?.message).toContain('S21');
         const askedFor = h.beforeCancel.mock.calls.map(([input]) => input.subscriptionId);
         expect(askedFor).not.toContain(a6.id);
         expect(calledWith(h.cancel, a6.providerId)).toBe(0);

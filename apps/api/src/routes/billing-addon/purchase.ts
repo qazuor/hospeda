@@ -8,6 +8,7 @@ import {
     confirmOneTimeOrder,
     purchaseAddon,
     readAddonPurchase,
+    rejectOneTimeOrder,
     ServiceError,
     sendOneTimeOrder
 } from '@repo/service-core';
@@ -133,14 +134,21 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                     ports
                 );
                 orderOutcome = confirmation.outcome;
+                if (confirmation.outcome === 'NOT_APPROVED')
+                    await rejectOneTimeOrder({ instanceId: result.instanceId }, ports);
             }
+            if (order.outcome === 'ORDER_DECLINED')
+                await rejectOneTimeOrder({ instanceId: result.instanceId }, ports);
             const current = await readAddonPurchase({
                 ownerId: actor.id,
                 orderRequestId: parsed.orderRequestId
             });
             return {
                 ...result,
-                processing: current?.processing ?? orderOutcome !== 'ACTIVATED',
+                processing:
+                    orderOutcome === 'ORDER_DECLINED' || orderOutcome === 'NOT_APPROVED'
+                        ? true
+                        : (current?.processing ?? orderOutcome !== 'ACTIVATED'),
                 order: { outcome: orderOutcome }
             };
         } catch (error) {

@@ -47,6 +47,7 @@ describe('TEST:B11:12 (support) the fake keeps orders and RP13 bounds the search
             reference: 'request-1',
             createdAt: START.toISOString(),
             hasApprovedPayment: true,
+            failed: false,
             paymentTransactionId: expect.any(String),
             refunds: []
         });
@@ -54,6 +55,7 @@ describe('TEST:B11:12 (support) the fake keeps orders and RP13 bounds the search
         expect(
             (await fake.readOrder({ orderId: unpaid.orderId })).snapshot.hasApprovedPayment
         ).toBe(false);
+        expect((await fake.readOrder({ orderId: unpaid.orderId })).snapshot.failed).toBe(false);
     });
 
     it('(b) an unknown order id is NOT_FOUND', async () => {

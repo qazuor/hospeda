@@ -5,6 +5,7 @@ const {
     mockCredited,
     mockExpire,
     mockAddonExpire,
+    mockInstanceExpire,
     mockSweep,
     mockClock,
     mockProvider,
@@ -13,6 +14,7 @@ const {
     mockCredited: vi.fn(),
     mockExpire: vi.fn(),
     mockAddonExpire: vi.fn(),
+    mockInstanceExpire: vi.fn(),
     mockSweep: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
     mockProvider: { readAuthorization: vi.fn() },
@@ -36,6 +38,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     activateCreditedPendingAuthorizations: mockCredited,
     expireAuthorizationWindows: mockExpire,
     expireAddonAuthorizationWindows: mockAddonExpire,
+    expireAddonInstances: mockInstanceExpire,
     sweepInheritedTouristVips: mockSweep
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
@@ -49,6 +52,7 @@ import { beforeCancelNotice } from '../../src/routes/billing-subscription/before
 import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { getAnalyticsFactSink } from '../../src/utils/analytics/analytics-facts';
 import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
+import { createApiListingInverse } from '../../src/utils/listing-publication/listing-inverse';
 
 const context = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -79,6 +83,7 @@ beforeEach(() => {
         failed: 0
     });
     mockSweep.mockResolvedValue({ cancelled: 1, deferred: 2, skipped: 0 });
+    mockInstanceExpire.mockResolvedValue({ examined: 2, expired: 2, skipped: 0, failed: 0 });
     mockAddonExpire.mockResolvedValue({
         examined: 2,
         activated: 1,
@@ -128,6 +133,12 @@ describe('subscription-window-expiry cron', () => {
                 applyScheduledChange: expect.any(Function)
             })
         });
+        expect(mockInstanceExpire).toHaveBeenCalledWith(100, {
+            clock: mockClock,
+            coverageNotices: getCoverageNotices(),
+            listing: expect.any(Function)
+        });
+        expect(createApiListingInverse().listing).toEqual(expect.any(Function));
         expect(mockSweep).toHaveBeenCalledWith(100, {
             provider: mockProvider,
             clock: mockClock,
@@ -150,12 +161,18 @@ describe('subscription-window-expiry cron', () => {
         expect(mockExpire.mock.invocationCallOrder[0]).toBeLessThan(
             mockAddonExpire.mock.invocationCallOrder[0]!
         );
+        expect(mockAddonExpire.mock.invocationCallOrder[0]).toBeLessThan(
+            mockInstanceExpire.mock.invocationCallOrder[0]!
+        );
+        expect(mockInstanceExpire.mock.invocationCallOrder[0]).toBeLessThan(
+            mockSweep.mock.invocationCallOrder[0]!
+        );
         expect(mockExpire.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(mockExpire.mock.calls[0]?.[1].billingFacts).toBe(getAnalyticsFactSink());
         expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,
-            processed: 8,
+            processed: 10,
             errors: 0,
             // HOS-1561 H9: branch 2's re-evaluation count reaches the run's details.
             details: { cancelled: 1, deferred: 2, retainedReevaluated: 1 }
@@ -190,10 +207,20 @@ describe('subscription-window-expiry cron', () => {
         expect(result.errors).toBeGreaterThanOrEqual(1);
     });
 
+    it('continues the later sweep when A4 rejects after A3', async () => {
+        mockInstanceExpire.mockRejectedValue(new Error('A4 failed'));
+        const result = await subscriptionWindowExpiryJob.handler(context());
+        expect(mockAddonExpire).toHaveBeenCalledTimes(1);
+        expect(mockInstanceExpire).toHaveBeenCalledTimes(1);
+        expect(mockSweep).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({ success: false, errors: 1, processed: 8 });
+    });
+
     it('does not call the service in dry run', async () => {
         const result = await subscriptionWindowExpiryJob.handler(context(true));
         expect(result).toMatchObject({ success: true, processed: 0, details: { dryRun: true } });
         expect(mockExpire).not.toHaveBeenCalled();
         expect(mockAddonExpire).not.toHaveBeenCalled();
+        expect(mockInstanceExpire).not.toHaveBeenCalled();
     });
 });

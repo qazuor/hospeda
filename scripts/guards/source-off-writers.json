@@ -222,12 +222,28 @@
         "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-instances.service.ts",
+        "symbol": "expireAddonInstances",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A4 expires due ACTIVE fixed-days addon instances; emitAddonCoverageRemoved sends the ADDON removal notice after each instance transaction commits (AC:B10:5)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
         "symbol": "applyA5",
         "table": "addonInstances",
         "effect": "turns-off",
         "via": "notice",
         "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a6.ts",
+        "symbol": "applyA6",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A6 consumes a live LISTING addon whose target reached PURGED; an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the removal after commit (AC:B10:6)."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
@@ -268,6 +284,14 @@
         "effect": "neutral",
         "via": null,
         "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
+        "symbol": "rejectOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A7 abandons a declined one-time addon still in PENDING_AUTHORIZATION; pending instances emit no ADDON coverage source."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",

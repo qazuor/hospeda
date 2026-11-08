@@ -309,6 +309,18 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** API responses, read-only sandbox preapprovals and order, addon instance and payment rows, receipt, and outbox delivery time.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
 
+### S19 — Addon end of life: expiry, purged listing and declined order (HOS-1594)
+
+- **Preconditions:** A paying principal in staging, owned listings, saleable recurring and fixed-days one-time addons, and Mercado Pago sandbox test cards.
+- **Steps:**
+  1. Buy and activate a recurring `LISTING` addon, then purge its listing with `POST /protected/{plural}/{id}/purge` (PB12). Observe our `billing.addon-listing-purged-cancel` email before the addon's preapproval becomes `cancelled`; check that the principal preapproval is unchanged.
+  2. Buy a one-time addon with a rejection test card. Read the purchase immediately and inspect the failed `/v1/orders` order.
+  3. Retry the purchase with another card and a new request identifier. Compare instance and order identifiers.
+  4. Buy a fixed-days one-time addon, unpublish its listing, and pass `ends_at` using the staging clock if available. Read its instance and coverage.
+- **Expected:** Purging consumes the addon and closes its complement once; the rejected order yields `ABANDONED` immediately; the new request creates a new instance and order; fixed-days expiry reaches `EXPIRED` while unpublished.
+- **Evidence:** Read-only addon, complement, principal, order and outbox rows; sandbox preapproval and order reads; delivery and cancellation timestamps.
+- **Covers:** AC:B10:5, AC:B10:6, AC:B10:7; TEST:B10:6, TEST:B10:7, TEST:B10:8.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -415,6 +427,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The plan and addon have separate charges and preapprovals; the one-time order has its own payment on an `ACTIVE` instance.
 - **Evidence:** Owner account responses, read-only provider records, card summary, provider email, and read-only addon/payment rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+
+### P10 — Real purged-listing addon cancellation (HOS-1594)
+
+- **Preconditions:** The owner's internal production account has an active principal and an approved recurring `LISTING` addon amount.
+- **Steps:** Repeat S19 step 1 with the owner's card and approved amount. Observe our notice and the provider's cancellation email; verify that no later addon charge occurs.
+- **Expected:** The addon and its complement are `CANCELLED`, our notice precedes cancellation, the principal stays active, and the addon has no later charge.
+- **Evidence:** Read-only instance, complement, principal, outbox and provider records; both emails and subsequent provider charge history.
+- **Covers:** AC:B10:6; TEST:B10:7.
 
 ### Sign-off
 

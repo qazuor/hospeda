@@ -161,7 +161,11 @@ export async function handleOrdersRoute(args: {
                     id: snapshot.orderId,
                     external_reference: snapshot.reference,
                     created_date: snapshot.createdAt,
-                    status: snapshot.hasApprovedPayment ? 'processed' : 'failed'
+                    status: snapshot.hasApprovedPayment
+                        ? 'processed'
+                        : snapshot.failed
+                          ? 'failed'
+                          : 'created'
                 };
             })
         );
@@ -177,8 +181,8 @@ export async function handleOrdersRoute(args: {
         status: 200,
         body: {
             id: snapshot.orderId,
-            status: paid ? 'processed' : 'failed',
-            status_detail: paid ? 'accredited' : 'failed',
+            status: paid ? 'processed' : snapshot.failed ? 'failed' : 'created',
+            status_detail: paid ? 'accredited' : snapshot.failed ? 'failed' : 'pending',
             external_reference: snapshot.reference,
             created_date: snapshot.createdAt,
             transactions: {

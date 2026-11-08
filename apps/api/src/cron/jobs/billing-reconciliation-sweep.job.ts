@@ -4,6 +4,7 @@ import {
     createAmountComparison,
     createClosedChargeSnapshots,
     createGraceExpiryCheck,
+    createListingPurgedAddonCanceller,
     createLostFirstRejectionCheck,
     createNextChargeSync,
     createPaymentReconciliationMarkPayments,
@@ -227,11 +228,18 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     zeroCallChecks: {
                         retainedPayments: retainedPaymentsFromLedger,
                         retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
-                        // B10 registers A6; until then the unimplemented boundary opens the red mark.
                         addonOrphanhood: {
                             addonPolicy,
                             listing,
-                            listingPurged: createApiListingInverse().listingPurged
+                            listingPurged: createApiListingInverse().listingPurged,
+                            listingPurgedAddons: createListingPurgedAddonCanceller({
+                                listing,
+                                listingPurged: createApiListingInverse().listingPurged,
+                                provider,
+                                clock,
+                                beforeCancelNotice,
+                                coverageNotices: getCoverageNotices()
+                            })
                         }
                     },
                     // The mark opened for a retained payment hangs it (AC:B5:32); without

@@ -113,6 +113,7 @@ const EXPECTED_KINDS = [
     'ARREARS_SUSPENSION',
     'ADDON_CANCELLED',
     'ADDON_AUTHORIZATION_EXPIRED',
+    'ADDON_LISTING_PURGED',
     'PERMANENT_GRANT',
     'PERMANENT_GRANT_ADDON',
     'DIRECT_CANCELLATION',
@@ -140,10 +141,15 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
                 kind: declaredKind(transition)
             }))
             .filter(({ kind }) => kind !== 'RECIPIENTLESS' && kind !== 'UNDECLARED')
-            .filter(
-                ({ code, transition, kind }) =>
-                    transition !== 'S31' && !code.includes(`kind: '${kind}'`)
-            )
+            .filter(({ code, transition, kind }) => {
+                if (transition === 'S31') return false;
+                const noticeCode =
+                    transition === 'A6'
+                        ? sources.find(({ path }) => path === 'addon/addon-instance-a6-provider.ts')
+                              ?.code
+                        : code;
+                return !noticeCode?.includes(`kind: '${kind}'`);
+            })
             .map(({ path, kind }) => `${path}: kind: '${kind}'`);
         expect(mismatched).toEqual([]);
         const afterCommit = readFileSync(
@@ -164,6 +170,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             'TOURIST_VIP_INHERITED',
             'A5',
             'A3',
+            'A6',
             'S13',
             'S20',
             'S22',
@@ -175,7 +182,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) AC:B7:10 and AC:B8b:9/13 the sixteen kinds have distinct templates and only S3 says the window expired', () => {
+    it('(d) AC:B7:10 and AC:B8b:9/13 the eighteen kinds have distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);

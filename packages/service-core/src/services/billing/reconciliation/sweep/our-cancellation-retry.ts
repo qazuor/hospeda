@@ -70,8 +70,7 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     S24: 'DIRECT_CANCELLATION',
     S31: 'SUCCESSOR_CUT',
     A3: 'ADDON_AUTHORIZATION_EXPIRED',
-    // No writer records A6 yet: its leaf declares the kind in the same PR.
-    A6: 'UNDECLARED',
+    A6: 'ADDON_LISTING_PURGED',
     S39: 'ATTEMPT_REPLACED',
     S40: 'ATTEMPT_CANCELLED'
 };

@@ -1,3 +1,4 @@
+export * from './billing-addon-renderers.js';
 export * from './billing-chargeback-renderers.js';
 export * from './billing-courtesy-renderers.js';
 export * from './billing-grace-reminder-renderers.js';
