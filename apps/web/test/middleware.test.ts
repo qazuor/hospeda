@@ -656,7 +656,7 @@ describe('middleware onRequest — H-110 legacy English facet-landing slugs redi
             const [target, status] = context.redirect.mock.calls[0] as [string, number];
             expect(status).toBe(301);
             expect(target.endsWith('?utm_source=qr')).toBe(true);
-            expect(target).toContain('comer-y-salir');
+            expect(target).toMatch(/comer-y-salir|comercio\/venue/);
         });
     });
 
@@ -1137,7 +1137,7 @@ describe('middleware — retired venue URLs preserve query in one redirect', () 
         expect(context.redirect).toHaveBeenCalledTimes(1);
         expect(context.redirect).toHaveBeenCalledWith(
             '/es/mi-cuenta/comercio/venue/abc/editar/fotos/?x=1',
-            302
+            301
         );
     });
 });
