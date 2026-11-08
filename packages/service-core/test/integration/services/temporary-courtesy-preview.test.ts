@@ -134,6 +134,24 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B9b:10 temporary courtesy previ
         });
     });
 
+    it('predicts a charge from the live courtesy end when pause clears nextChargeAt', async () => {
+        const s = await seedCourtesyPrincipal({ manual: true });
+        const result = await grant(s);
+        expect(result.outcome).toBe('GRANTED');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: null })
+            .where(eq(subscriptions.id, s.subscriptionId));
+        const revoke = await previewTemporaryCourtesyRevoke(
+            { subscriptionId: s.subscriptionId },
+            s.ports
+        );
+        expect(revoke.inForce).toBe(true);
+        expect(revoke.predictedNextChargeAt).toEqual(
+            result.outcome === 'GRANTED' ? result.endsAt : undefined
+        );
+    });
+
     it('rolls a past next-charge date by billing cycle until it passes the clock', async () => {
         const s = await seedCourtesyPrincipal({ manual: true });
         const result = await grant(s);

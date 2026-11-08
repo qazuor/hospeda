@@ -165,7 +165,7 @@ export async function previewTemporaryCourtesyRevoke(
     const { subscription, pause, base } = await readBase(subscriptionId, now);
     const inForce =
         base.status === 'PAUSED' && pause?.reason === 'COURTESY' && base.liveCourtesy !== null;
-    let predictedNextChargeAt = subscription?.nextChargeAt ?? null;
+    let predictedNextChargeAt = subscription?.nextChargeAt ?? base.liveCourtesy?.endsAt ?? null;
     if (base.cycle) {
         while (predictedNextChargeAt && predictedNextChargeAt <= now) {
             const advanced = new Date(predictedNextChargeAt);
