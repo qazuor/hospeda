@@ -857,9 +857,27 @@ Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `M
 
 ### Owner pause and resume (HOS-1580)
 
+The owner pause request also accepts optional `courtesyForfeitConfirmed: true`. For a live
+`PAUSED · COURTESY` row, preview returns `offered: true` and `courtesyForfeit.endsAt` when
+the S35 pause terms pass. The POST refuses missing confirmation with 409 `CONFLICT`,
+reason `COURTESY_FORFEIT_NOT_CONFIRMED`; a confirmed POST replaces the courtesy pause
+with a customer-request pause. Early owner resume still refuses a courtesy pause.
+
 `GET /api/v1/protected/billing-subscription/{subscriptionId}/pause-preview` requires `BILLING_VIEW_OWN` and permits an unverified email for `READ_OWN`. The response reports `offered: false` with the typed S8 refusal reason (and `courtesyEndsAt` for `COURTESY_IN_FORCE`), or `offered: true` with allowed months, the UTC end date per month, remaining quota, and affected recurring addons.
 
 `POST /{subscriptionId}/pause` takes a strict `{ months: 1..4 }` body and returns `PAUSED`, `pauseId`, `expectedEndAt`, and `complements`. `POST /{subscriptionId}/resume` takes a strict empty body and returns `RESUMED` with `nextCharge`. Both POST routes require a verified email. All three resolve ownership before calling the service; an alien id returns 404. The POST routes use the typed S8/S10 rejection mapping above and record `BILLING_MUTATION` only on success, without an administrative action id. A courtesy pause returns 409 `PAUSE_NOT_CUSTOMER_REQUEST` before any provider call.
+
+### Administrative temporary courtesy revocation (ACC:1, HOS-1590)
+
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke` requires
+`BILLING_GRANT_COMPLIMENTARY`. The strict body is `{ expectedStatus: 'PAUSED',
+confirmed: true, note? }`. Rejections follow 401 authentication → 403 route permission
+→ 400 body or params → 404 `SUBSCRIPTION_NOT_FOUND` → 403
+`ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409
+`ADMINISTRATIVE_ACTION_STATE_CHANGED` → 409 `COURTESY_NOT_IN_FORCE` if the open pause
+is not courtesy. `NOT_APPLIED` maps to 409 `RESUME_NOT_APPLIED`; no mutation audit is
+written. Success returns `RESUMED` and `nextCharge` and records a billing mutation
+audit with `administrativeAction: ACC_1`.
 
 ### Mi Suscripción: cortesía vigente y checkout sucesor (HOS-1580)
 

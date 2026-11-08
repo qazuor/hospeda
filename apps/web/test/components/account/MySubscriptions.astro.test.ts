@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(
@@ -58,6 +59,26 @@ describe('MySubscriptions SSR block', () => {
         );
         expect(source).toContain('row.succession?.checkoutDeadline');
         expect(source).toContain('date: date(row.succession.checkoutDeadline)');
+    });
+    it('TEST:B9b:8 mounts pause for ACTIVE and PAUSED courtesy, but not other PAUSED reasons', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const pauseOffer = article.match(/\{\(([^{}]+)\) && <PauseOffer client:visible/u);
+        expect(pauseOffer).not.toBeNull();
+        expect([...article.matchAll(/<PauseOffer client:visible/gu)]).toHaveLength(1);
+        expect(pauseOffer?.[1]).toBe(
+            "row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')"
+        );
+        const mountsPauseOffer = (row: { status: string; pause?: { reason: string } }) =>
+            runInNewContext(pauseOffer?.[1] ?? 'false', { row }) as boolean;
+        expect(mountsPauseOffer({ status: 'ACTIVE' })).toBe(true);
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'COURTESY' } })).toBe(true);
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'CUSTOMER_REQUEST' } })).toBe(
+            false
+        );
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'ADMIN' } })).toBe(false);
+        expect(article).toContain(
+            "row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible"
+        );
     });
     it('renders deferred courtesy balances with plural wording and the payment condition', () => {
         expect(source).toContain('result?.deferredCourtesies.map((c) =>');

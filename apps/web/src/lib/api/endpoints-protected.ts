@@ -5621,14 +5621,16 @@ export const billingSubscriptionApi = {
     /** Pause an owned subscription for whole months. */
     pause({
         subscriptionId,
-        months
+        months,
+        courtesyForfeitConfirmed
     }: {
         readonly subscriptionId: string;
         readonly months: number;
+        readonly courtesyForfeitConfirmed?: true;
     }): Promise<ApiResult<z.infer<typeof SelfSubscriptionPauseResponseSchema>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing-subscription/${subscriptionId}/pause`,
-            body: { months }
+            body: { months, ...(courtesyForfeitConfirmed ? { courtesyForfeitConfirmed } : {}) }
         });
     },
     /** Resume an owned customer-request pause. */

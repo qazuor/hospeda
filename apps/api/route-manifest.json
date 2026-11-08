@@ -458,6 +458,10 @@
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/cancellation"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/revoke"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments"
         },

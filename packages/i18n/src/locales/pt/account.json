@@ -483,6 +483,8 @@
                 "monthCount_other": "{{count}} meses",
                 "expectedEnd": "Pausa prevista até {{date}}.",
                 "confirmation": "Se você confirmar, sua assinatura ficará pausada até {{date}}.",
+                "courtesyForfeit": "Você tem um período de cortesia até {{date}}. Se pausar, perderá o tempo restante e ele não voltará.",
+                "courtesyConfirmation": "Ao confirmar a pausa, sua cortesia termina hoje e você perde o tempo restante.",
                 "listing": "Seu anúncio sai do site público hoje. Ele volta automaticamente quando você retomar, se houver capacidade no plano. Durante a pausa, ele não é arquivado nem excluído e não recebe avisos de retenção; o relógio para e recomeça do zero na volta.",
                 "addonsVertical": "Os complementos recorrentes desta vertical pausam pelos mesmos meses e voltam com o plano:",
                 "addonPauses": "{{name}} pausa porque não resta outra vertical compatível ativa.",
@@ -499,6 +501,8 @@
                     "MONTHS_OUT_OF_RANGE": "Escolha um período de pausa válido.",
                     "PAUSE_COUNT_EXHAUSTED": "Você já usou as pausas disponíveis.",
                     "MONTHS_EXHAUSTED": "Você já usou os meses de pausa disponíveis.",
+                    "COURTESY_FORFEIT_NOT_CONFIRMED": "Confirme que perderá o tempo restante da cortesia antes de pausar.",
+                    "LOST_RACE": "Sua assinatura mudou. Confira antes de pausar novamente.",
                     "other": "A pausa não está disponível agora."
                 }
             },

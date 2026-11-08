@@ -77,6 +77,11 @@ const grantBinding = (file: string, route: string): Binding => ({
     file: `apps/api/src/routes/billing-permanent-grant/admin/${file}.ts`,
     route
 });
+const courtesyBinding: Binding = {
+    kind: 'required',
+    file: 'apps/api/src/routes/billing-subscription/admin/courtesy.ts',
+    route: 'adminRevokeCourtesyRoute'
+};
 /** A catalog action that maps to one or more concrete route bindings. */
 export type BoundEntry = { readonly bindings: readonly Binding[] };
 /** A catalog action that no route binds yet, with the reason it stays unbound. */
@@ -147,7 +152,7 @@ export const compareBinding = (args: {
 
 /** The table under test, keyed by action, in the catalog's own order. */
 export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | UnboundEntry>> = {
-    ACC_1: { unbound: 'B9b builds it' },
+    ACC_1: { bindings: [courtesyBinding] },
     ACC_2: {
         bindings: [
             grantBinding('grant', 'adminGrantPermanentGrantRoute'),

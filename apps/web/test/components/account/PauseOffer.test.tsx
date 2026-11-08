@@ -8,6 +8,17 @@ const response = (data: unknown) => ({
     status: 200,
     json: async () => ({ success: true, data })
 });
+const courtesyPreview = {
+    offered: true,
+    months: { min: 1, max: 2 },
+    expectedEndAtByMonths: {
+        '1': '2026-12-05T03:00:00.000Z',
+        '2': '2027-01-05T03:00:00.000Z'
+    },
+    quota: { pausesLeft: 2, monthsLeft: 2 },
+    addons: { vertical: [], account: [] },
+    courtesyForfeit: { endsAt: '2026-11-25T03:00:00.000Z' }
+};
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
     fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
@@ -40,6 +51,74 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('TEST:B8b:25 PauseOffer', () => {
+    it('TEST:B9b:8 warns with the courtesy end date and confirms the forfeit with the selected months', async () => {
+        fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+            init?.method === 'POST'
+                ? response({ outcome: 'PAUSED', expectedEndAt: '2027-01-05T03:00:00.000Z' })
+                : response(courtesyPreview)
+        );
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        expect(await screen.findByTestId('pause-courtesy-forfeit')).toHaveTextContent(
+            'Tenés una cortesía hasta el 25 de noviembre de 2026. Si pausás, perdés lo que queda y no vuelve.'
+        );
+        const panel = screen.getByTestId('pause-confirmation');
+        fireEvent.change(screen.getByLabelText('Meses de pausa'), { target: { value: '2' } });
+        expect(panel).toHaveTextContent('tu cortesía termina hoy y perdés el tiempo que quedaba');
+        expect(panel).toHaveTextContent('5 de enero de 2027');
+        expect(
+            [...screen.getByTestId('pause-offer').querySelectorAll('p')].map((line) =>
+                line.textContent?.trim()
+            )
+        ).toEqual([
+            'Tenés una cortesía hasta el 25 de noviembre de 2026. Si pausás, perdés lo que queda y no vuelve.',
+            'Al confirmar la pausa, tu cortesía termina hoy y perdés el tiempo que quedaba.',
+            'Si confirmás, tu suscripción queda pausada hasta el 5 de enero de 2027.',
+            'Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.',
+            'Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:'
+        ]);
+        fireEvent.click(within(panel).getByRole('button', { name: 'Confirmar pausa' }));
+        await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument());
+        expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+            months: 2,
+            courtesyForfeitConfirmed: true
+        });
+    });
+    it('TEST:B9b:8 explains a stale 409 by its reason', async () => {
+        fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+            init?.method === 'POST'
+                ? {
+                      ok: false,
+                      status: 409,
+                      json: async () => ({
+                          success: false,
+                          error: {
+                              code: 'CONFLICT',
+                              reason: 'COURTESY_FORFEIT_NOT_CONFIRMED',
+                              message: 'Conflict'
+                          }
+                      })
+                  }
+                : response(courtesyPreview)
+        );
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        const panel = await screen.findByTestId('pause-confirmation');
+        fireEvent.click(within(panel).getByRole('button', { name: 'Confirmar pausa' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Confirmá que perdés el tiempo restante de la cortesía antes de pausar.'
+        );
+    });
     it('shows the complete dated confirmation and posts the selected duration', async () => {
         render(
             <PauseOffer

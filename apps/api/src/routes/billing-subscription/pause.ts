@@ -10,6 +10,7 @@ import {
 } from '@repo/schemas';
 import {
     entityNotFoundError,
+    forfeitCourtesyAndPause,
     pauseSubscription,
     previewPause,
     resumeSubscription
@@ -76,12 +77,28 @@ export const protectedPauseRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const id = params.subscriptionId as string;
         await owned(id, actor.id);
-        const { months } = SelfSubscriptionPauseRequestSchema.parse(body);
+        const { months, courtesyForfeitConfirmed } = SelfSubscriptionPauseRequestSchema.parse(body);
         try {
-            const result = await pauseSubscription(
-                { subscriptionId: id, requestedMonths: months },
-                buildPausePorts()
-            );
+            const [openPause] = await getDb()
+                .select({ reason: subscriptionPauses.reason })
+                .from(subscriptionPauses)
+                .where(
+                    and(
+                        eq(subscriptionPauses.subscriptionId, id),
+                        isNull(subscriptionPauses.actualEndAt)
+                    )
+                )
+                .limit(1);
+            const result =
+                openPause?.reason === 'COURTESY'
+                    ? await forfeitCourtesyAndPause(
+                          { subscriptionId: id, requestedMonths: months, courtesyForfeitConfirmed },
+                          buildPausePorts()
+                      )
+                    : await pauseSubscription(
+                          { subscriptionId: id, requestedMonths: months },
+                          buildPausePorts()
+                      );
             if (result.outcome === 'REFUSED') rejectPause(result.reason);
             if (result.outcome !== 'PAUSED') rejectPause(result.outcome);
             auditLog({

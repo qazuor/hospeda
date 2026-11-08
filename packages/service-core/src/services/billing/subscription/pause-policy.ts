@@ -37,6 +37,7 @@ export async function canPause(
     input: {
         readonly subscriptionId: string;
         readonly requestedMonths: number;
+        readonly courtesyForfeit?: true;
         readonly tx?: DrizzleClient;
     },
     ports: { readonly clock: Clock; readonly planPolicy: VerticalsForBilling['planPolicy'] }
@@ -52,6 +53,7 @@ export async function canPause(
         .strictObject({
             subscriptionId: z.uuid(),
             requestedMonths: z.number(),
+            courtesyForfeit: z.literal(true).optional(),
             tx: z.custom<DrizzleClient>((candidate) => candidate != null).optional()
         })
         .parse(input);
@@ -70,7 +72,8 @@ export async function canPause(
         .where(eq(subscriptions.id, value.subscriptionId))
         .limit(1);
     if (row?.class !== 'PRINCIPAL') return { allowed: false, reason: 'NOT_PRINCIPAL' };
-    if (row.status !== 'ACTIVE') return { allowed: false, reason: 'NOT_ACTIVE' };
+    if (!value.courtesyForfeit && row.status !== 'ACTIVE')
+        return { allowed: false, reason: 'NOT_ACTIVE' };
     if (row.paymentMethod === 'MANUAL') return { allowed: false, reason: 'MANUAL_PAYER' };
     const [option] = row.billingOptionId
         ? await db
@@ -96,7 +99,7 @@ export async function canPause(
             )
         )
         .limit(1);
-    if (courtesy) return { allowed: false, reason: 'COURTESY_IN_FORCE' };
+    if (courtesy && !value.courtesyForfeit) return { allowed: false, reason: 'COURTESY_IN_FORCE' };
     if (
         !Number.isInteger(value.requestedMonths) ||
         value.requestedMonths < 1 ||

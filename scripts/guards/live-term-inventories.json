@@ -281,6 +281,12 @@
             "symbol": "runStep3b",
             "row": null,
             "why": "La herramienta del 3b saltea al beneficiario que ya tiene un ancla viva de Alojamiento (AC:B9a:15)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+            "symbol": "grantTemporaryCourtesy",
+            "row": 2,
+            "why": "AC:B9b:7 rejects a temporary courtesy only when the beneficiary has a live permanent grant anchor in the same vertical."
         }
     ],
     "marca_abierta": [
@@ -457,6 +463,27 @@
             "symbol": "readOwnDeferredCourtesies",
             "row": 10,
             "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+            "symbol": "grantTemporaryCourtesy",
+            "row": null,
+            "why": "S34 reads balanceMonths null to select the non-deferred live courtesy grant on this subscription (AC:B9b:8).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/forfeit-courtesy-pause.service.ts",
+            "symbol": "forfeitCourtesyAndPause",
+            "row": null,
+            "why": "S35 selects the live non-deferred courtesy grant before ending it when the customer confirms forfeiture (AC:B9b:8).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+            "symbol": "resumeSubscription",
+            "row": null,
+            "why": "The third S10 event selects the live non-deferred courtesy grant before revocation (AC:B9b:13).",
+            "subject": "courtesy_grant"
         }
     ]
 }

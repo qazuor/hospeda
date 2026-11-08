@@ -8,6 +8,7 @@ export * from './attempt-cancelled-cancel.js';
 export * from './attempt-replaced-cancel.js';
 export * from './chargeback-suspension.js';
 export * from './closed-subscription-authorization-cancel.js';
+export * from './courtesy-revoked.js';
 export * from './direct-cancellation.js';
 export * from './duplicate-charge-detected.js';
 export * from './first-charge-declined-cancel.js';
