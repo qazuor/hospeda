@@ -156,6 +156,17 @@ describe('TEST:B10:7 AC:B10:6 A6 committed push and daily safety net', () => {
         expect(states).toEqual(['CANCELLED', 'PENDING_AUTHORIZATION']);
     });
 
+    it('examines only instances whose target id is the purged listing', async () => {
+        const target = await createA6Fixture({ status: 'PENDING_AUTHORIZATION' });
+        const other = await createA6Fixture({ status: 'PENDING_AUTHORIZATION' });
+        await target.verticals.purgeListing({ listingId: target.listingId });
+        expect(
+            await cancelAddonsOfPurgedListing({ listingId: target.listingId }, target.ports)
+        ).toEqual({ examined: 1, cancelled: 1, discarded: 0, failed: 0 });
+        expect((await target.readInstance())?.status).toBe('CANCELLED');
+        expect((await other.readInstance())?.status).toBe('PENDING_AUTHORIZATION');
+    });
+
     it('recovers a lost push through the B5 safety net', async () => {
         const h = await createA6Fixture({ status: 'ACTIVE' });
         const cancel = vi.spyOn(h.f.fake, 'cancel');
