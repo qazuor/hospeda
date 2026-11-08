@@ -35,8 +35,8 @@ describe('venue/experience Premium card copy does not sell chat as exclusive (HO
     ][]) {
         for (const planKey of PLAN_KEYS) {
             const description = (
-                json as unknown as { plans: Record<string, { description: string }> }
-            ).plans[planKey]?.description;
+                json as unknown as { plan: Record<string, { description: string }> }
+            ).plan[planKey]?.description;
 
             it(`${locale}/${planKey} expresses chat as volume`, () => {
                 expect(description).toBeTypeOf('string');
@@ -47,5 +47,28 @@ describe('venue/experience Premium card copy does not sell chat as exclusive (HO
                 expect(description).not.toMatch(BARE_CHAT[locale]);
             });
         }
+    }
+});
+
+/**
+ * Venue is "Comer y salir" (food AND nightlife), not only restaurants: no
+ * locale may word the venue chat limit as a restaurant.
+ */
+describe('venue chat limit copy does not call a venue a restaurant (HOS-2088)', () => {
+    const RESTAURANT = /restaurant|restaurante/i;
+
+    for (const [locale, json] of Object.entries(LOCALES)) {
+        it(`${locale} max_ai_chat_venue_per_month texts say venue, not restaurant`, () => {
+            const raw = JSON.stringify(json);
+            const matches = [
+                ...raw.matchAll(
+                    /"([^"]*max_ai_chat_venue_per_month[^"]*)":\s*("(?:[^"\\]|\\.)*"|\{[^{}]*\})/g
+                )
+            ];
+            expect(matches.length).toBeGreaterThan(0);
+            for (const match of matches) {
+                expect(match[2]).not.toMatch(RESTAURANT);
+            }
+        });
     }
 });
