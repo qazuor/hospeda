@@ -10,6 +10,8 @@ import {
     getDb,
     gt,
     inArray,
+    isNull,
+    subscriptionPauses,
     subscriptions
 } from '@repo/db';
 import { z } from 'zod';
@@ -42,6 +44,7 @@ export async function previewPause(
               readonly vertical: readonly string[];
               readonly account: readonly { readonly name: string; readonly pauses: boolean }[];
           };
+          readonly courtesyForfeit?: { readonly endsAt: string };
       }
 > {
     const value = z
@@ -52,7 +55,8 @@ export async function previewPause(
             .select({
                 id: subscriptions.id,
                 userId: subscriptions.userId,
-                vertical: subscriptions.vertical
+                vertical: subscriptions.vertical,
+                status: subscriptions.status
             })
             .from(subscriptions)
             .where(eq(subscriptions.id, value.subscriptionId))
@@ -61,8 +65,27 @@ export async function previewPause(
             return { offered: false, reason: 'NOT_PRINCIPAL' };
         const now = ports.clock.now();
         const previewClock = { now: () => now };
+        const [openPause] =
+            row?.status === 'PAUSED'
+                ? await tx
+                      .select({ reason: subscriptionPauses.reason })
+                      .from(subscriptionPauses)
+                      .where(
+                          and(
+                              eq(subscriptionPauses.subscriptionId, value.subscriptionId),
+                              isNull(subscriptionPauses.actualEndAt)
+                          )
+                      )
+                      .limit(1)
+                : [];
+        const courtesyForfeit = openPause?.reason === 'COURTESY';
         const eligible = await canPause(
-            { subscriptionId: value.subscriptionId, requestedMonths: 1, tx },
+            {
+                subscriptionId: value.subscriptionId,
+                requestedMonths: 1,
+                tx,
+                ...(courtesyForfeit ? { courtesyForfeit: true } : {})
+            },
             { ...ports, clock: previewClock }
         );
         if (!eligible.allowed) {
@@ -85,6 +108,21 @@ export async function previewPause(
                 ...(courtesy ? { courtesyEndsAt: courtesy.endsAt.toISOString() } : {})
             };
         }
+        const [courtesyGrant] = courtesyForfeit
+            ? await tx
+                  .select({ endsAt: courtesyGrants.endsAt })
+                  .from(courtesyGrants)
+                  .where(
+                      and(
+                          eq(courtesyGrants.subscriptionId, value.subscriptionId),
+                          gt(courtesyGrants.endsAt, now)
+                      )
+                  )
+                  .orderBy(courtesyGrants.endsAt)
+                  .limit(1)
+            : [];
+        if (courtesyForfeit && !courtesyGrant)
+            return { offered: false, reason: 'COURTESY_IN_FORCE' };
         if (!row?.userId || !row.vertical)
             throw new Error('Principal subscription lacks owner or vertical');
         const pausesLeft = Math.max(
@@ -161,7 +199,10 @@ export async function previewPause(
             months: { min: 1, max },
             expectedEndAtByMonths,
             quota: { pausesLeft, monthsLeft },
-            addons: { vertical, account }
+            addons: { vertical, account },
+            ...(courtesyGrant
+                ? { courtesyForfeit: { endsAt: courtesyGrant.endsAt.toISOString() } }
+                : {})
         };
     });
 }

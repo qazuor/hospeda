@@ -5,7 +5,8 @@ export const SelfSubscriptionPauseParamsSchema = z.strictObject({ subscriptionId
 
 /** Customer-request pause duration. */
 export const SelfSubscriptionPauseRequestSchema = z.strictObject({
-    months: z.number().int().min(1).max(4)
+    months: z.number().int().min(1).max(4),
+    courtesyForfeitConfirmed: z.literal(true).optional()
 });
 
 /** Empty body for an early resume. */
@@ -29,7 +30,8 @@ export const SelfSubscriptionPausePreviewResponseSchema = z.discriminatedUnion('
         addons: z.strictObject({
             vertical: z.array(z.string()),
             account: z.array(z.strictObject({ name: z.string(), pauses: z.boolean() }))
-        })
+        }),
+        courtesyForfeit: z.strictObject({ endsAt: z.string().datetime() }).optional()
     })
 ]);
 

@@ -43,3 +43,29 @@ describe('TEST:B8b:25 owner pause schemas', () => {
         ).toBe(true);
     });
 });
+
+describe('AC:B9b:8 owner courtesy forfeit pause schema', () => {
+    it('accepts explicit courtesy loss confirmation and an offered preview', () => {
+        expect(
+            SelfSubscriptionPauseRequestSchema.parse({ months: 1, courtesyForfeitConfirmed: true })
+        ).toEqual({ months: 1, courtesyForfeitConfirmed: true });
+        expect(
+            SelfSubscriptionPausePreviewResponseSchema.safeParse({
+                offered: true,
+                months: { min: 1, max: 4 },
+                expectedEndAtByMonths: { 1: '2026-11-05T12:00:00.000Z' },
+                quota: { pausesLeft: 2, monthsLeft: 6 },
+                addons: { vertical: [], account: [] },
+                courtesyForfeit: { endsAt: '2026-11-05T12:00:00.000Z' }
+            }).success
+        ).toBe(true);
+    });
+    it('rejects false confirmation', () => {
+        expect(
+            SelfSubscriptionPauseRequestSchema.safeParse({
+                months: 1,
+                courtesyForfeitConfirmed: false
+            }).success
+        ).toBe(false);
+    });
+});

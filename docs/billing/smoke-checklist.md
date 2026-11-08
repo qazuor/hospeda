@@ -285,6 +285,17 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Preview and action responses, sandbox provider reads, listing visibility, subscription rows, and audit entries.
 - **Covers:** AC:B8b:22, AC:B8b:25 (TEST:B8b:22, TEST:B8b:25).
 
+### S17 — Temporary courtesy and revocation (HOS-1590)
+
+- **Preconditions:** A monthly `ACTIVE` card principal in staging with a sandbox preapproval; a test customer and a `SUPER_ADMIN`.
+- **Steps:**
+  1. Grant one month of temporary courtesy through the service or console until HOS-1592 supplies its route. Read the sandbox preapproval as `paused`, check whether Mercado Pago sent its pause email, and confirm the row is `PAUSED · COURTESY`.
+  2. Confirm revocation through `POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke`. Read the preapproval as `authorized`; check whether Mercado Pago sent its resume email.
+  3. Check our `billing.courtesy-revoked` email and compare its next charge date with the sandbox preapproval's `next_payment_date`.
+- **Expected:** The subscription returns to `ACTIVE`, the next charge dates agree, and the two provider email outcomes are recorded.
+- **Evidence:** Route response, read-only subscription, pause, grant and outbox rows; sandbox preapproval reads; both provider email observations and our notice.
+- **Covers:** AC:B9b:13; TEST:B9b:14, TEST:B9b:15.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -374,6 +385,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The preapproval moves from `paused` to `authorized`, and its next charge date matches the screen.
 - **Evidence:** Owner screen, subscription and pause rows, and read-only provider preapproval reads.
 - **Covers:** AC:B8b:22, AC:B8b:23, AC:B8b:26; TEST:B8b:25, TEST:B8b:26.
+
+### P8 — Temporary courtesy and revocation (HOS-1590)
+
+- **Preconditions:** The owner's internal production account has an `ACTIVE` monthly card subscription and an approved amount.
+- **Steps:** Grant one month of temporary courtesy through the service or console until HOS-1592 supplies its route; read the Mercado Pago preapproval as `paused` and check its provider email. Confirm revocation through the admin route; read the preapproval as `authorized`, compare its `next_payment_date` with the date in our `billing.courtesy-revoked` email, and check the provider resume email.
+- **Expected:** The subscription moves `PAUSED · COURTESY` → `ACTIVE`; the next charge dates agree, and both provider emails are observed.
+- **Evidence:** Read-only subscription, pause, grant and outbox rows; read-only provider preapproval reads; both provider emails and our notice.
+- **Covers:** AC:B9b:13; TEST:B9b:14, TEST:B9b:15.
 
 ### Sign-off
 

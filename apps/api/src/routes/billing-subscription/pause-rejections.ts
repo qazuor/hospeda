@@ -15,7 +15,11 @@ type PauseRouteReason =
     | 'LOST_RACE'
     | 'ADMINISTRATIVE_ACTION_STATE_CHANGED'
     | 'ADMINISTRATIVE_ACTION_FORBIDDEN'
-    | 'SUBSCRIPTION_NOT_FOUND';
+    | 'SUBSCRIPTION_NOT_FOUND'
+    | 'COURTESY_NOT_IN_FORCE'
+    | 'NOT_IN_COURTESY'
+    | 'COURTESY_FORFEIT_NOT_CONFIRMED'
+    | 'RESUME_NOT_APPLIED';
 
 type Answer = { readonly status: 403 | 404 | 409 | 422; readonly code: string };
 const CONFLICT: Answer = { status: 409, code: 'CONFLICT' };
@@ -40,7 +44,11 @@ export const PAUSE_REJECTION_ANSWERS: Readonly<Record<PauseRouteReason, Answer>>
     LOST_RACE: CONFLICT,
     ADMINISTRATIVE_ACTION_STATE_CHANGED: CONFLICT,
     ADMINISTRATIVE_ACTION_FORBIDDEN: { status: 403, code: ServiceErrorCode.FORBIDDEN },
-    SUBSCRIPTION_NOT_FOUND: { status: 404, code: ServiceErrorCode.NOT_FOUND }
+    SUBSCRIPTION_NOT_FOUND: { status: 404, code: ServiceErrorCode.NOT_FOUND },
+    COURTESY_NOT_IN_FORCE: CONFLICT,
+    NOT_IN_COURTESY: CONFLICT,
+    COURTESY_FORFEIT_NOT_CONFIRMED: CONFLICT,
+    RESUME_NOT_APPLIED: CONFLICT
 };
 
 /** Reject with a stable, mapped reason. */

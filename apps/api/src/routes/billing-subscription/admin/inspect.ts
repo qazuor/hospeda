@@ -10,6 +10,7 @@ import {
     adminCancelSubscriptionRoute,
     adminSubscriptionCancellationPreviewRoute
 } from './cancellation';
+import { adminRevokeCourtesyRoute } from './courtesy';
 import {
     adminDeclareManualUnpaidRoute,
     adminListManualPaymentsRoute,
@@ -73,6 +74,7 @@ router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
+router.route('/', adminRevokeCourtesyRoute);
 router.route('/', adminSubscriptionPausePreviewRoute);
 router.route('/', adminPauseSubscriptionRoute);
 router.route('/', adminResumeSubscriptionRoute);
