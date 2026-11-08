@@ -362,6 +362,43 @@ describe('ExperienceReviewService._beforeCreate', () => {
         );
         expect(patch.userId).toBe(REVIEWER_ID);
     });
+
+    it('persists averageRating as the mean of the voted dimensions (HOS-2083)', async () => {
+        const service = makeService();
+        const patch = await (service as AnyService)._beforeCreate(
+            {
+                experienceId: EXPERIENCE_ID,
+                overallRating: 1,
+                rating: { food: 5, service: 4, ambiance: 5, value: 4 }
+            },
+            reviewerActor,
+            {}
+        );
+        expect(patch).toHaveProperty('averageRating', 4.5);
+    });
+
+    it('falls back to overallRating as averageRating when there is no breakdown (HOS-2083)', async () => {
+        const service = makeService();
+        const patch = await (service as AnyService)._beforeCreate(
+            { experienceId: EXPERIENCE_ID, overallRating: 4 },
+            reviewerActor,
+            {}
+        );
+        expect(patch).toHaveProperty('averageRating', 4);
+    });
+
+    it('hands averageRating 4.5 to the model on create, never the 0 default (HOS-2083)', async () => {
+        const service = makeService();
+        const model = (service as AnyService).model;
+        await service.create(reviewerActor, {
+            experienceId: EXPERIENCE_ID,
+            overallRating: 1,
+            rating: { food: 5, service: 4, ambiance: 5, value: 4 }
+        });
+        expect(model.create).toHaveBeenCalledTimes(1);
+        const payload = model.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(payload).toHaveProperty('averageRating', 4.5);
+    });
 });
 
 // ---------------------------------------------------------------------------

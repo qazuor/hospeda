@@ -58,6 +58,7 @@ import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
+import { computeEffectiveReviewRating } from '../listing/review-effective-rating.js';
 import { VenueService } from './venue.service';
 
 // ---------------------------------------------------------------------------
@@ -88,18 +89,7 @@ export interface VenueReviewModerateInput {
  * @returns The effective scalar rating to persist as `averageRating`.
  */
 export function computeEffectiveRating(input: VenueReviewCreateInput): number {
-    const breakdown = input.rating;
-    if (breakdown) {
-        const dimensions = REVIEW_RULES.venue.dimensions;
-        const voted = dimensions.flatMap(({ id }) => {
-            const value = breakdown[id];
-            return value === undefined ? [] : [value];
-        });
-        if (voted.length === 0) return input.overallRating;
-        const mean = voted.reduce((sum, value) => sum + value, 0) / voted.length;
-        return Math.round(mean * 100) / 100;
-    }
-    return input.overallRating;
+    return computeEffectiveReviewRating({ vertical: 'venue', input });
 }
 
 // ---------------------------------------------------------------------------
