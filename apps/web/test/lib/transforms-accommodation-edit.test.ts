@@ -54,9 +54,10 @@ describe('transformAccommodationEdit', () => {
                 capacity: 4,
                 bedrooms: 2,
                 bathrooms: 1,
-                beds: 3,
-                minNights: 2
+                beds: 3
             },
+            // HOS-2060: the minimum stay is a house rule now.
+            policies: { minNights: 2, smokingAllowed: 'no' },
             price: { price: 15000, currency: 'ARS' },
             isAvailable: true,
             isFeatured: false,
@@ -97,7 +98,7 @@ describe('transformAccommodationEdit', () => {
         expect(result.bedrooms).toBe(2);
         expect(result.bathrooms).toBe(1);
         expect(result.beds).toBe(3);
-        expect(result.minNights).toBe(2);
+        expect(result.policies).toEqual({ minNights: 2, smokingAllowed: 'no' });
         expect(result.basePrice).toBe(15000);
         expect(result.currency).toBe('ARS');
         expect(result.isAvailable).toBe(true);
@@ -138,7 +139,7 @@ describe('transformAccommodationEdit', () => {
         expect(result.bedrooms).toBeNull();
         expect(result.bathrooms).toBeNull();
         expect(result.beds).toBeNull();
-        expect(result.minNights).toBeNull();
+        expect(result.policies).toEqual({});
         expect(result.basePrice).toBeNull();
         expect(result.currency).toBeNull();
         expect(result.isAvailable).toBe(true);

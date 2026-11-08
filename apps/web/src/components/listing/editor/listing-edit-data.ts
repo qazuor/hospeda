@@ -9,6 +9,7 @@
  */
 
 import type { I18nText, OpeningHours } from '@repo/schemas';
+import type { ListingPolicyValues } from '@/lib/listing/listing-policies';
 import type { ListingI18nValues } from '../ListingTranslationPanel.client';
 
 /**
@@ -93,12 +94,6 @@ export interface ListingEditData {
     readonly entryPriceFrom: number | null;
     /** When the server last changed the price; read-only, never sent. */
     readonly entryPriceUpdatedAt: string | null;
-    /** Lowest applicable entry age (13..30), or `null` when not informed. */
-    readonly minAge: number | null;
-    /** `''` when the owner has not said, otherwise one of `VenueDressCodeEnum`. */
-    readonly dressCode: string;
-    /** Localized note about the dress code; same shape as {@link entryNoteI18n}. */
-    readonly dressCodeNoteI18n: I18nText;
     /**
      * Where the experience starts (HOS-1048) — experience vertical only, since
      * `meetingPoint` is on `ExperienceOwnerUpdateInputSchema` and not on the
@@ -165,10 +160,16 @@ export interface ListingEditData {
     readonly whatToBring: readonly string[];
     /** Requirements to take part (HOS-1046). See {@link whatToBring}. */
     readonly requirements: readonly string[];
-    /** Free-text cancellation policy (HOS-1047); `''` when not declared. */
-    readonly cancellationPolicy: string;
-    /** Whether the owner offers an arrangement for private groups (HOS-1056). */
-    readonly acceptsPrivateGroups: boolean;
+    /**
+     * The stored house rules (HOS-2060), as parsed by
+     * `parseListingPolicyValues`. Holds every vertical key: the base keys and
+     * the vertical's own (venue reservations; experience cancellation text and
+     * private groups) are edited by the amenities page's Policies panel, while
+     * the venue night keys (`minAge`, `dressCode`, `dressCodeNote`) are edited
+     * by the nightInfo page. Each page PATCHes only the keys its catalog
+     * section owns (`restrictPayloadToSection`).
+     */
+    readonly policies: ListingPolicyValues;
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: ListingI18nValues;

@@ -3,8 +3,8 @@
  * @description Minimum-age input for the owner create form (DEC-FAC-050).
  *
  * The create form shows this field only when the selected listing type brings a
- * `minAge` field default (BOLICHE → 18); the value stays editable and clearable
- * and is sent in the create payload. Extracted from `ListingCreateForm` so the
+ * `policies.minAge` field default (BOLICHE → 18); the value stays editable and
+ * clearable and is sent in the create payload as `policies.minAge` (HOS-2060). Extracted from `ListingCreateForm` so the
  * form island does not keep growing (HOS-1787 leaf 5.6 review).
  */
 
@@ -22,7 +22,7 @@ export interface MinAgeFieldProps {
     readonly value: number | null;
     /** Receives the parsed number, or `null` for an empty/invalid input. */
     readonly onChange: (value: number | null) => void;
-    /** Validation message for `minAge`, when present. */
+    /** Validation message for `policies.minAge`, when present. */
     readonly error?: string;
 }
 
@@ -55,10 +55,10 @@ export function MinAgeField({ locale, value, onChange, error }: MinAgeFieldProps
                     onChange(Number.isNaN(next) ? null : next);
                 }}
                 aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? fieldErrorId('minAge') : undefined}
+                aria-describedby={error ? fieldErrorId('policies-minAge') : undefined}
             />
             <FieldError
-                id={fieldErrorId('minAge')}
+                id={fieldErrorId('policies-minAge')}
                 message={error}
             />
         </div>

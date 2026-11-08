@@ -29,6 +29,8 @@ interface Props {
     readonly servesCuisine?: string;
     readonly telephone?: string;
     readonly hasMenu?: string;
+    /** Accepted payment methods, human labels (HOS-2060). */
+    readonly paymentAccepted?: string;
     readonly aggregateRating?: VenueAggregateRating;
 }
 
@@ -42,6 +44,7 @@ const {
     servesCuisine,
     telephone,
     hasMenu,
+    paymentAccepted,
     aggregateRating
 } = Astro.props;
 
@@ -55,6 +58,7 @@ const structuredData = buildVenueStructuredData({
     servesCuisine,
     telephone,
     hasMenu,
+    paymentAccepted,
     aggregateRating
 });
 ---

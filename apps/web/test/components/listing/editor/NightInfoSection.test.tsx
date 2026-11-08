@@ -61,6 +61,7 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
 
 function renderSection(entryKind: string, overrides: Record<string, unknown> = {}) {
     const onFieldChange = vi.fn();
+    const onPolicyChange = vi.fn();
 
     render(
         <NightInfoSection
@@ -68,10 +69,11 @@ function renderSection(entryKind: string, overrides: Record<string, unknown> = {
             data={buildEditData({ entryKind, ...overrides })}
             errors={{}}
             onFieldChange={onFieldChange}
+            onPolicyChange={onPolicyChange}
         />
     );
 
-    return onFieldChange;
+    return { onFieldChange, onPolicyChange };
 }
 
 function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
@@ -98,12 +100,23 @@ describe('NightInfoSection', () => {
         expect(fields[1]).not.toHaveAttribute('hidden');
     });
 
-    it('clears minAge to null, never to zero', () => {
-        const onFieldChange = renderSection('', { minAge: 18 });
+    it('removes policies.minAge when cleared, never sets it to zero (HOS-2060)', () => {
+        const { onFieldChange, onPolicyChange } = renderSection('', { policies: { minAge: 18 } });
 
         fireEvent.change(screen.getByLabelText('Edad mínima'), { target: { value: '' } });
 
-        expect(onFieldChange).toHaveBeenCalledWith('minAge', null);
+        expect(onPolicyChange).toHaveBeenCalledWith('minAge', undefined);
+        expect(onFieldChange).not.toHaveBeenCalled();
+    });
+
+    it('writes the dress code into policies', () => {
+        const { onPolicyChange } = renderSection('');
+
+        fireEvent.change(screen.getByLabelText('Código de vestimenta'), {
+            target: { value: 'elegant' }
+        });
+
+        expect(onPolicyChange).toHaveBeenCalledWith('dressCode', 'elegant');
     });
 
     it('sends a note over 200 characters to validation instead of the API', () => {

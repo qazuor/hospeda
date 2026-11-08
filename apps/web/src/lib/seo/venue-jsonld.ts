@@ -69,6 +69,8 @@ export interface BuildVenueStructuredDataInput {
     readonly servesCuisine?: string;
     readonly telephone?: string;
     readonly hasMenu?: string;
+    /** Accepted payment methods as human labels (HOS-2060, `policies.paymentMethods`). */
+    readonly paymentAccepted?: string;
     readonly aggregateRating?: VenueAggregateRating;
 }
 
@@ -107,6 +109,7 @@ export function buildVenueStructuredData({
     servesCuisine,
     telephone,
     hasMenu,
+    paymentAccepted,
     aggregateRating
 }: BuildVenueStructuredDataInput): Record<string, unknown> {
     const structuredData: Record<string, unknown> = {
@@ -135,6 +138,10 @@ export function buildVenueStructuredData({
 
     if (hasMenu) {
         structuredData.hasMenu = hasMenu;
+    }
+
+    if (paymentAccepted) {
+        structuredData.paymentAccepted = paymentAccepted;
     }
 
     if (aggregateRating) {

@@ -2,7 +2,8 @@
  * @file CapacityPricingForm.client.tsx
  * @description Form island for `…/editar/capacidad-precio/` (HOS-318 T-021).
  *
- * Guests, bedrooms, bathrooms, price and currency. Needs no catalog at all, so
+ * Guests, bedrooms, bathrooms, price, currency and the minimum stay
+ * (`policies.minNights`, HOS-2060). Needs no catalog at all, so
  * this page issues exactly one request.
  */
 
@@ -10,6 +11,7 @@ import { PublicationStatusEnum } from '@repo/schemas';
 import { useCallback } from 'react';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildListingPoliciesPatch, setListingPolicy } from '@/lib/listing/listing-policies';
 import { ActionBar } from '../ActionBar.client';
 import { AccommodationCapacityPricingSchema } from '../accommodation-edit-form.schema';
 import { CapacitySection } from '../CapacitySection.client';
@@ -19,15 +21,31 @@ import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import { usePublishReadyPrompt } from '../use-publish-ready-prompt';
 import styles from './SectionForm.module.css';
 
-/** The fields this page owns. Nothing else can reach the PATCH body. */
-const OWN_FIELDS = [
-    'maxGuests',
-    'bedrooms',
-    'bathrooms',
-    'basePrice',
-    'currency',
-    'minNights'
-] as const;
+/**
+ * The fields this page owns. Nothing else can reach the PATCH body, except the
+ * `policies.minNights` key `extendMinNights` adds.
+ */
+const OWN_FIELDS = ['maxGuests', 'bedrooms', 'bathrooms', 'basePrice', 'currency'] as const;
+
+/**
+ * Adds the minimum stay as a one-key `policies` PATCH (HOS-2060). The API
+ * merges it per key, so the house rules the services page edits survive.
+ * Module-level so the hook's payload memo does not recompute on every render.
+ */
+function extendMinNights({
+    values,
+    baseline
+}: {
+    readonly values: AccommodationEditData;
+    readonly baseline: AccommodationEditData;
+}): Record<string, unknown> {
+    const policies = buildListingPoliciesPatch({
+        current: values.policies,
+        baseline: baseline.policies,
+        keys: ['minNights']
+    });
+    return policies ? { policies } : {};
+}
 
 interface CapacityPricingFormProps {
     readonly locale: SupportedLocale;
@@ -71,7 +89,7 @@ export function CapacityPricingForm({
                 before: {
                     description: before.description,
                     capacity: before.maxGuests,
-                    minNights: before.minNights,
+                    minNights: before.policies.minNights ?? null,
                     bedrooms: before.bedrooms,
                     bathrooms: before.bathrooms,
                     hasMainImage
@@ -79,7 +97,7 @@ export function CapacityPricingForm({
                 after: {
                     description: after.description,
                     capacity: after.maxGuests,
-                    minNights: after.minNights,
+                    minNights: after.policies.minNights ?? null,
                     bedrooms: after.bedrooms,
                     bathrooms: after.bathrooms,
                     hasMainImage
@@ -96,6 +114,7 @@ export function CapacityPricingForm({
         initialValues: initialData,
         ownFields: [...OWN_FIELDS],
         schema: AccommodationCapacityPricingSchema,
+        extendPayload: extendMinNights,
         onSaved: handleSaved
     });
 
@@ -111,6 +130,12 @@ export function CapacityPricingForm({
                     data={form.values}
                     errors={form.fieldErrors}
                     onFieldChange={(field, value) => form.setValue(field, value)}
+                    onPolicyChange={(key, value) =>
+                        form.setValue(
+                            'policies',
+                            setListingPolicy({ policies: form.values.policies, key, value })
+                        )
+                    }
                 />
             </div>
 

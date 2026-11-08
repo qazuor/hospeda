@@ -53,12 +53,18 @@ interface NightInfoCountEnvelope {
         readonly pt?: string;
     } | null;
     readonly entryPriceFrom?: number | null;
-    readonly minAge?: number | null;
-    readonly dressCode?: string | null;
-    readonly dressCodeNoteI18n?: {
-        readonly es?: string;
-        readonly en?: string;
-        readonly pt?: string;
+    /**
+     * HOS-2060: the age, dress code and its note are `policies` keys the
+     * catalog still assigns to `nightInfo` (its `policyKeys`).
+     */
+    readonly policies?: {
+        readonly minAge?: number | null;
+        readonly dressCode?: string | null;
+        readonly dressCodeNote?: {
+            readonly es?: string;
+            readonly en?: string;
+            readonly pt?: string;
+        } | null;
     } | null;
 }
 
@@ -120,8 +126,9 @@ async function readDailySpecialsCount({
 
 /**
  * `nightInfo` is not a nested document: its six writable fields live on the
- * venue row, so counting "how much is stored" means counting the non-empty
- * ones. A localized note counts once when ANY locale is written.
+ * venue row (three of them inside `policies` since HOS-2060), so counting "how
+ * much is stored" means counting the non-empty ones. A localized note counts
+ * once when ANY locale is written.
  */
 async function readNightInfoCount({
     listingId,
@@ -139,14 +146,15 @@ async function readNightInfoCount({
 
         const hasI18n = (value: NightInfoCountEnvelope['entryNoteI18n']): boolean =>
             Boolean(value?.es?.trim() || value?.en?.trim() || value?.pt?.trim());
+        const policies = result.data.policies ?? {};
 
         return [
             result.data.entryKind,
             hasI18n(result.data.entryNoteI18n) ? 'note' : null,
             result.data.entryPriceFrom,
-            result.data.minAge,
-            result.data.dressCode,
-            hasI18n(result.data.dressCodeNoteI18n) ? 'dressNote' : null
+            policies.minAge,
+            policies.dressCode,
+            hasI18n(policies.dressCodeNote) ? 'dressNote' : null
         ].filter((value) => value !== null && value !== undefined && value !== '').length;
     } catch {
         return null;

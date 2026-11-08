@@ -6,8 +6,8 @@
  * The only route that fetches the amenity/feature catalogs, scoped to the
  * listing's vertical (SPEC-266). When BOTH come back empty — a genuinely empty
  * catalog or a failed fetch, which degrade the same way — the page says so
- * instead of rendering an editor with nothing in it: `AmenitiesSection` returns
- * `null` on that input, and a page holding only a Save button reads as broken.
+ * above the editor. The editor itself still mounts: since HOS-2060 this page
+ * also carries the house-rules (`policies`) panel, which needs no catalog.
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/servicios/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -32,10 +32,10 @@ if (resolution.error) return resolution.error;
 const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 
-// `AmenitiesSection` returns null when BOTH catalogs are empty, so mounting the
-// editor here would render a page whose only control is "Guardar". The notice
-// says which of the two situations it is in the only way this page can tell
-// them apart: it cannot, and both are the owner's cue to come back later.
+// `AmenitiesSection` returns null when BOTH catalogs are empty. The notice says
+// so the only way this page can tell an empty catalog from a failed fetch: it
+// cannot, and both are the owner's cue to come back later. The Policies panel
+// below it stays editable either way (HOS-2060).
 const hasCatalogs = resolution.amenities.length > 0 || resolution.features.length > 0;
 ---
 
@@ -49,18 +49,7 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 	title={t('listing.owner.editor.sectionNav.amenities', 'Servicios')}
 >
 	{
-		hasCatalogs ? (
-			<ListingEditor
-				client:load
-				sectionId="amenities"
-				vertical={vertical}
-				listingId={listingId}
-				locale={locale}
-				initialData={detail}
-				amenities={resolution.amenities}
-				features={resolution.features}
-			/>
-		) : (
+		!hasCatalogs && (
 			<p class="listing-editor-empty">
 				{t(
 					'listing.owner.editor.amenities.catalogUnavailable',
@@ -69,11 +58,21 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 			</p>
 		)
 	}
+	<ListingEditor
+		client:load
+		sectionId="amenities"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+		amenities={resolution.amenities}
+		features={resolution.features}
+	/>
 </ListingEditorSectionLayout>
 
 <style>
 	.listing-editor-empty {
-		margin: 0;
+		margin: 0 0 var(--space-4, 1rem);
 		padding: var(--space-4, 1rem);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md, 0.625rem);

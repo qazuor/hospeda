@@ -73,7 +73,7 @@ describe('MinAgeField', () => {
 
         const input = screen.getByLabelText('Edad mínima');
         expect(input).toHaveAttribute('aria-invalid', 'true');
-        expect(input).toHaveAttribute('aria-describedby', 'minAge-error');
+        expect(input).toHaveAttribute('aria-describedby', 'policies-minAge-error');
         expect(screen.getByRole('alert')).toHaveTextContent('Edad inválida');
     });
 });

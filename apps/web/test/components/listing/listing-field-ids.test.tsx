@@ -153,6 +153,10 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // Object blocks — their members are expanded into dotted keys instead.
     contactInfo: 'JSONB block; members covered as dotted keys',
     socialNetworks: 'JSONB block; members covered as dotted keys',
+    // HOS-2060: a per-key PATCH object. Its leaves render under dotted ids
+    // (`ce-policies-minAge`, `ce-policies-smokingAllowed`, ...), several of
+    // them checkbox groups with no single focus target.
+    policies: 'JSONB block; leaf controls carry dotted ids',
     // Not exposed in this owner surface.
     videos: 'not exposed by this editor',
     // Owned by the translation panel, which edits a parallel i18n structure.

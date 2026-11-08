@@ -105,8 +105,9 @@ export function ListingCreateForm({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     // HOS-1787 leaf 5.6 — business lines. The selection starts empty and the
     // type's `preselect` fills it when the owner picks a type. `minAge` is the
-    // type's `fieldDefaults.minAge` suggestion (BOLICHE → 18), editable and
-    // clearable, and travels in the create body when the owner leaves it set.
+    // type's `fieldDefaults.policies.minAge` suggestion (BOLICHE → 18, HOS-2060),
+    // editable and clearable, and travels in the create body as
+    // `policies.minAge` when the owner leaves it set.
     const [businessLines, setBusinessLines] = useState<readonly string[]>([]);
     const [businessLinesTouched, setBusinessLinesTouched] = useState(false);
     const [minAge, setMinAge] = useState<number | null>(null);
@@ -116,7 +117,7 @@ export function ListingCreateForm({
     const typeDefaults = config.showsBusinessLines
         ? config.resolveBusinessLineDefaults(listingType)
         : { preselect: [], fieldDefaults: {} };
-    const showMinAge = typeof typeDefaults.fieldDefaults.minAge === 'number';
+    const showMinAge = typeof typeDefaults.fieldDefaults.policies?.minAge === 'number';
 
     // HOS-820: "comercio" is the name of the internal module venue and
     // experience share — not a word an excursion, a boat trip or a tour guide
@@ -155,9 +156,8 @@ export function ListingCreateForm({
             stillAllowed.length === businessLines.length;
 
         setBusinessLines(keepTouched ? stillAllowed : [...defaults.preselect]);
-        setMinAge(
-            typeof defaults.fieldDefaults.minAge === 'number' ? defaults.fieldDefaults.minAge : null
-        );
+        const suggestedMinAge = defaults.fieldDefaults.policies?.minAge;
+        setMinAge(typeof suggestedMinAge === 'number' ? suggestedMinAge : null);
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -191,7 +191,11 @@ export function ListingCreateForm({
 
         if (config.showsBusinessLines) {
             basePayload.businessLines = [...businessLines];
-            basePayload.minAge = minAge;
+            // HOS-2060: the age is a policy. A cleared age sends no policies at
+            // all, so the server's defaults (cash) are all the listing starts with.
+            if (minAge !== null) {
+                basePayload.policies = { minAge };
+            }
         }
 
         const parsed = validate(basePayload);
@@ -308,7 +312,7 @@ export function ListingCreateForm({
                     locale={locale}
                     value={minAge}
                     onChange={setMinAge}
-                    error={fieldErrors.minAge}
+                    error={fieldErrors['policies.minAge']}
                 />
             ) : null}
 

@@ -58,7 +58,8 @@ const INITIAL = {
     maxGuests: 4,
     bedrooms: 2,
     bathrooms: 1,
-    minNights: 1,
+    // HOS-2060: house rules, minimum stay included.
+    policies: { minNights: 1, paymentMethods: ['cash'] },
     basePrice: 15000,
     currency: 'ARS',
     amenityIds: ['am-1'],
@@ -572,8 +573,8 @@ describe('social fields', () => {
 // not merely "the form rendered" or "schema.safeParse succeeded".
 // ---------------------------------------------------------------------------
 
-describe('G7 smoke — minNights reaches the PATCH body (H-112)', () => {
-    it('should send minNights when the host changes it, and nothing else', async () => {
+describe('G7 smoke — minNights reaches the PATCH body (H-112 → HOS-2060)', () => {
+    it('should send policies.minNights alone when the host changes it', async () => {
         const user = userEvent.setup();
         render(<CapacityPricingForm {...COMMON} />);
 
@@ -585,7 +586,61 @@ describe('G7 smoke — minNights reaches the PATCH body (H-112)', () => {
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
         const body = firstPatchBody();
-        expect(body).toEqual({ minNights: 3 });
+        // A one-key PATCH: the API merges it, so the services page's house
+        // rules (here `paymentMethods`) survive this save.
+        expect(body).toEqual({ policies: { minNights: 3 } });
+    });
+});
+
+describe('Policies panel on the services page (HOS-2060)', () => {
+    it('should send only the changed house rule, never minNights', async () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        const smoking = document.getElementById('acc-policies-smokingAllowed') as HTMLSelectElement;
+        fireEvent.change(smoking, { target: { value: 'outdoor_only' } });
+        submitFrom(smoking);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ policies: { smokingAllowed: 'outdoor_only' } });
+    });
+
+    it('should send null for a house rule the host cleared', async () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        const cash = screen.getByLabelText('Efectivo') as HTMLInputElement;
+        expect(cash).toBeChecked();
+        fireEvent.click(cash);
+        submitFrom(cash);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ policies: { paymentMethods: null } });
+    });
+
+    it('should not render a minNights control on the services page', () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        expect(document.getElementById('acc-policies-minNights')).toBeNull();
+        expect(document.getElementById('acc-policies-maxNights')).not.toBeNull();
     });
 });
 

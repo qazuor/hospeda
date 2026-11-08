@@ -31,6 +31,8 @@ const INITIAL = {
     amenityIds: [POOL],
     amenityAttributes: { [POOL]: { scope: 'shared', availability: null } },
     featureIds: [],
+    // HOS-2060: the services page also carries the Policies panel.
+    policies: {},
     videos: []
 } as any;
 

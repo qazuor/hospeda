@@ -20,6 +20,14 @@
  * All six writable fields clear to `null`, not to an empty string or to `0`.
  * `buildPatchPayload` owns that contract; this component only produces honest
  * form state (`''`, `null`, or a number).
+ *
+ * ## Policies (HOS-2060)
+ *
+ * The age, dress code and dress-code note are keys of the venue `policies`
+ * JSONB now (`policies.minAge`, `policies.dressCode`, `policies.dressCodeNote`),
+ * still claimed by this section in the catalog. They are edited through
+ * `onPolicyChange`; an emptied control removes its key, which the PATCH sends
+ * as `null` (delete that key) without touching any other policy.
  */
 
 import { VenueDressCodeEnum, VenueEntryKindEnum } from '@repo/schemas';
@@ -28,16 +36,21 @@ import { TextField } from '@/components/ui/TextField';
 import { formatMonthYearLabel } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { isEmptyPolicyNote } from '@/lib/listing/listing-policies';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import fieldStyles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
 import styles from './NightInfoSection.module.css';
+import type { ListingPolicyChange } from './PoliciesPanel.client';
+
+/** The note shown while the owner has not written one. */
+const EMPTY_NOTE = { es: '', en: '', pt: '' } as const;
 
 /** One localized note control set. */
 interface I18nNoteFieldProps {
     readonly locale: SupportedLocale;
-    readonly baseName: 'entryNoteI18n' | 'dressCodeNoteI18n';
+    readonly baseName: 'entryNoteI18n' | 'policies.dressCodeNote';
     readonly legend: string;
     readonly values: { readonly es: string; readonly en: string; readonly pt: string };
     readonly errors: Readonly<Record<string, string | undefined>>;
@@ -100,6 +113,7 @@ export interface NightInfoSectionProps {
     readonly data: ListingEditData;
     readonly errors: Readonly<Record<string, string | undefined>>;
     readonly onFieldChange: ListingFieldChange;
+    readonly onPolicyChange: ListingPolicyChange;
 }
 
 /**
@@ -112,9 +126,11 @@ export function NightInfoSection({
     locale,
     data,
     errors,
-    onFieldChange
+    onFieldChange,
+    onPolicyChange
 }: NightInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const { policies } = data;
 
     const updatedAt = data.entryPriceUpdatedAt === null ? null : new Date(data.entryPriceUpdatedAt);
     const hasValidUpdatedAt = updatedAt !== null && !Number.isNaN(updatedAt.getTime());
@@ -194,22 +210,22 @@ export function NightInfoSection({
 
             <TextField
                 prefix={LISTING_FIELD_PREFIX}
-                name="minAge"
+                name="policies.minAge"
                 label={t('venue.detail.nightInfo.minAgeLabel', 'Edad mínima')}
                 labelClassName={fieldStyles.label}
                 className={fieldStyles.input}
-                error={errors.minAge}
+                error={errors['policies.minAge']}
                 type="number"
                 min={13}
                 max={30}
                 step={1}
-                value={data.minAge ?? ''}
+                value={policies.minAge ?? ''}
                 onChange={(event) => {
                     const raw = event.target.value.trim();
-                    const parsed = raw === '' ? null : Number(raw);
-                    onFieldChange(
+                    const parsed = raw === '' ? undefined : Number(raw);
+                    onPolicyChange(
                         'minAge',
-                        parsed !== null && Number.isFinite(parsed) ? parsed : null
+                        parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined
                     );
                 }}
             />
@@ -226,13 +242,16 @@ export function NightInfoSection({
             <TextField
                 as="select"
                 prefix={LISTING_FIELD_PREFIX}
-                name="dressCode"
+                name="policies.dressCode"
                 label={t('venue.detail.nightInfo.dressCodeLabel', 'Código de vestimenta')}
                 labelClassName={fieldStyles.label}
                 className={fieldStyles.input}
-                error={errors.dressCode}
-                value={data.dressCode}
-                onChange={(event) => onFieldChange('dressCode', event.target.value)}
+                error={errors['policies.dressCode']}
+                value={policies.dressCode ?? ''}
+                onChange={(event) => {
+                    const value = event.target.value as VenueDressCodeEnum | '';
+                    onPolicyChange('dressCode', value === '' ? undefined : value);
+                }}
             >
                 <option value="">
                     {t('listing.owner.editor.nightInfo.notInformed', 'No informado')}
@@ -249,14 +268,16 @@ export function NightInfoSection({
 
             <I18nNoteField
                 locale={locale}
-                baseName="dressCodeNoteI18n"
+                baseName="policies.dressCodeNote"
                 legend={t(
                     'listing.owner.editor.nightInfo.dressCodeNoteLabel',
                     'Nota sobre el código de vestimenta (es/en/pt)'
                 )}
-                values={data.dressCodeNoteI18n}
+                values={policies.dressCodeNote ?? EMPTY_NOTE}
                 errors={errors}
-                onChange={(next) => onFieldChange('dressCodeNoteI18n', next)}
+                onChange={(next) =>
+                    onPolicyChange('dressCodeNote', isEmptyPolicyNote(next) ? undefined : next)
+                }
             />
         </section>
     );

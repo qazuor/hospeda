@@ -88,9 +88,9 @@ async function clearSection({
                     entryKind: null,
                     entryNoteI18n: null,
                     entryPriceFrom: null,
-                    minAge: null,
-                    dressCode: null,
-                    dressCodeNoteI18n: null
+                    // HOS-2060: the night policies are deleted key by key, so
+                    // every other house rule survives the clear.
+                    policies: { minAge: null, dressCode: null, dressCodeNote: null }
                 }
             });
             return result.ok;

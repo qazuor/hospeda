@@ -30,9 +30,7 @@ function renderSection(): { container: HTMLElement } {
                 durationHours: null,
                 durationMinutesPart: null,
                 whatToBring: [],
-                requirements: [],
-                cancellationPolicy: '',
-                acceptsPrivateGroups: false
+                requirements: []
             })}
             errors={{}}
             onFieldChange={vi.fn()}

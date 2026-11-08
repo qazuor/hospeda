@@ -26,7 +26,7 @@ const amenities = [
     { id: AMENITY_A, slug: 'wifi', category: null },
     { id: AMENITY_B, slug: 'terraza', category: null }
 ];
-const features = [{ id: FEATURE_A, slug: 'pet_friendly', category: null }];
+const features = [{ id: FEATURE_A, slug: 'river_view', category: null }];
 
 function renderSection(overrides: Partial<React.ComponentProps<typeof AmenitiesSection>> = {}): {
     onToggleAmenity: ReturnType<typeof vi.fn>;
@@ -101,7 +101,7 @@ describe('AmenitiesSection', () => {
     it('falls back to the raw slug for a feature with no i18n key', () => {
         renderSection();
 
-        expect(screen.getByLabelText('pet_friendly')).toBeInTheDocument();
+        expect(screen.getByLabelText('river_view')).toBeInTheDocument();
     });
 
     it('reflects the selected sets as checked state', () => {
@@ -112,7 +112,7 @@ describe('AmenitiesSection', () => {
 
         expect(screen.getByLabelText('Wifi')).toBeChecked();
         expect(screen.getByLabelText('Terraza')).not.toBeChecked();
-        expect(screen.getByLabelText('pet_friendly')).toBeChecked();
+        expect(screen.getByLabelText('river_view')).toBeChecked();
     });
 
     it('reports an amenity toggle by id', () => {
@@ -127,7 +127,7 @@ describe('AmenitiesSection', () => {
     it('reports a feature toggle on the feature callback, not the amenity one', () => {
         const { onToggleAmenity, onToggleFeature } = renderSection();
 
-        fireEvent.click(screen.getByLabelText('pet_friendly'));
+        fireEvent.click(screen.getByLabelText('river_view'));
 
         // `amenityIds` and `featureIds` are separate entries in the PATCH diff;
         // crossing the callbacks would write the id into the wrong column.
@@ -245,7 +245,7 @@ describe('AmenitiesSection', () => {
                 <AmenitiesSection
                     locale="es"
                     amenities={[]}
-                    features={[{ id: FEATURE_A, slug: 'pet_friendly', category: null }]}
+                    features={[{ id: FEATURE_A, slug: 'river_view', category: null }]}
                     selectedAmenityIds={new Set<string>()}
                     selectedFeatureIds={new Set<string>()}
                     onToggleAmenity={vi.fn()}
@@ -254,82 +254,20 @@ describe('AmenitiesSection', () => {
             );
 
             expect(container.querySelectorAll('details')).toHaveLength(0);
-            expect(screen.getByLabelText('pet_friendly')).toBeInTheDocument();
+            expect(screen.getByLabelText('river_view')).toBeInTheDocument();
         });
     });
 
-    describe('accepts-events dedicated toggle (HOS-1055)', () => {
-        const EVENTS_AMENITY = '55555555-5555-4555-8555-555555555555';
-
-        it('does not render when the catalog carries no private_events amenity', () => {
+    describe('no dedicated events toggle (HOS-1055 → HOS-2060)', () => {
+        it('renders no standalone events control: events are a house rule now', () => {
+            // `private_events` was retired; "accepts events" is
+            // `policies.eventsAllowed`, edited in the Policies panel.
             renderSection();
 
-            expect(
-                screen.queryByText('Acepto eventos (cumpleaños, empresas, casamientos)')
-            ).toBeNull();
-        });
-
-        it('renders a dedicated toggle, outside the accordion, when private_events is present', () => {
-            renderSection({
-                amenities: [
-                    ...amenities,
-                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
-                ]
-            });
-
-            const toggle = screen.getByLabelText(
-                'Acepto eventos (cumpleaños, empresas, casamientos)'
+            expect(screen.queryByText(/Acepto eventos/)).toBeNull();
+            expect(document.querySelectorAll('input[type="checkbox"]').length).toBe(
+                amenities.length + features.length
             );
-            expect(toggle).toBeInTheDocument();
-            // Not duplicated inside a details accordion — it renders exactly
-            // once, as a standalone control.
-            expect(toggle.closest('details')).toBeNull();
-        });
-
-        it('excludes private_events from the generic accordion (no double control)', () => {
-            renderSection({
-                amenities: [
-                    ...amenities,
-                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
-                ]
-            });
-
-            // Only one checkbox is labeled by this amenity in the whole form —
-            // the dedicated toggle, not a second copy inside "Servicios".
-            expect(
-                screen.getAllByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
-            ).toHaveLength(1);
-        });
-
-        it('reflects the selected set as checked state', () => {
-            renderSection({
-                amenities: [
-                    ...amenities,
-                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
-                ],
-                selectedAmenityIds: new Set([EVENTS_AMENITY])
-            });
-
-            expect(
-                screen.getByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
-            ).toBeChecked();
-        });
-
-        it('reports a toggle through the same onToggleAmenity callback as any other amenity', () => {
-            const { onToggleAmenity, onToggleFeature } = renderSection({
-                amenities: [
-                    ...amenities,
-                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
-                ]
-            });
-
-            fireEvent.click(
-                screen.getByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
-            );
-
-            // No new PATCH field: it flows through the existing amenityIds diff.
-            expect(onToggleAmenity).toHaveBeenCalledWith(EVENTS_AMENITY);
-            expect(onToggleFeature).not.toHaveBeenCalled();
         });
     });
 });

@@ -22,18 +22,10 @@
  * carry no category in the catalog (see `transformAmenityList` in
  * `lib/api/transforms.ts`), so they stay a single flat grid.
  *
- * HOS-1055: "accepts events" (birthdays, corporate, weddings) is deliberately
- * NOT a new column on the venue table — it reuses the existing `private_events`
- * catalog amenity (seeded venue-only, same shape as `accepts_reservations`
- * / `delivery` / `takeaway`), which keeps ONE source of truth for the flag
- * instead of a second copy living on the row itself. What's new here is only
- * the UI: that one amenity is pulled OUT of the generic accordion and rendered
- * as its own prominent toggle above it, so it reads as "the" toggle the owner
- * is looking for rather than one checkbox buried among twenty. It still flows
- * through the exact same `onToggleAmenity` / `amenityIds` diff as every other
- * amenity — no new PATCH field, no new schema. Absent from the catalog (e.g.
- * an experience listing, which never receives it — the SSR fetch already
- * scopes the catalog by `applicableVertical`) it simply renders nothing.
+ * HOS-1055 → HOS-2060: the dedicated "accepts events" toggle that sat above
+ * the accordion was backed by a catalog amenity that has been retired; the
+ * rule is now `policies.eventsAllowed`, edited by the Policies panel rendered
+ * next to this section.
  */
 
 import type { JSX } from 'react';
@@ -44,13 +36,6 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AmenitiesSection.module.css';
 import fieldStyles from './editor-fields.module.css';
-
-/**
- * Slug of the "accepts events" catalog amenity (HOS-1055). Kept out of the
- * generic accordion and rendered as a dedicated toggle instead — see the file
- * header for why this reuses the catalog row rather than a new DB column.
- */
-const EVENTS_AMENITY_SLUG = 'private_events';
 
 export interface AmenitiesSectionProps {
     readonly locale: SupportedLocale;
@@ -78,13 +63,7 @@ export function AmenitiesSection({
     onToggleFeature
 }: AmenitiesSectionProps): JSX.Element | null {
     const { t } = createTranslations(locale);
-    const eventsAmenity = amenities.find((amenity) => amenity.slug === EVENTS_AMENITY_SLUG);
-    // Excluded from the accordion input so it never renders twice — the
-    // dedicated toggle below is its only appearance in this form.
-    const accordionAmenities = eventsAmenity
-        ? amenities.filter((amenity) => amenity.slug !== EVENTS_AMENITY_SLUG)
-        : amenities;
-    const amenityGroups = groupAmenitiesByCategory({ amenities: accordionAmenities, t });
+    const amenityGroups = groupAmenitiesByCategory({ amenities, t });
 
     if (amenities.length === 0 && features.length === 0) {
         return null;
@@ -95,28 +74,6 @@ export function AmenitiesSection({
             className={fieldStyles.section}
             id="editor-amenities"
         >
-            {eventsAmenity && (
-                <div className={styles.eventsToggle}>
-                    <label className={fieldStyles.checkbox}>
-                        <input
-                            type="checkbox"
-                            checked={selectedAmenityIds.has(eventsAmenity.id)}
-                            onChange={() => onToggleAmenity(eventsAmenity.id)}
-                        />
-                        {t(
-                            'venue.owner.editor.acceptsEvents.label',
-                            'Acepto eventos (cumpleaños, empresas, casamientos)'
-                        )}
-                    </label>
-                    <p className={fieldStyles.hint}>
-                        {t(
-                            'venue.owner.editor.acceptsEvents.hint',
-                            'Mostramos un botón de contacto en tu ficha para que te escriban por este tipo de consultas.'
-                        )}
-                    </p>
-                </div>
-            )}
-
             <div className={styles.catalog}>
                 {amenityGroups.length > 0 && (
                     <fieldset className={styles.catalogGroup}>

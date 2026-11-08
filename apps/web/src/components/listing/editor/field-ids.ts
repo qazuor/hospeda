@@ -68,7 +68,7 @@ export const OPENING_HOURS_AGGREGATE_FIELDS: ReadonlyArray<string> = ['openingHo
  * Every Zod key whose nested issues must be rolled up to the bare key
  * (`useZodForm`'s `aggregateFields`).
  *
- * `openingHours` keeps the reason above. The two `nightInfo` notes join it for
+ * `openingHours` keeps the reason above. The localized notes join it for
  * the same mechanical reason: their controls are `entryNoteI18n.{es,en,pt}`,
  * so a 201-character note arrives at `entryNoteI18n.<locale>` and neither the
  * section's `<FieldError>` nor focus-on-error (both keyed by the bare field)
@@ -78,5 +78,7 @@ export const OPENING_HOURS_AGGREGATE_FIELDS: ReadonlyArray<string> = ['openingHo
 export const LISTING_AGGREGATE_FIELDS: ReadonlyArray<string> = [
     ...OPENING_HOURS_AGGREGATE_FIELDS,
     'entryNoteI18n',
-    'dressCodeNoteI18n'
+    // HOS-2060: the dress-code note and the pets note live inside `policies`.
+    'policies.dressCodeNote',
+    'policies.pets.notes'
 ] as const;

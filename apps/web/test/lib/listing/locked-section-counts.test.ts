@@ -143,9 +143,8 @@ describe('readAbsentSectionCounts (HOS-1787 leaf 5.7)', () => {
                     entryKind: 'paid',
                     entryNoteI18n: { es: 'Hasta las 2', en: '', pt: '' },
                     entryPriceFrom: 500000,
-                    minAge: 18,
-                    dressCode: null,
-                    dressCodeNoteI18n: null
+                    // HOS-2060: the night house rules live in `policies`.
+                    policies: { minAge: 18 }
                 }
             } as never;
         });
