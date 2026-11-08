@@ -78,6 +78,16 @@ export interface ExperienceReviewModerateInput {
     reason?: string;
 }
 
+/**
+ * Per-request hook state for ExperienceReviewService lifecycle hooks.
+ * Carries the parent experience id across the before/after hook pair, because the
+ * after-hooks of soft delete, hard delete and restore receive only a count.
+ */
+interface ExperienceReviewHookState extends Record<string, unknown> {
+    /** Experience id of the review being deleted or restored, for rating recompute. */
+    affectedExperienceId?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -368,6 +378,89 @@ export class ExperienceReviewService extends BaseCrudService<
     }
 
     // -----------------------------------------------------------------------
+    // Delete / restore: keep the denormalized rating in sync (HOS-2089)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Captures the parent experience id before the review is removed, since the
+     * matching after-hook only receives a row count.
+     */
+    private async _captureExperienceId(
+        id: string,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<void> {
+        const review = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState.affectedExperienceId = (review as Record<string, unknown> | null)
+                ?.experienceId as string | undefined;
+        }
+    }
+
+    protected override async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    /** Recomputes the rating of the experience captured by the matching before-hook, if any. */
+    private async _recomputeAffectedListing(
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<void> {
+        const experienceId = ctx.hookState?.affectedExperienceId;
+        if (experienceId) {
+            await this._recomputeListingRating(experienceId, ctx);
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Public search — force-filtered to ACTIVE + APPROVED
     // -----------------------------------------------------------------------
 
@@ -615,7 +708,7 @@ export class ExperienceReviewService extends BaseCrudService<
      * Recomputes the experience listing's denormalized rating fields from all
      * APPROVED, non-deleted reviews using `ExperienceService.recomputeRating`.
      *
-     * Called after create, moderation decision, and soft-delete.
+     * Called after create, moderation decision, soft delete, hard delete and restore.
      *
      * Experience reviews use the ExperienceRatingSchema breakdown (food / service /
      * ambiance / value) — identical to venue. The identity mapping below

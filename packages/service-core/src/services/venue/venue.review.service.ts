@@ -92,6 +92,16 @@ export function computeEffectiveRating(input: VenueReviewCreateInput): number {
     return computeEffectiveReviewRating({ vertical: 'venue', input });
 }
 
+/**
+ * Per-request hook state for VenueReviewService lifecycle hooks.
+ * Carries the parent venue id across the before/after hook pair, because the
+ * after-hooks of soft delete, hard delete and restore receive only a count.
+ */
+interface VenueReviewHookState extends Record<string, unknown> {
+    /** Venue id of the review being deleted or restored, for rating recompute. */
+    affectedVenueId?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -376,6 +386,90 @@ export class VenueReviewService extends BaseCrudService<
     ): Promise<VenueReview> {
         await this._recomputeListingRating(entity.venueId, ctx);
         return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // Delete / restore: keep the denormalized rating in sync (HOS-2089)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Captures the parent venue id before the review is removed, since the
+     * matching after-hook only receives a row count.
+     */
+    private async _captureVenueId(
+        id: string,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<void> {
+        const review = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState.affectedVenueId = (review as Record<string, unknown> | null)?.venueId as
+                | string
+                | undefined;
+        }
+    }
+
+    protected override async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<string> {
+        await this._captureVenueId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<string> {
+        await this._captureVenueId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<string> {
+        await this._captureVenueId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    /** Recomputes the rating of the venue captured by the matching before-hook, if any. */
+    private async _recomputeAffectedListing(
+        ctx: ServiceContext<VenueReviewHookState>
+    ): Promise<void> {
+        const venueId = ctx.hookState?.affectedVenueId;
+        if (venueId) {
+            await this._recomputeListingRating(venueId, ctx);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -703,7 +797,7 @@ export class VenueReviewService extends BaseCrudService<
      * Recomputes the venue listing's denormalized rating fields from all
      * APPROVED, non-deleted reviews using `VenueService.recomputeRating`.
      *
-     * Called after create, moderation decision, and soft-delete.
+     * Called after create, moderation decision, soft delete, hard delete and restore.
      *
      * @param venueId - UUID of the listing to refresh.
      * @param ctx - Service context (carries the active transaction).
