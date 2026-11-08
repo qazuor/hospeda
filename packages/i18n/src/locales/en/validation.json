@@ -5193,5 +5193,29 @@
         "windowDays": {
             "unsupported": "The requested day window is not available"
         }
+    },
+    "listingPolicies": {
+        "paymentMethods": {
+            "invalid": "The payment method is not valid",
+            "invalidType": "Payment methods must be a list",
+            "duplicate": "Each payment method can be listed only once"
+        },
+        "pets": {
+            "admission": {
+                "invalid": "The pets policy is not valid"
+            }
+        },
+        "note": {
+            "tooLong": "The note cannot exceed 200 characters"
+        },
+        "smokingAllowed": {
+            "invalid": "The smoking policy is not valid"
+        },
+        "reservations": {
+            "invalid": "The reservations policy is not valid"
+        },
+        "maxNights": {
+            "belowMinNights": "The maximum nights cannot be lower than the minimum"
+        }
     }
 }

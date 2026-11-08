@@ -147,12 +147,7 @@
                 "whatToBringHint": "Un ítem por línea. Lo que tiene que traer la persona que se anota.",
                 "requirements": "Requisitos",
                 "requirementsPlaceholder": "Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas",
-                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.",
-                "cancellationPolicy": "Política de cancelación",
-                "cancellationPolicyPlaceholder": "Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.",
-                "cancellationPolicyHint": "Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.",
-                "acceptsPrivateGroups": "Hago precio especial para grupos privados",
-                "acceptsPrivateGroupsHint": "Si lo activás, la ficha invita a escribirte para consultar por grupos. No publicamos ningún tarifario."
+                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar."
             },
             "contactField": {
                 "mobilePhone": "Teléfono",
@@ -470,6 +465,80 @@
             "hiddenSections": "Dejan de verse: {{sections}}.",
             "nothingDeleted": "No se borró nada: lo que cargaste en una sección oculta vuelve si recuperás el rubro.",
             "changedAt": "Cambio del {{date}}."
+        }
+    },
+    "policies": {
+        "panelTitle": "Políticas",
+        "panelHint": "Lo que no completes se muestra como «no informado», nunca como un «no».",
+        "houseRulesTitle": "Normas y políticas",
+        "notInformed": "No informado",
+        "yes": "Sí",
+        "no": "No",
+        "locale": {
+            "es": "Español",
+            "en": "Inglés",
+            "pt": "Portugués"
+        },
+        "paymentMethods": {
+            "label": "Medios de pago",
+            "cash": "Efectivo",
+            "debit": "Tarjeta de débito",
+            "credit": "Tarjeta de crédito",
+            "transfer": "Transferencia bancaria",
+            "mercadopago": "Mercado Pago"
+        },
+        "pets": {
+            "label": "Mascotas",
+            "admissionLabel": "¿Se admiten mascotas?",
+            "admission": {
+                "no": "No se admiten mascotas",
+                "yes": "Se admiten mascotas",
+                "on_request": "Mascotas a consultar"
+            },
+            "extraCost": "con cargo extra",
+            "extraCostLabel": "Cobro un cargo extra por mascota",
+            "notesLabel": "Nota"
+        },
+        "smokingAllowed": {
+            "label": "Fumar",
+            "no": "No se permite fumar",
+            "yes": "Se permite fumar",
+            "outdoor_only": "Solo en espacios al aire libre"
+        },
+        "eventsAllowed": {
+            "label": "Eventos",
+            "editorLabel": "¿Se pueden hacer eventos privados?",
+            "yes": "Se permiten eventos privados",
+            "no": "No se permiten eventos"
+        },
+        "checkIn": {
+            "label": "Check-in"
+        },
+        "checkOut": {
+            "label": "Check-out"
+        },
+        "time": {
+            "from": "Desde",
+            "to": "Hasta",
+            "range": "{{from}} a {{to}}",
+            "fromOnly": "Desde las {{from}}",
+            "toOnly": "Hasta las {{to}}"
+        },
+        "maxNights": {
+            "label": "Máximo de noches"
+        },
+        "reservations": {
+            "label": "Reservas",
+            "required": "Reserva obligatoria",
+            "recommended": "Reserva recomendada",
+            "not_accepted": "No toma reservas"
+        },
+        "privateGroups": {
+            "editorLabel": "Hago precio especial para grupos privados"
+        },
+        "cancellation": {
+            "label": "Política de cancelación",
+            "placeholder": "Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo."
         }
     }
 }

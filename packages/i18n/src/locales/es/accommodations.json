@@ -891,8 +891,7 @@
             "additionalCost": "(costo adicional)"
         },
         "features": {
-            "title": "Características",
-            "smokingAllowed": "Se permite fumar"
+            "title": "Características"
         },
         "faqsDetail": {
             "title": "Preguntas frecuentes",

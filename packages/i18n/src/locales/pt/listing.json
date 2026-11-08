@@ -147,12 +147,7 @@
                 "whatToBringHint": "Um item por linha. O que a pessoa que se inscreve precisa levar.",
                 "requirements": "Requisitos",
                 "requirementsPlaceholder": "Idade mínima 12 anos\nSaber nadar\nNão indicado para gestantes",
-                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar.",
-                "cancellationPolicy": "Política de cancelamento",
-                "cancellationPolicyPlaceholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo.",
-                "cancellationPolicyHint": "O que acontece se o passeio não sair: chuva, vento, rio baixo, ou se não houver o mínimo de pessoas.",
-                "acceptsPrivateGroups": "Faço preço especial para grupos privados",
-                "acceptsPrivateGroupsHint": "Se ativar, a ficha convida a escrever para você sobre grupos. Não publicamos nenhuma tabela de preços."
+                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar."
             },
             "contactField": {
                 "mobilePhone": "Telefone",
@@ -470,6 +465,80 @@
             "hiddenSections": "Deixam de aparecer: {{sections}}.",
             "nothingDeleted": "Nada foi apagado: o que você carregou em uma seção oculta volta se recuperar o rubro.",
             "changedAt": "Mudança de {{date}}."
+        }
+    },
+    "policies": {
+        "panelTitle": "Políticas",
+        "panelHint": "O que você não preencher aparece como «não informado», nunca como um «não».",
+        "houseRulesTitle": "Regras e políticas",
+        "notInformed": "Não informado",
+        "yes": "Sim",
+        "no": "Não",
+        "locale": {
+            "es": "Espanhol",
+            "en": "Inglês",
+            "pt": "Português"
+        },
+        "paymentMethods": {
+            "label": "Formas de pagamento",
+            "cash": "Dinheiro",
+            "debit": "Cartão de débito",
+            "credit": "Cartão de crédito",
+            "transfer": "Transferência bancária",
+            "mercadopago": "Mercado Pago"
+        },
+        "pets": {
+            "label": "Animais de estimação",
+            "admissionLabel": "Aceita animais de estimação?",
+            "admission": {
+                "no": "Não aceita animais",
+                "yes": "Aceita animais",
+                "on_request": "Animais sob consulta"
+            },
+            "extraCost": "com custo extra",
+            "extraCostLabel": "Cobro uma taxa extra por animal",
+            "notesLabel": "Nota"
+        },
+        "smokingAllowed": {
+            "label": "Fumar",
+            "no": "Proibido fumar",
+            "yes": "Permitido fumar",
+            "outdoor_only": "Somente em áreas ao ar livre"
+        },
+        "eventsAllowed": {
+            "label": "Eventos",
+            "editorLabel": "É possível realizar eventos privados?",
+            "yes": "Eventos privados permitidos",
+            "no": "Eventos não permitidos"
+        },
+        "checkIn": {
+            "label": "Check-in"
+        },
+        "checkOut": {
+            "label": "Check-out"
+        },
+        "time": {
+            "from": "Das",
+            "to": "Até",
+            "range": "{{from}} às {{to}}",
+            "fromOnly": "A partir das {{from}}",
+            "toOnly": "Até as {{to}}"
+        },
+        "maxNights": {
+            "label": "Máximo de noites"
+        },
+        "reservations": {
+            "label": "Reservas",
+            "required": "Reserva obrigatória",
+            "recommended": "Reserva recomendada",
+            "not_accepted": "Não aceita reservas"
+        },
+        "privateGroups": {
+            "editorLabel": "Faço preço especial para grupos privados"
+        },
+        "cancellation": {
+            "label": "Política de cancelamento",
+            "placeholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo."
         }
     }
 }
