@@ -273,4 +273,71 @@ describe('computeSectionSummary', () => {
         });
         expect(result).toBe('— sin datos');
     });
+
+    // ---- House rules (HOS-2060) ----
+
+    describe('option fields and nested values (HOS-2060)', () => {
+        const section = makeSection([
+            {
+                id: 'policies.paymentMethods',
+                type: FieldTypeEnum.SELECT_MULTIPLE,
+                typeConfig: {
+                    options: [
+                        { value: 'cash', label: 'Efectivo' },
+                        { value: 'transfer', label: 'Transferencia bancaria' }
+                    ]
+                }
+            },
+            {
+                id: 'policies.pets.admission',
+                type: FieldTypeEnum.SELECT,
+                typeConfig: {
+                    options: [
+                        { value: 'yes', label: 'Se admiten mascotas' },
+                        { value: 'on_request', label: 'Mascotas a consultar' }
+                    ]
+                }
+            }
+        ]);
+
+        it('shows the option labels instead of the stored keys', () => {
+            // Act
+            const result = computeSectionSummary({
+                values: { policies: { paymentMethods: ['cash'], pets: { admission: 'yes' } } },
+                section
+            });
+
+            // Assert
+            expect(result).toBe('Efectivo · Se admiten mascotas');
+        });
+
+        it('reads the live nested value before the stale flat seed', () => {
+            // Arrange: the flat keys still hold the stored values.
+            const values = {
+                policies: {
+                    paymentMethods: ['cash', 'transfer'],
+                    pets: { admission: 'on_request' }
+                },
+                'policies.paymentMethods': ['cash'],
+                'policies.pets.admission': 'yes'
+            };
+
+            // Act
+            const result = computeSectionSummary({ values, section });
+
+            // Assert
+            expect(result).toBe('Efectivo, Transferencia bancaria · Mascotas a consultar');
+        });
+
+        it('keeps a value that matches no option as it is', () => {
+            // Act
+            const result = computeSectionSummary({
+                values: { 'policies.pets.admission': 'legacy' },
+                section
+            });
+
+            // Assert
+            expect(result).toBe('legacy');
+        });
+    });
 });

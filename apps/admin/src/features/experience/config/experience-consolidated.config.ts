@@ -361,7 +361,7 @@ export const createExperienceConsolidatedConfig = (
         createExperienceSpecificSection(),
         createMeetingPointSection(),
         createPracticalDetailsSection(),
-        createListingPoliciesSection({ vertical: 'experience' }).section,
+        createListingPoliciesSection({ vertical: 'experience', t }).section,
         createListingOperationalSection('experience')
     ],
     metadata: {

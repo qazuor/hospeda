@@ -41,8 +41,10 @@ const PERMISSIONS = [
     PermissionEnum.ACCOMMODATION_AMENITIES_EDIT
 ];
 
+const t = ((key: string) => key) as Parameters<typeof createListingPoliciesSection>[0]['t'];
+
 const [section] = filterSectionsByMode(
-    [createListingPoliciesSection({ vertical: 'accommodation' }).section],
+    [createListingPoliciesSection({ vertical: 'accommodation', t }).section],
     'edit'
 ) as SectionConfig[];
 
