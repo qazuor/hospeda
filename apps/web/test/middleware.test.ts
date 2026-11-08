@@ -642,10 +642,10 @@ describe('middleware onRequest — H-110 legacy English facet-landing slugs redi
 
     describe('retired venue URLs answer a permanent single hop and keep the query (HOS-1956)', () => {
         it.each([
-            '/es/gastronomia/sample/carta/',
-            '/es/planes/gastronomia/precios/',
-            '/es/publicar/gastronomia/',
-            '/es/mi-cuenta/comercio/gastronomy/abc/editar/'
+            `/es${RETIRED_VENUE_URL_PREFIXES[0]}/sample/carta/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[1]}/precios/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[3]}/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[4]}/abc/editar/`
         ])('301s %s once, with the query string', async (pathname) => {
             const context = createContext({ pathname: `${pathname}?utm_source=qr` });
             const next = vi.fn().mockResolvedValue(new Response('ok'));
