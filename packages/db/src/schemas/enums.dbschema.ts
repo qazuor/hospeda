@@ -73,7 +73,6 @@ import {
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
-    VenueDressCodeEnum,
     VenueEntryKindEnum,
     VenueTypeEnum,
     VisibilityEnum
@@ -333,11 +332,6 @@ export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRang
 export const VenueEntryKindPgEnum = pgEnum(
     'venue_entry_kind_enum',
     enumToTuple(VenueEntryKindEnum)
-);
-
-export const VenueDressCodePgEnum = pgEnum(
-    'venue_dress_code_enum',
-    enumToTuple(VenueDressCodeEnum)
 );
 
 export const ExternalPlatformPgEnum = pgEnum(

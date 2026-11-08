@@ -70,7 +70,7 @@ VALUES ($1, 'Night Venue', 'summary', 'description', 'BOLICHE', $2, $3,
         ARRAY['nightlife']::text[], 'DRAFT', now(), 1, $4, $5)`;
 
 describe('nightInfo schema from empty (HOS-1846, AC:4:1)', () => {
-    it('exposes the seven nullable columns on venues', async () => {
+    it('exposes the four nullable entry columns on venues (age and dress code are policies, HOS-2060)', async () => {
         const result = await getTestPool().query<{
             column_name: string;
             data_type: string;
@@ -82,26 +82,22 @@ describe('nightInfo schema from empty (HOS-1846, AC:4:1)', () => {
                 AND column_name IN (
                     'entry_kind', 'entry_note_i18n', 'entry_price_from',
                     'entry_price_updated_at', 'min_age', 'dress_code',
-                    'dress_code_note_i18n'
+                    'dress_code_note_i18n', 'policies'
                 )
               ORDER BY column_name`
         );
         expect(result.rows.map((row) => row.column_name)).toEqual([
-            'dress_code',
-            'dress_code_note_i18n',
             'entry_kind',
             'entry_note_i18n',
             'entry_price_from',
             'entry_price_updated_at',
-            'min_age'
+            'policies'
         ]);
         for (const row of result.rows) expect(row.is_nullable).toBe('YES');
         expect(result.rows.find((row) => row.column_name === 'entry_price_from')?.data_type).toBe(
             'integer'
         );
-        expect(result.rows.find((row) => row.column_name === 'min_age')?.data_type).toBe(
-            'smallint'
-        );
+        expect(result.rows.find((row) => row.column_name === 'policies')?.data_type).toBe('jsonb');
         expect(
             result.rows.find((row) => row.column_name === 'entry_price_updated_at')?.data_type
         ).toBe('timestamp with time zone');

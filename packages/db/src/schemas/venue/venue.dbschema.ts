@@ -4,6 +4,7 @@ import type {
     I18nText,
     Seo,
     SocialNetwork,
+    VenuePolicies,
     Video
 } from '@repo/schemas';
 import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '@repo/schemas';
@@ -17,18 +18,12 @@ import {
     numeric,
     pgEnum,
     pgTable,
-    smallint,
     text,
     timestamp,
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import {
-    PriceRangePgEnum,
-    VenueDressCodePgEnum,
-    VenueEntryKindPgEnum,
-    VenueTypePgEnum
-} from '../enums.dbschema.ts';
+import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { quotedList } from '../vertical/quoted-list.ts';
@@ -97,12 +92,13 @@ export const venues = pgTable(
          * same price does not claim a fresher date.
          */
         entryPriceUpdatedAt: timestamp('entry_price_updated_at', { withTimezone: true }),
-        /** Lowest age that applies to entry; empty means "not informed". */
-        minAge: smallint('min_age'),
-        /** Closed dress-code list; null when the owner has not said. */
-        dressCode: VenueDressCodePgEnum('dress_code'),
-        /** Short localized note about the dress code. */
-        dressCodeNoteI18n: jsonb('dress_code_note_i18n').$type<I18nText>(),
+        /**
+         * Structured house rules (HOS-2060), validated by `VenuePoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it, backfilled it from the fields and
+         * catalog rows it replaced, and dropped those fields in the same release.
+         */
+        policies: jsonb('policies').$type<VenuePolicies>(),
         /**
          * Optional URL to the venue's online menu — the link the owner already
          * publishes somewhere else.

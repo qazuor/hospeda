@@ -193,8 +193,7 @@ describe.each([
                 UPDATE venues SET type = 'BOLICHE', business_lines = ARRAY['nightlife']::text[],
                     entry_kind = 'paid', entry_note_i18n = ${JSON.stringify(note)}::jsonb,
                     entry_price_from = 1500, entry_price_updated_at = '2026-10-01T12:00:00.000Z',
-                    min_age = 18, dress_code = 'smart_casual',
-                    dress_code_note_i18n = ${JSON.stringify(note)}::jsonb
+                    policies = ${JSON.stringify({ minAge: 18, dressCode: 'smart_casual', dressCodeNote: note })}::jsonb
                 WHERE id = ${listing.id}`);
 
             await listingPurgeModel.purgeListingContent({
@@ -206,16 +205,14 @@ describe.each([
 
             const stored = await tx.execute(sql`
                 SELECT entry_kind, entry_note_i18n, entry_price_from, entry_price_updated_at,
-                    min_age, dress_code, dress_code_note_i18n
+                    policies
                 FROM venues WHERE id = ${listing.id}`);
             expect(stored.rows[0]).toEqual({
                 entry_kind: null,
                 entry_note_i18n: null,
                 entry_price_from: null,
                 entry_price_updated_at: null,
-                min_age: null,
-                dress_code: null,
-                dress_code_note_i18n: null
+                policies: null
             });
         });
     });
