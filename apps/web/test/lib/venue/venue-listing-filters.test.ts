@@ -230,6 +230,33 @@ describe('buildVenueFilterGroups', () => {
     });
 });
 
+describe('buildVenueFilterGroups — category grouping (HOS-2061 AC-5)', () => {
+    it('groups the narrowed amenity and feature options by category', () => {
+        // Arrange
+        const located = { ...feature1, category: 'LOCATION' } as FeaturePublic;
+
+        // Act
+        const groups = buildVenueFilterGroups({
+            t,
+            destinations: [],
+            types: [],
+            amenities: [amenityA, { ...amenityB, type: 'SAFETY' } as AmenityPublic],
+            features: [located, feature2]
+        });
+
+        // Assert
+        const byId = new Map(groups.map((group) => [group.id, group]));
+        expect(byId.get('amenities')?.categories).toEqual({
+            'accommodations.amenityCategories.entertainment': [AMENITY_A],
+            'accommodations.amenityCategories.safety': [AMENITY_B]
+        });
+        expect(byId.get('features')?.categories).toEqual({
+            'accommodations.featureCategories.location': [FEATURE_1],
+            'accommodations.featureCategories.other': [FEATURE_2]
+        });
+    });
+});
+
 describe('buildVenueTypeChips', () => {
     const baseUrl = '/es/comer-y-salir/rubro/coleccion/';
 

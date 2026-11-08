@@ -8,6 +8,10 @@
 
 import type { AmenityPublic, DestinationPublic, FeaturePublic } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import {
+    buildAmenityFilterCategories,
+    buildFeatureFilterCategories
+} from '@/lib/catalog-categories';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import type { TranslationFn } from '@/lib/i18n';
 
@@ -188,6 +192,8 @@ export function buildAccommodationsFilterGroups({
                 icon: a.icon ?? undefined
             })),
             maxVisible: 10,
+            // HOS-2061 AC-5: the "Ver más" dialog groups by category.
+            categories: buildAmenityFilterCategories({ amenities, t }),
             // Quick-filter shortcuts rendered ABOVE the regular amenity chips.
             // Each `value` is the URL boolean param name that the backend
             // resolves to canonical amenity IDs server-side (with slug
@@ -225,7 +231,8 @@ export function buildAccommodationsFilterGroups({
                 label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
                 icon: f.icon ?? undefined
             })),
-            maxVisible: 10
+            maxVisible: 10,
+            categories: buildFeatureFilterCategories({ features, t })
         },
         {
             id: 'section-dates',

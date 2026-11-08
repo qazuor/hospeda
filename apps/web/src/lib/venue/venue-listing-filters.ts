@@ -17,6 +17,10 @@
 
 import type { AmenityPublic, FeaturePublic, VenuePublicFilterOptions } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import {
+    buildAmenityFilterCategories,
+    buildFeatureFilterCategories
+} from '@/lib/catalog-categories';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 import type { TranslationFn } from '@/lib/i18n';
 import { getVenueTypeIcon } from '@/lib/venue-type-icons';
@@ -220,7 +224,9 @@ export function buildVenueFilterGroups({
                           ),
                           icon: amenity.icon ?? undefined
                       })),
-                      maxVisible: 10
+                      maxVisible: 10,
+                      // HOS-2061 AC-5: the "Ver más" dialog groups by category.
+                      categories: buildAmenityFilterCategories({ amenities, t })
                   }
               ] satisfies FilterGroup[])
             : []),
@@ -238,7 +244,8 @@ export function buildVenueFilterGroups({
                           ),
                           icon: feature.icon ?? undefined
                       })),
-                      maxVisible: 10
+                      maxVisible: 10,
+                      categories: buildFeatureFilterCategories({ features, t })
                   }
               ] satisfies FilterGroup[])
             : []),
