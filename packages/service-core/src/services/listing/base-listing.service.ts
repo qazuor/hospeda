@@ -65,6 +65,7 @@ import {
 import type { ListingHookState } from './listing.types';
 import { assertBusinessLinesChangeOnly } from './listing-business-lines-change';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
+import { readStoredPoliciesForMerge } from './listing-policies-lock';
 import {
     isPoliciesVertical,
     resolveCreatePolicies,
@@ -901,16 +902,20 @@ export abstract class BaseListingService<
         if (typedCtx.hookState?.regeneratedSlug) {
             rest.slug = typedCtx.hookState.regeneratedSlug;
         }
-        // HOS-2060: `policies` is a patch over the stored object, re-validated whole.
+        // HOS-2060: `policies` is a patch over the stored object, re-validated
+        // whole, and read under a row lock so two concurrent saves keep both keys.
         if (isPoliciesVertical(listingVertical)) {
+            const { stored } = await readStoredPoliciesForMerge({
+                vertical: listingVertical,
+                listingId: typedCtx.hookState?.updateId,
+                payload,
+                ctx: typedCtx,
+                fallback: (current as { policies?: Record<string, unknown> | null } | null)
+                    ?.policies
+            });
             Object.assign(
                 rest,
-                resolveUpdatePolicies({
-                    vertical: listingVertical,
-                    payload,
-                    current: (current as { policies?: Record<string, unknown> | null } | null)
-                        ?.policies
-                })
+                resolveUpdatePolicies({ vertical: listingVertical, payload, current: stored })
             );
         }
         return rest as Partial<TEntity>;

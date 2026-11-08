@@ -145,6 +145,7 @@ import {
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
+import { readStoredPoliciesForMerge } from '../listing/listing-policies-lock';
 import { resolveCreatePolicies, resolveUpdatePolicies } from '../listing/listing-policies-write';
 import {
     assertOutsideAction15Scope,
@@ -1263,14 +1264,18 @@ export class AccommodationService extends BaseCrudService<
             cleanData.slug = ctx.hookState.regeneratedSlug;
         }
 
-        // HOS-2060: `policies` is a patch over the stored object, re-validated whole.
+        // HOS-2060: `policies` is a patch over the stored object, re-validated
+        // whole, and read under a row lock so two concurrent saves keep both keys.
+        const { stored: storedPolicies } = await readStoredPoliciesForMerge({
+            vertical: 'accommodation',
+            listingId: ctx.hookState?.updateId,
+            payload,
+            ctx,
+            fallback: current?.policies as Record<string, unknown> | null | undefined
+        });
         Object.assign(
             cleanData,
-            resolveUpdatePolicies({
-                vertical: 'accommodation',
-                payload,
-                current: current?.policies as Record<string, unknown> | null | undefined
-            })
+            resolveUpdatePolicies({ vertical: 'accommodation', payload, current: storedPolicies })
         );
 
         return cleanData as Partial<Accommodation>;

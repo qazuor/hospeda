@@ -14,11 +14,15 @@ vi.mock('../../../src/utils/transaction', async () => {
     const doubles = await import('../../helpers/owner-act-doubles');
     return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
 });
+const lockedPolicies = vi.hoisted(() => ({
+    readForUpdate: vi.fn().mockResolvedValue({ found: false, policies: null })
+}));
 vi.mock('@repo/db', async (importOriginal) => {
     const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...(await importOriginal<object>()),
-        domainEventModel: doubles.domainEventModelDouble
+        domainEventModel: doubles.domainEventModelDouble,
+        listingPoliciesModel: lockedPolicies
     };
 });
 
@@ -109,16 +113,18 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalled();
     });
 
-    it('HOS-2060: merges a policies patch over the stored rules instead of replacing them', async () => {
-        // Arrange
+    it('HOS-2060: merges a policies patch over the row-locked stored rules, not the stale pre-read', async () => {
+        // Arrange: the unlocked pre-read is stale; another page committed
+        // minNights in between, and the locked read inside the update tx sees it.
         const actor = createAdminActor();
         const id = 'policies-merge-id';
-        const existing = createMockAccommodation({
-            id,
-            policies: { paymentMethods: ['cash'], minNights: 2, smokingAllowed: 'no' }
-        });
+        const existing = createMockAccommodation({ id, policies: { paymentMethods: ['cash'] } });
         (model.findById as Mock).mockResolvedValue(existing);
         (model.update as Mock).mockResolvedValue(existing);
+        lockedPolicies.readForUpdate.mockResolvedValueOnce({
+            found: true,
+            policies: { paymentMethods: ['cash'], minNights: 2, smokingAllowed: 'no' }
+        });
 
         // Act
         const result = await service.update(actor, id, {
@@ -134,6 +140,27 @@ describe('AccommodationService.update', () => {
             }),
             FAKE_SERVICE_TX
         );
+        expect(lockedPolicies.readForUpdate).toHaveBeenCalledWith({
+            tx: FAKE_SERVICE_TX,
+            vertical: 'accommodation',
+            listingId: id
+        });
+    });
+
+    it('HOS-2060: takes no row lock when the body does not send policies', async () => {
+        // Arrange
+        const actor = createAdminActor();
+        const id = 'no-policies-id';
+        const existing = createMockAccommodation({ id });
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue(existing);
+        lockedPolicies.readForUpdate.mockClear();
+
+        // Act
+        await service.update(actor, id, { name: 'Otro nombre' });
+
+        // Assert
+        expect(lockedPolicies.readForUpdate).not.toHaveBeenCalled();
     });
 
     it('HOS-2060: refuses a policies patch whose merged result is invalid', async () => {
