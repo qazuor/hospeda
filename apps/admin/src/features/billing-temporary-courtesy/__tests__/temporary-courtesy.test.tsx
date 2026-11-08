@@ -13,9 +13,8 @@ vi.mock('@tanstack/react-router', async (importOriginal) => importOriginal());
 const fetchApi = vi.fn();
 vi.mock('@/lib/api/client', () => ({ fetchApi: (...args: unknown[]) => fetchApi(...args) }));
 vi.mock('@/hooks/use-translations', () => ({
-    useTranslations: () => ({
-        locale: 'es',
-        t: (key: string, params?: Record<string, unknown>) => {
+    useTranslations: () => {
+        const t = (key: string, params?: Record<string, unknown>) => {
             let value: unknown = es;
             for (const part of key.replace('admin-billing.', '').split('.'))
                 value =
@@ -24,12 +23,21 @@ vi.mock('@/hooks/use-translations', () => ({
                         : undefined;
             return typeof value === 'string'
                 ? Object.entries(params ?? {}).reduce(
-                      (text, [name, item]) => text.replaceAll(`{${name}}`, String(item)),
+                      (text, [name, item]) =>
+                          text
+                              .replaceAll(`{{${name}}}`, String(item))
+                              .replaceAll(`{${name}}`, String(item)),
                       value
                   )
                 : key;
-        }
-    })
+        };
+        return {
+            locale: 'es',
+            t,
+            tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
+                t(`${key}_${count === 1 ? 'one' : 'other'}`, { ...params, count })
+        };
+    }
 }));
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: () => [PermissionEnum.BILLING_GRANT_COMPLIMENTARY]
@@ -146,7 +154,7 @@ describe('AC:B9b:14 support for TEST:B9b:13 temporary courtesy screen', () => {
             'hasta el 07/12/2026'
         );
         expect(screen.getByTestId('courtesy-grant-confirmation')).toHaveTextContent(
-            'Se suman 1 meses: la fecha de fin nueva es el 07/01/2027'
+            'Se suma 1 mes: la fecha de fin nueva es el 07/01/2027'
         );
     });
     it('states remaining courtesy, no refund, ACTIVE and predicted charge date before revocation; displays confirmed charge after', async () => {
@@ -158,7 +166,7 @@ describe('AC:B9b:14 support for TEST:B9b:13 temporary courtesy screen', () => {
             await screen.findByRole('button', { name: es.temporaryCourtesy.reviewRevoke })
         );
         const confirmation = screen.getByTestId('courtesy-revoke-confirmation');
-        expect(confirmation).toHaveTextContent('1 meses, hasta el 07/12/2026');
+        expect(confirmation).toHaveTextContent('1 mes, hasta el 07/12/2026');
         expect(confirmation).toHaveTextContent('sin reembolso');
         expect(confirmation).toHaveTextContent('vuelve a ACTIVE');
         expect(confirmation).toHaveTextContent('se le cobra el 17/11/2026');

@@ -15,7 +15,7 @@ export function CourtesyRevokeConfirmation({
     readonly pending: boolean;
     readonly onConfirm: () => void;
 }) {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     if (!preview.courtesy || !preview.predictedNextChargeAt) return null;
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     return (
@@ -24,12 +24,15 @@ export function CourtesyRevokeConfirmation({
             className="space-y-3"
         >
             <p>
-                {t('admin-billing.temporaryCourtesy.revokeConfirm', {
-                    customer,
-                    remaining: preview.courtesy.remainingMonths,
-                    endsAt: date(preview.courtesy.endsAt),
-                    date: date(preview.predictedNextChargeAt)
-                })}
+                {tPlural(
+                    'admin-billing.temporaryCourtesy.revokeConfirm',
+                    preview.courtesy.remainingMonths,
+                    {
+                        customer,
+                        endsAt: date(preview.courtesy.endsAt),
+                        date: date(preview.predictedNextChargeAt)
+                    }
+                )}
             </p>
             <Button
                 type="button"

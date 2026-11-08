@@ -15,7 +15,7 @@ export function CourtesyGrantConfirmation({
     readonly pending: boolean;
     readonly onConfirm: () => void;
 }) {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     return (
         <div
@@ -24,15 +24,13 @@ export function CourtesyGrantConfirmation({
         >
             <p>
                 {preview.liveCourtesy
-                    ? t('admin-billing.temporaryCourtesy.extendConfirm', {
+                    ? tPlural('admin-billing.temporaryCourtesy.extendConfirm', preview.months, {
                           customer,
-                          months: preview.months,
                           current: date(preview.liveCourtesy.endsAt),
                           date: date(preview.endsAt)
                       })
-                    : t('admin-billing.temporaryCourtesy.grantConfirm', {
+                    : tPlural('admin-billing.temporaryCourtesy.grantConfirm', preview.months, {
                           customer,
-                          months: preview.months,
                           date: date(preview.endsAt)
                       })}
             </p>
