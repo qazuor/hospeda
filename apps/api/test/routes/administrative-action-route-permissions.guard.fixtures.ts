@@ -9,6 +9,7 @@ import {
     ADMINISTRATIVE_ACTIONS,
     type AdministrativeAction
 } from '@repo/verticals';
+import { ACTION_20_ROUTE_BINDINGS } from './billing-addon-product/action20-route-bindings.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const partnerApplicationResolutionBinding = (decision: 'approve' | 'reject') => ({
@@ -363,20 +364,7 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
             }
         ]
     },
-    ACC_20: {
-        bindings: [
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-addon-product/admin/index.ts',
-                route: 'adminPreviewAddonVersionPublicationRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/billing-addon-product/admin/index.ts',
-                route: 'adminPublishAddonVersionRoute'
-            }
-        ]
-    },
+    ACC_20: { bindings: ACTION_20_ROUTE_BINDINGS },
     ACC_21: {
         bindings: [
             {
@@ -480,7 +468,6 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
 export const KNOWN_MISALIGNED: Readonly<Partial<Record<AdministrativeAction, string>>> = {
     ACC_22: 'Row says [] with pending V6.9 (HOS-1479); both deadline-change routes ask for MAINTENANCE_MODE_WRITE provisionally (Coord-20); the real permission is B13a debt.'
 };
-
 /** The shared argument shape of the action-level guard helpers. */
 type ActionArgument = { readonly action: AdministrativeAction };
 
