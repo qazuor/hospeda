@@ -24,6 +24,87 @@ afterAll(closeServiceTestPool);
 
 describe('TEST:B10:4 AC:B10:3 recurring addon authorization', () => {
     it.skipIf(!isServiceTestDbAvailable())(
+        'returns NOT_APPLICABLE when the complement left pending',
+        async () => {
+            const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
+            await payingPrincipal(f);
+            const bought = await purchaseAddon(f.input(), f.ports);
+            if (bought.outcome !== 'CREATED') throw new Error('Purchase missing');
+            const [instance] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.id, bought.instanceId));
+            if (!instance?.complementSubscriptionId) throw new Error('Complement missing');
+            const complementId = instance.complementSubscriptionId;
+            // The state is changed directly to probe A2's from-state guard.
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ACTIVE' })
+                .where(eq(subscriptions.id, instance.complementSubscriptionId));
+            const result = await getServiceTestDb().transaction((tx) =>
+                applyA2Recurring(
+                    {
+                        tx,
+                        complementSubscriptionId: complementId,
+                        now: f.ports.clock.now()
+                    },
+                    f.ports
+                )
+            );
+            expect(result).toEqual({ outcome: 'NOT_APPLICABLE' });
+            const [after] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.id, instance.id));
+            expect(after?.status).toBe('PENDING_AUTHORIZATION');
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'rolls back when a locked complement changes before guarded update',
+        async () => {
+            const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
+            await payingPrincipal(f);
+            const bought = await purchaseAddon(f.input(), f.ports);
+            if (bought.outcome !== 'CREATED') throw new Error('Purchase missing');
+            const [instance] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.id, bought.instanceId));
+            if (!instance?.complementSubscriptionId) throw new Error('Complement missing');
+            const complementId = instance.complementSubscriptionId;
+            const policy = await f.ports.addonPolicy({ addonVersionId: instance.addonVersionId });
+            // The policy callback changes the locked row in the same tx to exercise the UPDATE guard.
+            await expect(
+                getServiceTestDb().transaction((tx) =>
+                    applyA2Recurring(
+                        {
+                            tx,
+                            complementSubscriptionId: complementId,
+                            now: f.ports.clock.now()
+                        },
+                        {
+                            ...f.ports,
+                            addonPolicy: async () => {
+                                await tx
+                                    .update(subscriptions)
+                                    .set({ status: 'ACTIVE' })
+                                    .where(eq(subscriptions.id, complementId));
+                                return policy;
+                            }
+                        }
+                    )
+                )
+            ).rejects.toThrow('A2 recurring state changed under lock');
+            const [complement] = await getServiceTestDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, complementId));
+            expect(complement?.status).toBe('PENDING_AUTHORIZATION');
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
         'activates its own complement without mutating the principal preapproval',
         async () => {
             const f = await purchaseFixture({
