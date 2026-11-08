@@ -1,7 +1,13 @@
-import { VerticalEnum } from '@repo/schemas';
+import { accommodations, destinations, eq, users } from '@repo/db';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { chooseFreeAddon } from '../../../src/services/billing/addon/choose-free-addon.service';
-import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    isServiceTestDbAvailable,
+    seedAccommodation
+} from './helpers';
 import { freeChoiceFixture, retireFreeChoiceFixtures } from './support/addon-free-choice-fixtures';
 
 afterEach(retireFreeChoiceFixtures);
@@ -87,5 +93,50 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:15 AC:B10:13 LISTING free
             targetId: target
         });
         expect(listing).toHaveBeenCalledTimes(2);
+    });
+
+    it('takes acceptsFeature from the listing port even when a DRAFT row exists', async () => {
+        const f = await freeChoiceFixture({ scopeType: 'LISTING' });
+        const db = getServiceTestDb();
+        // The fixture directly seeds a DRAFT listing; billing must ask the listing contract.
+        const seeded = await seedAccommodation(db, {
+            publicationStatus: PublicationStatusEnum.DRAFT
+        });
+        await db
+            .update(accommodations)
+            .set({ ownerId: f.ownerId })
+            .where(eq(accommodations.id, seeded.accommodationId));
+        try {
+            const listing = vi.fn(async () => ({
+                ownerId: f.ownerId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                acceptsFeature: false
+            }));
+            const target = seeded.accommodationId;
+            expect(
+                await chooseFreeAddon(f.freeInput(crypto.randomUUID(), target), {
+                    ...f.freePorts,
+                    listing
+                })
+            ).toEqual({ outcome: 'REFUSED', reason: 'TARGET_NOT_FOUND' });
+            expect(await f.instances()).toHaveLength(0);
+            listing.mockResolvedValueOnce({
+                ownerId: f.ownerId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                acceptsFeature: true
+            });
+            expect(
+                await chooseFreeAddon(f.freeInput(crypto.randomUUID(), target), {
+                    ...f.freePorts,
+                    listing
+                })
+            ).toMatchObject({ outcome: 'CREATED', status: 'ACTIVE' });
+            expect((await f.instances())[0]?.targetId).toBe(target);
+            expect(listing).toHaveBeenCalledTimes(2);
+        } finally {
+            await db.delete(accommodations).where(eq(accommodations.id, seeded.accommodationId));
+            await db.delete(destinations).where(eq(destinations.id, seeded.destinationId));
+            await db.delete(users).where(eq(users.id, seeded.userId));
+        }
     });
 });
