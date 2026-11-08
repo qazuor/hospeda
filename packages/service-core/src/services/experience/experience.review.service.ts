@@ -59,6 +59,7 @@ import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
+import { computeEffectiveReviewRating } from '../listing/review-effective-rating.js';
 import { ExperienceService } from './experience.service';
 
 // ---------------------------------------------------------------------------
@@ -335,10 +336,19 @@ export class ExperienceReviewService extends BaseCrudService<
             );
         }
 
+        // Persist the per-review scalar rating (mean of the voted dimensions, else
+        // `overallRating`); the DB `average_rating` default of 0 is otherwise never
+        // overwritten on create (HOS-2083). Same computation as venue.
+        const averageRating = computeEffectiveReviewRating({
+            vertical: 'experience',
+            input: data
+        });
+
         // Force PENDING regardless of any caller-supplied value.
         return {
             userId: actor.id,
-            moderationState: ModerationStatusEnum.PENDING
+            moderationState: ModerationStatusEnum.PENDING,
+            averageRating
         } as Partial<ExperienceReview>;
     }
 
