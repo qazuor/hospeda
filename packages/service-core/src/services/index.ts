@@ -65,6 +65,7 @@ export * from './billing/addon/addon-coverage-verticals.js';
 export * from './billing/addon/addon-instance-a2.js';
 export * from './billing/addon/addon-instance-a2-one-time.js';
 export * from './billing/addon/addon-instance-a5.js';
+export * from './billing/addon/addon-instance-a7.js';
 export * from './billing/addon/addon-orphanhood.js';
 export * from './billing/addon/addon-orphanhood-ports.js';
 export * from './billing/addon/expire-addon-authorization-windows.service.js';
