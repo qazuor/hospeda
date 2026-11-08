@@ -1422,6 +1422,13 @@
       "when": 1794047311654,
       "tag": "0202_vengeful_frog_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1794118527366,
+      "tag": "0203_hos1593_addon_domain_event",
+      "breakpoints": true
     }
   ]
 }
