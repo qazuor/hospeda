@@ -628,6 +628,37 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(streamTextCalls).toHaveLength(0);
     });
 
+    it.each([
+        { entityType: 'accommodation' as const, limitKey: 'max_ai_chat_per_month' },
+        { entityType: 'venue' as const, limitKey: 'max_ai_chat_venue_per_month' },
+        { entityType: 'experience' as const, limitKey: 'max_ai_chat_experience_per_month' }
+    ])('HOS-2076: the owner LIMIT_REACHED message for $entityType does not name the listing type', async ({
+        entityType,
+        limitKey
+    }) => {
+        mockOwnerQueryResult.current = [{ ownerId: OWNER_ID, businessLines: ['standard'] }];
+        mockOwnerLimits.current = new Map([[limitKey, 20]]);
+        getMonthlyCallCountReturn.current = 20;
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType,
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(403);
+        const body = (await res.json()) as { error: { code: string; message: string } };
+        expect(body.error.code).toBe('LIMIT_REACHED');
+        expect(body.error.message).not.toMatch(/alojamiento/i);
+        expect(body.error.message).toBe(
+            'El propietario ha alcanzado el límite mensual de chats de IA.'
+        );
+    });
+
     it('returns 400 VALIDATION_ERROR when messages exceed the 20-message cap', async () => {
         const res = await app.request(STREAM_PATH, {
             method: 'POST',

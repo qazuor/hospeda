@@ -283,8 +283,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
             entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
             effectiveSetSnapshot: ownerEffectiveSet,
-            limitMessage:
-                'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.'
+            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.'
         });
         await enforceAiQuota({
             userId: actor.id,
