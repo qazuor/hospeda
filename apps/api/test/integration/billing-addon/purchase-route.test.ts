@@ -123,7 +123,8 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
             fake
         });
         const charge = vi.spyOn(fake, 'chargeOnce');
-        const created = await post(app, fixture.ownerId, fixture.request());
+        const { payerEmail: _payerEmail, ...withoutPayerEmail } = fixture.request();
+        const created = await post(app, fixture.ownerId, withoutPayerEmail);
         expect([200, 201]).toContain(created.status);
         const data = (await created.json()).data;
         expect(data).toMatchObject({
@@ -143,6 +144,9 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
         expect(attached).toHaveLength(1);
         expect(attached[0]?.status).toBe('SUCCEEDED');
         expect(charge).toHaveBeenCalledTimes(1);
+        expect(charge).toHaveBeenCalledWith(
+            expect.objectContaining({ payerEmail: fixture.payerEmail })
+        );
         const replay = await post(
             app,
             fixture.ownerId,

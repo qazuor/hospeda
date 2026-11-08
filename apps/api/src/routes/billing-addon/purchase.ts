@@ -1,4 +1,4 @@
-import { addonProducts, eq, getDb } from '@repo/db';
+import { addonProducts, eq, getDb, users } from '@repo/db';
 import {
     AddonPurchaseRequestSchema,
     AddonPurchaseResponseSchema,
@@ -40,11 +40,11 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
             .from(addonProducts)
             .where(eq(addonProducts.id, parsed.productId))
             .limit(1);
-        if (product?.chargeKind === 'UNA_VEZ' && (!parsed.payment || !parsed.payerEmail)) {
+        if (product?.chargeKind === 'UNA_VEZ' && !parsed.payment) {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'Payment and payer email are required for one-time addons'
+                    message: 'Payment details are required for one-time addons'
                 },
                 ctx,
                 400
@@ -60,6 +60,21 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                 400
             );
         }
+        const [owner] =
+            product?.chargeKind === 'UNA_VEZ' && !parsed.payerEmail
+                ? await getDb()
+                      .select({ email: users.email })
+                      .from(users)
+                      .where(eq(users.id, actor.id))
+                      .limit(1)
+                : [];
+        const payerEmail = parsed.payerEmail ?? owner?.email;
+        if (product?.chargeKind === 'UNA_VEZ' && !payerEmail)
+            return createErrorResponse(
+                { code: ServiceErrorCode.VALIDATION_ERROR, message: 'Payer email is required' },
+                ctx,
+                400
+            );
         const ports = buildAddonPurchasePorts();
         try {
             const result = await purchaseAddon(
@@ -69,7 +84,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                     targetId: parsed.targetId,
                     orderRequestId: parsed.orderRequestId,
                     expectedAddonVersionId: parsed.addonVersionId,
-                    payerEmail: parsed.payerEmail,
+                    payerEmail,
                     returnUrl: env.HOSPEDA_SITE_URL
                 },
                 ports
@@ -90,7 +105,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                         order: { outcome: 'ORDER_ALREADY_PLACED' as const }
                     };
             }
-            if (!parsed.payment || !parsed.payerEmail)
+            if (!parsed.payment || !payerEmail)
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
                     'One-time payment input missing'
@@ -98,7 +113,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
             const order = await sendOneTimeOrder(
                 {
                     orderRequestId: parsed.orderRequestId,
-                    payerEmail: parsed.payerEmail,
+                    payerEmail,
                     payment: parsed.payment
                 },
                 ports
