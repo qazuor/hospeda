@@ -238,6 +238,30 @@
         "reason": "A1 links a newly PENDING_AUTHORIZATION instance to its complement; pending instances emit no ADDON coverage source."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2.ts",
+        "symbol": "applyA2Recurring",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates a recurring addon; emitAddonCoverageAdded sends the ADDON coverage notice after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2.ts",
+        "symbol": "applyA2Recurring",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates the complement alongside its addon; emitAddonCoverageAdded sends coverage after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time.ts",
+        "symbol": "confirmOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates an approved one-time addon; emitAddonCoverageAdded sends coverage after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
         "symbol": "applyS21",
         "table": "subscriptions",

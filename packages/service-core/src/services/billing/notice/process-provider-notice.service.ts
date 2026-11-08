@@ -35,11 +35,7 @@ import {
 } from '../reconciliation/handle-unknown-authorization.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
-import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
-import {
-    type AfterSubscriptionActivatedPorts,
-    afterSubscriptionActivated
-} from '../subscription/after-activation-commit.js';
+import type { AfterSubscriptionActivatedPorts } from '../subscription/after-activation-commit.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
@@ -57,6 +53,7 @@ import {
     unimplementedSuccessionCloser,
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
+import { activateAuthorizedPending } from './complement-authorized.js';
 import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
@@ -347,12 +344,11 @@ export async function processProviderNotice(
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
-                const changed = await activatePendingWithSignupNotice(
-                    { subscriptionId: row.id, now: ports.clock.now() },
-                    { successionCloser: closer }
+                const changed = await activateAuthorizedPending(
+                    { row, now: ports.clock.now() },
+                    { ...ports, successionCloser: closer }
                 );
                 if (!changed) continue;
-                await afterSubscriptionActivated({ subscription: row }, ports);
             }
             if (action.kind === 'DIVERGENCE') {
                 await openReconciliationMark({
