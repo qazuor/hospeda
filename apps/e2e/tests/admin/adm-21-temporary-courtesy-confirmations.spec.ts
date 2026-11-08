@@ -279,13 +279,14 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
             [card.subscriptionId, grant.id]
         );
         expect(state?.status).toBe('ACTIVE');
+        const revocationClock = world.clock;
         await expect
             .poll(async () => {
-                const [current] = await execSQL<{ expired: boolean }>(
-                    'SELECT ends_at <= now() AS expired FROM courtesy_grant WHERE id = $1',
+                const [current] = await execSQL<{ ends_at: Date }>(
+                    'SELECT ends_at FROM courtesy_grant WHERE id = $1',
                     [grant.id]
                 );
-                return current?.expired;
+                return current !== undefined && current.ends_at <= revocationClock.now();
             })
             .toBe(true);
         const body = (await response.json()) as {
