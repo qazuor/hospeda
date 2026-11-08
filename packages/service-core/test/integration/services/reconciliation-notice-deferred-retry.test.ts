@@ -92,7 +92,8 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
         const settled = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
         const absent = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' });
         const tombstone = await seedDeferredRetryTombstone();
-        const undeclared = await seedDeferredRetryRow({ fake: h.fake, transition: 'A3' });
+        const undeclared = await seedDeferredRetryRow({ fake: h.fake, transition: 'A6' });
+        const a3 = await seedDeferredRetryRow({ fake: h.fake, transition: 'A3' });
         h.notices.set(old.subscription.id, fresh);
         h.notices.set(settled.subscription.id, { state: 'SENT', settledAgeMs: 2 * 60 * minute });
         const eligible = [];
@@ -105,11 +106,11 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
             runNoticeDeferredCancellationRetry({ ...input(), maxRows: 10 }, h.ports)
         );
         expect(result).toMatchObject({
-            candidates: 16,
+            candidates: 17,
             noRecipient: 1,
             undeclared: 1,
             noticePending: 0,
-            noticeAbsent: 1,
+            noticeAbsent: 2,
             settledLongAgo: 1,
             deferredToNextRun: 2,
             retried: { confirmed: 10 },
@@ -127,7 +128,12 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
                 ([request]) => request.subscriptionId === undeclared.subscription.id
             )
         ).toHaveLength(0);
-        for (const row of [old, settled, absent, undeclared])
+        expect(h.read).toHaveBeenCalledWith({
+            subscriptionId: a3.subscription.id,
+            userId: a3.subscription.userId,
+            kind: 'ADDON_AUTHORIZATION_EXPIRED'
+        });
+        for (const row of [old, settled, absent, undeclared, a3])
             expect(callsFor(h.cancel, row.providerId)).toBe(0);
         const callCounts = eligible.map((row) => callsFor(h.cancel, row.providerId));
         expect(callCounts.filter((count) => count === 1)).toHaveLength(10);
