@@ -11,7 +11,7 @@ import type { z } from 'zod';
 import { apiClient } from './client';
 import type { ApiResult } from './types';
 
-const ADDONS = '/api/v1/protected/billing/addons';
+const PROTECTED = '/api/v1/protected';
 
 /** Reads offers, starts purchases, resumes a purchase and chooses a free addon. */
 export const billingAddonApi = {
@@ -20,7 +20,7 @@ export const billingAddonApi = {
      * @example const result = await billingAddonApi.offers();
      */
     offers(): Promise<ApiResult<AddonOffersResponse>> {
-        return apiClient.getProtected({ path: `${ADDONS}/offers` });
+        return apiClient.getProtected({ path: `${PROTECTED}/billing/addons/offers` });
     },
     /**
      * Start or replay an addon purchase.
@@ -31,7 +31,7 @@ export const billingAddonApi = {
     }: {
         readonly body: z.input<typeof AddonPurchaseRequestSchema>;
     }): Promise<ApiResult<z.infer<typeof AddonPurchaseResponseSchema>>> {
-        return apiClient.postProtected({ path: `${ADDONS}/purchases`, body });
+        return apiClient.postProtected({ path: `${PROTECTED}/billing/addons/purchases`, body });
     },
     /**
      * Read one of this owner's purchase requests.
@@ -43,7 +43,7 @@ export const billingAddonApi = {
         readonly orderRequestId: string;
     }): Promise<ApiResult<z.infer<typeof AddonPurchaseReadResponseSchema>>> {
         return apiClient.getProtected({
-            path: `${ADDONS}/purchases/${encodeURIComponent(orderRequestId)}`
+            path: `${PROTECTED}/billing/addons/purchases/${encodeURIComponent(orderRequestId)}`
         });
     },
     /**
@@ -55,6 +55,6 @@ export const billingAddonApi = {
     }: {
         readonly body: z.input<typeof AddonFreeChoiceRequestSchema>;
     }): Promise<ApiResult<z.infer<typeof AddonFreeChoiceResponseSchema>>> {
-        return apiClient.postProtected({ path: `${ADDONS}/free-choices`, body });
+        return apiClient.postProtected({ path: `${PROTECTED}/billing/addons/free-choices`, body });
     }
 };
