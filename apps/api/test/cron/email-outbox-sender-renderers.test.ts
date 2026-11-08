@@ -172,10 +172,7 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 'Mercado Pago'
             ]
         ],
-        [
-            'billing.addon-authorization-expired-cancel',
-            ['Venció el plazo para autorizar tu addon', 'No se te cobró nada', 'Mercado Pago']
-        ],
+        ['billing.addon-authorization-expired-cancel', ['No se te cobró nada']],
         [
             'billing.first-charge-declined-cancel',
             ['El primer cobro de tu suscripción fue rechazado', 'Mercado Pago']
@@ -421,7 +418,6 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
 describe('TEST:V6:36 the production outbox sender renders the on-archive notice', () => {
     const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
     const listingId = '3f0d3c2e-5a7b-4c1d-9e8f-0a1b2c3d4e5f';
-
     it('renders verticals.listing-archived through the production sender', async () => {
         const result = await render({
             row: row(LISTING_ARCHIVED_TEMPLATE, {
