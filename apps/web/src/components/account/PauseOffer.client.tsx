@@ -155,6 +155,11 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                             ))}
                             <button
                                 type="button"
+                                data-testid={
+                                    preview.courtesyForfeit
+                                        ? 'pause-confirm-courtesy-forfeit'
+                                        : 'pause-confirm-simple'
+                                }
                                 className={styles.primary}
                                 onClick={() => void applyPause()}
                             >

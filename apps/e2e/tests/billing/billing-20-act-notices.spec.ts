@@ -35,7 +35,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
     let promoIds: string[] = [];
     let dialogs: string[] = [];
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }, testInfo) => {
         providerNamespace = randomUUID();
         dialogs = [];
         page.on('dialog', async (dialog) => {
@@ -43,28 +43,42 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
             await dialog.dismiss();
         });
         const clock = createAdjustableClock({ start: new Date() });
-        const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({
-                clock,
-                idNamespace: providerNamespace,
-                honestAbout: [
-                    {
-                        lie: 'M1',
-                        why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
-                    },
-                    { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
-                    {
-                        lie: 'M8',
-                        why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
-                    },
-                    {
-                        lie: 'M12',
-                        why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
-                    }
-                ]
-            }),
-            clock
-        });
+        const provider = testInfo.title.startsWith('fila 5')
+            ? new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      {
+                          lie: 'M1',
+                          why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
+                      },
+                      { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
+                      {
+                          lie: 'M8',
+                          why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
+                      }
+                  ]
+              })
+            : new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      {
+                          lie: 'M1',
+                          why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
+                      },
+                      { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
+                      {
+                          lie: 'M8',
+                          why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
+                      },
+                      {
+                          lie: 'M12',
+                          why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
+                      }
+                  ]
+              });
+        const fakeServer = await startE2eFakeProvider({ provider, clock });
         try {
             world = { clock, fakeServer, mailCapture: await startE2eMailCapture() };
         } catch (error) {
@@ -307,6 +321,71 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         await expect(updated.getByTestId('plan-change-promo-warning')).toHaveText(
             'Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.'
         );
+    });
+
+    test('fila 5 (traspaso HOS-1580 → HOS-1592): live courtesy warns of the loss before customer pause', async ({
+        page
+    }) => {
+        if (!world) throw new Error('Expected case-local fake provider.');
+        const subscriber = await createSubscriber();
+        userIds.push(subscriber.user.id, subscriber.admin.id);
+        const card = await createApiCardSubscription({
+            user: subscriber.user,
+            billingOptionId: await monthlyOptionForSlug('owner-basico')
+        });
+        await activateCardSubscription({
+            fakeServer: world.fakeServer,
+            subscriptionId: card.subscriptionId
+        });
+        const granted = await page.request.post(
+            `${API_URL}/api/v1/admin/billing-subscription/${card.subscriptionId}/courtesy/grant`,
+            {
+                headers: { cookie: subscriber.admin.sessionCookie },
+                data: {
+                    expectedStatus: 'ACTIVE',
+                    months: 1,
+                    reason: 'TEST:B8b:25 row 5 transfer',
+                    confirmed: true
+                }
+            }
+        );
+        const grantBody = (await granted.json()) as {
+            readonly data?: { readonly outcome: string };
+            readonly error?: {
+                readonly code?: string;
+                readonly reason?: string;
+                readonly message?: string;
+            };
+        };
+        expect(
+            granted.status(),
+            `grant HTTP ${granted.status()}: ${JSON.stringify(grantBody.error ?? grantBody)}`
+        ).toBe(200);
+        expect(grantBody.data?.outcome).toBe('GRANTED');
+        const [courtesy] = await execSQL<{ ends_at: Date }>(
+            'SELECT ends_at FROM courtesy_grant WHERE beneficiary_user_id = $1',
+            [subscriber.user.id]
+        );
+        if (!courtesy) throw new Error('Expected courtesy granted by admin route.');
+        await seedCookieConsent(page);
+        await attachSession(page, subscriber.user.sessionCookie);
+        await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+        const article = articleFor(page, card.subscriptionId);
+        await expect(article).toBeVisible();
+        await article.getByRole('button', { name: 'Pausar suscripción' }).click();
+        await expect(article.getByTestId('pause-confirm-simple')).toHaveCount(0);
+        await expect(article.getByTestId('pause-confirm-courtesy-forfeit')).toBeVisible();
+        await expect(article.getByTestId('pause-courtesy-forfeit')).toContainText(
+            formatMarketDate(courtesy.ends_at)
+        );
+        await expect(article.getByTestId('pause-confirmation')).toContainText(
+            'perdés el tiempo que quedaba'
+        );
+        await expect(
+            article.getByTestId('pause-confirmation').getByRole('button', {
+                name: 'Confirmar pausa'
+            })
+        ).toBeVisible();
     });
 
     test('a provider reread without authorized status explains the last charge remedy', async ({

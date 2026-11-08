@@ -11,6 +11,8 @@ import {
     adminSubscriptionCancellationPreviewRoute
 } from './cancellation';
 import { adminRevokeCourtesyRoute } from './courtesy';
+import { adminCourtesyGrantPreviewRoute, adminGrantCourtesyRoute } from './courtesy-grant';
+import { adminCourtesyRevokePreviewRoute } from './courtesy-revoke-preview';
 import {
     adminDeclareManualUnpaidRoute,
     adminListManualPaymentsRoute,
@@ -75,6 +77,9 @@ router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
 router.route('/', adminRevokeCourtesyRoute);
+router.route('/', adminCourtesyGrantPreviewRoute);
+router.route('/', adminGrantCourtesyRoute);
+router.route('/', adminCourtesyRevokePreviewRoute);
 router.route('/', adminSubscriptionPausePreviewRoute);
 router.route('/', adminPauseSubscriptionRoute);
 router.route('/', adminResumeSubscriptionRoute);

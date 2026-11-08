@@ -241,6 +241,12 @@
     ],
     "grant_vivo_ancla_viva": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/temporary-courtesy-preview.ts",
+            "symbol": "previewTemporaryCourtesyGrant",
+            "row": 2,
+            "why": "AC:B9b:14 previews the same live permanent grant anchor refusal as S9 and S34."
+        },
+        {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
             "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
             "row": 17,
@@ -382,6 +388,13 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/subscription/temporary-courtesy-preview.ts",
+            "symbol": "readBase",
+            "row": null,
+            "why": "AC:B9b:14 preview selects balanceMonths null to show the live, non-deferred courtesy and its remaining months.",
+            "subject": "courtesy_grant"
+        },
         {
             "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy-support.ts",
             "symbol": "computeReissueWindow",

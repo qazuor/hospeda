@@ -2301,5 +2301,34 @@
             "INVALID_PERMANENT_GRANT_INPUT": "Los datos del grant no son válidos."
         },
         "invalidForm": "Revisá la vertical, el plan vigente y el motivo."
+    },
+    "temporaryCourtesy": {
+        "title": "Cortesía temporal",
+        "rule": "La cortesía temporal se otorga en meses enteros y sólo sobre un plan mensual. Cada mes saltea un cobro.",
+        "unavailable": "No disponible: el plan de {customer} es {cycle}, no mensual.",
+        "unavailableReason": "Motivo: {reason}.",
+        "alternatives": "Alternativas: una cortesía permanente o una promo sobre la renovación.",
+        "months": "Meses",
+        "reason": "Motivo",
+        "review": "Revisar efectos",
+        "confirm": "Confirmar acción",
+        "grantConfirm_one": "{customer} no paga el próximo {{count}} cobro: la suscripción se pausa en Mercado Pago y el servicio sigue. La cortesía termina el {date}.",
+        "grantConfirm_other": "{customer} no paga los próximos {{count}} cobros: la suscripción se pausa en Mercado Pago y el servicio sigue. La cortesía termina el {date}.",
+        "extendConfirm_one": "{customer} ya tiene una cortesía hasta el {current}. Se suma {{count}} mes: la fecha de fin nueva es el {date}.",
+        "extendConfirm_other": "{customer} ya tiene una cortesía hasta el {current}. Se suman {{count}} meses: la fecha de fin nueva es el {date}.",
+        "granted": "Cortesía otorgada hasta el {date}.",
+        "extended": "Cortesía extendida hasta el {date}.",
+        "notApplied": "La cortesía no se aplicó: Mercado Pago no confirmó la pausa. Quedó una marca de conciliación para revisar.",
+        "revokeConfirm_one": "{customer} pierde la cortesía que le quedaba ({{count}} mes, hasta el {endsAt}), sin reembolso. La suscripción vuelve a ACTIVE y se le cobra el {date}.",
+        "revokeConfirm_other": "{customer} pierde la cortesía que le quedaba ({{count}} meses, hasta el {endsAt}), sin reembolso. La suscripción vuelve a ACTIVE y se le cobra el {date}.",
+        "revoked": "Cortesía revocada. Próximo cobro: {date}.",
+        "notInForce": "No hay una cortesía temporal vigente para revocar.",
+        "error": "No se pudo completar la acción ({reason}). Revisá el estado y volvé a intentar.",
+        "stateChanged": "El estado de la suscripción cambió. Recargá el preview y volvé a revisar.",
+        "revokeTitle": "Revocar cortesía temporal",
+        "reviewRevoke": "Revisar revocación",
+        "loading": "Revisando la cortesía…",
+        "invalidId": "La suscripción no existe.",
+        "chargePending": "pendiente de confirmación del proveedor"
     }
 }
