@@ -1,7 +1,9 @@
 /**
  * @file listing-catalogs.ts
- * @description Loads the amenity and feature catalogs the venue/experience
- * editor offers, scoped to one vertical and read to the last page (HOS-2061).
+ * @description Loads the amenity and feature catalogs the listing editors
+ * offer, scoped to one vertical and read to the last page (HOS-2061). The
+ * venue/experience editor and the accommodation editor
+ * (`accommodation-editor-data.ts`) both read through `readAllCatalogPages`.
  *
  * The public catalog endpoints cap `pageSize` at 100. A single-page read
  * silently drops every row past the cap, which is how a catalog loses entries
@@ -16,8 +18,8 @@ import type { AmenityData, ApiResult, PaginatedResponse } from '@/lib/api/types'
 /** The public catalog endpoints cap `pageSize` at 100. */
 export const LISTING_CATALOG_PAGE_SIZE = 100;
 
-/** The verticals the listing editor serves. */
-export type ListingCatalogVertical = 'venue' | 'experience';
+/** The verticals whose editors read a catalog. */
+export type ListingCatalogVertical = 'accommodation' | 'venue' | 'experience';
 
 /** One page fetcher for a catalog endpoint. */
 type CatalogPageFetcher = (params: {
