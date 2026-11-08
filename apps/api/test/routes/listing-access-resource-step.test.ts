@@ -230,7 +230,8 @@ describe.each(cases)('TEST:V5:1 $label resource step', ({ label, service, route 
         } else {
             vi.spyOn(service.prototype, 'loadJunctionIds').mockResolvedValue({
                 amenityIds: [],
-                featureIds: []
+                featureIds: [],
+                amenityAttributes: []
             });
         }
         const result = await probe(app, LISTING_ID);
