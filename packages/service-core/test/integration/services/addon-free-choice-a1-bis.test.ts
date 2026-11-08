@@ -143,6 +143,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:14 AC:B10:12 free addon u
             .from(addonInstances)
             .where(eq(addonInstances.id, created.instanceId));
         expect(row?.status).toBe('CANCELLED');
+        // A5 does not write its domain event yet: HOS-2090.
+        expect(f.notices).toContainEqual(
+            expect.objectContaining({ sourceType: 'ADDON', change: 'REMOVED' })
+        );
         expect(await chooseFreeAddon(f.freeInput(), f.freePorts)).toEqual({
             outcome: 'REFUSED',
             reason: 'NO_FREE_TITLE'

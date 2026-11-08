@@ -1,5 +1,21 @@
 [
     {
+        "file": "apps/api/src/utils/listing-publication/ports.ts",
+        "symbol": "insertTrial",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Inserts a newly active listing trial; successful insertion adds trial coverage."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "insertTrial",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Inserts a newly active trial; a conflict leaves existing coverage unchanged."
+    },
+    {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
         "symbol": "markConverted",
         "table": "trials",
@@ -30,6 +46,30 @@
         "effect": "turns-on",
         "via": null,
         "reason": "Activates newly authorized coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "createPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a PENDING_AUTHORIZATION principal, which emits no subscription coverage source."
+    },
+    {
+        "file": "packages/db/src/models/subscription/manual-pending-authorization.ts",
+        "symbol": "createManualPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a PENDING_AUTHORIZATION manual principal, which emits no subscription coverage source."
+    },
+    {
+        "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+        "symbol": "insertReceiptTombstone",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a CANCELLED receipt tombstone; the row never emits a subscription coverage source."
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
@@ -252,6 +292,22 @@
         "effect": "neutral",
         "via": null,
         "reason": "A1 links a newly PENDING_AUTHORIZATION instance to its complement; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/choose-free-addon.service.ts",
+        "symbol": "chooseFreeAddon",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A1-bis inserts an ACTIVE free addon under a live grant; emitAddonCoverageAdded sends the ADDON notice after commit (AC:B10:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/purchase-addon-complement.ts",
+        "symbol": "insertPendingComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A1 creates a PENDING_AUTHORIZATION complement, which emits no subscription coverage source."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/addon-instance-a2.ts",
@@ -581,5 +637,13 @@
         "effect": "turns-off",
         "via": "notice",
         "reason": "The third S10 event ends the live courtesy grant while resuming the principal; the existing S10 path emits coverage change after commit (AC:B9b:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/trial/cutover-v6-trials.ts",
+        "symbol": "writeCutoverTrials",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "V6 cutover inserts an active trial for an eligible listing; a conflict skips the insert and preserves existing coverage."
     }
 ]
