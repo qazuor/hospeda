@@ -200,7 +200,10 @@ describe('TEST:B10:6 AC:B10:5 A4 fixed-days expiry', () => {
             };
             const ports = { clock: f.ports.clock, listing: f.ports.listing, coverageNotices };
             expect(await expireAddonInstances(100, ports)).toMatchObject({ expired: 1 });
-            expect(await expireAddonInstances(100, ports)).toMatchObject({ expired: 0 });
+            expect(await expireAddonInstances(100, ports)).toMatchObject({
+                examined: 0,
+                expired: 0
+            });
             const events = await domainEventModel.findByEntity({
                 entityType: 'addon_instance',
                 entityId: instance.id
