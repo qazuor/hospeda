@@ -68,6 +68,8 @@ const translateFeatureName = (slug: string): string => {
 interface PublicFeatureItem {
     readonly id: string;
     readonly slug?: string;
+    /** Verticals the item applies to (SPEC-266); scopes the picker (HOS-2061). */
+    readonly applicableVerticals?: readonly string[];
     readonly icon?: string | null;
 }
 
@@ -130,7 +132,15 @@ const fetchFeaturePage = async (page: number) => {
  * The result is used for client-side filtering inside EntitySelectField
  * (searchMode: 'client').
  */
-export const loadAllFeatures = async (): Promise<SelectOption[]> => {
+export const loadAllFeatures = async ({
+    applicableVertical
+}: {
+    /**
+     * When set, only items whose `applicableVerticals` include it are offered
+     * (HOS-2061 AC-4) — a venue form never offers accommodation-only rows.
+     */
+    readonly applicableVertical?: string;
+} = {}): Promise<SelectOption[]> => {
     try {
         const allItems: PublicFeatureItem[] = [];
 
@@ -146,7 +156,10 @@ export const loadAllFeatures = async (): Promise<SelectOption[]> => {
             allItems.push(...items);
         }
 
-        return allItems.map(toSelectOption);
+        const scoped = applicableVertical
+            ? allItems.filter((item) => item.applicableVerticals?.includes(applicableVertical))
+            : allItems;
+        return scoped.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
             'Error loading admin feature catalog:',
@@ -167,6 +180,8 @@ export const loadFeaturesByIds = async (ids: string[]): Promise<SelectOption[]> 
     if (ids.length === 0) return [];
 
     try {
+        // Unscoped on purpose: an already-linked item outside the vertical must
+        // still render its label instead of vanishing from the field.
         const all = await loadAllFeatures();
         return all.filter((opt) => ids.includes(opt.value));
     } catch (error) {

@@ -509,7 +509,8 @@ export function createListingOperationalSection(
                 typeConfig: {
                     multiple: true,
                     searchMode: 'client',
-                    clearable: true
+                    clearable: true,
+                    applicableVertical: vertical
                 }
             },
             {
@@ -526,7 +527,8 @@ export function createListingOperationalSection(
                 typeConfig: {
                     multiple: true,
                     searchMode: 'client',
-                    clearable: true
+                    clearable: true,
+                    applicableVertical: vertical
                 }
             }
         ]

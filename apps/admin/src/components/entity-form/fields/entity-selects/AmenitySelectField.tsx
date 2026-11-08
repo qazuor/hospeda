@@ -49,9 +49,17 @@ export const AmenitySelectField = React.forwardRef<HTMLButtonElement, AmenitySel
         { config, value, onChange, error, hasError, errorMessage, disabled, required, className },
         ref
     ) => {
-        const { multiple = true, clearable = true, itemClassName } = config.typeConfig || {};
+        const {
+            multiple = true,
+            clearable = true,
+            itemClassName,
+            applicableVertical
+        } = config.typeConfig || {};
 
-        const loadAllCallback = React.useCallback(loadAllAmenities, []);
+        const loadAllCallback = React.useCallback(
+            () => loadAllAmenities({ applicableVertical }),
+            [applicableVertical]
+        );
         const loadByIdsCallback = React.useCallback(loadAmenitiesByIds, []);
 
         const entitySelectConfig: FieldConfig & { typeConfig: EntitySelectFieldConfig } = {
