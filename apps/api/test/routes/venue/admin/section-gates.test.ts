@@ -112,7 +112,16 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         withTransaction: async (
             callback: (tx: { execute: () => Promise<void> }) => Promise<unknown>
-        ) => callback({ execute: async () => undefined })
+        ) => callback({ execute: async () => undefined }),
+        // HOS-2060: the policies merge reads the stored object under a row lock;
+        // here the lock is the in-memory store.
+        listingPoliciesModel: {
+            readForUpdate: async () => ({
+                found: true,
+                policies:
+                    (store.row as { policies?: Record<string, unknown> | null }).policies ?? null
+            })
+        }
     };
 });
 
