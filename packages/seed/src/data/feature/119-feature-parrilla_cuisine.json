@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "119-feature-parrilla_cuisine",
+    "slug": "parrilla_cuisine",
+    "category": "CUISINE",
+    "description": {
+        "es": "Parrilla: carnes asadas a las brasas",
+        "en": "Grill house: meats cooked over embers",
+        "pt": "Parrilla: carnes assadas na brasa"
+    },
+    "applicableVerticals": ["venue"],
+    "icon": "TraditionalGrillIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

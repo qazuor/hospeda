@@ -8,7 +8,7 @@
         "en": "Ambiente acogedor y seguro para familias con niños de todas las edades",
         "pt": "Ambiente acogedor y seguro para familias con niños de todas las edades"
     },
-    "applicableVerticals": ["venue"],
+    "applicableVerticals": ["venue", "experience"],
     "icon": "FamilySuitableIcon",
     "isBuiltin": false,
     "isFeatured": true,

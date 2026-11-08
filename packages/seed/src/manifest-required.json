@@ -1096,9 +1096,7 @@
         "090-amenity-services-half-board.json",
         "093-amenity-services-delivery.json",
         "094-amenity-services-takeaway.json",
-        "095-amenity-services-accepts-reservations.json",
         "096-amenity-entertainment-live-music.json",
-        "097-amenity-services-happy-hour.json",
         "098-amenity-outdoors-bike-parking.json",
         "099-amenity-family-friendly-kids-play-area.json",
         "101-amenity-services-catering.json",
@@ -1173,7 +1171,12 @@
         "170-amenity-safety-security-cameras.json",
         "171-amenity-family-friendly-baby-bathtub.json",
         "172-amenity-work-friendly-desk.json",
-        "173-amenity-work-friendly-ergonomic-chair.json"
+        "173-amenity-work-friendly-ergonomic-chair.json",
+        "174-amenity-outdoors-outdoor-tables.json",
+        "175-amenity-family-friendly-baby-changing-table.json",
+        "176-amenity-general-appliances-boat-included.json",
+        "177-amenity-services-changing-rooms.json",
+        "178-amenity-safety-life-jacket-included.json"
     ],
     "features": [
         "001-feature-river_front.json",
@@ -1246,13 +1249,11 @@
         "086-feature-romantic_ambiance.json",
         "087-feature-organic_products.json",
         "088-feature-craft_beer.json",
-        "089-feature-kid_friendly.json",
         "090-feature-beginner_friendly.json",
         "091-feature-english_guide_available.json",
         "092-feature-portuguese_guide_available.json",
         "093-feature-outdoor_activity.json",
         "094-feature-pregnancy_safe.json",
-        "095-feature-private_available.json",
         "096-feature-senior_friendly.json",
         "097-feature-lactose_free_options.json",
         "098-feature-nut_free_options.json",
@@ -1271,7 +1272,12 @@
         "111-feature-lagoon_view.json",
         "112-feature-stream_view.json",
         "113-feature-countryside_view.json",
-        "114-feature-pool_view.json"
+        "114-feature-pool_view.json",
+        "115-feature-happy_hour.json",
+        "116-feature-thermal_waters.json",
+        "117-feature-birdwatching.json",
+        "118-feature-island_setting.json",
+        "119-feature-parrilla_cuisine.json"
     ],
     "sponsorshipLevels": [
         "001-level-event-bronze.json",

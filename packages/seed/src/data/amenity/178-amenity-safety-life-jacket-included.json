@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "178-amenity-safety-life-jacket-included",
+    "slug": "life_jacket_included",
+    "description": {
+        "es": "Chaleco salvavidas incluido para cada participante",
+        "en": "Life jacket included for every participant",
+        "pt": "Colete salva-vidas incluído para cada participante"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SAFETY",
+    "icon": "SafeIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 65
+}

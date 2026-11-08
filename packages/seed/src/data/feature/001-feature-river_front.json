@@ -8,7 +8,7 @@
         "en": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial",
         "pt": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue"],
     "icon": "RiverFrontIcon",
     "isBuiltin": true,
     "isFeatured": false,
