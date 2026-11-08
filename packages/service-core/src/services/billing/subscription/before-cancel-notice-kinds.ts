@@ -23,6 +23,8 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     ARREARS_SUSPENSION: 'billing.arrears-suspension',
     /** A5: an orphaned addon's complement subscription (AC:B5:27). */
     ADDON_CANCELLED: 'billing.addon-cancelled',
+    /** A3: the authorization window of a recurring addon expired. */
+    ADDON_AUTHORIZATION_EXPIRED: 'billing.addon-authorization-expired-cancel',
     /** S13: a permanent grant cut the subscription's charge (B9a, HOS-1582). */
     PERMANENT_GRANT: 'billing.permanent-grant-cancel',
     /** S20: a permanent grant converted an addon to $0 and cut its complement's charge (B9a, HOS-1583). */

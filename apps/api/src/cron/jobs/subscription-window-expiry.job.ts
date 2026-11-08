@@ -1,6 +1,7 @@
 import { planCatalogModel } from '@repo/db';
 import {
     activateCreditedPendingAuthorizations,
+    expireAddonAuthorizationWindows,
     expireAuthorizationWindows,
     sweepInheritedTouristVips
 } from '@repo/service-core';
@@ -64,6 +65,14 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             failed: 0
         };
         let vipSummary = { cancelled: 0, deferred: 0, skipped: 0 };
+        let addonSummary = {
+            examined: 0,
+            activated: 0,
+            abandoned: 0,
+            deferred: 0,
+            noticePending: 0,
+            failed: 0
+        };
         const collector = createScheduledChangeCollector();
         const ports = {
             provider: getPaymentProvider(),
@@ -103,6 +112,22 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             });
         }
         try {
+            addonSummary = await expireAddonAuthorizationWindows(100, {
+                provider: getPaymentProvider(),
+                clock: getClock().clock,
+                beforeCancelNotice,
+                coverageNotices: getCoverageNotices(),
+                ...buildComplementPolicyPorts()
+            });
+            errors += addonSummary.failed;
+        } catch (error) {
+            rejected = true;
+            errors++;
+            logger.error('Addon authorization window expiry failed', {
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
+        try {
             vipSummary = await sweepInheritedTouristVips(100, {
                 provider: getPaymentProvider(),
                 clock: getClock().clock,
@@ -119,10 +144,16 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             });
         }
         const durationMs = Date.now() - startedAt.getTime();
-        const processed = creditedPending.activated + summary.abandoned + summary.activated;
+        const processed =
+            creditedPending.activated +
+            summary.abandoned +
+            summary.activated +
+            addonSummary.activated +
+            addonSummary.abandoned;
         logger.info('Authorization window expiry completed', {
             ...summary,
             creditedPending,
+            addonSummary,
             durationMs
         });
         return {
@@ -131,7 +162,7 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             processed,
             errors,
             durationMs,
-            details: { ...summary, creditedPending, ...vipSummary }
+            details: { ...summary, creditedPending, addonSummary, ...vipSummary }
         };
     }
 };

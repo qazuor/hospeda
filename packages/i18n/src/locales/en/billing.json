@@ -84,6 +84,12 @@
         "viewAvailable": "View available add-ons",
         "buyMore": "Buy more add-ons"
     },
+    "addonPurchaseApi": {
+        "oneTimePaymentRequired": "Payment details are required for one-time addons.",
+        "recurringPaymentNotAccepted": "Recurring addons are paid for at the provider checkout.",
+        "payerEmailRequired": "Enter the payer's email address.",
+        "purchaseNotFound": "We couldn't find that addon purchase."
+    },
     "payment": {
         "title": "Payment methods",
         "setDefault": "Set as default",

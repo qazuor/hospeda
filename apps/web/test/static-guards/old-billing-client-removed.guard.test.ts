@@ -242,7 +242,7 @@ describe('TEST:B13a:23 — the scanner catches a reintroduced old-billing call (
             'export const billingApi = {',
             '    purchaseAddon({ slug }: { readonly slug: string }) {',
             '        return apiClient.postProtected({',
-            `            path: \`${PROTECTED_TOKEN}/billing/addons/${SLUG_TOKEN}/purchase\`,`,
+            `            path: \`${PROTECTED_TOKEN}/billing/checkout/${SLUG_TOKEN}\`,`,
             '        });',
             '    },',
             '    list() {',
@@ -265,7 +265,7 @@ describe('TEST:B13a:23 — the scanner catches a reintroduced old-billing call (
             {
                 file: plantedClient.file,
                 line: 4,
-                route: `/api/v1/protected/billing/addons/${SLUG_TOKEN}/purchase`
+                route: `/api/v1/protected/billing/checkout/${SLUG_TOKEN}`
             },
             { file: plantedClient.file, line: 8, route: '/api/v1/public/plans' }
         ]);
@@ -276,6 +276,16 @@ describe('TEST:B13a:23 — the scanner catches a reintroduced old-billing call (
             findOldBillingPaths({
                 file: 'x.ts',
                 source: `const a = { path: \`${PROTECTED_TOKEN}/price-alerts\` };`
+            })
+        ).toEqual([]);
+    });
+
+    it('leaves the registered addon purchases route alone', () => {
+        expect(REGISTERED_MOUNTS).toContain('/api/v1/protected/billing/addons');
+        expect(
+            findOldBillingPaths({
+                file: 'x.ts',
+                source: `const a = { path: \`${PROTECTED_TOKEN}/billing/addons/purchases\` };`
             })
         ).toEqual([]);
     });

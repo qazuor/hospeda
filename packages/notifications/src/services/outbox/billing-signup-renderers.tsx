@@ -1,7 +1,9 @@
 import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import {
+    ADDON_AUTHORIZATION_EXPIRED_SUBJECT,
     ADDON_CANCELLED_SUBJECT,
+    AddonAuthorizationExpired,
     AddonCancelled,
     ARREARS_SUSPENSION_SUBJECT,
     ArrearsSuspension,
@@ -136,6 +138,16 @@ function addonCancelled(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación del addon');
     return { subject: ADDON_CANCELLED_SUBJECT, react: <AddonCancelled /> };
+}
+
+function addonAuthorizationExpired(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de autorización del addon');
+    return {
+        subject: ADDON_AUTHORIZATION_EXPIRED_SUBJECT,
+        react: <AddonAuthorizationExpired />
+    };
 }
 
 function firstChargeDeclinedCancel(row: EmailOutboxRow) {
@@ -460,6 +472,7 @@ export function createBillingSignupRenderers(input: {
         'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
         'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),
         'billing.addon-cancelled': ({ row }) => addonCancelled(row),
+        'billing.addon-authorization-expired-cancel': ({ row }) => addonAuthorizationExpired(row),
         'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
         'billing.revocation-cancel': ({ row }) => revocationCancel(row),
         'billing.permanent-grant-cancel': ({ row }) => permanentGrantCancel(row),

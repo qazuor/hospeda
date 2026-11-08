@@ -301,6 +301,14 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Route response, read-only subscription, pause, grant and outbox rows; sandbox preapproval reads; both provider email observations and our notice.
 - **Covers:** AC:B9b:11, AC:B9b:13, AC:B9b:14; TEST:B9b:11, TEST:B9b:13, TEST:B9b:14, TEST:B9b:15.
 
+### S18 — Addon purchase: recurring checkout and one-time order (HOS-1593)
+
+- **Preconditions:** A paying `ACTIVE` principal in staging, a test card, and saleable recurring and one-time addon products.
+- **Steps:** Buy a recurring addon through the protected API; authorize its own sandbox checkout. Repeat the POST with the same `orderRequestId`. Buy a one-time addon with the test card. Let a second recurring checkout expire without authorization.
+- **Expected:** The addon has its own preapproval and its `external_reference` names the complement row; the principal amount stays unchanged. Replay creates no second preapproval. The one-time order has a payment on its `ACTIVE` instance and an end date. A3 sends our email before cancelling the expired preapproval.
+- **Evidence:** API responses, read-only sandbox preapprovals and order, addon instance and payment rows, receipt, and outbox delivery time.
+- **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -400,6 +408,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Read-only subscription, pause, grant and outbox rows; read-only provider preapproval reads; both provider emails and our notice.
 - **Covers:** AC:B9b:11, AC:B9b:13, AC:B9b:14; TEST:B9b:11, TEST:B9b:13, TEST:B9b:14, TEST:B9b:15.
 
+### P9 — Real addon purchase (HOS-1593)
+
+- **Preconditions:** The owner's internal production account has a paying `ACTIVE` principal and an approved addon amount.
+- **Steps:** Buy a recurring addon and a one-time addon through the protected API with the owner's card. Read both provider charges and observe the provider email and card summary.
+- **Expected:** The plan and addon have separate charges and preapprovals; the one-time order has its own payment on an `ACTIVE` instance.
+- **Evidence:** Owner account responses, read-only provider records, card summary, provider email, and read-only addon/payment rows.
+- **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -419,6 +435,7 @@ The B9b slice that went to cut (HOS-1588, HOS-1589, HOS-1591) added its item to 
 B8b (HOS-1579) added S15 to staging and P6 to production.
 B8b phase 2 (HOS-1411) is covered by S15, S16 and P6/P7; courtesy pause follows in HOS-1590.
 The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains active) is verified with HOS-1592.
+Phase 3 (B10, HOS-1373) starts with HOS-1593: S18 and P9.
 
 ## Related
 

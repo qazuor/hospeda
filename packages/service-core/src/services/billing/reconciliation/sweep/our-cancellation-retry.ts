@@ -69,8 +69,7 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     S23: 'DIRECT_CANCELLATION',
     S24: 'DIRECT_CANCELLATION',
     S31: 'SUCCESSOR_CUT',
-    // No writer records A3 yet: its leaf declares the kind in the same PR.
-    A3: 'UNDECLARED',
+    A3: 'ADDON_AUTHORIZATION_EXPIRED',
     // No writer records A6 yet: its leaf declares the kind in the same PR.
     A6: 'UNDECLARED',
     S39: 'ATTEMPT_REPLACED',

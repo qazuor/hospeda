@@ -84,6 +84,12 @@
         "viewAvailable": "Ver complementos disponibles",
         "buyMore": "Comprar más complementos"
     },
+    "addonPurchaseApi": {
+        "oneTimePaymentRequired": "Para un complemento de pago único, ingresá los datos de pago.",
+        "recurringPaymentNotAccepted": "Los complementos recurrentes se pagan en el checkout del proveedor.",
+        "payerEmailRequired": "Ingresá el correo del pagador.",
+        "purchaseNotFound": "No encontramos esa compra de complemento."
+    },
     "payment": {
         "title": "Métodos de pago",
         "setDefault": "Establecer como predeterminado",

@@ -16,6 +16,19 @@ const renderers = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test'
 const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
 
 describe('billing signup outbox renderers', () => {
+    it('renders the A3 authorization expiry notice with its own copy', async () => {
+        const template = 'billing.addon-authorization-expired-cancel';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe('Venció la autorización de tu addon');
+        expect(html).toContain('Venció el plazo para autorizar tu addon');
+        expect(html).toContain('No se te cobró nada');
+        expect(() => renderers[template]!({ row: row({ template, payload: {} }) })).toThrow(
+            TypeError
+        );
+    });
     it('TEST:1735:7a AC:1735:7 renders the person-cancelled attempt notice and requires subscriptionId', async () => {
         const result = await renderers['billing.attempt-cancelled-cancel']!({
             row: row({ template: 'billing.attempt-cancelled-cancel', payload: { subscriptionId } })

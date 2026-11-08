@@ -468,6 +468,12 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
         // Arrange
         const { fake } = newFake();
         const h = harness(fake);
+        const a6 = await decided({
+            fake,
+            status: 'CANCELLED',
+            class: 'COMPLEMENTO',
+            transition: 'A6'
+        });
         const a3 = await decided({
             fake,
             status: 'CANCELLED',
@@ -482,13 +488,20 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
         // Assert
         expect(day0.summary.rowsFailed).toBe(1);
         const failures = day0.summary.failures.filter(
-            ({ subscriptionId }) => subscriptionId === a3.id
+            ({ subscriptionId }) => subscriptionId === a6.id
         );
         expect(failures).toHaveLength(1);
-        expect(failures[0]?.message).toContain('A3');
+        expect(failures[0]?.message).toContain('A6');
         const askedFor = h.beforeCancel.mock.calls.map(([input]) => input.subscriptionId);
-        expect(askedFor).not.toContain(a3.id);
-        expect(calledWith(h.cancel, a3.providerId)).toBe(0);
+        expect(askedFor).not.toContain(a6.id);
+        expect(calledWith(h.cancel, a6.providerId)).toBe(0);
+        expect(BEFORE_CANCEL_KIND_BY_TRANSITION.A3).toBe('ADDON_AUTHORIZATION_EXPIRED');
+        expect(h.beforeCancel).toHaveBeenCalledWith({
+            subscriptionId: a3.id,
+            userId: a3.userId,
+            kind: 'ADDON_AUTHORIZATION_EXPIRED'
+        });
+        expect(calledWith(h.cancel, a3.providerId)).toBe(1);
         expect(h.beforeCancel).toHaveBeenCalledWith({
             subscriptionId: s36.id,
             userId: s36.userId,
@@ -499,7 +512,7 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
         await runDay(3, fake, h.beforeCancel);
 
         // Assert
-        expect(await openMarks16([a3.id])).toHaveLength(1);
+        expect(await openMarks16([a6.id])).toHaveLength(1);
     });
 
     it('TEST:1683:2 (j) an S36 retry enqueues billing.revocation-cancel once and never billing.before-cancel', async () => {
