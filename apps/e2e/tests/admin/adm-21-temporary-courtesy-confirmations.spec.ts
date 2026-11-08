@@ -65,7 +65,7 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
     let userIds: string[] = [];
     let dialogs: string[] = [];
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }, testInfo) => {
         dialogs = [];
         page.on('dialog', async (dialog) => {
             dialogs.push(dialog.message());
@@ -78,6 +78,14 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [
+                    ...(testInfo.title.startsWith('annual plan')
+                        ? [
+                              {
+                                  lie: 'M1' as const,
+                                  why: 'TEST:B9b:13 annual authorization must retain its requested yearly cadence for the annual refusal screen.'
+                              }
+                          ]
+                        : []),
                     { lie: 'M6', why: 'TEST:B9b:13 activates the card authorization.' },
                     { lie: 'M8', why: 'TEST:B9b:13 reads active billing state.' }
                 ]
