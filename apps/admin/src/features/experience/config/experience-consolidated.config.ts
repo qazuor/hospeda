@@ -15,8 +15,8 @@
  *
  * plus a practical-details section (HOS-898 / HOS-1047 / HOS-1056):
  *   - durationMinutes (NUMBER, optional — total minutes)
- *   - cancellationPolicy (TEXTAREA, optional — free text)
- *   - acceptsPrivateGroups (SWITCH, optional)
+ *   (cancellation and private groups moved to the house-rules section,
+ *   `policies.cancellation` / `policies.privateGroups`, HOS-2060)
  *
  * The two HOS-1046 checklists (`whatToBring` / `requirements`) are absent on
  * purpose — see {@link createPracticalDetailsSection} for why a `text[]` has no
@@ -33,7 +33,11 @@ import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
-import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
+import {
+    createListingIdentitySection,
+    createListingOperationalSection,
+    createListingPoliciesSection
+} from '@/features/listing';
 
 // ---------------------------------------------------------------------------
 // Experience-specific field options
@@ -298,7 +302,7 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
     return {
         id: 'experience-practical-details',
         title: 'Datos Prácticos',
-        description: 'Duración, cancelación y grupos privados',
+        description: 'Duración de la experiencia',
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
@@ -324,36 +328,6 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                     max: MAX_EXPERIENCE_DURATION_MINUTES,
                     step: 1
                 }
-            },
-            {
-                id: 'cancellationPolicy',
-                type: FieldTypeEnum.TEXTAREA,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Política de Cancelación',
-                description:
-                    'Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.',
-                placeholder:
-                    'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.',
-                permissions: {
-                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
-                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'acceptsPrivateGroups',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Acepta Grupos Privados',
-                description:
-                    'Cuando está activo, la ficha pública muestra una invitación a consultar por grupos. No publica tarifario.',
-                permissions: {
-                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
-                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
-                },
-                typeConfig: {}
             }
         ]
     };
@@ -387,6 +361,7 @@ export const createExperienceConsolidatedConfig = (
         createExperienceSpecificSection(),
         createMeetingPointSection(),
         createPracticalDetailsSection(),
+        createListingPoliciesSection({ vertical: 'experience' }).section,
         createListingOperationalSection('experience')
     ],
     metadata: {

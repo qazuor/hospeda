@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
+import { createListingPoliciesSection } from '@/features/listing/config/listingPoliciesSection';
 import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
@@ -65,6 +66,7 @@ export const createAccommodationConsolidatedConfig = (
         createContactInfoConsolidatedSection(t),
         createLocationInfoConsolidatedSection(t),
         createAmenitiesConsolidatedSection(t),
+        createListingPoliciesSection({ vertical: 'accommodation' }).section,
         createGalleryConsolidatedSection(t),
         createStatisticsConsolidatedSection(t)
     ];
