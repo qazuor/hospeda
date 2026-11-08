@@ -27,6 +27,41 @@ function request(f: Awaited<ReturnType<typeof publicationFixture>>, price = f.pr
 }
 
 describe('TEST:B10:9 AC:B10:8 addon version publication', () => {
+    it.skipIf(skip)('rejects provider floor and ceiling before writing', async () => {
+        const f = await publicationFixture();
+        await expect(
+            publishAddonVersion({ actor: f.actor, input: request(f, 1499) }, f.ports)
+        ).rejects.toMatchObject({ reason: 'ADDON_PRICE_BELOW_PROVIDER_MINIMUM' });
+        await expect(
+            publishAddonVersion({ actor: f.actor, input: request(f, 200000001) }, f.ports)
+        ).rejects.toMatchObject({ reason: 'ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM' });
+        const [product] = await getServiceTestDb()
+            .select()
+            .from(addonProducts)
+            .where(eq(addonProducts.id, f.productId));
+        expect(product?.versionId).toBe(f.versionId);
+    });
+
+    it.skipIf(skip)('rejects a missing version through the real addonPolicy port', async () => {
+        const f = await publicationFixture();
+        await expect(
+            publishAddonVersion(
+                { actor: f.actor, input: { ...request(f), addonVersionId: crypto.randomUUID() } },
+                f.ports
+            )
+        ).rejects.toMatchObject({ reason: 'ADDON_VERSION_NOT_FOUND' });
+    });
+
+    it.skipIf(skip)('rejects a publication with no version or price change', async () => {
+        const f = await publicationFixture();
+        await expect(
+            publishAddonVersion(
+                { actor: f.actor, input: { ...request(f), addonVersionId: f.versionId } },
+                f.ports
+            )
+        ).rejects.toMatchObject({ reason: 'ADDON_PRODUCT_UNCHANGED' });
+    });
+
     it.skipIf(skip)('previews version and price changes against the current version', async () => {
         const f = await publicationFixture();
         const preview = await previewAddonVersionPublication(
