@@ -18,6 +18,7 @@ import { PublicationStatusEnumSchema } from '../../enums/publication-status.sche
 import { AccommodationLocationFields } from './accommodation.location.schema.js';
 import { AccommodationFaqSchema } from './subtypes/accommodation.faq.schema.js';
 import { AccommodationIaDataSchema } from './subtypes/accommodation.ia.schema.js';
+import { AccommodationPoliciesSchema } from './subtypes/accommodation.policies.schema.js';
 import { AccommodationPriceSchema } from './subtypes/accommodation.price.schema.js';
 import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schema.js';
 
@@ -28,7 +29,7 @@ import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schem
  * derive a deep-partial variant via `.partial()` for partial PATCH semantics
  * (SPEC-229).
  *
- * `capacity`/`minNights`/`bedrooms`/`bathrooms` are OPTIONAL here (HOS-152 fix).
+ * `capacity`/`bedrooms`/`bathrooms` are OPTIONAL here (HOS-152 fix).
  * A host-onboarding DRAFT (`AccommodationService.createForOnboarding`) is
  * legitimately created with a PARTIAL (or entirely absent) `extraInfo` — the
  * onboarding form lets the host fill in capacity data incrementally across
@@ -51,13 +52,6 @@ export const AccommodationExtraInfoSchema = z.object({
             message: 'zodError.accommodation.extraInfo.capacity.required'
         })
         .optional(),
-    minNights: z
-        .number()
-        .int({
-            message: 'zodError.accommodation.extraInfo.minNights.required'
-        })
-        .optional(),
-    maxNights: z.number().int().optional(),
     bedrooms: z
         .number()
         .int({
@@ -71,15 +65,15 @@ export const AccommodationExtraInfoSchema = z.object({
             message: 'zodError.accommodation.extraInfo.bathrooms.required'
         })
         .optional(),
-    smokingAllowed: z.boolean().optional(),
     extraInfo: z.array(z.string()).optional()
 });
 
 /**
  * Strict variant of {@link AccommodationExtraInfoSchema} requiring
- * `capacity`/`minNights`/`bedrooms`/`bathrooms` — the four fields a DRAFT may
+ * `capacity`/`bedrooms`/`bathrooms` — the extra-info fields a DRAFT may
  * legitimately omit on read/write, but which MUST be present before an
- * accommodation can be published (-> PUBLISHED).
+ * accommodation can be published (-> PUBLISHED). The fourth publish field,
+ * `minNights`, lives in `policies` since HOS-2060 and is checked there.
  *
  * Used exclusively by `AccommodationService.publish()`'s completeness guard
  * (HOS-152). Never used on the read or draft-write paths — those stay
@@ -88,7 +82,6 @@ export const AccommodationExtraInfoSchema = z.object({
 export const AccommodationExtraInfoRequiredForPublishSchema = AccommodationExtraInfoSchema.required(
     {
         capacity: true,
-        minNights: true,
         bedrooms: true,
         bathrooms: true
     }
@@ -273,7 +266,16 @@ export const AccommodationSchema = z.object({
     lastWarnedAt: z.date().nullable().optional(),
 
     // Extra Info
-    extraInfo: AccommodationExtraInfoSchema.nullish()
+    extraInfo: AccommodationExtraInfoSchema.nullish(),
+
+    /**
+     * Structured house rules (HOS-2060): payment methods, pets, smoking,
+     * events, check-in/out and stay length. Nullish: the column is nullable
+     * and a listing may declare nothing. Absent keys mean "not informed".
+     * Written whole: an update REPLACES the stored object (the column is not
+     * a mergeable JSONB).
+     */
+    policies: AccommodationPoliciesSchema.nullish()
 });
 /**
  * Read-side variant of {@link AccommodationSchema}: identical except `slug`

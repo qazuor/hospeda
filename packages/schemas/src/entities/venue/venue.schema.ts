@@ -15,13 +15,13 @@ import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
 import {
     PriceRangeEnumSchema,
-    VenueDressCodeEnumSchema,
     VenueEntryKindEnumSchema,
     VenueTypeEnumSchema
 } from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
 import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
+import { VenuePoliciesSchema } from './subtypes/venue.policies.schema.js';
 
 const VenueRatingDimensionSchema = z.object({
     average: z.number(),
@@ -52,13 +52,6 @@ const VenueNightNoteSchema = I18nTextSchema.extend({
     es: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
     en: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
     pt: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' })
-});
-
-/** Dress-code note variant with its own translation key. */
-const VenueDressCodeNoteSchema = I18nTextSchema.extend({
-    es: z.string().max(200, { message: 'zodError.venue.dressCodeNote.tooLong' }),
-    en: z.string().max(200, { message: 'zodError.venue.dressCodeNote.tooLong' }),
-    pt: z.string().max(200, { message: 'zodError.venue.dressCodeNote.tooLong' })
 });
 
 /**
@@ -132,23 +125,13 @@ export const VenueSchema = z.object({
         .nullish(),
 
     /**
-     * Lowest age that applies to entry — the minor of the per-gender or
-     * per-night variants when they differ, with the rest in the note.
-     * Empty means "not informed" (never `0`). Zod bounds 13..30 (DEC-FAC-058);
-     * there is intentionally no database CHECK for this range.
+     * Structured house rules (HOS-2060): payment methods, pets, smoking,
+     * events, reservations, minimum age and dress code. Nullish: the column is
+     * nullable. Absent keys mean "not informed". An update merges per
+     * top-level key (see the venue service); `minAge`, `dressCode` and
+     * `dressCodeNote` belong to the nightInfo section (DEC-FAC-040).
      */
-    minAge: z
-        .number()
-        .int({ message: 'zodError.venue.minAge.int' })
-        .min(13, { message: 'zodError.venue.minAge.min' })
-        .max(30, { message: 'zodError.venue.minAge.max' })
-        .nullish(),
-
-    /** Closed dress-code list; null when the owner has not said. */
-    dressCode: VenueDressCodeEnumSchema.nullish(),
-
-    /** Short localized note about the dress code. */
-    dressCodeNoteI18n: VenueDressCodeNoteSchema.nullish(),
+    policies: VenuePoliciesSchema.nullish(),
 
     /**
      * URL linking to the venue's online menu.

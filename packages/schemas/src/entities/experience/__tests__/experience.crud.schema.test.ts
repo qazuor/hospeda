@@ -795,8 +795,10 @@ describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
             durationMinutes: 150,
             whatToBring: ['Repelente', 'Calzado cerrado'],
             requirements: ['Edad mínima 12 años'],
-            cancellationPolicy: 'Si hay alerta de viento reprogramamos sin cargo.',
-            acceptsPrivateGroups: true
+            policies: {
+                cancellation: 'Si hay alerta de viento reprogramamos sin cargo.',
+                privateGroups: true
+            }
         };
 
         // Act
@@ -808,10 +810,10 @@ describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
         expect(result.data.durationMinutes).toBe(150);
         expect(result.data.whatToBring).toEqual(['Repelente', 'Calzado cerrado']);
         expect(result.data.requirements).toEqual(['Edad mínima 12 años']);
-        expect(result.data.cancellationPolicy).toBe(
+        expect(result.data.policies?.cancellation).toBe(
             'Si hay alerta de viento reprogramamos sin cargo.'
         );
-        expect(result.data.acceptsPrivateGroups).toBe(true);
+        expect(result.data.policies?.privateGroups).toBe(true);
     });
 
     it('should treat an omitted key as "no change", injecting no defaults', () => {
@@ -824,7 +826,7 @@ describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
         if (!result.success) return;
         expect(result.data.whatToBring).toBeUndefined();
         expect(result.data.requirements).toBeUndefined();
-        expect(result.data.acceptsPrivateGroups).toBeUndefined();
+        expect(result.data.policies).toBeUndefined();
     });
 
     it('should accept an empty array as the way to CLEAR a checklist', () => {
@@ -839,13 +841,13 @@ describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
     it('should accept an explicit null, which is how the editor clears the text fields', () => {
         const result = ExperienceOwnerUpdateInputSchema.safeParse({
             durationMinutes: null,
-            cancellationPolicy: null
+            policies: { cancellation: null }
         });
 
         expect(result.success).toBe(true);
         if (!result.success) return;
         expect(result.data.durationMinutes).toBeNull();
-        expect(result.data.cancellationPolicy).toBeNull();
+        expect(result.data.policies?.cancellation).toBeNull();
     });
 
     it('should reject a duration in fractional minutes', () => {
@@ -856,7 +858,7 @@ describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
 
     it('should reject a cancellation policy past the column contract', () => {
         const result = ExperienceOwnerUpdateInputSchema.safeParse({
-            cancellationPolicy: 'x'.repeat(1501)
+            policies: { cancellation: 'x'.repeat(1501) }
         });
 
         expect(result.success).toBe(false);

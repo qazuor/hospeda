@@ -487,9 +487,11 @@ describe('practical ficha fields reach the public tier', () => {
             durationMinutes: 150,
             whatToBring: ['Repelente', 'Calzado cerrado', 'Traje de baño'],
             requirements: ['Edad mínima 12 años', 'Saber nadar'],
-            cancellationPolicy:
-                'Si baja el río o hay alerta de viento, reprogramamos sin cargo o devolvemos la seña.',
-            acceptsPrivateGroups: true,
+            policies: {
+                cancellation:
+                    'Si baja el río o hay alerta de viento, reprogramamos sin cargo o devolvemos la seña.',
+                privateGroups: true
+            },
             ...overrides
         });
 
@@ -508,8 +510,8 @@ describe('practical ficha fields reach the public tier', () => {
         expect(result.data.durationMinutes).toBe(150);
         expect(result.data.whatToBring).toEqual(['Repelente', 'Calzado cerrado', 'Traje de baño']);
         expect(result.data.requirements).toEqual(['Edad mínima 12 años', 'Saber nadar']);
-        expect(result.data.cancellationPolicy).toContain('reprogramamos sin cargo');
-        expect(result.data.acceptsPrivateGroups).toBe(true);
+        expect(result.data.policies?.cancellation).toContain('reprogramamos sin cargo');
+        expect(result.data.policies?.privateGroups).toBe(true);
         expect(Object.keys(result.data)).not.toContain('adminInfo');
     });
 
@@ -530,11 +532,11 @@ describe('practical ficha fields reach the public tier', () => {
         expect(result.data.durationMinutes).toBe(150);
         expect(result.data.whatToBring).toHaveLength(3);
         expect(result.data.requirements).toHaveLength(2);
-        expect(result.data.cancellationPolicy).toContain('reprogramamos sin cargo');
-        expect(result.data.acceptsPrivateGroups).toBe(true);
+        expect(result.data.policies?.cancellation).toContain('reprogramamos sin cargo');
+        expect(result.data.policies?.privateGroups).toBe(true);
     });
 
-    it('defaults the two checklists to [] and the group flag to false when absent', () => {
+    it('defaults the two checklists to [] and leaves policies undeclared when absent', () => {
         // A legacy row predating the columns arrives without the keys. "No
         // items" must have ONE representation, so the consumer never has to
         // test for both null and [].
@@ -544,9 +546,8 @@ describe('practical ficha fields reach the public tier', () => {
         if (!result.success) return;
         expect(result.data.whatToBring).toEqual([]);
         expect(result.data.requirements).toEqual([]);
-        expect(result.data.acceptsPrivateGroups).toBe(false);
         expect(result.data.durationMinutes ?? null).toBeNull();
-        expect(result.data.cancellationPolicy ?? null).toBeNull();
+        expect(result.data.policies ?? null).toBeNull();
     });
 
     it('trims checklist items and rejects one that is blank after trimming', () => {

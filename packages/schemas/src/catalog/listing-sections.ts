@@ -45,7 +45,9 @@ export const LISTING_SECTIONS = {
             id: 'amenities',
             vertical: 'venue',
             common: true,
-            fields: ['amenityIds', 'featureIds'],
+            // HOS-2060: the structured `policies` live with the catalog rows
+            // they replaced; a section may claim keys inside it (`policyKeys`).
+            fields: ['amenityIds', 'featureIds', 'policies'],
             order: 4,
             group: 'property'
         },
@@ -113,17 +115,12 @@ export const LISTING_SECTIONS = {
             id: 'nightInfo',
             vertical: 'venue',
             common: false,
-            // HOS-1846 (DEC-FAC-040): the six writable fields of the section.
-            // Its detection (`sectionsTouchedByBody`) and the public projector's
+            // HOS-1846 (DEC-FAC-040): the writable fields of the section. Its
+            // detection (`sectionsTouchedByBody`) and the public projector's
             // removal of the section both read from here.
-            fields: [
-                'entryKind',
-                'entryNoteI18n',
-                'entryPriceFrom',
-                'minAge',
-                'dressCode',
-                'dressCodeNoteI18n'
-            ],
+            fields: ['entryKind', 'entryNoteI18n', 'entryPriceFrom'],
+            // HOS-2060: age and dress code are policies now, still nightInfo's.
+            policyKeys: ['minAge', 'dressCode', 'dressCodeNote'],
             // Server-managed: never writable and never counted by sections-touched.
             readOnlyFields: ['entryPriceUpdatedAt'],
             // DEC-FAC-050 / DEC-FAC-068: an i18n key, never the Spanish text.
@@ -193,13 +190,7 @@ export const LISTING_SECTIONS = {
             id: 'practicalInfo',
             vertical: 'experience',
             common: true,
-            fields: [
-                'durationMinutes',
-                'whatToBring',
-                'requirements',
-                'cancellationPolicy',
-                'acceptsPrivateGroups'
-            ],
+            fields: ['durationMinutes', 'whatToBring', 'requirements'],
             order: 3,
             group: 'property'
         },
@@ -223,7 +214,9 @@ export const LISTING_SECTIONS = {
             id: 'amenities',
             vertical: 'experience',
             common: true,
-            fields: ['amenityIds', 'featureIds'],
+            // HOS-2060: the structured `policies` live with the catalog rows
+            // they replaced; a section may claim keys inside it (`policyKeys`).
+            fields: ['amenityIds', 'featureIds', 'policies'],
             order: 6,
             group: 'property'
         },
@@ -315,7 +308,9 @@ export const LISTING_SECTIONS = {
             common: true,
             // HOS-2058: per-amenity scope/availability is written with the
             // amenity selection, from the same editor section.
-            fields: ['amenityIds', 'featureIds', 'amenityAttributes'],
+            // HOS-2060: the structured `policies` live with the catalog rows
+            // they replaced; a section may claim keys inside it (`policyKeys`).
+            fields: ['amenityIds', 'featureIds', 'amenityAttributes', 'policies'],
             order: 4,
             group: 'property'
         },

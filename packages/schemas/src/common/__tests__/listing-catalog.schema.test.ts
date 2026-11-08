@@ -24,8 +24,8 @@ const FEATURE_UUID = '9c8b7a65-2222-4f1e-9b03-1a2b3c4d5e6f';
 /** One catalog-joined amenity row, exactly as the public route emits it. */
 const AMENITY_ROW = {
     amenityId: AMENITY_UUID,
-    slug: 'accepts_cards',
-    icon: 'credit-card'
+    slug: 'wifi',
+    icon: 'wifi'
 } as const;
 
 /** One catalog-joined feature row, carrying both owner-authored columns. */

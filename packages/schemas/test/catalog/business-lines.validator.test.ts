@@ -175,7 +175,7 @@ describe('TEST:5.6:1 resolveBusinessLineDefaults', () => {
     it('returns the BOLICHE preselection and its minAge suggestion (DEC-FAC-050)', () => {
         expect(resolveBusinessLineDefaults({ vertical: 'venue', type: 'BOLICHE' })).toEqual({
             preselect: ['nightlife'],
-            fieldDefaults: { minAge: 18 }
+            fieldDefaults: { policies: { minAge: 18 } }
         });
     });
 

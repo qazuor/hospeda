@@ -105,9 +105,10 @@ export const VenuePublicSchema = VenueSchema.pick({
     entryNoteI18n: true,
     entryPriceFrom: true,
     entryPriceUpdatedAt: true,
-    minAge: true,
-    dressCode: true,
-    dressCodeNoteI18n: true
+
+    // HOS-2060: structured house rules. Owned by the always-available
+    // `amenities` catalog section, so the public projector never removes it.
+    policies: true
 }).extend({
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
@@ -309,9 +310,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
     entryNoteI18n: true,
     entryPriceFrom: true,
     entryPriceUpdatedAt: true,
-    minAge: true,
-    dressCode: true,
-    dressCodeNoteI18n: true,
+    // HOS-2060: structured house rules, round-tripped to the owner editor.
+    policies: true,
 
     // Protected: ownership
     ownerId: true,
