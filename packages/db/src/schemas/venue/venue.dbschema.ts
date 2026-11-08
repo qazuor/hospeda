@@ -4,6 +4,7 @@ import type {
     I18nText,
     Seo,
     SocialNetwork,
+    VenuePolicies,
     Video
 } from '@repo/schemas';
 import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '@repo/schemas';
@@ -97,12 +98,19 @@ export const venues = pgTable(
          * same price does not claim a fresher date.
          */
         entryPriceUpdatedAt: timestamp('entry_price_updated_at', { withTimezone: true }),
-        /** Lowest age that applies to entry; empty means "not informed". */
-        minAge: smallint('min_age'),
-        /** Closed dress-code list; null when the owner has not said. */
-        dressCode: VenueDressCodePgEnum('dress_code'),
-        /** Short localized note about the dress code. */
-        dressCodeNoteI18n: jsonb('dress_code_note_i18n').$type<I18nText>(),
+        /**
+         * Structured house rules (HOS-2060), validated by `VenuePoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those columns are dropped in release N+1.
+         */
+        policies: jsonb('policies').$type<VenuePolicies>(),
+        /** LEGACY (HOS-2060): copied into `policies.minAge`; dropped in release N+1. No code may read or write it. */
+        legacyMinAge: smallint('min_age'),
+        /** LEGACY (HOS-2060): copied into `policies.dressCode`; dropped in release N+1. No code may read or write it. */
+        legacyDressCode: VenueDressCodePgEnum('dress_code'),
+        /** LEGACY (HOS-2060): copied into `policies.dressCodeNote`; dropped in release N+1. No code may read or write it. */
+        legacyDressCodeNoteI18n: jsonb('dress_code_note_i18n').$type<I18nText>(),
         /**
          * Optional URL to the venue's online menu — the link the owner already
          * publishes somewhere else.

@@ -1,6 +1,7 @@
 import type {
     AdminInfoType,
     ContactInfo,
+    ExperiencePolicies,
     I18nText,
     Seo,
     SocialNetwork,
@@ -230,35 +231,16 @@ export const experiences = pgTable(
          */
         requirements: text('requirements').array().notNull().default([]),
         /**
-         * What happens when the experience does not run — rain, wind, a low
-         * river, not reaching the minimum group size (HOS-1047).
-         *
-         * FREE TEXT, deliberately, not a structured (deadline + outcome)
-         * policy. A structured policy only earns its complexity once money has
-         * changed hands and something has to be computed from it — that is
-         * HOS-1050 (deposits), which is deferred. Until then the only consumer
-         * is a human reading the ficha, and prose says "si baja el río
-         * reprogramamos sin cargo" in a way no enum pair does.
-         *
-         * Nullable; NOT entitlement-gated.
+         * Structured house rules (HOS-2060), validated by `ExperiencePoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those columns are dropped in release N+1.
          */
-        cancellationPolicy: text('cancellation_policy'),
-        /**
-         * Whether the provider offers a special arrangement for private groups
-         * (HOS-1056). A single flag, on purpose: it turns on a CTA to contact
-         * the provider and nothing else — no rate card, no quote calculator, no
-         * group booking.
-         *
-         * A column rather than a catalog feature row (the issue offered both):
-         * a feature row renders as one more tick in the amenities grid, and a
-         * tick cannot carry a call to action. The behaviour attached to this
-         * value is what makes it a column.
-         *
-         * NOT NULL with a `false` default — "did not say" and "does not offer
-         * it" are the same answer for a CTA that only ever appears when the
-         * flag is on.
-         */
-        acceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
+        policies: jsonb('policies').$type<ExperiencePolicies>(),
+        /** LEGACY (HOS-2060): copied into `policies.cancellation`; dropped in release N+1. No code may read or write it. */
+        legacyCancellationPolicy: text('cancellation_policy'),
+        /** LEGACY (HOS-2060): copied into `policies.privateGroups`; dropped in release N+1. No code may read or write it. */
+        legacyAcceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
         // Jsonb grouped columns (matching venue / accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),

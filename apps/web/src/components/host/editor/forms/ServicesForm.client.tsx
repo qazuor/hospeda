@@ -16,14 +16,28 @@
  * `extendPayload` rather than through `OWN_FIELDS`: the form keeps a map keyed
  * by amenity id, and the wire wants a list of the CHECKED amenities only,
  * compared by value against the baseline.
+ *
+ * HOS-2060: the page also carries the house-rules panel, because the catalog
+ * puts `policies` in the amenities section. Its keys travel as a `policies`
+ * PATCH object through the same `extendPayload` — every key except
+ * `minNights`, which the capacity/pricing page owns (it is a publish
+ * requirement and its hub status points there).
  */
 
+import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
 import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import {
+    buildListingPoliciesPatch,
+    LISTING_BASE_POLICY_KEYS,
+    type ListingPolicyKey,
+    setListingPolicy
+} from '@/lib/listing/listing-policies';
 import { ActionBar } from '../ActionBar.client';
 import { AmenitiesSection } from '../AmenitiesSection.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
 import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
+import { ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 
@@ -33,6 +47,17 @@ import styles from './SectionForm.module.css';
  */
 const OWN_FIELDS = ['amenityIds', 'featureIds'] as const;
 
+/**
+ * The house-rule keys this page's Policies panel owns (HOS-2060): the shared
+ * base plus the accommodation's check-in/out and maximum stay.
+ */
+const ACCOMMODATION_SERVICES_POLICY_KEYS: readonly ListingPolicyKey[] = [
+    'checkIn',
+    'checkOut',
+    'maxNights',
+    ...LISTING_BASE_POLICY_KEYS
+];
+
 /** Module-level so the hook's payload memo does not recompute on every render. */
 function extendAttributes({
     values,
@@ -41,7 +66,15 @@ function extendAttributes({
     readonly values: AccommodationEditData;
     readonly baseline: AccommodationEditData;
 }): Record<string, unknown> {
-    return { ...buildAmenityAttributesPayload({ values, baseline }) };
+    const policies = buildListingPoliciesPatch({
+        current: values.policies,
+        baseline: baseline.policies,
+        keys: ACCOMMODATION_SERVICES_POLICY_KEYS
+    });
+    return {
+        ...buildAmenityAttributesPayload({ values, baseline }),
+        ...(policies ? { policies } : {})
+    };
 }
 
 /** An empty declaration, used when an amenity has none yet. */
@@ -112,6 +145,22 @@ export function ServicesForm({
                     onToggleAmenity={(id) => toggle('amenityIds', id)}
                     onToggleFeature={(id) => toggle('featureIds', id)}
                     onChangeAmenityAttribute={setAttribute}
+                />
+            </div>
+
+            <div className={styles.card}>
+                <PoliciesPanel
+                    locale={locale}
+                    idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                    keys={ACCOMMODATION_SERVICES_POLICY_KEYS}
+                    policies={form.values.policies}
+                    errors={form.fieldErrors}
+                    onChange={(key, value) =>
+                        form.setValue(
+                            'policies',
+                            setListingPolicy({ policies: form.values.policies, key, value })
+                        )
+                    }
                 />
             </div>
 

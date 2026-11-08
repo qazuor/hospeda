@@ -142,8 +142,8 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     durationMinutes: true,
     whatToBring: true,
     requirements: true,
-    cancellationPolicy: true,
-    acceptsPrivateGroups: true,
+    // HOS-2060: structured house rules, public like the ficha fields above.
+    policies: true,
 
     // Subscription visibility gate
 
@@ -347,8 +347,8 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     durationMinutes: true,
     whatToBring: true,
     requirements: true,
-    cancellationPolicy: true,
-    acceptsPrivateGroups: true,
+    // HOS-2060: structured house rules, round-tripped to the owner editor.
+    policies: true,
 
     // Protected: ownership
     ownerId: true,

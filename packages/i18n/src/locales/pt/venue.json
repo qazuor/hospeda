@@ -366,10 +366,6 @@
                 "inactive": "Não é exibido",
                 "unavailable": "Indisponível",
                 "fileUnavailable": "Não é possível abrir este arquivo."
-            },
-            "acceptsEvents": {
-                "label": "Aceito eventos (aniversários, empresas, casamentos)",
-                "hint": "Mostramos um botão de contato na sua ficha para que entrem em contato para esse tipo de consulta."
             }
         }
     },

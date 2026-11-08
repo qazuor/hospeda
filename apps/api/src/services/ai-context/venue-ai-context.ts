@@ -26,10 +26,11 @@
  */
 
 import { getDb, venueFaqs, venueMenuItems, venueMenuSections, venues } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, type VenuePolicies } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
+import { buildListingPoliciesLines } from './listing-policies-context.js';
 import {
     buildChatSystemMessage,
     fenceOwnerValue,
@@ -82,6 +83,8 @@ export interface VenueContextRow {
     readonly openingHours: Record<string, unknown> | null;
     readonly averageRating: number | null;
     readonly reviewsCount: number | null;
+    /** House rules (HOS-2060); optional so older callers and tests need not pass it. */
+    readonly policies?: VenuePolicies | null;
 }
 
 /** One FAQ as the context block consumes it. */
@@ -247,6 +250,9 @@ export function buildVenueMarkdownContext(
         }
     }
 
+    // --- House rules (closed values only; night keys render with nightInfo) ---
+    lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
+
     // --- FAQs (owner free text — fenced) ---
     if (cappedFaqs.length > 0) {
         lines.push('', '### Preguntas frecuentes', OWNER_DATA_DELIMITER_START);
@@ -321,9 +327,7 @@ export async function assembleVenueContext(
             entryKind: venues.entryKind,
             entryNoteI18n: venues.entryNoteI18n,
             entryPriceFrom: venues.entryPriceFrom,
-            minAge: venues.minAge,
-            dressCode: venues.dressCode,
-            dressCodeNoteI18n: venues.dressCodeNoteI18n
+            policies: venues.policies
         })
         .from(venues)
         .where(and(eq(venues.id, entityId), isNull(venues.deletedAt)))

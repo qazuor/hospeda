@@ -60,6 +60,13 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import {
+    buildListingPoliciesPatch,
+    LISTING_BASE_POLICY_KEYS,
+    type ListingPolicyKey,
+    parseListingPolicyValues,
+    setListingPolicy
+} from '@/lib/listing/listing-policies';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
 import {
@@ -83,6 +90,7 @@ import {
     type ListingEditorFormSectionId,
     restrictPayloadToSection
 } from './editor/listing-section-payload';
+import type { ListingPolicyChange } from './editor/PoliciesPanel.client';
 import { joinDuration, splitDuration } from './editor/PracticalInfoSection.client';
 import { LISTING_SECTION_RENDERERS } from './editor/section-renderers';
 import styles from './ListingEditor.module.css';
@@ -387,8 +395,32 @@ function buildPatchPayload({
 
     Object.assign(payload, VERTICAL_PATCH_FIELDS[vertical]({ current, baseline }));
 
+    // HOS-2060: house rules travel as a PATCH object — only the keys that
+    // changed, `null` for a removed key — because the API shallow-merges
+    // `policies` per key. `restrictPayloadToSection` then keeps the keys the
+    // page's catalog section owns (nightInfo's three, or the rest).
+    const policies = buildListingPoliciesPatch({
+        current: current.policies,
+        baseline: baseline.policies,
+        keys: VERTICAL_POLICY_KEYS[vertical]
+    });
+    if (policies) {
+        payload.policies = policies;
+    }
+
     return payload;
 }
+
+/**
+ * The policy keys each vertical's owner update schema accepts (HOS-2060):
+ * the shared base plus the vertical's own (`VenuePoliciesSchema`,
+ * `ExperiencePoliciesSchema`). A record, not a branch on a vertical literal
+ * (G-FAC-05).
+ */
+const VERTICAL_POLICY_KEYS: Readonly<Record<VenueOrExperience, readonly ListingPolicyKey[]>> = {
+    venue: [...LISTING_BASE_POLICY_KEYS, 'reservations', 'minAge', 'dressCode', 'dressCodeNote'],
+    experience: [...LISTING_BASE_POLICY_KEYS, 'privateGroups', 'cancellation']
+};
 
 /** The two form snapshots one vertical's own field diff reads. */
 interface VerticalPatchFieldsArgs {
@@ -423,21 +455,10 @@ function buildVenuePatchFields({
     if (current.entryPriceFrom !== baseline.entryPriceFrom) {
         payload.entryPriceFrom = current.entryPriceFrom;
     }
-    if (current.minAge !== baseline.minAge) {
-        payload.minAge = current.minAge;
-    }
-    if (current.dressCode !== baseline.dressCode) {
-        payload.dressCode = current.dressCode || null;
-    }
     if (!sameValue(current.entryNoteI18n, baseline.entryNoteI18n)) {
         payload.entryNoteI18n = isEmptyI18nText(current.entryNoteI18n)
             ? null
             : current.entryNoteI18n;
-    }
-    if (!sameValue(current.dressCodeNoteI18n, baseline.dressCodeNoteI18n)) {
-        payload.dressCodeNoteI18n = isEmptyI18nText(current.dressCodeNoteI18n)
-            ? null
-            : current.dressCodeNoteI18n;
     }
 
     return payload;
@@ -530,19 +551,6 @@ function buildExperiencePatchFields({
     }
     if (!sameStringList(current.requirements, baseline.requirements)) {
         payload.requirements = [...current.requirements];
-    }
-
-    // HOS-1047: nullable free text, so it clears to `null` like the meeting
-    // point rather than to `''` — the column and the schema both say "not
-    // declared" with null, and `''` would be a declared empty policy.
-    if (current.cancellationPolicy !== baseline.cancellationPolicy) {
-        payload.cancellationPolicy = current.cancellationPolicy || null;
-    }
-
-    // HOS-1056: NOT NULL with a false default, so it never sends null —
-    // turning the toggle off is `false`, a real value, not an absence.
-    if (current.acceptsPrivateGroups !== baseline.acceptsPrivateGroups) {
-        payload.acceptsPrivateGroups = current.acceptsPrivateGroups;
     }
 
     return payload;
@@ -676,9 +684,6 @@ export function ListingEditor({
                 : data.entryPriceUpdatedAt instanceof Date
                   ? data.entryPriceUpdatedAt.toISOString()
                   : null,
-        minAge: numField(data, 'minAge'),
-        dressCode: strField(data, 'dressCode'),
-        dressCodeNoteI18n: i18nTextField(data, 'dressCodeNoteI18n'),
         // HOS-1048: experience-only; a venue listing simply reads them as
         // empty/null and `buildPatchPayload` never emits them for that vertical.
         meetingPoint: strField(data, 'meetingPoint'),
@@ -696,13 +701,14 @@ export function ListingEditor({
         durationMinutesPart: splitDuration({
             totalMinutes: numField(data, 'durationMinutes')
         }).minutes,
-        // HOS-1046 / HOS-1047 / HOS-1056: experience-only, same as the meeting
-        // point above — a venue listing reads them as empty and
-        // `buildPatchPayload` never emits them for that vertical.
+        // HOS-1046: experience-only, same as the meeting point above — a venue
+        // listing reads them as empty and `buildPatchPayload` never emits them
+        // for that vertical.
         whatToBring: strArrayField(data, 'whatToBring'),
         requirements: strArrayField(data, 'requirements'),
-        cancellationPolicy: strField(data, 'cancellationPolicy'),
-        acceptsPrivateGroups: data.acceptsPrivateGroups === true,
+        // HOS-2060: house rules, including the venue night keys and the
+        // experience cancellation text / private groups.
+        policies: parseListingPolicyValues({ raw: data.policies }),
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
@@ -744,6 +750,15 @@ export function ListingEditor({
 
     const updateSocial = useCallback((key: keyof SocialValues, val: string) => {
         setFormData((prev) => ({ ...prev, social: { ...prev.social, [key]: val } }));
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    /** Sets or removes (`undefined`) one house-rule key (HOS-2060). */
+    const onPolicyChange: ListingPolicyChange = useCallback((key, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            policies: setListingPolicy({ policies: prev.policies, key, value })
+        }));
         setStatus({ kind: 'idle' });
     }, []);
 
@@ -1022,6 +1037,7 @@ export function ListingEditor({
                 amenities,
                 features,
                 onFieldChange,
+                onPolicyChange,
                 onContactChange: updateContact,
                 onSocialChange: updateSocial,
                 onToggleAmenity: toggleAmenity,

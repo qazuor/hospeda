@@ -55,6 +55,8 @@ export * from './listing-media.schema.js';
 export * from './listing-moderation.schema.js';
 export * from './listing-notices.schema.js';
 export * from './listing-owner-listing.schema.js';
+// Shared base of the per-vertical `policies` JSONB (HOS-2060)
+export * from './listing-policies.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';

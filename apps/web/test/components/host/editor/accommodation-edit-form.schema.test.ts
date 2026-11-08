@@ -32,10 +32,15 @@ describe('slice composition', () => {
             ...Object.keys(AccommodationSeoSchema.shape)
         ].sort();
 
-        expect(fromSlices).toEqual(merged);
+        // `policies` sits in two slices on purpose (HOS-2060), see below.
+        expect([...new Set(fromSlices)]).toEqual(merged);
     });
 
-    it('should not repeat a field across two slices', () => {
+    it('should not repeat a field across two slices, except the per-key policies PATCH', () => {
+        // HOS-2060: `policies` is a PATCH object the API merges per key, so the
+        // capacity page (`{ minNights }`) and the services page (every other
+        // house rule) can both send it without clobbering each other.
+        const SHARED = new Set(['policies']);
         const fromSlices = [
             ...Object.keys(AccommodationBasicsSchema.shape),
             ...Object.keys(AccommodationCapacityPricingSchema.shape),
@@ -43,9 +48,11 @@ describe('slice composition', () => {
             ...Object.keys(AccommodationServicesSchema.shape),
             ...Object.keys(AccommodationContactSchema.shape),
             ...Object.keys(AccommodationSeoSchema.shape)
-        ];
+        ].filter((key) => !SHARED.has(key));
 
         expect(new Set(fromSlices).size).toBe(fromSlices.length);
+        expect(Object.keys(AccommodationCapacityPricingSchema.shape)).toContain('policies');
+        expect(Object.keys(AccommodationServicesSchema.shape)).toContain('policies');
     });
 
     it('should validate the exact field set the pre-split editor did, plus the G7 smoke additions', () => {
@@ -74,10 +81,11 @@ describe('slice composition', () => {
             'linkedin',
             'longitude',
             'maxGuests',
-            'minNights',
             'name',
             'number',
             'phone',
+            // HOS-2060: house rules (minimum stay included) as a per-key PATCH.
+            'policies',
             'seoDescription',
             'seoTitle',
             'street',
@@ -162,18 +170,31 @@ describe('AccommodationCapacityPricingSchema', () => {
         expect(AccommodationCapacityPricingSchema.safeParse({ bedrooms: 2.5 }).success).toBe(false);
     });
 
-    it('should accept a valid minNights (G7 smoke, H-112)', () => {
-        expect(AccommodationCapacityPricingSchema.safeParse({ minNights: 3 }).success).toBe(true);
+    it('should accept a valid policies.minNights (G7 smoke, H-112 → HOS-2060)', () => {
+        expect(
+            AccommodationCapacityPricingSchema.safeParse({ policies: { minNights: 3 } }).success
+        ).toBe(true);
     });
 
-    it('should reject minNights below 1', () => {
-        expect(AccommodationCapacityPricingSchema.safeParse({ minNights: 0 }).success).toBe(false);
+    it('should reject policies.minNights below 1 at the dotted path', () => {
+        const result = AccommodationCapacityPricingSchema.safeParse({ policies: { minNights: 0 } });
+        expect(result.success).toBe(false);
+        if (!result.success)
+            expect(result.error.issues[0]?.path).toEqual(['policies', 'minNights']);
     });
 
-    it('should accept an explicit null minNights (host clearing the field)', () => {
-        const result = AccommodationCapacityPricingSchema.safeParse({ minNights: null });
+    it('should accept an explicit null policies.minNights (host clearing the field)', () => {
+        const result = AccommodationCapacityPricingSchema.safeParse({
+            policies: { minNights: null }
+        });
         expect(result.success).toBe(true);
-        if (result.success) expect(result.data.minNights).toBeNull();
+    });
+
+    it('should reject a maximum stay below the minimum on the services slice', () => {
+        const result = AccommodationServicesSchema.safeParse({
+            policies: { minNights: 3, maxNights: 2 }
+        });
+        expect(result.success).toBe(false);
     });
 });
 

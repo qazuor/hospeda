@@ -568,8 +568,7 @@
             "additionalCost": "(additional cost)"
         },
         "features": {
-            "title": "Features",
-            "smokingAllowed": "Smoking allowed"
+            "title": "Features"
         },
         "faqsDetail": {
             "title": "Frequently asked questions",

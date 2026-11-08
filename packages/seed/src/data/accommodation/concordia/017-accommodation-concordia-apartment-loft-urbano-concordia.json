@@ -162,18 +162,21 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 2,
-        "maxNights": 30,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "No se permiten mascotas",
             "Check-in sin contacto con caja de seguridad",
             "Ascensor disponible en el edificio",
             "Seguridad 24h en el edificio"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 30
     },
     "seo": {
         "title": "Loft Urbano Concordia | Apartamento Moderno en Centro de",

@@ -17,16 +17,18 @@
  */
 
 import { type Locale, trans } from '@repo/i18n';
-import type { I18nText } from '@repo/schemas';
+import type { I18nText, VenuePolicies } from '@repo/schemas';
 
-/** One `nightInfo` row, already read from the venues table. */
+/**
+ * One `nightInfo` row, already read from the venues table. The minimum age and
+ * the dress code are house rules stored in `policies` since HOS-2060; they
+ * still belong to this section and are gated with it.
+ */
 export interface VenueNightContextRow {
     readonly entryKind: string | null;
     readonly entryNoteI18n: I18nText | null;
     readonly entryPriceFrom: number | null;
-    readonly minAge: number | null;
-    readonly dressCode: string | null;
-    readonly dressCodeNoteI18n: I18nText | null;
+    readonly policies: VenuePolicies | null;
 }
 
 /** The `nightInfo` values the context block renders, already resolved. */
@@ -103,7 +105,12 @@ export function toVenueNightContext(args: {
     const { row, available, locale } = args;
     if (!available) return null;
 
-    const minAge = row.minAge !== null && Number.isFinite(row.minAge) ? row.minAge : null;
+    const policies = row.policies ?? {};
+    const minAge =
+        typeof policies.minAge === 'number' && Number.isFinite(policies.minAge)
+            ? policies.minAge
+            : null;
+    const dressCode = policies.dressCode ?? null;
     const legalNotice =
         minAge === null ? null : translateNightKey(`${NIGHT_INFO_KEY_PREFIX}.legalAge`, locale);
     const entryLabel =
@@ -112,12 +119,11 @@ export function toVenueNightContext(args: {
             : translateNightKey(`${NIGHT_INFO_KEY_PREFIX}.entryKind.${row.entryKind}`, locale) ||
               null;
     const dressCodeLabel =
-        row.dressCode === null
+        dressCode === null
             ? null
-            : translateNightKey(`${NIGHT_INFO_KEY_PREFIX}.dressCode.${row.dressCode}`, locale) ||
-              null;
+            : translateNightKey(`${NIGHT_INFO_KEY_PREFIX}.dressCode.${dressCode}`, locale) || null;
     const entryNote = resolveNote(row.entryNoteI18n, locale);
-    const dressCodeNote = resolveNote(row.dressCodeNoteI18n, locale);
+    const dressCodeNote = resolveNote(policies.dressCodeNote ?? null, locale);
     // The price is a `paid` fact only (DEC-FAC-058): a stale value next to a
     // different `entryKind` is never rendered.
     const entryPriceFrom =

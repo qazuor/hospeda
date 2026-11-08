@@ -35,8 +35,14 @@ type Translate = (key: string, fallback?: string) => string;
 /** Business-line defaults the create form applies when a type is chosen. */
 export interface ListingBusinessLineDefaults {
     readonly preselect: readonly string[];
+    /**
+     * Field suggestions for the chosen type. The only one today is the
+     * BOLICHE minimum age, which lives in `policies.minAge` since HOS-2060.
+     */
     readonly fieldDefaults: {
-        readonly minAge?: number | null;
+        readonly policies?: {
+            readonly minAge?: number | null;
+        };
     };
 }
 
@@ -84,7 +90,8 @@ const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     description: true,
     destinationId: true,
     businessLines: true,
-    minAge: true
+    // HOS-2060: the minimum age is `policies.minAge` (the BOLICHE default).
+    policies: true
 });
 
 /**

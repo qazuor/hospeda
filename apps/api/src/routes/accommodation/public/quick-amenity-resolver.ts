@@ -1,8 +1,14 @@
 /**
  * @file quick-amenity-resolver.ts
  * @description Resolves the public boolean shortcut flags (`hasWifi`,
- * `hasPool`, `hasParking`, `allowsPets`) into the `anyAmenityGroups` domain
- * filter that the model understands.
+ * `hasPool`, `hasParking`) into the `anyAmenityGroups` domain filter that the
+ * model understands.
+ *
+ * `allowsPets` is NOT resolved here (HOS-2060): pets are a house rule, matched
+ * on `policies.pets.admission in ('yes','on_request')`, not an amenity. The
+ * flag travels to the model as the `allowsPets` domain param, and
+ * `buildAllowsPetsClause` (`@repo/db`, `accommodation-search-filters.ts`)
+ * builds the condition.
  *
  * Each toggle maps to one or more canonical amenity slugs. The "pool" and
  * "parking" toggles intentionally include variants (`heated_pool`,
@@ -26,8 +32,7 @@ import { AmenityModel } from '@repo/db';
 const SLUG_GROUPS = {
     hasWifi: ['wifi'],
     hasPool: ['pool', 'heated_pool'],
-    hasParking: ['parking', 'covered_parking', 'motorhome_parking', 'security_parking'],
-    allowsPets: ['pet_friendly']
+    hasParking: ['parking', 'covered_parking', 'motorhome_parking', 'security_parking']
 } as const;
 
 export type QuickAmenityFlag = keyof typeof SLUG_GROUPS;

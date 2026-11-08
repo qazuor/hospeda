@@ -116,18 +116,21 @@
     },
     "extraInfo": {
         "capacity": 55,
-        "minNights": 1,
-        "maxNights": 25,
         "bedrooms": 28,
         "beds": 40,
         "bathrooms": 28,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior",
             "Desayuno buffet incluido",
             "Estacionamiento descubierto",
             "Recepción con horario amplio"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 25
     },
     "seo": {
         "title": "Paraíso Agradable Hotel - Confort y piscina en Concepción",

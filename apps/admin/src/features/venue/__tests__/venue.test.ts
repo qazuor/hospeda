@@ -176,11 +176,12 @@ describe('venueListConfig', () => {
 describe('createVenueConsolidatedConfig', () => {
     const config = createVenueConsolidatedConfig(t);
 
-    it('has exactly 3 sections in the correct order', () => {
-        expect(config.sections).toHaveLength(3);
+    it('has exactly 4 sections in the correct order', () => {
+        expect(config.sections).toHaveLength(4);
         expect(config.sections[0]?.id).toBe('listing-identity');
         expect(config.sections[1]?.id).toBe('venue-specific');
-        expect(config.sections[2]?.id).toBe('listing-operational');
+        expect(config.sections[2]?.id).toBe('listing-policies');
+        expect(config.sections[3]?.id).toBe('listing-operational');
     });
 
     it('listing-identity section contains required core text fields', () => {
@@ -220,7 +221,7 @@ describe('createVenueConsolidatedConfig', () => {
     });
 
     it('listing-operational section contains contact and social fields', () => {
-        const ids = config.sections[2]?.fields.map((f) => f.id) ?? [];
+        const ids = config.sections[3]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('contactInfo.phone');
         expect(ids).toContain('contactInfo.email');
         expect(ids).toContain('socialNetworks.instagram');

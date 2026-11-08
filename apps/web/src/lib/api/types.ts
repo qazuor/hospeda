@@ -3,6 +3,7 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
+import type { ListingPolicyValues } from '../listing/listing-policies';
 import type { MediaAttribution } from '../media';
 
 /** Pagination metadata returned by list endpoints */
@@ -242,12 +243,12 @@ export interface AccommodationEditData {
     readonly bathrooms: number | null;
     readonly beds: number | null;
     /**
-     * Minimum stay. Writable since G7 smoke (H-112) via the capacity/pricing
-     * section — both HTTP create mappings still force `minNights: 1` at
-     * creation time (so a self-service draft is always publishable), but the
-     * PATCH schema now accepts `minNights` so the host can change it afterward.
+     * House rules (HOS-2060), as stored. The minimum stay is
+     * `policies.minNights` (a publish requirement, edited on the
+     * capacity/pricing page); the rest are edited by the Policies panel of the
+     * services page. Each page PATCHes only the policy keys it owns.
      */
-    readonly minNights: number | null;
+    readonly policies: ListingPolicyValues;
     readonly basePrice: number | null;
     readonly currency: string | null;
     readonly isAvailable: boolean;

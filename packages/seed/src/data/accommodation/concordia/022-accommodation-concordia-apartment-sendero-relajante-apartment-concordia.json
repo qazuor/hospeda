@@ -124,17 +124,20 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Barrio tranquilo",
             "Ideal para parejas o viajeros solos",
             "Cerca de Termas de Concordia"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Sendero Relajante - Apartamento tranquilo en Concordia ",

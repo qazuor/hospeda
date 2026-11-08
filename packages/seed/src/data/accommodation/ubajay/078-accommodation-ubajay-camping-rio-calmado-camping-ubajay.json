@@ -98,10 +98,7 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 20,
         "bathrooms": 2,
-        "smokingAllowed": true,
         "extraInfo": [
             "Parcelas con sombra y parrilla",
             "Acceso directo al arroyo",
@@ -109,6 +106,12 @@
             "Cerca del Parque Nacional El Palmar"
         ],
         "bedrooms": 1
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 1,
+        "maxNights": 20
     },
     "seo": {
         "title": "Rio Calmado Camping - Naturaleza y arroyo en Ubajay | El",

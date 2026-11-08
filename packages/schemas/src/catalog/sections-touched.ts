@@ -24,11 +24,34 @@ export function sectionsTouchedByBody<V extends ListingVertical>({
     readonly body: Partial<UpdateInputOf<V>> | Record<string, unknown> | undefined;
 }): readonly ListingSectionId<V>[] {
     const values: Readonly<Record<string, unknown>> = body ?? {};
-    return LISTING_SECTIONS[vertical]
-        .filter((section) =>
-            section.fields.some((field) => values[field] !== undefined && values[field] !== null)
-        )
-        .map(({ id }) => id);
+    const sections = LISTING_SECTIONS[
+        vertical
+    ] as unknown as readonly ListingSectionDefinitionBase<V>[];
+    const policies = values.policies;
+    const policyEntries =
+        policies !== null && typeof policies === 'object'
+            ? Object.entries(policies as Record<string, unknown>).filter(
+                  ([, value]) => value !== undefined && value !== null
+              )
+            : [];
+    // HOS-2060: a key inside `policies` counts for the section that claims it
+    // (`policyKeys`); every other policy key counts for the section owning the
+    // `policies` field. A cleared key (`null`) is skipped, like a cleared field.
+    const claimed = new Set(sections.flatMap((section) => section.policyKeys ?? []));
+    const touchesUnclaimedPolicy = policyEntries.some(([key]) => !claimed.has(key));
+    return sections
+        .filter((section) => {
+            const byField = section.fields.some((field) => {
+                const name = field as string;
+                if (name === 'policies') return touchesUnclaimedPolicy;
+                return values[name] !== undefined && values[name] !== null;
+            });
+            const byPolicyKey = policyEntries.some(([key]) =>
+                (section.policyKeys ?? []).includes(key)
+            );
+            return byField || byPolicyKey;
+        })
+        .map(({ id }) => id as ListingSectionId<V>);
 }
 
 /** Return trait ids with body fields set to non-null, defined values. */

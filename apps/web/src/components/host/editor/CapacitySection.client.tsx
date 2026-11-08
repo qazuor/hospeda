@@ -1,9 +1,11 @@
 /**
  * @file CapacitySection.client.tsx
  * @description Form section for accommodation capacity: maxGuests, bedrooms,
- * bathrooms. Uses native HTML number inputs.
+ * bathrooms, and the minimum stay (`policies.minNights`, HOS-2060). Uses
+ * native HTML number inputs.
  */
 
+import type { ListingPolicyChange } from '@/components/listing/editor/PoliciesPanel.client';
 import { TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -19,16 +21,27 @@ export interface CapacitySectionProps {
         maxGuests?: string;
         bedrooms?: string;
         bathrooms?: string;
-        minNights?: string;
+        'policies.minNights'?: string;
     }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: number | null) => void;
+    /**
+     * Sets or removes a house-rule key (HOS-2060). This section edits only
+     * `policies.minNights`, the minimum stay the publish gate requires.
+     */
+    readonly onPolicyChange: ListingPolicyChange;
 }
 
 /**
  * Capacity form section.
  * Renders maxGuests, bedrooms, and bathrooms number inputs.
  */
-export function CapacitySection({ locale, data, errors, onFieldChange }: CapacitySectionProps) {
+export function CapacitySection({
+    locale,
+    data,
+    errors,
+    onFieldChange,
+    onPolicyChange
+}: CapacitySectionProps) {
     const { t } = createTranslations(locale);
 
     return (
@@ -104,19 +117,19 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                 <div className={styles.field}>
                     <TextField
                         prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="minNights"
+                        name="policies.minNights"
                         label={t('host.properties.editor.field.minNights', 'Mínimo de noches')}
                         labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
-                        error={errors.minNights}
+                        error={errors['policies.minNights']}
                         type="number"
-                        value={data.minNights ?? ''}
+                        value={data.policies.minNights ?? ''}
                         min={1}
                         max={365}
                         onChange={(e) =>
-                            onFieldChange(
+                            onPolicyChange(
                                 'minNights',
-                                e.target.value === '' ? null : Number(e.target.value)
+                                e.target.value === '' ? undefined : Number(e.target.value)
                             )
                         }
                     />

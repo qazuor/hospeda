@@ -97,6 +97,39 @@ const CATALOG_FIELDS_BY_SECTION: Readonly<Record<string, readonly string[]>> = (
 })();
 
 /**
+ * Keys INSIDE `policies` a section claims (`policyKeys`, HOS-2060), unioned
+ * across verticals like {@link CATALOG_FIELDS_BY_SECTION}.
+ *
+ * `policies` is one JSONB field owned by the amenities section, but the venue
+ * `nightInfo` section claims three of its keys (`minAge`, `dressCode`,
+ * `dressCodeNote`). Restricting by top-level field alone would let the
+ * amenities page send night keys and drop every key the nightInfo page edits.
+ */
+const POLICY_KEYS_BY_SECTION: Readonly<Record<string, readonly string[]>> = (() => {
+    const bySection: Record<string, string[]> = {};
+
+    for (const sections of Object.values(LISTING_SECTIONS)) {
+        for (const section of sections as ReadonlyArray<{
+            readonly id: string;
+            readonly policyKeys?: readonly string[];
+        }>) {
+            const keys = bySection[section.id] ?? [];
+            for (const key of section.policyKeys ?? []) {
+                if (!keys.includes(key)) keys.push(key);
+            }
+            bySection[section.id] = keys;
+        }
+    }
+
+    return bySection;
+})();
+
+/** Every policy key some section claims; the rest belong to the `policies` owner. */
+const CLAIMED_POLICY_KEYS: ReadonlySet<string> = new Set(
+    Object.values(POLICY_KEYS_BY_SECTION).flat()
+);
+
+/**
  * Fields the listing PATCH accepts, but that the catalog deliberately does not
  * assign to a section. Each one needs its reason here.
  *
@@ -147,10 +180,49 @@ export function restrictPayloadToSection({
     const restricted: Record<string, unknown> = {};
 
     for (const key of owned) {
+        if (key === 'policies') continue;
         if (key in payload) {
             restricted[key] = payload[key];
         }
     }
 
+    const policies = restrictPoliciesToSection({
+        policies: payload.policies,
+        sectionId,
+        ownsPoliciesField: owned.includes('policies')
+    });
+    if (policies !== undefined) {
+        restricted.policies = policies;
+    }
+
     return restricted;
+}
+
+/**
+ * Keeps the `policies` keys a section owns (HOS-2060).
+ *
+ * The section owning the `policies` FIELD keeps every key no section claims;
+ * a section with `policyKeys` keeps exactly those. `policies: null` (clear the
+ * whole object) only passes for the field owner.
+ *
+ * @returns The restricted object, or `undefined` when nothing of it is owned.
+ */
+function restrictPoliciesToSection({
+    policies,
+    sectionId,
+    ownsPoliciesField
+}: {
+    readonly policies: unknown;
+    readonly sectionId: ListingEditorFormSectionId;
+    readonly ownsPoliciesField: boolean;
+}): Record<string, unknown> | null | undefined {
+    if (policies === null) return ownsPoliciesField ? null : undefined;
+    if (typeof policies !== 'object' || policies === undefined) return undefined;
+
+    const claimedHere = POLICY_KEYS_BY_SECTION[sectionId] ?? [];
+    const kept = Object.entries(policies as Record<string, unknown>).filter(
+        ([key]) => claimedHere.includes(key) || (ownsPoliciesField && !CLAIMED_POLICY_KEYS.has(key))
+    );
+
+    return kept.length > 0 ? Object.fromEntries(kept) : undefined;
 }

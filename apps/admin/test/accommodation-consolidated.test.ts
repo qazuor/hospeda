@@ -31,8 +31,12 @@ describe('AccommodationConsolidatedConfig', () => {
             );
 
             expect(config).toBeDefined();
-            // 7 sections: import-from-url (SPEC-222) + the 6 standard consolidated sections
-            expect(config.sections).toHaveLength(7);
+            // 8 sections: import-from-url (SPEC-222) + the 6 standard consolidated
+            // sections + the house rules (`listing-policies`, HOS-2060), right
+            // after amenities.
+            expect(config.sections).toHaveLength(8);
+            const ids = config.sections.map((section) => section.id);
+            expect(ids[ids.indexOf('amenities') + 1]).toBe('listing-policies');
             expect(config.sections.some((section) => section.id === 'states-moderation')).toBe(
                 false
             );
@@ -79,7 +83,9 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const viewSections = filterSectionsByMode(config.sections, 'view');
 
-            expect(viewSections).toHaveLength(6);
+            // +1 for the house rules (HOS-2060)
+            expect(viewSections).toHaveLength(7);
+            expect(viewSections.map((s) => s.id)).toContain('listing-policies');
             expect(viewSections[0].id).toBe('basic-info');
 
             // All fields must be present in view mode
@@ -93,8 +99,10 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const editSections = filterSectionsByMode(config.sections, 'edit');
 
-            // 6 = 5 standard edit sections + import-from-url (SPEC-222, edit+create only)
-            expect(editSections).toHaveLength(6);
+            // 7 = 5 standard edit sections + import-from-url (SPEC-222, edit+create
+            // only) + the house rules (HOS-2060)
+            expect(editSections).toHaveLength(7);
+            expect(editSections.map((s) => s.id)).toContain('listing-policies');
             // import-from-url is positioned first so admins can prefill before editing
             expect(editSections[0].id).toBe('import-from-url');
 
@@ -110,8 +118,10 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const createSections = filterSectionsByMode(config.sections, 'create');
 
-            // 6 = 5 standard create sections + import-from-url (SPEC-222, edit+create only)
-            expect(createSections).toHaveLength(6);
+            // 7 = 5 standard create sections + import-from-url (SPEC-222, edit+create
+            // only) + the house rules (HOS-2060)
+            expect(createSections).toHaveLength(7);
+            expect(createSections.map((s) => s.id)).toContain('listing-policies');
             // import-from-url is positioned first so admins can prefill before creating
             expect(createSections[0].id).toBe('import-from-url');
 

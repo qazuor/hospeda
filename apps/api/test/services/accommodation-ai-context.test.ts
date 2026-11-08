@@ -272,10 +272,9 @@ function makeAccommodation(overrides: Record<string, unknown> = {}): Record<stri
             capacity: 6,
             bedrooms: 3,
             bathrooms: 2,
-            beds: 4,
-            minNights: 2,
-            maxNights: 30
+            beds: 4
         },
+        policies: { paymentMethods: ['cash'], minNights: 2, maxNights: 30 },
         price: { price: 15000, currency: 'ARS' },
         faqs: [
             { question: '¿Se admiten mascotas?', answer: 'Sí, mascotas pequeñas.' },
@@ -613,8 +612,43 @@ describe('buildMarkdownContext', () => {
         expect(ctx).toContain('**Dormitorios**: 3');
         expect(ctx).toContain('**Baños**: 2');
         expect(ctx).toContain('**Camas**: 4');
+    });
+
+    it('HOS-2060: renders the house rules from policies, not from extraInfo', () => {
+        const ctx = buildMarkdownContext(
+            makeAccommodation({
+                policies: {
+                    paymentMethods: ['cash', 'debit'],
+                    pets: { admission: 'on_request' },
+                    smokingAllowed: 'outdoor_only',
+                    checkIn: { from: '14:00', to: '20:00' },
+                    checkOut: { to: '10:00' },
+                    minNights: 2,
+                    maxNights: 30
+                }
+            }) as never,
+            [],
+            [],
+            []
+        );
+        expect(ctx).toContain('### Normas de la casa');
+        expect(ctx).toContain('**Medios de pago**: efectivo, tarjeta de débito');
+        expect(ctx).toContain('**Mascotas**: a consultar');
+        expect(ctx).toContain('**Fumar**: solo en espacios al aire libre');
+        expect(ctx).toContain('**Check-in**: 14:00–20:00');
+        expect(ctx).toContain('**Check-out**: hasta 10:00');
         expect(ctx).toContain('**Mínimo de noches**: 2');
         expect(ctx).toContain('**Máximo de noches**: 30');
+    });
+
+    it('HOS-2060: renders no house-rules block without policies', () => {
+        const ctx = buildMarkdownContext(
+            makeAccommodation({ policies: null }) as never,
+            [],
+            [],
+            []
+        );
+        expect(ctx).not.toContain('### Normas de la casa');
     });
 
     it('should omit Capacidad section when extraInfo is null', () => {

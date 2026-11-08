@@ -136,12 +136,9 @@
     },
     "extraInfo": {
         "capacity": 8,
-        "minNights": 2,
-        "maxNights": 20,
         "bedrooms": 3,
         "beds": 5,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Entorno rural tranquilo",
             "Piscina privada",
@@ -150,6 +147,12 @@
             "Ideal para familias o grupos",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 20
     },
     "seo": {
         "title": "Retiro Natural - Casa de Campo con Piscina cerca de San",

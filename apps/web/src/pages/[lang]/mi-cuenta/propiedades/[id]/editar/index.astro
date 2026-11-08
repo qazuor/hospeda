@@ -82,7 +82,7 @@ const statuses = resolveEditorSectionStatuses({
 		publishReadiness: {
 			description: accommodation.description,
 			capacity: accommodation.maxGuests,
-			minNights: accommodation.minNights,
+			minNights: accommodation.policies.minNights ?? null,
 			bedrooms: accommodation.bedrooms,
 			bathrooms: accommodation.bathrooms,
 			hasMainImage: Boolean(data.featuredImage),

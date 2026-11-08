@@ -66,9 +66,10 @@ const nightOnly = { allowed: ['nightlife'], preselect: ['nightlife'] } as const;
 /**
  * `nightOnly` plus the field suggestion the owner editor pre-fills on create
  * (DEC-FAC-050; owner decision 2026-11-04: the +18 suggestion belongs to the
- * editor, not to the nightInfo section). `minAge` is editable and clearable.
+ * editor, not to the nightInfo section). `policies.minAge` (HOS-2060) is
+ * editable and clearable.
  */
-const boliche = { ...nightOnly, fieldDefaults: { minAge: 18 } } as const;
+const boliche = { ...nightOnly, fieldDefaults: { policies: { minAge: 18 } } } as const;
 /** Type-specific rules for assigning business lines. */
 export const BUSINESS_LINE_RULES = {
     venue: {

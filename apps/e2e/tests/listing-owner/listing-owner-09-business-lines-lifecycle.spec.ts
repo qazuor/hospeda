@@ -125,10 +125,14 @@ async function seedNightInfo(venueId: string): Promise<void> {
             SET entry_kind = 'paid',
                 entry_note_i18n = $2::jsonb,
                 entry_price_from = 500000,
-                min_age = 18,
-                dress_code = 'casual'
+                policies = COALESCE(policies, '{}'::jsonb) || $3::jsonb
           WHERE id = $1`,
-        [venueId, JSON.stringify({ es: 'Hasta las 2', en: '', pt: '' })]
+        [
+            venueId,
+            JSON.stringify({ es: 'Hasta las 2', en: '', pt: '' }),
+            // HOS-2060: the age and dress code are nightInfo policy keys now.
+            JSON.stringify({ minAge: 18, dressCode: 'casual' })
+        ]
     );
 }
 

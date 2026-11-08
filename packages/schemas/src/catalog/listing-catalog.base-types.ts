@@ -39,6 +39,13 @@ export interface ListingSectionDefinitionBase<V extends ListingVertical = Listin
     readonly fields: readonly (keyof UpdateInputOf<V>)[];
     /** Fields owned by this section in read responses; never writable and never counted by sections-touched. */
     readonly readOnlyFields?: readonly string[];
+    /**
+     * Keys INSIDE the `policies` JSONB owned by this section (HOS-2060). The
+     * `policies` field itself belongs to the amenities section; a key listed
+     * here is counted as a write to THIS section and is removed from the
+     * public read when this section is unavailable.
+     */
+    readonly policyKeys?: readonly string[];
     /** Optional heading when the listing has multiple business lines. */
     readonly headingWhenMultiLineKey?: string;
     /** Shared editor and public-page order. */

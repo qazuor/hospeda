@@ -177,18 +177,21 @@
     },
     "extraInfo": {
         "capacity": 5,
-        "minNights": 2,
-        "maxNights": 15,
         "bedrooms": 2,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Barrio residencial tranquilo",
             "Parrilla exterior",
             "Ideal para familias",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 15
     },
     "seo": {
         "title": "Refugio Tranquilo House - Casa en Ubajay para familias | El",

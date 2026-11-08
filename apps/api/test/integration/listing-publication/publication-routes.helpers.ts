@@ -413,7 +413,10 @@ export async function createListing(args: {
             publicationStatus: args.status,
             ...(args.complete === false
                 ? {}
-                : { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } })
+                : {
+                      extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                      policies: { paymentMethods: ['cash'], minNights: 1 }
+                  })
         } as Partial<Accommodation>,
         getDb()
     );

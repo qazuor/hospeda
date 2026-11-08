@@ -214,9 +214,9 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     entryKind: true,
     entryNoteI18n: true,
     entryPriceFrom: true,
-    minAge: true,
-    dressCode: true,
-    dressCodeNoteI18n: true
+    // HOS-2060: structured house rules. Owner-declared, no entitlement,
+    // validated whole by `VenuePoliciesSchema`.
+    policies: true
 })
     .partial()
     .extend({

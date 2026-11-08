@@ -4,7 +4,8 @@
  *
  * The public API already applies every gate this page must honour: a section
  * that is not `available` reaches the web with none of its seven fields (the
- * projector removes them), and `multiLine` is resolved on the server by
+ * projector removes them; since HOS-2060 three of them — `minAge`, `dressCode`,
+ * `dressCodeNote` — travel inside `policies`), and `multiLine` is resolved on the server by
  * `resolveListingSections`. This helper does NOT inspect business lines and
  * never decides whether the section is visible — it only turns the fields that
  * arrived into renderer-ready values.
@@ -152,6 +153,13 @@ export function toVenueNightInfo({
     readonly locale: string;
 }): VenueNightInfoData {
     const entryKind = readEntryKind(item.entryKind);
+    // HOS-2060: age and dress code are venue policies now, still owned by the
+    // nightInfo section — the API strips them from `policies` together with
+    // the other nightInfo fields when the section is not `available`.
+    const policies =
+        typeof item.policies === 'object' && item.policies !== null
+            ? (item.policies as Record<string, unknown>)
+            : {};
     const rawPrice = readNumber(item.entryPriceFrom);
     // The price is a `paid` fact only (DEC-FAC-058). A stale value next to a
     // different `entryKind` is never rendered, and without a price the update
@@ -165,9 +173,9 @@ export function toVenueNightInfo({
         entryNote: readNote(item.entryNoteI18n, locale),
         entryPriceFromCents,
         entryPriceUpdatedAt,
-        minAge: readNumber(item.minAge),
-        dressCode: readDressCode(item.dressCode),
-        dressCodeNote: readNote(item.dressCodeNoteI18n, locale),
+        minAge: readNumber(policies.minAge),
+        dressCode: readDressCode(policies.dressCode),
+        dressCodeNote: readNote(policies.dressCodeNote, locale),
         multiLine: item.multiLine === true
     };
 }

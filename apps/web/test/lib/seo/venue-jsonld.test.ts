@@ -72,6 +72,26 @@ describe('buildVenueStructuredData (TEST:6.1:2 / AC:6:5)', () => {
         expect('hasMenu' in data).toBe(false);
     });
 
+    it('emits paymentAccepted when declared and omits it otherwise (HOS-2060)', () => {
+        // Arrange
+        const common = {
+            name: 'La Parrilla',
+            url: 'https://hospeda.example/es/comer-y-salir/la-parrilla/',
+            type: VenueTypeEnum.RESTAURANT
+        };
+
+        // Act
+        const declared = buildVenueStructuredData({
+            ...common,
+            paymentAccepted: 'Efectivo, Mercado Pago'
+        });
+        const undeclared = buildVenueStructuredData(common);
+
+        // Assert
+        expect(declared.paymentAccepted).toBe('Efectivo, Mercado Pago');
+        expect('paymentAccepted' in undeclared).toBe(false);
+    });
+
     it('emits Restaurant and the carta URL for a RESTAURANT with structured menu content', () => {
         const hasMenu = buildRestaurantHasMenu({
             ...jsonLdOptions,

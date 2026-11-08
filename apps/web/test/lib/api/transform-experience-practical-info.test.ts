@@ -130,56 +130,53 @@ describe('toExperienceDetailPageProps — checklists (HOS-1046)', () => {
     });
 });
 
-describe('toExperienceDetailPageProps — cancellation policy (HOS-1047)', () => {
-    it('carries the owner text through', () => {
+describe('toExperienceDetailPageProps — cancellation policy (HOS-1047 → HOS-2060)', () => {
+    it('carries the owner text through from policies.cancellation', () => {
         const props = toExperienceDetailPageProps({
-            item: buildRaw({ cancellationPolicy: POLICY }),
+            item: buildRaw({ policies: { cancellation: POLICY } }),
             locale: 'es'
         });
 
-        expect(props.cancellationPolicy).toBe(POLICY);
+        expect(props.policies.cancellation).toBe(POLICY);
     });
 
-    it('collapses absent, null and whitespace-only to null', () => {
+    it('collapses absent, null and whitespace-only to absent', () => {
         // A whitespace policy is a string, and the view's gate is a presence
         // check — leaving it as `'   '` would render the heading over nothing.
-        expect(
-            toExperienceDetailPageProps({ item: buildRaw(), locale: 'es' }).cancellationPolicy
-        ).toBeNull();
-        expect(
-            toExperienceDetailPageProps({
-                item: buildRaw({ cancellationPolicy: null }),
+        for (const policies of [
+            undefined,
+            null,
+            { cancellation: null },
+            { cancellation: '   \n  ' }
+        ]) {
+            const props = toExperienceDetailPageProps({
+                item: buildRaw({ policies }),
                 locale: 'es'
-            }).cancellationPolicy
-        ).toBeNull();
-        expect(
-            toExperienceDetailPageProps({
-                item: buildRaw({ cancellationPolicy: '   \n  ' }),
-                locale: 'es'
-            }).cancellationPolicy
-        ).toBeNull();
+            });
+            expect(props.policies.cancellation).toBeUndefined();
+        }
     });
 });
 
-describe('toExperienceDetailPageProps — private groups (HOS-1056)', () => {
-    it('turns the CTA on only for an explicit true', () => {
-        expect(
-            toExperienceDetailPageProps({
-                item: buildRaw({ acceptsPrivateGroups: true }),
-                locale: 'es'
-            }).acceptsPrivateGroups
-        ).toBe(true);
-    });
-
-    it('reads a missing key, false, and a truthy non-boolean as OFF', () => {
-        // Strict `=== true`: a legacy row carries no key at all, and a string
-        // "false" is truthy — a loose check would light the CTA up on it.
-        for (const value of [undefined, false, null, 'false', 0]) {
+describe('toExperienceDetailPageProps — private groups (HOS-1056 → HOS-2060)', () => {
+    it('carries an explicit true and an explicit false', () => {
+        for (const value of [true, false]) {
             const props = toExperienceDetailPageProps({
-                item: buildRaw({ acceptsPrivateGroups: value }),
+                item: buildRaw({ policies: { privateGroups: value } }),
                 locale: 'es'
             });
-            expect(props.acceptsPrivateGroups).toBe(false);
+            expect(props.policies.privateGroups).toBe(value);
+        }
+    });
+
+    it('reads a missing key and a non-boolean as undeclared', () => {
+        // A string "false" is truthy; a loose check would light the CTA up on it.
+        for (const value of [undefined, null, 'false', 0]) {
+            const props = toExperienceDetailPageProps({
+                item: buildRaw({ policies: { privateGroups: value } }),
+                locale: 'es'
+            });
+            expect(props.policies.privateGroups).toBeUndefined();
         }
     });
 });

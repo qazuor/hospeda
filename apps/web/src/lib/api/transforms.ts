@@ -38,6 +38,7 @@ import type {
     VenueSocialNetworks
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
+import { parseListingPolicyValues } from '../listing/listing-policies';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
@@ -1131,15 +1132,11 @@ export function toAccommodationDetailPageProps({
                   capacity: extraInfoObj.capacity == null ? null : Number(extraInfoObj.capacity),
                   bedrooms: extraInfoObj.bedrooms == null ? null : Number(extraInfoObj.bedrooms),
                   beds: extraInfoObj.beds == null ? null : Number(extraInfoObj.beds),
-                  bathrooms: extraInfoObj.bathrooms == null ? null : Number(extraInfoObj.bathrooms),
-                  minNights: extraInfoObj.minNights == null ? null : Number(extraInfoObj.minNights),
-                  maxNights: extraInfoObj.maxNights == null ? null : Number(extraInfoObj.maxNights),
-                  smokingAllowed:
-                      extraInfoObj.smokingAllowed == null
-                          ? null
-                          : Boolean(extraInfoObj.smokingAllowed)
+                  bathrooms: extraInfoObj.bathrooms == null ? null : Number(extraInfoObj.bathrooms)
               }
             : null,
+        // HOS-2060: house rules moved out of `extraInfo` into `policies`.
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seo: seoObj
             ? {
                   title: seoObj.title ? String(seoObj.title) : null,
@@ -1927,19 +1924,14 @@ export function transformAccommodationEdit({
     const latitude = coordLat != null && String(coordLat).length > 0 ? Number(coordLat) : null;
     const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
 
-    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
-    //
-    // `minNights` became writable in G7 smoke (H-112): both HTTP create mappings
-    // still force `minNights: 1` at creation time (so a self-service draft is
-    // always publishable), but `AccommodationUpdateHttpSchema` now accepts it, so
-    // the value read here also feeds the capacity/pricing form's own field.
+    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds).
+    // The minimum stay is a house rule since HOS-2060 (`policies.minNights`).
     const extraInfo = item.extraInfo as
         | {
               capacity?: number | null;
               bedrooms?: number | null;
               bathrooms?: number | null;
               beds?: number | null;
-              minNights?: number | null;
           }
         | null
         | undefined;
@@ -1988,7 +1980,7 @@ export function transformAccommodationEdit({
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
         beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
-        minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seoTitle: String(seoObj?.title ?? ''),
         seoDescription: String(seoObj?.description ?? ''),
         // The values the PUBLIC page falls back to when the overrides above are
@@ -3057,6 +3049,7 @@ export function toVenueDetailPageProps({
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),
         nightInfo: toVenueNightInfo({ item, locale }),
+        policies: parseListingPolicyValues({ raw: item.policies }),
         rating: parsePublicDimensionRatings(item.rating),
         reviewSectionStates: parsePublicReviewSectionStates(item.reviewSectionStates),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
@@ -3302,7 +3295,7 @@ export function toExperienceDetailPageProps({
         // has no reason to tell those apart, and the FLAG below is what decides
         // whether the map is drawn.
         meetingPointDirections: normalizeChecklist(item.meetingPointDirections),
-        // Strictly `=== true`, like `acceptsPrivateGroups`. Absent means the
+        // Strictly `=== true`. Absent means the
         // payload never resolved the entitlement (a list card, a legacy
         // response), and only an explicit true may turn the paid map on — the
         // one direction where guessing gives the product away.
@@ -3315,13 +3308,11 @@ export function toExperienceDetailPageProps({
         // bullet, and a missing column reads as `[]` rather than `undefined`.
         whatToBring: normalizeChecklist(item.whatToBring),
         requirements: normalizeChecklist(item.requirements),
-        // HOS-1047: reuses the meeting point's normaliser — same problem, same
-        // answer. A whitespace-only policy must not render a heading over
-        // nothing.
-        cancellationPolicy: normalizeMeetingPoint(item.cancellationPolicy),
-        // HOS-1056: strictly `=== true`. A legacy row has no key, and only an
-        // explicit true may turn the CTA on.
-        acceptsPrivateGroups: item.acceptsPrivateGroups === true,
+        // HOS-2060: the cancellation text (HOS-1047) and private groups
+        // (HOS-1056) are `policies.cancellation` / `policies.privateGroups`.
+        // The parser drops a whitespace-only cancellation, so the view never
+        // renders a heading over nothing.
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seo: seoObj
             ? {
                   title: seoObj.title == null ? null : String(seoObj.title),

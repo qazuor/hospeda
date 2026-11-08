@@ -198,18 +198,21 @@
     },
     "extraInfo": {
         "capacity": 5,
-        "minNights": 2,
-        "maxNights": 15,
         "bedrooms": 2,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Barrio residencial tranquilo",
             "Parrilla exterior",
             "Ideal para familias",
             "Cerca de Paranacito y el Delta"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 15
     },
     "seo": {
         "title": "Sendero Encantado House - Casa en Paranacito para familias",

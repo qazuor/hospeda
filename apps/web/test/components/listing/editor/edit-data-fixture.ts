@@ -47,9 +47,8 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         entryNoteI18n: blankI18n(),
         entryPriceFrom: null,
         entryPriceUpdatedAt: null,
-        minAge: null,
-        dressCode: '',
-        dressCodeNoteI18n: blankI18n(),
+        // HOS-2060: every house rule, night ones included, lives here.
+        policies: {},
         amenityIds: new Set<string>(),
         featureIds: new Set<string>(),
         i18nValues: {

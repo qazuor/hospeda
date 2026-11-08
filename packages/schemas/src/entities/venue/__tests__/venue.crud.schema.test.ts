@@ -555,16 +555,36 @@ describe('VenueRestoreInputSchema', () => {
 // ============================================================================
 
 describe('nightInfo section inputs', () => {
-    it('owner update accepts the six writable nightInfo fields', () => {
+    it('owner update accepts the entry fields and the nightInfo policy keys', () => {
         const result = VenueOwnerUpdateInputSchema.safeParse({
             entryKind: 'paid',
             entryNoteI18n: { es: 'Gratis hasta la 1', en: 'Free until 1am', pt: 'Grátis até 1h' },
             entryPriceFrom: 5000,
+            policies: {
+                minAge: 18,
+                dressCode: 'smart_casual',
+                dressCodeNote: { es: 'No', en: 'No', pt: 'Não' }
+            }
+        });
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        // HOS-2060: the age and dress code survive the parse inside `policies`.
+        expect(result.data.policies).toEqual({
+            minAge: 18,
+            dressCode: 'smart_casual',
+            dressCodeNote: { es: 'No', en: 'No', pt: 'Não' }
+        });
+    });
+
+    it('no longer accepts the retired age and dress-code columns (HOS-2060)', () => {
+        const parsed = VenueOwnerUpdateInputSchema.parse({
             minAge: 18,
             dressCode: 'smart_casual',
             dressCodeNoteI18n: { es: 'No', en: 'No', pt: 'Não' }
         });
-        expect(result.success).toBe(true);
+        expect(parsed).not.toHaveProperty('minAge');
+        expect(parsed).not.toHaveProperty('dressCode');
+        expect(parsed).not.toHaveProperty('dressCodeNoteI18n');
     });
 
     it('entryPriceUpdatedAt is server-managed and never accepted by any input', () => {
@@ -582,8 +602,9 @@ describe('nightInfo section inputs', () => {
         expect(parsed).not.toHaveProperty('entryPriceUpdatedAt');
     });
 
-    it('minAge must be an integer between 13 and 30', () => {
-        const parse = (minAge: number) => VenueOwnerUpdateInputSchema.safeParse({ minAge }).success;
+    it('policies.minAge must be an integer between 13 and 30', () => {
+        const parse = (minAge: number) =>
+            VenueOwnerUpdateInputSchema.safeParse({ policies: { minAge } }).success;
         expect(parse(12)).toBe(false);
         expect(parse(31)).toBe(false);
         expect(parse(13)).toBe(true);

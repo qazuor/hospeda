@@ -626,13 +626,15 @@ export async function getAnyCityDestinationId(): Promise<string> {
  * (HOS-1641: `publication_status` is the only publication column; the old
  * `lifecycle_state` / `visibility` / `moderation_state` trio is gone).
  *
- * `extraInfo` defaults to a COMPLETE capacity payload (`capacity`, `minNights`,
- * `bedrooms`, `bathrooms` all present) so accommodations created through this
- * helper clear `AccommodationService.publish()`'s capacity-completeness guard
- * (HOS-152) and reach the behaviour the calling spec actually targets
- * (subscription-required, qzpay-timeout, tx-compensation, api-down) instead
- * of failing earlier with a capacity `VALIDATION_ERROR`. Pass `extraInfo: {}`
- * (or a partial object) explicitly to test the incomplete-capacity path.
+ * `extraInfo` defaults to a COMPLETE capacity payload (`capacity`, `bedrooms`,
+ * `bathrooms`) and `policies` to `{ paymentMethods: ['cash'], minNights: 1 }`
+ * (the minimum stay lives in `policies` since HOS-2060), so accommodations
+ * created through this helper clear `AccommodationService.publish()`'s
+ * capacity-completeness guard (HOS-152) and reach the behaviour the calling
+ * spec actually targets (subscription-required, qzpay-timeout,
+ * tx-compensation, api-down) instead of failing earlier with a capacity
+ * `VALIDATION_ERROR`. Pass `extraInfo: {}` or `policies: {}` (or a partial
+ * object) explicitly to test the incomplete-capacity path.
  */
 export async function createAccommodation(options: {
     readonly ownerId: string;
@@ -640,6 +642,8 @@ export async function createAccommodation(options: {
     readonly slugPrefix?: string;
     readonly publicationStatus?: PublicationStatusEnum;
     readonly extraInfo?: Record<string, unknown>;
+    /** House rules (`policies`, HOS-2060); defaults to cash and a one-night minimum. */
+    readonly policies?: Record<string, unknown>;
     /** Skip the normal active-trial fixture to exercise the PRE_TRIAL publish flow. */
     readonly withTrial?: boolean;
     /** Seed the main image required by the accommodation publish-completeness evaluator. */
@@ -650,19 +654,19 @@ export async function createAccommodation(options: {
     const publicationStatus = options.publicationStatus ?? PublicationStatusEnum.DRAFT;
     const extraInfo = options.extraInfo ?? {
         capacity: 4,
-        minNights: 1,
         bedrooms: 2,
         bathrooms: 1
     };
+    const policies = options.policies ?? { paymentMethods: ['cash'], minNights: 1 };
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO accommodations (
              slug, name, summary, description, type,
-             owner_id, destination_id, extra_info,
+             owner_id, destination_id, extra_info, policies,
              publication_status, inactive_since, deadlines_version,
              created_at, updated_at
          ) VALUES (
              $1, $2, $3, $4, $5::accommodation_type_enum,
-             $6, $7, $9::jsonb,
+             $6, $7, $9::jsonb, $10::jsonb,
              $8::publication_status_enum, NOW(), 1,
              NOW(), NOW()
          ) RETURNING id`,
@@ -675,7 +679,8 @@ export async function createAccommodation(options: {
             options.ownerId,
             destinationId,
             publicationStatus,
-            JSON.stringify(extraInfo)
+            JSON.stringify(extraInfo),
+            JSON.stringify(policies)
         ]
     );
     const id = rows[0]?.id;

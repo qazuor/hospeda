@@ -147,12 +147,7 @@
                 "whatToBringHint": "One item per line. What the person signing up has to bring.",
                 "requirements": "Requirements",
                 "requirementsPlaceholder": "Minimum age 12\nMust know how to swim\nNot suitable during pregnancy",
-                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in.",
-                "cancellationPolicy": "Cancellation policy",
-                "cancellationPolicyPlaceholder": "If there is a weather alert or the river runs low, we let you know 12 hours ahead and reschedule at no cost.",
-                "cancellationPolicyHint": "What happens if the outing does not run: rain, wind, a low river, or not reaching the minimum group size.",
-                "acceptsPrivateGroups": "I offer special pricing for private groups",
-                "acceptsPrivateGroupsHint": "When this is on, the listing invites people to write to you about groups. We publish no rate card."
+                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in."
             },
             "contactField": {
                 "mobilePhone": "Phone",
@@ -470,6 +465,80 @@
             "hiddenSections": "No longer visible: {{sections}}.",
             "nothingDeleted": "Nothing was deleted: whatever you saved in a hidden section comes back if you restore the line.",
             "changedAt": "Change from {{date}}."
+        }
+    },
+    "policies": {
+        "panelTitle": "Policies",
+        "panelHint": "Anything you leave blank shows as “not specified”, never as a “no”.",
+        "houseRulesTitle": "Rules and policies",
+        "notInformed": "Not specified",
+        "yes": "Yes",
+        "no": "No",
+        "locale": {
+            "es": "Spanish",
+            "en": "English",
+            "pt": "Portuguese"
+        },
+        "paymentMethods": {
+            "label": "Payment methods",
+            "cash": "Cash",
+            "debit": "Debit card",
+            "credit": "Credit card",
+            "transfer": "Bank transfer",
+            "mercadopago": "Mercado Pago"
+        },
+        "pets": {
+            "label": "Pets",
+            "admissionLabel": "Are pets allowed?",
+            "admission": {
+                "no": "No pets allowed",
+                "yes": "Pets allowed",
+                "on_request": "Pets on request"
+            },
+            "extraCost": "extra charge",
+            "extraCostLabel": "I charge an extra fee per pet",
+            "notesLabel": "Note"
+        },
+        "smokingAllowed": {
+            "label": "Smoking",
+            "no": "No smoking",
+            "yes": "Smoking allowed",
+            "outdoor_only": "Outdoor areas only"
+        },
+        "eventsAllowed": {
+            "label": "Events",
+            "editorLabel": "Can private events be held?",
+            "yes": "Private events allowed",
+            "no": "No events allowed"
+        },
+        "checkIn": {
+            "label": "Check-in"
+        },
+        "checkOut": {
+            "label": "Check-out"
+        },
+        "time": {
+            "from": "From",
+            "to": "Until",
+            "range": "{{from}} to {{to}}",
+            "fromOnly": "From {{from}}",
+            "toOnly": "Until {{to}}"
+        },
+        "maxNights": {
+            "label": "Maximum nights"
+        },
+        "reservations": {
+            "label": "Reservations",
+            "required": "Reservation required",
+            "recommended": "Reservation recommended",
+            "not_accepted": "No reservations"
+        },
+        "privateGroups": {
+            "editorLabel": "I offer a special price for private groups"
+        },
+        "cancellation": {
+            "label": "Cancellation policy",
+            "placeholder": "If there is a weather alert or the river drops, we notify you 12 hours in advance and reschedule at no cost."
         }
     }
 }

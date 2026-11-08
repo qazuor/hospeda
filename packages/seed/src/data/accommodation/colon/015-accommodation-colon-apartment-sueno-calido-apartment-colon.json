@@ -185,17 +185,20 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 20,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Edificio sin ascensor",
             "Ideal para familias pequeñas",
             "Cerca de supermercados"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 20
     },
     "seo": {
         "title": "Sueño Cálido Apartamento - Cómodo alojamiento en Colón",

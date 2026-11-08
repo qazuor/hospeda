@@ -258,7 +258,10 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     socialNetworks: true,
 
     // Extra Info (public)
-    extraInfo: true
+    extraInfo: true,
+
+    // HOS-2060: structured house rules (public).
+    policies: true
 }).extend({
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
@@ -557,6 +560,8 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     price: true,
     tags: true,
     extraInfo: true,
+    // HOS-2060: structured house rules, round-tripped to the owner editor.
+    policies: true,
 
     // Protected fields - ownership
     ownerId: true,

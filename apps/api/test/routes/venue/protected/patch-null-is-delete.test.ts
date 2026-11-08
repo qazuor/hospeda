@@ -27,14 +27,21 @@ const OTHER_ID = '22222222-2222-4222-8222-222222222222';
 const STAFF_ID = '55555555-5555-4555-8555-555555555555';
 const VENUE_ID = '33333333-3333-4333-8333-333333333333';
 
-const NIGHT_FIELDS = [
-    'entryKind',
-    'entryNoteI18n',
-    'entryPriceFrom',
-    'minAge',
-    'dressCode',
-    'dressCodeNoteI18n'
-] as const;
+/** The nightInfo COLUMNS; age and dress code are policy keys since HOS-2060. */
+const NIGHT_FIELDS = ['entryKind', 'entryNoteI18n', 'entryPriceFrom'] as const;
+
+/** The nightInfo policy keys (`policyKeys` of the section, HOS-2060). */
+const NIGHT_POLICY_KEYS = ['minAge', 'dressCode', 'dressCodeNote'] as const;
+
+/** The all-null nightInfo body: every column and every policy key in null. */
+const NIGHT_NULLS = {
+    ...Object.fromEntries(NIGHT_FIELDS.map((field) => [field, null])),
+    policies: Object.fromEntries(NIGHT_POLICY_KEYS.map((key) => [key, null]))
+};
+
+/** The stored venue `policies`, as the in-memory store holds them. */
+const storedPolicies = (): Record<string, unknown> =>
+    (store.row.policies as Record<string, unknown> | null) ?? {};
 
 /** Effective-set keys of the subject: mutable per test. */
 let effectiveKeys: string[] = ['edit_venue_info'];
@@ -76,9 +83,7 @@ const { fakeModel, store } = vi.hoisted(() => {
             entryNoteI18n: null,
             entryPriceFrom: null,
             entryPriceUpdatedAt: null,
-            minAge: null,
-            dressCode: null,
-            dressCodeNoteI18n: null,
+            policies: null,
             createdAt: new Date('2026-01-01T00:00:00Z'),
             updatedAt: new Date('2026-01-01T00:00:00Z'),
             createdById: null,
@@ -106,7 +111,16 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         withTransaction: async (
             callback: (tx: { execute: () => Promise<void> }) => Promise<unknown>
-        ) => callback({ execute: async () => undefined })
+        ) => callback({ execute: async () => undefined }),
+        // HOS-2060: the policies merge reads the stored object under a row lock;
+        // here the lock is the in-memory store.
+        listingPoliciesModel: {
+            readForUpdate: async () => ({
+                found: true,
+                policies:
+                    (store.row as { policies?: Record<string, unknown> | null }).policies ?? null
+            })
+        }
     };
 });
 
@@ -199,9 +213,7 @@ function resetStore(overrides: Record<string, unknown> = {}): void {
         entryNoteI18n: null,
         entryPriceFrom: null,
         entryPriceUpdatedAt: null,
-        minAge: null,
-        dressCode: null,
-        dressCodeNoteI18n: null,
+        policies: null,
         ...overrides
     };
 }
@@ -287,22 +299,24 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
     // TEST:5.0:2 — section hidden by the business lines can be emptied
     // -----------------------------------------------------------------------
 
-    it('TEST:5.0:2 clears the six nightInfo fields for an owner of a BAR without nightlife', async () => {
+    it('TEST:5.0:2 clears the nightInfo columns and policy keys for an owner of a BAR without nightlife', async () => {
         resetStore({
             type: 'BAR',
             businessLines: ['food'],
             entryKind: 'free',
             entryNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' },
             entryPriceFrom: null,
-            minAge: 18,
-            dressCode: 'casual',
-            dressCodeNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            policies: {
+                minAge: 18,
+                dressCode: 'casual',
+                dressCodeNote: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            }
         });
 
-        const nulls = Object.fromEntries(NIGHT_FIELDS.map((field) => [field, null]));
-        const response = await patch(nulls);
+        const response = await patch(NIGHT_NULLS);
         await expectStatus(response, 200);
         for (const field of NIGHT_FIELDS) expect(store.row[field]).toBeNull();
+        for (const key of NIGHT_POLICY_KEYS) expect(storedPolicies()[key]).toBeUndefined();
 
         const readBack = await patch({});
         const readBackBody = await expectStatus(readBack, 200);
@@ -314,16 +328,15 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             type: 'BAR',
             businessLines: ['food'],
             entryKind: 'free',
-            minAge: 18,
-            dressCode: 'casual'
+            policies: { minAge: 18, dressCode: 'casual' }
         });
 
-        const response = await patch({ minAge: 20 });
+        const response = await patch({ policies: { minAge: 20 } });
         const body = await expectStatus(response, 409);
         expect(body.error).toMatchObject({
             details: { reason: 'SECTION_ABSENT', section: 'nightInfo' }
         });
-        expect(store.row.minAge).toBe(18);
+        expect(storedPolicies().minAge).toBe(18);
     });
 
     // -----------------------------------------------------------------------
@@ -336,31 +349,33 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             businessLines: ['food'],
             entryKind: 'free',
             entryNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' },
-            minAge: 18,
-            dressCode: 'casual',
-            dressCodeNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            policies: {
+                minAge: 18,
+                dressCode: 'casual',
+                dressCodeNote: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            }
         });
 
-        const response = await patch({ entryKind: null, minAge: 20 });
+        const response = await patch({ entryKind: null, policies: { minAge: 20 } });
         const body = await expectStatus(response, 409);
         expect(body.error).toMatchObject({
             details: { reason: 'SECTION_ABSENT', section: 'nightInfo' }
         });
         expect(store.row.entryKind).toBe('free');
-        expect(store.row.minAge).toBe(18);
+        expect(storedPolicies().minAge).toBe(18);
     });
 
     it('TEST:5.0:3b rejects a cross-section mix atomically and does not clear menuUrl', async () => {
         resetStore({
             businessLines: ['food'],
             menuUrl: 'https://example.com/carta',
-            minAge: 18
+            policies: { minAge: 18 }
         });
 
-        const response = await patch({ menuUrl: null, minAge: 20 });
+        const response = await patch({ menuUrl: null, policies: { minAge: 20 } });
         await expectStatus(response, 409);
         expect(store.row.menuUrl).toBe('https://example.com/carta');
-        expect(store.row.minAge).toBe(18);
+        expect(storedPolicies().minAge).toBe(18);
     });
 
     it('TEST:5.0:3c keeps a locked menu value protected when another section is mixed in', async () => {
@@ -368,10 +383,13 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             type: 'BAR',
             businessLines: ['food', 'nightlife'],
             menuUrl: 'https://example.com/carta',
-            minAge: 18
+            policies: { minAge: 18 }
         });
 
-        const response = await patch({ menuUrl: 'https://example.com/otra', minAge: 20 });
+        const response = await patch({
+            menuUrl: 'https://example.com/otra',
+            policies: { minAge: 20 }
+        });
         const body = await expectStatus(response, 403);
         expect(body.error).toMatchObject({
             code: 'ENTITLEMENT_REQUIRED',
@@ -390,22 +408,26 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             businessLines: ['food'],
             entryKind: 'free',
             entryNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' },
-            minAge: 18,
-            dressCode: 'casual',
-            dressCodeNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            policies: {
+                minAge: 18,
+                dressCode: 'casual',
+                dressCodeNote: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            }
         });
 
-        const response = await patch({ dressCodeNoteI18n: null });
+        const response = await patch({ policies: { dressCodeNote: null } });
         await expectStatus(response, 200);
-        expect(store.row.dressCodeNoteI18n).toBeNull();
+        expect(storedPolicies().dressCodeNote).toBeUndefined();
         expect(store.row.entryKind).toBe('free');
         expect(store.row.entryNoteI18n).toEqual({ es: 'Sin nota', en: 'No note', pt: 'Sem nota' });
-        expect(store.row.minAge).toBe(18);
-        expect(store.row.dressCode).toBe('casual');
+        expect(storedPolicies().minAge).toBe(18);
+        expect(storedPolicies().dressCode).toBe('casual');
 
         const readBack = await patch({});
         const readBackBody = await expectStatus(readBack, 200);
-        expect(readBackBody.data.dressCodeNoteI18n).toBeNull();
+        expect(
+            (readBackBody.data.policies as Record<string, unknown> | null)?.dressCodeNote
+        ).toBeUndefined();
     });
 
     // -----------------------------------------------------------------------
@@ -425,12 +447,10 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             type: 'BAR',
             businessLines: ['food'],
             entryKind: 'free',
-            minAge: 18,
-            dressCode: 'casual'
+            policies: { minAge: 18, dressCode: 'casual' }
         });
 
-        const nulls = Object.fromEntries(NIGHT_FIELDS.map((field) => [field, null]));
-        const response = await patch(nulls, otherHeaders());
+        const response = await patch(NIGHT_NULLS, otherHeaders());
         await expectStatus(response, 404);
         expect(store.row.entryKind).toBe('free');
     });
@@ -438,7 +458,7 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
     it('TEST:5.0:5 still answers validation (400) before existence for a third party', async () => {
         resetStore({ type: 'BAR', businessLines: ['food'] });
 
-        const response = await patch({ minAge: 12 }, otherHeaders());
+        const response = await patch({ policies: { minAge: 12 } }, otherHeaders());
         await expectStatus(response, 400);
     });
 
@@ -452,14 +472,16 @@ describe('PATCH null-is-delete over the protected venue routes (HOS-2038)', () =
             businessLines: ['food'],
             entryKind: 'free',
             entryNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' },
-            minAge: 18,
-            dressCode: 'casual',
-            dressCodeNoteI18n: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            policies: {
+                minAge: 18,
+                dressCode: 'casual',
+                dressCodeNote: { es: 'Sin nota', en: 'No note', pt: 'Sem nota' }
+            }
         });
 
-        const nulls = Object.fromEntries(NIGHT_FIELDS.map((field) => [field, null]));
-        const response = await patch(nulls, staffHeaders());
+        const response = await patch(NIGHT_NULLS, staffHeaders());
         await expectStatus(response, 200);
         for (const field of NIGHT_FIELDS) expect(store.row[field]).toBeNull();
+        for (const key of NIGHT_POLICY_KEYS) expect(storedPolicies()[key]).toBeUndefined();
     });
 });

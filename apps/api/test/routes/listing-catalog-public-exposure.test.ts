@@ -56,7 +56,7 @@ const DESTINATION_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const AMENITY_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const FEATURE_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
-const AMENITY_ROW = { amenityId: AMENITY_ID, slug: 'accepts_cards', icon: 'credit-card' };
+const AMENITY_ROW = { amenityId: AMENITY_ID, slug: 'wifi', icon: 'wifi' };
 const FEATURE_ROW = {
     featureId: FEATURE_ID,
     slug: 'transport_included',

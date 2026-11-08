@@ -21,6 +21,7 @@ import {
     CATALOG_MERGES,
     FEATURE_SLUG_RENAMES
 } from '../src/data-migrations/0147-hos-2059-catalog-curation.js';
+import { RETIRED_POLICY_FEATURE_SLUGS } from '../src/data-migrations/0154-hos-2060-retire-policy-catalog-rows.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '../src');
@@ -43,15 +44,18 @@ const readSchema = (file: string) =>
     };
 
 /**
- * HOS-2059 (0147) later retires some of the 0146 rows and renames one. The
+ * HOS-2059 (0147) later retires some of the 0146 rows and renames one, and
+ * HOS-2060 (0154) retires the policy features. The
  * baseline reflects the END state, so a 0146 slug is looked up under its
  * current name, and a retired one is not looked up at all.
  */
-const RETIRED_FEATURES = new Set(
-    CATALOG_MERGES.filter((merge) => merge.source.kind === 'feature').map(
+const RETIRED_FEATURES = new Set([
+    ...CATALOG_MERGES.filter((merge) => merge.source.kind === 'feature').map(
         (merge) => merge.source.slug
-    )
-);
+    ),
+    // HOS-2060 (0154) retires the features that stood in for house rules.
+    ...RETIRED_POLICY_FEATURE_SLUGS
+]);
 const RENAMED_FEATURES = new Map(FEATURE_SLUG_RENAMES.map((rename) => [rename.from, rename.to]));
 
 describe('feature fixtures carry a category (HOS-2058)', () => {

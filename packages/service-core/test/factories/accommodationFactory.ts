@@ -130,10 +130,11 @@ export const createMockAccommodation = (
     // incomplete/DRAFT extraInfo override this explicitly.
     extraInfo: {
         capacity: 4,
-        minNights: 1,
         bedrooms: 2,
         bathrooms: 1
     },
+    // HOS-2060: the minimum stay (a publish requirement) is a house rule.
+    policies: { paymentMethods: ['cash'], minNights: 1 },
 
     ...overrides
 });

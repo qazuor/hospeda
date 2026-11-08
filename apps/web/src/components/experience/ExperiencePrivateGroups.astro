@@ -35,8 +35,11 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    /** Whether the owner ticked the private-groups toggle. */
-    readonly acceptsPrivateGroups: boolean;
+    /**
+     * Whether the owner offers an arrangement for private groups
+     * (`policies.privateGroups`, HOS-2060). Only an explicit `true` renders.
+     */
+    readonly privateGroups: boolean | undefined;
     /**
      * Whether `ExperienceContactBlock` will actually render on this page.
      * Decides whether the CTA is a link or a plain sentence — see the file
@@ -46,7 +49,7 @@ interface Props {
     readonly locale: SupportedLocale;
 }
 
-const { acceptsPrivateGroups, hasContactBlock, locale } = Astro.props;
+const { privateGroups, hasContactBlock, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const body = t(
@@ -55,7 +58,7 @@ const body = t(
 );
 ---
 
-{acceptsPrivateGroups && (
+{privateGroups === true && (
     <section class="exp-groups">
         <h3 class="exp-groups__title">
             {t('experience.detail.privateGroups.title', 'Grupos privados')}

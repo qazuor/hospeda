@@ -138,15 +138,16 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const domainParams = httpToDomainAccommodationSearch(httpQuery);
 
         // Resolve the public boolean shortcut flags (`hasWifi`, `hasPool`,
-        // `hasParking`, `allowsPets`) to `anyAmenityGroups`. Slug→ID lookup is
-        // cached for the lifetime of the API process. Each flag becomes one
-        // inner array (OR within), and the model AND-joins the groups so
-        // multiple toggles narrow the result set as expected.
+        // `hasParking`) to `anyAmenityGroups`. Slug→ID lookup is cached for the
+        // lifetime of the API process. Each flag becomes one inner array (OR
+        // within), and the model AND-joins the groups so multiple toggles narrow
+        // the result set as expected. `allowsPets` is NOT one of them (HOS-2060):
+        // pets are a house rule read from the `policies` JSONB, not an amenity,
+        // so the flag travels as its own domain param.
         const quickAmenityGroups = await resolveQuickAmenityFlags({
             hasWifi: httpQuery.hasWifi,
             hasPool: httpQuery.hasPool,
-            hasParking: httpQuery.hasParking,
-            allowsPets: httpQuery.allowsPets
+            hasParking: httpQuery.hasParking
         });
 
         // Enforce the public allow-list for sort fields to prevent sorting
@@ -171,6 +172,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const result = await accommodationService.search(createGuestActor(), {
             ...domainParams,
             ...(quickAmenityGroups.length > 0 ? { anyAmenityGroups: quickAmenityGroups } : {}),
+            ...(httpQuery.allowsPets === true ? { allowsPets: true } : {}),
             page,
             pageSize,
             sortBy: safeSortBy,

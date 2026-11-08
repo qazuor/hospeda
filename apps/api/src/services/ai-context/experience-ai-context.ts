@@ -20,10 +20,11 @@
  */
 
 import { experienceFaqs, experiences, getDb } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { type ExperiencePolicies, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
+import { buildListingPoliciesLines } from './listing-policies-context.js';
 import {
     buildChatSystemMessage,
     fenceOwnerValue,
@@ -85,9 +86,11 @@ export interface ExperienceContextRow {
     readonly whatToBring: readonly string[] | null;
     /** Requirements — an ORDERED LIST, same shape as {@link whatToBring}. */
     readonly requirements: readonly string[] | null;
-    /** The cancellation policy IS a single free-text paragraph, unlike the two above. */
-    readonly cancellationPolicy: string | null;
-    readonly acceptsPrivateGroups: boolean | null;
+    /**
+     * House rules (HOS-2060). `cancellation` IS a single free-text paragraph,
+     * unlike the two lists above; `privateGroups` is a yes/no.
+     */
+    readonly policies: ExperiencePolicies | null;
     readonly averageRating: number | null;
     readonly reviewsCount: number | null;
 }
@@ -140,10 +143,9 @@ export function buildExperienceMarkdownContext(
     if (experience.durationMinutes != null) {
         logistics.push(`**Duración**: ${formatDuration(experience.durationMinutes)}`);
     }
-    if (experience.acceptsPrivateGroups != null) {
-        logistics.push(
-            `**Grupos privados**: ${experience.acceptsPrivateGroups ? 'sí, los acepta' : 'no'}`
-        );
+    const policies = experience.policies ?? {};
+    if (policies.privateGroups != null) {
+        logistics.push(`**Grupos privados**: ${policies.privateGroups ? 'sí, los acepta' : 'no'}`);
     }
     if (logistics.length > 0) {
         lines.push('', '### Datos prácticos', ...logistics);
@@ -216,18 +218,21 @@ export function buildExperienceMarkdownContext(
     }
 
     // --- Cancellation policy (a single paragraph, unlike the two lists above) ---
-    if (experience.cancellationPolicy) {
+    if (policies.cancellation) {
         lines.push(
             '',
             '### Política de cancelación',
             OWNER_DATA_DELIMITER_START,
             truncate(
-                sanitizeOwnerDelimiters(experience.cancellationPolicy),
+                sanitizeOwnerDelimiters(policies.cancellation),
                 EXPERIENCE_LOGISTICS_MAX_CHARS
             ),
             OWNER_DATA_DELIMITER_END
         );
     }
+
+    // --- House rules (closed values; the cancellation paragraph is above) ---
+    lines.push(...buildListingPoliciesLines({ policies }).lines);
 
     // --- FAQs (owner free text — fenced) ---
     if (cappedFaqs.length > 0) {
@@ -297,8 +302,7 @@ export async function assembleExperienceContext(
             meetingPointDirections: experiences.meetingPointDirections,
             whatToBring: experiences.whatToBring,
             requirements: experiences.requirements,
-            cancellationPolicy: experiences.cancellationPolicy,
-            acceptsPrivateGroups: experiences.acceptsPrivateGroups,
+            policies: experiences.policies,
             averageRating: experiences.averageRating,
             reviewsCount: experiences.reviewsCount
         })

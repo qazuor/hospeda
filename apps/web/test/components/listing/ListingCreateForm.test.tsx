@@ -164,8 +164,10 @@ describe('ListingCreateForm', () => {
             const call = mockCreate.mock.calls[0]?.[0];
             expect(call?.data).toMatchObject({
                 businessLines: ['nightlife'],
-                minAge: 18
+                // HOS-2060: the boliche default lands in `policies`.
+                policies: { minAge: 18 }
             });
+            expect(call?.data).not.toHaveProperty('minAge');
         });
 
         it('shows the 400 business-line reason inside the selector (TEST:5.6:4)', async () => {

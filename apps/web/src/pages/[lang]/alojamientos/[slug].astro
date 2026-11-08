@@ -50,6 +50,8 @@ import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import type { NearbyPoi } from '@repo/schemas';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
+import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
+import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
 import {
@@ -478,6 +480,9 @@ const lodgingNumberOfRooms =
 // see buildLodgingPriceRange for why this isn't a $/$$/$$$ indicator or a
 // real min-max range.
 const lodgingPriceRange = buildLodgingPriceRange({ price: accommodation.price });
+// HOS-2060: petsAllowed / checkinTime / checkoutTime / paymentAccepted come
+// from the house rules; see `buildListingPolicyStructuredData`.
+const lodgingPolicyData = buildListingPolicyStructuredData({ policies: accommodation.policies, t });
 
 // HOS-557: publish the LOCALIZED amenity label, not the catalog slug —
 // see `buildLodgingAmenityNames` for why.
@@ -535,6 +540,10 @@ const faqSections = accommodation.faqs.map((faq) => ({
         numberOfRooms={lodgingNumberOfRooms}
         amenities={lodgingAmenities}
         priceRange={lodgingPriceRange}
+        petsAllowed={lodgingPolicyData.petsAllowed}
+        checkinTime={lodgingPolicyData.checkinTime}
+        checkoutTime={lodgingPolicyData.checkoutTime}
+        paymentAccepted={lodgingPolicyData.paymentAccepted}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
@@ -568,7 +577,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             client:load
         />
-        <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
+        <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
         {accommodation.richDescription ? (
             <section class="description-rich">
                 {accommodation.summary && (
@@ -598,8 +607,9 @@ const faqSections = accommodation.faqs.map((faq) => ({
             locale={locale}
         />
 
-        <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
+        <FeaturesGrid features={accommodation.features} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
+        <ListingHouseRules policies={accommodation.policies} locale={locale} />
 
         <PromotionBanner promos={activePromos} locale={locale} />
 
@@ -704,7 +714,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
     <!-- Sidebar -->
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
-            <PricingSidebar price={accommodation.price} extraInfo={accommodation.extraInfo} lang={locale} />
+            <PricingSidebar price={accommodation.price} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
             <PriceAlertButton
                 client:idle
                 accommodationId={accommodation.id}

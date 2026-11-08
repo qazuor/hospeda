@@ -880,8 +880,12 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
     });
 
     describe('nightInfo (HOS-1787 leaf 5.1)', () => {
-        it('sends only dressCode when only dressCode changed', async () => {
-            renderEditor('venue', buildListing({ dressCode: 'casual' }), 'nightInfo');
+        it('sends only policies.dressCode when only dressCode changed (HOS-2060)', async () => {
+            renderEditor(
+                'venue',
+                buildListing({ policies: { dressCode: 'casual', minAge: 18 } }),
+                'nightInfo'
+            );
 
             fireEvent.change(screen.getByLabelText('Código de vestimenta'), {
                 target: { value: 'elegant' }
@@ -889,7 +893,21 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toEqual({ dressCode: 'elegant' });
+            expect(body).toEqual({ policies: { dressCode: 'elegant' } });
+        });
+
+        it('sends null for a night rule the owner cleared', async () => {
+            renderEditor(
+                'venue',
+                buildListing({ policies: { dressCode: 'casual', minAge: 18 } }),
+                'nightInfo'
+            );
+
+            fireEvent.change(screen.getByLabelText('Edad mínima'), { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ policies: { minAge: null } });
         });
     });
 });

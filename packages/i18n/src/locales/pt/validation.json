@@ -5193,5 +5193,29 @@
         "windowDays": {
             "unsupported": "A janela de dias solicitada não está disponível"
         }
+    },
+    "listingPolicies": {
+        "paymentMethods": {
+            "invalid": "O meio de pagamento não é válido",
+            "invalidType": "Os meios de pagamento devem ser uma lista",
+            "duplicate": "Cada meio de pagamento pode aparecer só uma vez"
+        },
+        "pets": {
+            "admission": {
+                "invalid": "A política de animais de estimação não é válida"
+            }
+        },
+        "note": {
+            "tooLong": "A nota não pode ultrapassar 200 caracteres"
+        },
+        "smokingAllowed": {
+            "invalid": "A política de fumo não é válida"
+        },
+        "reservations": {
+            "invalid": "A política de reservas não é válida"
+        },
+        "maxNights": {
+            "belowMinNights": "O máximo de noites não pode ser menor que o mínimo"
+        }
     }
 }

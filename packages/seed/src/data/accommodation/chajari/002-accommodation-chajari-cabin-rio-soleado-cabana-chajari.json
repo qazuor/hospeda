@@ -186,17 +186,20 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Requiere vehículo propio para llegar",
             "Ideal para desconectar, entorno muy tranquilo",
             "No apto para fiestas o eventos ruidosos"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Rio Soleado Cabaña - Alojamiento rural en Chajarí, Entre",

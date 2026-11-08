@@ -298,7 +298,7 @@ const breadcrumbItems = [
              rendered as TEXT and never as HTML — it is owner-authored and
              published with no review in between. Self-hides when absent. -->
         <ExperienceCancellationPolicy
-            cancellationPolicy={experience.cancellationPolicy}
+            cancellation={experience.policies.cancellation}
             locale={locale}
         />
 
@@ -306,7 +306,7 @@ const breadcrumbItems = [
              keeps its CTA from becoming a dead anchor when the contact block
              below self-hides — see the constant's docstring. -->
         <ExperiencePrivateGroups
-            acceptsPrivateGroups={experience.acceptsPrivateGroups}
+            privateGroups={experience.policies.privateGroups}
             hasContactBlock={hasContactBlock}
             locale={locale}
         />

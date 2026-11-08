@@ -25,6 +25,7 @@ import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
+import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -44,6 +45,8 @@ import { getApiUrl } from '@/lib/env';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
+import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
+import { setListingPolicy } from '@/lib/listing/listing-policies';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildRestaurantHasMenu } from '@/lib/venue/menu-jsonld';
@@ -193,10 +196,9 @@ try {
 const descriptionText = renderPlain({ raw: venue.description });
 
 // --- "Accepts events" CTA (HOS-1055) ---
-// Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
-// `venue.amenities`) rather than a new DB column or public-schema field —
-// see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
-// the write side.
+// Driven by the house rule `policies.eventsAllowed` (HOS-2060). It used to
+// reuse a catalog amenity, retired when the house rules moved into
+// `policies`; only an explicit `true` turns the CTA on.
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
 // `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
@@ -215,7 +217,7 @@ const descriptionText = renderPlain({ raw: venue.description });
 // could point at an anchor with nothing behind it, which is worse than no CTA
 // (same principle as HOS-363/HOS-924: never promise a channel that isn't
 // there).
-const acceptsEventsAmenity = venue.amenities.find((amenity) => amenity.name === 'private_events');
+const acceptsEvents = venue.policies?.eventsAllowed === true;
 const hasVenueContact =
     Boolean(resolveSafeExternalUrl(venue.menuUrl)) ||
     (venue.socialNetworks
@@ -223,12 +225,13 @@ const hasVenueContact =
               Boolean(resolveSafeExternalUrl(value))
           )
         : false);
-const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;
-// Excluded from the generic grid ONLY when the dedicated CTA renders in its
-// place — otherwise both would say "accepts events" two centimeters apart.
-const amenitiesForGrid = showEventsCta
-    ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
-    : venue.amenities;
+const showEventsCta = acceptsEvents && hasVenueContact;
+// The events rule is left out of the house-rules list ONLY when the dedicated
+// CTA renders in its place — otherwise both would say "accepts events" two
+// centimeters apart.
+const houseRulePolicies = showEventsCta
+    ? setListingPolicy({ policies: venue.policies ?? {}, key: 'eventsAllowed', value: undefined })
+    : venue.policies;
 
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
 const jsonLdHasMenu = buildRestaurantHasMenu({
@@ -294,9 +297,11 @@ const venueDetailSectionBlocks: Readonly<
     amenities: [
         {
             Component: FeaturesGrid,
-            props: { features: venue.features, smokingAllowed: null, lang: locale }
+            props: { features: venue.features, lang: locale }
         },
-        { Component: AmenitiesGrid, props: { amenities: amenitiesForGrid, lang: locale } },
+        { Component: AmenitiesGrid, props: { amenities: venue.amenities, lang: locale } },
+        // HOS-2060: `policies` belongs to the amenities section in the catalog.
+        { Component: ListingHouseRules, props: { policies: houseRulePolicies, locale } },
         ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
     contact: hasContactBlock
@@ -336,6 +341,11 @@ const venueDetailSectionBlocks: Readonly<
         { Component: VenueNightInfo, props: { nightInfo: venue.nightInfo, locale } }
     ]
 };
+
+// HOS-2060: `paymentAccepted` is a `LocalBusiness` property, so a venue may
+// carry it; `petsAllowed` is not (schema.org scopes it to lodging), so it is
+// deliberately left out of the venue object.
+const jsonLdPolicyData = buildListingPolicyStructuredData({ policies: venue.policies ?? {}, t });
 
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
@@ -377,6 +387,7 @@ const breadcrumbItems = [
         hasMenu={jsonLdHasMenu}
         image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
+        paymentAccepted={jsonLdPolicyData.paymentAccepted}
         aggregateRating={venue.averageRating > 0 ? {
             ratingValue: venue.averageRating,
             reviewCount: venue.reviewsCount,

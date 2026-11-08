@@ -161,13 +161,16 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": ["Ubicación céntrica", "Ideal para parejas", "Check-in autónomo disponible"]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Retiro Encantado - Apartamento Céntrico en Concepción del",

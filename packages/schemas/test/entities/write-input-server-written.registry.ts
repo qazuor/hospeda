@@ -149,6 +149,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     extraInfo faqs iaData lastWarnedAt location media name nameI18n ownerId price rating
                     reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
                     summaryI18n tags translationMeta type videos
+                    policies
                 `)
             },
             {
@@ -160,6 +161,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     extraInfo faqs iaData lastWarnedAt location name nameI18n ownerId price rating
                     reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
                     summaryI18n tags translationMeta type videos
+                    policies
                 `)
             }
         ]
@@ -247,12 +249,13 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: ExperienceAdminCreateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    acceptsPrivateGroups adminInfo averageRating cancellationPolicy contactInfo
+                    adminInfo averageRating contactInfo
                     description descriptionI18n destinationId durationMinutes faqs isPriceOnRequest
                     media meetingPoint meetingPointDirections meetingPointLat meetingPointLong name
                     nameI18n openingHours ownerId priceFrom priceUnit rating requirements reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos whatToBring
+                    policies
                 `)
             },
             {
@@ -260,11 +263,12 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: ExperienceUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    acceptsPrivateGroups adminInfo cancellationPolicy contactInfo description
+                    adminInfo contactInfo description
                     descriptionI18n destinationId durationMinutes faqs isPriceOnRequest meetingPoint
                     meetingPointDirections meetingPointLat meetingPointLong name nameI18n openingHours
                     priceFrom priceUnit rating requirements richDescription richDescriptionI18n seo slug
                     socialNetworks summary summaryI18n tags translationMeta type videos whatToBring
+                    policies
                 `)
             },
             {
@@ -278,11 +282,12 @@ export const ENTITIES: readonly EntityEntry[] = [
                 // listing is created before the provider has any subscription
                 // at all. The schema omits it; the gated PATCH writes it.
                 accepts: fields(`
-                    acceptsPrivateGroups cancellationPolicy contactInfo description descriptionI18n
+                    contactInfo description descriptionI18n
                     destinationId durationMinutes faqs isPriceOnRequest meetingPoint
                     meetingPointLat meetingPointLong name nameI18n openingHours priceFrom priceUnit
                     requirements richDescription richDescriptionI18n seo socialNetworks summary
                     summaryI18n tags type videos whatToBring
+                    policies
                 `)
             },
             {
@@ -290,11 +295,12 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: ExperienceOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
-                    acceptsPrivateGroups cancellationPolicy contactInfo description descriptionI18n
+                    contactInfo description descriptionI18n
                     destinationId durationMinutes isPriceOnRequest meetingPoint
                     meetingPointDirections meetingPointLat meetingPointLong name nameI18n
                     openingHours priceFrom priceUnit requirements richDescription
                     richDescriptionI18n socialNetworks summary summaryI18n type videos whatToBring
+                    policies
                 `)
             }
         ]
@@ -324,7 +330,8 @@ export const ENTITIES: readonly EntityEntry[] = [
                     media menuUrl name nameI18n openingHours ownerId priceRange rating reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos
-                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
+                    entryKind entryNoteI18n entryPriceFrom
+                    policies
                 `)
             },
             {
@@ -335,7 +342,8 @@ export const ENTITIES: readonly EntityEntry[] = [
                     adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
                     socialNetworks summary summaryI18n tags translationMeta type videos
-                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
+                    entryKind entryNoteI18n entryPriceFrom
+                    policies
                 `)
             },
             {
@@ -346,7 +354,8 @@ export const ENTITIES: readonly EntityEntry[] = [
                     contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange richDescription richDescriptionI18n seo
                     socialNetworks summary summaryI18n tags type videos
-                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
+                    entryKind entryNoteI18n entryPriceFrom
+                    policies
                 `)
             },
             {
@@ -357,7 +366,8 @@ export const ENTITIES: readonly EntityEntry[] = [
                     contactInfo description descriptionI18n destinationId menuUrl name nameI18n
                     openingHours priceRange richDescription richDescriptionI18n socialNetworks
                     summary summaryI18n type videos
-                    dressCode dressCodeNoteI18n entryKind entryNoteI18n entryPriceFrom minAge
+                    entryKind entryNoteI18n entryPriceFrom
+                    policies
                 `)
             }
         ]

@@ -40,7 +40,7 @@ const trialDays = await resolveGenericOwnerTrialDays();
 const publishContext = {
 	capacity: data.accommodation.maxGuests,
 	description: data.accommodation.description,
-	minNights: data.accommodation.minNights,
+	minNights: data.accommodation.policies.minNights ?? null,
 	bedrooms: data.accommodation.bedrooms,
 	bathrooms: data.accommodation.bathrooms,
 	isDraft: data.accommodation.publicationStatus === 'DRAFT',

@@ -162,6 +162,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // renders `listing.notices.fixRequest.*`, and imports the notices module.
     'listing.notices',
     'listing.owner',
+    // HOS-2060 — the house-rules panel (`PoliciesPanel.client.tsx`) shared by
+    // the listing and accommodation editors names this subtree.
+    'listing.policies',
     // The venue-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.
     'venue.owner',

@@ -98,12 +98,9 @@
     },
     "extraInfo": {
         "capacity": 25,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 5,
         "beds": 23,
         "bathrooms": 4,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina comunitaria amplia",
@@ -111,6 +108,12 @@
             "Alquiler de toallas",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Rio Soleado Hostel - Económico y social en San José | El",

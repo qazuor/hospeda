@@ -24,7 +24,11 @@ import type {
     ConsolidatedFieldConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
-import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
+import {
+    createListingIdentitySection,
+    createListingOperationalSection,
+    createListingPoliciesSection
+} from '@/features/listing';
 import { getVenueBusinessLineOptions, hasBusinessLineChoice } from './venue-business-lines';
 
 // ---------------------------------------------------------------------------
@@ -178,6 +182,7 @@ export const createVenueConsolidatedConfig = (
     sections: [
         createListingIdentitySection('venue'),
         createVenueSpecificSection(t),
+        createListingPoliciesSection({ vertical: 'venue' }).section,
         createListingOperationalSection('venue')
     ],
     metadata: {

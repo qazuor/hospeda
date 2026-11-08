@@ -123,4 +123,39 @@ describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
             ctx.tx
         );
     });
+
+    it.each([
+        ['venue', VenueService, 'BOLICHE'],
+        ['experience', ExperienceService, 'EXCURSION'],
+        ['accommodation', AccommodationService, 'CABIN']
+    ] as const)('HOS-2060: a new %s stores the cash payment default', async (vertical, Service, type) => {
+        // Arrange
+        const service = new Service({}) as unknown as CreateHarness;
+        const model = { create: vi.fn(async (data: unknown) => data) };
+        service.model = model;
+        service._canCreate = async () => {};
+        service._afterCreate = async (entity: unknown) => entity;
+        service._refetchWithWriteRelations = async (entity: unknown) => entity;
+        service._assertDestinationIsCity = async () => {};
+        const input = {
+            type,
+            name: 'Test place',
+            slug: 'test-place',
+            ownerId: '00000000-0000-4000-a000-000000000001',
+            destinationId: '00000000-0000-4000-a000-000000000002',
+            summary: 'A sufficiently long summary for this service create test.',
+            description: 'A sufficiently long description for this service create test.',
+            ...(vertical === 'venue' ? {} : { priceFrom: 1000 })
+        };
+        const ctx = { tx: {}, hookState: {} };
+
+        // Act
+        await service.create(createActor({ id: input.ownerId }), input, ctx);
+
+        // Assert
+        expect(model.create).toHaveBeenLastCalledWith(
+            expect.objectContaining({ policies: { paymentMethods: ['cash'] } }),
+            ctx.tx
+        );
+    });
 });

@@ -60,25 +60,28 @@ const OWNER_ID = 'eeeeeeee-0000-4000-8000-000000001849';
 const VENUE_ID = 'aaaaaaaa-0000-4000-8000-000000001849';
 const DESTINATION_ID = 'dddddddd-0000-4000-8000-000000001849';
 
-/** The seven fields the section owns: six writable plus the server-managed date. */
+/** The four columns the section owns: three writable plus the server-managed date. */
 const NIGHT_INFO_FIELDS = [
     'entryKind',
     'entryNoteI18n',
     'entryPriceFrom',
-    'entryPriceUpdatedAt',
-    'minAge',
-    'dressCode',
-    'dressCodeNoteI18n'
+    'entryPriceUpdatedAt'
 ] as const;
+
+/** The policy keys the section owns since HOS-2060 (`policyKeys`). */
+const NIGHT_INFO_POLICY_KEYS = ['minAge', 'dressCode', 'dressCodeNote'] as const;
 
 const NIGHT_INFO_VALUES = {
     entryKind: 'paid',
     entryNoteI18n: { es: 'Hasta la 1', en: 'Until 1 am', pt: 'Até a 1' },
     entryPriceFrom: 500000,
     entryPriceUpdatedAt: new Date('2026-03-01T00:00:00Z'),
-    minAge: 18,
-    dressCode: 'smart_casual',
-    dressCodeNoteI18n: { es: 'Salvo verano', en: 'Except summer', pt: 'Exceto verão' }
+    policies: {
+        paymentMethods: ['cash', 'debit'],
+        minAge: 18,
+        dressCode: 'smart_casual',
+        dressCodeNote: { es: 'Salvo verano', en: 'Except summer', pt: 'Exceto verão' }
+    }
 } as const;
 
 type VenueOverrides = {
@@ -160,7 +163,7 @@ beforeEach(async () => {
 });
 
 describe('GET /public/venues/slug/:slug — nightInfo (HOS-1849)', () => {
-    it('TEST:4.5:1 publishes the seven fields and multiLine false for a nightclub', async () => {
+    it('TEST:4.5:1 publishes the night columns, the night policy keys and multiLine false for a nightclub', async () => {
         venueSvc.getBySlug.mockResolvedValue({
             data: makeVenue({ slug: 'boliche', type: 'BOLICHE', businessLines: ['nightlife'] })
         });
@@ -172,9 +175,7 @@ describe('GET /public/venues/slug/:slug — nightInfo (HOS-1849)', () => {
         expect(data.entryPriceFrom).toBe(500000);
         // The schema coerces to Date; JSON brings it back as ISO text.
         expect(typeof data.entryPriceUpdatedAt).toBe('string');
-        expect(data.minAge).toBe(18);
-        expect(data.dressCode).toBe('smart_casual');
-        expect(data.dressCodeNoteI18n).toEqual(NIGHT_INFO_VALUES.dressCodeNoteI18n);
+        expect(data.policies).toEqual(NIGHT_INFO_VALUES.policies);
         expect(data.multiLine).toBe(false);
     });
 
@@ -221,6 +222,11 @@ describe('GET /public/venues/slug/:slug — nightInfo (HOS-1849)', () => {
         for (const field of NIGHT_INFO_FIELDS) {
             expect(data).not.toHaveProperty(field);
         }
+        // HOS-2060 / DEC-FAC-040: the night policy keys are stripped with the
+        // section, and the rest of the house rules stay public.
+        const policies = data.policies as Record<string, unknown>;
+        for (const key of NIGHT_INFO_POLICY_KEYS) expect(policies).not.toHaveProperty(key);
+        expect(policies.paymentMethods).toEqual(['cash', 'debit']);
         expect(data.multiLine).toBe(false);
     });
 });

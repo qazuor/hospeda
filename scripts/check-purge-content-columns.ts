@@ -16,7 +16,12 @@
  *     action-15 list, DEC-FAC-074) in both directions, with a closed, counted list
  *     of exceptions; and
  * (e) requires `business_lines` in the system list and `businessLines` in
- *     `LISTING_NON_CONTENT_FIELDS` (it is classification, not content).
+ *     `LISTING_NON_CONTENT_FIELDS` (it is classification, not content); and
+ * (f) allows a closed, counted list of LEGACY columns (`purgeOnlyLegacyColumns`)
+ *     that the purge must still blank but no field may edit, because no code
+ *     reads or writes them any more (an expand/contract window before their
+ *     DROP). Each row must still be a column of its table and must be in the
+ *     purge `SET`, so the list empties itself when the column is dropped.
  * A floor per table and per `SET` catches a parser that under-reads, and the
  * positive control (this repository) is green.
  *
@@ -108,6 +113,11 @@ export interface Inventory {
         readonly count: number;
         readonly fields: readonly { readonly field: string; readonly reason: string }[];
     };
+    /** Legacy columns the purge blanks but no field edits (rule f). */
+    readonly purgeOnlyLegacyColumns?: {
+        readonly count: number;
+        readonly rows: readonly SystemRow[];
+    };
 }
 
 /** The data the analysis needs, so tests can inject their own. */
@@ -197,10 +207,34 @@ export function parseInventory(text: string): {
         seenFields.add(raw.field);
         fields.push({ field: raw.field, reason: raw.reason });
     }
+    const rawLegacy = parsed.purgeOnlyLegacyColumns;
+    const legacyRows: SystemRow[] = [];
+    let legacyCount = 0;
+    if (rawLegacy !== undefined) {
+        if (!isRecord(rawLegacy) || !Array.isArray(rawLegacy.rows))
+            return { error: `${INVENTORY_PATH} purgeOnlyLegacyColumns.rows is missing` };
+        if (typeof rawLegacy.count !== 'number' || !Number.isInteger(rawLegacy.count))
+            return { error: `${INVENTORY_PATH} purgeOnlyLegacyColumns.count is missing` };
+        legacyCount = rawLegacy.count;
+        const seenLegacy = new Set<string>();
+        for (const [index, raw] of rawLegacy.rows.entries()) {
+            if (!isRecord(raw) || typeof raw.key !== 'string' || typeof raw.reason !== 'string')
+                return { error: `${INVENTORY_PATH} legacy row ${index} needs a key and a reason` };
+            if (!KEY_PATTERN.test(raw.key))
+                return { error: `${INVENTORY_PATH} legacy row ${raw.key} is not "tabla.columna"` };
+            if (!raw.reason.trim())
+                return { error: `${INVENTORY_PATH} legacy row ${raw.key} has no reason` };
+            if (seenLegacy.has(raw.key))
+                return { error: `${INVENTORY_PATH} repeats legacy row ${raw.key}` };
+            seenLegacy.add(raw.key);
+            legacyRows.push({ key: raw.key, reason: raw.reason });
+        }
+    }
     return {
         inventory: {
             systemColumns: { counts: parsedCounts, rows },
-            supportEditExceptions: { count: rawExceptions.count, fields }
+            supportEditExceptions: { count: rawExceptions.count, fields },
+            purgeOnlyLegacyColumns: { count: legacyCount, rows: legacyRows }
         }
     };
 }
@@ -286,8 +320,34 @@ export function analyze(input: GuardInput): readonly string[] {
         for (const column of input.columns[vertical]) allColumns.add(column);
         for (const column of input.purgeSet[vertical] ?? []) allSet.add(column);
     }
+    const legacy = input.inventory.purgeOnlyLegacyColumns ?? { count: 0, rows: [] };
+    if (legacy.count !== legacy.rows.length)
+        violations.push(
+            `purgeOnlyLegacyColumns count is ${legacy.count} but the list has ${legacy.rows.length} rows`
+        );
+    const legacyColumns = new Set<string>();
+    for (const row of legacy.rows) {
+        const table = tableOfKey(row.key);
+        const column = row.key.slice(row.key.indexOf('.') + 1);
+        const present = columnIndex.get(table);
+        const vertical = VERTICALS.find((v) => TABLES[v].table === table);
+        if (!present || !vertical) {
+            violations.push(`legacy row ${row.key} names an unknown table`);
+            continue;
+        }
+        if (!present.has(column)) {
+            violations.push(
+                `legacy row ${row.key} no longer exists in ${table}; remove it from purgeOnlyLegacyColumns`
+            );
+            continue;
+        }
+        if (!(input.purgeSet[vertical] ?? []).includes(column))
+            violations.push(`legacy row ${row.key} must be blanked by the purge SET`);
+        legacyColumns.add(column);
+    }
     const supportEdit = new Set(input.supportEditFields);
     for (const column of allSet) {
+        if (legacyColumns.has(column)) continue;
         const field = snakeToCamel(column);
         if (!supportEdit.has(field))
             violations.push(

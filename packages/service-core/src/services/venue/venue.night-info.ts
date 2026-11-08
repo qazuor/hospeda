@@ -31,28 +31,20 @@
 import { ServiceErrorCode, type Venue } from '@repo/schemas';
 import { ServiceError } from '../../types';
 
-/** The six `nightInfo` fields a request body may write (catalog `fields`). */
+/**
+ * The three `nightInfo` columns a request body may write (catalog `fields`).
+ * Age and dress code also belong to the section, but they live in `policies`
+ * since HOS-2060 (the catalog's `policyKeys`) and need no stored-row rule.
+ */
 export const VENUE_NIGHT_INFO_WRITABLE_FIELDS = [
     'entryKind',
     'entryNoteI18n',
-    'entryPriceFrom',
-    'minAge',
-    'dressCode',
-    'dressCodeNoteI18n'
+    'entryPriceFrom'
 ] as const;
 
 /** Fields the helper may return for persistence. */
 export type VenueNightInfoPatch = Partial<
-    Pick<
-        Venue,
-        | 'entryKind'
-        | 'entryNoteI18n'
-        | 'entryPriceFrom'
-        | 'entryPriceUpdatedAt'
-        | 'minAge'
-        | 'dressCode'
-        | 'dressCodeNoteI18n'
-    >
+    Pick<Venue, 'entryKind' | 'entryNoteI18n' | 'entryPriceFrom' | 'entryPriceUpdatedAt'>
 >;
 
 /** Subset of the stored row the rules need (kept narrow so tests stay cheap). */

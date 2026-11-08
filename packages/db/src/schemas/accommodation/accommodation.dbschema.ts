@@ -1,5 +1,6 @@
 import type {
     AccommodationLocationType,
+    AccommodationPolicies,
     AdminInfoType,
     ContactInfo,
     I18nText,
@@ -132,6 +133,13 @@ export const accommodations = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         lastWarnedAt: timestamp('last_warned_at', { withTimezone: true }),
         extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
+        /**
+         * Structured house rules (HOS-2060), validated by `AccommodationPoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those are removed in release N+1.
+         */
+        policies: jsonb('policies').$type<AccommodationPolicies>(),
         rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({

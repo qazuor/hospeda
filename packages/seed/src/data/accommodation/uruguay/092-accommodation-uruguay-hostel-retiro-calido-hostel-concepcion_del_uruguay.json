@@ -136,18 +136,21 @@
     },
     "extraInfo": {
         "capacity": 25,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 5,
         "beds": 20,
         "bathrooms": 4,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina equipada",
             "Ambiente familiar",
             "Patio para relajarse"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Retiro Cálido Hostel - Alojamiento acogedor en Concepción",

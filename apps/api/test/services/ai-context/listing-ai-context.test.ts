@@ -57,8 +57,11 @@ const EXPERIENCE: ExperienceContextRow = {
     meetingPointDirections: ['Cruzá el puente', 'Doblá a la izquierda'],
     whatToBring: ['Protector solar', 'Toalla'],
     requirements: ['Saber nadar'],
-    cancellationPolicy: 'Cancelación gratis hasta 24 h antes.',
-    acceptsPrivateGroups: true,
+    policies: {
+        paymentMethods: ['cash', 'transfer'],
+        cancellation: 'Cancelación gratis hasta 24 h antes.',
+        privateGroups: true
+    },
     averageRating: 4.8,
     reviewsCount: 30
 };
@@ -326,7 +329,7 @@ describe('buildExperienceMarkdownContext', () => {
                     meetingPointDirections: [INJECTION],
                     whatToBring: [INJECTION],
                     requirements: [INJECTION],
-                    cancellationPolicy: INJECTION
+                    policies: { cancellation: INJECTION }
                 },
                 [{ question: INJECTION, answer: INJECTION }],
                 true
@@ -372,3 +375,25 @@ describe('buildExperienceMarkdownContext', () => {
 });
 
 // ---------------------------------------------------------------------------
+
+describe('house rules in the experience context (HOS-2060)', () => {
+    it('renders the closed policy values under a Normas de la casa heading', () => {
+        // Act
+        const block = buildExperienceMarkdownContext(EXPERIENCE, [], true);
+
+        // Assert
+        expect(block).toContain('### Normas de la casa');
+        expect(block).toContain('**Medios de pago**: efectivo, transferencia');
+        expect(block).toContain('**Grupos privados**: sí, los acepta');
+        expect(block).toContain('Cancelación gratis hasta 24 h antes.');
+    });
+
+    it('renders no house-rules block when the listing declares none', () => {
+        // Act
+        const block = buildExperienceMarkdownContext({ ...EXPERIENCE, policies: null }, [], true);
+
+        // Assert
+        expect(block).not.toContain('### Normas de la casa');
+        expect(block).not.toContain('Grupos privados');
+    });
+});

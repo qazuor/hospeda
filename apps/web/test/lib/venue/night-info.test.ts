@@ -34,9 +34,12 @@ function fullItem(): Record<string, unknown> {
         entryNoteI18n: { es: 'Hasta la 1', en: 'Until 1 am', pt: 'Até a 1' },
         entryPriceFrom: 500000,
         entryPriceUpdatedAt: '2026-03-01T00:00:00.000Z',
-        minAge: 18,
-        dressCode: 'smart_casual',
-        dressCodeNoteI18n: { es: 'Salvo verano', en: 'Except summer', pt: 'Exceto verão' },
+        // HOS-2060: the night house rules live in `policies`.
+        policies: {
+            minAge: 18,
+            dressCode: 'smart_casual',
+            dressCodeNote: { es: 'Salvo verano', en: 'Except summer', pt: 'Exceto verão' }
+        },
         multiLine: true
     };
 }
@@ -73,7 +76,7 @@ describe('toVenueNightInfo', () => {
     it('TEST:4.5:4 resolves a note to the locale and falls back to es', () => {
         const item = {
             entryNoteI18n: { es: 'Nota en español', en: 'English note' },
-            dressCodeNoteI18n: { es: 'Código en español' }
+            policies: { dressCodeNote: { es: 'Código en español', en: '', pt: '' } }
         };
 
         const english = toVenueNightInfo({ item, locale: 'en' });
@@ -118,7 +121,7 @@ describe('toVenueNightInfo', () => {
 
     it('treats an unknown entryKind or dressCode as not informed', () => {
         const data = toVenueNightInfo({
-            item: { entryKind: 'bogus', dressCode: 'bogus' },
+            item: { entryKind: 'bogus', policies: { dressCode: 'bogus' } },
             locale: 'es'
         });
         expect(data.entryKind).toBeNull();
@@ -127,7 +130,7 @@ describe('toVenueNightInfo', () => {
 
     it('collapses a blank note to null', () => {
         const data = toVenueNightInfo({
-            item: { entryNoteI18n: { es: '   ' }, dressCodeNoteI18n: { es: '' } },
+            item: { entryNoteI18n: { es: '   ' }, policies: { dressCodeNote: { es: '' } } },
             locale: 'es'
         });
         expect(data.entryNote).toBeNull();

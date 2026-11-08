@@ -335,6 +335,10 @@ export const VenueEntryKindPgEnum = pgEnum(
     enumToTuple(VenueEntryKindEnum)
 );
 
+/**
+ * LEGACY (HOS-2060): backs `venues.dress_code`, dropped with it in release N+1.
+ * No code may read or write it.
+ */
 export const VenueDressCodePgEnum = pgEnum(
     'venue_dress_code_enum',
     enumToTuple(VenueDressCodeEnum)

@@ -25,6 +25,10 @@ import type {
 import type { ListingEditorFormSectionId } from '@/components/listing/editor/listing-section-payload';
 import { NightInfoSection } from '@/components/listing/editor/NightInfoSection.client';
 import { OpeningHoursSection } from '@/components/listing/editor/OpeningHoursSection.client';
+import {
+    type ListingPolicyChange,
+    PoliciesPanel
+} from '@/components/listing/editor/PoliciesPanel.client';
 import { PracticalInfoSection } from '@/components/listing/editor/PracticalInfoSection.client';
 import { PriceSection } from '@/components/listing/editor/PriceSection.client';
 import { SocialNetworksSection } from '@/components/listing/editor/SocialNetworksSection.client';
@@ -35,7 +39,10 @@ import {
 import type { AmenityData } from '@/lib/api/types';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
+import { LISTING_BASE_POLICY_KEYS, type ListingPolicyKey } from '@/lib/listing/listing-policies';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
+import fieldStyles from './editor-fields.module.css';
+import { LISTING_FIELD_PREFIX } from './field-ids';
 
 /** Everything a section renderer can need, supplied once by `ListingEditor`. */
 export interface ListingSectionRenderContext {
@@ -48,6 +55,8 @@ export interface ListingSectionRenderContext {
     readonly amenities: readonly AmenityData[];
     readonly features: readonly AmenityData[];
     readonly onFieldChange: ListingFieldChange;
+    /** Sets or removes one house-rule key (HOS-2060). */
+    readonly onPolicyChange: ListingPolicyChange;
     readonly onContactChange: (patch: Partial<ContactValues>) => void;
     readonly onSocialChange: (key: keyof SocialValues, value: string) => void;
     readonly onToggleAmenity: (id: string) => void;
@@ -72,6 +81,17 @@ export interface ListingSectionRenderContext {
 const RENDERS_EXPERIENCE_ONLY_FORM: Readonly<Record<VenueOrExperience, boolean>> = {
     venue: false,
     experience: true
+};
+
+/**
+ * The house-rule keys the amenities page's Policies panel edits per vertical
+ * (HOS-2060): the shared base plus the vertical's own. The venue night keys
+ * (`minAge`, `dressCode`, `dressCodeNote`) are absent on purpose — the catalog
+ * gives them to `nightInfo`, whose page edits them.
+ */
+const POLICIES_PANEL_KEYS: Readonly<Record<VenueOrExperience, readonly ListingPolicyKey[]>> = {
+    venue: [...LISTING_BASE_POLICY_KEYS, 'reservations'],
+    experience: [...LISTING_BASE_POLICY_KEYS, 'privateGroups', 'cancellation']
 };
 
 /**
@@ -138,15 +158,31 @@ export const LISTING_SECTION_RENDERERS: Readonly<
         />
     ),
     amenities: (context) => (
-        <AmenitiesSection
-            locale={context.locale}
-            amenities={context.amenities}
-            features={context.features}
-            selectedAmenityIds={context.data.amenityIds}
-            selectedFeatureIds={context.data.featureIds}
-            onToggleAmenity={context.onToggleAmenity}
-            onToggleFeature={context.onToggleFeature}
-        />
+        <>
+            <AmenitiesSection
+                locale={context.locale}
+                amenities={context.amenities}
+                features={context.features}
+                selectedAmenityIds={context.data.amenityIds}
+                selectedFeatureIds={context.data.featureIds}
+                onToggleAmenity={context.onToggleAmenity}
+                onToggleFeature={context.onToggleFeature}
+            />
+            {/* HOS-2060: `policies` lives in the amenities section of the catalog. */}
+            <section
+                className={fieldStyles.section}
+                id="editor-policies"
+            >
+                <PoliciesPanel
+                    locale={context.locale}
+                    idPrefix={LISTING_FIELD_PREFIX}
+                    keys={POLICIES_PANEL_KEYS[context.vertical]}
+                    policies={context.data.policies}
+                    errors={context.errors}
+                    onChange={context.onPolicyChange}
+                />
+            </section>
+        </>
     ),
     contact: (context) => (
         <>
@@ -170,6 +206,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
             data={context.data}
             errors={context.errors}
             onFieldChange={context.onFieldChange}
+            onPolicyChange={context.onPolicyChange}
         />
     ),
     translations: (context) => (

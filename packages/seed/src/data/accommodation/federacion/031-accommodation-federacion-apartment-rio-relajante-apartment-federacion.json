@@ -192,18 +192,21 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cerca de la costanera del lago",
             "Barrio tranquilo",
             "Ideal para parejas o viajeros solos",
             "Edificio con ascensor"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Rio Relajante - Apartamento cerca del Lago en Federación ",

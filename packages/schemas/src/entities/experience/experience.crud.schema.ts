@@ -281,8 +281,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *   `manage_experience_directions`. The one field here that is not free.
  * - `durationMinutes` — how long it lasts (HOS-898; ficha data, no entitlement)
  * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
- * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
- * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
+ * - `policies` — house rules, incl. cancellation text and private groups (HOS-2060)
  * - `amenityIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  * - `featureIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  *
@@ -337,8 +336,9 @@ export const ExperienceOwnerUpdateInputSchema = z
                 durationMinutes: true,
                 whatToBring: true,
                 requirements: true,
-                cancellationPolicy: true,
-                acceptsPrivateGroups: true,
+                // HOS-2060: structured house rules. Owner-declared, no
+                // entitlement, validated whole by `ExperiencePoliciesSchema`.
+                policies: true,
                 richDescription: true,
                 nameI18n: true,
                 summaryI18n: true,

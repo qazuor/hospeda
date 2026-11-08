@@ -366,10 +366,6 @@
                 "inactive": "Not shown",
                 "unavailable": "Unavailable",
                 "fileUnavailable": "This file cannot be opened."
-            },
-            "acceptsEvents": {
-                "label": "We accept events (birthdays, corporate, weddings)",
-                "hint": "We show a contact button on your listing so people can reach out for this kind of request."
             }
         }
     },

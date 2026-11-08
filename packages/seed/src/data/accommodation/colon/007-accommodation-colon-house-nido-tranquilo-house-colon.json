@@ -146,17 +146,20 @@
     },
     "extraInfo": {
         "capacity": 6,
-        "minNights": 2,
-        "maxNights": 20,
         "bedrooms": 3,
         "beds": 4,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Amplio jardín",
             "Estacionamiento descubierto dentro de la propiedad",
             "Ideal para familias"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 20
     },
     "seo": {
         "title": "Nido Tranquilo House - Casa para familias en Colón, Entre",

@@ -44,11 +44,6 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('bbq');
         });
 
-        it('should match "mascotas" → pet_friendly', () => {
-            const result = matchAmenityTerms('mascotas', 'es');
-            expect(result).toContain('pet_friendly');
-        });
-
         it('should match "desayuno" → breakfast', () => {
             const result = matchAmenityTerms('desayuno', 'es');
             expect(result).toContain('breakfast');
@@ -94,16 +89,6 @@ describe('matchAmenityTerms', () => {
             expect(result).toContain('parking');
         });
 
-        it('should match "pet friendly" → pet_friendly', () => {
-            const result = matchAmenityTerms('pet friendly', 'en');
-            expect(result).toContain('pet_friendly');
-        });
-
-        it('should match "pet-friendly" → pet_friendly', () => {
-            const result = matchAmenityTerms('pet-friendly', 'en');
-            expect(result).toContain('pet_friendly');
-        });
-
         it('should match "breakfast included" → breakfast', () => {
             const result = matchAmenityTerms('breakfast included', 'en');
             expect(result).toContain('breakfast');
@@ -129,11 +114,6 @@ describe('matchAmenityTerms', () => {
         it('should match "estacionamento" → parking', () => {
             const result = matchAmenityTerms('estacionamento', 'pt');
             expect(result).toContain('parking');
-        });
-
-        it('should match "animais" → pet_friendly', () => {
-            const result = matchAmenityTerms('animais', 'pt');
-            expect(result).toContain('pet_friendly');
         });
 
         it('should match "ar condicionado" → air_conditioning (HOS-111 T-009: fixed slug)', () => {
@@ -483,8 +463,7 @@ describe('matchFeatureTerms', () => {
 
     describe('anti-overlap negatives — physical services MUST NOT appear in FEATURE_ALLOWLIST', () => {
         it('matchFeatureTerms("pet friendly", "en") → empty array', () => {
-            // "pet friendly" maps to "pet_friendly" in AMENITY_ALLOWLIST; it MUST
-            // NOT appear in FEATURE_ALLOWLIST — would cause double-mapping.
+            // Pets are a house rule since HOS-2060: no catalog row in either list.
             const result = matchFeatureTerms('pet friendly', 'en');
             expect(result).toHaveLength(0);
         });
@@ -514,7 +493,7 @@ describe('matchFeatureTerms', () => {
         });
 
         it('matchFeatureTerms("mascotas", "es") → empty array', () => {
-            // "mascotas" maps to "pet_friendly" in AMENITY_ALLOWLIST; not in FEATURE_ALLOWLIST.
+            // Pets are a house rule since HOS-2060: no catalog row in either list.
             const result = matchFeatureTerms('mascotas', 'es');
             expect(result).toHaveLength(0);
         });
@@ -605,13 +584,9 @@ describe('FEATURE_ALLOWLIST structure', () => {
             'pool',
             'wifi',
             'parking',
-            'pet_friendly',
             'breakfast',
             'air_conditioning',
-            'bbq',
-            // HOS-111 T-009: smoke_free is a physical-service AMENITY (property-wide
-            // no-smoking policy) — its inverse, smoking_area, is a legitimate FEATURE.
-            'smoke_free'
+            'bbq'
         ];
         for (const locale of ['es', 'en', 'pt'] as const) {
             const slugs = Object.values(FEATURE_ALLOWLIST[locale] ?? {});
@@ -622,75 +597,26 @@ describe('FEATURE_ALLOWLIST structure', () => {
     });
 });
 
-// ─── HOS-111 T-009: pets / smoking / A/C / river-beach-front NL coverage ─────
+// ─── HOS-111 T-009: A/C / river-beach-front NL coverage ─────
 
-describe('HOS-111 T-009 — pets / smoking / A/C / river-beach-front NL coverage', () => {
-    describe('pets — amenity + feature slugs', () => {
-        it('matchAmenityTerms("mascotas", "es") → pet_friendly (generic amenity)', () => {
-            const result = matchAmenityTerms('mascotas', 'es');
-            expect(result).toContain('pet_friendly');
-        });
-
-        it('matchFeatureTerms("área para mascotas", "es") → pet_friendly_area', () => {
-            const result = matchFeatureTerms('área para mascotas', 'es');
-            expect(result).toContain('pet_friendly_area');
-        });
-
-        it('matchFeatureTerms("apto para mascotas", "es") → pet_suitable', () => {
-            const result = matchFeatureTerms('apto para mascotas', 'es');
-            expect(result).toContain('pet_suitable');
-        });
-
-        it('matchFeatureTerms("pet area", "en") → pet_friendly_area', () => {
-            const result = matchFeatureTerms('pet area', 'en');
-            expect(result).toContain('pet_friendly_area');
-        });
-
-        it('matchFeatureTerms("pet suitable", "en") → pet_suitable', () => {
-            const result = matchFeatureTerms('pet suitable', 'en');
-            expect(result).toContain('pet_suitable');
-        });
-    });
-
-    describe('smoking — INVERSE framing (no literal "smoking" slug)', () => {
-        it('matchAmenityTerms("libre de humo", "es") → smoke_free', () => {
-            const result = matchAmenityTerms('libre de humo', 'es');
-            expect(result).toContain('smoke_free');
-        });
-
-        it('matchFeatureTerms("se puede fumar", "es") → smoking_area', () => {
-            const result = matchFeatureTerms('se puede fumar', 'es');
-            expect(result).toContain('smoking_area');
-        });
-
-        it('matchAmenityTerms("smoke free", "en") → smoke_free', () => {
-            const result = matchAmenityTerms('smoke free', 'en');
-            expect(result).toContain('smoke_free');
-        });
-
-        it('matchFeatureTerms("smoking allowed", "en") → smoking_area', () => {
-            const result = matchFeatureTerms('smoking allowed', 'en');
-            expect(result).toContain('smoking_area');
-        });
-
-        it('matchAmenityTerms("livre de fumaça", "pt") → smoke_free', () => {
-            const result = matchAmenityTerms('livre de fumaça', 'pt');
-            expect(result).toContain('smoke_free');
-        });
-
-        it('matchFeatureTerms("permite fumar", "pt") → smoking_area', () => {
-            const result = matchFeatureTerms('permite fumar', 'pt');
-            expect(result).toContain('smoking_area');
-        });
-
-        it('the two framings never cross-match: "libre de humo" does not yield smoking_area', () => {
-            const result = matchFeatureTerms('libre de humo', 'es');
-            expect(result).not.toContain('smoking_area');
-        });
-
-        it('the two framings never cross-match: "se puede fumar" does not yield smoke_free', () => {
-            const result = matchAmenityTerms('se puede fumar', 'es');
-            expect(result).not.toContain('smoke_free');
+describe('HOS-111 T-009 — A/C / river-beach-front NL coverage (pets and smoking left with HOS-2060)', () => {
+    describe('pets and smoking — house rules, not catalog rows (HOS-2060)', () => {
+        it.each([
+            ['mascotas', 'es'],
+            ['acepta mascotas', 'es'],
+            ['área para mascotas', 'es'],
+            ['apto para mascotas', 'es'],
+            ['libre de humo', 'es'],
+            ['se puede fumar', 'es'],
+            ['pet friendly', 'en'],
+            ['pet area', 'en'],
+            ['smoke free', 'en'],
+            ['smoking allowed', 'en'],
+            ['animais', 'pt'],
+            ['livre de fumaça', 'pt']
+        ] as const)('"%s" (%s) maps to no amenity and no feature', (term, locale) => {
+            expect(matchAmenityTerms(term, locale)).toHaveLength(0);
+            expect(matchFeatureTerms(term, locale)).toHaveLength(0);
         });
     });
 

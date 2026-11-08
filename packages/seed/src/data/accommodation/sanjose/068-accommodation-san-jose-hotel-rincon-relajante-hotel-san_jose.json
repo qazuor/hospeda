@@ -219,12 +219,9 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 18,
         "beds": 30,
         "bathrooms": 18,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior disponible en temporada",
             "Desayuno incluido",
@@ -232,6 +229,12 @@
             "Ambiente tranquilo",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Rincón Relajante Hotel - Tranquilidad y piscina en San José",

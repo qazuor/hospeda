@@ -90,6 +90,14 @@ interface Props {
 	readonly aggregateRating?: AggregateRating;
 	/** Number of rooms / bedrooms */
 	readonly numberOfRooms?: number;
+	/** Whether pets are admitted (HOS-2060, from `policies.pets`). */
+	readonly petsAllowed?: boolean;
+	/** Earliest check-in time, `HH:mm` (HOS-2060, from `policies.checkIn.from`). */
+	readonly checkinTime?: string;
+	/** Latest check-out time, `HH:mm` (HOS-2060, from `policies.checkOut.to`). */
+	readonly checkoutTime?: string;
+	/** Accepted payment methods, human labels (HOS-2060). */
+	readonly paymentAccepted?: string;
 }
 
 const {
@@ -106,6 +114,10 @@ const {
 	telephone,
 	aggregateRating,
 	numberOfRooms,
+	petsAllowed,
+	checkinTime,
+	checkoutTime,
+	paymentAccepted,
 } = Astro.props;
 
 const structuredData: Record<string, unknown> = {
@@ -171,6 +183,23 @@ if (aggregateRating) {
 
 if (numberOfRooms !== undefined) {
 	structuredData.numberOfRooms = numberOfRooms;
+}
+
+// HOS-2060: house-rule properties. An undeclared rule stays absent.
+if (petsAllowed !== undefined) {
+	structuredData.petsAllowed = petsAllowed;
+}
+
+if (checkinTime) {
+	structuredData.checkinTime = checkinTime;
+}
+
+if (checkoutTime) {
+	structuredData.checkoutTime = checkoutTime;
+}
+
+if (paymentAccepted) {
+	structuredData.paymentAccepted = paymentAccepted;
 }
 ---
 
