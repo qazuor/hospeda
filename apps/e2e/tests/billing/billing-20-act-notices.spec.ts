@@ -309,6 +309,61 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         );
     });
 
+    test('fila 5 (traspaso HOS-1580 → HOS-1592): live courtesy warns of the loss before customer pause', async ({
+        page
+    }) => {
+        if (!world) throw new Error('Expected case-local fake provider.');
+        const subscriber = await createSubscriber();
+        userIds.push(subscriber.user.id, subscriber.admin.id);
+        const card = await createApiCardSubscription({
+            user: subscriber.user,
+            billingOptionId: await monthlyOptionForSlug('owner-basico')
+        });
+        await activateCardSubscription({
+            fakeServer: world.fakeServer,
+            subscriptionId: card.subscriptionId
+        });
+        const granted = await page.request.post(
+            `${API_URL}/api/v1/admin/billing-subscription/${card.subscriptionId}/courtesy/grant`,
+            {
+                headers: { cookie: subscriber.admin.sessionCookie },
+                data: {
+                    expectedStatus: 'ACTIVE',
+                    months: 1,
+                    reason: 'TEST:B8b:25 row 5 transfer',
+                    confirmed: true
+                }
+            }
+        );
+        expect(granted.status()).toBe(200);
+        const outcome = (await granted.json()) as {
+            readonly data: { readonly outcome: string };
+        };
+        expect(outcome.data.outcome).toBe('GRANTED');
+        const [courtesy] = await execSQL<{ ends_at: Date }>(
+            'SELECT ends_at FROM courtesy_grant WHERE beneficiary_user_id = $1',
+            [subscriber.user.id]
+        );
+        if (!courtesy) throw new Error('Expected courtesy granted by admin route.');
+        await seedCookieConsent(page);
+        await attachSession(page, subscriber.user.sessionCookie);
+        await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+        const article = articleFor(page, card.subscriptionId);
+        await expect(article).toBeVisible();
+        await article.getByRole('button', { name: 'Pausar suscripción' }).click();
+        await expect(article.getByTestId('pause-courtesy-forfeit')).toContainText(
+            formatMarketDate(courtesy.ends_at)
+        );
+        await expect(article.getByTestId('pause-confirmation')).toContainText(
+            'perdés el tiempo que quedaba'
+        );
+        await expect(
+            article.getByTestId('pause-confirmation').getByRole('button', {
+                name: 'Confirmar pausa'
+            })
+        ).toBeVisible();
+    });
+
     test('a provider reread without authorized status explains the last charge remedy', async ({
         page
     }) => {
