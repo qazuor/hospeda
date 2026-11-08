@@ -136,8 +136,8 @@ export const accommodations = pgTable(
         /**
          * Structured house rules (HOS-2060), validated by `AccommodationPoliciesSchema` on every
          * write. Nullable with no default: an undeclared policy is absent, not
-         * `false`. Migration 0194 added it, backfilled it from the fields and
-         * catalog rows it replaced, and dropped those fields in the same release.
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those are removed in release N+1.
          */
         policies: jsonb('policies').$type<AccommodationPolicies>(),
         rating: jsonb('rating').$type<Record<string, unknown>>()

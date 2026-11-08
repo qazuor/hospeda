@@ -90,14 +90,15 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
         menu_url = NULL, menu_file_url = NULL, menu_file_public_id = NULL,
         menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, opening_hours = NULL,
         price_range = NULL, entry_kind = NULL, entry_note_i18n = NULL, entry_price_from = NULL,
-        entry_price_updated_at = NULL, videos = NULL, seo = NULL, policies = NULL`,
+        entry_price_updated_at = NULL, videos = NULL, seo = NULL, policies = NULL,
+        min_age = NULL, dress_code = NULL, dress_code_note_i18n = NULL`,
     experience: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         price_from = NULL, price_unit = NULL, is_price_on_request = true,
         meeting_point = NULL, meeting_point_lat = NULL, meeting_point_long = NULL,
         meeting_point_directions = '{}', duration_minutes = NULL, what_to_bring = '{}',
         requirements = '{}', contact_info = NULL, social_networks = NULL, opening_hours = NULL, videos = NULL, seo = NULL,
-        policies = NULL`
+        policies = NULL, cancellation_policy = NULL, accepts_private_groups = false`
 };
 
 const ENTITY_TYPES: Record<ListingVertical, EntityTypeEnum> = {

@@ -70,7 +70,7 @@ VALUES ($1, 'Night Venue', 'summary', 'description', 'BOLICHE', $2, $3,
         ARRAY['nightlife']::text[], 'DRAFT', now(), 1, $4, $5)`;
 
 describe('nightInfo schema from empty (HOS-1846, AC:4:1)', () => {
-    it('exposes the four nullable entry columns on venues (age and dress code are policies, HOS-2060)', async () => {
+    it('exposes the nullable night columns on venues (age and dress code live in policies, HOS-2060)', async () => {
         const result = await getTestPool().query<{
             column_name: string;
             data_type: string;
@@ -86,11 +86,16 @@ describe('nightInfo schema from empty (HOS-1846, AC:4:1)', () => {
                 )
               ORDER BY column_name`
         );
+        // min_age, dress_code and dress_code_note_i18n are legacy until release
+        // N+1 drops them; no code reads or writes them.
         expect(result.rows.map((row) => row.column_name)).toEqual([
+            'dress_code',
+            'dress_code_note_i18n',
             'entry_kind',
             'entry_note_i18n',
             'entry_price_from',
             'entry_price_updated_at',
+            'min_age',
             'policies'
         ]);
         for (const row of result.rows) expect(row.is_nullable).toBe('YES');

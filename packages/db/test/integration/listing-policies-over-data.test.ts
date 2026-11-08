@@ -1,5 +1,5 @@
-// HOS-2060 — apply 0194 (add `policies` + backfill) and 0195 (drop the legacy
-// fields) over live-style rows in an isolated pre-0194 database.
+// HOS-2060 — apply 0194 (add `policies` + backfill) over live-style rows in an
+// isolated pre-0194 database. The legacy columns stay until release N+1 drops them.
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -165,10 +165,7 @@ beforeAll(async () => {
     );
 
     // Act
-    const next = journal.entries.find((entry) => entry.tag.startsWith('0195_'));
-    if (!next) throw new Error('0195 migration absent from journal');
     await apply(target.tag);
-    await apply(next.tag);
 }, 240_000);
 
 afterAll(async () => {
@@ -177,7 +174,7 @@ afterAll(async () => {
     await admin?.end();
 });
 
-describe('HOS-2060 migrations 0194 + 0195 over data', () => {
+describe('HOS-2060 migration 0194 over data', () => {
     it('gives every listing at least cash', async () => {
         for (const table of ['accommodations', 'venues', 'experiences']) {
             const { rows } = await db.query<{ total: number; covered: number }>(
@@ -273,10 +270,11 @@ describe('HOS-2060 migrations 0194 + 0195 over data', () => {
         });
     });
 
-    it('drops the legacy columns, the enum type and the extra_info keys', async () => {
+    it('keeps the legacy columns and extra_info keys untouched for release N+1 to drop', async () => {
         const { rows: columns } = await db.query<{ column_name: string }>(
             `SELECT column_name FROM information_schema.columns
-             WHERE table_name IN ('venues', 'experiences') AND column_name = ANY($1)`,
+             WHERE table_name IN ('venues', 'experiences') AND column_name = ANY($1)
+             ORDER BY column_name`,
             [
                 [
                     'min_age',
@@ -287,20 +285,27 @@ describe('HOS-2060 migrations 0194 + 0195 over data', () => {
                 ]
             ]
         );
-        expect(columns).toEqual([]);
-        const { rows: types } = await db.query(
-            `SELECT 1 FROM pg_type WHERE typname = 'venue_dress_code_enum'`
+        expect(columns.map((row) => row.column_name)).toEqual([
+            'accepts_private_groups',
+            'cancellation_policy',
+            'dress_code',
+            'dress_code_note_i18n',
+            'min_age'
+        ]);
+        const { rows: venue } = await db.query<{ min_age: number; dress_code: string }>(
+            `SELECT min_age, dress_code FROM venues WHERE id = $1`,
+            [VENUE.night]
         );
-        expect(types).toEqual([]);
-        const { rows: keys } = await db.query<{ total: number }>(
-            `SELECT count(*)::int AS total FROM accommodations
-             WHERE extra_info ?| array['smokingAllowed', 'minNights', 'maxNights']`
-        );
-        expect(keys[0]?.total).toBe(0);
+        expect(venue[0]).toEqual({ min_age: 18, dress_code: 'elegant' });
         const { rows: kept } = await db.query<{ extra_info: unknown }>(
             `SELECT extra_info FROM accommodations WHERE id = $1`,
             [ACC.rich]
         );
-        expect(kept[0]?.extra_info).toEqual({ capacity: 4 });
+        expect(kept[0]?.extra_info).toEqual({
+            capacity: 4,
+            smokingAllowed: true,
+            minNights: 2,
+            maxNights: 14
+        });
     });
 });

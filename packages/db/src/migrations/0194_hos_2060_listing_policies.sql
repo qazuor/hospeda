@@ -3,9 +3,9 @@ ALTER TABLE "experiences" ADD COLUMN "policies" jsonb;--> statement-breakpoint
 ALTER TABLE "venues" ADD COLUMN "policies" jsonb;--> statement-breakpoint
 -- HOS-2060 backfill (hand-written, owner decision 2026-11-07: no backward
 -- compatibility). Fills `policies` from the fields and catalog rows it
--- replaces, BEFORE 0195 drops them: a seed data-migration cannot do this,
--- because db:migrate runs the whole batch (drops included) before any
--- db:seed:migrate step (HOS-433).
+-- replaces. The legacy columns and extra_info keys stay until release N+1
+-- drops them (expand/contract, HOS-601); the catalog rows are retired by seed
+-- data-migration 0154, which runs after db:migrate, so this reads them first.
 --
 -- Rules: every listing gets cash, plus debit and credit when linked to the
 -- `accepts_cards` amenity; `pet_friendly` (amenity) or `pet_suitable` /

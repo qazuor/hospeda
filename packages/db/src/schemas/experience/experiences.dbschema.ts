@@ -233,10 +233,14 @@ export const experiences = pgTable(
         /**
          * Structured house rules (HOS-2060), validated by `ExperiencePoliciesSchema` on every
          * write. Nullable with no default: an undeclared policy is absent, not
-         * `false`. Migration 0194 added it, backfilled it from the fields and
-         * catalog rows it replaced, and dropped those fields in the same release.
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those columns are dropped in release N+1.
          */
         policies: jsonb('policies').$type<ExperiencePolicies>(),
+        /** LEGACY (HOS-2060): copied into `policies.cancellation`; dropped in release N+1. No code may read or write it. */
+        legacyCancellationPolicy: text('cancellation_policy'),
+        /** LEGACY (HOS-2060): copied into `policies.privateGroups`; dropped in release N+1. No code may read or write it. */
+        legacyAcceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
         // Jsonb grouped columns (matching venue / accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
