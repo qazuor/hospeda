@@ -1,4 +1,5 @@
 import {
+    addonInstances,
     and,
     domainEventModel,
     emailOutbox,
@@ -208,5 +209,27 @@ describe('TEST:B10:7 AC:B10:6 A6 act and lost-push safety net', () => {
                 .filter((event) => event.changes?.some((change) => change.new === 'CANCELLED'))
         ).toHaveLength(1);
         expect((await h.readInstance())?.status).toBe('CANCELLED');
+    });
+
+    it('rejects a state change between its locked read and guarded UPDATE', async () => {
+        const h = await createA6Fixture({ status: 'ACTIVE' });
+        await expect(
+            getServiceTestDb().transaction((tx) =>
+                applyA6(
+                    { tx, instanceId: h.instanceId, now: h.f.ports.clock.now() },
+                    {
+                        listing: async (args) => {
+                            // Same transaction: emulate a competing local transition after the read.
+                            await tx
+                                .update(addonInstances)
+                                .set({ status: 'EXPIRED' })
+                                .where(eq(addonInstances.id, h.instanceId));
+                            return h.ports.listing(args);
+                        }
+                    }
+                )
+            )
+        ).rejects.toThrow('changed during A6');
+        expect((await h.readInstance())?.status).toBe('ACTIVE');
     });
 });

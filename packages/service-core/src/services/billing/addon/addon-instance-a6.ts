@@ -76,6 +76,10 @@ export async function applyA6(
         .where(eq(addonVersions.id, instance.addonVersionId))
         .limit(1);
     if (version?.scopeType !== 'LISTING') return { outcome: 'NOT_LIVE' };
+    const coverageVerticals =
+        instance.status === 'ACTIVE'
+            ? await removedCoverageVerticalsOf({ tx, instance, ports })
+            : [];
     const [written] = await tx
         .update(addonInstances)
         .set({ status: 'CANCELLED', updatedAt: now })
@@ -141,10 +145,6 @@ export async function applyA6(
             }
         }
     }
-    const coverageVerticals =
-        instance.status === 'ACTIVE'
-            ? await removedCoverageVerticalsOf({ tx, instance, ports })
-            : [];
     return {
         outcome: 'CANCELLED',
         addon: {
