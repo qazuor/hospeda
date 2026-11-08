@@ -562,3 +562,81 @@ describe('ExperienceReviewService.search pagination (HOS-1900)', () => {
         expect(model.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 5 });
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2089: delete / hard delete / restore must recompute the listing rating
+// ---------------------------------------------------------------------------
+
+describe('ExperienceReviewService delete/restore rating recompute (HOS-2089)', () => {
+    const remaining = () =>
+        makeReview({
+            id: '00000000-0000-4000-a000-0000000000ff',
+            moderationState: ModerationStatusEnum.APPROVED,
+            rating: { service: 3 },
+            overallRating: 4
+        });
+
+    const cases = [
+        { op: 'softDelete', deletedAt: null },
+        { op: 'hardDelete', deletedAt: null },
+        { op: 'restore', deletedAt: new Date('2024-02-01') }
+    ] as const;
+
+    it.each(
+        cases
+    )('$op recomputes the experience rating from the remaining APPROVED non-deleted reviews', async ({
+        op,
+        deletedAt
+    }) => {
+        // Arrange
+        const service = makeService(
+            makeReview({ moderationState: ModerationStatusEnum.APPROVED, deletedAt })
+        );
+        const model = (service as AnyService).model;
+        model.hardDelete.mockResolvedValue(1);
+        model.restore.mockResolvedValue(1);
+        model.softDelete.mockResolvedValue(1);
+        model.findAll.mockResolvedValue({ items: [remaining()], total: 1 });
+        const recompute = (service as AnyService)._experienceService.recomputeRating;
+
+        // Act
+        const result = await (service as AnyService)[op](staffActor, REVIEW_ID);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(model.findAll).toHaveBeenCalledTimes(1);
+        expect(model.findAll.mock.calls[0]?.[0]).toEqual({
+            experienceId: EXPERIENCE_ID,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        expect(recompute).toHaveBeenCalledTimes(1);
+        expect(recompute).toHaveBeenCalledWith(
+            EXPERIENCE_ID,
+            [
+                {
+                    food: null,
+                    service: 3,
+                    ambiance: null,
+                    value: null,
+                    overallRating: 4
+                }
+            ],
+            undefined
+        );
+    });
+
+    it('softDelete of the only approved review recomputes against an empty set', async () => {
+        const service = makeService(
+            makeReview({ moderationState: ModerationStatusEnum.APPROVED, deletedAt: null })
+        );
+        const model = (service as AnyService).model;
+        model.softDelete.mockResolvedValue(1);
+        model.findAll.mockResolvedValue({ items: [], total: 0 });
+        const recompute = (service as AnyService)._experienceService.recomputeRating;
+
+        await service.softDelete(staffActor, REVIEW_ID);
+
+        expect(recompute).toHaveBeenCalledWith(EXPERIENCE_ID, [], undefined);
+    });
+});
