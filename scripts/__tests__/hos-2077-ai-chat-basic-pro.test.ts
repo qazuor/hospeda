@@ -38,7 +38,7 @@ function effectiveChat(vertical: 'venue' | 'experience', slug: string) {
 }
 
 describe('HOS-2077 AI chat on venue and experience Basic and Pro', () => {
-    it('re-exports the one list migration 0155 reads (single source)', () => {
+    it('re-exports the one list migration 0156 reads (single source)', () => {
         expect(PRODUCTION_PLAN_NEXT_VERSION_QUOTA_GRANTS).toBe(SEED_OWNED);
         expect(
             PRODUCTION_PLAN_NEXT_VERSION_QUOTA_GRANTS.map((entry) => [

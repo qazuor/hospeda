@@ -1823,7 +1823,7 @@ export const PRODUCTION_PLAN_CATALOG = [
 
 /**
  * Catalog publications after the immutable V2.4b baseline. Owned by the seed
- * package (migration 0133 consumes the entitlement list, HOS-2037; migration 0155
+ * package (migration 0133 consumes the entitlement list, HOS-2037; migration 0156
  * the quota-grant list, HOS-2077); re-exported here so the catalog source stays
  * the one place to read the whole catalog. Not part of the generated SQL on
  * purpose: see the constants' own docblock (GUARD:G18).

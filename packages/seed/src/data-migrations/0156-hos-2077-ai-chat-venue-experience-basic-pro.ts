@@ -34,7 +34,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Ledger identity of this migration; `contentOnly` so fresh databases run it for real. */
 export const meta = {
-    name: '0155-hos-2077-ai-chat-venue-experience-basic-pro',
+    name: '0156-hos-2077-ai-chat-venue-experience-basic-pro',
     group: 'required',
     destructive: false,
     contentOnly: true

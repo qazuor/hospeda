@@ -23,7 +23,7 @@ export type NextVersionEntitlement = (typeof PRODUCTION_PLAN_NEXT_VERSION_ENTITL
 
 /**
  * HOS-2077 (owner decision, 2026-11-08): AI chat on the venue and experience
- * Basic (20/month) and Pro (100/month) plans. Read by migration 0155.
+ * Basic (20/month) and Pro (100/month) plans. Read by migration 0156.
  *
  * Each entry adds one metered entitlement row and raises one limit row of the
  * plan's current version; the row's `planQuota` equals the limit. `trialQuota`

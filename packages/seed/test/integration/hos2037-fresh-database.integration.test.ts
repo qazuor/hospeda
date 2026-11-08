@@ -6,7 +6,7 @@
  * rows, and the baseline Pro/Premium grants, all through the REAL runner (so a
  * `contentOnly` regression, i.e. baseline-stamping 0133, fails here).
  *
- * HOS-2077 asserts on the same run that `contentOnly` migration 0155 left chat on the
+ * HOS-2077 asserts on the same run that `contentOnly` migration 0156 left chat on the
  * venue and experience Basic and Pro plans.
  *
  * Builds its own scratch database (`hospeda_it_hos2037_fresh`, dropped afterwards) so
@@ -71,7 +71,7 @@ describe('HOS-2037 fresh database (migrate, seed, data-migrate)', () => {
         expect(ledger.rows[0]?.n).toBe('1');
     }, 60_000);
 
-    // HOS-2077 rides the same fresh-database run: 0155 is `contentOnly`, so a fresh database
+    // HOS-2077 rides the same fresh-database run: 0156 is `contentOnly`, so a fresh database
     // must end with chat on venue/experience Basic (20) and Pro (100), not baseline-stamp it.
     it('ends with chat on venue and experience Basic (20) and Pro (100) through the real runner', async () => {
         if (!scratch) throw new Error('scratch database was not initialized');
@@ -99,7 +99,7 @@ describe('HOS-2037 fresh database (migrate, seed, data-migrate)', () => {
             expect(bySlug.get(slug)?.limit, slug).toBe(quota);
         }
         const ledger = await scratch.query<{ n: string }>(
-            `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0155-hos-2077-ai-chat-venue-experience-basic-pro'`
+            `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0156-hos-2077-ai-chat-venue-experience-basic-pro'`
         );
         expect(ledger.rows[0]?.n).toBe('1');
     }, 60_000);

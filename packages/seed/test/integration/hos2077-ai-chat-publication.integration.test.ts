@@ -5,7 +5,7 @@
  *
  * Scenario: monthly and annual venue Basic subscribers, a venue Pro subscriber with a queued
  * downgrade to Basic, an experience Basic subscriber and a cancelled venue Basic row. After
- * migration 0155 the four Basic/Pro plans have a new current version granting `ai_chat` with
+ * migration 0156 the four Basic/Pro plans have a new current version granting `ai_chat` with
  * the chat limit at 20 (Basic) or 100 (Pro), the live rows and the queued change are on the
  * new versions with cycle-matched options, prices are untouched, Premium and accommodation
  * are untouched, the trial derivation (limits from the lowest rank, entitlements from the
@@ -29,7 +29,7 @@ import {
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { up } from '../../src/data-migrations/0155-hos-2077-ai-chat-venue-experience-basic-pro.js';
+import { up } from '../../src/data-migrations/0156-hos-2077-ai-chat-venue-experience-basic-pro.js';
 import { scratchDatabase } from './support/scratch-database.js';
 
 const database = scratchDatabase({ name: 'hospeda_it_hos2077_pub' });
@@ -124,7 +124,7 @@ async function anchor(input: {
     return row;
 }
 
-describe('HOS-2077 migration 0155 (real database)', () => {
+describe('HOS-2077 migration 0156 (real database)', () => {
     it('publishes Basic/Pro with chat, re-anchors live rows, leaves the rest alone, is idempotent', async () => {
         // Arrange
         const targets = [
