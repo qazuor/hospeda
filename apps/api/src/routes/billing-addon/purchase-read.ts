@@ -1,7 +1,7 @@
-import { AddonPurchaseReadResponseSchema, ServiceErrorCode } from '@repo/schemas';
-import { readAddonPurchase, ServiceError } from '@repo/service-core';
+import { AddonPurchaseReadResponseSchema } from '@repo/schemas';
+import { readAddonPurchase } from '@repo/service-core';
 import { z } from 'zod';
-import { getActorFromContext, isGuestActor } from '../../utils/actor';
+import { getActorFromContext } from '../../utils/actor';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 
@@ -14,18 +14,6 @@ export const protectedAddonPurchaseReadRoute = createProtectedRoute({
     tags: ['Billing addons'],
     requestParams: { orderRequestId: z.string().min(1).max(64) },
     responseSchema: AddonPurchaseReadResponseSchema,
-    options: {
-        middlewares: [
-            async (ctx, next) => {
-                if (isGuestActor(getActorFromContext(ctx)))
-                    throw new ServiceError(
-                        ServiceErrorCode.UNAUTHORIZED,
-                        'Authentication required'
-                    );
-                await next();
-            }
-        ]
-    },
     handler: async (ctx, params) => {
         const found = await readAddonPurchase({
             ownerId: getActorFromContext(ctx).id,

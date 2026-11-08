@@ -11,7 +11,7 @@ import {
     ServiceError,
     sendOneTimeOrder
 } from '@repo/service-core';
-import { getActorFromContext, isGuestActor } from '../../utils/actor';
+import { getActorFromContext } from '../../utils/actor';
 import { env } from '../../utils/env';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
@@ -31,18 +31,6 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
         const response = AddonPurchaseResponseSchema.parse(result);
         if (response.processing && response.order) return 202;
         return response.outcome === 'CREATED' ? 201 : 200;
-    },
-    options: {
-        middlewares: [
-            async (ctx, next) => {
-                if (isGuestActor(getActorFromContext(ctx)))
-                    throw new ServiceError(
-                        ServiceErrorCode.UNAUTHORIZED,
-                        'Authentication required'
-                    );
-                await next();
-            }
-        ]
     },
     handler: async (ctx, _params, body) => {
         const actor = getActorFromContext(ctx);
