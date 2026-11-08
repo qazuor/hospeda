@@ -286,6 +286,13 @@
             "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
         },
         {
+            "file": "packages/service-core/src/services/billing/addon/includes-addons-anchor.ts",
+            "symbol": "findIncludesAddonsAnchor",
+            "row": 2,
+            "why": "AC:B10:12: A1-bis only accepts a live anchor whose grant includes addons, in the selected compatible vertical.",
+            "subject": "permanent_grant_vertical"
+        },
+        {
             "file": "packages/service-core/src/services/billing/coverage/grant-sources.ts",
             "symbol": "resolveGrantSources",
             "row": null,

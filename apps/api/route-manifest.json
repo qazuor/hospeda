@@ -2671,6 +2671,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/billing/addons/free-choices"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/billing/addons/purchases"
         },
         {

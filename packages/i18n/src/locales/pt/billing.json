@@ -88,7 +88,14 @@
         "oneTimePaymentRequired": "Para um complemento de pagamento único, informe os dados de pagamento.",
         "recurringPaymentNotAccepted": "Complementos recorrentes são pagos no checkout do provedor.",
         "payerEmailRequired": "Informe o e-mail do pagador.",
-        "purchaseNotFound": "Não encontramos essa compra de complemento."
+        "purchaseNotFound": "Não encontramos essa compra de complemento.",
+        "freeProductNotFound": "Não encontramos esse complemento.",
+        "freeTargetNotFound": "Não encontramos esse destino.",
+        "freeNoTitle": "Você não tem um benefício ativo para escolher este complemento grátis.",
+        "freeVersionChanged": "A versão do complemento mudou. Tente novamente.",
+        "freeAlreadyActive": "Este complemento já está ativo para você.",
+        "freePendingElsewhere": "Outra compra deste complemento está em andamento.",
+        "freeOrderRequestReused": "Esse pedido já foi usado para outra escolha."
     },
     "payment": {
         "title": "Métodos de pagamento",

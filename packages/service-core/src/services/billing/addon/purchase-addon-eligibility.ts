@@ -54,8 +54,8 @@ async function hasTitle(
     });
 }
 
-/** Resolves the purchase target and a paying principal or live grant anchor. */
-export async function resolvePurchaseTitle(
+/** Validates the target through the same listing and principal guards used by A1. */
+export async function resolvePurchaseTarget(
     input: {
         readonly tx: DrizzleClient;
         readonly ownerId: string;
@@ -63,8 +63,8 @@ export async function resolvePurchaseTitle(
         readonly scopeType: AddonScopeType;
         readonly targetId: string | null;
     },
-    ports: PurchaseAddonPorts
-): Promise<PurchaseTitleResult> {
+    ports: Pick<PurchaseAddonPorts, 'listing'>
+): Promise<PurchaseTitleResult | { readonly vertical: null }> {
     const { tx, ownerId, product, scopeType, targetId } = input;
     let vertical: string | undefined;
     if (scopeType === 'LISTING') {
@@ -101,12 +101,34 @@ export async function resolvePurchaseTitle(
         vertical = target.vertical;
     } else {
         if (targetId !== null) return { reason: 'TARGET_NOT_FOUND' };
-        for (const candidate of product.compatibleVerticals) {
-            if (await hasTitle({ tx, ownerId, vertical: candidate }, ports))
+        return { vertical: null };
+    }
+    return { vertical };
+}
+
+/** Resolves the purchase target and a paying principal or live grant anchor. */
+export async function resolvePurchaseTitle(
+    input: {
+        readonly tx: DrizzleClient;
+        readonly ownerId: string;
+        readonly product: SelectAddonProduct;
+        readonly scopeType: AddonScopeType;
+        readonly targetId: string | null;
+    },
+    ports: PurchaseAddonPorts
+): Promise<PurchaseTitleResult> {
+    const target = await resolvePurchaseTarget(input, ports);
+    if ('reason' in target) return target;
+    if (target.vertical === null) {
+        for (const candidate of input.product.compatibleVerticals) {
+            if (
+                await hasTitle({ tx: input.tx, ownerId: input.ownerId, vertical: candidate }, ports)
+            )
                 return { vertical: candidate };
         }
         return { reason: 'NO_VALID_TITLE' };
     }
-    if (await hasTitle({ tx, ownerId, vertical }, ports)) return { vertical };
+    if (await hasTitle({ tx: input.tx, ownerId: input.ownerId, vertical: target.vertical }, ports))
+        return target;
     return { reason: 'NO_VALID_TITLE' };
 }

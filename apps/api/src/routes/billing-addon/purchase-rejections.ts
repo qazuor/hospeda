@@ -10,7 +10,14 @@ type AddonPurchaseCopyKey =
     | 'oneTimePaymentRequired'
     | 'recurringPaymentNotAccepted'
     | 'payerEmailRequired'
-    | 'purchaseNotFound';
+    | 'purchaseNotFound'
+    | 'freeProductNotFound'
+    | 'freeTargetNotFound'
+    | 'freeNoTitle'
+    | 'freeVersionChanged'
+    | 'freeAlreadyActive'
+    | 'freePendingElsewhere'
+    | 'freeOrderRequestReused';
 
 /** Reads API copy in the request locale, failing if a catalog entry is missing. */
 export function readAddonPurchaseCopy(ctx: Context, key: AddonPurchaseCopyKey): string {
@@ -28,6 +35,7 @@ export const PURCHASE_REJECTION_ANSWERS: Readonly<Record<PurchaseAddonRefusalRea
     NO_VALID_TITLE: { status: 409, code: 'ADDON_NO_VALID_TITLE' },
     ADDON_VERSION_NOT_CURRENT: { status: 409, code: 'ADDON_VERSION_NOT_CURRENT' },
     ALREADY_ACTIVE: { status: 409, code: 'ADDON_ALREADY_ACTIVE' },
+    FREE_UNDER_GRANT: { status: 409, code: 'ADDON_FREE_UNDER_GRANT' },
     ORDER_REQUEST_REUSED: { status: 409, code: 'ADDON_ORDER_REQUEST_REUSED' }
 };
 

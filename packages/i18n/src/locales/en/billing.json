@@ -88,7 +88,14 @@
         "oneTimePaymentRequired": "Payment details are required for one-time addons.",
         "recurringPaymentNotAccepted": "Recurring addons are paid for at the provider checkout.",
         "payerEmailRequired": "Enter the payer's email address.",
-        "purchaseNotFound": "We couldn't find that addon purchase."
+        "purchaseNotFound": "We couldn't find that addon purchase.",
+        "freeProductNotFound": "We couldn't find that addon.",
+        "freeTargetNotFound": "We couldn't find that target.",
+        "freeNoTitle": "You don't have an active benefit for this free addon.",
+        "freeVersionChanged": "The addon version changed. Please try again.",
+        "freeAlreadyActive": "This addon is already active for you.",
+        "freePendingElsewhere": "Another purchase of this addon is in progress.",
+        "freeOrderRequestReused": "That request was already used for another choice."
     },
     "payment": {
         "title": "Payment methods",
