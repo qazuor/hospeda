@@ -46,16 +46,18 @@ export async function purchaseFixture(
         cycle: input.cycle ?? 'monthly',
         verticals
     });
+    let currentNow = purchaseNow;
+    const clock = { now: () => currentNow };
     const fake = new FakePaymentProvider({
         idNamespace: crypto.randomUUID(),
-        clock: { now: () => purchaseNow },
+        clock,
         honestAbout: [{ lie: 'M1', why: 'A1 identity test needs an applied preapproval' }]
     });
     const listings = new Map<string, ListingResponse>();
     const anchors = new Set<string>();
     const ports: PurchaseAddonPorts = {
         provider: fake,
-        clock: { now: () => purchaseNow },
+        clock,
         addonPolicy: async ({ addonVersionId }) => {
             const [row] = await db
                 .select()
@@ -87,6 +89,9 @@ export async function purchaseFixture(
         ...product,
         fake,
         ports,
+        advanceTo: (instant: Date) => {
+            currentNow = instant;
+        },
         setListing: (id: string, listing: ListingResponse) => listings.set(id, listing),
         anchor: (vertical: string) => anchors.add(`${ownerId}|${vertical}`),
         input: (orderRequestId = crypto.randomUUID(), targetId: string | null = null) => ({

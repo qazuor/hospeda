@@ -173,6 +173,10 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
             ]
         ],
         [
+            'billing.addon-authorization-expired-cancel',
+            ['Venció el plazo para autorizar tu addon', 'No se te cobró nada', 'Mercado Pago']
+        ],
+        [
             'billing.first-charge-declined-cancel',
             ['El primer cobro de tu suscripción fue rechazado', 'Mercado Pago']
         ],

@@ -262,6 +262,30 @@
         "reason": "A2 activates an approved one-time addon; emitAddonCoverageAdded sends coverage after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows-one-time.ts",
+        "symbol": "abandonOneTimeAddon",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
+        "symbol": "abandonRecurring",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending COMPLEMENTO row; only PRINCIPAL rows emit subscription coverage."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
+        "symbol": "abandonRecurring",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending recurring addon; pending instances emit no ADDON coverage source."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
         "symbol": "applyS21",
         "table": "subscriptions",

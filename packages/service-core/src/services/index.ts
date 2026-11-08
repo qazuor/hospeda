@@ -67,6 +67,7 @@ export * from './billing/addon/addon-instance-a2-one-time.js';
 export * from './billing/addon/addon-instance-a5.js';
 export * from './billing/addon/addon-orphanhood.js';
 export * from './billing/addon/addon-orphanhood-ports.js';
+export * from './billing/addon/expire-addon-authorization-windows.service.js';
 export * from './billing/addon/purchase-addon.service.js';
 export * from './billing/addon/purchase-addon-complement.js';
 export * from './billing/addon/purchase-addon-eligibility.js';

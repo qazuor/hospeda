@@ -1,19 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockCredited, mockExpire, mockSweep, mockClock, mockProvider, mockComplementPorts } =
-    vi.hoisted(() => ({
-        mockCredited: vi.fn(),
-        mockExpire: vi.fn(),
-        mockSweep: vi.fn(),
-        mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
-        mockProvider: { readAuthorization: vi.fn() },
-        mockComplementPorts: {
-            addonPolicy: vi.fn(),
-            listing: vi.fn(),
-            liveAnchors: { hasLiveAnchor: vi.fn() }
-        }
-    }));
+const {
+    mockCredited,
+    mockExpire,
+    mockAddonExpire,
+    mockSweep,
+    mockClock,
+    mockProvider,
+    mockComplementPorts
+} = vi.hoisted(() => ({
+    mockCredited: vi.fn(),
+    mockExpire: vi.fn(),
+    mockAddonExpire: vi.fn(),
+    mockSweep: vi.fn(),
+    mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
+    mockProvider: { readAuthorization: vi.fn() },
+    mockComplementPorts: {
+        addonPolicy: vi.fn(),
+        listing: vi.fn(),
+        liveAnchors: { hasLiveAnchor: vi.fn() }
+    }
+}));
 vi.mock('@repo/verticals', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/verticals')>()),
     createPlanCatalogInverse: () => ({ changeDirection: vi.fn() })
@@ -27,6 +35,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     activateCreditedPendingAuthorizations: mockCredited,
     expireAuthorizationWindows: mockExpire,
+    expireAddonAuthorizationWindows: mockAddonExpire,
     sweepInheritedTouristVips: mockSweep
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
@@ -70,6 +79,14 @@ beforeEach(() => {
         failed: 0
     });
     mockSweep.mockResolvedValue({ cancelled: 1, deferred: 2, skipped: 0 });
+    mockAddonExpire.mockResolvedValue({
+        examined: 2,
+        activated: 1,
+        abandoned: 1,
+        deferred: 0,
+        noticePending: 0,
+        failed: 0
+    });
 });
 
 describe('subscription-window-expiry cron', () => {
@@ -119,16 +136,26 @@ describe('subscription-window-expiry cron', () => {
             coverageNotices: getCoverageNotices(),
             billingFacts: getAnalyticsFactSink()
         });
+        expect(mockAddonExpire).toHaveBeenCalledWith(100, {
+            provider: mockProvider,
+            clock: mockClock,
+            beforeCancelNotice,
+            coverageNotices: getCoverageNotices(),
+            ...mockComplementPorts
+        });
         // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).
         expect(mockCredited.mock.invocationCallOrder[0]).toBeLessThan(
             mockExpire.mock.invocationCallOrder[0]!
+        );
+        expect(mockExpire.mock.invocationCallOrder[0]).toBeLessThan(
+            mockAddonExpire.mock.invocationCallOrder[0]!
         );
         expect(mockExpire.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(mockExpire.mock.calls[0]?.[1].billingFacts).toBe(getAnalyticsFactSink());
         expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,
-            processed: 6,
+            processed: 8,
             errors: 0,
             // HOS-1561 H9: branch 2's re-evaluation count reaches the run's details.
             details: { cancelled: 1, deferred: 2, retainedReevaluated: 1 }
@@ -167,5 +194,6 @@ describe('subscription-window-expiry cron', () => {
         const result = await subscriptionWindowExpiryJob.handler(context(true));
         expect(result).toMatchObject({ success: true, processed: 0, details: { dryRun: true } });
         expect(mockExpire).not.toHaveBeenCalled();
+        expect(mockAddonExpire).not.toHaveBeenCalled();
     });
 });
