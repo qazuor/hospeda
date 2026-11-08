@@ -285,6 +285,15 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, complementId));
             if (!complement) throw new Error('Complement missing');
+            const decisions = await getServiceTestDb()
+                .select()
+                .from(domainEvent)
+                .where(eq(domainEvent.entityId, complementId));
+            const decision = decisions.find(
+                (event) => event.eventType === 'subscription.provider_cancellation_decided'
+            );
+            expect(decision?.reason).toBe('A3');
+            if (!decision?.reason) throw new Error('A3 decision missing');
             const [notice] = await getServiceTestDb()
                 .select()
                 .from(emailOutbox)
@@ -299,7 +308,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                     {
                         subscription: complement,
                         providerLink: link,
-                        decision: { transition: 'A3', decidedAt: s.f.ports.clock.now() },
+                        decision: { transition: decision.reason, decidedAt: decision.occurredAt },
                         correlationId: crypto.randomUUID()
                     },
                     {
