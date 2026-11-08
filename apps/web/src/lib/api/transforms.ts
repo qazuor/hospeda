@@ -2781,12 +2781,11 @@ export function toVenueCardProps({
  * - `name` receives the **slug**, because the grid uses it as the i18n key
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
- * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The venue/experience junction tables have no such columns (see
- *   `ListingAmenityPublicSchema`), so there is nothing to read; the
- *   constants keep one grid component serving three verticals instead of
- *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no venue/experience owner could have set.
+ * - The relation attributes (`isOptional`, `additionalCost`, `scope`,
+ *   `availability`) are read straight through since HOS-2061 gave the
+ *   venue/experience junctions the accommodation columns, so the grid shows
+ *   the same badges in all three verticals. `displayWeight` stays the inert
+ *   `50`: the junction has no per-listing weight.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2801,9 +2800,11 @@ function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
             amenityId: String(item.amenityId ?? ''),
             name: String(item.slug ?? ''),
             icon: item.icon == null ? null : String(item.icon),
-            isOptional: false,
-            additionalCost: null,
-            displayWeight: 50
+            isOptional: item.isOptional === true,
+            additionalCost: typeof item.additionalCost === 'number' ? item.additionalCost : null,
+            displayWeight: 50,
+            scope: toAmenityScope(item.scope),
+            availability: toAmenityAvailability(item.availability)
         }))
         .filter((item) => item.name.length > 0);
 }
