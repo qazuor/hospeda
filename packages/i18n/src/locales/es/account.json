@@ -483,6 +483,8 @@
                 "monthCount_other": "{{count}} meses",
                 "expectedEnd": "Pausa prevista hasta el {{date}}.",
                 "confirmation": "Si confirmás, tu suscripción queda pausada hasta el {{date}}.",
+                "courtesyForfeit": "Tenés una cortesía hasta el {{date}}. Si pausás, perdés lo que queda y no vuelve.",
+                "courtesyConfirmation": "Al confirmar la pausa, tu cortesía termina hoy y perdés el tiempo que quedaba.",
                 "listing": "Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.",
                 "addonsVertical": "Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:",
                 "addonPauses": "{{name}} se pausa porque no queda otra vertical compatible activa.",
@@ -499,6 +501,8 @@
                     "MONTHS_OUT_OF_RANGE": "Elegí un período de pausa válido.",
                     "PAUSE_COUNT_EXHAUSTED": "Ya usaste las pausas disponibles.",
                     "MONTHS_EXHAUSTED": "Ya usaste los meses de pausa disponibles.",
+                    "COURTESY_FORFEIT_NOT_CONFIRMED": "Confirmá que perdés el tiempo restante de la cortesía antes de pausar.",
+                    "LOST_RACE": "La suscripción cambió. Revisala antes de volver a pausar.",
                     "other": "La pausa no está disponible ahora."
                 }
             },

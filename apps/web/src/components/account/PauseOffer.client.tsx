@@ -20,7 +20,9 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
     const [preview, setPreview] = useState<Preview | null>(null);
     const [months, setMonths] = useState(1);
     const [endAt, setEndAt] = useState('');
+    const [errorReason, setErrorReason] = useState<string | null>(null);
     async function open() {
+        setErrorReason(null);
         setState('loading');
         try {
             const value = parsePausePreview(
@@ -40,8 +42,13 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
         if (!preview?.offered || !preview.expectedEndAtByMonths[String(months)]) return;
         setState('pending');
         try {
-            const result = await billingSubscriptionApi.pause({ subscriptionId, months });
+            const result = await billingSubscriptionApi.pause({
+                subscriptionId,
+                months,
+                ...(preview.courtesyForfeit ? { courtesyForfeitConfirmed: true as const } : {})
+            });
             if (!result.ok) {
+                setErrorReason(result.error.status === 409 ? (result.error.reason ?? null) : null);
                 setState('error');
                 return;
             }
@@ -69,7 +76,15 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
             {(state === 'loading' || state === 'pending') && (
                 <p aria-live="polite">{t('account.subscription.mine.pause.pending')}</p>
             )}
-            {state === 'error' && <p role="alert">{t('account.subscription.mine.pause.error')}</p>}
+            {state === 'error' && (
+                <p role="alert">
+                    {errorReason && Object.hasOwn(PAUSE_REASON_KEYS, errorReason)
+                        ? t(
+                              `account.subscription.mine.pause.reason.${errorReason as keyof typeof PAUSE_REASON_KEYS}`
+                          )
+                        : t('account.subscription.mine.pause.error')}
+                </p>
+            )}
             {state === 'ready' && preview && !preview.offered && (
                 <p data-testid="pause-refusal">
                     {preview.reason === 'COURTESY_IN_FORCE' && preview.courtesyEndsAt
@@ -83,6 +98,13 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
             )}
             {state === 'ready' && preview?.offered && (
                 <>
+                    {preview.courtesyForfeit && (
+                        <p data-testid="pause-courtesy-forfeit">
+                            {t('account.subscription.mine.pause.courtesyForfeit', undefined, {
+                                date: pauseDate(preview.courtesyForfeit.endsAt, locale)
+                            })}
+                        </p>
+                    )}
                     <label htmlFor={`pause-months-${subscriptionId}`}>
                         {t('account.subscription.mine.pause.months')}
                     </label>
@@ -107,6 +129,9 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                     </select>
                     {end && (
                         <div data-testid="pause-confirmation">
+                            {preview.courtesyForfeit && (
+                                <p>{t('account.subscription.mine.pause.courtesyConfirmation')}</p>
+                            )}
                             <p>
                                 {t('account.subscription.mine.pause.confirmation', undefined, {
                                     date: pauseDate(end, locale)
@@ -157,5 +182,7 @@ const PAUSE_REASON_KEYS = {
     PLAN_DISALLOWS_PAUSE: true,
     MONTHS_OUT_OF_RANGE: true,
     PAUSE_COUNT_EXHAUSTED: true,
-    MONTHS_EXHAUSTED: true
+    MONTHS_EXHAUSTED: true,
+    COURTESY_FORFEIT_NOT_CONFIRMED: true,
+    LOST_RACE: true
 } as const;

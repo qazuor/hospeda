@@ -483,6 +483,8 @@
                 "monthCount_other": "{{count}} months",
                 "expectedEnd": "Pause expected to end on {{date}}.",
                 "confirmation": "If you confirm, your subscription will be paused until {{date}}.",
+                "courtesyForfeit": "You have a courtesy period until {{date}}. If you pause, you lose the remaining time and it will not return.",
+                "courtesyConfirmation": "When you confirm the pause, your courtesy period ends today and you lose the remaining time.",
                 "listing": "Your listing leaves the public site today. It returns automatically when you resume if your plan has capacity. During the pause it is not archived, deleted or sent retention notices; the clock stops and starts from zero when you return.",
                 "addonsVertical": "Recurring add-ons for this vertical pause for the same months and return with the plan:",
                 "addonPauses": "{{name}} pauses because no other compatible vertical remains active.",
@@ -499,6 +501,8 @@
                     "MONTHS_OUT_OF_RANGE": "Choose a valid pause length.",
                     "PAUSE_COUNT_EXHAUSTED": "You have used all available pauses.",
                     "MONTHS_EXHAUSTED": "You have used all available pause months.",
+                    "COURTESY_FORFEIT_NOT_CONFIRMED": "Confirm that you will lose the remaining courtesy time before pausing.",
+                    "LOST_RACE": "Your subscription changed. Review it before pausing again.",
                     "other": "Pausing is unavailable now."
                 }
             },
