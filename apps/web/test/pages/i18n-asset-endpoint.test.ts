@@ -119,11 +119,18 @@ describe('GET /i18n/[file].js', () => {
         }
     });
 
-    it('never marks a 404 immutable', async () => {
-        // A cached 404 for a filename a later deployment DOES serve would
-        // outlive the mistake by a year.
-        const response = await get('es.deadbeef');
+    it('forbids every cache from keeping a 404 (HOS-2080)', async () => {
+        // A 404 with NO Cache-Control is not "uncached": Cloudflare stores it
+        // and hands the browser its zone default (measured on staging:
+        // `max-age=14400`, `cf-cache-status: HIT` on the second request).
+        // During a rollout the old container answers the NEW hash with a 404,
+        // and that 404 then pins every island of that locale to its Spanish
+        // fallbacks long after the new container serves the dictionary.
+        for (const file of ['es.deadbeef', `fr.${param('es').slice('es.'.length)}`, 'es']) {
+            const response = await get(file);
 
-        expect(response.headers.get('Cache-Control')).toBeNull();
+            expect(response.status, file).toBe(404);
+            expect(response.headers.get('Cache-Control'), file).toBe('no-store');
+        }
     });
 });
