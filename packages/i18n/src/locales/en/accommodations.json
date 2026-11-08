@@ -839,7 +839,12 @@
         "security_cameras": "Security cameras",
         "baby_bathtub": "Baby bathtub",
         "desk": "Desk",
-        "ergonomic_chair": "Comfortable work chair"
+        "ergonomic_chair": "Comfortable work chair",
+        "outdoor_tables": "Outdoor tables",
+        "baby_changing_table": "Baby changing table",
+        "boat_included": "Boat included",
+        "changing_rooms": "Changing rooms",
+        "life_jacket_included": "Life jacket included"
     },
     "featureNames": {
         "river_front": "Riverfront",
@@ -942,7 +947,12 @@
         "lagoon_view": "Lagoon view",
         "stream_view": "Stream view",
         "countryside_view": "Countryside view",
-        "pool_view": "Pool view"
+        "pool_view": "Pool view",
+        "happy_hour": "Happy hour",
+        "thermal_waters": "Thermal waters",
+        "birdwatching": "Birdwatching",
+        "island_setting": "On the Delta or Paraná islands",
+        "parrilla_cuisine": "Grill house"
     },
     "list": {
         "searchContext": {

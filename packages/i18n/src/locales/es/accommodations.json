@@ -314,7 +314,12 @@
         "security_cameras": "Cámaras de seguridad",
         "baby_bathtub": "Bañera de bebé",
         "desk": "Escritorio",
-        "ergonomic_chair": "Silla cómoda de trabajo"
+        "ergonomic_chair": "Silla cómoda de trabajo",
+        "outdoor_tables": "Mesas al aire libre",
+        "baby_changing_table": "Cambiador para bebés",
+        "boat_included": "Embarcación incluida",
+        "changing_rooms": "Vestuarios",
+        "life_jacket_included": "Chaleco salvavidas incluido"
     },
     "featureNames": {
         "river_front": "Frente al río",
@@ -417,7 +422,12 @@
         "lagoon_view": "Vista a la laguna",
         "stream_view": "Vista al arroyo",
         "countryside_view": "Vista al campo",
-        "pool_view": "Vista a la pileta"
+        "pool_view": "Vista a la pileta",
+        "happy_hour": "Happy hour",
+        "thermal_waters": "Aguas termales",
+        "birdwatching": "Avistaje de aves",
+        "island_setting": "En las islas del Delta o del Paraná",
+        "parrilla_cuisine": "Parrilla"
     },
     "title": "Alojamientos",
     "tagline": "Encontrá tu lugar ideal",
