@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { AmenityRelationAttributesListSchema } from '../amenity/amenity.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
 
 /**
@@ -368,6 +369,12 @@ export const ExperienceOwnerUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });
@@ -571,6 +578,12 @@ export const ExperienceUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });

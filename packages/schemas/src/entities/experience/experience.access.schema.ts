@@ -8,6 +8,7 @@ import {
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { AmenityRelationAttributesSchema } from '../amenity/amenity.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
 
 /**
@@ -401,6 +402,12 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
     featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * HOS-2061: declared relation attributes of the linked amenities
+     * (junction read-back), so the owner editor seeds its scope/availability
+     * controls. Only amenities with at least one declared value are listed.
+     */
+    amenityAttributes: z.array(AmenityRelationAttributesSchema).optional(),
     /**
      * HOS-1787 leaf 5.7 — the business lines this experience is assigned to.
      *

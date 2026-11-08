@@ -7,6 +7,7 @@ import {
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { AmenityRelationAttributesSchema } from '../amenity/amenity.schema.js';
 import { VenueDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
 import { VenueEventPublicSchema } from './subtypes/venue.event.schema.js';
 import { VenueMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
@@ -364,6 +365,12 @@ export const VenueProtectedSchema = VenueSchema.pick({
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
     featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * HOS-2061: declared relation attributes of the linked amenities
+     * (junction read-back), so the owner editor seeds its scope/availability
+     * controls. Only amenities with at least one declared value are listed.
+     */
+    amenityAttributes: z.array(AmenityRelationAttributesSchema).optional(),
     /**
      * HOS-1787 leaf 5.6 — the business lines this venue is assigned to.
      *
