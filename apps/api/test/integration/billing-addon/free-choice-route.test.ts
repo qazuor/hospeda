@@ -164,6 +164,15 @@ describe('TEST:B10:14 TEST:B10:15 protected free choice route', () => {
             outcome: 'EXISTING',
             instanceId: data.instanceId
         });
+        const differentOrder = await post(app, f.ownerId, {
+            ...body,
+            orderRequestId: crypto.randomUUID()
+        });
+        expect(differentOrder.status).toBe(200);
+        expect((await differentOrder.json()).data).toMatchObject({
+            outcome: 'EXISTING',
+            instanceId: data.instanceId
+        });
         expect(await ownerInstances(f.ownerId)).toHaveLength(1);
         expect(authorize).toHaveBeenCalledTimes(0);
     });

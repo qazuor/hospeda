@@ -125,11 +125,9 @@ export async function chooseFreeAddon(
                             : eq(addonInstances.targetId, request.targetId)
                     )
                 );
-            const free = occupants.find((row) => sameChoice(row, request));
-            if (free) return { outcome: 'EXISTING', instanceId: free.id, status: 'ACTIVE' };
             if (occupants.some((row) => row.status === 'PENDING_AUTHORIZATION'))
                 return { outcome: 'REFUSED', reason: 'PENDING_ELSEWHERE' };
-            if (occupants.some((row) => row.status === 'ACTIVE'))
+            if (occupants.some((row) => row.status === 'ACTIVE' && !sameChoice(row, request)))
                 return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
             const endsAt =
                 policy.validity === 'FIXED_DAYS' && policy.validityDays
