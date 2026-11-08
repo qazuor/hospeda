@@ -73,6 +73,7 @@ export async function readMercadoPagoOrder(args: {
         reference: parsed.external_reference ?? '',
         createdAt: createdAt(parsed),
         hasApprovedPayment: hasApprovedPayment(parsed.status),
+        failed: parsed.status === 'failed',
         paymentTransactionId: parsed.transactions?.payments?.[0]?.id ?? null,
         refunds: mapOrderRefunds(parsed.transactions?.refunds, 'read').refunds
     };

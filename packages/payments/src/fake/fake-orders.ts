@@ -39,6 +39,7 @@ export class FakeOrders {
         readonly reference: string;
         readonly createdAt?: string;
         readonly paid: boolean;
+        readonly failed?: boolean;
         readonly amount?: Money;
     }): { readonly orderId: string } {
         const orderId = this.args.ledger.nextId({ prefix: 'order' });
@@ -51,6 +52,7 @@ export class FakeOrders {
                 reference: input.reference,
                 createdAt: input.createdAt ?? this.args.clock.now().toISOString(),
                 hasApprovedPayment: input.paid,
+                failed: input.failed ?? false,
                 paymentTransactionId: input.paid
                     ? this.args.ledger.nextId({ prefix: 'order-payment' })
                     : null,

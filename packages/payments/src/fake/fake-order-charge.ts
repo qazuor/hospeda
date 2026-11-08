@@ -69,6 +69,7 @@ function createOrder(args: {
     const { orderId } = orders.place({
         reference: input.reference,
         paid: !declined,
+        failed: declined,
         amount: input.amount
     });
     args.usedPaymentTokens.add(input.paymentToken);

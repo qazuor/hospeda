@@ -269,6 +269,8 @@ export interface OrderSnapshot {
     /** The ISO 8601 instant the order was created. */
     readonly createdAt: string;
     readonly hasApprovedPayment: boolean;
+    /** True iff the provider reports the order as `failed`: a declined one-time payment creates a failed order (EX-30). */
+    readonly failed: boolean;
     /** Payment transaction id for a partial refund (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
     readonly paymentTransactionId: string | null;
     /** Refunds read by order id (MP:EX-58, AC:B6:8, TRANS:B:RF3). */

@@ -35,7 +35,8 @@ describe('HOS-1554 AC:B6:12 RP15/RP16 fake HTTP order charge', () => {
         expect((await adapter.readOrder({ orderId: first.orderId })).snapshot).toMatchObject({
             orderId: first.orderId,
             reference: input.reference,
-            hasApprovedPayment: true
+            hasApprovedPayment: true,
+            failed: false
         });
         expect(await adapter.chargeOnce(input)).toEqual(first);
         expect(fake.ordersFor({ reference: input.reference })).toEqual({ orders: 1, paid: 1 });
@@ -58,6 +59,7 @@ describe('HOS-1554 AC:B6:12 RP15/RP16 fake HTTP order charge', () => {
         expect(
             (await adapter.readOrder({ orderId: result.orderId })).snapshot.hasApprovedPayment
         ).toBe(false);
+        expect((await adapter.readOrder({ orderId: result.orderId })).snapshot.failed).toBe(true);
         expect(fake.ordersFor({ reference: input.reference })).toEqual({ orders: 1, paid: 0 });
     });
 

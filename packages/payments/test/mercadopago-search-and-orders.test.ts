@@ -110,19 +110,23 @@ describe('HOS-1669 TEST:1669:10 AC:1669:2 orders over fake HTTP', () => {
         expect(paidRead.snapshot).toMatchObject({
             orderId: paid.orderId,
             reference: 'paid-order',
-            hasApprovedPayment: true
+            hasApprovedPayment: true,
+            failed: false
         });
         expect(paidRead.snapshot.createdAt).toBeTypeOf('string');
         expect(paidRead.readAt).toEqual(clock.now());
         expect(
             (await adapter.readOrder({ orderId: unpaid.orderId })).snapshot.hasApprovedPayment
         ).toBe(false);
+        expect((await adapter.readOrder({ orderId: unpaid.orderId })).snapshot.failed).toBe(false);
         await expect(adapter.readOrder({ orderId: 'missing-order' })).rejects.toMatchObject({
             code: 'NOT_FOUND'
         });
     });
 
     it.each([
+        ['failed', false],
+        ['created', false],
         ['refunded', false],
         ['partially_refunded', true]
     ])('maps order status %s to hasApprovedPayment=%s', async (status, expected) => {
@@ -138,9 +142,9 @@ describe('HOS-1669 TEST:1669:10 AC:1669:2 orders over fake HTTP', () => {
                 )
         );
         const adapter = new MercadoPagoPaymentProvider({ clock, accessToken: 'test-token', fetch });
-        expect((await adapter.readOrder({ orderId: 'o' })).snapshot.hasApprovedPayment).toBe(
-            expected
-        );
+        const snapshot = (await adapter.readOrder({ orderId: 'o' })).snapshot;
+        expect(snapshot.hasApprovedPayment).toBe(expected);
+        expect(snapshot.failed).toBe(status === 'failed');
     });
 
     it('rejects unknown order status and missing creation date', async () => {
