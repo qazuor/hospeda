@@ -96,6 +96,18 @@ async function countLiveInstances(args: {
     return row?.total ?? 0;
 }
 
+async function assertNoLiveInstancesForPriceChange(args: {
+    readonly tx: DrizzleClient;
+    readonly product: SelectAddonProduct;
+    readonly proposedPrice: number;
+}): Promise<void> {
+    if (
+        args.proposedPrice !== args.product.price &&
+        (await countLiveInstances({ tx: args.tx, productId: args.product.id })) > 0
+    )
+        reject('ADDON_PRODUCT_HAS_LIVE_INSTANCES');
+}
+
 function assertVersionOfProduct(args: {
     readonly product: SelectAddonProduct;
     readonly policy: Policy;
@@ -128,6 +140,7 @@ export async function previewAddonVersionPublication(
     if (product.versionId !== input.addonVersionId) changes.push('VERSION');
     if (product.price !== input.price) changes.push('PRICE');
     if (changes.length === 0) reject('ADDON_PRODUCT_UNCHANGED');
+    await assertNoLiveInstancesForPriceChange({ tx: db, product, proposedPrice: input.price });
     const currentPolicy = await policyOf({ versionId: product.versionId, ports });
     return {
         current: { versionId: product.versionId, price: product.price, policy: currentPolicy },
@@ -174,11 +187,7 @@ export async function publishAddonVersion(
                 .limit(1)
                 .for('update');
             if (!product) reject('ADDON_PRODUCT_NOT_FOUND');
-            if (
-                input.price !== product.price &&
-                (await countLiveInstances({ tx, productId: product.id })) > 0
-            )
-                reject('ADDON_PRODUCT_HAS_LIVE_INSTANCES');
+            await assertNoLiveInstancesForPriceChange({ tx, product, proposedPrice: input.price });
             if (product.versionId === input.addonVersionId && product.price === input.price)
                 reject('ADDON_PRODUCT_UNCHANGED');
             const [written] = await tx

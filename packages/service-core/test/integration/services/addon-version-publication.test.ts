@@ -1,4 +1,5 @@
 import { addonInstances, addonProducts, addonVersions, domainEventModel, eq } from '@repo/db';
+import { ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import {
@@ -24,6 +25,13 @@ function request(f: Awaited<ReturnType<typeof publicationFixture>>, price = f.pr
         expectedCurrentVersionId: f.versionId,
         expectedCurrentPrice: f.product.price
     };
+}
+
+function previewRequest(
+    f: Awaited<ReturnType<typeof publicationFixture>>,
+    price = f.product.price
+) {
+    return { productId: f.productId, addonVersionId: f.nextVersionId, price };
 }
 
 describe('TEST:B10:9 AC:B10:8 addon version publication', () => {
@@ -85,6 +93,41 @@ describe('TEST:B10:9 AC:B10:8 addon version publication', () => {
         expect(preview.current.policy.addonId).toBe(f.product.addonId);
         expect(preview.proposed.policy.addonId).toBe(f.product.addonId);
     });
+
+    it.skipIf(skip)(
+        'previews a price change only while the product has no live instances',
+        async () => {
+            const f = await publicationFixture();
+            const changedPrice = f.product.price + 100;
+            await expect(
+                previewAddonVersionPublication(
+                    { actor: f.actor, input: previewRequest(f, changedPrice) },
+                    f.ports
+                )
+            ).resolves.toMatchObject({ changes: ['VERSION', 'PRICE'] });
+
+            await principalFixture({ ownerId: f.ownerId, credited: true });
+            expect((await purchaseAddon(f.input(), f.purchasePorts)).outcome).toBe('CREATED');
+            await expect(
+                previewAddonVersionPublication(
+                    { actor: f.actor, input: previewRequest(f, changedPrice) },
+                    f.ports
+                )
+            ).rejects.toMatchObject({
+                reason: 'ADDON_PRODUCT_HAS_LIVE_INSTANCES',
+                code: ServiceErrorCode.ALREADY_EXISTS
+            });
+            await expect(
+                previewAddonVersionPublication(
+                    { actor: f.actor, input: previewRequest(f) },
+                    f.ports
+                )
+            ).resolves.toMatchObject({
+                changes: ['VERSION'],
+                liveInstancesOnCurrentVersion: 1
+            });
+        }
+    );
 
     it.skipIf(skip)(
         'publishes the same addon version while a real purchase stays anchored',
