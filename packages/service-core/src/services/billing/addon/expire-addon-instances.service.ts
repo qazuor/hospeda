@@ -57,17 +57,11 @@ export async function expireAddonInstances(
                     .where(eq(addonInstances.id, row.id))
                     .limit(1)
                     .for('update');
-                if (instance?.status !== 'ACTIVE' || !instance.endsAt || instance.endsAt > now)
-                    return null;
+                if (!instance?.endsAt || instance.endsAt > now) return null;
                 if (instance.complementSubscriptionId) {
                     logger.error({ instanceId: instance.id }, 'Fixed-days addon has a complement');
                     return null;
                 }
-                const coverageVerticals = await removedCoverageVerticalsOf({
-                    tx,
-                    instance,
-                    ports
-                });
                 const [updated] = await tx
                     .update(addonInstances)
                     .set({ status: 'EXPIRED', updatedAt: now })
@@ -80,6 +74,11 @@ export async function expireAddonInstances(
                     )
                     .returning({ id: addonInstances.id });
                 if (!updated) return null;
+                const coverageVerticals = await removedCoverageVerticalsOf({
+                    tx,
+                    instance,
+                    ports
+                });
                 await domainEventModel.insert({
                     eventType: 'addon_instance.status_changed',
                     entityType: 'addon_instance',

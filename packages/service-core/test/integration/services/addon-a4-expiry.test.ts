@@ -220,6 +220,46 @@ describe('TEST:B10:6 AC:B10:5 A4 fixed-days expiry', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
+        'commits one transition when two passes selected the same ACTIVE instance',
+        async () => {
+            const f = await purchaseFixture({ scopeType: 'LISTING' });
+            await payingPrincipal(f);
+            const id = crypto.randomUUID();
+            listing(f, id, true);
+            const instance = await active(f, id);
+            f.advanceTo(instance.endsAt!);
+            let listingCalls = 0;
+            const slowListing: typeof f.ports.listing = async (input) => {
+                listingCalls++;
+                if (listingCalls === 1) await new Promise((resolve) => setTimeout(resolve, 150));
+                return f.ports.listing(input);
+            };
+            const coverageNotices = noticeSpy();
+            const ports = { clock: f.ports.clock, listing: slowListing, coverageNotices };
+            const results = await Promise.all([
+                expireAddonInstances(100, ports),
+                expireAddonInstances(100, ports)
+            ]);
+            expect(results.reduce((total, result) => total + result.expired, 0)).toBe(1);
+            expect(await status(instance.id)).toBe('EXPIRED');
+            const events = await domainEventModel.findByEntity({
+                entityType: 'addon_instance',
+                entityId: instance.id
+            });
+            expect(
+                events.filter(
+                    (event) =>
+                        event.eventType === 'addon_instance.status_changed' &&
+                        event.changes?.some(
+                            (change) => change.field === 'status' && change.new === 'EXPIRED'
+                        )
+                )
+            ).toHaveLength(1);
+            expect(coverageNotices.emitCoverageChanged).toHaveBeenCalledTimes(1);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
         'isolates a transaction failure from the next instance',
         async () => {
             const f = await purchaseFixture({ scopeType: 'LISTING' });
