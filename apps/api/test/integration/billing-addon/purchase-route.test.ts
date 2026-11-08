@@ -1,4 +1,5 @@
 import { addonInstances, eq, getDb, payments } from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -155,5 +156,40 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
             order: { outcome: 'ORDER_ALREADY_PLACED' }
         });
         expect(charge).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        {
+            error: new PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'authorize',
+                message: 'Rejected'
+            }),
+            status: 422,
+            reason: 'PROVIDER_REJECTED'
+        },
+        {
+            error: new PaymentProviderError({
+                code: 'UNAVAILABLE',
+                capability: 'authorize',
+                message: 'Busy',
+                transient: { kind: 'RATE_LIMITED', retryAfterSeconds: 42 }
+            }),
+            status: 503,
+            reason: 'PROVIDER_BUSY'
+        }
+    ])('maps recurring provider failure to $status $reason', async ({ error, status, reason }) => {
+        const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO' });
+        const { app, fake } = purchaseApp();
+        await makePayingPrincipal({
+            ownerId: fixture.ownerId,
+            payerEmail: fixture.payerEmail,
+            fake
+        });
+        vi.spyOn(fake, 'authorize').mockRejectedValueOnce(error);
+        const response = await post(app, fixture.ownerId, fixture.request());
+        expect(response.status).toBe(status);
+        expect(await response.json()).toMatchObject({ error: { reason } });
+        if (status === 503) expect(response.headers.get('Retry-After')).toBe('42');
     });
 });
