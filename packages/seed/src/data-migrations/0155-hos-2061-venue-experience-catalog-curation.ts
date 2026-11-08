@@ -380,6 +380,11 @@ async function applyMerge(
 /**
  * Backfills the policy a retired row stood in for, on the listings that
  * linked it, only where the policy key is unset or null.
+ *
+ * A `policies` value that is not a JSON object (SQL NULL, or a JSON `null`
+ * scalar that COALESCE does not replace) is normalized to `{}` first:
+ * `jsonb_set` on a scalar aborts the whole migration with "cannot set path in
+ * scalar".
  */
 async function backfillPolicy(
     ctx: SeedMigrationCtx,
@@ -390,7 +395,7 @@ async function backfillPolicy(
         // The row said reservations are accepted, not that they are required.
         const result = await ctx.db.execute(sql`
             UPDATE venues v
-            SET policies = jsonb_set(COALESCE(v.policies, '{}'::jsonb), '{reservations}', '"recommended"'::jsonb)
+            SET policies = jsonb_set(CASE WHEN v.policies IS NULL OR jsonb_typeof(v.policies) <> 'object' THEN '{}'::jsonb ELSE v.policies END, '{reservations}', '"recommended"'::jsonb)
             WHERE EXISTS (SELECT 1 FROM r_venue_amenity r WHERE r.venue_id = v.id AND r.amenity_id = ${id})
               AND COALESCE(v.policies -> 'reservations', 'null'::jsonb) = 'null'::jsonb
         `);
@@ -399,7 +404,7 @@ async function backfillPolicy(
     if (ref.kind === 'feature' && ref.slug === 'private_available') {
         const result = await ctx.db.execute(sql`
             UPDATE experiences e
-            SET policies = jsonb_set(COALESCE(e.policies, '{}'::jsonb), '{privateGroups}', 'true'::jsonb)
+            SET policies = jsonb_set(CASE WHEN e.policies IS NULL OR jsonb_typeof(e.policies) <> 'object' THEN '{}'::jsonb ELSE e.policies END, '{privateGroups}', 'true'::jsonb)
             WHERE EXISTS (SELECT 1 FROM r_experience_feature r WHERE r.experience_id = e.id AND r.feature_id = ${id})
               AND COALESCE(e.policies -> 'privateGroups', 'null'::jsonb) = 'null'::jsonb
         `);

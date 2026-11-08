@@ -27,6 +27,7 @@ import {
     resetDb,
     rVenueAmenity,
     rVenueFeature,
+    sql,
     users,
     venues
 } from '@repo/db';
@@ -314,6 +315,39 @@ describe('HOS-2061: 0155-hos-2061-venue-experience-catalog-curation (integration
             expect(result.counts?.policiesBackfilled).toBe(2);
             expect(result.counts?.rowsMerged).toBe(2);
             expect(result.counts?.policyRowsRetired).toBe(2);
+        });
+    });
+
+    it('backfills over a JSON null policies value instead of aborting', async () => {
+        await withRollback(async (tx) => {
+            // Arrange: a JSON `null` scalar, which COALESCE does not replace
+            // and `jsonb_set` refuses ("cannot set path in scalar").
+            const { ownerId, venueId, experienceId } = await insertListings(tx);
+            await tx.execute(sql`UPDATE venues SET policies = 'null'::jsonb WHERE id = ${venueId}`);
+            await tx.execute(
+                sql`UPDATE experiences SET policies = 'null'::jsonb WHERE id = ${experienceId}`
+            );
+            const reservations = await ensureAmenity(tx, 'accepts_reservations', ['venue']);
+            const privateAvailable = await ensureFeature(tx, 'private_available', ['experience']);
+            await tx.insert(rVenueAmenity).values({ venueId, amenityId: reservations });
+            await tx
+                .insert(rExperienceFeature)
+                .values({ experienceId, featureId: privateAvailable });
+
+            // Act
+            await migration.up(buildCtx(tx, ownerId));
+
+            // Assert
+            const [venue] = await tx
+                .select({ policies: venues.policies })
+                .from(venues)
+                .where(eq(venues.id, venueId));
+            expect(venue?.policies).toEqual({ reservations: 'recommended' });
+            const [experience] = await tx
+                .select({ policies: experiences.policies })
+                .from(experiences)
+                .where(eq(experiences.id, experienceId));
+            expect(experience?.policies).toEqual({ privateGroups: true });
         });
     });
 
