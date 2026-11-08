@@ -166,7 +166,7 @@ export async function expireAddonAuthorizationWindows(
         try {
             if (row.chargeKind === 'UNA_VEZ') {
                 const outcome = await expireOneTimeAddon(
-                    { instanceId: row.instance.id, hasOrderId: !!row.instance.providerOrderId },
+                    { instanceId: row.instance.id, providerOrderId: row.instance.providerOrderId },
                     ports
                 );
                 if (outcome === 'ACTIVATED') activated++;

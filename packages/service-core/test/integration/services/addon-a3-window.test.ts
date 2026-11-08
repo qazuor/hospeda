@@ -9,6 +9,7 @@ import {
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { expireAddonAuthorizationWindows } from '../../../src/services/billing/addon/expire-addon-authorization-windows.service';
+import { expireOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { sendOneTimeOrder } from '../../../src/services/billing/addon/send-one-time-order.service';
 import { retryOurCancellation } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry';
@@ -99,6 +100,30 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                 status: 'SUCCEEDED',
                 addonInstanceId: s.bought.instanceId
             });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'defers when an order id appeared after candidate selection',
+        async () => {
+            const s = await setup();
+            await sendOneTimeOrder(
+                {
+                    orderRequestId: s.request.orderRequestId,
+                    payerEmail: 'payer@example.test',
+                    payment: { token: `card-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
+                },
+                s.f.ports
+            );
+            await s.advance();
+            expect(
+                await expireOneTimeAddon(
+                    { instanceId: s.bought.instanceId, providerOrderId: null },
+                    s.ports
+                )
+            ).toBe('DEFERRED');
+            expect((await s.row()).status).toBe('PENDING_AUTHORIZATION');
+            expect(await s.expire()).toMatchObject({ activated: 1 });
         }
     );
 
