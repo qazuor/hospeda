@@ -1,5 +1,6 @@
 import {
     addonInstances,
+    addonProducts,
     getDb,
     inArray,
     permanentGrants,
@@ -25,6 +26,15 @@ const purchasesPath = '/api/v1/protected/billing/addons/purchases';
 const grants: string[] = [];
 const admins: string[] = [];
 const owners: string[] = [];
+const fixtureOwners: string[] = [];
+const fixtureProducts: string[] = [];
+
+async function catalog(input: Parameters<typeof purchaseCatalog>[0]) {
+    const fixture = await purchaseCatalog(input);
+    fixtureOwners.push(fixture.ownerId);
+    fixtureProducts.push(fixture.productId);
+    return fixture;
+}
 
 async function addGrant(input: {
     readonly ownerId: string;
@@ -114,6 +124,14 @@ beforeAll(async () => {
 });
 afterEach(async () => {
     await retirePurchaseRoutes();
+    if (fixtureOwners.length) {
+        await getDb().delete(addonInstances).where(inArray(addonInstances.ownerId, fixtureOwners));
+        fixtureOwners.length = 0;
+    }
+    if (fixtureProducts.length) {
+        await getDb().delete(addonProducts).where(inArray(addonProducts.id, fixtureProducts));
+        fixtureProducts.length = 0;
+    }
     if (owners.length) {
         await getDb().delete(addonInstances).where(inArray(addonInstances.ownerId, owners));
         owners.length = 0;
@@ -144,7 +162,7 @@ describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
         false
     ])('reads policy and includes-addons=%s for the seeded owner', async (includesAddons) => {
         // The immutable addon version is seeded; the grant is created by the real service.
-        const fixture = await purchaseCatalog({ scopeType: 'LISTING' });
+        const fixture = await catalog({ scopeType: 'LISTING' });
         const { app, fake } = purchaseApp();
         await addGrant({ ownerId: fixture.ownerId, fake, includesAddons });
         const response = await app.request(offersPath, { headers: ownerHeaders(fixture.ownerId) });
@@ -164,7 +182,7 @@ describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
     });
 
     it('has no free vertical without a grant', async () => {
-        const fixture = await purchaseCatalog({});
+        const fixture = await catalog({});
         const { app } = purchaseApp();
         const response = await app.request(offersPath, { headers: ownerHeaders(fixture.ownerId) });
         expect(response.status).toBe(200);
@@ -177,8 +195,8 @@ describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
     });
 
     it('never reads another owner grant as a free choice', async () => {
-        const granted = await purchaseCatalog({});
-        const other = await purchaseCatalog({});
+        const granted = await catalog({});
+        const other = await catalog({});
         const { app, fake } = purchaseApp();
         await addGrant({ ownerId: granted.ownerId, fake, includesAddons: true });
         const response = await app.request(offersPath, { headers: ownerHeaders(other.ownerId) });
@@ -192,7 +210,7 @@ describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
     });
 
     it('sends the English return URL to the fake recurring authorization', async () => {
-        const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO' });
+        const fixture = await catalog({ chargeKind: 'PERIODICO' });
         const { app, fake } = purchaseApp();
         await makePayingPrincipal({
             ownerId: fixture.ownerId,
