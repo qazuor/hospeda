@@ -289,7 +289,14 @@
                 "plan_other": "Tenés {{count}} cargados que no se publican: tu plan no incluye {{section}}."
             },
             "amenities": {
-                "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar."
+                "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar.",
+                "picker": {
+                    "searchLabel": "Buscar servicios y características",
+                    "searchPlaceholder": "Ej.: wifi, pileta, vegano",
+                    "featured": "Destacados",
+                    "showAll": "Ver todos",
+                    "noResults": "No encontramos nada con \"{{query}}\"."
+                }
             },
             "nightInfo": {
                 "entryPriceFrom": "Precio desde (en pesos)",
