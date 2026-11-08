@@ -149,24 +149,35 @@ export function PoliciesPanel({
                 <legend className={styles.groupTitle}>{label}</legend>
                 <div className={styles.pair}>
                     {(['from', 'to'] as const).map((end) => (
-                        <TextField
+                        // TextField renders a bare label + input fragment; the
+                        // wrapper keeps each pair in its own grid cell.
+                        <div
                             key={end}
-                            prefix={idPrefix}
-                            name={`policies.${key}.${end}`}
-                            label={
-                                end === 'from'
-                                    ? t('listing.policies.time.from', 'Desde')
-                                    : t('listing.policies.time.to', 'Hasta')
-                            }
-                            labelClassName={fieldStyles.hint}
-                            className={fieldStyles.input}
-                            error={errors[`policies.${key}.${end}`] ?? errors[`policies.${key}`]}
-                            type="time"
-                            value={window[end] ?? ''}
-                            onChange={(event) =>
-                                onChange(key, cleanWindow({ ...window, [end]: event.target.value }))
-                            }
-                        />
+                            className={styles.timeField}
+                        >
+                            <TextField
+                                prefix={idPrefix}
+                                name={`policies.${key}.${end}`}
+                                label={
+                                    end === 'from'
+                                        ? t('listing.policies.time.from', 'Desde')
+                                        : t('listing.policies.time.to', 'Hasta')
+                                }
+                                labelClassName={fieldStyles.hint}
+                                className={fieldStyles.input}
+                                error={
+                                    errors[`policies.${key}.${end}`] ?? errors[`policies.${key}`]
+                                }
+                                type="time"
+                                value={window[end] ?? ''}
+                                onChange={(event) =>
+                                    onChange(
+                                        key,
+                                        cleanWindow({ ...window, [end]: event.target.value })
+                                    )
+                                }
+                            />
+                        </div>
                     ))}
                 </div>
             </fieldset>
