@@ -6,6 +6,7 @@ import {
     reconciliationZeroCallModel
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import type { CancelPurgedListingAddonPorts } from '../../../src/services/billing/addon/addon-instance-a6';
 import { createListingPurgedAddonCanceller } from '../../../src/services/billing/addon/listing-purged-addon-canceller';
 import {
     cancelAddonsOfPurgedListing,
@@ -30,15 +31,18 @@ function isolateSweep(instanceId: string): void {
     );
 }
 
-async function sweep(h: Awaited<ReturnType<typeof createA6Fixture>>): Promise<void> {
+async function sweep(
+    h: Awaited<ReturnType<typeof createA6Fixture>>,
+    ports: CancelPurgedListingAddonPorts = h.ports
+): ReturnType<typeof runZeroCallChecks> {
     isolateSweep(h.instanceId);
-    await runZeroCallChecks(
+    return runZeroCallChecks(
         { correlationId: crypto.randomUUID() },
         {
             addonOrphanhood: {
                 ...h.f.ports,
-                listingPurged: h.ports.listingPurged,
-                listingPurgedAddons: createListingPurgedAddonCanceller(h.ports)
+                listingPurged: ports.listingPurged,
+                listingPurgedAddons: createListingPurgedAddonCanceller(ports)
             }
         }
     );
@@ -212,18 +216,25 @@ describe('TEST:B10:7 AC:B10:6 A6 committed push and daily safety net', () => {
     it('parallel push and sweep still cancel the preapproval once', async () => {
         const h = await createA6Fixture({ status: 'ACTIVE' });
         const cancel = vi.spyOn(h.f.fake, 'cancel');
-        const stop = subscribeListingPurgedAddons(
-            { onListingPurged: h.verticals.onListingPurged.bind(h.verticals) },
-            h.ports
-        );
-        try {
-            await Promise.all([h.verticals.purgeListing({ listingId: h.listingId }), sweep(h)]);
-            expect((await h.readInstance())?.status).toBe('CANCELLED');
-            expect(cancel).toHaveBeenCalledTimes(1);
-            expect(await statusEvents(h.instanceId)).toBe(1);
-        } finally {
-            stop();
-        }
+        await h.verticals.purgeListing({ listingId: h.listingId });
+        const slowPorts: CancelPurgedListingAddonPorts = {
+            ...h.ports,
+            listing: async (input) => {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+                return h.ports.listing(input);
+            }
+        };
+        const [pushed, checked] = await Promise.all([
+            cancelAddonsOfPurgedListing({ listingId: h.listingId }, slowPorts),
+            sweep(h, slowPorts)
+        ]);
+        expect(pushed).toMatchObject({ failed: 0 });
+        expect(
+            checked.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET')
+        ).toMatchObject({ resolved: 1 });
+        expect((await h.readInstance())?.status).toBe('CANCELLED');
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(await statusEvents(h.instanceId)).toBe(1);
     });
 
     it('a failing listener resolves the push and leaves the addon for the sweep', async () => {
