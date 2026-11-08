@@ -4,7 +4,6 @@ import { formatPrice } from '@/lib/format-utils';
 import type { createTranslations, SupportedLocale } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
 import type { AddonTarget } from './AddonTargetPicker';
-import { OneTimePayment } from './OneTimePayment';
 
 type Offer = AddonOffersResponse['items'][number];
 type Translate = ReturnType<typeof createTranslations>['t'];
@@ -64,11 +63,7 @@ export function AddonPurchaseSummary(input: {
                     data-testid="addon-hidden-listing-notice"
                     data-notice-kind={noticeKind}
                 >
-                    {t(
-                        noticeKind === 'RECURRING'
-                            ? 'billing.addonPurchase.hiddenListingRecurring'
-                            : 'billing.addonPurchase.hiddenListingOneTime'
-                    )}
+                    {t('billing.addonPurchase.hiddenListingRecurring')}
                 </p>
             )}
             {!free && offer.chargeKind === 'PERIODICO' && (
@@ -101,9 +96,7 @@ export function AddonPurchaseSummary(input: {
                 >
                     {t('billing.addonPurchase.confirmPurchase')}
                 </button>
-            ) : (
-                <OneTimePayment />
-            )}
+            ) : null}
         </section>
     );
 }

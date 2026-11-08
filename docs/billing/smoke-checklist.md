@@ -329,10 +329,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   2. From the purchase screen, choose a compatible addon under the grant; inspect the `ACTIVE` instance and its `title_anchor_id`, then revoke the grant.
   3. Open a paid `LISTING` boost summary for a draft listing and a published listing. Read the notice before confirming either.
   4. Buy the recurring addon from the screen and follow checkout back to `/es/mi-cuenta/complementos/?compra=…`; observe processing until `ACTIVE`.
-  5. only if the one-time card step shipped (Q1): buy once with an approved test card, then try a rejected card on another request.
-- **Expected:** The new checkout uses the new price while the old instance keeps its version; the unpermitted admin gets 403. The grant choice is `ACTIVE` without a sandbox preapproval or order and becomes `CANCELLED` without a provider call when revoked. The draft summary warns that the boost is charged while hidden, and the published summary has no warning. The recurring checkout returns to the localized purchase screen and reaches `ACTIVE`. If step 5 applies, the approved order activates and the rejected order is `ABANDONED` immediately.
+- **Expected:** The new checkout uses the new price while the old instance keeps its version; the unpermitted admin gets 403. The grant choice is `ACTIVE` without a sandbox preapproval or order and becomes `CANCELLED` without a provider call when revoked. The draft summary warns that the boost is charged while hidden, and the published summary has no warning. The recurring checkout returns to the localized purchase screen and reaches `ACTIVE`. One-time offers do not appear on the web purchase screen.
 - **Evidence:** Admin API responses, read-only addon product and instance rows, grant anchor, sandbox preapprovals and orders, purchase screen captures, checkout return URL and purchase status reads.
 - **Covers:** AC:B10:8, AC:B10:11, AC:B10:12, AC:B10:13; TEST:B10:9, TEST:B10:13, TEST:B10:14, TEST:B10:15.
+- **Nota:** pago único: ver HOS-2094.
 
 ### Sign-off
 
@@ -452,10 +452,11 @@ This part is TEST:B13a:15 and TEST:U1:20.
 ### P11 — Phase 3 real recurring addon purchase (HOS-1595)
 
 - **Preconditions:** The owner's internal production account has an active paying principal and an approved recurring addon amount; only the owner runs this item.
-- **Steps:** Buy a recurring addon from `/es/mi-cuenta/complementos/` with the owner's card. Observe the returned purchase and both the principal and addon charges. If the one-time card step shipped (Q1), repeat with a one-time addon and an approved amount.
-- **Expected:** The recurring addon becomes `ACTIVE` with its own preapproval and charge, separate from the principal's unchanged amount; the provider sends its charge email. If the one-time step applies, its order is approved and its instance becomes `ACTIVE`. Action 20 is not executed in production smoke.
+- **Steps:** Buy a recurring addon from `/es/mi-cuenta/complementos/` with the owner's card. Observe the returned purchase and both the principal and addon charges.
+- **Expected:** The recurring addon becomes `ACTIVE` with its own preapproval and charge, separate from the principal's unchanged amount; the provider sends its charge email. Action 20 is not executed in production smoke.
 - **Evidence:** Owner account screen and purchase response, read-only provider and payment records, card statement, provider email, and read-only addon instance rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
+- **Nota:** pago único: ver HOS-2094.
 
 ### Sign-off
 

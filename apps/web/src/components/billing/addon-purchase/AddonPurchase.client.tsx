@@ -6,6 +6,7 @@ import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import {
     eligibleTargets,
     mintOrderRequestId,
+    purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -53,7 +54,7 @@ export function AddonPurchase(input: {
             .then((result) => {
                 if (!alive) return;
                 if (result.ok) {
-                    setOffers(result.data.items);
+                    setOffers(purchasableOffers(result.data.items));
                     if (!input.returnOrderRequestId) setView('OFFERS');
                 } else setError(result.error.message);
             })

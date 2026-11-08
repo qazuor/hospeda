@@ -819,7 +819,6 @@
         "days_one": "{{count}} dia",
         "days_other": "{{count}} dias",
         "hiddenListingRecurring": "Este anúncio não está publicado. O destaque continua sendo cobrado mesmo que o anúncio não esteja visível, até você cancelá-lo.",
-        "hiddenListingOneTime": "Este anúncio não está publicado. O destaque é cobrado mesmo assim e seus dias continuam correndo enquanto o anúncio não estiver visível.",
         "chooseFree": "Escolher grátis",
         "payerEmailLabel": "E-mail do pagador",
         "payerEmailInvalid": "Digite um e-mail válido do pagador.",

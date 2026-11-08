@@ -5,17 +5,6 @@ import { cleanupPermanentGrantE2eRows } from './permanent-grant-flow.ts';
 
 const addonPurchaseCatalog = [
     {
-        addonId: 'b10c0000-0000-4000-8000-000000000001',
-        versionId: 'b10c0000-0000-4000-8000-000000000002',
-        productId: 'b10c0000-0000-4000-8000-000000000003',
-        slug: 'e2e-b10c-listing-one-time',
-        name: 'E2E listing boost one time',
-        chargeKind: 'UNA_VEZ',
-        validity: 'FIXED_DAYS',
-        validityDays: 7,
-        cycle: null
-    },
-    {
         addonId: 'b10c0000-0000-4000-8000-000000000004',
         versionId: 'b10c0000-0000-4000-8000-000000000005',
         productId: 'b10c0000-0000-4000-8000-000000000006',
@@ -30,7 +19,6 @@ const addonPurchaseCatalog = [
 
 /** Ensure immutable, case-shared LISTING addon versions and their paid products. */
 export async function ensureAddonPurchaseCatalog(): Promise<{
-    readonly oneTimeProductId: string;
     readonly recurringProductId: string;
 }> {
     // The E2E seed clears the catalog; these fixed rows survive individual cases.
@@ -77,8 +65,7 @@ export async function ensureAddonPurchaseCatalog(): Promise<{
         if (!row) throw new Error(`Expected E2E addon purchase product ${item.productId}.`);
     }
     return {
-        oneTimeProductId: addonPurchaseCatalog[0].productId,
-        recurringProductId: addonPurchaseCatalog[1].productId
+        recurringProductId: addonPurchaseCatalog[0].productId
     };
 }
 

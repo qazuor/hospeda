@@ -97,11 +97,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             'se cobra igual'
         );
     });
-    it.each([
-        'DRAFT',
-        'ARCHIVED',
-        'UNPUBLISHED_BY_BILLING'
-    ])('uses the one-time copy for %s', async (status) => {
+    it('hides one-time offers and shows the existing empty state', async () => {
         offers.mockResolvedValue({
             ok: true,
             data: {
@@ -116,15 +112,33 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
                 ]
             }
         });
-        await selectListing(status);
-        expect(
-            screen.getByTestId('addon-hidden-listing-notice').getAttribute('data-notice-kind')
-        ).toBe('ONE_TIME');
-        expect(screen.getByTestId('addon-hidden-listing-notice').textContent).toContain(
-            'días corren'
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+            />
         );
-        expect(screen.getByTestId('addon-one-time-payment').childElementCount).toBe(0);
-        expect(screen.queryAllByTestId('addon-purchase-confirm')).toHaveLength(0);
+        expect(await screen.findByText('No hay complementos disponibles.')).toBeTruthy();
+        expect(screen.queryByTestId(`addon-offer-${productId}`)).toBeNull();
+        expect(listingNotices).not.toHaveBeenCalled();
+    });
+    it('shows recurring offers when the API also returns one-time offers', async () => {
+        offers.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [{ ...baseOffer, productId: 'one-time', chargeKind: 'UNA_VEZ' }, baseOffer]
+            }
+        });
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+            />
+        );
+        expect(await screen.findByTestId(`addon-offer-${productId}`)).toBeTruthy();
+        expect(screen.queryByTestId('addon-offer-one-time')).toBeNull();
     });
     it('shows no paid notice for a published listing or free choice', async () => {
         await selectListing('PUBLISHED');

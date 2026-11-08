@@ -4,6 +4,7 @@ import {
     eligibleTargets,
     hiddenListingNoticeKind,
     mintOrderRequestId,
+    purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 
@@ -25,11 +26,9 @@ describe('AC:B10:11 TEST:B10:13 hidden listing notice decision', () => {
         )
     )('$publicationStatus $chargeKind free=$free', ({ publicationStatus, chargeKind, free }) => {
         const expected =
-            free || publicationStatus === 'PUBLISHED'
+            free || publicationStatus === 'PUBLISHED' || chargeKind === 'UNA_VEZ'
                 ? null
-                : chargeKind === 'PERIODICO'
-                  ? 'RECURRING'
-                  : 'ONE_TIME';
+                : 'RECURRING';
         expect(
             hiddenListingNoticeKind({
                 scopeType: 'LISTING',
@@ -49,6 +48,19 @@ describe('AC:B10:11 TEST:B10:13 hidden listing notice decision', () => {
                 free: false
             })
         ).toBeNull();
+    });
+});
+
+describe('purchasableOffers', () => {
+    const recurring = { productId: 'recurring', chargeKind: 'PERIODICO' } as const;
+    const oneTime = { productId: 'one-time', chargeKind: 'UNA_VEZ' } as const;
+
+    it('keeps recurring offers and excludes one-time offers', () => {
+        expect(purchasableOffers([oneTime, recurring, oneTime] as const)).toEqual([recurring]);
+    });
+
+    it('returns an empty list when only one-time offers are returned', () => {
+        expect(purchasableOffers([oneTime] as const)).toEqual([]);
     });
 });
 

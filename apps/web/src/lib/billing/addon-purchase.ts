@@ -7,16 +7,28 @@ import type {
 } from '@repo/schemas';
 import type { z } from 'zod';
 
-/** The warning copy variant before confirming a paid hidden-listing boost. */
+/** Only recurring addons can be purchased from the web screen. */
+export function purchasableOffers<T extends { readonly chargeKind: 'UNA_VEZ' | 'PERIODICO' }>(
+    offers: readonly T[]
+): T[] {
+    return offers.filter((offer) => offer.chargeKind === 'PERIODICO');
+}
+
+/** Warn before confirming a paid recurring boost for a hidden listing. */
 export function hiddenListingNoticeKind(input: {
     readonly scopeType: 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
     readonly publicationStatus: PublicationStatusEnum;
     readonly chargeKind: 'UNA_VEZ' | 'PERIODICO';
     readonly free: boolean;
-}): 'RECURRING' | 'ONE_TIME' | null {
-    if (input.scopeType !== 'LISTING' || input.publicationStatus === 'PUBLISHED' || input.free)
+}): 'RECURRING' | null {
+    if (
+        input.scopeType !== 'LISTING' ||
+        input.publicationStatus === 'PUBLISHED' ||
+        input.free ||
+        input.chargeKind !== 'PERIODICO'
+    )
         return null;
-    return input.chargeKind === 'PERIODICO' ? 'RECURRING' : 'ONE_TIME';
+    return 'RECURRING';
 }
 
 /** Keep only owned listing notices from compatible verticals that permit a boost. */

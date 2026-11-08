@@ -819,7 +819,6 @@
         "days_one": "{{count}} día",
         "days_other": "{{count}} días",
         "hiddenListingRecurring": "Esta ficha no está publicada. El destaque se cobra igual aunque la ficha no se vea, hasta que lo des de baja.",
-        "hiddenListingOneTime": "Esta ficha no está publicada. El destaque se cobra igual y sus días corren aunque la ficha no se vea.",
         "chooseFree": "Elegir gratis",
         "payerEmailLabel": "Correo del pagador",
         "payerEmailInvalid": "Ingresá un correo válido del pagador.",

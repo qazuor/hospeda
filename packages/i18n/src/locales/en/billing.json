@@ -819,7 +819,6 @@
         "days_one": "{{count}} day",
         "days_other": "{{count}} days",
         "hiddenListingRecurring": "This listing is not published. The boost is still charged while the listing is hidden, until you cancel it.",
-        "hiddenListingOneTime": "This listing is not published. The boost is still charged and its days keep running while the listing is hidden.",
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",

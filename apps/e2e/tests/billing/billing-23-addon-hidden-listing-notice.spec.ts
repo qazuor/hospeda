@@ -23,20 +23,12 @@ import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
-type ProductClass = 'ONE_TIME' | 'RECURRING';
 const cases = [
-    { status: PublicationStatusEnum.DRAFT, productClass: 'ONE_TIME' },
-    { status: PublicationStatusEnum.DRAFT, productClass: 'RECURRING' },
-    { status: PublicationStatusEnum.ARCHIVED, productClass: 'ONE_TIME' },
-    { status: PublicationStatusEnum.ARCHIVED, productClass: 'RECURRING' },
-    { status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING, productClass: 'ONE_TIME' },
-    { status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING, productClass: 'RECURRING' },
-    { status: PublicationStatusEnum.PUBLISHED, productClass: 'ONE_TIME' },
-    { status: PublicationStatusEnum.PUBLISHED, productClass: 'RECURRING' }
-] as const satisfies ReadonlyArray<{
-    readonly status: PublicationStatusEnum;
-    readonly productClass: ProductClass;
-}>;
+    PublicationStatusEnum.DRAFT,
+    PublicationStatusEnum.ARCHIVED,
+    PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+    PublicationStatusEnum.PUBLISHED
+] as const;
 
 /**
  * TEST:B10:13 AC:B10:11. Preconditions: E2E seed with owner-basico billing
@@ -120,33 +112,30 @@ test.describe('TEST:B10:13 AC:B10:11 the hidden-listing notice before buying a f
         }
     });
 
-    for (const { status, productClass } of cases) {
-        test(`${status} ${productClass}: summary and correct pre-confirmation notice`, async ({
+    for (const status of cases) {
+        test(`${status} RECURRING: summary and correct pre-confirmation notice`, async ({
             page
         }) => {
             if (!world || userIds.length !== 1) throw new Error('Expected case-local paid host.');
             const catalog = await ensureAddonPurchaseCatalog();
-            const productId =
-                productClass === 'ONE_TIME' ? catalog.oneTimeProductId : catalog.recurringProductId;
             const listing = await createAccommodation({
                 ownerId: userIds[0]!,
                 publicationStatus: status
             });
-            await openAddonPurchase({ page, productId, listingId: listing.id });
+            await openAddonPurchase({
+                page,
+                productId: catalog.recurringProductId,
+                listingId: listing.id
+            });
             const summary = page.getByTestId('addon-purchase-summary');
             await expect(summary).toBeVisible();
             const notice = summary.getByTestId('addon-hidden-listing-notice');
             if (status === PublicationStatusEnum.PUBLISHED) {
                 await expect(notice).toHaveCount(0);
             } else {
-                const kind = productClass === 'ONE_TIME' ? 'ONE_TIME' : 'RECURRING';
-                const copy =
-                    productClass === 'ONE_TIME'
-                        ? esBilling.addonPurchase.hiddenListingOneTime
-                        : esBilling.addonPurchase.hiddenListingRecurring;
                 await expect(notice).toBeVisible();
-                await expect(notice).toHaveAttribute('data-notice-kind', kind);
-                await expect(notice).toHaveText(copy);
+                await expect(notice).toHaveAttribute('data-notice-kind', 'RECURRING');
+                await expect(notice).toHaveText(esBilling.addonPurchase.hiddenListingRecurring);
             }
         });
     }
