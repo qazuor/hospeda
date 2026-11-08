@@ -867,6 +867,27 @@ with a customer-request pause. Early owner resume still refuses a courtesy pause
 
 `POST /{subscriptionId}/pause` takes a strict `{ months: 1..4 }` body and returns `PAUSED`, `pauseId`, `expectedEndAt`, and `complements`. `POST /{subscriptionId}/resume` takes a strict empty body and returns `RESUMED` with `nextCharge`. Both POST routes require a verified email. All three resolve ownership before calling the service; an alien id returns 404. The POST routes use the typed S8/S10 rejection mapping above and record `BILLING_MUTATION` only on success, without an administrative action id. A courtesy pause returns 409 `PAUSE_NOT_CUSTOMER_REQUEST` before any provider call.
 
+### Administrative temporary courtesy grant and previews (ACC:1, HOS-1592)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/grant-preview?months=N`,
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/grant`, and
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke-preview` require
+`BILLING_GRANT_COMPLIMENTARY`. The POST requires a strict body with `expectedStatus`,
+integer `months` ≥ 1, nonempty `reason`, and `confirmed: true`. Rejections follow
+401 authentication → 403 route permission → 400 input → 404 `SUBSCRIPTION_NOT_FOUND`
+→ 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409
+`ADMINISTRATIVE_ACTION_STATE_CHANGED` → service rules.
+
+| Reason | Status | `error.code` |
+|---|---:|---|
+| `NOT_PRINCIPAL`, `NOT_MONTHLY`, `MONTHS_INVALID`, `NO_PROVIDER_LINK` | 422 | `VALIDATION_ERROR` |
+| `SUBSCRIPTION_PAUSED`, `NOT_ELIGIBLE`, `LIVE_GRANT_ANCHOR` | 409 | `CONFLICT` |
+| `COURTESY_NOT_APPLIED`, `LOST_RACE` | 409 | `CONFLICT` |
+
+Both previews record `BILLING_READ`. A revoke preview outside a live courtesy returns
+200 with `inForce: false` and `reason: COURTESY_NOT_IN_FORCE`. Only `GRANTED` and
+`EXTENDED` record `BILLING_MUTATION`, using the courtesy grant id as resource id.
+
 ### Administrative temporary courtesy revocation (ACC:1, HOS-1590)
 
 `POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke` requires

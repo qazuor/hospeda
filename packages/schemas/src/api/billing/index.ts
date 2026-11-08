@@ -41,6 +41,7 @@ export * from './signup-notice.schema.js';
 export * from './subscribe-destination.schema.js';
 export * from './subscription-admin-cancel.schema.js';
 export * from './subscription-admin-courtesy.schema.js';
+export * from './subscription-admin-courtesy-grant.schema.js';
 export * from './subscription-admin-pause.schema.js';
 export * from './subscription-admin-plan-change.schema.js';
 export * from './subscription-cancel.schema.js';

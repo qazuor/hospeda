@@ -459,7 +459,19 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/grant"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/grant-preview"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/revoke"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/revoke-preview"
         },
         {
             "method": "GET",
