@@ -79,15 +79,21 @@ const B8_MAP = [
         ]
     }
 ] as const;
-const DEFERRED_CASES = [
-    { tests: ['TEST:B8b:25 (cortesía)'], issue: 'HOS-1590', phase: 'fase-2' },
+const DELIVERED_CASES = [
     {
-        test: 'TEST:B8b:25 (fila 5: pausa negada con cortesía vigente)',
-        case: 'PM-374',
-        issue: 'HOS-1592',
-        phase: 'fase-2'
+        case: 'cortesía',
+        file: 'apps/web/test/components/account/PauseOffer.test.tsx',
+        title: 'TEST:B9b:8 warns with the courtesy end date and confirms the forfeit with the selected months',
+        marker: 'TEST:B8b:25 PauseOffer'
+    },
+    {
+        case: 'fila 5: pausa negada con cortesía vigente',
+        file: 'apps/e2e/tests/billing/billing-20-act-notices.spec.ts',
+        title: 'fila 5 (traspaso HOS-1580 → HOS-1592): live courtesy warns of the loss before customer pause',
+        marker: 'TEST:B8b:25 row 5 transfer'
     }
 ] as const;
+const DEFERRED_CASES: readonly { test: string; issue: string; phase: string }[] = [];
 const FROM_EMPTY = {
     test: 'TEST:B8b:23',
     file: 'packages/db/test/integration/b8b-schema-from-empty.test.ts'
@@ -242,7 +248,7 @@ describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU
         });
         expect(missing).toEqual([]);
     });
-    it('finds TEST:B8b:1..27 in test titles and declares both phase-2 deferrals', () => {
+    it('finds TEST:B8b:1..27 in test titles and links the delivered courtesy cases', () => {
         const roots = [
             'packages/service-core/test',
             'packages/db/test',
@@ -258,18 +264,13 @@ describe('AC:B8b:23 - B8b exit: LISTA:B8b evidence in the tree, G-R1-C wired, AU
             (id) => !treeTitles.some((title) => hasId(title, id))
         );
         expect(missing).toEqual([]);
-        expect(DEFERRED_CASES).toHaveLength(2);
-        expect(DEFERRED_CASES).toContainEqual({
-            tests: ['TEST:B8b:25 (cortesía)'],
-            issue: 'HOS-1590',
-            phase: 'fase-2'
-        });
-        expect(DEFERRED_CASES).toContainEqual({
-            test: 'TEST:B8b:25 (fila 5: pausa negada con cortesía vigente)',
-            case: 'PM-374',
-            issue: 'HOS-1592',
-            phase: 'fase-2'
-        });
+        for (const entry of DELIVERED_CASES) {
+            expect(exists(entry.file), entry.case).toBe(true);
+            const source = read(entry.file);
+            expect(titles(source), entry.case).toContain(entry.title);
+            expect(source, entry.case).toContain(entry.marker);
+        }
+        expect(DEFERRED_CASES).toEqual([]);
     });
     it('wires G-R1-C and additive migrations into package scripts and the guards job', () => {
         const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> })
