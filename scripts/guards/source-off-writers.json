@@ -4,16 +4,16 @@
         "symbol": "insertTrial",
         "table": "trials",
         "effect": "turns-on",
-        "via": null,
-        "reason": "Inserts a newly active listing trial; successful insertion adds trial coverage."
+        "via": "notice",
+        "reason": "Inserts a TRIAL_ACTIVE listing trial; publishListing emits the TRIAL/CHANGED coverage notice after commit when insertion succeeds."
     },
     {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
         "symbol": "insertTrial",
         "table": "trials",
-        "effect": "turns-on",
+        "effect": "neutral",
         "via": null,
-        "reason": "Inserts a newly active trial; a conflict leaves existing coverage unchanged."
+        "reason": "The only caller inserts a TRIAL_CONVERTED row, which adds no active trial coverage; a conflict leaves coverage unchanged."
     },
     {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
@@ -209,9 +209,9 @@
         "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
         "symbol": "writePausedScheduledCancellation",
         "table": "subscriptions",
-        "effect": "neutral",
-        "via": null,
-        "reason": "S22 retains unconsumed successor credit through S11, scheduling the service end; the row emits coverage until S12 (AC:B8b:5)."
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "S22 moves a credited PRINCIPAL row from PAUSED to source-emitting CANCEL_SCHEDULED; its caller emits SUBSCRIPTION/CHANGED after commit (AC:B8b:5)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
@@ -644,6 +644,6 @@
         "table": "trials",
         "effect": "turns-on",
         "via": null,
-        "reason": "V6 cutover inserts an active trial for an eligible listing; a conflict skips the insert and preserves existing coverage."
+        "reason": "V6 cutover inserts an active trial for an eligible listing; a conflict skips the insert and preserves existing coverage; gap tracked in HOS-2091: no post-commit coverage notice; must be resolved before cutover."
     }
 ]
