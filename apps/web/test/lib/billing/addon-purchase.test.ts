@@ -91,6 +91,14 @@ describe('purchase identity and states', () => {
             'PROCESSING'
         ],
         [{ ...base, order: { outcome: 'ACTIVATED' as const } }, 'ACTIVE'],
+        [
+            {
+                ...base,
+                chargeKind: 'UNA_VEZ' as const,
+                order: { outcome: 'ORDER_ALREADY_PLACED' as const }
+            },
+            'ACTIVE'
+        ],
         [{ ...base, order: { outcome: 'ORDER_DECLINED' as const } }, 'REFUSED'],
         [{ ...base, order: { outcome: 'ORDER_REJECTED' as const } }, 'REFUSED'],
         [{ ...base, order: { outcome: 'NOT_APPROVED' as const } }, 'REFUSED'],

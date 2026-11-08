@@ -55,6 +55,7 @@ export function purchaseStateFrom(input: {
     )
         return 'REFUSED';
     if (response.order?.outcome === 'ACTIVATED') return 'ACTIVE';
+    if (response.order?.outcome === 'ORDER_ALREADY_PLACED' && !response.processing) return 'ACTIVE';
     if (response.outcome === 'PENDING_ELSEWHERE' || response.processing) return 'PROCESSING';
     if (response.checkoutUrl) return 'REDIRECT';
     return 'PROCESSING';
