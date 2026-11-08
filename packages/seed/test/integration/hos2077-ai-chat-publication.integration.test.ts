@@ -55,7 +55,8 @@ const CHAT_LIMIT: Record<'venue' | 'experience', string> = {
     experience: 'max_ai_chat_experience_per_month'
 };
 
-const run = () => db.transaction(async (tx) => up({ db: tx } as Parameters<typeof up>[0]));
+const run = () =>
+    db.transaction(async (tx) => up({ db: tx } as unknown as Parameters<typeof up>[0]));
 
 async function currentVersion(vertical: Vertical, slug: string) {
     const [plan] = await db
