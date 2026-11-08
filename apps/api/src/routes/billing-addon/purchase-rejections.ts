@@ -17,7 +17,8 @@ type AddonPurchaseCopyKey =
     | 'freeVersionChanged'
     | 'freeAlreadyActive'
     | 'freePendingElsewhere'
-    | 'freeOrderRequestReused';
+    | 'freeOrderRequestReused'
+    | 'freeUnderGrant';
 
 /** Reads API copy in the request locale, failing if a catalog entry is missing. */
 export function readAddonPurchaseCopy(ctx: Context, key: AddonPurchaseCopyKey): string {
@@ -46,7 +47,14 @@ export function answerPurchaseRefusal(input: {
 }): Response {
     const answer = PURCHASE_REJECTION_ANSWERS[input.reason];
     return createErrorResponse(
-        { code: answer.code, message: input.reason, reason: input.reason },
+        {
+            code: answer.code,
+            message:
+                input.reason === 'FREE_UNDER_GRANT'
+                    ? readAddonPurchaseCopy(input.ctx, 'freeUnderGrant')
+                    : input.reason,
+            reason: input.reason
+        },
         input.ctx,
         answer.status
     );

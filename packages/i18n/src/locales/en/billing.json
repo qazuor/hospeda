@@ -95,7 +95,8 @@
         "freeVersionChanged": "The addon version changed. Please try again.",
         "freeAlreadyActive": "This addon is already active for you.",
         "freePendingElsewhere": "Another purchase of this addon is in progress.",
-        "freeOrderRequestReused": "That request was already used for another choice."
+        "freeOrderRequestReused": "That request was already used for another choice.",
+        "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying."
     },
     "payment": {
         "title": "Payment methods",

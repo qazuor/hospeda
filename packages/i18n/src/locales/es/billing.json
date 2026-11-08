@@ -95,7 +95,8 @@
         "freeVersionChanged": "La versión del complemento cambió. Volvé a intentarlo.",
         "freeAlreadyActive": "Ya tenés activo este complemento.",
         "freePendingElsewhere": "Hay otra compra de este complemento en proceso.",
-        "freeOrderRequestReused": "Ese pedido ya se usó para otra elección."
+        "freeOrderRequestReused": "Ese pedido ya se usó para otra elección.",
+        "freeUnderGrant": "Este complemento está incluido gratis en tu beneficio. Elegilo sin pagar."
     },
     "payment": {
         "title": "Métodos de pago",
