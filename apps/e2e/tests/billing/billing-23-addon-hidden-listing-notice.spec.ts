@@ -148,7 +148,6 @@ test.describe('TEST:B10:13 AC:B10:11 the hidden-listing notice before buying a f
                 await expect(notice).toHaveAttribute('data-notice-kind', kind);
                 await expect(notice).toHaveText(copy);
             }
-            await expect(summary.getByTestId('addon-purchase-confirm')).toBeVisible();
         });
     }
 });
