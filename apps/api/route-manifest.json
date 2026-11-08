@@ -354,6 +354,14 @@
             "path": "/api/v1/admin/auth/signup-as-host"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication/preview"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-deadlines"
         },

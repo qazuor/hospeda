@@ -363,7 +363,20 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
             }
         ]
     },
-    ACC_20: { unbound: 'B10 (HOS-1595) builds it' },
+    ACC_20: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-addon-product/admin/index.ts',
+                route: 'adminPreviewAddonVersionPublicationRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-addon-product/admin/index.ts',
+                route: 'adminPublishAddonVersionRoute'
+            }
+        ]
+    },
     ACC_21: {
         bindings: [
             {

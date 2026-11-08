@@ -138,6 +138,27 @@ eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
 This PR proposes these messages and codes (BS); a separate documentation PR
 records them in the spec after merge.
 
+### Addon version publication (ACC:20, HOS-1595)
+
+`POST /api/v1/admin/billing-addon-products/{productId}/version-publication/preview`
+previews the current and proposed policy, price, and count of live instances still
+anchored to the current version. `POST` to the same path without `/preview`
+publishes with `expectedCurrentVersionId` and `expectedCurrentPrice`. Both require
+`billing.publishAddonVersion` and reject in order: 401 session, 403 permission,
+400 body or path shape, 404 product or version, then business rules. The version
+must belong to the product's addon. Price changes are refused while the product
+has live instances; a version change at the same price remains allowed. Successful
+publication records a `BILLING_MUTATION` audit with `administrativeAction: ACC_20`.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `ADDON_PRODUCT_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_VERSION_OF_ANOTHER_ADDON`, `ADDON_PRODUCT_HAS_LIVE_INSTANCES`, `ADDON_PRODUCT_CHANGED_SINCE_PREVIEW` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `ADDON_PRODUCT_UNCHANGED`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These route codes and messages are proposed for owner approval under BS.
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a
