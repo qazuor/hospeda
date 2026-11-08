@@ -145,6 +145,7 @@ import {
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
+import { resolveCreatePolicies, resolveUpdatePolicies } from '../listing/listing-policies-write';
 import {
     assertOutsideAction15Scope,
     assertSupportCreateIsDraft,
@@ -877,13 +878,21 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.ownerActPayload = data as Record<string, unknown>;
         }
 
+        // HOS-2060: every new listing stores at least `paymentMethods: ['cash']`.
+        const createPolicies = resolveCreatePolicies({
+            vertical: 'accommodation',
+            payload: data as Record<string, unknown>
+        }) as Partial<Accommodation>;
+
         // Only generate a slug if one is not already provided
         if (!data.slug) {
             const slug = await generateSlug(data.type as string, data.name as string);
-            return { slug, businessLines } as Partial<Accommodation>;
+            return { slug, businessLines, ...createPolicies } as Partial<Accommodation>;
         }
         // If slug is provided, return only the catalog default when needed.
-        return businessLines ? ({ businessLines } as Partial<Accommodation>) : {};
+        return businessLines
+            ? ({ businessLines, ...createPolicies } as Partial<Accommodation>)
+            : createPolicies;
     }
 
     /**
@@ -1253,6 +1262,16 @@ export class AccommodationService extends BaseCrudService<
         if (ctx.hookState?.regeneratedSlug) {
             cleanData.slug = ctx.hookState.regeneratedSlug;
         }
+
+        // HOS-2060: `policies` is a patch over the stored object, re-validated whole.
+        Object.assign(
+            cleanData,
+            resolveUpdatePolicies({
+                vertical: 'accommodation',
+                payload,
+                current: current?.policies as Record<string, unknown> | null | undefined
+            })
+        );
 
         return cleanData as Partial<Accommodation>;
     }
@@ -1754,7 +1773,8 @@ export class AccommodationService extends BaseCrudService<
             input: {
                 description: accommodation.description,
                 capacity: extraInfo.capacity,
-                minNights: extraInfo.minNights,
+                // HOS-2060: the minimum stay is a house rule now.
+                minNights: accommodation.policies?.minNights ?? undefined,
                 bedrooms: extraInfo.bedrooms,
                 bathrooms: extraInfo.bathrooms,
                 hasMainImage: Boolean(composedMedia.featuredImage?.url)

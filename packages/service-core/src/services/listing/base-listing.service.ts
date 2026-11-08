@@ -65,6 +65,11 @@ import {
 import type { ListingHookState } from './listing.types';
 import { assertBusinessLinesChangeOnly } from './listing-business-lines-change';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
+import {
+    isPoliciesVertical,
+    resolveCreatePolicies,
+    resolveUpdatePolicies
+} from './listing-policies-write';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
 import {
     assertOutsideAction15Scope,
@@ -643,6 +648,11 @@ export abstract class BaseListingService<
             await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
         }
 
+        // HOS-2060: every new listing stores at least `paymentMethods: ['cash']`.
+        const createPolicies = isPoliciesVertical(listingVertical)
+            ? resolveCreatePolicies({ vertical: listingVertical, payload })
+            : {};
+
         // (c) Capture junction IDs into hookState BEFORE the DB write
         if (typedCtx.hookState !== undefined) {
             typedCtx.hookState.pendingAmenityIds = payload.amenityIds as
@@ -666,10 +676,19 @@ export abstract class BaseListingService<
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
-            return { slug, ...(businessLines ? { businessLines } : {}) } as Partial<TEntity>;
+            return {
+                slug,
+                ...(businessLines ? { businessLines } : {}),
+                ...createPolicies
+                // TYPE-WORKAROUND: TEntity is generic, so a concrete `policies` key cannot be proven to fit it.
+            } as unknown as Partial<TEntity>;
         }
 
-        return (businessLines ? { businessLines } : {}) as Partial<TEntity>;
+        return {
+            ...(businessLines ? { businessLines } : {}),
+            ...createPolicies
+            // TYPE-WORKAROUND: TEntity is generic, so a concrete `policies` key cannot be proven to fit it.
+        } as unknown as Partial<TEntity>;
     }
 
     // -----------------------------------------------------------------------
@@ -881,6 +900,18 @@ export abstract class BaseListingService<
         } = payload;
         if (typedCtx.hookState?.regeneratedSlug) {
             rest.slug = typedCtx.hookState.regeneratedSlug;
+        }
+        // HOS-2060: `policies` is a patch over the stored object, re-validated whole.
+        if (isPoliciesVertical(listingVertical)) {
+            Object.assign(
+                rest,
+                resolveUpdatePolicies({
+                    vertical: listingVertical,
+                    payload,
+                    current: (current as { policies?: Record<string, unknown> | null } | null)
+                        ?.policies
+                })
+            );
         }
         return rest as Partial<TEntity>;
     }

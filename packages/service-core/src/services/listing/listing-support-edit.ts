@@ -172,9 +172,6 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'entryNoteI18n', // [BLANK] venue
     'entryPriceFrom', // [BLANK] venue
     'entryPriceUpdatedAt', // [BLANK] venue (server-managed, still content)
-    'minAge', // [BLANK] venue
-    'dressCode', // [BLANK] venue
-    'dressCodeNoteI18n', // [BLANK] venue
     'priceFrom', // [BLANK] experience
     'priceUnit', // [BLANK] experience
     'isPriceOnRequest', // [BLANK] experience
@@ -185,8 +182,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'durationMinutes', // [BLANK] experience
     'whatToBring', // [BLANK] experience
     'requirements', // [BLANK] experience
-    'cancellationPolicy', // [BLANK] experience
-    'acceptsPrivateGroups' // [BLANK] experience
+    'policies' // [BLANK] all three verticals (HOS-2060)
 ] as const;
 
 const CONTENT_FIELDS = new Set<string>(LISTING_SUPPORT_EDIT_CONTENT_FIELDS);

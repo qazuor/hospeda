@@ -617,8 +617,8 @@ export class ExperienceService extends BaseListingService<
      *    sections (`openingHours`, `contactInfo`, `socialNetworks`, `media`,
      *    `isPriceOnRequest`, `richDescription`, `amenityIds`, `featureIds`,
      *    the `meetingPoint*` trio, and the practical ficha fields
-     *    `durationMinutes` / `whatToBring` / `requirements` /
-     *    `cancellationPolicy` / `acceptsPrivateGroups`).
+     *    `durationMinutes` / `whatToBring` / `requirements`, and `policies`,
+     *    which holds the cancellation rules and private groups since HOS-2060).
      *    Identity fields (`name`, `slug`, `type`, `priceFrom`, `priceUnit`,
      *    `destinationId`) are absent from the schema — any forged keys in the
      *    HTTP body are silently stripped.

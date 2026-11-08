@@ -14,14 +14,7 @@ import {
 } from '../../../src/services/venue/venue.create-sections';
 import { ServiceError } from '../../../src/types';
 
-const NIGHT_INFO_FIELDS = [
-    'entryKind',
-    'entryNoteI18n',
-    'entryPriceFrom',
-    'minAge',
-    'dressCode',
-    'dressCodeNoteI18n'
-] as const;
+const NIGHT_INFO_FIELDS = ['entryKind', 'entryNoteI18n', 'entryPriceFrom'] as const;
 
 /** The business line values the catalog says offer `nightInfo`. */
 const offeringLines = resolveSectionBusinessLines({

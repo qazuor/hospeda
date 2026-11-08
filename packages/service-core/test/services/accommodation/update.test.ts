@@ -109,6 +109,51 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalled();
     });
 
+    it('HOS-2060: merges a policies patch over the stored rules instead of replacing them', async () => {
+        // Arrange
+        const actor = createAdminActor();
+        const id = 'policies-merge-id';
+        const existing = createMockAccommodation({
+            id,
+            policies: { paymentMethods: ['cash'], minNights: 2, smokingAllowed: 'no' }
+        });
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue(existing);
+
+        // Act
+        const result = await service.update(actor, id, {
+            policies: { pets: { admission: 'yes' }, smokingAllowed: null }
+        });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.objectContaining({
+                policies: { paymentMethods: ['cash'], minNights: 2, pets: { admission: 'yes' } }
+            }),
+            FAKE_SERVICE_TX
+        );
+    });
+
+    it('HOS-2060: refuses a policies patch whose merged result is invalid', async () => {
+        // Arrange
+        const actor = createAdminActor();
+        const id = 'policies-invalid-id';
+        const existing = createMockAccommodation({
+            id,
+            policies: { paymentMethods: ['cash'], minNights: 1, maxNights: 5 }
+        });
+        (model.findById as Mock).mockResolvedValue(existing);
+
+        // Act
+        const result = await service.update(actor, id, { policies: { minNights: 9 } });
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
     it('regenerates the slug when an unpublished accommodation is renamed', async () => {
         const actor = createAdminActor();
         const id = 'draft-accommodation-id';
