@@ -83,6 +83,15 @@ export * from './billing/addon/read-addon-purchase.js';
 export * from './billing/addon/scheduled-downgrade-addon-notice.js';
 export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';
+export * from './billing/addon-catalog/addon-version-publication.service.js';
+export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
+export {
+    ADDON_VERSION_PUBLICATION_ACTION,
+    ADDON_VERSION_PUBLICATION_REJECTIONS,
+    addonVersionPublicationRejection,
+    assertAddonVersionPublicationPermitted,
+    mapAddonVersionPublicationWriteError
+} from './billing/addon-catalog/addon-version-publication-authorization.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
 export * from './billing/coverage/can-charge.js';
