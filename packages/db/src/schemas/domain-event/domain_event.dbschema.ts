@@ -97,7 +97,9 @@ export const DOMAIN_EVENT_TYPES = [
     /** The previous and new amount of one billing option set by admin action 19 (HOS-1515). */
     'billing_option.price_set',
     /** An addon instance changed status, including its initial pending state. */
-    'addon_instance.status_changed'
+    'addon_instance.status_changed',
+    /** Admin action 20 published an addon product version and price (HOS-1595). */
+    'addon_product.version_published'
 ] as const;
 
 /** One type of the closed domain event catalog. */

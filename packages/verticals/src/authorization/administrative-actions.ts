@@ -101,7 +101,10 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.BILLING_SET_CYCLE_PRICE],
         pendingOwnPermission: null
     },
-    ACC_20: { permissions: [], pendingOwnPermission: 'B10 (HOS-1595)' },
+    ACC_20: {
+        permissions: [PermissionEnum.BILLING_PUBLISH_ADDON_VERSION],
+        pendingOwnPermission: null
+    },
     ACC_21: {
         permissions: [PermissionEnum.BILLING_MANAGE_PROMO_CODES],
         pendingOwnPermission: null
