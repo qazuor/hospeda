@@ -1366,6 +1366,13 @@
       "when": 1794089397054,
       "tag": "0194_hos_2060_listing_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1794109298691,
+      "tag": "0195_hos_2061_venue_experience_amenity_attributes",
+      "breakpoints": true
     }
   ]
 }

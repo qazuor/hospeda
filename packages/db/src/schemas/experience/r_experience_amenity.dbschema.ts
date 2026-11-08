@@ -1,6 +1,16 @@
+import type { PriceType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    doublePrecision,
+    index,
+    jsonb,
+    pgTable,
+    primaryKey,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { amenities } from '../accommodation/amenity.dbschema.ts';
+import { AmenityAvailabilityPgEnum, AmenityScopePgEnum } from '../enums.dbschema.ts';
 import { experiences } from './experiences.dbschema.ts';
 
 /**
@@ -18,7 +28,18 @@ export const rExperienceAmenity = pgTable(
             .references(() => experiences.id, { onDelete: 'cascade' }),
         amenityId: uuid('amenity_id')
             .notNull()
-            .references(() => amenities.id, { onDelete: 'cascade' })
+            .references(() => amenities.id, { onDelete: 'cascade' }),
+        /**
+         * HOS-2061: relation attributes, identical in shape to
+         * `r_accommodation_amenity` (one standard across verticals).
+         */
+        isOptional: boolean('is_optional').notNull().default(false),
+        additionalCost: jsonb('additional_cost').$type<PriceType>(),
+        additionalCostPercent: doublePrecision('additional_cost_percent'),
+        /** private/shared. NULL = not declared; never inferred. */
+        scope: AmenityScopePgEnum('scope'),
+        /** year-round/seasonal. NULL = not declared; never inferred. */
+        availability: AmenityAvailabilityPgEnum('availability')
     },
     (table) => ({
         pk: primaryKey({ columns: [table.experienceId, table.amenityId] }),
