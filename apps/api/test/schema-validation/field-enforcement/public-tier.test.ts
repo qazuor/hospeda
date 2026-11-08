@@ -56,10 +56,10 @@ const ACCOMMODATION_WITH_ADMIN_FIELDS = {
     tags: [],
     extraInfo: {
         capacity: 4,
-        minNights: 1,
         bedrooms: 2,
         bathrooms: 1
     },
+    policies: { paymentMethods: ['cash'], minNights: 1 },
     createdAt: '2024-01-01T00:00:00.000Z',
     // Admin-only fields that MUST NOT leak to the public tier.
     createdById: '99999999-9999-4999-8999-999999999999',

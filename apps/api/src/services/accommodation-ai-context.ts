@@ -10,6 +10,10 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, type Actor, ServiceError } from '@repo/service-core';
 import { and, eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
+import {
+    buildListingPoliciesLines,
+    type ListingPoliciesContextInput
+} from './ai-context/listing-policies-context.js';
 
 // ---------------------------------------------------------------------------
 // Constants — context size caps
@@ -105,9 +109,9 @@ export interface AccommodationWithRelations {
         bedrooms?: number;
         bathrooms?: number;
         beds?: number;
-        minNights?: number;
-        maxNights?: number;
     } | null;
+    /** House rules (HOS-2060): pets, smoking, payment, check-in/out, stay length. */
+    policies?: ListingPoliciesContextInput | null;
     price?: { price?: number; currency?: string } | null;
     faqs?: Array<{ question: string; answer: string }>;
 }
@@ -208,9 +212,10 @@ export function buildMarkdownContext(
         if (ei.bedrooms != null) lines.push(`**Dormitorios**: ${ei.bedrooms}`);
         if (ei.bathrooms != null) lines.push(`**Baños**: ${ei.bathrooms}`);
         if (ei.beds != null) lines.push(`**Camas**: ${ei.beds}`);
-        if (ei.minNights != null) lines.push(`**Mínimo de noches**: ${ei.minNights}`);
-        if (ei.maxNights != null) lines.push(`**Máximo de noches**: ${ei.maxNights}`);
     }
+
+    // --- House rules (HOS-2060) ---
+    lines.push(...buildListingPoliciesLines({ policies: accommodation.policies }).lines);
 
     // --- Pricing ---
     if (accommodation.price?.price != null) {

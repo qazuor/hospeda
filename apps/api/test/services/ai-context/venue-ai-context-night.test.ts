@@ -17,7 +17,7 @@
  */
 
 import { composeSystemPrompt, DEFAULT_PROMPTS, DEFAULT_RULES } from '@repo/ai-core';
-import { VerticalEnum } from '@repo/schemas';
+import { VenueDressCodeEnum, VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet, resolveListingSections } from '@repo/verticals';
 import { describe, expect, it } from 'vitest';
 import {
@@ -73,12 +73,14 @@ const NIGHT_ROW: VenueNightContextRow = {
         pt: 'Entrada até 1h'
     },
     entryPriceFrom: 500_000,
-    minAge: 18,
-    dressCode: 'smart_casual',
-    dressCodeNoteI18n: {
-        es: 'No se permite musculosa',
-        en: 'No tank tops',
-        pt: 'Sem regata'
+    policies: {
+        minAge: 18,
+        dressCode: VenueDressCodeEnum.SMART_CASUAL,
+        dressCodeNote: {
+            es: 'No se permite musculosa',
+            en: 'No tank tops',
+            pt: 'Sem regata'
+        }
     }
 };
 
@@ -176,7 +178,7 @@ describe('toVenueNightContext', () => {
         const row: VenueNightContextRow = {
             ...NIGHT_ROW,
             entryNoteI18n: { es: 'Sólo en español', en: '', pt: '' },
-            dressCodeNoteI18n: null
+            policies: { minAge: 18, dressCode: VenueDressCodeEnum.SMART_CASUAL }
         };
 
         const night = toVenueNightContext({ row, available: true, locale: 'en' });
@@ -194,9 +196,7 @@ describe('toVenueNightContext', () => {
             entryKind: null,
             entryNoteI18n: null,
             entryPriceFrom: null,
-            minAge: null,
-            dressCode: null,
-            dressCodeNoteI18n: null
+            policies: null
         };
 
         expect(toVenueNightContext({ row: empty, available: true, locale: 'es' })).toBeNull();
@@ -204,7 +204,7 @@ describe('toVenueNightContext', () => {
 
     it('omits the legal notice when there is no minimum age', () => {
         const night = toVenueNightContext({
-            row: { ...NIGHT_ROW, minAge: null },
+            row: { ...NIGHT_ROW, policies: { dressCode: VenueDressCodeEnum.SMART_CASUAL } },
             available: true,
             locale: 'es'
         });

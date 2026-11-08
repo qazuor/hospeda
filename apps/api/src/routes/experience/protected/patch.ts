@@ -47,8 +47,9 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * Only operational sections are accepted (openingHours, contactInfo,
  * socialNetworks, media, isPriceOnRequest, richDescription,
  * amenityIds, featureIds, the meetingPoint trio, and the practical ficha
- * fields durationMinutes / whatToBring / requirements / cancellationPolicy /
- * acceptsPrivateGroups). The service enforces ownership and per-section
+ * fields durationMinutes / whatToBring / requirements, plus `policies`, which
+ * holds cancellation and private groups since HOS-2060). The service enforces
+ * ownership and per-section
  * permission gates internally.
  *
  * The accepted set is `ExperienceOwnerUpdateInputSchema` itself, so a new

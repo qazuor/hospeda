@@ -184,10 +184,10 @@ const ACCOMMODATION_FIXTURE = {
     tags: [],
     extraInfo: {
         capacity: 4,
-        minNights: 1,
         bedrooms: 2,
         bathrooms: 1
     },
+    policies: { paymentMethods: ['cash'], minNights: 1 },
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     createdById: ADMIN_ID,

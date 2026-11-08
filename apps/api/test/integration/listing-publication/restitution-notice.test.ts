@@ -190,7 +190,8 @@ async function createFixture(): Promise<{ ownerId: string; listingIds: string[] 
                 destinationId: destination.id,
                 type: 'CABIN',
                 publicationStatus: PublicationStatusEnum.PUBLISHED,
-                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+                extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                policies: { paymentMethods: ['cash'], minNights: 1 }
             } as Partial<Accommodation>,
             db
         );

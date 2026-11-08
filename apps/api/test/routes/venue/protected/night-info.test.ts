@@ -74,9 +74,7 @@ const { fakeModel, store } = vi.hoisted(() => {
             entryNoteI18n: null,
             entryPriceFrom: null,
             entryPriceUpdatedAt: null,
-            minAge: null,
-            dressCode: null,
-            dressCodeNoteI18n: null,
+            policies: null,
             createdAt: new Date('2026-01-01T00:00:00Z'),
             updatedAt: new Date('2026-01-01T00:00:00Z'),
             createdById: null,
@@ -182,9 +180,7 @@ function resetStore(overrides: Partial<StoreRow> = {}): void {
         entryNoteI18n: null,
         entryPriceFrom: null,
         entryPriceUpdatedAt: null,
-        minAge: null,
-        dressCode: null,
-        dressCodeNoteI18n: null,
+        policies: null,
         ...overrides
     };
 }
@@ -215,7 +211,7 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
 
     it('returns 409 SECTION_ABSENT to the owner writing nightInfo on a food listing', async () => {
         resetStore({ type: 'RESTAURANT', businessLines: ['food'] });
-        const response = await patch({ minAge: 20 });
+        const response = await patch({ policies: { minAge: 20 } });
         expect(response.status, await response.clone().text()).toBe(409);
         expect((await response.json()).error).toMatchObject({
             details: { reason: 'SECTION_ABSENT', section: 'nightInfo' }
@@ -224,7 +220,7 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
 
     it('returns 404 to a third party writing nightInfo on a foreign listing', async () => {
         resetStore({ type: 'RESTAURANT', businessLines: ['food'] });
-        const response = await patch({ minAge: 20 }, otherHeaders());
+        const response = await patch({ policies: { minAge: 20 } }, otherHeaders());
         expect(response.status, await response.clone().text()).toBe(404);
     });
 
@@ -258,7 +254,7 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
                 description: 'A sufficiently detailed description for this listing.',
                 type: 'HELADERIA',
                 destinationId: DEST_ID,
-                dressCode: 'casual'
+                policies: { dressCode: 'casual' }
             })
         });
         expect(response.status, await response.clone().text()).toBe(409);
@@ -272,19 +268,19 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
     // -----------------------------------------------------------------------
 
     it.each([12, 31])('rejects minAge %i with 400', async (minAge) => {
-        const response = await patch({ minAge });
+        const response = await patch({ policies: { minAge } });
         expect(response.status, await response.clone().text()).toBe(400);
     });
 
     it.each([13, 30])('accepts minAge %i', async (minAge) => {
-        const response = await patch({ minAge });
+        const response = await patch({ policies: { minAge } });
         expect(response.status, await response.clone().text()).toBe(200);
-        expect(store.row.minAge).toBe(minAge);
+        expect((store.row.policies as Record<string, unknown> | null)?.minAge).toBe(minAge);
     });
 
     it('documents that an invalid shape for a third party fails validation first (400)', async () => {
         resetStore({ type: 'RESTAURANT', businessLines: ['food'] });
-        const response = await patch({ minAge: 12 }, otherHeaders());
+        const response = await patch({ policies: { minAge: 12 } }, otherHeaders());
         expect(response.status).toBe(400);
     });
 

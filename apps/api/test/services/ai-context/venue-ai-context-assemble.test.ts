@@ -90,9 +90,11 @@ function makeVenueRow(): Record<string, unknown> {
         entryKind: 'paid',
         entryNoteI18n: { es: 'Entrada hasta la 1' },
         entryPriceFrom: 500_000,
-        minAge: 18,
-        dressCode: 'smart_casual',
-        dressCodeNoteI18n: { es: 'No se permite musculosa' }
+        policies: {
+            minAge: 18,
+            dressCode: 'smart_casual',
+            dressCodeNote: { es: 'No se permite musculosa' }
+        }
     };
 }
 

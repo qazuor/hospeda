@@ -86,9 +86,7 @@ const { fakeModel, store } = vi.hoisted(() => {
             entryNoteI18n: null,
             entryPriceFrom: null,
             entryPriceUpdatedAt: null,
-            minAge: null,
-            dressCode: null,
-            dressCodeNoteI18n: null,
+            policies: null,
             createdAt: new Date('2026-01-01T00:00:00Z'),
             updatedAt: new Date('2026-01-01T00:00:00Z')
         } as Record<string, unknown>
@@ -205,9 +203,7 @@ function resetStore(overrides: Record<string, unknown> = {}): void {
         entryNoteI18n: null,
         entryPriceFrom: null,
         entryPriceUpdatedAt: null,
-        minAge: null,
-        dressCode: null,
-        dressCodeNoteI18n: null,
+        policies: null,
         ...overrides
     };
 }
@@ -244,7 +240,7 @@ describe('Admin venue section gates (HOS-1874)', () => {
     // -----------------------------------------------------------------------
 
     it('rejects a PATCH of nightlife fields on a food listing with 409', async () => {
-        const response = await patch({ minAge: 20 });
+        const response = await patch({ policies: { minAge: 20 } });
 
         expect(response.status, await response.clone().text()).toBe(409);
         expect((await response.json()).error).toMatchObject({
@@ -254,7 +250,7 @@ describe('Admin venue section gates (HOS-1874)', () => {
     });
 
     it('rejects a PUT of nightlife fields on a food listing with 409', async () => {
-        const response = await put({ minAge: 20 });
+        const response = await put({ policies: { minAge: 20 } });
 
         expect(response.status, await response.clone().text()).toBe(409);
         expect((await response.json()).error).toMatchObject({
@@ -266,7 +262,7 @@ describe('Admin venue section gates (HOS-1874)', () => {
     it('answers 403 before 4b when the foreign admin lacks action 15', async () => {
         store.row = { ...store.row, ownerId: OTHER_ID };
         const response = await patch(
-            { minAge: 20 },
+            { policies: { minAge: 20 } },
             headers(OWNER_ID, ['access.panelAdmin', 'venue.editAll'])
         );
 
@@ -282,7 +278,10 @@ describe('Admin venue section gates (HOS-1874)', () => {
     });
 
     it('lets a PATCH that also adds nightlife through (control)', async () => {
-        const response = await patch({ businessLines: ['food', 'nightlife'], minAge: 20 });
+        const response = await patch({
+            businessLines: ['food', 'nightlife'],
+            policies: { minAge: 20 }
+        });
 
         expect(response.status, await response.clone().text()).toBe(200);
         expect(fakeModel.update).toHaveBeenCalledTimes(1);

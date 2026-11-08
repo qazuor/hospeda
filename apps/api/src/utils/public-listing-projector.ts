@@ -69,6 +69,19 @@ function projectVenueMenuTraits(
     };
 }
 
+/**
+ * Removes from a `policies` object the keys owned by an unavailable section
+ * (HOS-2060, `policyKeys`). Anything that is not a plain object passes through.
+ */
+function stripPolicyKeys(value: unknown, keys: ReadonlySet<string>): unknown {
+    if (keys.size === 0 || value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return value;
+    }
+    return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(([key]) => !keys.has(key))
+    );
+}
+
 /** Removes every catalog field whose section or trait is not available. */
 export function projectPublicListing<T extends Record<string, unknown>>(args: {
     readonly vertical: PublicVertical;
@@ -79,15 +92,18 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     >;
 }): T {
     const removed = new Set<string>();
+    const removedPolicyKeys = new Set<string>();
     for (const section of LISTING_SECTIONS[args.vertical] as readonly {
         readonly id: string;
         readonly fields: readonly string[];
         readonly readOnlyFields?: readonly string[];
+        readonly policyKeys?: readonly string[];
         readonly traits?: readonly { readonly id: string; readonly fields?: readonly string[] }[];
     }[]) {
         const state = args.states.get(section.id);
         if (state?.state !== 'available') {
             for (const field of section.fields) removed.add(field);
+            for (const key of section.policyKeys ?? []) removedPolicyKeys.add(key);
             for (const field of section.readOnlyFields ?? []) removed.add(field);
             for (const trait of section.traits ?? []) {
                 for (const field of trait.fields ?? []) removed.add(field);
@@ -100,15 +116,19 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
         }
     }
     const projected = Object.fromEntries(
-        Object.entries(args.listing).filter(([key, value]) => {
-            if (removed.has(key)) return false;
-            return !(
-                args.vertical === 'experience' &&
-                key === 'meetingPointDirections' &&
-                Array.isArray(value) &&
-                value.length === 0
-            );
-        })
+        Object.entries(args.listing)
+            .map(([key, value]): [string, unknown] =>
+                key === 'policies' ? [key, stripPolicyKeys(value, removedPolicyKeys)] : [key, value]
+            )
+            .filter(([key, value]) => {
+                if (removed.has(key)) return false;
+                return !(
+                    args.vertical === 'experience' &&
+                    key === 'meetingPointDirections' &&
+                    Array.isArray(value) &&
+                    value.length === 0
+                );
+            })
     );
     if (args.vertical === 'venue') return projectVenueMenuTraits(projected, args.states) as T;
     return projected as T;

@@ -140,9 +140,7 @@ function venueRow(overrides: Record<string, unknown> = {}): Record<string, unkno
         entryNoteI18n: null,
         entryPriceFrom: null,
         entryPriceUpdatedAt: null,
-        minAge: null,
-        dressCode: null,
-        dressCodeNoteI18n: null,
+        policies: null,
         createdAt: new Date('2026-01-01T00:00:00Z'),
         updatedAt: new Date('2026-01-01T00:00:00Z'),
         ...overrides
@@ -239,7 +237,7 @@ describe('Admin venue create — nightInfo section presence (HOS-2052)', () => {
             createBody({
                 type: typeWithoutNight,
                 businessLines: [...rulesWithoutNight.preselect],
-                minAge: 18
+                policies: { minAge: 18 }
             })
         );
 
@@ -256,14 +254,14 @@ describe('Admin venue create — nightInfo section presence (HOS-2052)', () => {
                 type: typeWithNight,
                 businessLines: [...offeringLines],
                 entryKind: VenueEntryKindEnum.FREE,
-                minAge: 18
+                policies: { minAge: 18 }
             })
         );
 
         expect(res.status, await res.clone().text()).toBe(201);
         const payload = fakeModel.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(payload.entryKind).toBe(VenueEntryKindEnum.FREE);
-        expect(payload.minAge).toBe(18);
+        expect(payload.policies).toEqual({ paymentMethods: ['cash'], minAge: 18 });
     });
 
     it('creates the listing when the type preselection offers nightInfo', async () => {

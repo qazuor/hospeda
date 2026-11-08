@@ -315,10 +315,7 @@ describe('PATCH /protected/accommodations/:id — partial grouped objects (SPEC-
 
 describe('PATCH /protected/accommodations/:id — unsupported nested fields (HOS-1978)', () => {
     const NESTED_BODIES: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
-        [
-            'extraInfo',
-            { extraInfo: { capacity: 4, minNights: 2, bedrooms: 2, beds: 3, bathrooms: 1 } }
-        ],
+        ['extraInfo', { extraInfo: { capacity: 4, bedrooms: 2, beds: 3, bathrooms: 1 } }],
         [
             'location',
             {
@@ -352,7 +349,7 @@ describe('PATCH /protected/accommodations/:id — unsupported nested fields (HOS
     it('still persists the same data when sent in the flat http shape', async () => {
         const input = await patch({
             maxGuests: 4,
-            minNights: 2,
+            policies: { minNights: 2 },
             latitude: -32.2214,
             longitude: -58.144,
             street: 'Av. Costanera',
@@ -362,7 +359,7 @@ describe('PATCH /protected/accommodations/:id — unsupported nested fields (HOS
         });
 
         expect((input.extraInfo as Record<string, unknown>).capacity).toBe(4);
-        expect((input.extraInfo as Record<string, unknown>).minNights).toBe(2);
+        expect((input.policies as Record<string, unknown>).minNights).toBe(2);
         expect((input.location as Record<string, unknown>).street).toBe('Av. Costanera');
         expect((input.price as Record<string, unknown>).price).toBe(45000);
     });

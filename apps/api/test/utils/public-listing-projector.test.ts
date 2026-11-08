@@ -434,3 +434,61 @@ describe('projectPublicListing', () => {
         });
     });
 });
+
+describe('projectPublicListing — nightInfo policy keys (HOS-2060, DEC-FAC-040)', () => {
+    const states = (nightInfo: string) =>
+        new Map([
+            ['amenities', { state: 'available', traits: new Map<string, string>() }],
+            ['nightInfo', { state: nightInfo, traits: new Map<string, string>() }]
+        ]);
+    const listing = {
+        id: 'venue-1',
+        entryKind: 'paid',
+        policies: {
+            paymentMethods: ['cash'],
+            minAge: 18,
+            dressCode: 'elegant',
+            dressCodeNote: { es: 'Saco', en: 'Jacket', pt: 'Paletó' }
+        }
+    };
+
+    it.each([
+        'absent',
+        'locked'
+    ])('strips the night keys from policies when nightInfo is %s', (state) => {
+        // Act
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing,
+            states: states(state)
+        });
+
+        // Assert
+        expect(projected.policies).toEqual({ paymentMethods: ['cash'] });
+        expect(projected).not.toHaveProperty('entryKind');
+    });
+
+    it('keeps the night keys when nightInfo is available', () => {
+        // Act
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing,
+            states: states('available')
+        });
+
+        // Assert
+        expect(projected.policies).toEqual(listing.policies);
+    });
+
+    it('leaves a null policies value alone', () => {
+        // Act
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing: { ...listing, policies: null },
+            states: states('absent')
+        });
+
+        // Assert
+        expect(projected.policies).toBeNull();
+    });
+});
