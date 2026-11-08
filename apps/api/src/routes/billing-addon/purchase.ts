@@ -16,7 +16,11 @@ import { env } from '../../utils/env';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { buildAddonPurchasePorts } from './purchase-ports';
-import { answerAddonProviderError, answerPurchaseRefusal } from './purchase-rejections';
+import {
+    answerAddonProviderError,
+    answerPurchaseRefusal,
+    readAddonPurchaseCopy
+} from './purchase-rejections';
 
 /** Buy an addon for the current actor; order sending stays outside A1's transaction. */
 export const protectedAddonPurchaseRoute = createProtectedRoute({
@@ -44,7 +48,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'Payment details are required for one-time addons'
+                    message: readAddonPurchaseCopy(ctx, 'oneTimePaymentRequired')
                 },
                 ctx,
                 400
@@ -54,7 +58,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'Payment details are not accepted for recurring addons'
+                    message: readAddonPurchaseCopy(ctx, 'recurringPaymentNotAccepted')
                 },
                 ctx,
                 400
@@ -71,7 +75,10 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
         const payerEmail = parsed.payerEmail ?? owner?.email;
         if (product?.chargeKind === 'UNA_VEZ' && !payerEmail)
             return createErrorResponse(
-                { code: ServiceErrorCode.VALIDATION_ERROR, message: 'Payer email is required' },
+                {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: readAddonPurchaseCopy(ctx, 'payerEmailRequired')
+                },
                 ctx,
                 400
             );

@@ -1,8 +1,23 @@
+import { trans } from '@repo/i18n';
 import { PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { PurchaseAddonRefusalReason } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createErrorResponse } from '../../utils/response-helpers';
+import { resolveReturnUrlLocale } from '../../utils/return-url-locale';
+
+type AddonPurchaseCopyKey =
+    | 'oneTimePaymentRequired'
+    | 'recurringPaymentNotAccepted'
+    | 'payerEmailRequired'
+    | 'purchaseNotFound';
+
+/** Reads API copy in the request locale, failing if a catalog entry is missing. */
+export function readAddonPurchaseCopy(ctx: Context, key: AddonPurchaseCopyKey): string {
+    const message = trans[resolveReturnUrlLocale(ctx)][`billing.addonPurchaseApi.${key}`];
+    if (!message) throw new Error(`Missing addon purchase copy: ${key}`);
+    return message;
+}
 
 type Answer = { readonly status: 404 | 409; readonly code: string };
 

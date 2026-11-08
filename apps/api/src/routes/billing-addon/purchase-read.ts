@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
+import { readAddonPurchaseCopy } from './purchase-rejections';
 
 /** Read the current actor's addon purchase by its request identity. */
 export const protectedAddonPurchaseReadRoute = createProtectedRoute({
@@ -23,7 +24,7 @@ export const protectedAddonPurchaseReadRoute = createProtectedRoute({
             return createErrorResponse(
                 {
                     code: 'ADDON_PURCHASE_NOT_FOUND',
-                    message: 'Addon purchase not found',
+                    message: readAddonPurchaseCopy(ctx, 'purchaseNotFound'),
                     reason: 'ADDON_PURCHASE_NOT_FOUND'
                 },
                 ctx,
