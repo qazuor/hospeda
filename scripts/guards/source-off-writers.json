@@ -238,6 +238,14 @@
         "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a6.ts",
+        "symbol": "applyA6",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A6 consumes a live LISTING addon whose target reached PURGED; an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the removal after commit (AC:B10:6)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
         "symbol": "purchaseAddon",
         "table": "addonInstances",

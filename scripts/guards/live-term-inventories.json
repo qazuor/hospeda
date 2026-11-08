@@ -169,6 +169,13 @@
             "subject": "addon_instance"
         },
         {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a6.ts",
+            "symbol": "applyA6",
+            "row": 18,
+            "why": "AC:B10:6: A6 consume sólo instancias LISTING vivas, PENDING_AUTHORIZATION o ACTIVE; fuera de ese conjunto no escribe.",
+            "subject": "addon_instance"
+        },
+        {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
             "symbol": "listLiveAddonInstanceIdsPage",
             "row": 25,

@@ -43,6 +43,7 @@ import {
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
+import { createBillingAddonRenderers } from './billing-addon-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
@@ -459,6 +460,7 @@ export function createBillingSignupRenderers(input: {
 }): Readonly<Record<string, OutboxMailRenderer>> {
     const subscriptionUrl = `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}`;
     return {
+        ...createBillingAddonRenderers(),
         ...createBillingChargebackRenderers({ subscriptionUrl }),
         'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
