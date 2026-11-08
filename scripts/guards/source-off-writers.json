@@ -270,6 +270,14 @@
         "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
+        "symbol": "rejectOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A7 abandons a declined one-time addon still in PENDING_AUTHORIZATION; pending instances emit no ADDON coverage source."
+    },
+    {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
         "symbol": "abandonRecurring",
         "table": "subscriptions",
