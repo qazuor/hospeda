@@ -43,32 +43,42 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
             await dialog.dismiss();
         });
         const clock = createAdjustableClock({ start: new Date() });
-        const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({
-                clock,
-                idNamespace: providerNamespace,
-                honestAbout: [
-                    {
-                        lie: 'M1',
-                        why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
-                    },
-                    { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
-                    {
-                        lie: 'M8',
-                        why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
-                    },
-                    ...(testInfo.title.startsWith('fila 5')
-                        ? []
-                        : [
-                              {
-                                  lie: 'M12' as const,
-                                  why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
-                              }
-                          ])
-                ]
-            }),
-            clock
-        });
+        const provider = testInfo.title.startsWith('fila 5')
+            ? new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      {
+                          lie: 'M1',
+                          why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
+                      },
+                      { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
+                      {
+                          lie: 'M8',
+                          why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
+                      }
+                  ]
+              })
+            : new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      {
+                          lie: 'M1',
+                          why: 'TEST:B8b:25 needs the credited starting cycle and promo mutation.'
+                      },
+                      { lie: 'M6', why: 'TEST:B8b:25 observes authorization and charge notices.' },
+                      {
+                          lie: 'M8',
+                          why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
+                      },
+                      {
+                          lie: 'M12',
+                          why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
+                      }
+                  ]
+              });
+        const fakeServer = await startE2eFakeProvider({ provider, clock });
         try {
             world = { clock, fakeServer, mailCapture: await startE2eMailCapture() };
         } catch (error) {

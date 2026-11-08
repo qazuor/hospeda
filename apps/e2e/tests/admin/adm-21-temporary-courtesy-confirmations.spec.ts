@@ -73,25 +73,28 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
         });
         const clock = createAdjustableClock({ start: new Date() });
         providerNamespace = randomUUID();
-        const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({
-                clock,
-                idNamespace: providerNamespace,
-                honestAbout: [
-                    ...(testInfo.title.startsWith('annual plan')
-                        ? [
-                              {
-                                  lie: 'M1' as const,
-                                  why: 'TEST:B9b:13 annual authorization must retain its requested yearly cadence for the annual refusal screen.'
-                              }
-                          ]
-                        : []),
-                    { lie: 'M6', why: 'TEST:B9b:13 activates the card authorization.' },
-                    { lie: 'M8', why: 'TEST:B9b:13 reads active billing state.' }
-                ]
-            }),
-            clock
-        });
+        const provider = testInfo.title.startsWith('annual plan')
+            ? new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      {
+                          lie: 'M1',
+                          why: 'TEST:B9b:13 annual authorization must retain its requested yearly cadence for the annual refusal screen.'
+                      },
+                      { lie: 'M6', why: 'TEST:B9b:13 activates the card authorization.' },
+                      { lie: 'M8', why: 'TEST:B9b:13 reads active billing state.' }
+                  ]
+              })
+            : new FakePaymentProvider({
+                  clock,
+                  idNamespace: providerNamespace,
+                  honestAbout: [
+                      { lie: 'M6', why: 'TEST:B9b:13 activates the card authorization.' },
+                      { lie: 'M8', why: 'TEST:B9b:13 reads active billing state.' }
+                  ]
+              });
+        const fakeServer = await startE2eFakeProvider({ provider, clock });
         try {
             world = { clock, fakeServer, mailCapture: await startE2eMailCapture() };
         } catch (error) {
