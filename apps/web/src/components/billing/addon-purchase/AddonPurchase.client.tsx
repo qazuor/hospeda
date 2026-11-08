@@ -149,7 +149,7 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
-    const confirm = async () => {
+    const confirmPurchase = async () => {
         if (!offer || !orderRequestId || busy) return;
         setBusy(true);
         setError(null);
@@ -229,7 +229,7 @@ export function AddonPurchase(input: {
                     busy={busy}
                     locale={input.locale}
                     onConfirm={() => {
-                        void confirm();
+                        void confirmPurchase();
                     }}
                     t={t}
                 />

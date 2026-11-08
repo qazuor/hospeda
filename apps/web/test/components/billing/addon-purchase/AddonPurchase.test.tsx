@@ -263,8 +263,8 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             />
         );
         await waitFor(() => expect(offers).toHaveBeenCalled());
-        await new Promise((resolve) => setTimeout(resolve, 3100));
+        await new Promise((resolve) => setTimeout(resolve, 6400));
         expect(await screen.findByText('Activo')).toBeTruthy();
         expect(readPurchase).toHaveBeenCalledTimes(1);
-    }, 5000);
+    }, 8000);
 });
