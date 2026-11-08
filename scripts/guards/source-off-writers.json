@@ -230,6 +230,14 @@
         "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
+        "symbol": "purchaseAddon",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A1 links a newly PENDING_AUTHORIZATION instance to its complement; pending instances emit no ADDON coverage source."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
         "symbol": "applyS21",
         "table": "subscriptions",
