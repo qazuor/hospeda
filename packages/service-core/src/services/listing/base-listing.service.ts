@@ -26,6 +26,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    type AmenityRelationAttributes,
     BUSINESS_LINE_RULES,
     BUSINESS_LINES_INVALID_REASON,
     DestinationTypeEnum,
@@ -51,6 +52,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { readAllJunctionRows } from '../../utils/junction-sync';
 import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
@@ -126,6 +128,12 @@ export interface ListingJunctionModel<TRow extends Record<string, unknown>> {
     ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+    /** HOS-2061: writes amenity relation attributes on kept rows. */
+    update?: (
+        where: Record<string, unknown>,
+        data: Record<string, unknown>,
+        tx?: DrizzleClient
+    ) => Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -412,31 +420,57 @@ export abstract class BaseListingService<
     // -----------------------------------------------------------------------
 
     /**
-     * Reads the currently-associated amenity and feature IDs for a listing.
+     * Reads the currently-associated amenity and feature IDs for a listing,
+     * plus the declared relation attributes of the linked amenities (HOS-2061).
      *
      * The listing read schemas (public/protected) do NOT carry the
      * junction relations, so the owner editor needs this to seed its
      * multi-select with the current selection. Returns plain ID arrays
-     * (symmetric with the `amenityIds` / `featureIds` write inputs).
+     * (symmetric with the `amenityIds` / `featureIds` write inputs) and an
+     * `amenityAttributes` list symmetric with the `amenityAttributes` write
+     * input; only amenities with at least one declared value are listed.
+     *
+     * The read covers EVERY row (`readAllJunctionRows`). A truncated read here
+     * is not cosmetic: the editor would seed a partial selection and its next
+     * save — an exact-set sync — would delete the rows it never saw (HOS-321).
      *
      * This is a standalone read (no transaction): it is meant to be called
      * by single-entity read paths (e.g. the protected getById route) rather
      * than on every getById, to avoid two extra queries on hot paths.
      *
      * @param entityId - The listing ID.
-     * @returns `{ amenityIds, featureIds }` — sorted arrays of catalog UUIDs.
+     * @returns `{ amenityIds, featureIds, amenityAttributes }`.
      */
-    public async loadJunctionIds(
-        entityId: string
-    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+    public async loadJunctionIds(entityId: string): Promise<{
+        amenityIds: string[];
+        featureIds: string[];
+        amenityAttributes: AmenityRelationAttributes[];
+    }> {
         const fk = this._entityFkColumn;
         const [amenityRows, featureRows] = await Promise.all([
-            this._amenityJunctionModel.findAll({ [fk]: entityId }),
-            this._featureJunctionModel.findAll({ [fk]: entityId })
+            readAllJunctionRows<Record<string, unknown>>({
+                where: { [fk]: entityId },
+                junctionModel: this._amenityJunctionModel,
+                sortBy: 'amenityId'
+            }),
+            readAllJunctionRows<Record<string, unknown>>({
+                where: { [fk]: entityId },
+                junctionModel: this._featureJunctionModel,
+                sortBy: 'featureId'
+            })
         ]);
+        const amenityAttributes: AmenityRelationAttributes[] = [];
+        for (const row of amenityRows) {
+            const scope = (row.scope ?? null) as AmenityRelationAttributes['scope'];
+            const availability = (row.availability ??
+                null) as AmenityRelationAttributes['availability'];
+            if (scope === null && availability === null) continue;
+            amenityAttributes.push({ amenityId: row.amenityId as string, scope, availability });
+        }
         return {
-            amenityIds: amenityRows.items.map((row) => row.amenityId as string),
-            featureIds: featureRows.items.map((row) => row.featureId as string)
+            amenityIds: amenityRows.map((row) => row.amenityId as string),
+            featureIds: featureRows.map((row) => row.featureId as string),
+            amenityAttributes
         };
     }
 
@@ -888,6 +922,10 @@ export abstract class BaseListingService<
             typedCtx.hookState.pendingFeatureIds = payload.featureIds as
                 | readonly string[]
                 | undefined;
+            // HOS-2061: per-amenity relation attributes (write-only).
+            typedCtx.hookState.pendingAmenityAttributes = payload.amenityAttributes as
+                | readonly AmenityRelationAttributes[]
+                | undefined;
             // HOS-1499: what the owner wrote, for the owner-act event.
             typedCtx.hookState.ownerActPayload = payload;
         }
@@ -896,6 +934,7 @@ export abstract class BaseListingService<
         const {
             amenityIds: _a,
             featureIds: _f,
+            amenityAttributes: _attributes,
             refreshSlugFromName: _refreshSlugFromName,
             ...rest
         } = payload;
@@ -943,7 +982,10 @@ export abstract class BaseListingService<
     ): Promise<TEntity> {
         const typedCtx = ctx as ServiceContext<ListingHookState>;
 
-        if (typedCtx.hookState?.pendingAmenityIds !== undefined) {
+        if (
+            typedCtx.hookState?.pendingAmenityIds !== undefined ||
+            typedCtx.hookState?.pendingAmenityAttributes !== undefined
+        ) {
             if (!ctx.tx) {
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
@@ -954,6 +996,7 @@ export abstract class BaseListingService<
                 entityId: entity.id,
                 entityFkColumn: this._entityFkColumn,
                 amenityIds: typedCtx.hookState.pendingAmenityIds,
+                amenityAttributes: typedCtx.hookState.pendingAmenityAttributes,
                 junctionModel: this._amenityJunctionModel,
                 amenityModel: this._amenityModel,
                 tx: ctx.tx

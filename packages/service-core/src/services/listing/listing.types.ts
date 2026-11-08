@@ -5,6 +5,8 @@
  * Mirrors the pattern established by accommodation.types.ts.
  */
 
+import type { AmenityRelationAttributes } from '@repo/schemas';
+
 /**
  * Per-request hook state for BaseListingService lifecycle hooks.
  *
@@ -31,6 +33,11 @@ export interface ListingHookState extends Record<string, unknown> {
      * Same three-way contract as `pendingAmenityIds`.
      */
     pendingFeatureIds?: readonly string[];
+    /**
+     * Per-amenity relation attributes from the update input (HOS-2061).
+     * `undefined` → attributes untouched; see `syncListingAmenityJunction`.
+     */
+    pendingAmenityAttributes?: readonly AmenityRelationAttributes[];
     /**
      * Entity data captured before soft-delete for post-delete side effects.
      * Used by `_afterSoftDelete` for cache revalidation / auditing.
