@@ -154,6 +154,10 @@ describe('the redirect table matches data-migration 0147', () => {
         declared.add('feature:spa_front');
         for (const slug of POLICY_AMENITIES) declared.add(`amenity:${slug}`);
         for (const slug of POLICY_FEATURES) declared.add(`feature:${slug}`);
+        // HOS-2061 (0155): parsed from that migration below.
+        for (const merge of MERGES_0155) declared.add(`${merge.sourceKind}:${merge.sourceSlug}`);
+        for (const slug of policySlugs0155('AMENITY')) declared.add(`amenity:${slug}`);
+        for (const slug of policySlugs0155('FEATURE')) declared.add(`feature:${slug}`);
         for (const slug of Object.keys(RETIRED_AMENITY_SLUG_TARGETS)) {
             expect(declared.has(`amenity:${slug}`), slug).toBe(true);
         }
@@ -193,5 +197,68 @@ describe('the redirect table matches data-migration 0154 (HOS-2060)', () => {
         expect(
             resolveRetiredCatalogSlugPath({ path: '/es/alojamientos/comodidades/accepts_cards/' })
         ).toBe('/es/alojamientos/');
+    });
+});
+
+const MIGRATION_0155 = readFileSync(
+    resolve(
+        __dirname,
+        '../../../../packages/seed/src/data-migrations/0155-hos-2061-venue-experience-catalog-curation.ts'
+    ),
+    'utf8'
+);
+
+/** Merges and policy retirements declared by migration 0155 (HOS-2061). */
+const MERGES_0155 = [
+    ...MIGRATION_0155.matchAll(
+        /source: (amenity|feature)\('([a-z0-9_]+)'\),\s+target: (amenity|feature)\('([a-z0-9_]+)'\)/g
+    )
+].map((match) => ({
+    sourceKind: match[1],
+    sourceSlug: match[2],
+    targetKind: match[3],
+    targetSlug: match[4]
+}));
+const policySlugs0155 = (kind: 'AMENITY' | 'FEATURE'): readonly string[] => {
+    const block = MIGRATION_0155.match(
+        new RegExp(`RETIRED_POLICY_${kind}_SLUGS[^=]*= \\[([^\\]]*)\\]`)
+    )?.[1];
+    return [...(block ?? '').matchAll(/'([a-z0-9_]+)'/g)].map((match) => match[1] ?? '');
+};
+
+describe('the redirect table matches data-migration 0155 (HOS-2061)', () => {
+    it('reads the two merges and the two policy retirements', () => {
+        expect(MERGES_0155).toHaveLength(2);
+        expect(policySlugs0155('AMENITY')).toEqual(['accepts_reservations']);
+        expect(policySlugs0155('FEATURE')).toEqual(['private_available']);
+    });
+
+    it.each(
+        MERGES_0155
+    )('$sourceKind $sourceSlug redirects to its survivor $targetKind $targetSlug', ({
+        sourceKind,
+        sourceSlug,
+        targetKind,
+        targetSlug
+    }) => {
+        const table =
+            sourceKind === 'amenity' ? RETIRED_AMENITY_SLUG_TARGETS : RETIRED_FEATURE_SLUG_TARGETS;
+        expect(table[sourceSlug ?? '']).toEqual({ family: familyOf(targetKind), slug: targetSlug });
+    });
+
+    it('sends the policy rows to the bare accommodation search', () => {
+        expect(
+            resolveRetiredCatalogSlugPath({
+                path: '/es/alojamientos/comodidades/accepts_reservations/'
+            })
+        ).toBe('/es/alojamientos/');
+        expect(
+            resolveRetiredCatalogSlugPath({
+                path: '/es/alojamientos/caracteristicas/private_available/'
+            })
+        ).toBe('/es/alojamientos/');
+        expect(
+            resolveRetiredCatalogSlugPath({ path: '/es/alojamientos/comodidades/happy_hour/' })
+        ).toBe('/es/alojamientos/caracteristicas/happy_hour/');
     });
 });
