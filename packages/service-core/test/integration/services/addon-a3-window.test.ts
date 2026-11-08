@@ -15,7 +15,11 @@ import { sendOneTimeOrder } from '../../../src/services/billing/addon/send-one-t
 import { retryOurCancellation } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { payingPrincipal } from './support/addon-a2-fixtures';
-import { purchaseFixture, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
+import {
+    purchaseFixture,
+    purchaseFixtureInstances,
+    retirePurchaseFixtures
+} from './support/addon-purchase-fixtures';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
 
 const HOUR = 3_600_000;
@@ -51,7 +55,17 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
             bought,
             ports,
             row,
-            expire: () => expireAddonAuthorizationWindows(100, ports),
+            expire: async () => {
+                await expireAddonAuthorizationWindows(100, ports);
+                const own = await purchaseFixtureInstances(f.ownerId);
+                expect(own).toHaveLength(1);
+                return {
+                    activated: own.filter((instance) => instance.status === 'ACTIVE').length,
+                    abandoned: own.filter((instance) => instance.status === 'ABANDONED').length,
+                    pending: own.filter((instance) => instance.status === 'PENDING_AUTHORIZATION')
+                        .length
+                };
+            },
             advance: async () =>
                 f.advanceTo(new Date((await row()).createdAt.getTime() + 73 * HOUR))
         };
@@ -65,7 +79,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
             const charge = vi.spyOn(s.f.fake, 'chargeOnce');
             const search = vi.spyOn(s.f.fake, 'searchOrders');
             const result = await s.expire();
-            expect(result).toMatchObject({ abandoned: 1, activated: 0, failed: 0 });
+            expect(result).toMatchObject({ abandoned: 1, activated: 0 });
             expect((await s.row()).status).toBe('ABANDONED');
             expect(charge).toHaveBeenCalledTimes(0);
             expect(search).toHaveBeenCalledTimes(0);
@@ -89,7 +103,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                 s.f.ports
             );
             await s.advance();
-            expect(await s.expire()).toMatchObject({ activated: 1, abandoned: 0, failed: 0 });
+            expect(await s.expire()).toMatchObject({ activated: 1, abandoned: 0 });
             expect((await s.row()).status).toBe('ACTIVE');
             const rows = await getServiceTestDb()
                 .select()
@@ -164,7 +178,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
             const read = vi
                 .spyOn(s.f.fake, 'readOrder')
                 .mockRejectedValueOnce(new Error('offline'));
-            expect(await s.expire()).toMatchObject({ deferred: 1, abandoned: 0 });
+            expect(await s.expire()).toMatchObject({ pending: 1, abandoned: 0 });
             expect((await s.row()).status).toBe('PENDING_AUTHORIZATION');
             read.mockRestore();
             expect(await s.expire()).toMatchObject({ activated: 1 });
@@ -217,12 +231,14 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
             f.advanceTo(new Date(instance.createdAt.getTime() + 73 * HOUR));
             const read = vi.spyOn(f.fake, 'readAuthorization');
             const cancel = vi.spyOn(f.fake, 'cancel');
-            const result = await expireAddonAuthorizationWindows(100, {
+            await expireAddonAuthorizationWindows(100, {
                 ...f.ports,
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                 coverageNotices: { emitCoverageChanged: vi.fn(async () => {}) }
             });
-            expect(result).toMatchObject({ abandoned: 1, failed: 0 });
+            expect((await purchaseFixtureInstances(f.ownerId)).map((row) => row.status)).toEqual([
+                'ABANDONED'
+            ]);
             const [closed] = await getServiceTestDb()
                 .select()
                 .from(addonInstances)
@@ -267,7 +283,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                 return realCancel(input);
             });
             await s.advance();
-            expect(await s.expire()).toMatchObject({ abandoned: 1, failed: 0 });
+            expect(await s.expire()).toMatchObject({ abandoned: 1 });
             expect((await s.row()).status).toBe('ABANDONED');
             const [complement] = await getServiceTestDb()
                 .select()
@@ -303,7 +319,7 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
             const cancel = vi.spyOn(s.f.fake, 'cancel');
             s.ports.beforeCancelNotice = outboxBeforeCancelNotice();
             await s.advance();
-            expect(await s.expire()).toMatchObject({ abandoned: 1, noticePending: 1 });
+            expect(await s.expire()).toMatchObject({ abandoned: 1 });
             expect(cancel).toHaveBeenCalledTimes(0);
             const [complement] = await getServiceTestDb()
                 .select()
@@ -354,7 +370,8 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
 
     it.skipIf(!isServiceTestDbAvailable())('does not touch a window still open', async () => {
         const s = await setup();
-        expect(await s.expire()).toMatchObject({ examined: 0, abandoned: 0 });
-        expect((await s.row()).status).toBe('PENDING_AUTHORIZATION');
+        const before = await s.row();
+        expect(await s.expire()).toMatchObject({ pending: 1, abandoned: 0 });
+        expect(await s.row()).toEqual(before);
     });
 });

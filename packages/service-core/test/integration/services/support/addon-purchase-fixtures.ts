@@ -25,6 +25,14 @@ import {
 export const purchaseNow = new Date('2026-10-13T12:00:00.000Z');
 const owners: string[] = [];
 
+/** Reads only addon instances created for one purchase fixture owner. */
+export async function purchaseFixtureInstances(ownerId: string) {
+    return getServiceTestDb()
+        .select()
+        .from(addonInstances)
+        .where(eq(addonInstances.ownerId, ownerId));
+}
+
 /** Creates committed fixture rows because purchaseAddon owns its own transaction. */
 export async function purchaseFixture(
     input: {
