@@ -63,8 +63,8 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
         expect(result.exitCode).toBe(0);
         expect(result.output).toMatch(/^OK GUARD:G-FAC-10: /);
         expect(result.output).toContain('accommodations 43 columns / 16 SET');
-        expect(result.output).toContain('venues 44 columns / 22 SET');
-        expect(result.output).toContain('experiences 45 columns / 23 SET');
+        expect(result.output).toContain('venues 47 columns / 25 SET');
+        expect(result.output).toContain('experiences 47 columns / 25 SET');
         expect(result.output).toContain('71 system rows and 6 action-15 exceptions');
     });
 
@@ -94,7 +94,11 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
             'entry_note_i18n',
             'entry_price_from',
             'entry_price_updated_at',
-            'policies'
+            'policies',
+            // HOS-2060 legacy columns, dropped in release N+1.
+            'min_age',
+            'dress_code',
+            'dress_code_note_i18n'
         ])
             expect(venue.columns).toContain(column);
     });
@@ -106,12 +110,14 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
             variableName: 'BLANK_CONTENT'
         });
         expect(scan.error).toBeNull();
-        expect(scan.assignments.venue).toHaveLength(22);
+        expect(scan.assignments.venue).toHaveLength(25);
         expect(scan.assignments.venue).toContain('entry_note_i18n');
         expect(scan.assignments.venue).toContain('entry_price_updated_at');
         expect(scan.assignments.venue).toContain('policies');
         expect(scan.assignments.accommodation).toHaveLength(16);
-        expect(scan.assignments.experience).toHaveLength(23);
+        expect(scan.assignments.experience).toHaveLength(25);
+        expect(scan.assignments.venue).toContain('dress_code_note_i18n');
+        expect(scan.assignments.experience).toContain('cancellation_policy');
     });
 
     it('converts between the purge snake_case and the action-15 camelCase', () => {
@@ -187,6 +193,75 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
         expect(violations).toContain(
             'venues system count is 2 but the list has 3 rows; update the count with every row'
         );
+    });
+
+    describe('purge-only legacy columns (rule f, HOS-2060)', () => {
+        const legacyInput = (rows: { key: string; reason: string }[], purged: string[]) =>
+            baseInput({
+                columns: {
+                    ...baseInput().columns,
+                    venue: ['id', 'summary', 'business_lines', 'min_age']
+                },
+                purgeSet: { ...baseInput().purgeSet, venue: ['summary', ...purged] },
+                inventory: { ...INVENTORY, purgeOnlyLegacyColumns: { count: rows.length, rows } }
+            });
+
+        it('accepts a legacy column the purge blanks and no field edits', () => {
+            const violations = analyze(
+                legacyInput([{ key: 'venues.min_age', reason: 'legacy' }], ['min_age'])
+            );
+            expect(violations).toEqual([]);
+        });
+
+        it('rejects a legacy column the purge no longer blanks', () => {
+            const violations = analyze(
+                legacyInput([{ key: 'venues.min_age', reason: 'legacy' }], [])
+            );
+            expect(violations).toContain(
+                'legacy row venues.min_age must be blanked by the purge SET'
+            );
+        });
+
+        it('rejects a legacy row whose column was dropped', () => {
+            const violations = analyze(
+                baseInput({
+                    inventory: {
+                        ...INVENTORY,
+                        purgeOnlyLegacyColumns: {
+                            count: 1,
+                            rows: [{ key: 'venues.min_age', reason: 'legacy' }]
+                        }
+                    }
+                })
+            );
+            expect(violations).toContain(
+                'legacy row venues.min_age no longer exists in venues; remove it from purgeOnlyLegacyColumns'
+            );
+        });
+
+        it('still requires the action-15 field for a purged column that is not listed as legacy', () => {
+            const violations = analyze(legacyInput([], ['min_age']));
+            expect(violations).toContain(
+                `purge SET column min_age maps to minAge, which is missing from ${SUPPORT_EDIT_FIELDS_NAME}`
+            );
+        });
+
+        it('rejects a count that does not match the rows', () => {
+            const input = legacyInput([{ key: 'venues.min_age', reason: 'legacy' }], ['min_age']);
+            const violations = analyze({
+                ...input,
+                inventory: {
+                    ...input.inventory,
+                    purgeOnlyLegacyColumns: {
+                        count: 2,
+                        rows: [{ key: 'venues.min_age', reason: 'legacy' }]
+                    }
+                }
+            });
+            expect(violations).toContain(
+                'purgeOnlyLegacyColumns count is 2 but the list has 1 rows'
+            );
+        });
     });
 
     it('rejects the system list when business_lines is not in LISTING_NON_CONTENT_FIELDS', () => {

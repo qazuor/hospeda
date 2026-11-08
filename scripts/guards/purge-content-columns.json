@@ -320,5 +320,30 @@
                 "reason": "FAQ rows live in <vertical>_faqs, deleted by the purge; not a column of the listing table."
             }
         ]
+    },
+    "purgeOnlyLegacyColumns": {
+        "count": 5,
+        "rows": [
+            {
+                "key": "venues.min_age",
+                "reason": "Legacy column copied into `policies.minAge` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
+            },
+            {
+                "key": "venues.dress_code",
+                "reason": "Legacy column copied into `policies.dressCode` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
+            },
+            {
+                "key": "venues.dress_code_note_i18n",
+                "reason": "Legacy column copied into `policies.dressCodeNote` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
+            },
+            {
+                "key": "experiences.cancellation_policy",
+                "reason": "Legacy column copied into `policies.cancellation` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
+            },
+            {
+                "key": "experiences.accepts_private_groups",
+                "reason": "Legacy column copied into `policies.privateGroups` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
+            }
+        ]
     }
 }
