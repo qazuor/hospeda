@@ -123,12 +123,9 @@
     },
     "extraInfo": {
         "capacity": 45,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 22,
         "beds": 35,
         "bathrooms": 22,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior disponible en temporada",
             "Desayuno incluido",
@@ -136,6 +133,12 @@
             "Entorno natural cercano",
             "Cerca de playas y Corsódromo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Nido Silvestre Hotel - Naturaleza y piscina en Gualeguaychú",

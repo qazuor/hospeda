@@ -91,18 +91,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cabaña apacible",
             "Parrilla exterior",
             "Ideal para familias pequeñas",
             "Cerca del Delta y Paranacito"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Retiro Apacible - Cabaña tranquila cerca de Paranacito ",

@@ -174,18 +174,21 @@
     },
     "extraInfo": {
         "capacity": 50,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 25,
         "beds": 38,
         "bathrooms": 25,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior disponible en temporada",
             "Desayuno incluido",
             "Estacionamiento descubierto gratuito",
             "Ambiente tranquilo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Refugio Apacible Hotel - Piscina en Federación",

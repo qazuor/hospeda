@@ -106,18 +106,21 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Apartamento muy luminoso",
             "Ubicación conveniente",
             "Ideal para parejas o viajeros solos",
             "Edificio con ascensor"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Refugio Soleado - Apartamento luminoso en Concepción del",

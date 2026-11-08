@@ -135,16 +135,19 @@
     },
     "extraInfo": {
         "capacity": 60,
-        "minNights": 1,
-        "maxNights": 20,
         "bathrooms": 3,
-        "smokingAllowed": true,
         "extraInfo": [
             "Parcelas con sombra y parrilla",
             "Entorno tranquilo cerca del lago",
             "Ideal para desconectar"
         ],
         "bedrooms": 1
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 1,
+        "maxNights": 20
     },
     "seo": {
         "title": "Paraíso Apacible Camping - Tranquilidad cerca del Lago",

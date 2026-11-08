@@ -128,18 +128,21 @@
     },
     "extraInfo": {
         "capacity": 18,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 4,
         "beds": 16,
         "bathrooms": 3,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina comunitaria equipada",
             "Barrio tranquilo",
             "Cerca de Termas de Federación"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Nido Tranquilo Hostel - Alojamiento económico en Federación",

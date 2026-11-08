@@ -140,18 +140,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 3,
-        "maxNights": 7,
         "bedrooms": 2,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": true,
         "extraInfo": [
             "Entorno natural aislado",
             "Electricidad limitada (prioriza luz y carga)",
             "Ideal para amantes de la naturaleza y la desconexión",
             "Requiere vehículo 4x4 en días de lluvia"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 3,
+        "maxNights": 7
     },
     "seo": {
         "title": "Nido Silvestre - Casa de Campo aislada en Concepción del",

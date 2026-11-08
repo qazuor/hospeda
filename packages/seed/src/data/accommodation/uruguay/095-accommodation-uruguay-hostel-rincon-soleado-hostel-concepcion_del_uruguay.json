@@ -235,12 +235,9 @@
     },
     "extraInfo": {
         "capacity": 30,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 6,
         "beds": 28,
         "bathrooms": 5,
-        "smokingAllowed": false,
         "extraInfo": [
             "Ubicación muy céntrica",
             "Ambiente social",
@@ -248,6 +245,12 @@
             "Patio interior",
             "Alquiler de toallas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Rincón Soleado Hostel - Céntrico y luminoso en Concepción",

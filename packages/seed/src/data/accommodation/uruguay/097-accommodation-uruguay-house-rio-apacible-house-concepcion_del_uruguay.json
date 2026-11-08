@@ -123,13 +123,16 @@
     },
     "extraInfo": {
         "capacity": 5,
-        "minNights": 2,
-        "maxNights": 15,
         "bedrooms": 2,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": ["Cerca de la costanera", "Parrilla exterior", "Ideal para familias"]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 15
     },
     "seo": {
         "title": "Rio Apacible House - Casa en Concepción del Uruguay",

@@ -187,18 +187,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cabaña acogedora",
             "Parrilla exterior",
             "Ideal para familias pequeñas",
             "Cerca de las playas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Paraíso Acogedor - Cabaña cerca de Gualeguaychú | Playas y",

@@ -130,18 +130,21 @@
     },
     "extraInfo": {
         "capacity": 5,
-        "minNights": 2,
-        "maxNights": 14,
         "bedrooms": 2,
         "beds": 3,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Entorno rural tranquilo",
             "Piscina privada",
             "Parrilla exterior",
             "Ideal para familias pequeñas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 14
     },
     "seo": {
         "title": "Paraíso Tranquilo - Casa de Campo en Concepción del Uruguay",

@@ -99,10 +99,7 @@
     },
     "extraInfo": {
         "capacity": 70,
-        "minNights": 1,
-        "maxNights": 30,
         "bathrooms": 4,
-        "smokingAllowed": true,
         "extraInfo": [
             "Amplias parcelas con sombra",
             "Parrilla individual por parcela",
@@ -111,6 +108,12 @@
             "Se admiten mascotas con correa"
         ],
         "bedrooms": 1
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 1,
+        "maxNights": 30
     },
     "seo": {
         "title": "Sendero Maravilloso Camping - Naturaleza y bosque cerca de",

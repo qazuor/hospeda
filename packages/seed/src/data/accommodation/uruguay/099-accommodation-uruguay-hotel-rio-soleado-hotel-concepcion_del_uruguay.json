@@ -124,18 +124,21 @@
     },
     "extraInfo": {
         "capacity": 45,
-        "minNights": 1,
-        "maxNights": 20,
         "bedrooms": 22,
         "beds": 35,
         "bathrooms": 22,
-        "smokingAllowed": false,
         "extraInfo": [
             "A una cuadra de la costanera",
             "Muchas habitaciones con vista al río",
             "Desayuno continental incluido",
             "Estacionamiento descubierto limitado"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 20
     },
     "seo": {
         "title": "Rio Soleado Hotel - Costanera en Concepción del Uruguay",
