@@ -807,5 +807,42 @@
         "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
+    },
+    "addonPurchase": {
+        "title": "Buy add-ons",
+        "chooseOffer": "Choose an add-on",
+        "noOffers": "No add-ons are available.",
+        "chooseTarget": "Choose a listing",
+        "noTargets": "No listings are available for this add-on.",
+        "summary": "Confirm add-on",
+        "freeUnderGrant": "Free with your benefit",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days",
+        "hiddenListingRecurring": "This listing is not published. The boost is still charged while the listing is hidden, until you cancel it.",
+        "hiddenListingOneTime": "This listing is not published. The boost is still charged and its days keep running while the listing is hidden.",
+        "chooseFree": "Choose for free",
+        "payerEmailLabel": "Payer email",
+        "payerEmailInvalid": "Enter a valid payer email.",
+        "payerEmailHint": "You declare this email; the provider has not confirmed it.",
+        "confirmPurchase": "Confirm purchase",
+        "loading": "Loading add-ons…",
+        "loadError": "We could not load the add-ons.",
+        "processing": "Your purchase is being processed.",
+        "active": "Active",
+        "closed": "The purchase ended without activation.",
+        "status": {
+            "DRAFT": "Draft",
+            "PUBLISHED": "Published",
+            "UNPUBLISHED_BY_BILLING": "Unpublished under your plan",
+            "ARCHIVED": "Archived",
+            "MODERATED": "Moderated",
+            "PURGED": "Removed"
+        },
+        "cycle": {
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "semiannual": "Every six months",
+            "annual": "Yearly"
+        }
     }
 }

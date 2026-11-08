@@ -104,6 +104,7 @@ if (returnSubscriptionId) {
 		accountEmail={user.email}
 		declaredPayerEmail={returnDeclaredPayerEmail}
 	/>}
+	<a data-testid="addon-purchase-link" href={buildUrl({ locale, path: 'mi-cuenta/complementos' })}>{t('billing.addons.viewAvailable')}</a>
 	<div data-subscription-sections>
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
