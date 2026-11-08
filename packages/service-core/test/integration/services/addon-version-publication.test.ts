@@ -1,5 +1,5 @@
 import { addonInstances, addonProducts, addonVersions, domainEventModel, eq } from '@repo/db';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import {
     previewAddonVersionPublication,
@@ -203,6 +203,21 @@ describe('TEST:B10:9 AC:B10:8 addon version publication', () => {
             expect(product?.price).toBe(f.product.price);
         }
     );
+
+    it.skipIf(skip)('writes the event through the transaction client', async () => {
+        const f = await publicationFixture();
+        const insert = domainEventModel.insert.bind(domainEventModel);
+        const spy = vi.spyOn(domainEventModel, 'insert').mockImplementation(async (input) => {
+            expect(input.tx).toBeDefined();
+            return insert(input);
+        });
+        try {
+            await publishAddonVersion({ actor: f.actor, input: request(f) }, f.ports);
+            expect(spy).toHaveBeenCalledTimes(1);
+        } finally {
+            spy.mockRestore();
+        }
+    });
 
     it.skipIf(skip)('rejects a price change with a pending real purchase', async () => {
         const f = await publicationFixture();
