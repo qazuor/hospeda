@@ -35,7 +35,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
     let promoIds: string[] = [];
     let dialogs: string[] = [];
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page }, testInfo) => {
         providerNamespace = randomUUID();
         dialogs = [];
         page.on('dialog', async (dialog) => {
@@ -57,10 +57,14 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
                         lie: 'M8',
                         why: 'TEST:B8b:25 reads the credited cycle before changing a plan.'
                     },
-                    {
-                        lie: 'M12',
-                        why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
-                    }
+                    ...(testInfo.title.startsWith('fila 5')
+                        ? []
+                        : [
+                              {
+                                  lie: 'M12' as const,
+                                  why: 'TEST:B8b:25 resumes the customer pause to read its next charge.'
+                              }
+                          ])
                 ]
             }),
             clock
@@ -335,11 +339,19 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
                 }
             }
         );
-        expect(granted.status()).toBe(200);
-        const outcome = (await granted.json()) as {
-            readonly data: { readonly outcome: string };
+        const grantBody = (await granted.json()) as {
+            readonly data?: { readonly outcome: string };
+            readonly error?: {
+                readonly code?: string;
+                readonly reason?: string;
+                readonly message?: string;
+            };
         };
-        expect(outcome.data.outcome).toBe('GRANTED');
+        expect(
+            granted.status(),
+            `grant HTTP ${granted.status()}: ${JSON.stringify(grantBody.error ?? grantBody)}`
+        ).toBe(200);
+        expect(grantBody.data?.outcome).toBe('GRANTED');
         const [courtesy] = await execSQL<{ ends_at: Date }>(
             'SELECT ends_at FROM courtesy_grant WHERE beneficiary_user_id = $1',
             [subscriber.user.id]
