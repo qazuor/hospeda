@@ -73,6 +73,7 @@ export * from './billing/addon/addon-orphanhood-ports.js';
 export * from './billing/addon/expire-addon-authorization-windows.service.js';
 export * from './billing/addon/expire-addon-instances.service.js';
 export * from './billing/addon/listing-purged-addon-canceller.js';
+export * from './billing/addon/listing-purged-addons.service.js';
 export * from './billing/addon/purchase-addon.service.js';
 export * from './billing/addon/purchase-addon-complement.js';
 export * from './billing/addon/purchase-addon-eligibility.js';

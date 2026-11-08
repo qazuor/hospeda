@@ -48,6 +48,7 @@ import { subscribeEffectiveSetCoverageInvalidation } from './utils/effective-set
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
+import { subscribeListingPurgedAddonCancellation } from './utils/listing-publication/listing-purged-addon-listener';
 import { apiLogger } from './utils/logger';
 import { shutdownMercadoPagoTrafficGovernor } from './utils/mp-traffic-governor';
 import { disconnectRedis } from './utils/redis';
@@ -355,6 +356,7 @@ const startServer = async (): Promise<void> => {
 
         const app = initApp();
         const unsubscribeCoverage = subscribeListingCoverageRecalculation();
+        const unsubscribeListingPurgedAddons = subscribeListingPurgedAddonCancellation();
         const unsubscribeTrialConversion = subscribeTrialCoverageConversion();
         const unsubscribeEffectiveSetInvalidation = subscribeEffectiveSetCoverageInvalidation();
 
@@ -460,6 +462,7 @@ const startServer = async (): Promise<void> => {
         const gracefulShutdown = async (signal: string) => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
             unsubscribeCoverage?.();
+            unsubscribeListingPurgedAddons?.();
             unsubscribeTrialConversion?.();
             unsubscribeEffectiveSetInvalidation?.();
 

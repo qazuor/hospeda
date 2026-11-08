@@ -176,6 +176,13 @@
             "subject": "addon_instance"
         },
         {
+            "file": "packages/service-core/src/services/billing/addon/listing-purged-addons.service.ts",
+            "symbol": "cancelAddonsOfPurgedListing",
+            "row": 18,
+            "why": "AC:B10:6: the committed purge push reads live LISTING addon instances for the purged target before invoking A6 for each one.",
+            "subject": "addon_instance"
+        },
+        {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
             "symbol": "listLiveAddonInstanceIdsPage",
             "row": 25,
