@@ -124,6 +124,27 @@ describe('ExperienceReviews', () => {
         });
     });
 
+    describe('review card rating (HOS-2082)', () => {
+        it('shows the reviewer overallRating, not the dimension mean', () => {
+            // Arrange: overall 2 chosen by the reviewer, dimension mean 5
+            renderReviews({
+                initialReviews: [{ ...REVIEW_1, overallRating: 2, averageRating: 5 }],
+                averageRating: 4.5
+            });
+            // Assert
+            expect(screen.getByText('2.0')).toBeInTheDocument();
+            expect(screen.queryByText('5.0')).not.toBeInTheDocument();
+        });
+
+        it('falls back to averageRating when overallRating is absent', () => {
+            renderReviews({
+                initialReviews: [{ ...REVIEW_1, overallRating: null, averageRating: 3 }],
+                averageRating: 4.5
+            });
+            expect(screen.getByText('3.0')).toBeInTheDocument();
+        });
+    });
+
     describe('client-side session resolution (HOS-369 WB0-4)', () => {
         it('hides the review CTA for a guest', () => {
             renderReviews({ isAuthenticated: false });

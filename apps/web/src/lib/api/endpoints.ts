@@ -1566,6 +1566,8 @@ export interface VenueReviewPublicItem {
     readonly title?: string | null;
     readonly content?: string | null;
     readonly averageRating?: number | null;
+    /** The general star rating the reviewer chose; what review cards display (HOS-2082). */
+    readonly overallRating?: number | null;
     readonly rating?: Record<string, number> | null;
     /** Reviewer's public profile from the user relation (Bug B7b fix). */
     readonly user?: {
@@ -1688,6 +1690,8 @@ export interface ExperienceReviewPublicItem {
     readonly title?: string | null;
     readonly content?: string | null;
     readonly averageRating?: number | null;
+    /** The general star rating the reviewer chose; what review cards display (HOS-2082). */
+    readonly overallRating?: number | null;
     readonly rating?: Record<string, number> | null;
     readonly user?: { readonly name: string | null; readonly image: string | null } | null;
     readonly createdAt?: string | null;
