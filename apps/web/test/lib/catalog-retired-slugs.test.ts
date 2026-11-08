@@ -39,6 +39,24 @@ const MERGES = [
     targetSlug: match[4]
 }));
 
+const MIGRATION_0154 = readFileSync(
+    resolve(
+        __dirname,
+        '../../../../packages/seed/src/data-migrations/0154-hos-2060-retire-policy-catalog-rows.ts'
+    ),
+    'utf8'
+);
+
+/** The slugs a `RETIRED_POLICY_<KIND>_SLUGS` list of migration 0154 declares. */
+const policySlugs = (kind: 'AMENITY' | 'FEATURE'): readonly string[] => {
+    const block = MIGRATION_0154.match(
+        new RegExp(`RETIRED_POLICY_${kind}_SLUGS[^=]*= \\[([^\\]]*)\\]`)
+    )?.[1];
+    return [...(block ?? '').matchAll(/'([a-z0-9_]+)'/g)].map((match) => match[1] ?? '');
+};
+const POLICY_AMENITIES = policySlugs('AMENITY');
+const POLICY_FEATURES = policySlugs('FEATURE');
+
 const familyOf = (kind: string | undefined) =>
     kind === 'amenity' ? 'comodidades' : 'caracteristicas';
 
@@ -94,6 +112,7 @@ describe('resolveRetiredCatalogSlugPath', () => {
             ...Object.values(RETIRED_AMENITY_SLUG_TARGETS),
             ...Object.values(RETIRED_FEATURE_SLUG_TARGETS)
         ]) {
+            if (target.family === 'search') continue;
             const path = `/es/alojamientos/${target.family}/${target.slug}/`;
             expect(resolveRetiredCatalogSlugPath({ path }), path).toBeUndefined();
         }
@@ -133,11 +152,46 @@ describe('the redirect table matches data-migration 0147', () => {
     it('has no redirect the migration does not justify (besides the spa_front rename)', () => {
         const declared = new Set(MERGES.map((merge) => `${merge.sourceKind}:${merge.sourceSlug}`));
         declared.add('feature:spa_front');
+        for (const slug of POLICY_AMENITIES) declared.add(`amenity:${slug}`);
+        for (const slug of POLICY_FEATURES) declared.add(`feature:${slug}`);
         for (const slug of Object.keys(RETIRED_AMENITY_SLUG_TARGETS)) {
             expect(declared.has(`amenity:${slug}`), slug).toBe(true);
         }
         for (const slug of Object.keys(RETIRED_FEATURE_SLUG_TARGETS)) {
             expect(declared.has(`feature:${slug}`), slug).toBe(true);
         }
+    });
+});
+
+describe('the redirect table matches data-migration 0154 (HOS-2060)', () => {
+    it('reads the four amenities and five features the migration retires', () => {
+        expect(POLICY_AMENITIES).toHaveLength(4);
+        expect(POLICY_FEATURES).toHaveLength(5);
+    });
+
+    it.each([
+        ...POLICY_AMENITIES.map((slug) => ['comodidades', slug] as const),
+        ...POLICY_FEATURES.map((slug) => ['caracteristicas', slug] as const)
+    ])('/%s/%s answers a 301 to the accommodation search', (family, slug) => {
+        const redirect = resolveLegacyRedirectTarget({
+            path: `/es/alojamientos/${family}/${slug}/`
+        });
+        expect(redirect?.status).toBe(301);
+        expect(redirect?.target.startsWith('/es/alojamientos/')).toBe(true);
+        expect(redirect?.target).not.toContain(`/${family}/`);
+    });
+
+    it('sends the pets rows to the allowsPets search and the rest to the bare search', () => {
+        expect(
+            resolveRetiredCatalogSlugPath({ path: '/en/alojamientos/comodidades/pet_friendly/' })
+        ).toBe('/en/alojamientos/?allowsPets=true');
+        expect(
+            resolveRetiredCatalogSlugPath({
+                path: '/es/alojamientos/caracteristicas/pet_friendly_area/page/2/'
+            })
+        ).toBe('/es/alojamientos/?allowsPets=true');
+        expect(
+            resolveRetiredCatalogSlugPath({ path: '/es/alojamientos/comodidades/accepts_cards/' })
+        ).toBe('/es/alojamientos/');
     });
 });
