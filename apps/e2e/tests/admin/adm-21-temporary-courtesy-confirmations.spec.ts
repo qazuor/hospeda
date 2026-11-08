@@ -145,6 +145,7 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
             copy.unavailableReason.replace('{reason}', 'NOT_MONTHLY')
         );
         await expect(page.getByTestId('courtesy-unavailable')).toContainText(copy.alternatives);
+        await expect(page.getByTestId('courtesy-grant-review')).toHaveCount(0);
         const grants = await execSQL<{ id: string }>(
             'SELECT id FROM courtesy_grant WHERE beneficiary_user_id = $1',
             [subscriber.user.id]

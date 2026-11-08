@@ -351,6 +351,8 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         const article = articleFor(page, card.subscriptionId);
         await expect(article).toBeVisible();
         await article.getByRole('button', { name: 'Pausar suscripción' }).click();
+        await expect(article.getByTestId('pause-confirm-simple')).toHaveCount(0);
+        await expect(article.getByTestId('pause-confirm-courtesy-forfeit')).toBeVisible();
         await expect(article.getByTestId('pause-courtesy-forfeit')).toContainText(
             formatMarketDate(courtesy.ends_at)
         );

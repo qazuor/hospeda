@@ -170,6 +170,7 @@ export function TemporaryCourtesyScreen({ subscriptionId }: TemporaryCourtesyScr
                                         ) : (
                                             <Button
                                                 type="button"
+                                                data-testid="courtesy-grant-review"
                                                 disabled={!reason.trim() || grantPreview.isFetching}
                                                 onClick={() => setConfirming('grant')}
                                             >
