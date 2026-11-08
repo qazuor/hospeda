@@ -21,11 +21,18 @@ const ENTITY_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const AMENITY_UUID = '3f1a6b2c-1111-4d3e-8a90-2b7c4d5e6f70';
 const FEATURE_UUID = '9c8b7a65-2222-4f1e-9b03-1a2b3c4d5e6f';
 
+/**
+ * The relation attributes every public amenity row carries since HOS-2061,
+ * with the values an owner who declared nothing produces.
+ */
+const UNDECLARED_ATTRIBUTES = { isOptional: false, additionalCost: null } as const;
+
 /** One catalog-joined amenity row, exactly as the public route emits it. */
 const AMENITY_ROW = {
     amenityId: AMENITY_UUID,
     slug: 'wifi',
-    icon: 'wifi'
+    icon: 'wifi',
+    ...UNDECLARED_ATTRIBUTES
 } as const;
 
 /** One catalog-joined feature row, carrying both owner-authored columns. */
@@ -132,9 +139,43 @@ describe('VenuePublicSchema — amenities/features reach the public tier (HOS-10
         expect(result.data.amenities?.[0]).toEqual(AMENITY_ROW);
     });
 
+    it('publishes the declared relation attributes (HOS-2061)', () => {
+        // Arrange
+        const declared = {
+            ...AMENITY_ROW,
+            isOptional: true,
+            additionalCost: 1500,
+            scope: 'private',
+            availability: 'seasonal'
+        };
+        const raw = buildVenue({ amenities: [declared] });
+
+        // Act
+        const result = VenuePublicSchema.safeParse(raw);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.amenities).toEqual([declared]);
+    });
+
+    it('rejects an amenity row without the relation attributes (HOS-2061)', () => {
+        // Arrange: the route always emits them, like the accommodation twin.
+        const { isOptional: _isOptional, ...withoutAttribute } = AMENITY_ROW;
+        const raw = buildVenue({ amenities: [withoutAttribute] });
+
+        // Act
+        const result = VenuePublicSchema.safeParse(raw);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
     it('rejects an amenity row whose catalog join produced no slug', () => {
         // Arrange: the slug IS the i18n key — a row without one renders nothing.
-        const raw = buildVenue({ amenities: [{ amenityId: AMENITY_UUID, icon: null }] });
+        const raw = buildVenue({
+            amenities: [{ amenityId: AMENITY_UUID, icon: null, ...UNDECLARED_ATTRIBUTES }]
+        });
 
         // Act
         const result = VenuePublicSchema.safeParse(raw);
@@ -149,8 +190,18 @@ describe('ExperiencePublicSchema — amenities/features reach the public tier (H
         // Arrange
         const raw = buildExperience({
             amenities: [
-                { amenityId: AMENITY_UUID, slug: 'transport_included', icon: 'bus' },
-                { amenityId: FEATURE_UUID, slug: 'guide_included', icon: null }
+                {
+                    amenityId: AMENITY_UUID,
+                    slug: 'transport_included',
+                    icon: 'bus',
+                    ...UNDECLARED_ATTRIBUTES
+                },
+                {
+                    amenityId: FEATURE_UUID,
+                    slug: 'guide_included',
+                    icon: null,
+                    ...UNDECLARED_ATTRIBUTES
+                }
             ]
         });
 
@@ -172,8 +223,8 @@ describe('ExperiencePublicSchema — amenities/features reach the public tier (H
         // weight to re-sort by.
         const raw = buildExperience({
             amenities: [
-                { amenityId: AMENITY_UUID, slug: 'zzz_last', icon: null },
-                { amenityId: FEATURE_UUID, slug: 'aaa_first', icon: null }
+                { amenityId: AMENITY_UUID, slug: 'zzz_last', icon: null, ...UNDECLARED_ATTRIBUTES },
+                { amenityId: FEATURE_UUID, slug: 'aaa_first', icon: null, ...UNDECLARED_ATTRIBUTES }
             ]
         });
 

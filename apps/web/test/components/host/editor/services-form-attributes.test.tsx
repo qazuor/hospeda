@@ -70,7 +70,7 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         renderForm();
 
         const shared = document.querySelector<HTMLInputElement>(
-            `input[name="amenity-${POOL}-scope"]:checked`
+            `input[name$="-amenity-${POOL}-scope"]:checked`
         );
         expect(shared?.parentElement?.textContent).toBe('Compartido');
     });
@@ -95,7 +95,7 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         const grill = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[1];
         await user.click(grill as HTMLInputElement);
         const grillPrivate = document.querySelector(
-            `input[name="amenity-${GRILL}-scope"]`
+            `input[name$="-amenity-${GRILL}-scope"]`
         ) as HTMLInputElement;
         await user.click(grillPrivate);
         submit();

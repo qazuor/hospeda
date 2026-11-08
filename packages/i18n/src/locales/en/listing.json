@@ -289,7 +289,14 @@
                 "plan_other": "You have {{count}} saved items that are not published: your plan does not include {{section}}."
             },
             "amenities": {
-                "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
+                "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again.",
+                "picker": {
+                    "searchLabel": "Search services and features",
+                    "searchPlaceholder": "E.g.: wifi, pool, vegan",
+                    "featured": "Featured",
+                    "showAll": "Show all",
+                    "noResults": "Nothing matches \"{{query}}\"."
+                }
             },
             "nightInfo": {
                 "entryPriceFrom": "Price from (in pesos)",

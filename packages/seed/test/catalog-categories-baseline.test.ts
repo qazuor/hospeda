@@ -22,6 +22,11 @@ import {
     FEATURE_SLUG_RENAMES
 } from '../src/data-migrations/0147-hos-2059-catalog-curation.js';
 import { RETIRED_POLICY_FEATURE_SLUGS } from '../src/data-migrations/0154-hos-2060-retire-policy-catalog-rows.js';
+import {
+    CATALOG_MERGES as HOS_2061_MERGES,
+    RETIRED_POLICY_AMENITY_SLUGS as HOS_2061_RETIRED_AMENITIES,
+    RETIRED_POLICY_FEATURE_SLUGS as HOS_2061_RETIRED_FEATURES
+} from '../src/data-migrations/0155-hos-2061-venue-experience-catalog-curation.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '../src');
@@ -54,7 +59,20 @@ const RETIRED_FEATURES = new Set([
         (merge) => merge.source.slug
     ),
     // HOS-2060 (0154) retires the features that stood in for house rules.
-    ...RETIRED_POLICY_FEATURE_SLUGS
+    ...RETIRED_POLICY_FEATURE_SLUGS,
+    // HOS-2061 (0155) merges `kid_friendly` and retires `private_available`.
+    ...HOS_2061_MERGES.filter((merge) => merge.source.kind === 'feature').map(
+        (merge) => merge.source.slug
+    ),
+    ...HOS_2061_RETIRED_FEATURES
+]);
+
+/** Amenities a later migration retired (HOS-2061 / 0155), so not looked up. */
+const RETIRED_AMENITIES = new Set([
+    ...HOS_2061_MERGES.filter((merge) => merge.source.kind === 'amenity').map(
+        (merge) => merge.source.slug
+    ),
+    ...HOS_2061_RETIRED_AMENITIES
 ]);
 const RENAMED_FEATURES = new Map(FEATURE_SLUG_RENAMES.map((rename) => [rename.from, rename.to]));
 
@@ -115,7 +133,7 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
 describe('amenity fixtures follow the HOS-2058 retype', () => {
     it('every moved amenity fixture carries its new type', () => {
         const bySlug = new Map(readDir('amenity').map((fixture) => [fixture.slug, fixture.type]));
-        for (const move of AMENITY_TYPE_MOVES) {
+        for (const move of AMENITY_TYPE_MOVES.filter((m) => !RETIRED_AMENITIES.has(m.slug))) {
             expect(bySlug.get(move.slug), move.slug).toBe(move.to);
         }
     });

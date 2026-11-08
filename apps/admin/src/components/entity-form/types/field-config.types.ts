@@ -420,6 +420,11 @@ export type PostSelectFieldConfig = BaseEntitySelectFieldConfig & {
  */
 export type FeatureSelectFieldConfig = BaseEntitySelectFieldConfig & {
     categoryFilter?: string[]; // Filter by feature category
+    /**
+     * Vertical whose catalog the picker offers (`accommodation`, `venue`,
+     * `experience`). Omitted = the whole catalog (HOS-2061 AC-4).
+     */
+    applicableVertical?: string;
 };
 
 /**
@@ -427,6 +432,11 @@ export type FeatureSelectFieldConfig = BaseEntitySelectFieldConfig & {
  */
 export type AmenitySelectFieldConfig = BaseEntitySelectFieldConfig & {
     categoryFilter?: string[]; // Filter by amenity category
+    /**
+     * Vertical whose catalog the picker offers (`accommodation`, `venue`,
+     * `experience`). Omitted = the whole catalog (HOS-2061 AC-4).
+     */
+    applicableVertical?: string;
 };
 
 /**

@@ -25,6 +25,12 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
+import { type AmenityRelationAttributes, ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '../../types';
+import {
+    amenityAttributesMatch,
+    resolveDesiredAmenityAttributes
+} from '../../utils/amenity-relation-attributes';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
@@ -55,6 +61,15 @@ interface JunctionModel<TRow extends Record<string, unknown>> {
     ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+    /**
+     * Updates rows matching `where` (HOS-2061: relation attributes). Optional
+     * because the feature junction never needs it.
+     */
+    update?: (
+        where: Record<string, unknown>,
+        data: Record<string, unknown>,
+        tx?: DrizzleClient
+    ) => Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +94,15 @@ export interface SyncListingAmenityJunctionInput<TRow extends Record<string, unk
      * `undefined` → no-op | `[]` → clear all | `[ids]` → sync to set.
      */
     readonly amenityIds: readonly string[] | undefined;
+    /**
+     * Per-amenity relation attributes (HOS-2061), same contract as the
+     * accommodation sync:
+     * `undefined` → attributes of existing rows untouched;
+     * `[…]` → every linked amenity gets exactly the listed `scope` /
+     * `availability`, an unlisted linked amenity is reset to NULL, and an entry
+     * for an amenity that is not linked throws `VALIDATION_ERROR`.
+     */
+    readonly amenityAttributes?: readonly AmenityRelationAttributes[] | undefined;
     /** Junction table model (injectable for testing). */
     readonly junctionModel: JunctionModel<TRow>;
     /** Amenity catalog model (injectable for testing). */
@@ -148,10 +172,18 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
 export async function syncListingAmenityJunction<TRow extends Record<string, unknown>>(
     input: SyncListingAmenityJunctionInput<TRow>
 ): Promise<void> {
-    const { entityId, entityFkColumn, amenityIds, junctionModel, amenityModel, tx } = input;
+    const {
+        entityId,
+        entityFkColumn,
+        amenityIds,
+        amenityAttributes,
+        junctionModel,
+        amenityModel,
+        tx
+    } = input;
 
     // undefined → no-op (three-way contract)
-    if (amenityIds === undefined) return;
+    if (amenityIds === undefined && amenityAttributes === undefined) return;
 
     // Fetch ALL current junction rows for this entity (HOS-321: an unpaginated
     // `findAll` silently truncates at the model's 20-row default page, which
@@ -167,7 +199,7 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
     // Validate all supplied IDs before touching any rows. Runs AFTER the read
     // so a retired catalog id the entity already has linked is tolerated
     // (HOS-2067); a retired id it does not have is rejected.
-    if (amenityIds.length > 0) {
+    if (amenityIds !== undefined && amenityIds.length > 0) {
         await validateCatalogIds({
             ids: amenityIds,
             findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
@@ -176,8 +208,15 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
             tx
         });
     }
-    const existingIds = new Set(existing.map((row) => row.amenityId as string));
-    const targetIds = new Set(amenityIds);
+    const existingById = new Map(existing.map((row) => [row.amenityId as string, row]));
+    const existingIds = new Set(existingById.keys());
+    const targetIds = amenityIds === undefined ? existingIds : new Set(amenityIds);
+
+    // HOS-2061: resolve attributes BEFORE any write, so a bad entry rolls back nothing.
+    const desired =
+        amenityAttributes === undefined
+            ? undefined
+            : resolveDesiredAmenityAttributes({ amenityAttributes, finalIds: targetIds });
 
     // Delete rows NOT in the target set, in ONE batched statement.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
@@ -188,7 +227,38 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
     // Insert rows that are in the target set but missing from the junction table.
     const toInsert = [...targetIds].filter((id) => !existingIds.has(id));
     for (const amenityId of toInsert) {
-        await junctionModel.create({ [entityFkColumn]: entityId, amenityId }, tx);
+        const attributes = desired?.get(amenityId);
+        await junctionModel.create(
+            {
+                [entityFkColumn]: entityId,
+                amenityId,
+                // HOS-2061: scope/availability stay NULL ("not declared") unless sent.
+                ...(attributes
+                    ? { scope: attributes.scope, availability: attributes.availability }
+                    : {})
+            },
+            tx
+        );
+    }
+
+    // HOS-2061: update kept rows whose attributes differ from the desired values.
+    if (desired === undefined) return;
+    for (const amenityId of targetIds) {
+        const row = existingById.get(amenityId);
+        if (!row) continue; // just inserted with the desired values
+        const want = desired.get(amenityId);
+        if (!want || amenityAttributesMatch({ row, want })) continue;
+        if (!junctionModel.update) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Amenity junction model must implement update() to write relation attributes'
+            );
+        }
+        await junctionModel.update(
+            { [entityFkColumn]: entityId, amenityId },
+            { scope: want.scope, availability: want.availability },
+            tx
+        );
     }
 }
 

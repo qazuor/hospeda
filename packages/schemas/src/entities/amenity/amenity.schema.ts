@@ -108,19 +108,24 @@ export const AccommodationAmenityRelationSchema = z.object({
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
 
 /**
- * One amenity's relation attributes, as the host editor writes them (HOS-2058).
+ * One amenity's relation attributes, as a listing owner writes them. ONE
+ * standard for every vertical (HOS-2058 for accommodation, HOS-2061 for venue
+ * and experience): the editors send the same shape to all three write paths.
  * `scope` / `availability` absent or `null` both mean "not declared".
  */
-export const AccommodationAmenityAttributesSchema = AccommodationAmenityRelationSchema.pick({
-    amenityId: true,
-    scope: true,
-    availability: true
+export const AmenityRelationAttributesSchema = z.object({
+    amenityId: AmenityIdSchema,
+    /** Private to the guest/customer, or shared. NULL = not declared. */
+    scope: AmenityScopeEnumSchema.nullish(),
+    /** Available all year, or only in season. NULL = not declared. */
+    availability: AmenityAvailabilityEnumSchema.nullish()
 });
-export type AccommodationAmenityAttributes = z.infer<typeof AccommodationAmenityAttributesSchema>;
+export type AmenityRelationAttributes = z.infer<typeof AmenityRelationAttributesSchema>;
 
 /**
- * Write-only list of per-amenity relation attributes on an accommodation update
- * (HOS-2058). Contract, enforced by the accommodation junction sync:
+ * Write-only list of per-amenity relation attributes on a listing update
+ * (HOS-2058, generalized to every vertical in HOS-2061). Contract, enforced by
+ * the junction sync of each vertical:
  *
  * - `undefined` -> attributes of existing rows are left untouched;
  * - provided -> every amenity linked after the update gets exactly the listed
@@ -129,33 +134,60 @@ export type AccommodationAmenityAttributes = z.infer<typeof AccommodationAmenity
  *
  * Each `amenityId` may appear at most once.
  */
-export const AccommodationAmenityAttributesListSchema = z
-    .array(AccommodationAmenityAttributesSchema)
+export const AmenityRelationAttributesListSchema = z
+    .array(AmenityRelationAttributesSchema)
     .refine((items) => new Set(items.map((item) => item.amenityId)).size === items.length, {
         message: 'zodError.accommodationAmenity.attributes.duplicate'
     });
-export type AccommodationAmenityAttributesList = z.infer<
-    typeof AccommodationAmenityAttributesListSchema
->;
+export type AmenityRelationAttributesList = z.infer<typeof AmenityRelationAttributesListSchema>;
 
 /**
- * venue-Amenity Relation Schema
- * Represents the many-to-many relationship between venue listings and amenities.
- * Simpler than the accommodation variant: no pricing or optional-cost fields.
+ * Accommodation alias of {@link AmenityRelationAttributesSchema} (HOS-2058).
+ * Kept so existing accommodation call sites read naturally; it IS the shared
+ * schema, never a second definition.
  */
-export const VenueAmenityRelationSchema = z.object({
-    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    amenityId: AmenityIdSchema
+export const AccommodationAmenityAttributesSchema = AmenityRelationAttributesSchema;
+export type AccommodationAmenityAttributes = AmenityRelationAttributes;
+
+/** Accommodation alias of {@link AmenityRelationAttributesListSchema} (HOS-2058). */
+export const AccommodationAmenityAttributesListSchema = AmenityRelationAttributesListSchema;
+export type AccommodationAmenityAttributesList = AmenityRelationAttributesList;
+
+/**
+ * Relation attribute columns shared by every amenity junction table
+ * (`r_accommodation_amenity`, `r_venue_amenity`, `r_experience_amenity`).
+ * HOS-2061 brought venue and experience to parity with accommodation.
+ */
+const AmenityRelationColumnsSchema = AccommodationAmenityRelationSchema.pick({
+    isOptional: true,
+    additionalCost: true,
+    additionalCostPercent: true,
+    scope: true,
+    availability: true
 });
+
+/**
+ * Venue-Amenity Relation Schema
+ * Represents the many-to-many relationship between venue listings and amenities.
+ * Same relation attributes as the accommodation variant (HOS-2061).
+ */
+export const VenueAmenityRelationSchema = z
+    .object({
+        venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        amenityId: AmenityIdSchema
+    })
+    .extend(AmenityRelationColumnsSchema.shape);
 export type VenueAmenityRelation = z.infer<typeof VenueAmenityRelationSchema>;
 
 /**
  * Experience-Amenity Relation Schema (SPEC-240)
  * Represents the many-to-many relationship between experience listings and amenities.
- * Mirrors venueAmenityRelationSchema: no pricing or optional-cost fields.
+ * Same relation attributes as the accommodation variant (HOS-2061).
  */
-export const ExperienceAmenityRelationSchema = z.object({
-    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    amenityId: AmenityIdSchema
-});
+export const ExperienceAmenityRelationSchema = z
+    .object({
+        experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        amenityId: AmenityIdSchema
+    })
+    .extend(AmenityRelationColumnsSchema.shape);
 export type ExperienceAmenityRelation = z.infer<typeof ExperienceAmenityRelationSchema>;

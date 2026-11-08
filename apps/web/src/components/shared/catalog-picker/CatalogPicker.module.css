@@ -1,38 +1,100 @@
-/* AmenitiesSection.module.css — SPEC-208 */
+/**
+ * CatalogPicker.module.css — the shared amenity/feature picker (HOS-2061).
+ *
+ * Merges the two former `AmenitiesSection.module.css` copies (host editor,
+ * BETA-133 / HOS-2058, and listing editor, HOS-371) so the three owner editors
+ * read identically.
+ */
 
-.section {
-    border: none;
-    padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
+.picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.5rem);
 }
 
-.sectionTitle {
-    font-family: var(--font-heading);
+/* ── Search ───────────────────────────────────────────────────────────── */
+
+.search {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.searchLabel {
+    font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: 0.875rem;
     color: var(--core-foreground);
-    margin-bottom: var(--space-4, 1.5rem);
-    padding-bottom: var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border);
 }
 
-.group {
-    margin-bottom: var(--space-4, 1.5rem);
+.searchInput {
+    width: 100%;
+    max-width: 28rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card, var(--core-background));
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
 }
 
-.groupTitle {
+.searchInput:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.noResults {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Catalog blocks ───────────────────────────────────────────────────── */
+
+.catalogGroup {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+}
+
+.catalogTitle {
+    padding: 0;
+    margin-bottom: var(--space-3, 1rem);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.9375rem;
     color: var(--core-foreground);
-    margin: 0 0 var(--space-3, 1rem);
 }
 
-.checkboxGrid {
+.featured {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.featuredTitle,
+.showAllTitle {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--core-muted-foreground);
+}
+
+.grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--space-2, 0.5rem);
 }
+
+/* ── Category accordions ──────────────────────────────────────────────── */
 
 .categoryList {
     display: flex;
@@ -44,10 +106,10 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-md, 10px);
     padding: 0 var(--space-3, 1rem);
-    background-color: var(--core-card);
+    background-color: var(--core-card, var(--core-background));
 }
 
-.categoryGroup .checkboxGrid {
+.categoryGroup .grid {
     padding-bottom: var(--space-3, 1rem);
 }
 
@@ -75,6 +137,7 @@
     gap: var(--space-3, 1rem);
 }
 
+/* Chevron drawn from borders — rotates when the accordion opens. */
 .categoryLabel::before {
     content: "";
     display: inline-block;
@@ -107,6 +170,22 @@
     flex-shrink: 0;
 }
 
+/* ── Items ────────────────────────────────────────────────────────────── */
+
+/*
+ * Each item spans two rows of the parent grid and adopts them as a subgrid, so
+ * every label in a visual row shares one track and every "Detalles" disclosure
+ * starts at the same height (HOS-2058). Opening a disclosure only grows the
+ * second track, never the cards above it.
+ */
+.item {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: 0.25rem;
+    min-width: 0;
+}
+
 .checkboxLabel {
     display: flex;
     align-items: center;
@@ -114,7 +193,7 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card);
+    background-color: var(--core-card, var(--core-background));
     cursor: pointer;
     transition:
         border-color 150ms ease-out,
@@ -139,21 +218,7 @@
     color: var(--core-foreground);
 }
 
-/*
- * HOS-2058: a checked amenity carries a collapsed scope/availability disclosure.
- * Each item spans two rows of the parent grid and adopts them as a subgrid, so
- * every label in a visual row shares one track (a two-line name stretches its
- * neighbours' cards instead of pushing them out of line) and every "Detalles"
- * disclosure starts at the same height. Opening a disclosure only grows the
- * second track, never the cards above it.
- */
-.item {
-    display: grid;
-    grid-row: span 2;
-    grid-template-rows: subgrid;
-    row-gap: 0.25rem;
-    min-width: 0;
-}
+/* ── Inline attribute controls ────────────────────────────────────────── */
 
 .attributes {
     padding: 0 0.75rem;

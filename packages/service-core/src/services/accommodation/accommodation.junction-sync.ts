@@ -29,13 +29,15 @@ import type {
     RAccommodationAmenityModel,
     RAccommodationFeatureModel
 } from '@repo/db';
-import {
-    type AccommodationAmenityAttributes,
-    type AmenityAvailabilityEnum,
-    type AmenityScopeEnum,
-    ServiceErrorCode
+import type {
+    AccommodationAmenityAttributes,
+    AmenityAvailabilityEnum,
+    AmenityScopeEnum
 } from '@repo/schemas';
-import { ServiceError } from '../../types';
+import {
+    amenityAttributesMatch,
+    resolveDesiredAmenityAttributes
+} from '../../utils/amenity-relation-attributes';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
@@ -97,48 +99,6 @@ interface AmenityJunctionRow {
     readonly amenityId: string;
     readonly scope?: AmenityScopeEnum | null;
     readonly availability?: AmenityAvailabilityEnum | null;
-}
-
-/** Desired attribute values, keyed by amenity id. NULL = not declared. */
-type DesiredAttributes = ReadonlyMap<
-    string,
-    {
-        readonly scope: AmenityScopeEnum | null;
-        readonly availability: AmenityAvailabilityEnum | null;
-    }
->;
-
-/**
- * Builds the desired attribute map for the final linked set, or throws when an
- * entry names an amenity that will not be linked (HOS-2058).
- */
-function resolveDesiredAttributes({
-    amenityAttributes,
-    finalIds
-}: {
-    readonly amenityAttributes: readonly AccommodationAmenityAttributes[];
-    readonly finalIds: ReadonlySet<string>;
-}): DesiredAttributes {
-    const listed = new Map(amenityAttributes.map((item) => [item.amenityId, item]));
-    const unlinked = [...listed.keys()].filter((id) => !finalIds.has(id));
-    if (unlinked.length > 0) {
-        throw new ServiceError(
-            ServiceErrorCode.VALIDATION_ERROR,
-            `amenityAttributes references amenities that are not linked: ${unlinked.join(', ')}`
-        );
-    }
-    const desired = new Map<
-        string,
-        { scope: AmenityScopeEnum | null; availability: AmenityAvailabilityEnum | null }
-    >();
-    for (const id of finalIds) {
-        const item = listed.get(id);
-        desired.set(id, {
-            scope: item?.scope ?? null,
-            availability: item?.availability ?? null
-        });
-    }
-    return desired;
 }
 
 /**
@@ -214,7 +174,7 @@ export async function syncAmenityJunction({
     const desired =
         amenityAttributes === undefined
             ? undefined
-            : resolveDesiredAttributes({ amenityAttributes, finalIds: targetIds });
+            : resolveDesiredAmenityAttributes({ amenityAttributes, finalIds: targetIds });
 
     // Delete rows NOT in the target set, in ONE statement. `buildWhereClause`
     // turns an array value on a scalar column into `IN (...)`, so clearing a
@@ -253,12 +213,7 @@ export async function syncAmenityJunction({
         if (!row) continue; // just inserted with the desired values
         const want = desired.get(amenityId);
         if (!want) continue;
-        if (
-            (row.scope ?? null) === want.scope &&
-            (row.availability ?? null) === want.availability
-        ) {
-            continue;
-        }
+        if (amenityAttributesMatch({ row, want })) continue;
         await junctionModel.update(
             { accommodationId, amenityId },
             { scope: want.scope, availability: want.availability },

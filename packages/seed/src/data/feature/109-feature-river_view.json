@@ -4,11 +4,11 @@
     "slug": "river_view",
     "category": "VIEW",
     "description": {
-        "es": "Vista al río desde el alojamiento",
-        "en": "River view from the property",
-        "pt": "Vista para o rio a partir da hospedagem"
+        "es": "Vista al río desde el lugar",
+        "en": "River view from the place",
+        "pt": "Vista para o rio a partir do local"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "RiverViewIcon",
     "isBuiltin": false,
     "isFeatured": true,

@@ -187,11 +187,11 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // until multi-currency ships), so there is no control to focus.
     currency: 'static read-only indicator, not an editable control',
     // Checkbox GROUPS — many controls, one key, no single focus target.
-    amenityIds: 'checkbox group in AmenitiesSection',
+    amenityIds: 'checkbox group in CatalogPicker',
     // HOS-2058: per-amenity radio GROUPS (scope + availability for every
     // checked amenity), one key, no single focus target.
-    amenityAttributes: 'per-amenity radio groups in AmenitiesSection',
-    featureIds: 'checkbox group in AmenitiesSection',
+    amenityAttributes: 'per-amenity radio groups in CatalogPicker',
+    featureIds: 'checkbox group in CatalogPicker',
     // HOS-2060: a per-key PATCH object split across two pages. Its leaves
     // render under dotted ids (`acc-policies-minNights` on capacity/pricing,
     // `acc-policies-smokingAllowed`, ... on services).

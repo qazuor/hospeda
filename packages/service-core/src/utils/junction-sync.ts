@@ -65,8 +65,8 @@ export interface ReadAllJunctionRowsInput<TRow> {
     readonly junctionModel: PaginatedJunctionReader<TRow>;
     /** Column giving a stable total order across pages. */
     readonly sortBy: keyof TRow & string;
-    /** Active transaction client. */
-    readonly tx: DrizzleClient;
+    /** Active transaction client. Omit for a standalone read (no transaction). */
+    readonly tx?: DrizzleClient;
 }
 
 /**

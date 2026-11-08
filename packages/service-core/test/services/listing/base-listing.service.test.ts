@@ -1035,12 +1035,13 @@ describe('BaseListingService — loadJunctionIds (junction read-back, SPEC-249)'
 
         expect(result).toEqual({
             amenityIds: ['amenity-1', 'amenity-2'],
-            featureIds: ['feature-1']
+            featureIds: ['feature-1'],
+            amenityAttributes: []
         });
-        expect(amenityJunction.findAll as Mock).toHaveBeenCalledWith({
+        expect((amenityJunction.findAll as Mock).mock.calls[0]?.[0]).toEqual({
             testListingId: 'listing-1'
         });
-        expect(featureJunction.findAll as Mock).toHaveBeenCalledWith({
+        expect((featureJunction.findAll as Mock).mock.calls[0]?.[0]).toEqual({
             testListingId: 'listing-1'
         });
     });
@@ -1050,7 +1051,46 @@ describe('BaseListingService — loadJunctionIds (junction read-back, SPEC-249)'
 
         const result = await svc.loadJunctionIds('listing-1');
 
-        expect(result).toEqual({ amenityIds: [], featureIds: [] });
+        expect(result).toEqual({ amenityIds: [], featureIds: [], amenityAttributes: [] });
+    });
+
+    it('reads past the model default page instead of truncating at 20 rows (HOS-2061 / HOS-321)', async () => {
+        // Arrange: 25 linked amenities; a page-1-only read would see 20.
+        const { svc, amenityJunction } = makeService();
+        const rows = Array.from({ length: 25 }, (_, i) => ({ amenityId: `amenity-${i}` }));
+        (amenityJunction.findAll as Mock).mockImplementation(
+            (_where: unknown, options?: { pageSize?: number }) => {
+                const pageSize = options?.pageSize ?? 20;
+                return Promise.resolve({ items: rows.slice(0, pageSize), total: rows.length });
+            }
+        );
+
+        // Act
+        const result = await svc.loadJunctionIds('listing-1');
+
+        // Assert
+        expect(result.amenityIds).toHaveLength(25);
+    });
+
+    it('returns only the declared relation attributes of linked amenities (HOS-2061)', async () => {
+        // Arrange
+        const { svc, amenityJunction } = makeService();
+        (amenityJunction.findAll as Mock).mockResolvedValue({
+            items: [
+                { amenityId: 'amenity-1', scope: 'shared', availability: null },
+                { amenityId: 'amenity-2', scope: null, availability: null },
+                { amenityId: 'amenity-3', scope: null, availability: 'seasonal' }
+            ]
+        });
+
+        // Act
+        const result = await svc.loadJunctionIds('listing-1');
+
+        // Assert
+        expect(result.amenityAttributes).toEqual([
+            { amenityId: 'amenity-1', scope: 'shared', availability: null },
+            { amenityId: 'amenity-3', scope: null, availability: 'seasonal' }
+        ]);
     });
 });
 

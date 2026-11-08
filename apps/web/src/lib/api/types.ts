@@ -408,6 +408,14 @@ export interface AmenityData {
     /** Catalog slug — used as the i18n key for label resolution (SPEC-266). */
     readonly slug: string;
     readonly category: string | null;
+    /**
+     * Catalog `is_featured` flag (HOS-2061): the picker lists featured items
+     * first. Optional so fixtures that predate it keep compiling; absent reads
+     * as not featured.
+     */
+    readonly isFeatured?: boolean;
+    /** Catalog `display_weight` (1-100, default 50): featured ordering (HOS-2061). */
+    readonly displayWeight?: number;
 }
 
 /**

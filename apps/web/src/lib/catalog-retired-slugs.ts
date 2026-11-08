@@ -15,7 +15,13 @@
  * (`CATALOG_MERGES`, `FEATURE_SLUG_RENAMES`) and, for the house rules that
  * became `policies` with no survivor row,
  * `0154-hos-2060-retire-policy-catalog-rows.ts` (HOS-2060), whose landings go
- * to the accommodation search instead. This table is their public-URL
+ * to the accommodation search instead.
+ *
+ * `0155-hos-2061-venue-experience-catalog-curation.ts` (HOS-2061) adds NO
+ * entry on purpose: none of the four rows it retires ever applied to
+ * accommodation, so none had a landing here, and a 404 stays the honest
+ * answer. Every target must be a live accommodation-applicable row of the
+ * seed baseline (`catalog-retired-slugs.test.ts` enforces it). This table is their public-URL
  * counterpart, and `legacy-redirects.ts` resolves it as a 301.
  *
  * @module lib/catalog-retired-slugs

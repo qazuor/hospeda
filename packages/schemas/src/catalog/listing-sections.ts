@@ -47,7 +47,7 @@ export const LISTING_SECTIONS = {
             common: true,
             // HOS-2060: the structured `policies` live with the catalog rows
             // they replaced; a section may claim keys inside it (`policyKeys`).
-            fields: ['amenityIds', 'featureIds', 'policies'],
+            fields: ['amenityIds', 'featureIds', 'amenityAttributes', 'policies'],
             order: 4,
             group: 'property'
         },
@@ -216,7 +216,7 @@ export const LISTING_SECTIONS = {
             common: true,
             // HOS-2060: the structured `policies` live with the catalog rows
             // they replaced; a section may claim keys inside it (`policyKeys`).
-            fields: ['amenityIds', 'featureIds', 'policies'],
+            fields: ['amenityIds', 'featureIds', 'amenityAttributes', 'policies'],
             order: 6,
             group: 'property'
         },

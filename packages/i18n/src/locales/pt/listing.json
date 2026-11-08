@@ -289,7 +289,14 @@
                 "plan_other": "Você tem {{count}} itens salvos que não são publicados: seu plano não inclui {{section}}."
             },
             "amenities": {
-                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
+                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente.",
+                "picker": {
+                    "searchLabel": "Buscar serviços e características",
+                    "searchPlaceholder": "Ex.: wifi, piscina, vegano",
+                    "featured": "Destaques",
+                    "showAll": "Ver todos",
+                    "noResults": "Não encontramos nada com \"{{query}}\"."
+                }
             },
             "nightInfo": {
                 "entryPriceFrom": "Preço a partir de (em pesos)",

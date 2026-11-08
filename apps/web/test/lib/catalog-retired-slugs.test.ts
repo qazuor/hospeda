@@ -9,7 +9,7 @@
  * does not depend on `@repo/seed`): a merge added there without a redirect
  * here would leave a 404 behind.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -193,5 +193,95 @@ describe('the redirect table matches data-migration 0154 (HOS-2060)', () => {
         expect(
             resolveRetiredCatalogSlugPath({ path: '/es/alojamientos/comodidades/accepts_cards/' })
         ).toBe('/es/alojamientos/');
+    });
+});
+
+const MIGRATION_0155 = readFileSync(
+    resolve(
+        __dirname,
+        '../../../../packages/seed/src/data-migrations/0155-hos-2061-venue-experience-catalog-curation.ts'
+    ),
+    'utf8'
+);
+
+/** Merges and policy retirements declared by migration 0155 (HOS-2061). */
+const MERGES_0155 = [
+    ...MIGRATION_0155.matchAll(
+        /source: (amenity|feature)\('([a-z0-9_]+)'\),\s+target: (amenity|feature)\('([a-z0-9_]+)'\)/g
+    )
+].map((match) => ({
+    sourceKind: match[1],
+    sourceSlug: match[2],
+    targetKind: match[3],
+    targetSlug: match[4]
+}));
+const policySlugs0155 = (kind: 'AMENITY' | 'FEATURE'): readonly string[] => {
+    const block = MIGRATION_0155.match(
+        new RegExp(`RETIRED_POLICY_${kind}_SLUGS[^=]*= \\[([^\\]]*)\\]`)
+    )?.[1];
+    return [...(block ?? '').matchAll(/'([a-z0-9_]+)'/g)].map((match) => match[1] ?? '');
+};
+
+describe('data-migration 0155 adds no redirect (HOS-2061)', () => {
+    it('reads the two merges and the two policy retirements', () => {
+        expect(MERGES_0155).toHaveLength(2);
+        expect(policySlugs0155('AMENITY')).toEqual(['accepts_reservations']);
+        expect(policySlugs0155('FEATURE')).toEqual(['private_available']);
+    });
+
+    it('leaves the four retired rows without a redirect: they never had an accommodation landing', () => {
+        // Arrange
+        const retired = [
+            ...MERGES_0155.map((merge) => `${merge.sourceKind}:${merge.sourceSlug}`),
+            ...policySlugs0155('AMENITY').map((slug) => `amenity:${slug}`),
+            ...policySlugs0155('FEATURE').map((slug) => `feature:${slug}`)
+        ];
+
+        // Act / Assert
+        for (const ref of retired) {
+            const [kind, slug] = ref.split(':') as [string, string];
+            const table =
+                kind === 'amenity' ? RETIRED_AMENITY_SLUG_TARGETS : RETIRED_FEATURE_SLUG_TARGETS;
+            expect(Object.hasOwn(table, slug), ref).toBe(false);
+        }
+    });
+});
+
+/** Live seed-baseline catalog rows, keyed by slug, with their verticals. */
+const baselineVerticals = (kind: 'amenity' | 'feature'): ReadonlyMap<string, readonly string[]> => {
+    const dir = resolve(__dirname, `../../../../packages/seed/src/data/${kind}`);
+    return new Map(
+        readdirSync(dir)
+            .filter((file) => file.endsWith('.json'))
+            .map((file) => {
+                const row = JSON.parse(readFileSync(resolve(dir, file), 'utf8')) as {
+                    slug: string;
+                    applicableVerticals: readonly string[];
+                };
+                return [row.slug, row.applicableVerticals] as const;
+            })
+    );
+};
+
+describe('every redirect lands on a live accommodation landing (HOS-2061)', () => {
+    const landingRows = {
+        comodidades: baselineVerticals('amenity'),
+        caracteristicas: baselineVerticals('feature')
+    } as const;
+    const entries = [
+        ...Object.entries(RETIRED_AMENITY_SLUG_TARGETS),
+        ...Object.entries(RETIRED_FEATURE_SLUG_TARGETS)
+    ];
+
+    it('reads the seed baseline', () => {
+        expect(landingRows.comodidades.size).toBeGreaterThan(0);
+        expect(landingRows.caracteristicas.size).toBeGreaterThan(0);
+    });
+
+    it.each(entries)('%s points at a live, accommodation-applicable row', (_slug, target) => {
+        if (target.family === 'search') return;
+        const verticals = landingRows[target.family].get(target.slug);
+        expect(verticals, `${target.family}/${target.slug} is not a live row`).toBeDefined();
+        expect(verticals).toContain('accommodation');
     });
 });

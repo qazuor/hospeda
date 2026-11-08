@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "117-feature-birdwatching",
+    "slug": "birdwatching",
+    "category": "ACTIVITIES",
+    "description": {
+        "es": "Avistaje de aves en el entorno natural de la actividad",
+        "en": "Birdwatching in the natural surroundings of the activity",
+        "pt": "Observação de aves no ambiente natural da atividade"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "BirdWatchingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

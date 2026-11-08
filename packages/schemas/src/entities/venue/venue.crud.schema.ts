@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { AmenityRelationAttributesListSchema } from '../amenity/amenity.schema.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
@@ -243,6 +244,12 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });
@@ -472,6 +479,12 @@ export const VenueUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });

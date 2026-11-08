@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "115-feature-happy_hour",
+    "slug": "happy_hour",
+    "category": "OFFER_PROFILE",
+    "description": {
+        "es": "Promociones especiales en bebidas durante el happy hour",
+        "en": "Special drink deals during happy hour",
+        "pt": "Promoções especiais de bebidas durante o happy hour"
+    },
+    "applicableVerticals": ["venue"],
+    "icon": "BarServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 45,
+    "lifecycleState": "ACTIVE"
+}

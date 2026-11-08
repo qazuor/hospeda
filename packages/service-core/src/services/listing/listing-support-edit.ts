@@ -156,7 +156,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'media', // [TABLE] media rows + [§1.2] "fotos"; nested moderation is refused below
     'videos', // [BLANK] accommodation, experience; nested moderation is refused below
     'amenityIds', // [TABLE] r_<vertical>_amenity
-    'amenityAttributes', // [TABLE] r_accommodation_amenity scope/availability (HOS-2058)
+    'amenityAttributes', // [TABLE] r_<vertical>_amenity scope/availability (HOS-2058 accommodation, HOS-2061 venue/experience)
     'featureIds', // [TABLE] r_<vertical>_feature
     'faqs', // [TABLE] <vertical>_faqs + [§1.2] "FAQ"
     'price', // [BLANK] accommodation

@@ -32,7 +32,7 @@ if (resolution.error) return resolution.error;
 const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 
-// `AmenitiesSection` returns null when BOTH catalogs are empty. The notice says
+// The amenities block (`CatalogPicker`, HOS-2061) renders nothing when BOTH catalogs are empty. The notice says
 // so the only way this page can tell an empty catalog from a failed fetch: it
 // cannot, and both are the owner's cue to come back later. The Policies panel
 // below it stays editable either way (HOS-2060).

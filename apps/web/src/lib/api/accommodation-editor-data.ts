@@ -24,6 +24,7 @@ import {
     transformDestinationList
 } from '@/lib/api/transforms';
 import type { AccommodationTranslationData, MediaImage } from '@/lib/api/types';
+import { readAllCatalogPages } from '@/lib/editor/listing-catalogs';
 import { webLogger as logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
@@ -111,17 +112,14 @@ export async function loadAccommodationEditorData({
                           destinationType: 'CITY'
                       })
                     : Promise.resolve(null),
+                // HOS-2061: read to the last page. The accommodation catalog
+                // outgrew one page of 100 (143 amenities in the seed), and a
+                // truncated catalog renders a saved row as unselectable.
                 wants.has('catalog')
-                    ? amenitiesApi.list({
-                          pageSize: CATALOG_PAGE_SIZE,
-                          applicableVertical: 'accommodation'
-                      })
+                    ? readWholeCatalog({ fetchPage: (params) => amenitiesApi.list(params) })
                     : Promise.resolve(null),
                 wants.has('catalog')
-                    ? featuresApi.list({
-                          pageSize: CATALOG_PAGE_SIZE,
-                          applicableVertical: 'accommodation'
-                      })
+                    ? readWholeCatalog({ fetchPage: (params) => featuresApi.list(params) })
                     : Promise.resolve(null),
                 wants.has('faqs')
                     ? accommodationFaqApi.list({ accommodationId, cookieHeader })
@@ -161,6 +159,7 @@ export async function loadAccommodationEditorData({
                 destinations: readCatalog({
                     result: destinationsResult,
                     label: 'destinations',
+                    singlePage: true,
                     transform: (items) => transformDestinationList({ items })
                 }),
                 amenities: readCatalog({
@@ -187,10 +186,26 @@ export async function loadAccommodationEditorData({
 // ---------------------------------------------------------------------------
 
 /**
+ * Reads every page of one accommodation-scoped catalog, all or nothing.
+ *
+ * @param params - The page fetcher for the catalog endpoint.
+ * @returns An OK result holding every row, or a failed result when any page failed.
+ */
+async function readWholeCatalog({
+    fetchPage
+}: {
+    readonly fetchPage: Parameters<typeof readAllCatalogPages>[0]['fetchPage'];
+}): Promise<{ readonly ok: boolean; readonly data?: unknown }> {
+    const whole = await readAllCatalogPages({ fetchPage, vertical: 'accommodation' });
+    return whole ? { ok: true, data: whole } : { ok: false };
+}
+
+/**
  * Reads one paginated catalog response, degrading to an empty list on failure.
  *
- * Also warns when the response hits the 100-item page cap — the select/checkbox
- * group would silently truncate, so we want to know before it bites.
+ * For a `singlePage` read, also warns when the response hits the 100-item
+ * page cap — the select would silently truncate, so we want to know before it
+ * bites. The amenity and feature catalogs are read whole and never warn.
  *
  * @param params - The API result, a label for logging, and the list transform.
  * @returns The transformed items, or an empty array.
@@ -198,10 +213,12 @@ export async function loadAccommodationEditorData({
 function readCatalog<T>({
     result,
     label,
+    singlePage = false,
     transform
 }: {
     readonly result: { readonly ok: boolean; readonly data?: unknown } | null;
     readonly label: string;
+    readonly singlePage?: boolean;
     readonly transform: (items: Record<string, unknown>[]) => readonly T[];
 }): readonly T[] {
     if (!result?.ok) return [];
@@ -209,7 +226,7 @@ function readCatalog<T>({
     const items = (result.data as { items?: Record<string, unknown>[] } | undefined)?.items ?? [];
     const transformed = transform(items);
 
-    if (transformed.length >= CATALOG_PAGE_SIZE) {
+    if (singlePage && transformed.length >= CATALOG_PAGE_SIZE) {
         logger.warn(`accommodation-editor-data: ${label} hit the ${CATALOG_PAGE_SIZE}-item cap`, {
             count: transformed.length
         });
