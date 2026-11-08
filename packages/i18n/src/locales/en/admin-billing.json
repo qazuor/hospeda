@@ -2301,5 +2301,31 @@
             "INVALID_PERMANENT_GRANT_INPUT": "The grant details are invalid."
         },
         "invalidForm": "Check the vertical, current plan, and reason."
+    },
+    "temporaryCourtesy": {
+        "title": "Temporary courtesy",
+        "rule": "Temporary courtesy is granted in whole months and only on a monthly plan. Each month skips one charge.",
+        "unavailable": "Unavailable: {customer} has a {cycle} plan, not a monthly plan.",
+        "unavailableReason": "Reason: {reason}.",
+        "alternatives": "Alternatives: a permanent courtesy grant or a promotion on renewal.",
+        "months": "Months",
+        "reason": "Reason",
+        "review": "Review effects",
+        "confirm": "Confirm action",
+        "grantConfirm": "{customer} will not pay the next {months} charges: the subscription is paused in Mercado Pago and service continues. Courtesy ends on {date}.",
+        "extendConfirm": "{customer} already has courtesy until {current}. {months} months are added: the new end date is {date}.",
+        "granted": "Courtesy granted until {date}.",
+        "extended": "Courtesy extended until {date}.",
+        "notApplied": "Courtesy was not applied: Mercado Pago did not confirm the pause. A reconciliation marker remains for review.",
+        "revokeConfirm": "{customer} loses the remaining courtesy ({remaining} months, until {endsAt}), with no refund. The subscription returns to ACTIVE and will be charged on {date}.",
+        "revoked": "Courtesy revoked. Next charge: {date}.",
+        "notInForce": "There is no active temporary courtesy to revoke.",
+        "error": "The action could not be completed ({reason}). Review the status and try again.",
+        "stateChanged": "The subscription status changed. Reload the preview and review it again.",
+        "revokeTitle": "Revoke temporary courtesy",
+        "reviewRevoke": "Review revocation",
+        "loading": "Reviewing courtesy…",
+        "invalidId": "The subscription does not exist.",
+        "chargePending": "pending provider confirmation"
     }
 }

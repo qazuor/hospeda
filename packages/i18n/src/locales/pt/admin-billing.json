@@ -2301,5 +2301,31 @@
             "INVALID_PERMANENT_GRANT_INPUT": "Os dados do grant são inválidos."
         },
         "invalidForm": "Confira a vertical, o plano vigente e o motivo."
+    },
+    "temporaryCourtesy": {
+        "title": "Cortesia temporária",
+        "rule": "A cortesia temporária é concedida em meses inteiros e somente para um plano mensal. Cada mês pula uma cobrança.",
+        "unavailable": "Indisponível: o plano de {customer} é {cycle}, não mensal.",
+        "unavailableReason": "Motivo: {reason}.",
+        "alternatives": "Alternativas: uma cortesia permanente ou uma promoção na renovação.",
+        "months": "Meses",
+        "reason": "Motivo",
+        "review": "Revisar efeitos",
+        "confirm": "Confirmar ação",
+        "grantConfirm": "{customer} não paga as próximas {months} cobranças: a assinatura é pausada no Mercado Pago e o serviço continua. A cortesia termina em {date}.",
+        "extendConfirm": "{customer} já tem cortesia até {current}. Somam-se {months} meses: a nova data de término é {date}.",
+        "granted": "Cortesia concedida até {date}.",
+        "extended": "Cortesia estendida até {date}.",
+        "notApplied": "A cortesia não foi aplicada: o Mercado Pago não confirmou a pausa. Ficou uma marca de conciliação para revisão.",
+        "revokeConfirm": "{customer} perde a cortesia restante ({remaining} meses, até {endsAt}), sem reembolso. A assinatura volta a ACTIVE e será cobrada em {date}.",
+        "revoked": "Cortesia revogada. Próxima cobrança: {date}.",
+        "notInForce": "Não há cortesia temporária vigente para revogar.",
+        "error": "Não foi possível concluir a ação ({reason}). Revise o estado e tente novamente.",
+        "stateChanged": "O estado da assinatura mudou. Recarregue a prévia e revise novamente.",
+        "revokeTitle": "Revogar cortesia temporária",
+        "reviewRevoke": "Revisar revogação",
+        "loading": "Revisando a cortesia…",
+        "invalidId": "A assinatura não existe.",
+        "chargePending": "aguardando confirmação do provedor"
     }
 }
