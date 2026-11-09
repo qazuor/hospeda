@@ -1,0 +1,74 @@
+{
+    "providers": [
+        {
+            "id": "openai",
+            "apiKeyEnv": "OPENAI_API_KEY"
+        }
+    ],
+    "models": [
+        {
+            "id": "gpt-5.4-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.2,
+                "outputUsdPerMillion": 1.25
+            },
+            "reasoningEfforts": ["none", "low"]
+        },
+        {
+            "id": "gpt-5.4-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.75,
+                "outputUsdPerMillion": 4.5
+            },
+            "reasoningEfforts": ["none", "low"]
+        },
+        {
+            "id": "gpt-5-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.05,
+                "outputUsdPerMillion": 0.4
+            },
+            "reasoningEfforts": ["minimal", "low"]
+        },
+        {
+            "id": "gpt-5-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.25,
+                "outputUsdPerMillion": 2.0
+            },
+            "reasoningEfforts": ["minimal", "low"]
+        }
+    ],
+    "maxOutputTokens": [2048],
+    "repetitions": 2,
+    "caseIds": [
+        "acc-real-isla-checkin-wifi-pets",
+        "acc-real-isla-parking-price-absent",
+        "acc-real-isla-two-families-8",
+        "acc-real-isla-sloppy-whatsapp-booking",
+        "acc-real-casa-pets-parking-checkin",
+        "acc-real-casa-pool-ac-absent",
+        "acc-real-casa-two-families-kids-recommend",
+        "acc-real-casa-booking-price-ask",
+        "acc-real-casa-portuguese-pets-pool",
+        "acc-real-ruca-group-14-cabins",
+        "acc-real-ruca-pool-size-checkin-pets-absent",
+        "acc-real-ruca-baby-quiet-ac-parking",
+        "acc-real-balcones-river-parking-pets-price",
+        "acc-real-balcones-4-people-beds-absent",
+        "acc-real-balcones-english-restaurant-bikes",
+        "acc-real-monogris-couple-central-cooking",
+        "acc-real-monogris-parking-kid-pets-absent"
+    ],
+    "concurrency": 2,
+    "maxCalls": 300,
+    "monthlyQuotas": [20, 50, 100, 250, 1250]
+}

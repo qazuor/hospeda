@@ -41,7 +41,7 @@ export const RubricSchema = z.object({
     /** The right answer is a polite decline / redirect to the listing. */
     expectsDecline: z.boolean().default(false),
     /** Language the answer should be written in. */
-    expectedLanguage: z.enum(['es', 'en']).default('es'),
+    expectedLanguage: z.enum(['es', 'en', 'pt']).default('es'),
     /** What an ideal answer looks like (for the human/LLM grader). */
     notes: z.string().min(1)
 });
@@ -68,12 +68,23 @@ const ES_WORDS =
 const EN_WORDS =
     /\b(the|and|is|are|you|your|to|of|in|it|for|with|not|this|have|can|do|does|we|our|please|there|about)\b/gi;
 
-/** Guesses the answer language by stopword counts. Heuristic only. */
-export function detectLanguage(text: string): 'es' | 'en' | 'unknown' {
+const PT_WORDS =
+    /(?<!\p{L})(você|voce|não|nao|sim|tem|também|tambem|são|aceitam|animais|nós|uma|com|em|do|da|dos|das|pelo|pela)(?!\p{L})/giu;
+
+/**
+ * Guesses the answer language by stopword counts. Heuristic only.
+ * Portuguese wins only with strictly more hits than Spanish and English.
+ */
+export function detectLanguage(text: string): 'es' | 'en' | 'pt' | 'unknown' {
     const es = (text.match(ES_WORDS) ?? []).length;
     const en = (text.match(EN_WORDS) ?? []).length;
-    if (es === en) return 'unknown';
-    return es > en ? 'es' : 'en';
+    const pt = (text.match(PT_WORDS) ?? []).length;
+    const max = Math.max(es, en, pt);
+    if (max === 0) return 'unknown';
+    const winners = [es === max, en === max, pt === max].filter(Boolean).length;
+    if (winners > 1) return 'unknown';
+    if (es === max) return 'es';
+    return en === max ? 'en' : 'pt';
 }
 
 /** Automatic quality checks of one answer. */
