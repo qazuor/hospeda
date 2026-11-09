@@ -1088,8 +1088,27 @@ describe('BaseListingService — loadJunctionIds (junction read-back, SPEC-249)'
 
         // Assert
         expect(result.amenityAttributes).toEqual([
-            { amenityId: 'amenity-1', scope: 'shared', availability: null },
-            { amenityId: 'amenity-3', scope: null, availability: 'seasonal' }
+            { amenityId: 'amenity-1', scope: 'shared', availability: null, extraCharge: false },
+            { amenityId: 'amenity-3', scope: null, availability: 'seasonal', extraCharge: false }
+        ]);
+    });
+
+    it('lists an amenity flagged as extra charge even with no scope or availability (HOS-2084)', async () => {
+        // Arrange
+        const { svc, amenityJunction } = makeService();
+        (amenityJunction.findAll as Mock).mockResolvedValue({
+            items: [
+                { amenityId: 'amenity-1', scope: null, availability: null, isOptional: true },
+                { amenityId: 'amenity-2', scope: null, availability: null, isOptional: false }
+            ]
+        });
+
+        // Act
+        const result = await svc.loadJunctionIds('listing-1');
+
+        // Assert
+        expect(result.amenityAttributes).toEqual([
+            { amenityId: 'amenity-1', scope: null, availability: null, extraCharge: true }
         ]);
     });
 });

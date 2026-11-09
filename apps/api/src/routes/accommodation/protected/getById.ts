@@ -42,6 +42,8 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 type ProtectedAmenityWithAttributes = AmenityProtected & {
     readonly scope: AmenityScopeEnum | null;
     readonly availability: AmenityAvailabilityEnum | null;
+    /** HOS-2084: `is_optional` -- paid separately. */
+    readonly isOptional: boolean;
 };
 
 /**
@@ -87,6 +89,8 @@ async function fetchProtectedAmenities(
             // HOS-2058: relation attributes, so the editor can rebuild them.
             scope: rAccommodationAmenity.scope,
             availability: rAccommodationAmenity.availability,
+            // HOS-2084: "Con cargo extra" flag.
+            isOptional: rAccommodationAmenity.isOptional,
             isFeatured: amenities.isFeatured,
             displayWeight: amenities.displayWeight,
             isBuiltin: amenities.isBuiltin,

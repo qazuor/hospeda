@@ -342,6 +342,109 @@ describe('syncListingAmenityJunction — relation attributes (HOS-2061)', () => 
 });
 
 // ---------------------------------------------------------------------------
+// syncListingAmenityJunction — extra charge flag (HOS-2084)
+// ---------------------------------------------------------------------------
+
+describe('syncListingAmenityJunction — extraCharge (HOS-2084)', () => {
+    function makeRows(rows: { amenityId: string; scope?: string | null; isOptional?: boolean }[]) {
+        const items = rows.map((row) => ({ [FK_COL]: ENTITY_ID, ...row }));
+        return {
+            findAll: vi.fn().mockResolvedValue({ items, total: items.length }),
+            hardDelete: vi.fn().mockResolvedValue(1),
+            create: vi.fn().mockResolvedValue({}),
+            update: vi.fn().mockResolvedValue({})
+        };
+    }
+
+    it('inserts a new row with is_optional true when extraCharge is sent', async () => {
+        const junctionModel = makeRows([]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A],
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: true }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            {
+                [FK_COL]: ENTITY_ID,
+                amenityId: UUID_A,
+                scope: null,
+                availability: null,
+                isOptional: true
+            },
+            fakeTx
+        );
+    });
+
+    it('updates a kept row when extraCharge changes', async () => {
+        const junctionModel = makeRows([{ amenityId: UUID_A, scope: null, isOptional: false }]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: true }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+            { scope: null, availability: null, isOptional: true },
+            fakeTx
+        );
+    });
+
+    it('keeps the stored value when extraCharge is omitted or the amenity is unlisted', async () => {
+        const junctionModel = makeRows([
+            { amenityId: UUID_A, scope: 'shared', isOptional: true },
+            { amenityId: UUID_B, scope: 'shared', isOptional: true }
+        ]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, scope: AmenityScopeEnum.PRIVATE }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledTimes(2);
+        for (const call of junctionModel.update.mock.calls) {
+            expect(call[1]).not.toHaveProperty('isOptional');
+        }
+    });
+
+    it('can clear the flag with extraCharge false', async () => {
+        const junctionModel = makeRows([{ amenityId: UUID_A, scope: null, isOptional: true }]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: false }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+            { scope: null, availability: null, isOptional: false },
+            fakeTx
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
 // syncListingFeatureJunction
 // ---------------------------------------------------------------------------
 

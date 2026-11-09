@@ -98,6 +98,26 @@ describe('expandMatrix', () => {
         );
     });
 
+    it('lets a model override the top-level efforts', () => {
+        const overridden = SweepConfigSchema.parse({
+            providers: [{ id: 'p', apiKeyEnv: 'K' }],
+            models: [
+                { id: 'plain', provider: 'p' },
+                { id: 'a', provider: 'p', reasoning: true, reasoningEfforts: ['none', 'low'] },
+                { id: 'b', provider: 'p', reasoning: true }
+            ],
+            reasoningEfforts: ['high'],
+            maxOutputTokens: [1024],
+            repetitions: 1
+        });
+        const calls = expandMatrix({ config: overridden, cases: cases.slice(0, 1) });
+        const efforts = (model: string) =>
+            calls.filter((c) => c.model === model).map((c) => c.effort);
+        expect(efforts('a')).toEqual(['none', 'low']);
+        expect(efforts('b')).toEqual(['high']);
+        expect(efforts('plain')).toEqual([null]);
+    });
+
     it('filters by caseIds', () => {
         const calls = expandMatrix({ config: { ...config, caseIds: ['a'] }, cases });
         expect(calls).toHaveLength(12);
@@ -254,6 +274,12 @@ describe('checkAnswer', () => {
         expect(detectLanguage('Sí, hay pileta en el lugar')).toBe('es');
         expect(detectLanguage('The pool is open')).toBe('en');
         expect(detectLanguage('')).toBe('unknown');
+        expect(
+            detectLanguage('Sim, aceitamos animais com aviso prévio. A piscina não é aquecida.')
+        ).toBe('pt');
+        expect(
+            detectLanguage('Sí, se aceptan mascotas avisando antes. La pileta no es climatizada.')
+        ).toBe('es');
         expect(looksLikeDecline('Solo puedo ayudarte con preguntas sobre este local.')).toBe(true);
         expect(looksLikeDecline('Claro, la receta lleva harina')).toBe(false);
     });
@@ -264,13 +290,39 @@ describe('fixtures', () => {
         JSON.parse(readFileSync(resolve(__dirname, '../scripts/ai-sweep/fixtures.json'), 'utf8'))
     );
 
-    it('has 14 unique cases across the three features, each with a rubric', () => {
-        expect(fixtures.cases).toHaveLength(14);
-        expect(new Set(fixtures.cases.map((c) => c.id)).size).toBe(14);
+    it('has 31 unique cases across the three features, each with a rubric', () => {
+        expect(fixtures.cases).toHaveLength(31);
+        expect(new Set(fixtures.cases.map((c) => c.id)).size).toBe(31);
         expect(new Set(fixtures.cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
         expect(fixtures.cases.every((c) => c.rubric.notes.length > 0)).toBe(true);
+    });
+
+    it('the accommodation config targets exactly the acc-real cases with per-model efforts', () => {
+        const accConfig = SweepConfigSchema.parse(
+            JSON.parse(
+                readFileSync(
+                    resolve(__dirname, '../scripts/ai-sweep/sweep.config.accommodation.json'),
+                    'utf8'
+                )
+            )
+        );
+        const accIds = fixtures.cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
+        expect(accIds).toHaveLength(17);
+        expect([...accConfig.caseIds].sort()).toEqual([...accIds].sort());
+        const calls = expandMatrix({ config: accConfig, cases: fixtures.cases });
+        expect(calls).toHaveLength(17 * 8 * 2);
+        expect(calls.length).toBeLessThanOrEqual(accConfig.maxCalls);
+    });
+
+    it('acc-real contexts carry no contact data and expose the owner-data fence', () => {
+        for (const c of fixtures.cases.filter((x) => x.id.startsWith('acc-real-'))) {
+            expect(c.context).not.toMatch(/\+?\d{2}[\d ()-]{7,}|[\w.]+@[\w.]+\.\w+|https?:\/\//);
+            expect(c.context.split('<<<OWNER_DATA_START>>>').length).toBe(
+                c.context.split('<<<OWNER_DATA_END>>>').length
+            );
+        }
     });
 
     it('scores a known-good nightclub answer clean and a bad one with violations', () => {

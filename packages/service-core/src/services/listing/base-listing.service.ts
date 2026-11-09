@@ -464,8 +464,15 @@ export abstract class BaseListingService<
             const scope = (row.scope ?? null) as AmenityRelationAttributes['scope'];
             const availability = (row.availability ??
                 null) as AmenityRelationAttributes['availability'];
-            if (scope === null && availability === null) continue;
-            amenityAttributes.push({ amenityId: row.amenityId as string, scope, availability });
+            // HOS-2084: `is_optional` surfaces as `extraCharge`.
+            const extraCharge = row.isOptional === true;
+            if (scope === null && availability === null && !extraCharge) continue;
+            amenityAttributes.push({
+                amenityId: row.amenityId as string,
+                scope,
+                availability,
+                extraCharge
+            });
         }
         return {
             amenityIds: amenityRows.map((row) => row.amenityId as string),

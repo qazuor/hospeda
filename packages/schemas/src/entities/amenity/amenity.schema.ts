@@ -83,6 +83,7 @@ export type Amenity = z.infer<typeof AmenitySchema>;
 export const AccommodationAmenityRelationSchema = z.object({
     accommodationId: AccommodationIdSchema,
     amenityId: AmenityIdSchema,
+    /** HOS-2084: paid separately ("Con cargo extra"); a flag, no amount. */
     isOptional: z
         .boolean({ message: 'zodError.accommodationAmenity.isOptional.required' })
         .default(false),
@@ -118,7 +119,13 @@ export const AmenityRelationAttributesSchema = z.object({
     /** Private to the guest/customer, or shared. NULL = not declared. */
     scope: AmenityScopeEnumSchema.nullish(),
     /** Available all year, or only in season. NULL = not declared. */
-    availability: AmenityAvailabilityEnumSchema.nullish()
+    availability: AmenityAvailabilityEnumSchema.nullish(),
+    /**
+     * HOS-2084: "Con cargo extra" -- the amenity is paid separately. Maps to the
+     * boolean `is_optional` column of the relation row. Omitted keeps the stored
+     * value (merged per key); no amount is captured.
+     */
+    extraCharge: z.boolean().optional()
 });
 export type AmenityRelationAttributes = z.infer<typeof AmenityRelationAttributesSchema>;
 

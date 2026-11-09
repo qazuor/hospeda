@@ -14,7 +14,7 @@ import { type AnswerQuality, checkUnknownMustSayDontKnow, RubricSchema } from '.
 export { checkUnknownMustSayDontKnow };
 
 /** Reasoning effort values accepted by the OpenAI `reasoningEffort` option. */
-export const REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high'] as const;
+export const REASONING_EFFORTS = ['none', 'minimal', 'low', 'medium', 'high'] as const;
 
 /** One reasoning effort value. */
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
@@ -45,6 +45,8 @@ export const SweepConfigSchema = z.object({
                 id: z.string().min(1),
                 provider: z.string().min(1),
                 reasoning: z.boolean().default(false),
+                /** Optional per-model efforts; overrides the top-level `reasoningEfforts`. */
+                reasoningEfforts: z.array(z.enum(REASONING_EFFORTS)).optional(),
                 /** Optional USD per 1M tokens; overrides the repo MODEL_RATES table. */
                 rates: z
                     .object({
@@ -129,10 +131,9 @@ export function expandMatrix(input: {
         config.caseIds.length === 0 ? cases : cases.filter((c) => config.caseIds.includes(c.id));
     const calls: PlannedCall[] = [];
     for (const model of config.models) {
+        const modelEfforts = model.reasoningEfforts ?? config.reasoningEfforts;
         const efforts: readonly (ReasoningEffort | null)[] =
-            model.reasoning && config.reasoningEfforts.length > 0
-                ? config.reasoningEfforts
-                : [null];
+            model.reasoning && modelEfforts.length > 0 ? modelEfforts : [null];
         for (const effort of efforts) {
             for (const maxOutputTokens of config.maxOutputTokens) {
                 for (const promptCase of selected) {

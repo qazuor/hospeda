@@ -18,7 +18,8 @@ import {
 import { AmenityCreateHttpSchema } from '../../../src/entities/amenity/amenity.http.schema.js';
 import {
     AccommodationAmenityAttributesListSchema,
-    AccommodationAmenityRelationSchema
+    AccommodationAmenityRelationSchema,
+    AmenityRelationAttributesListSchema
 } from '../../../src/entities/amenity/amenity.schema.js';
 import {
     FeatureProtectedSchema,
@@ -182,6 +183,34 @@ describe('AccommodationAmenityAttributesListSchema (HOS-2058)', () => {
                 'zodError.accommodationAmenity.attributes.duplicate'
             );
         }
+    });
+});
+
+describe('AmenityRelationAttributesListSchema extraCharge (HOS-2084)', () => {
+    it('accepts an optional boolean extraCharge, and omitting it stays valid', () => {
+        const result = AmenityRelationAttributesListSchema.safeParse([
+            { amenityId: AMENITY_A, extraCharge: true },
+            { amenityId: AMENITY_B, scope: 'shared' }
+        ]);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data[0]?.extraCharge).toBe(true);
+            expect(result.data[1]?.extraCharge).toBeUndefined();
+        }
+    });
+
+    it('rejects a non-boolean extraCharge', () => {
+        const result = AmenityRelationAttributesListSchema.safeParse([
+            { amenityId: AMENITY_A, extraCharge: 'yes' }
+        ]);
+        expect(result.success).toBe(false);
+    });
+
+    it('does not accept an amount: extraCharge is a flag, not a price', () => {
+        const parsed = AmenityRelationAttributesListSchema.parse([
+            { amenityId: AMENITY_A, extraCharge: true, additionalCost: 10 }
+        ]);
+        expect(parsed[0]).not.toHaveProperty('additionalCost');
     });
 });
 
