@@ -103,7 +103,6 @@ import {
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 import { resolveAttractionConstraint } from './attraction-resolver.js';
-import { resolveChatUsageStatus } from './chat.usage-status.js';
 import { matchPoiTerms } from './poi-allowlist.js';
 import { resolvePoiConstraint } from './poi-resolver.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
@@ -1249,14 +1248,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                             (intentUsage.completionTokens ?? 0) +
                             (resolvedMeta.usage?.completionTokens ?? 0),
                         latencyMs: Date.now() - handlerStartMs,
-                        // HOS-2095: a drained stream with no visible text (a reasoning
-                        // model that spent its whole output cap reasoning) delivered
-                        // nothing, so it must not count against the monthly quota.
-                        status:
-                            drainedCleanly &&
-                            !resolveChatUsageStatus({ text: accumulatedReplyText }).isEmpty
-                                ? 'success'
-                                : 'error',
+                        status: drainedCleanly ? 'success' : 'error',
                         logContext: { locale, conversationId: conversationId ?? null }
                     })
                 );

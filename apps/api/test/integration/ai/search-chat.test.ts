@@ -3502,27 +3502,6 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
             expect(recorded?.completionTokens).toBe(9);
         });
 
-        it('HOS-2095: records status error when the reply stream drains with no visible text', async () => {
-            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
-            nextSearchCallCount.current = 0;
-            nextStreamDeltas.current = [];
-
-            const res = await app.request(ENDPOINT, {
-                method: 'POST',
-                headers: makeMockActorHeaders(),
-                body: makeValidBody()
-            });
-
-            expect(res.status).toBe(200);
-            await readSseFrames(res);
-
-            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
-            expect(mockRecordAiUsage.mock.calls[0]?.[0]).toMatchObject({
-                feature: 'search',
-                status: 'error'
-            });
-        });
-
         it('still records success usage after the former quota is reached', async () => {
             currentLimitsForTest.current = new Map([
                 [LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 2147483647]
