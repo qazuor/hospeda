@@ -76,14 +76,31 @@ const rows = [
         customerEmail: 'beto@example.test',
         status: 'PAUSED',
         cycle: 'monthly',
-        direction: 'DOWN',
+        direction: 'UP',
         currentAmount: 200000,
         newAmount: null,
         currency: 'ARS',
         losesPromo: false,
         applicationDate: null,
-        waits: true,
+        waits: false,
         outcome: 'PARA_RESOLVER',
+        excludedReason: null
+    },
+    {
+        subscriptionId: '12121212-1212-4212-8212-121212121212',
+        userId: '13131313-1313-4313-8313-131313131313',
+        customerName: 'Dani',
+        customerEmail: 'dani@example.test',
+        status: 'PAUSED',
+        cycle: 'monthly',
+        direction: 'UP',
+        currentAmount: 120000,
+        newAmount: 150000,
+        currency: 'ARS',
+        losesPromo: false,
+        applicationDate: '2027-01-11',
+        waits: true,
+        outcome: 'PENDIENTE',
         excludedReason: null
     },
     {
@@ -144,15 +161,29 @@ const result = {
             applicationDate: '2027-01-10'
         }
     ],
-    excluded: [{ subscriptionId: rows[2].subscriptionId, excludedReason: 'ACTOR_IS_SUBJECT' }]
+    excluded: [{ subscriptionId: rows[3].subscriptionId, excludedReason: 'ACTOR_IS_SUBJECT' }]
 };
-function setup({ launchable = true }: { launchable?: boolean } = {}) {
+function setup({
+    launchable = true,
+    direction = 'UP'
+}: {
+    launchable?: boolean;
+    direction?: 'UP' | 'DOWN';
+} = {}) {
     fetchApi.mockImplementation(async (input?: { path: string }) => ({
         data: {
             data: input?.path.endsWith('/options')
                 ? options
                 : input?.path.endsWith('/preview')
-                  ? { ...preview, launchable }
+                  ? {
+                        ...preview,
+                        launchable,
+                        direction,
+                        rows: preview.rows.map((row) => ({
+                            ...row,
+                            direction: row.outcome === 'EXCLUDED' ? null : direction
+                        }))
+                    }
                   : result
         }
     }));
@@ -174,18 +205,18 @@ async function previewSelection() {
 
 describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel', () => {
     beforeEach(() => fetchApi.mockReset());
-    it('muestra cada cliente alcanzado con subida o bajada, ambos precios, fecha y la cuenta propia excluida', async () => {
+    it('AC:B12:2 antes de confirmar ve a cada cliente alcanzado con subida o bajada —según direcciónDeCambio—, su precio actual y el nuevo, y su fecha; la cuenta propia se muestra excluida', async () => {
         setup();
         await previewSelection();
         const rendered = rows.map((row) =>
             screen.getByTestId(`plan-migration-row-${row.subscriptionId}`)
         );
-        expect(rendered).toHaveLength(4);
+        expect(rendered).toHaveLength(5);
         expect(within(rendered[0]).getByTestId('plan-migration-row-direction')).toHaveTextContent(
             'Sube'
         );
         expect(within(rendered[1]).getByTestId('plan-migration-row-direction')).toHaveTextContent(
-            'Baja'
+            'Sube'
         );
         expect(
             within(rendered[0]).getByTestId('plan-migration-row-current-amount')
@@ -213,11 +244,23 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
         expect(within(rendered[1]).getByTestId('plan-migration-row-date')).toHaveTextContent(
             'A resolver'
         );
-        expect(within(rendered[2]).getByTestId('plan-migration-row-excluded')).toHaveTextContent(
+        expect(within(rendered[2]).getByTestId('plan-migration-row-date')).toHaveTextContent(
+            'Espera a que vuelva'
+        );
+        expect(within(rendered[3]).getByTestId('plan-migration-row-excluded')).toHaveTextContent(
             'Excluida'
         );
-        expect(rendered[2]).toHaveTextContent('Es tu propia cuenta');
-        expect(rendered[3]).toHaveTextContent('Ya está en otra migración');
+        expect(rendered[3]).toHaveTextContent('Es tu propia cuenta');
+        expect(rendered[4]).toHaveTextContent('Ya está en otra migración');
+    });
+    it('AC:B12:2 muestra la bajada de una segunda previsualización del par de versiones', async () => {
+        setup({ direction: 'DOWN' });
+        await previewSelection();
+        expect(
+            within(screen.getByTestId(`plan-migration-row-${rows[0].subscriptionId}`)).getByTestId(
+                'plan-migration-row-direction'
+            )
+        ).toHaveTextContent('Baja');
     });
     it('lista sólo destinos vigentes y vendibles de la misma vertical del origen', async () => {
         setup();
@@ -230,6 +273,10 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
                 (screen.getByTestId('plan-migration-target') as HTMLSelectElement).options
             ).map((option) => option.value)
         ).toEqual(['', target.id]);
+        expect(
+            (screen.getByTestId('plan-migration-source') as HTMLSelectElement).options[1]
+                ?.textContent
+        ).toContain('3 clientes');
     });
     it('confirma con cohortFingerprint y muestra filas escritas y excluidas', async () => {
         setup();
