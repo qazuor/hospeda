@@ -205,6 +205,27 @@ describe('neutral venue funnel copy', () => {
         }
     });
 
+    it('keeps the plan-card item for product photos free of kitchen-only words (HOS-2092)', () => {
+        // The pricing card lists this entitlement without the rubro tag the
+        // comparison table adds, so it must read for a bar or a boliche too.
+        const dishWords = {
+            es: ['plato'],
+            en: ['dish'],
+            pt: ['prato']
+        } as const;
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const billing = JSON.parse(
+                readFileSync(`src/locales/${lang}/billing.json`, 'utf8')
+            ) as Locale;
+            const value = getString(billing, 'entitlement.menu_item_photos').toLocaleLowerCase(
+                lang
+            );
+            for (const word of dishWords[lang]) {
+                expect(value, `${lang} entitlement.menu_item_photos`).not.toContain(word);
+            }
+        }
+    });
+
     it('keeps the approved vertical name in account and footer titles', () => {
         const approved = {
             es: 'Comer y salir',
