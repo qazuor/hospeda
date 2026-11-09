@@ -174,7 +174,9 @@ const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend({
      * NULL = not declared.
      */
     scope: AmenityScopeEnumSchema.nullish(),
-    availability: AmenityAvailabilityEnumSchema.nullish()
+    availability: AmenityAvailabilityEnumSchema.nullish(),
+    /** HOS-2084: `is_optional` -- the amenity is paid separately ("Con cargo extra"). */
+    isOptional: z.boolean().optional()
 });
 /**
  * HOS-2058 N+1: `features.category` is NOT NULL, so the strict feature schemas
@@ -196,7 +198,9 @@ const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend({
  */
 const AccommodationAmenityAdminReadSchema = AmenityAdminSchema.extend({
     scope: AmenityScopeEnumSchema.nullish(),
-    availability: AmenityAvailabilityEnumSchema.nullish()
+    availability: AmenityAvailabilityEnumSchema.nullish(),
+    /** HOS-2084: `is_optional` -- the amenity is paid separately. */
+    isOptional: z.boolean().optional()
 });
 
 /**

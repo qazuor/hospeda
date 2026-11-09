@@ -29,6 +29,7 @@ import { type AmenityRelationAttributes, ServiceErrorCode } from '@repo/schemas'
 import { ServiceError } from '../../types';
 import {
     amenityAttributesMatch,
+    buildAmenityAttributeUpdate,
     resolveDesiredAmenityAttributes
 } from '../../utils/amenity-relation-attributes';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
@@ -234,7 +235,14 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
                 amenityId,
                 // HOS-2061: scope/availability stay NULL ("not declared") unless sent.
                 ...(attributes
-                    ? { scope: attributes.scope, availability: attributes.availability }
+                    ? {
+                          scope: attributes.scope,
+                          availability: attributes.availability,
+                          // HOS-2084: `extraCharge` -> is_optional (column default false).
+                          ...(attributes.isOptional === undefined
+                              ? {}
+                              : { isOptional: attributes.isOptional })
+                      }
                     : {})
             },
             tx
@@ -256,7 +264,7 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
         }
         await junctionModel.update(
             { [entityFkColumn]: entityId, amenityId },
-            { scope: want.scope, availability: want.availability },
+            buildAmenityAttributeUpdate({ want }),
             tx
         );
     }

@@ -283,6 +283,23 @@ describe('CatalogPicker — toggles and attributes', () => {
         expect(onChangeAmenityAttribute).toHaveBeenCalledWith('am-pool', 'scope', null);
     });
 
+    it('offers a "Con cargo extra" checkbox that reflects and reports the flag (HOS-2084)', () => {
+        const onChangeAmenityAttribute = vi.fn();
+        renderPicker({
+            selectedAmenityIds: new Set(['am-pool']),
+            amenityAttributes: {
+                'am-pool': { scope: null, availability: null, extraCharge: true }
+            },
+            onChangeAmenityAttribute
+        });
+
+        const box = screen.getByRole('checkbox', { name: 'Con cargo extra' });
+        expect(box).toBeChecked();
+
+        fireEvent.click(box);
+        expect(onChangeAmenityAttribute).toHaveBeenCalledWith('am-pool', 'extraCharge', false);
+    });
+
     it('hides the attribute controls when the caller does not handle them', () => {
         renderPicker({
             selectedAmenityIds: new Set(['am-pool']),

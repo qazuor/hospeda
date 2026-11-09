@@ -10,6 +10,10 @@
  * - the attribute list is applied to the FINAL linked set;
  * - a listed amenity gets exactly its listed `scope` / `availability`;
  * - a linked amenity that is NOT listed is reset to NULL ("not declared");
+ * - HOS-2084: `extraCharge` maps to the boolean column `is_optional` ("paid
+ *   separately") and is merged PER KEY: an entry that omits it, and a linked
+ *   amenity that is not listed at all, KEEP the stored value; new rows get
+ *   `false`;
  * - an entry for an amenity that will not be linked is a `VALIDATION_ERROR`,
  *   raised before any write so nothing is rolled back half-way.
  *
@@ -28,6 +32,11 @@ import { ServiceError } from '../types';
 export interface AmenityAttributeValues {
     readonly scope: AmenityScopeEnum | null;
     readonly availability: AmenityAvailabilityEnum | null;
+    /**
+     * HOS-2084: `is_optional` ("extra charge"). `undefined` = not sent, keep the
+     * stored value (inserts then use the column default `false`).
+     */
+    readonly isOptional?: boolean | undefined;
 }
 
 /** Desired attribute values, keyed by amenity id. */
@@ -62,7 +71,8 @@ export function resolveDesiredAmenityAttributes({
         const item = listed.get(id);
         desired.set(id, {
             scope: item?.scope ?? null,
-            availability: item?.availability ?? null
+            availability: item?.availability ?? null,
+            isOptional: item?.extraCharge
         });
     }
     return desired;
@@ -83,8 +93,34 @@ export function amenityAttributesMatch({
     readonly row: {
         readonly scope?: AmenityScopeEnum | null;
         readonly availability?: AmenityAvailabilityEnum | null;
+        readonly isOptional?: boolean | null;
     };
     readonly want: AmenityAttributeValues;
 }): boolean {
-    return (row.scope ?? null) === want.scope && (row.availability ?? null) === want.availability;
+    const optionalMatches =
+        want.isOptional === undefined || (row.isOptional ?? false) === want.isOptional;
+    return (
+        (row.scope ?? null) === want.scope &&
+        (row.availability ?? null) === want.availability &&
+        optionalMatches
+    );
+}
+
+/**
+ * The columns an UPDATE of a kept row writes: scope and availability always,
+ * `isOptional` only when the caller sent `extraCharge` (HOS-2084 merge-per-key).
+ *
+ * @param input.want - The desired values.
+ * @returns Column map for `junctionModel.update`.
+ */
+export function buildAmenityAttributeUpdate({
+    want
+}: {
+    readonly want: AmenityAttributeValues;
+}): Record<string, unknown> {
+    return {
+        scope: want.scope,
+        availability: want.availability,
+        ...(want.isOptional === undefined ? {} : { isOptional: want.isOptional })
+    };
 }

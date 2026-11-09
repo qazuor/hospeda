@@ -83,7 +83,8 @@ vi.mock('@repo/db', async (importOriginal) => {
             amenityId: 'raa.amenityId',
             accommodationId: 'raa.accommodationId',
             scope: 'raa.scope',
-            availability: 'raa.availability'
+            availability: 'raa.availability',
+            isOptional: 'raa.isOptional'
         },
         rAccommodationFeature: {
             featureId: 'raf.featureId',
@@ -194,6 +195,7 @@ const AMENITY_ROW = {
     deletedAt: null,
     deletedById: null,
     scope: 'shared',
+    isOptional: true,
     availability: 'seasonal'
 };
 
@@ -283,6 +285,7 @@ describe('GET /:id — adminGetAccommodationByIdRoute — catalog attributes (HO
         expect(res.status).toBe(200);
         expect(body.data.amenities[0].scope).toBe('shared');
         expect(body.data.amenities[0].availability).toBe('seasonal');
+        expect(body.data.amenities[0].isOptional).toBe(true);
         expect(body.data.features[0].category).toBe('VIEW');
     });
 

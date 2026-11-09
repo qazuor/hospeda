@@ -667,6 +667,10 @@
             "yearRound": "O ano todo",
             "seasonal": "Sazonal",
             "unset": "Não informado"
+        },
+        "extraCharge": {
+            "label": "Com custo extra",
+            "badge": "Com custo"
         }
     },
     "amenityNames": {

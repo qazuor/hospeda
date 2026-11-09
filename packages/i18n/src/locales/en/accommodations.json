@@ -667,6 +667,10 @@
             "yearRound": "Year-round",
             "seasonal": "Seasonal",
             "unset": "Not specified"
+        },
+        "extraCharge": {
+            "label": "Extra charge",
+            "badge": "Extra charge"
         }
     },
     "amenityNames": {

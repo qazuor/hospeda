@@ -102,3 +102,57 @@ describe('buildAmenityAttributesPayload', () => {
         });
     });
 });
+
+describe('extraCharge (HOS-2084)', () => {
+    const empty = { amenityIds: ['a'], amenityAttributes: {} };
+
+    it('lists an amenity flagged as extra charge even with nothing else declared', () => {
+        const list = buildAmenityAttributesList({
+            amenityIds: ['a'],
+            amenityAttributes: { a: { scope: null, availability: null, extraCharge: true } }
+        });
+
+        expect(list).toEqual([
+            { amenityId: 'a', scope: null, availability: null, extraCharge: true }
+        ]);
+    });
+
+    it('sends the flag when it is checked', () => {
+        const values = {
+            amenityIds: ['a'],
+            amenityAttributes: { a: { scope: null, availability: null, extraCharge: true } }
+        };
+
+        expect(buildAmenityAttributesPayload({ values, baseline: empty })).toEqual({
+            amenityAttributes: [
+                { amenityId: 'a', scope: null, availability: null, extraCharge: true }
+            ]
+        });
+    });
+
+    it('sends an explicit false when a stored flag is cleared', () => {
+        const baseline = {
+            amenityIds: ['a'],
+            amenityAttributes: { a: { scope: null, availability: null, extraCharge: true } }
+        };
+        const values = {
+            amenityIds: ['a'],
+            amenityAttributes: { a: { scope: null, availability: null, extraCharge: false } }
+        };
+
+        expect(buildAmenityAttributesPayload({ values, baseline })).toEqual({
+            amenityAttributes: [
+                { amenityId: 'a', scope: null, availability: null, extraCharge: false }
+            ]
+        });
+    });
+
+    it('sends nothing when the box is checked and unchecked again', () => {
+        const values = {
+            amenityIds: ['a'],
+            amenityAttributes: { a: { scope: null, availability: null, extraCharge: false } }
+        };
+
+        expect(buildAmenityAttributesPayload({ values, baseline: empty })).toEqual({});
+    });
+});

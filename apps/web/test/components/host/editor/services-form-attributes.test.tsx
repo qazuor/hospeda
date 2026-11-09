@@ -92,7 +92,9 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         const user = userEvent.setup();
         renderForm();
 
-        const grill = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[1];
+        const grill = document.querySelectorAll<HTMLInputElement>(
+            'input[type="checkbox"]:not([name$="-extra-charge"])'
+        )[1];
         await user.click(grill as HTMLInputElement);
         const grillPrivate = document.querySelector(
             `input[name$="-amenity-${GRILL}-scope"]`
@@ -107,6 +109,21 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
             { amenityId: POOL, scope: 'shared', availability: null },
             { amenityId: GRILL, scope: 'private', availability: null }
         ]);
+    });
+
+    it('sends extraCharge true when the host checks "Con cargo extra" (HOS-2084)', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        await user.click(screen.getByRole('checkbox', { name: 'Con cargo extra' }));
+        submit();
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(mockUpdate.mock.calls[0][0].data).toEqual({
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: true }
+            ]
+        });
     });
 
     it('treats a change put back to its saved value as no change', async () => {

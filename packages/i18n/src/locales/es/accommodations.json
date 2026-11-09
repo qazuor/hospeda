@@ -142,6 +142,10 @@
             "yearRound": "Todo el año",
             "seasonal": "De temporada",
             "unset": "Sin indicar"
+        },
+        "extraCharge": {
+            "label": "Con cargo extra",
+            "badge": "Con cargo"
         }
     },
     "amenityNames": {
