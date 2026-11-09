@@ -20,6 +20,9 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
+// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
+// to: a stale build would make this sync check compare old strings.
+import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0159-hos-2095-chat-answer-quality-rules.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -134,12 +137,18 @@ describe('0159-hos-2095-chat-answer-quality-rules', () => {
         for (const feature of migration.CHAT_FEATURES) {
             expect(before.rules[feature]).not.toContain('decline in ONE short sentence');
             expect(after.rules[feature]).toContain('decline in ONE short sentence');
-            expect(after.rules[feature]).toContain('contact or booking options shown on this page');
+            expect(after.rules[feature]).toContain('contact options shown on this page');
         }
         expect(before.rules.chat_venue).toContain('with anything other than the minimum age');
         expect(after.rules.chat_venue).not.toContain('with anything other than the minimum age');
         expect(after.rules.chat_venue).toContain('explicit "no"');
         expect(after.rules.chat_venue).toContain('from the carta');
+    });
+
+    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
+        for (const feature of migration.CHAT_FEATURES) {
+            expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+        }
     });
 
     it('is declared non-destructive and belongs to the required group', () => {
