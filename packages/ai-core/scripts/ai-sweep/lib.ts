@@ -9,6 +9,9 @@
  */
 
 import { z } from 'zod';
+import { type AnswerQuality, checkUnknownMustSayDontKnow, RubricSchema } from './quality.js';
+
+export { checkUnknownMustSayDontKnow };
 
 /** Reasoning effort values accepted by the OpenAI `reasoningEffort` option. */
 export const REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high'] as const;
@@ -66,14 +69,28 @@ export const SweepConfigSchema = z.object({
 export type SweepConfig = z.infer<typeof SweepConfigSchema>;
 
 /** One prompt case, as stored in `fixtures.json` (system text is composed at run time). */
-export interface PromptCase {
-    readonly id: string;
-    readonly feature: 'chat' | 'chat_venue' | 'chat_experience';
-    readonly source: string;
-    readonly contextBlock: string;
-    readonly userMessage: string;
-    readonly rules: readonly RuleId[];
-}
+export const PromptCaseSchema = z.object({
+    id: z.string().min(1),
+    feature: z.enum(['chat', 'chat_venue', 'chat_experience']),
+    /** Real builder file:line the context block mirrors. */
+    source: z.string().min(1),
+    /** Synthetic listing block in the real builders' output format. */
+    context: z.string(),
+    /** What the tourist types. */
+    question: z.string().min(1),
+    /** Ground truth for the automatic checks and the blind grader. */
+    rubric: RubricSchema,
+    /** Legacy heuristic rules (kept alongside the rubric). */
+    rules: z.array(z.enum(RULE_IDS)).default([])
+});
+
+/** One prompt case. */
+export type PromptCase = z.infer<typeof PromptCaseSchema>;
+
+/** Shape of `fixtures.json`. */
+export const FixtureFileSchema = z.object({
+    cases: z.array(PromptCaseSchema).min(1)
+});
 
 /** One planned call of the sweep matrix. */
 export interface PlannedCall {
@@ -202,13 +219,6 @@ export function checkMinorMustNotAffirmEntry(text: string): boolean {
     return !(affirms && !text.includes('18'));
 }
 
-/** Unknown-fact heuristic: the answer should say it does not know / is not specified. */
-export function checkUnknownMustSayDontKnow(text: string): boolean {
-    return /no s[eé]\b|no (se )?especifica|no figura|no (lo )?indica|no (est[aá]|esta) (indicad|especificad)|no cuento|no tengo (ese|el|esa|la|informaci)|no dispongo|no hay (informaci|datos)|consult(á|a|ar)/i.test(
-        text
-    );
-}
-
 /** Runs one rule on an answer. */
 export function runRule(input: { readonly rule: RuleId; readonly text: string }): boolean {
     return input.rule === 'minor-must-not-affirm-entry'
@@ -234,6 +244,8 @@ export interface CallResult {
     readonly costUsd: number | null;
     /** Rule id to pass/fail; empty when the case has no rules. */
     readonly ruleChecks: Readonly<Record<string, boolean>>;
+    /** Automatic rubric checks (heuristic). */
+    readonly quality: AnswerQuality;
     readonly error: string | null;
 }
 
@@ -253,6 +265,40 @@ export interface SummaryRow {
     readonly avgCostUsd: number | null;
     readonly monthlyCostUsd: Readonly<Record<number, number | null>>;
     readonly rulePassRate: number | null;
+    /** Calls that ended in a provider error (no answer). */
+    readonly errors: number;
+    /** First error message seen, for the per-variant error summary. */
+    readonly sampleError: string | null;
+    /** Mean `mustInclude` coverage over answered calls (null when no rubric has any). */
+    readonly avgIncludeCoverage: number | null;
+    /** Total `mustNotClaim` violations over answered calls. */
+    readonly violations: number;
+    /** Pass rate over cases that expect "unknown". */
+    readonly unknownPassRate: number | null;
+    /** Pass rate over cases that expect a decline. */
+    readonly declinePassRate: number | null;
+    /** Share of answers in the expected language. */
+    readonly languageOkRate: number | null;
+    /** Mean human/LLM score 1-5 over graded calls (null without grades). */
+    readonly avgScore: number | null;
+    readonly gradedCount: number;
+    /** Mean score per USD spent per 1000 answers (null without score or cost). */
+    readonly scorePerDollar: number | null;
+}
+
+/** Stable identity of one executed call (variant + case + repetition). */
+export function resultKey(input: {
+    readonly variantKey: string;
+    readonly caseId: string;
+    readonly repetition: number;
+}): string {
+    return `${input.variantKey}|${input.caseId}|${input.repetition}`;
+}
+
+/** A human or LLM grade of one answer. */
+export interface Grade {
+    readonly score: number;
+    readonly notes?: string | undefined;
 }
 
 /** Nearest-rank percentile of a numeric list (`p` in 0..100). Empty list gives 0. */
@@ -274,6 +320,8 @@ function avg(values: readonly number[]): number {
 export function aggregateResults(input: {
     readonly results: readonly CallResult[];
     readonly quotas: readonly number[];
+    /** Grades keyed by {@link resultKey}. */
+    readonly grades?: Readonly<Record<string, Grade>> | undefined;
 }): SummaryRow[] {
     const groups = new Map<string, CallResult[]>();
     for (const r of input.results) {
@@ -283,6 +331,20 @@ export function aggregateResults(input: {
     }
     const rows: SummaryRow[] = [];
     for (const [variantKey, list] of groups) {
+        const answered = list.filter((r) => r.error === null);
+        const qualities = answered.map((r) => r.quality);
+        const coverages = qualities.flatMap((q) =>
+            q.includeCoverage === null ? [] : [q.includeCoverage]
+        );
+        const rate = (values: readonly (boolean | null)[]): number | null => {
+            const defined = values.filter((v): v is boolean => v !== null);
+            return defined.length === 0 ? null : defined.filter(Boolean).length / defined.length;
+        };
+        const scores = list.flatMap((r) => {
+            const g = input.grades?.[resultKey(r)];
+            return g ? [g.score] : [];
+        });
+        const avgScore = scores.length === 0 ? null : avg(scores);
         const visible = list.filter((r) => r.text.trim() !== '');
         const finishReasons: Record<string, number> = {};
         for (const r of list)
@@ -296,6 +358,7 @@ export function aggregateResults(input: {
         const monthlyCostUsd: Record<number, number | null> = {};
         for (const q of input.quotas)
             monthlyCostUsd[q] = avgCostUsd === null ? null : avgCostUsd * q;
+        const errored = list.filter((r) => r.error !== null);
         rows.push({
             variantKey,
             n: list.length,
@@ -313,7 +376,21 @@ export function aggregateResults(input: {
             rulePassRate:
                 ruleValues.length === 0
                     ? null
-                    : ruleValues.filter(Boolean).length / ruleValues.length
+                    : ruleValues.filter(Boolean).length / ruleValues.length,
+            errors: errored.length,
+            sampleError: errored[0]?.error ?? null,
+            avgIncludeCoverage: coverages.length === 0 ? null : avg(coverages),
+            violations: qualities.reduce((a, q) => a + q.violations.length, 0),
+            unknownPassRate: rate(qualities.map((q) => q.unknownHandled)),
+            declinePassRate: rate(qualities.map((q) => q.declineHandled)),
+            languageOkRate:
+                qualities.length === 0 ? null : rate(qualities.map((q) => q.languageOk)),
+            avgScore,
+            gradedCount: scores.length,
+            scorePerDollar:
+                avgScore === null || avgCostUsd === null || avgCostUsd === 0
+                    ? null
+                    : avgScore / (avgCostUsd * 1000)
         });
     }
     return rows.sort((a, b) => a.variantKey.localeCompare(b.variantKey));
@@ -329,7 +406,7 @@ export function renderSummaryMarkdown(input: {
     readonly quotas: readonly number[];
 }): string {
     const header = [
-        'model | effort | cap',
+        'model / effort / cap',
         'n',
         'visible',
         'finishReason',
@@ -342,7 +419,15 @@ export function renderSummaryMarkdown(input: {
         'reasoning share',
         'avg cost/answer',
         ...input.quotas.map((q) => `USD/mo @${q}`),
-        'rules pass'
+        'rules pass',
+        'coverage',
+        'violations',
+        'unknown ok',
+        'decline ok',
+        'lang ok',
+        'errors',
+        'avg score',
+        'score per $/1k'
     ];
     const lines = [`| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`];
     for (const r of input.rows) {
@@ -351,7 +436,7 @@ export function renderSummaryMarkdown(input: {
             .join(' ');
         lines.push(
             `| ${[
-                r.variantKey,
+                r.variantKey.replaceAll('|', '/'),
                 r.n,
                 pct(r.visibleRate),
                 reasons,
@@ -364,9 +449,29 @@ export function renderSummaryMarkdown(input: {
                 pct(r.reasoningShare),
                 usd(r.avgCostUsd),
                 ...input.quotas.map((q) => usd(r.monthlyCostUsd[q] ?? null)),
-                pct(r.rulePassRate)
+                pct(r.rulePassRate),
+                pct(r.avgIncludeCoverage),
+                r.violations,
+                pct(r.unknownPassRate),
+                pct(r.declinePassRate),
+                pct(r.languageOkRate),
+                r.errors,
+                fmt(r.avgScore, 2),
+                fmt(r.scorePerDollar, 1)
             ].join(' | ')} |`
         );
     }
     return lines.join('\n');
+}
+
+/** Renders a per-variant provider error summary (empty string when there are none). */
+export function renderErrorSummary(rows: readonly SummaryRow[]): string {
+    const bad = rows.filter((r) => r.errors > 0);
+    if (bad.length === 0) return '';
+    return [
+        'Provider errors per variant (the sweep continued past them):',
+        ...bad.map(
+            (r) => `- ${r.variantKey}: ${r.errors}/${r.n} calls failed. First: ${r.sampleError}`
+        )
+    ].join('\n');
 }
