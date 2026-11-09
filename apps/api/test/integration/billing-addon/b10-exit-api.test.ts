@@ -56,7 +56,7 @@ beforeAll(async () => {
 afterEach(cleanup);
 afterAll(async () => testDb.teardown());
 
-describe('TEST:B10:10 AC:B10:9 LISTA:B10 clause 6 the purge preview names the A1 addon and its price', () => {
+describe('LISTA:B10 clause 6 borrar una ficha dice qué addons se pierden y por cuánto antes de borrarla', () => {
     it('shows the A1 instance with the current product price before purge', async () => {
         const fixture = await purchaseCatalog({ scopeType: 'LISTING', chargeKind: 'PERIODICO' });
         const { app, fake } = purchaseApp();
