@@ -92,7 +92,7 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],
         pendingOwnPermission: null
     },
-    ACC_17: { permissions: [], pendingOwnPermission: 'B12 (HOS-1612)' },
+    ACC_17: { permissions: [PermissionEnum.BILLING_MIGRATE_PLAN], pendingOwnPermission: null },
     ACC_18: {
         permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE],
         pendingOwnPermission: 'V2.3 (HOS-1436)'

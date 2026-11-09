@@ -130,6 +130,8 @@ function isOldBillingPermission(value: string): boolean {
         value === 'billing.setCyclePrice' ||
         // HOS-1595 action 20 is new billing, not a legacy billing permission.
         value === 'billing.publishAddonVersion' ||
+        // HOS-1612 action 17 is new billing, not a legacy billing permission.
+        value === 'billing.migratePlan' ||
         // HOS-1580 actions 9 and 10 are new billing permissions.
         value === 'billing.pauseSubscription' ||
         value === 'billing.changeSubscriptionPlan'

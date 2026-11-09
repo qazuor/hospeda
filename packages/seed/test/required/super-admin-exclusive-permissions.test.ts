@@ -33,6 +33,13 @@ describe('SUPER_ADMIN-exclusive required role permissions', () => {
         expect(ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN]).toContain('billing.publishAddonVersion');
     });
 
+    it('AC:B12:2 gives SUPER_ADMIN only the action 17 permission', () => {
+        expect(ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN]).toContain('billing.migratePlan');
+        expect(
+            ROLE_PERMISSIONS[RoleEnum.ADMIN].filter((p) => p === 'billing.migratePlan')
+        ).toHaveLength(0);
+    });
+
     it('checks a non-empty instrument and a known ADMIN permission', () => {
         expect(SUPER_ADMIN_EXCLUSIVE_PERMISSIONS.length).toBeGreaterThan(0);
         expect(ROLE_PERMISSIONS[RoleEnum.ADMIN]).toContain('user.update.roles');
