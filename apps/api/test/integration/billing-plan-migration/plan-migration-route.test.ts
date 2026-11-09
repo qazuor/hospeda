@@ -250,6 +250,15 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización, por el panel
                 allowed: false
             });
             expect(forbidden.status).toBe(403);
+            if (body) {
+                const malformed = await request({
+                    path: route,
+                    actorId: seeded.actorId,
+                    body: { ...body, extra: true },
+                    allowed: false
+                });
+                expect(malformed.status).toBe(403);
+            }
         }
         const invalid = await request({
             path: `${path}/preview`,
