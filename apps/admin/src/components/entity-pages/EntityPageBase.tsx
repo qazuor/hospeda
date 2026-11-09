@@ -4,47 +4,16 @@ import React, { type ReactNode, Suspense } from 'react';
 import type { ZodSchema } from 'zod';
 import { EntityFormProvider, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import {
-    NoChangesToSaveError,
-    pickChangedFields
-} from '@/components/entity-form/utils/changed-fields.utils';
-import { nullifyClearedSocialNetworks } from '@/components/entity-form/utils/social-networks-payload.utils';
-import {
-    prepareFormValues,
-    unflattenValues
-} from '@/components/entity-form/utils/unflatten-values.utils';
+import { NoChangesToSaveError } from '@/components/entity-form/utils/changed-fields.utils';
+import { prepareFormValues } from '@/components/entity-form/utils/unflatten-values.utils';
 import {
     EntityPageHeader,
     type EntityPageHeaderMedia
 } from '@/components/entity-header/EntityPageHeader';
+import { buildEntityUpdatePayload } from '@/components/entity-pages/utils/build-update-payload';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Read a (possibly dot-notation) field value from the live form state.
- * Mirrors `EntityFormSection.readValue` so the save path picks up the same
- * "nested-first" value the inputs render against. Returns `undefined` when
- * neither the nested path nor the flat literal key carry a value.
- */
-function readFieldValueForSave(source: Record<string, unknown>, id: string): unknown {
-    if (!id.includes('.')) return source[id];
-    const parts = id.split('.');
-    let current: unknown = source;
-    for (const part of parts) {
-        if (current === null || current === undefined) {
-            current = undefined;
-            break;
-        }
-        current = (current as Record<string, unknown>)[part];
-    }
-    if (current !== undefined) return current;
-    return source[id];
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -230,29 +199,17 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 return sectionConfig.fields;
             });
 
-            // Only what changed travels (HOS-1493). Sending every editable field
-            // made a support edit on somebody else's listing fail with 403: the
-            // API accepts content fields only there, and an unchanged status or
-            // visibility field rode along. Mirror EntityFormSection.readValue on
-            // both sides: for dot-notation ids the nested copy is authoritative
-            // (TanStack Form writes there), with the flat literal key as fallback.
-            const { changed: fieldsToSave } = pickChangedFields({
+            // Only what changed travels (HOS-1493); see buildEntityUpdatePayload.
+            const { payload } = buildEntityUpdatePayload({
                 fieldIds: allFields.map((field) => field.id),
-                readCurrent: (id) => readFieldValueForSave(values, id),
-                readInitial: (id) => readFieldValueForSave(preparedValues, id)
+                values,
+                initialValues: preparedValues
             });
 
-            if (Object.keys(fieldsToSave).length === 0) {
+            if (payload === null) {
                 // Nothing to write: no request. The edit surface says so.
                 throw new NoChangesToSaveError();
             }
-
-            // A cleared social network must travel as `null`: the column is merged
-            // server-side, so an omitted (or empty-string) key would leave the stored
-            // link in place, or fail URL validation (HOS-1262).
-            const payload = nullifyClearedSocialNetworks({
-                payload: unflattenValues(fieldsToSave)
-            });
 
             // Merge optional extra save payload (e.g. aiAssistedFields audit metadata).
             // Supports both static objects and lazy-evaluated functions for ref-based data.

@@ -15,14 +15,17 @@
  *   a plain text input, and a cleared one would send `''`, which the `HH:mm`
  *   schema rejects. The owner editor edits them.
  *
- * Labels are hardcoded Spanish, matching the sibling admin section configs.
+ * Field labels are hardcoded Spanish, matching the sibling admin section
+ * configs. Option labels come from `@repo/i18n` (`listing.policies.*`), the
+ * same strings the public listing and the owner editor show, so the closed
+ * values read the same everywhere, including the collapsed section summary.
  */
 
+import type { useTranslations } from '@repo/i18n';
 import {
     LISTING_PAYMENT_METHODS,
     LISTING_PET_ADMISSION_VALUES,
     LISTING_SMOKING_VALUES,
-    type ListingPaymentMethod,
     PermissionEnum
 } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
@@ -52,34 +55,19 @@ const PERMISSIONS: Readonly<
     }
 };
 
-const PAYMENT_LABELS: Readonly<Record<ListingPaymentMethod, string>> = {
-    cash: 'Efectivo',
-    debit: 'Tarjeta de débito',
-    credit: 'Tarjeta de crédito',
-    transfer: 'Transferencia',
-    mercadopago: 'Mercado Pago'
-};
-const PETS_LABELS: Readonly<Record<(typeof LISTING_PET_ADMISSION_VALUES)[number], string>> = {
-    no: 'No se admiten',
-    yes: 'Se admiten',
-    on_request: 'A consultar'
-};
-const SMOKING_LABELS: Readonly<Record<(typeof LISTING_SMOKING_VALUES)[number], string>> = {
-    no: 'No se permite fumar',
-    yes: 'Se permite fumar',
-    outdoor_only: 'Solo al aire libre'
-};
-
 /**
  * Builds the house-rules section of a listing's admin form.
  *
  * @param input.vertical - The listing vertical.
+ * @param input.t - Translation function, for the option labels.
  * @returns `{ section }`, the consolidated section config.
  */
 export function createListingPoliciesSection({
-    vertical
+    vertical,
+    t
 }: {
     readonly vertical: PoliciesVertical;
+    readonly t: ReturnType<typeof useTranslations>['t'];
 }): { readonly section: ConsolidatedSectionConfig } {
     const permissions = PERMISSIONS[vertical];
     const field = (
@@ -101,7 +89,7 @@ export function createListingPoliciesSection({
             typeConfig: {
                 options: LISTING_PAYMENT_METHODS.map((value) => ({
                     value,
-                    label: PAYMENT_LABELS[value]
+                    label: t(`listing.policies.paymentMethods.${value}`)
                 }))
             }
         }),
@@ -113,7 +101,7 @@ export function createListingPoliciesSection({
             typeConfig: {
                 options: LISTING_PET_ADMISSION_VALUES.map((value) => ({
                     value,
-                    label: PETS_LABELS[value]
+                    label: t(`listing.policies.pets.admission.${value}`)
                 }))
             }
         }),
@@ -132,7 +120,7 @@ export function createListingPoliciesSection({
             typeConfig: {
                 options: LISTING_SMOKING_VALUES.map((value) => ({
                     value,
-                    label: SMOKING_LABELS[value]
+                    label: t(`listing.policies.smokingAllowed.${value}`)
                 }))
             }
         }),

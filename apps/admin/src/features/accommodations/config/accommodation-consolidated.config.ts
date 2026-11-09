@@ -66,7 +66,7 @@ export const createAccommodationConsolidatedConfig = (
         createContactInfoConsolidatedSection(t),
         createLocationInfoConsolidatedSection(t),
         createAmenitiesConsolidatedSection(t),
-        createListingPoliciesSection({ vertical: 'accommodation' }).section,
+        createListingPoliciesSection({ vertical: 'accommodation', t }).section,
         createGalleryConsolidatedSection(t),
         createStatisticsConsolidatedSection(t)
     ];

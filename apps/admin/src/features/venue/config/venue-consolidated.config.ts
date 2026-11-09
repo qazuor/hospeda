@@ -182,7 +182,7 @@ export const createVenueConsolidatedConfig = (
     sections: [
         createListingIdentitySection('venue'),
         createVenueSpecificSection(t),
-        createListingPoliciesSection({ vertical: 'venue' }).section,
+        createListingPoliciesSection({ vertical: 'venue', t }).section,
         createListingOperationalSection('venue')
     ],
     metadata: {
