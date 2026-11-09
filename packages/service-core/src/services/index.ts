@@ -144,6 +144,7 @@ export * from './billing/payment/payment-ledger.js';
 export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';
 export * from './billing/payment/settle-external-charge.service.js';
+export * from './billing/plan-migration/index.js';
 export * from './billing/pricing/cycle-price.service.js';
 export * from './billing/pricing/cycle-price-authorization.js';
 export * from './billing/pricing/cycle-price-customers.js';
