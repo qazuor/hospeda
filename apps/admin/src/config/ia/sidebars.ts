@@ -654,6 +654,15 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'addon-catalog',
+            label: { es: 'Complementos', en: 'Add-ons', pt: 'Complementos' },
+            icon: 'SettingsIcon',
+            route: '/billing/addon-catalog',
+            permissions: ['BILLING_PUBLISH_ADDON_VERSION'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'permanent-grants',
             label: { es: 'Grants permanentes', en: 'Permanent grants', pt: 'Grants permanentes' },
             icon: 'DollarSignIcon',
