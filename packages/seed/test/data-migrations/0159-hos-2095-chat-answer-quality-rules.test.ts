@@ -20,9 +20,6 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
-// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
-// to: a stale build would make this sync check compare old strings.
-import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0159-hos-2095-chat-answer-quality-rules.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -44,6 +41,17 @@ const DATA_PATH = path.resolve(
     '../../src/data-migrations/0159-hos-2095-chat-answer-quality-rules.data.json'
 );
 const { before, after } = JSON.parse(readFileSync(DATA_PATH, 'utf-8')) as FrozenBaseline;
+
+/** 0160's frozen snapshot: its `before` must equal this migration's `after`. */
+const next = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0160-hos-2095-chat-answer-quality-rules-2.data.json'
+        ),
+        'utf-8'
+    )
+) as FrozenBaseline;
 
 /** Flattens a drizzle condition tree into one string for shape assertions. */
 function flattenSql(node: unknown, depth = 0): string {
@@ -145,9 +153,13 @@ describe('0159-hos-2095-chat-answer-quality-rules', () => {
         expect(after.rules.chat_venue).toContain('from the carta');
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
+    it('AC-5: the frozen "after" rules are exactly what 0160 starts from (chain without a gap)', () => {
+        // DEFAULT_RULES moved on in HOS-2095 round 2, so the anti-drift check
+        // against source now lives in 0160. What 0159 must still guarantee is
+        // that its output is byte-identical to 0160's `before`: a gap there
+        // would leave every row 0159 wrote unmatched by 0160.
         for (const feature of migration.CHAT_FEATURES) {
-            expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+            expect(after.rules[feature]).toBe(next.before.rules[feature]);
         }
     });
 
