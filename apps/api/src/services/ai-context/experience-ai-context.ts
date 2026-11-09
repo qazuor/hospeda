@@ -34,12 +34,13 @@ import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
     buildChatSystemMessage,
+    buildFencedFaqLines,
     fenceOwnerValue,
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START,
     OWNER_DATA_DIRECTIVE,
     sanitizeOwnerDelimiters,
-    truncate
+    truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
 
@@ -64,6 +65,9 @@ export const EXPERIENCE_CONTEXT_FAQ_MAX = 30;
  * verbose cancellation policy must not be able to crowd out the FAQs.
  */
 export const EXPERIENCE_LOGISTICS_MAX_CHARS = 400;
+
+/** Hard cap on the experience name and summary (HOS-2095 review). */
+const EXPERIENCE_SHORT_TEXT_MAX_CHARS = 300;
 
 // ---------------------------------------------------------------------------
 // Row shapes
@@ -143,7 +147,7 @@ export function buildExperienceMarkdownContext(
     locale: Locale = 'es'
 ): string {
     const cappedFaqs = faqs.slice(0, EXPERIENCE_CONTEXT_FAQ_MAX);
-    const truncatedDescription = truncate(
+    const truncatedDescription = truncateAtWord(
         sanitizeOwnerDelimiters(experience.description),
         EXPERIENCE_DESCRIPTION_MAX_CHARS
     );
@@ -153,9 +157,9 @@ export function buildExperienceMarkdownContext(
     const lines: string[] = [
         OWNER_DATA_DIRECTIVE,
         '',
-        `## Experiencia: ${fenceOwnerValue(experience.name)}`,
+        `## Experiencia: ${fenceOwnerValue(truncateAtWord(experience.name, EXPERIENCE_SHORT_TEXT_MAX_CHARS))}`,
         `**Tipo**: ${experienceTypeLabel({ type: experience.type, locale }).label}`,
-        `**Resumen**: ${fenceOwnerValue(experience.summary)}`
+        `**Resumen**: ${fenceOwnerValue(truncateAtWord(experience.summary, EXPERIENCE_SHORT_TEXT_MAX_CHARS))}`
     ];
 
     // --- Logistics: the block this vertical exists for ---
@@ -212,7 +216,7 @@ export function buildExperienceMarkdownContext(
             '',
             '### Punto de encuentro',
             OWNER_DATA_DELIMITER_START,
-            truncate(
+            truncateAtWord(
                 sanitizeOwnerDelimiters(experience.meetingPoint),
                 EXPERIENCE_LOGISTICS_MAX_CHARS
             ),
@@ -223,7 +227,7 @@ export function buildExperienceMarkdownContext(
             lines.push('**Cómo llegar**:', OWNER_DATA_DELIMITER_START);
             directions.forEach((step, index) => {
                 lines.push(
-                    `${index + 1}. ${truncate(sanitizeOwnerDelimiters(step), EXPERIENCE_LOGISTICS_MAX_CHARS)}`
+                    `${index + 1}. ${truncateAtWord(sanitizeOwnerDelimiters(step), EXPERIENCE_LOGISTICS_MAX_CHARS)}`
                 );
             });
             lines.push(OWNER_DATA_DELIMITER_END);
@@ -257,7 +261,7 @@ export function buildExperienceMarkdownContext(
             lines.push('', `### ${heading}`, OWNER_DATA_DELIMITER_START);
             for (const item of items) {
                 lines.push(
-                    `- ${truncate(sanitizeOwnerDelimiters(item), EXPERIENCE_LOGISTICS_MAX_CHARS)}`
+                    `- ${truncateAtWord(sanitizeOwnerDelimiters(item), EXPERIENCE_LOGISTICS_MAX_CHARS)}`
                 );
             }
             lines.push(OWNER_DATA_DELIMITER_END);
@@ -270,7 +274,7 @@ export function buildExperienceMarkdownContext(
             '',
             '### Política de cancelación',
             OWNER_DATA_DELIMITER_START,
-            truncate(
+            truncateAtWord(
                 sanitizeOwnerDelimiters(policies.cancellation),
                 EXPERIENCE_LOGISTICS_MAX_CHARS
             ),
@@ -281,16 +285,15 @@ export function buildExperienceMarkdownContext(
     // --- House rules (closed values; the cancellation paragraph is above) ---
     lines.push(...buildListingPoliciesLines({ policies }).lines);
 
-    // --- FAQs (owner free text — fenced) ---
-    if (cappedFaqs.length > 0) {
-        lines.push('', '### Preguntas frecuentes', OWNER_DATA_DELIMITER_START);
-        for (const faq of cappedFaqs) {
-            lines.push(`**P: ${sanitizeOwnerDelimiters(faq.question)}**`);
-            lines.push(`R: ${sanitizeOwnerDelimiters(faq.answer)}`);
-            lines.push('');
-        }
-        lines.push(OWNER_DATA_DELIMITER_END);
-    }
+    // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
+    lines.push(
+        ...buildFencedFaqLines({
+            heading: 'Preguntas frecuentes',
+            faqs: cappedFaqs,
+            questionPrefix: 'P',
+            answerPrefix: 'R'
+        }).lines
+    );
 
     return lines.join('\n').trimEnd();
 }

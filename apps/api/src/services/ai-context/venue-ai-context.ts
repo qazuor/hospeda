@@ -36,12 +36,13 @@ import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
     buildChatSystemMessage,
+    buildFencedFaqLines,
     fenceOwnerValue,
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START,
     OWNER_DATA_DIRECTIVE,
     sanitizeOwnerDelimiters,
-    truncate
+    truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
 import { toVenueNightContext, type VenueNightContext } from './venue-night-context.js';
@@ -74,8 +75,14 @@ export const VENUE_CONTEXT_FAQ_MAX = 30;
  */
 export const VENUE_CONTEXT_MENU_ITEM_MAX = 40;
 
-/** Hard cap on each menu item's description in the context block. */
-export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 160;
+/** Hard cap on each menu item's description in the context block (160 → 120, HOS-2095 review). */
+export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 120;
+
+/** Hard cap on a menu item's name and a section's name (HOS-2095 review: were unbounded). */
+const VENUE_MENU_NAME_MAX_CHARS = 100;
+
+/** Hard cap on the venue name and summary (HOS-2095 review). */
+const VENUE_SHORT_TEXT_MAX_CHARS = 300;
 
 // ---------------------------------------------------------------------------
 // Row shapes
@@ -139,7 +146,7 @@ export function buildVenueMarkdownContext(
 ): string {
     const cappedFaqs = faqs.slice(0, VENUE_CONTEXT_FAQ_MAX);
     const cappedItems = includeMenu ? menuItems.slice(0, VENUE_CONTEXT_MENU_ITEM_MAX) : [];
-    const truncatedDescription = truncate(
+    const truncatedDescription = truncateAtWord(
         sanitizeOwnerDelimiters(venue.description),
         VENUE_DESCRIPTION_MAX_CHARS
     );
@@ -150,9 +157,9 @@ export function buildVenueMarkdownContext(
     const lines: string[] = [
         OWNER_DATA_DIRECTIVE,
         '',
-        `## Local: ${fenceOwnerValue(venue.name)}`,
+        `## Local: ${fenceOwnerValue(truncateAtWord(venue.name, VENUE_SHORT_TEXT_MAX_CHARS))}`,
         `**Tipo de local**: ${venueTypeLabel({ type: venue.type, locale }).label}`,
-        `**Resumen**: ${fenceOwnerValue(venue.summary)}`
+        `**Resumen**: ${fenceOwnerValue(truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS))}`
     ];
 
     if (venue.priceRange) {
@@ -205,7 +212,9 @@ export function buildVenueMarkdownContext(
         for (const item of cappedItems) {
             if (item.sectionName !== currentSection) {
                 currentSection = item.sectionName;
-                lines.push(`#### ${sanitizeOwnerDelimiters(currentSection ?? 'Otros')}`);
+                lines.push(
+                    `#### ${truncateAtWord(sanitizeOwnerDelimiters(currentSection ?? 'Otros'), VENUE_MENU_NAME_MAX_CHARS)}`
+                );
             }
             const price =
                 item.priceCents == null
@@ -215,10 +224,12 @@ export function buildVenueMarkdownContext(
             // "is X on the menu?" and "can I order X tonight?" are different
             // questions, and silently omitting the dish answers the first wrong.
             const availability = item.isAvailable === false ? ' (no disponible)' : '';
-            lines.push(`**${sanitizeOwnerDelimiters(item.name)}**${price}${availability}`);
+            lines.push(
+                `**${truncateAtWord(sanitizeOwnerDelimiters(item.name), VENUE_MENU_NAME_MAX_CHARS)}**${price}${availability}`
+            );
             if (item.description) {
                 lines.push(
-                    truncate(
+                    truncateAtWord(
                         sanitizeOwnerDelimiters(item.description),
                         VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS
                     )
@@ -280,16 +291,15 @@ export function buildVenueMarkdownContext(
     // --- House rules (closed values only; night keys render with nightInfo) ---
     lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
 
-    // --- FAQs (owner free text — fenced) ---
-    if (cappedFaqs.length > 0) {
-        lines.push('', '### Preguntas frecuentes', OWNER_DATA_DELIMITER_START);
-        for (const faq of cappedFaqs) {
-            lines.push(`**P: ${sanitizeOwnerDelimiters(faq.question)}**`);
-            lines.push(`R: ${sanitizeOwnerDelimiters(faq.answer)}`);
-            lines.push('');
-        }
-        lines.push(OWNER_DATA_DELIMITER_END);
-    }
+    // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
+    lines.push(
+        ...buildFencedFaqLines({
+            heading: 'Preguntas frecuentes',
+            faqs: cappedFaqs,
+            questionPrefix: 'P',
+            answerPrefix: 'R'
+        }).lines
+    );
 
     return lines.join('\n').trimEnd();
 }

@@ -23,12 +23,13 @@ import {
 } from './ai-context/listing-policies-context.js';
 import {
     buildChatSystemMessage,
+    buildFencedFaqLines,
     fenceOwnerValue,
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START,
     OWNER_VOICE_DIRECTIVE,
     sanitizeOwnerDelimiters,
-    truncate
+    truncateAtWord
 } from './ai-context/owner-data-fence.js';
 
 /**
@@ -104,6 +105,12 @@ export const CONTEXT_IADATA_MAX = 10;
 
 /** Hard cap on each IA data entry's content length in the context block. */
 export const CONTEXT_IADATA_CONTENT_MAX_CHARS = 500;
+
+/** Hard cap on each IA data entry's title (HOS-2095 review: was unbounded). */
+const CONTEXT_IADATA_TITLE_MAX_CHARS = 120;
+
+/** Hard cap on the name and the summary (HOS-2095 review: owner text, bounded here too). */
+const CONTEXT_SHORT_TEXT_MAX_CHARS = 300;
 
 /** Default fallback location suffix (the platform is Argentina-only in V1). */
 const LOCATION_SUFFIX = ', Argentina';
@@ -214,7 +221,7 @@ export function buildMarkdownContext(
     const destinationName = accommodation.destination?.name ?? 'Unknown';
     // Sanitize BEFORE truncating: with the markers already gone, the cut cannot
     // split one in half or leave a forged fragment behind.
-    const truncatedDescription = truncate(
+    const truncatedDescription = truncateAtWord(
         sanitizeOwnerDelimiters(accommodation.description),
         CONTEXT_DESCRIPTION_MAX_CHARS
     );
@@ -232,10 +239,10 @@ export function buildMarkdownContext(
     const lines: string[] = [
         OWNER_DATA_DIRECTIVE,
         '',
-        `## Accommodation: ${fenceOwnerValue(accommodation.name)}`,
+        `## Accommodation: ${fenceOwnerValue(truncateAtWord(accommodation.name, CONTEXT_SHORT_TEXT_MAX_CHARS))}`,
         `**Type**: ${accommodationTypeLabel({ type: accommodation.type, locale }).label}`,
         `**Destino**: ${destinationName}${LOCATION_SUFFIX}`,
-        `**Summary**: ${fenceOwnerValue(accommodation.summary)}`
+        `**Summary**: ${fenceOwnerValue(truncateAtWord(accommodation.summary, CONTEXT_SHORT_TEXT_MAX_CHARS))}`
     ];
 
     // --- Capacity & Space ---
@@ -259,7 +266,10 @@ export function buildMarkdownContext(
             locale,
             currency
         }).text;
-        lines.push('', '### Precio', `**Precio base**: ${amount} ${currency}/noche`);
+        // The `en` formatter already prints the code ("ARS 85,000"); `es` prints a
+        // bare "$", so the code is appended only when the amount lacks it.
+        const priced = amount.includes(currency) ? amount : `${amount} ${currency}`;
+        lines.push('', '### Precio', `**Precio base**: ${priced}/noche`);
     }
 
     // --- Ratings ---
@@ -290,11 +300,13 @@ export function buildMarkdownContext(
         for (const [category, entries] of grouped) {
             lines.push(`#### ${sanitizeOwnerDelimiters(category)}`);
             for (const entry of entries) {
-                const content = truncate(
+                const content = truncateAtWord(
                     sanitizeOwnerDelimiters(entry.content),
                     CONTEXT_IADATA_CONTENT_MAX_CHARS
                 );
-                lines.push(`**${sanitizeOwnerDelimiters(entry.title)}**: ${content}`);
+                lines.push(
+                    `**${truncateAtWord(sanitizeOwnerDelimiters(entry.title), CONTEXT_IADATA_TITLE_MAX_CHARS)}**: ${content}`
+                );
                 lines.push('');
             }
         }
@@ -318,17 +330,16 @@ export function buildMarkdownContext(
     }
 
     // --- FAQs (HOS-393 G-7: owner-supplied data, never instructions) ---
-    // The per-section directive that used to live here was hoisted into
-    // OWNER_DATA_DIRECTIVE (HOS-547) — one directive now governs every fence.
-    if (cappedFaqs.length > 0) {
-        lines.push('', '### FAQs', OWNER_DATA_DELIMITER_START);
-        for (const faq of cappedFaqs) {
-            lines.push(`**Q: ${sanitizeOwnerDelimiters(faq.question)}**`);
-            lines.push(`A: ${sanitizeOwnerDelimiters(faq.answer)}`);
-            lines.push('');
-        }
-        lines.push(OWNER_DATA_DELIMITER_END);
-    }
+    // HOS-2095 review: rendered by the shared helper, which cuts each answer and
+    // budgets the whole section so the worst case stays bounded.
+    lines.push(
+        ...buildFencedFaqLines({
+            heading: 'FAQs',
+            faqs: cappedFaqs,
+            questionPrefix: 'Q',
+            answerPrefix: 'A'
+        }).lines
+    );
 
     return lines.join('\n').trimEnd();
 }

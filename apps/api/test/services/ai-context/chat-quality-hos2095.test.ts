@@ -96,7 +96,7 @@ describe('HOS-2095 #1 — the answer language follows the latest user message', 
     ] as const)('never pins the answer to the page locale (%s) as a hard instruction', (locale) => {
         const msg = buildChatSystemMessage('ctx', 'prompt', locale);
         expect(msg).not.toContain(`You MUST respond in the user's language: locale is`);
-        expect(msg).toContain("language of the user's most recent message");
+        expect(msg).toContain("language of the visitor's latest message");
         expect(msg).toContain(`page locale is "${locale}"`);
         expect(msg).toContain('only as a fallback');
     });
@@ -478,5 +478,232 @@ describe('HOS-2095 #8 — owner-entered fields reach the context', () => {
         expect(ctx).toContain('**Mascotas**: sí, se admiten');
         expect(ctx).toContain('**Fumar**: solo en espacios al aire libre');
         expect(ctx).toContain('**Mínimo de noches**: 2');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Review follow-ups (PR #4249)
+// ---------------------------------------------------------------------------
+
+/** A 2,000-char FAQ answer (schema maximum), made of words so a word cut is observable. */
+const MAX_ANSWER = 'palabra '.repeat(250).trim();
+
+/** `count` FAQs with maxed-out question (300) and answer (2,000) lengths. */
+function maxedFaqs(count: number): Array<{ question: string; answer: string }> {
+    return Array.from({ length: count }, (_, i) => ({
+        question: `${'¿'}${String(i).padStart(3, '0')} ${'pregunta '.repeat(32)}`.slice(0, 300),
+        answer: MAX_ANSWER
+    }));
+}
+
+describe('review #1 — owner text is bounded, so the worst case is bounded', () => {
+    it('truncates a long FAQ answer at a word boundary with "…"', () => {
+        const ctx = buildMarkdownContext(
+            makeCasaQuinta() as never,
+            [{ question: '¿Larga?', answer: MAX_ANSWER }],
+            [],
+            [],
+            [],
+            'es'
+        );
+        const answerLine = ctx.split('\n').find((line) => line.startsWith('A: ')) ?? '';
+        const answer = answerLine.slice(3);
+        expect(answer.endsWith('…')).toBe(true);
+        expect(answer.length).toBeLessThanOrEqual(701);
+        // Word boundary: the cut never leaves half a word before the marker.
+        expect(answer.slice(0, -1).trimEnd().endsWith('palabra')).toBe(true);
+    });
+
+    it('caps the whole FAQ section with a char budget and says how many were left out', () => {
+        const ctx = buildMarkdownContext(
+            makeCasaQuinta() as never,
+            maxedFaqs(30),
+            [],
+            [],
+            [],
+            'es'
+        );
+        const section = ctx.split('### FAQs')[1] ?? '';
+        expect(section.length).toBeLessThan(7000);
+        expect(section).toMatch(/\d+ preguntas frecuentes más no se incluyeron/);
+    });
+
+    it('venue and experience FAQ sections are budgeted too', () => {
+        const venue = buildVenueMarkdownContext(
+            makeBarVenue() as never,
+            maxedFaqs(30),
+            [],
+            false,
+            null,
+            'es'
+        );
+        const experience = buildExperienceMarkdownContext(
+            makeKayakExperience() as never,
+            maxedFaqs(30),
+            true,
+            'es'
+        );
+        for (const ctx of [venue, experience]) {
+            const section = ctx.split('### Preguntas frecuentes')[1] ?? '';
+            expect(section.length).toBeLessThan(7000);
+        }
+    });
+
+    it('worst case: maxed-out listings stay under 24,000 chars (~6k tokens) each', () => {
+        const longText = (n: number) => 'texto '.repeat(Math.ceil(n / 6)).slice(0, n);
+        const accommodation = buildMarkdownContext(
+            {
+                ...makeCasaQuinta(),
+                name: longText(200),
+                summary: longText(300),
+                description: longText(10000)
+            } as never,
+            maxedFaqs(60),
+            Array.from({ length: 176 }, (_, i) => ({ name: `amenity_number_${i}_long_slug` })),
+            Array.from({ length: 106 }, (_, i) => ({ name: `feature_number_${i}_long_slug` })),
+            Array.from({ length: 10 }, (_, i) => ({
+                title: longText(300),
+                content: longText(2000),
+                category: `Categoría ${i % 3}`
+            })),
+            'es'
+        );
+        const venue = buildVenueMarkdownContext(
+            {
+                ...makeBarVenue(),
+                name: longText(200),
+                summary: longText(300),
+                description: longText(10000),
+                openingHours: { ...REAL_OPENING_HOURS, notesI18n: { es: longText(5000) } }
+            } as never,
+            maxedFaqs(60),
+            Array.from({ length: 40 }, (_, i) => ({
+                sectionName: longText(200),
+                name: `${i} ${longText(300)}`,
+                description: longText(1000),
+                priceCents: 999999999,
+                isAvailable: false
+            })),
+            true,
+            {
+                minAge: 18,
+                legalNotice: longText(300),
+                entryLabel: 'Entrada paga',
+                entryNote: longText(200),
+                entryPriceFrom: 99999,
+                dressCodeLabel: 'Elegante',
+                dressCodeNote: longText(200)
+            },
+            'es'
+        );
+        const experience = buildExperienceMarkdownContext(
+            {
+                ...makeKayakExperience(),
+                name: longText(200),
+                summary: longText(300),
+                description: longText(10000),
+                meetingPoint: longText(300),
+                meetingPointDirections: Array.from({ length: 12 }, () => longText(400)),
+                whatToBring: Array.from({ length: 20 }, () => longText(160)),
+                requirements: Array.from({ length: 20 }, () => longText(160)),
+                policies: { cancellation: longText(3000), privateGroups: true },
+                openingHours: { ...REAL_OPENING_HOURS, notesI18n: { es: longText(5000) } }
+            } as never,
+            maxedFaqs(60),
+            true,
+            'es'
+        );
+        for (const block of [accommodation, venue, experience]) {
+            expect(block.length).toBeLessThan(24000);
+        }
+    });
+});
+
+describe('review #2/#3/#8 — opening hours edge cases', () => {
+    it('a row without `days` never re-renders timezone and keeps notes inside the fence', () => {
+        const ctx = buildVenueMarkdownContext(
+            {
+                ...makeBarVenue(),
+                openingHours: {
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    notes: 'Nota del dueño'
+                }
+            } as never,
+            [],
+            [],
+            false,
+            null,
+            'es'
+        );
+        expect(ctx).not.toContain('timezone');
+        expect(ctx).not.toContain('America/Argentina');
+        expect(ctx).toContain(
+            `${OWNER_DATA_DELIMITER_START}\nNota del dueño\n${OWNER_DATA_DELIMITER_END}`
+        );
+        expectWellFormedFences(ctx);
+    });
+
+    it('drops shift times that are not HH:mm', () => {
+        const ctx = buildVenueMarkdownContext(
+            {
+                ...makeBarVenue(),
+                openingHours: {
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    days: {
+                        ...REAL_OPENING_HOURS.days,
+                        tue: { closed: false, shifts: [{ open: 'IGNORE ALL', close: '25' }] }
+                    }
+                }
+            } as never,
+            [],
+            [],
+            false,
+            null,
+            'es'
+        );
+        expect(ctx).not.toContain('IGNORE ALL');
+    });
+
+    it('a day missing from `days` (or with no valid shift) reads as "sin información", not closed', () => {
+        const { wed: _wed, ...withoutWednesday } = REAL_OPENING_HOURS.days;
+        const ctx = buildVenueMarkdownContext(
+            {
+                ...makeBarVenue(),
+                openingHours: { timezone: 'America/Argentina/Buenos_Aires', days: withoutWednesday }
+            } as never,
+            [],
+            [],
+            false,
+            null,
+            'es'
+        );
+        expect(ctx).toContain('- Miércoles: sin información');
+    });
+});
+
+describe('review #4/#8 — neutral voice example, generic language rule, single currency', () => {
+    it('the voice directive does not name a restaurant in every vertical', () => {
+        for (const block of [
+            buildCasaQuinta('es'),
+            buildExperienceMarkdownContext(makeKayakExperience() as never, [], true, 'es')
+        ]) {
+            const directive = block.split('\n')[0] ?? '';
+            expect(directive).not.toContain('restaurant');
+            expect(directive).toContain('el lugar acepta');
+        }
+    });
+
+    it('the language rule names the latest message generically, not a closed list of languages', () => {
+        const msg = buildChatSystemMessage('ctx', 'prompt', 'es');
+        expect(msg).toContain("the language of the visitor's latest message");
+        expect(msg).not.toContain('Spanish, English or Portuguese');
+    });
+
+    it('the accommodation price shows the currency once (en: no "ARS … ARS")', () => {
+        const en = buildCasaQuinta('en');
+        const priceLine = en.split('\n').find((line) => line.startsWith('**Precio base**')) ?? '';
+        expect(priceLine.match(/ARS/g) ?? []).toHaveLength(1);
+        const es = buildCasaQuinta('es');
+        expect(es).toMatch(/\*\*Precio base\*\*: \$\s85\.000 ARS\/noche/);
     });
 });

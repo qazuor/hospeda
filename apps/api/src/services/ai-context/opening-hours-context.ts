@@ -19,7 +19,23 @@
 
 import type { Locale } from '@repo/i18n';
 import { translateCatalogKey } from './listing-labels.js';
-import { sanitizeOwnerDelimiters } from './owner-data-fence.js';
+import { sanitizeOwnerDelimiters, truncateAtWord } from './owner-data-fence.js';
+
+/** Validated `HH:mm` shape; anything else is dropped, never rendered (HOS-2095 review). */
+const HH_MM = /^\d{2}:\d{2}$/;
+
+/** Cap on the owner's free-text schedule notes (the schema leaves them unbounded). */
+const NOTES_MAX_CHARS = 500;
+
+/**
+ * Phrase for a day the schedule does not inform. Written in Spanish like the
+ * rest of the block's own scaffolding; it exists so the model never reads a
+ * missing day as "closed".
+ */
+const DAY_NOT_INFORMED = 'sin información';
+
+/** Top-level keys of the real shape that are never a day in the legacy flat map. */
+const NON_DAY_KEYS: ReadonlySet<string> = new Set(['timezone', 'notes', 'notesI18n', 'days']);
 
 /** Weekday keys of `OpeningHoursSchema.days`, in display order. */
 const DAY_KEYS = [
@@ -46,11 +62,14 @@ function formatDay(day: Record<string, unknown>, closedLabel: string): string | 
     const shifts = Array.isArray(day.shifts) ? day.shifts : [];
     const windows = shifts
         .filter(isRecord)
-        .filter((shift) => typeof shift.open === 'string' && typeof shift.close === 'string')
-        .map(
+        .filter(
             (shift) =>
-                `${sanitizeOwnerDelimiters(String(shift.open))}–${sanitizeOwnerDelimiters(String(shift.close))}`
-        );
+                typeof shift.open === 'string' &&
+                typeof shift.close === 'string' &&
+                HH_MM.test(shift.open) &&
+                HH_MM.test(shift.close)
+        )
+        .map((shift) => `${String(shift.open)}–${String(shift.close)}`);
     return windows.length > 0 ? windows.join(', ') : null;
 }
 
@@ -59,7 +78,7 @@ function resolveNotes(hours: Record<string, unknown>, locale: Locale): string | 
     const i18n = isRecord(hours.notesI18n) ? hours.notesI18n : {};
     for (const candidate of [i18n[locale], i18n.es, hours.notes]) {
         if (typeof candidate === 'string' && candidate.trim().length > 0) {
-            return candidate.trim();
+            return truncateAtWord(candidate.trim(), NOTES_MAX_CHARS);
         }
     }
     return null;
@@ -90,23 +109,29 @@ export function buildOpeningHoursLines({
         const lines: string[] = [];
         for (const [key, name] of DAY_KEYS) {
             const day = days[key];
-            if (!isRecord(day)) continue;
-            const schedule = formatDay(day, closedLabel);
-            if (!schedule) continue;
+            // A missing day, or one with no valid shift, is stated as NOT INFORMED:
+            // omitting it would let the model read the gap as "closed".
+            const schedule = isRecord(day) ? formatDay(day, closedLabel) : null;
             const label =
                 translateCatalogKey({ key: `${KEY_PREFIX}.${name}`, locale }).label ?? key;
-            lines.push(`${label}: ${schedule}`);
+            lines.push(`${label}: ${schedule ?? DAY_NOT_INFORMED}`);
         }
         return { lines, notes: resolveNotes(openingHours, locale) };
     }
 
     // Legacy flat map: `{ "lunes": "18:00-02:00" }`. Keys are owner-influenced in
-    // principle, so both sides are sanitized.
+    // principle, so both sides are sanitized. The real shape's own keys are
+    // skipped (HOS-2095 review): a row with `timezone`/`notes` but no `days`
+    // used to re-render the timezone and put the owner's notes OUTSIDE the fence.
+    // Notes always travel in `notes`, which the caller fences.
     const lines: string[] = [];
     for (const [day, value] of Object.entries(openingHours)) {
+        if (NON_DAY_KEYS.has(day)) continue;
         if (typeof value === 'string' && value.trim().length > 0) {
-            lines.push(`${sanitizeOwnerDelimiters(day)}: ${sanitizeOwnerDelimiters(value)}`);
+            lines.push(
+                `${sanitizeOwnerDelimiters(day)}: ${truncateAtWord(sanitizeOwnerDelimiters(value), 120)}`
+            );
         }
     }
-    return { lines, notes: null };
+    return { lines, notes: resolveNotes(openingHours, locale) };
 }

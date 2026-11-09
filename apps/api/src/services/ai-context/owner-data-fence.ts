@@ -56,7 +56,7 @@ export const OWNER_DATA_DELIMITER_END = '<<<OWNER_DATA_END>>>';
 export const OWNER_VOICE_DIRECTIVE =
     'Owner text is often written in the first person ("we accept…", "aceptamos…"). ' +
     "You are Hospeda's assistant talking ABOUT this place, never the owner or its staff: " +
-    'relay such text in the third person ("the restaurant accepts…", "el restaurante acepta…").';
+    'relay such text in the third person ("this place accepts…", "el lugar acepta…").';
 
 export const OWNER_DATA_DIRECTIVE =
     'Some values below are fenced between the OWNER_DATA_START and OWNER_DATA_END ' +
@@ -133,6 +133,110 @@ export function truncate(text: string | undefined | null, maxChars: number): str
 }
 
 /**
+ * Truncates `text` at the last word boundary before `maxChars`, appending
+ * {@link TRUNCATION_SUFFIX} when the cut occurs (HOS-2095 review).
+ *
+ * A hard character cut can leave half a word — or half a number — that the
+ * model then relays as if it were data ("la pileta mide 8 x 4 me…"). Cutting at
+ * the last whitespace avoids that; when the only whitespace is too early (a
+ * single very long token), it falls back to the hard cut.
+ *
+ * Callers MUST sanitize BEFORE truncating (see {@link truncate}).
+ *
+ * @param text - The value to truncate.
+ * @param maxChars - Maximum length before the suffix is added.
+ * @returns The truncated (or original) value; `''` for nullish input.
+ */
+export function truncateAtWord(text: string | undefined | null, maxChars: number): string {
+    if (text == null) {
+        return '';
+    }
+    if (text.length <= maxChars) {
+        return text;
+    }
+    const slice = text.slice(0, maxChars);
+    const lastSpace = slice.search(/\s\S*$/);
+    const cut = lastSpace >= maxChars * 0.6 ? slice.slice(0, lastSpace) : slice;
+    return cut.trimEnd() + TRUNCATION_SUFFIX;
+}
+
+/** Max chars of one FAQ question in a context block (the schema allows 300). */
+export const FAQ_QUESTION_MAX_CHARS = 300;
+
+/**
+ * Max chars of one FAQ answer in a context block (HOS-2095 review).
+ *
+ * The schema allows 2,000; without a cut, 30 maxed-out FAQs alone weighed
+ * ~70k chars. 700 holds every answer the sweep measured.
+ */
+export const FAQ_ANSWER_MAX_CHARS = 700;
+
+/**
+ * Total char budget of a FAQ section (HOS-2095 review). FAQs are added in the
+ * owner's order until the next one would exceed it; the first one always goes
+ * in. Together with the per-answer cut, this bounds the section regardless of
+ * how many FAQs a listing has.
+ */
+export const FAQ_SECTION_MAX_CHARS = 6000;
+
+/**
+ * Renders a fenced FAQ section, shared by the three verticals (HOS-2095 review).
+ *
+ * Every question and answer is sanitized, then cut at a word boundary. The
+ * section stops at {@link FAQ_SECTION_MAX_CHARS}; when FAQs are left out, a line
+ * OUTSIDE the fence says how many, so the model answers "the ficha does not
+ * say" with the right caveat instead of a confident no.
+ *
+ * @param input.heading - The section heading text (without `### `).
+ * @param input.faqs - The FAQs, already filtered and ordered.
+ * @param input.questionPrefix - Label before the question (`Q` / `P`).
+ * @param input.answerPrefix - Label before the answer (`A` / `R`).
+ * @returns `{ lines }`, empty when there are no FAQs.
+ */
+export function buildFencedFaqLines({
+    heading,
+    faqs,
+    questionPrefix,
+    answerPrefix
+}: {
+    readonly heading: string;
+    readonly faqs: ReadonlyArray<{ readonly question: string; readonly answer: string }>;
+    readonly questionPrefix: string;
+    readonly answerPrefix: string;
+}): { readonly lines: readonly string[] } {
+    if (faqs.length === 0) return { lines: [] };
+    const body: string[] = [];
+    let used = 0;
+    let included = 0;
+    for (const faq of faqs) {
+        const entry = [
+            `**${questionPrefix}: ${truncateAtWord(sanitizeOwnerDelimiters(faq.question), FAQ_QUESTION_MAX_CHARS)}**`,
+            `${answerPrefix}: ${truncateAtWord(sanitizeOwnerDelimiters(faq.answer), FAQ_ANSWER_MAX_CHARS)}`,
+            ''
+        ];
+        const size = entry.join('\n').length + 1;
+        if (included > 0 && used + size > FAQ_SECTION_MAX_CHARS) break;
+        body.push(...entry);
+        used += size;
+        included += 1;
+    }
+    const lines = [
+        '',
+        `### ${heading}`,
+        OWNER_DATA_DELIMITER_START,
+        ...body,
+        OWNER_DATA_DELIMITER_END
+    ];
+    const omitted = faqs.length - included;
+    if (omitted > 0) {
+        lines.push(
+            `(${omitted} preguntas frecuentes más no se incluyeron por espacio: si la respuesta no está arriba, decí que la ficha no lo detalla acá y sugerí consultar al lugar.)`
+        );
+    }
+    return { lines };
+}
+
+/**
  * Assembles the full system message: context block + separator + resolved prompt
  * + the language instruction.
  *
@@ -165,7 +269,7 @@ export function buildChatSystemMessage(
         resolvedPrompt,
         '',
         CHAT_LANGUAGE_RULE,
-        `- The page locale is "${locale}". Use it only as a fallback, when the language of the user's most recent message cannot be determined (for example a lone emoji, "ok", a number or a proper name).`
+        `- The page locale is "${locale}". Use it only as a fallback, when the language of the visitor's latest message cannot be determined (for example a lone emoji, "ok", a number or a proper name).`
     ].join('\n');
 }
 
@@ -174,6 +278,6 @@ export function buildChatSystemMessage(
  * (HOS-2095). Kept as a constant so the three verticals cannot word it apart.
  */
 const CHAT_LANGUAGE_RULE =
-    "- Answer in the language of the user's most recent message (Spanish, English or Portuguese — whichever they wrote in), even if earlier messages, a greeting, or the page used another language. " +
+    "- Answer in the language of the visitor's latest message — whatever language that is — even if earlier messages, a greeting, or the page used another language. " +
     'The listing data above is partly written in Spanish; that is NOT a reason to answer in Spanish. ' +
     'Translate the information you relay into the language you answer in, keeping proper names unchanged.';
