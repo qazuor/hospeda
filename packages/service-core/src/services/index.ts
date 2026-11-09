@@ -70,8 +70,11 @@ export * from './billing/addon/addon-instance-a6-provider.js';
 export * from './billing/addon/addon-instance-a7.js';
 export * from './billing/addon/addon-orphanhood.js';
 export * from './billing/addon/addon-orphanhood-ports.js';
+export * from './billing/addon/choose-free-addon.service.js';
+export * from './billing/addon/choose-free-addon-types.js';
 export * from './billing/addon/expire-addon-authorization-windows.service.js';
 export * from './billing/addon/expire-addon-instances.service.js';
+export * from './billing/addon/includes-addons-anchor.js';
 export * from './billing/addon/listing-purged-addon-canceller.js';
 export * from './billing/addon/listing-purged-addons.service.js';
 export * from './billing/addon/purchase-addon.service.js';
@@ -83,6 +86,15 @@ export * from './billing/addon/read-addon-purchase.js';
 export * from './billing/addon/scheduled-downgrade-addon-notice.js';
 export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';
+export * from './billing/addon-catalog/addon-version-publication.service.js';
+export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
+export {
+    ADDON_VERSION_PUBLICATION_ACTION,
+    ADDON_VERSION_PUBLICATION_REJECTIONS,
+    addonVersionPublicationRejection,
+    assertAddonVersionPublicationPermitted,
+    mapAddonVersionPublicationWriteError
+} from './billing/addon-catalog/addon-version-publication-authorization.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
 export * from './billing/coverage/can-charge.js';

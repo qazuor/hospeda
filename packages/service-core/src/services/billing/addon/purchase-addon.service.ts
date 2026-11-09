@@ -17,6 +17,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import { findIncludesAddonsAnchor } from './includes-addons-anchor';
 import { authorizePendingComplement, insertPendingComplement } from './purchase-addon-complement';
 import { resolvePurchaseTitle } from './purchase-addon-eligibility';
 import type { PurchaseAddonPorts } from './purchase-addon-ports';
@@ -119,6 +120,14 @@ export async function purchaseAddon(
                 ports
             );
             if ('reason' in title) return { outcome: 'REFUSED', reason: title.reason };
+            if (
+                await findIncludesAddonsAnchor({
+                    tx,
+                    userId: request.ownerId,
+                    vertical: title.vertical
+                })
+            )
+                return { outcome: 'REFUSED', reason: 'FREE_UNDER_GRANT' };
             const [existing] = await tx
                 .select()
                 .from(addonInstances)

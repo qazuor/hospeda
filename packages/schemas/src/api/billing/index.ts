@@ -5,7 +5,10 @@
 
 export * from './account-stats-response.schema.js';
 export * from './addon.schema.js';
+export * from './addon-free-choice.schema.js';
+export * from './addon-offers.schema.js';
 export * from './addon-purchase.schema.js';
+export * from './addon-version-publication-admin.schema.js';
 export * from './admin-billing-view.schema.js';
 export * from './admin-effective-set.schema.js';
 export * from './admin-trial-summary.schema.js';

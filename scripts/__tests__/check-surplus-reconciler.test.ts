@@ -60,6 +60,22 @@ describe('TEST:V6:6 GUARD:G5', () => {
     it('rejects an unlisted writer', () => {
         expect(check(baseFiles, []).output).toContain('source write is not inventoried');
     });
+    it('requires an inventory entry for an addon instance insert', () => {
+        const files = {
+            ...baseFiles,
+            [writer.file]:
+                "export async function chooseFreeAddon() { await db.insert(addonInstances).values({ status: 'ACTIVE' }); }"
+        };
+        const entry = {
+            ...writer,
+            symbol: 'chooseFreeAddon',
+            table: 'addonInstances',
+            effect: 'turns-on',
+            via: null
+        } as const;
+        expect(check(files, []).output).toContain('source write is not inventoried');
+        expect(check(files, [entry]).exitCode).toBe(0);
+    });
     it('rejects a stale entry', () => {
         expect(check({ ...baseFiles, [writer.file]: 'export const x = 1;' }).output).toContain(
             'stale inventory'

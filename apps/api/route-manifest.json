@@ -354,6 +354,14 @@
             "path": "/api/v1/admin/auth/signup-as-host"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication/preview"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-deadlines"
         },
@@ -2660,6 +2668,14 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/free-choices"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/offers"
         },
         {
             "method": "POST",

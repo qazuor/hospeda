@@ -138,6 +138,27 @@ eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
 This PR proposes these messages and codes (BS); a separate documentation PR
 records them in the spec after merge.
 
+### Addon version publication (ACC:20, HOS-1595)
+
+`POST /api/v1/admin/billing-addon-products/{productId}/version-publication/preview`
+previews the current and proposed policy, price, and count of live instances still
+anchored to the current version. `POST` to the same path without `/preview`
+publishes with `expectedCurrentVersionId` and `expectedCurrentPrice`. Both require
+`billing.publishAddonVersion` and reject in order: 401 session, 403 permission,
+400 body or path shape, 404 product or version, then business rules. The version
+must belong to the product's addon. Price changes are refused while the product
+has live instances; a version change at the same price remains allowed. Successful
+publication records a `BILLING_MUTATION` audit with `administrativeAction: ACC_20`.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `ADDON_PRODUCT_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_VERSION_OF_ANOTHER_ADDON`, `ADDON_PRODUCT_HAS_LIVE_INSTANCES`, `ADDON_PRODUCT_CHANGED_SINCE_PREVIEW` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `ADDON_PRODUCT_UNCHANGED`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These route codes and messages are proposed for owner approval under BS.
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a
@@ -856,6 +877,8 @@ administrator as actor.
 Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `MONTHS_EXHAUSTED` with 409 `CONFLICT`; `NOT_PRINCIPAL`, `MANUAL_PAYER`, `NOT_MONTHLY`, `PLAN_DISALLOWS_PAUSE`, `MONTHS_OUT_OF_RANGE`, and `NO_PROVIDER_LINK` with 422 `VALIDATION_ERROR`. Resume refuses `NOT_PAUSED`, `NO_OPEN_PAUSE`, and `PAUSE_NOT_CUSTOMER_REQUEST` with 409; provider calls are forbidden for a courtesy pause. `NOT_APPLIED` and `LOST_RACE` are 409. Each typed error carries `error.reason` and `error.details.reason`. Provider rejection is 422 `PROVIDER_REJECTED`; transient provider failure is 503 with `Retry-After` when available. The preview records `BILLING_READ`, and only a successful POST records `BILLING_MUTATION` with `administrativeAction: ACC_9` and the admin as actor.
 
 Protected addon purchase (`POST /api/v1/protected/billing/addons/purchases`) requires a non-guest session; absent authentication returns 401. The strict body rejects extra fields with 400. A one-time product requires payment details; its optional payer email defaults to the account email. Recurring products reject supplied payment details with 400. Product and target refusals return 404 `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND`; an inaccessible or ineligible listing has the same `ADDON_TARGET_NOT_FOUND` response. The 409 purchase codes are `ADDON_NO_VALID_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ADDON_ALREADY_ACTIVE`, and `ADDON_ORDER_REQUEST_REUSED`. `PENDING_ELSEWHERE` returns 200 with `processing: true`. Provider authorization rejection returns 422 `PROVIDER_REJECTED`; transient authorization failures return 503 as in signup. Unresolved one-time order outcomes return 202 with `processing: true`; the route does not abandon the order. `GET /api/v1/protected/billing/addons/purchases/{orderRequestId}` returns 404 `ADDON_PURCHASE_NOT_FOUND` for an absent purchase or one owned by another actor.
+
+Protected free addon choice (`POST /api/v1/protected/billing/addons/free-choices`) requires a non-guest session and a strict body without payment fields. The order is 401 authentication → 400 shape → 404 product or target existence and ownership → 409 business rules. `PRODUCT_NOT_FOUND` and `TARGET_NOT_FOUND` map to `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND` (404). `NO_FREE_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ALREADY_ACTIVE`, `PENDING_ELSEWHERE`, and `ORDER_REQUEST_REUSED` map to their `ADDON_*` codes (409). A valid choice returns 201 with an `ACTIVE` instance; replay or an already live free choice returns 200 with the same instance id. The paid purchase path rejects `FREE_UNDER_GRANT` with 409 `ADDON_FREE_UNDER_GRANT` before provider authorization.
 
 ### Owner pause and resume (HOS-1580)
 

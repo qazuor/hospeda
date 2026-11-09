@@ -138,6 +138,16 @@ export const addonInstances = pgTable(
             )
             .where(
                 sql`${t.status} = 'PENDING_AUTHORIZATION' OR (${t.status} = 'ACTIVE' AND ${t.complementSubscriptionId} IS NOT NULL)`
+            ),
+        /** Identity of one active free choice under an includesAddons grant (A1-bis). */
+        freeChoiceIdentity: uniqueIndex('uq_addon_instance_free_choice')
+            .on(
+                t.ownerId,
+                t.productId,
+                sql`coalesce(${t.targetId}, '00000000-0000-0000-0000-000000000000'::uuid)`
+            )
+            .where(
+                sql`${t.status} = 'ACTIVE' AND ${t.complementSubscriptionId} IS NULL AND ${t.titleAnchorId} IS NOT NULL`
             )
     })
 );

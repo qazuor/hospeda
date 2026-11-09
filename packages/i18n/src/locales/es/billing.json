@@ -88,7 +88,15 @@
         "oneTimePaymentRequired": "Para un complemento de pago único, ingresá los datos de pago.",
         "recurringPaymentNotAccepted": "Los complementos recurrentes se pagan en el checkout del proveedor.",
         "payerEmailRequired": "Ingresá el correo del pagador.",
-        "purchaseNotFound": "No encontramos esa compra de complemento."
+        "purchaseNotFound": "No encontramos esa compra de complemento.",
+        "freeProductNotFound": "No encontramos ese complemento.",
+        "freeTargetNotFound": "No encontramos ese destino.",
+        "freeNoTitle": "No tenés un beneficio vigente para elegir este complemento gratis.",
+        "freeVersionChanged": "La versión del complemento cambió. Volvé a intentarlo.",
+        "freeAlreadyActive": "Ya tenés activo este complemento.",
+        "freePendingElsewhere": "Hay otra compra de este complemento en proceso.",
+        "freeOrderRequestReused": "Ese pedido ya se usó para otra elección.",
+        "freeUnderGrant": "Este complemento está incluido gratis en tu beneficio. Elegilo sin pagar."
     },
     "payment": {
         "title": "Métodos de pago",
@@ -799,5 +807,41 @@
         "max_venues": "Cuántos locales podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
+    },
+    "addonPurchase": {
+        "title": "Comprar complementos",
+        "chooseOffer": "Elegí un complemento",
+        "noOffers": "No hay complementos disponibles.",
+        "chooseTarget": "Elegí una ficha",
+        "noTargets": "No hay fichas disponibles para este complemento.",
+        "summary": "Confirmar complemento",
+        "freeUnderGrant": "Gratis por tu beneficio",
+        "days_one": "{{count}} día",
+        "days_other": "{{count}} días",
+        "hiddenListingRecurring": "Esta ficha no está publicada. El destaque se cobra igual aunque la ficha no se vea, hasta que lo des de baja.",
+        "chooseFree": "Elegir gratis",
+        "payerEmailLabel": "Correo del pagador",
+        "payerEmailInvalid": "Ingresá un correo válido del pagador.",
+        "payerEmailHint": "Este correo lo declarás vos; no está confirmado por el proveedor.",
+        "confirmPurchase": "Confirmar compra",
+        "loading": "Cargando complementos…",
+        "loadError": "No pudimos cargar los complementos.",
+        "processing": "Se está procesando tu compra.",
+        "active": "Activo",
+        "closed": "La compra terminó sin activarse.",
+        "status": {
+            "DRAFT": "Borrador",
+            "PUBLISHED": "Publicada",
+            "UNPUBLISHED_BY_BILLING": "Sin publicar por tu plan",
+            "ARCHIVED": "Archivada",
+            "MODERATED": "Moderada",
+            "PURGED": "Eliminada"
+        },
+        "cycle": {
+            "monthly": "Cada mes",
+            "quarterly": "Cada trimestre",
+            "semiannual": "Cada semestre",
+            "annual": "Cada año"
+        }
     }
 }

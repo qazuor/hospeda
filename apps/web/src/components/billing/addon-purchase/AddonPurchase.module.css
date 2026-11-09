@@ -1,0 +1,47 @@
+.root {
+    display: grid;
+    gap: var(--space-6);
+    max-width: 48rem;
+}
+.section {
+    display: grid;
+    gap: var(--space-4);
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-4);
+}
+.card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.card:focus-visible,
+.section button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+.notice {
+    padding: var(--space-4);
+    border-inline-start: 3px solid currentColor;
+    background: var(--surface-warm);
+}
+.error {
+    color: var(--destructive-text);
+}
+
+.emailField {
+    display: grid;
+    gap: var(--space-2);
+}
+.emailField input {
+    padding: var(--space-2);
+    font: inherit;
+}

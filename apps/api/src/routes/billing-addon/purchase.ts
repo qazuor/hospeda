@@ -13,7 +13,6 @@ import {
     sendOneTimeOrder
 } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
-import { env } from '../../utils/env';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { buildAddonPurchasePorts } from './purchase-ports';
@@ -22,6 +21,7 @@ import {
     answerPurchaseRefusal,
     readAddonPurchaseCopy
 } from './purchase-rejections';
+import { addonPurchaseReturnUrl } from './purchase-return-url';
 
 /** Buy an addon for the current actor; order sending stays outside A1's transaction. */
 export const protectedAddonPurchaseRoute = createProtectedRoute({
@@ -93,7 +93,10 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                     orderRequestId: parsed.orderRequestId,
                     expectedAddonVersionId: parsed.addonVersionId,
                     payerEmail,
-                    returnUrl: env.HOSPEDA_SITE_URL
+                    returnUrl: addonPurchaseReturnUrl({
+                        ctx,
+                        orderRequestId: parsed.orderRequestId
+                    })
                 },
                 ports
             );

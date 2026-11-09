@@ -1429,6 +1429,13 @@
       "when": 1794118527366,
       "tag": "0203_hos1593_addon_domain_event",
       "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1794151149160,
+      "tag": "0204_hos1595_addon_version_publication",
+      "breakpoints": true
     }
   ]
 }

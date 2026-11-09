@@ -321,6 +321,19 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Read-only addon, complement, principal, order and outbox rows; sandbox preapproval and order reads; delivery and cancellation timestamps.
 - **Covers:** AC:B10:5, AC:B10:6, AC:B10:7; TEST:B10:6, TEST:B10:7, TEST:B10:8.
 
+### S20 — Addon version publication, free addon under grant and purchase screen (HOS-1595)
+
+- **Preconditions:** Staging has a `SUPER_ADMIN`, an admin without `billing.publishAddonVersion`, a paying owner with a listing boost, and a separate test beneficiary of a live `includesAddons: true` grant. The sandbox has an approved recurring addon amount and a test card.
+- **Steps:**
+  1. Through the admin API, preview and publish a new version of a recurring addon with no live purchases and a new price. Open a new recurring checkout from `/es/mi-cuenta/complementos/`; compare its price with the previously bought instance's `addon_version_id`. Ask the admin without permission to publish.
+  2. From the purchase screen, choose a compatible addon under the grant; inspect the `ACTIVE` instance and its `title_anchor_id`, then revoke the grant.
+  3. Open a paid `LISTING` boost summary for a draft listing and a published listing. Read the notice before confirming either.
+  4. Buy the recurring addon from the screen and follow checkout back to `/es/mi-cuenta/complementos/?compra=…`; observe processing until `ACTIVE`.
+- **Expected:** The new checkout uses the new price while the old instance keeps its version; the unpermitted admin gets 403. The grant choice is `ACTIVE` without a sandbox preapproval or order and becomes `CANCELLED` without a provider call when revoked. The draft summary warns that the boost is charged while hidden, and the published summary has no warning. The recurring checkout returns to the localized purchase screen and reaches `ACTIVE`. One-time offers do not appear on the web purchase screen.
+- **Evidence:** Admin API responses, read-only addon product and instance rows, grant anchor, sandbox preapprovals and orders, purchase screen captures, checkout return URL and purchase status reads.
+- **Covers:** AC:B10:8, AC:B10:11, AC:B10:12, AC:B10:13; TEST:B10:9, TEST:B10:13, TEST:B10:14, TEST:B10:15.
+- **Nota:** pago único: ver HOS-2094.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -436,6 +449,15 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Read-only instance, complement, principal, outbox and provider records; both emails and subsequent provider charge history.
 - **Covers:** AC:B10:6; TEST:B10:7.
 
+### P11 — Phase 3 real recurring addon purchase (HOS-1595)
+
+- **Preconditions:** The owner's internal production account has an active paying principal and an approved recurring addon amount; only the owner runs this item.
+- **Steps:** Buy a recurring addon from `/es/mi-cuenta/complementos/` with the owner's card. Observe the returned purchase and both the principal and addon charges.
+- **Expected:** The recurring addon becomes `ACTIVE` with its own preapproval and charge, separate from the principal's unchanged amount; the provider sends its charge email. Action 20 is not executed in production smoke.
+- **Evidence:** Owner account screen and purchase response, read-only provider and payment records, card statement, provider email, and read-only addon instance rows.
+- **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
+- **Nota:** pago único: ver HOS-2094.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -456,6 +478,7 @@ B8b (HOS-1579) added S15 to staging and P6 to production.
 B8b phase 2 (HOS-1411) is covered by S15, S16 and P6/P7; courtesy pause follows in HOS-1590.
 The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains active) is verified with HOS-1592.
 Phase 3 (B10, HOS-1373) starts with HOS-1593: S18 and P9.
+Phase 3 (B10, HOS-1373) continues with HOS-1595: S20 and P11.
 
 ## Related
 
