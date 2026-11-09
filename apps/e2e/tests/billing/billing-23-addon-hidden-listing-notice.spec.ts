@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
-import esBilling from '../../../../packages/i18n/src/locales/es/billing.json';
+import esBilling from '../../../../packages/i18n/src/locales/es/billing.json' with { type: 'json' };
 import {
     cleanupAddonPurchaseRows,
     ensureAddonPurchaseCatalog,
