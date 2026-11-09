@@ -143,7 +143,20 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:14 AC:B10:12 free addon u
             .from(addonInstances)
             .where(eq(addonInstances.id, created.instanceId));
         expect(row?.status).toBe('CANCELLED');
-        // A5 does not write its domain event yet: HOS-2090.
+        const events = await domainEventModel.findByEntity({
+            entityType: 'addon_instance',
+            entityId: created.instanceId
+        });
+        expect(
+            events.filter((event) => event.eventType === 'addon_instance.status_changed')
+        ).toEqual([
+            expect.objectContaining({
+                changes: [{ field: 'status', old: null, new: 'ACTIVE' }]
+            }),
+            expect.objectContaining({
+                changes: [{ field: 'status', old: 'ACTIVE', new: 'CANCELLED' }]
+            })
+        ]);
         expect(f.notices).toContainEqual(
             expect.objectContaining({ sourceType: 'ADDON', change: 'REMOVED' })
         );

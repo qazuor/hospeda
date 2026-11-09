@@ -9,11 +9,13 @@
  * {@link emitAddonCoverageRemoved} → {@link cancelAddonComplementsAtProvider} (AC:B5:27), the only
  * half that calls the provider or enqueues mail; it holds no transaction.
  */
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     and,
     type DrizzleClient,
+    domainEventModel,
     eq,
     inArray,
     LIVE_SUBSCRIPTION_STATUSES,
@@ -177,6 +179,17 @@ export async function applyA5(
             undefined,
             'A5_STATE_CHANGED'
         );
+    await domainEventModel.insert({
+        eventType: 'addon_instance.status_changed',
+        entityType: 'addon_instance',
+        entityId: instance.id,
+        actorType: 'job',
+        actorId: null,
+        correlationId: randomUUID(),
+        changes: [{ field: 'status', old: from, new: 'CANCELLED' }],
+        occurredAt: now,
+        tx
+    });
 
     const providerCancellation = instance.complementSubscriptionId
         ? await closeComplement({

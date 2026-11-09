@@ -5,13 +5,14 @@
  */
 import {
     type DrizzleClient,
+    domainEventModel,
     eq,
     reconciliationMarkPayments,
     reconciliationMarks,
     refunds
 } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { applyA5 } from '../../../src/services/billing/addon/addon-instance-a5.js';
 import { isAddonInstanceOrphaned } from '../../../src/services/billing/addon/addon-orphanhood.js';
 import {
@@ -125,6 +126,59 @@ async function readTrail(tx: DrizzleClient, complementId: string, paymentId: str
 describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B5:13 TEST:B5:14 AC:B5:26 — A5 cancels by its third clause whatever the orphanhood says',
     () => {
+        it.each([
+            ['ORPHANED', 'ACTIVE'],
+            ['ORPHANED', 'PENDING_AUTHORIZATION'],
+            ['WITHDRAWN', 'ACTIVE'],
+            ['WITHDRAWN', 'PENDING_AUTHORIZATION'],
+            ['GRANT_REVOKED', 'ACTIVE'],
+            ['GRANT_REVOKED', 'PENDING_AUTHORIZATION']
+        ] as const)('%s from %s writes one status event in its transaction', async (clause, origin) => {
+            await withServiceTestTransaction(async (tx) => {
+                const s = await seedCase(tx, 'USER', origin);
+                const insert = domainEventModel.insert.bind(domainEventModel);
+                const spy = vi
+                    .spyOn(domainEventModel, 'insert')
+                    .mockImplementation(async (input) => {
+                        if (input.entityId === s.instanceId) expect(input.tx).toBe(tx);
+                        return insert(input);
+                    });
+                try {
+                    const input = { tx, instanceId: s.instanceId, clause, now: orphanNow };
+                    expect((await applyA5(input, s.fixture.ports)).outcome).toBe('CANCELLED');
+                    const events = (
+                        await domainEventModel.findByEntity({
+                            entityType: 'addon_instance',
+                            entityId: s.instanceId,
+                            tx
+                        })
+                    ).filter((event) => event.eventType === 'addon_instance.status_changed');
+                    expect(events).toHaveLength(1);
+                    expect(events[0]).toMatchObject({
+                        actorType: 'job',
+                        changes: [{ field: 'status', old: origin, new: 'CANCELLED' }]
+                    });
+                    expect(await applyA5(input, s.fixture.ports)).toEqual({
+                        outcome: 'NOT_APPLICABLE'
+                    });
+                    expect(
+                        (
+                            await domainEventModel.findByEntity({
+                                entityType: 'addon_instance',
+                                entityId: s.instanceId,
+                                tx
+                            })
+                        ).filter((event) => event.eventType === 'addon_instance.status_changed')
+                    ).toHaveLength(1);
+                    expect(
+                        spy.mock.calls.filter(([event]) => event.entityId === s.instanceId)
+                    ).toHaveLength(1);
+                } finally {
+                    spy.mockRestore();
+                }
+            });
+        });
+
         it.each(scopes)('%s ACTIVE: A5 and S21 write reason 15 in one act', async (scopeType) => {
             await withServiceTestTransaction(async (tx) => {
                 const s = await seedCase(tx, scopeType);
