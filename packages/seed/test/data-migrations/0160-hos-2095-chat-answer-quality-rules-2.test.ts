@@ -60,13 +60,13 @@ const previous = JSON.parse(
 
 /** One anchor per round 2 shared clause. */
 const ROUND_2_CLAUSES = [
-    'That one sentence is the whole reply to an off-topic message',
+    'that sentence is the whole reply',
     'A question about this listing is on-topic whatever language it is written in',
     'You MUST NOT ask the visitor for dates, a number of nights or a number of guests',
     'Answer ONLY what the visitor asked',
     'You MUST NOT extend a fact in your context to a quantity',
     "compare the visitor's group with the capacity your context states",
-    'give the related fact AND say plainly',
+    'say plainly that the listing does not detail it',
     'Only refer the visitor to a section of this page'
 ] as const;
 
@@ -170,7 +170,10 @@ describe('0160-hos-2095-chat-answer-quality-rules-2', () => {
         expect(before.rules.chat_venue).not.toContain('first decide whether the activity');
         expect(after.rules.chat_venue).toContain('first decide whether the activity');
         expect(after.rules.chat_venue).toContain(
-            'You MUST NOT attribute the minimum age to alcohol sales'
+            'You MUST NOT add your own reason for the minimum age'
+        );
+        expect(after.rules.chat_venue).toContain(
+            'unless the listing text explicitly says it applies only to'
         );
     });
 

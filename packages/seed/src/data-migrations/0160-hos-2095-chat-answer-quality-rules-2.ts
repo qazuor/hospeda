@@ -20,10 +20,12 @@
  * lugar"), inventory dumps on group questions, facts stretched to a quantity
  * or a room the listing does not state, links to page sections that do not
  * exist, leaky off-topic declines, and English questions declined as
- * off-topic. All three features gain one clause per finding; `chat_venue`'s
- * mixed-venue age rule becomes a decision procedure (decide first whether the
- * asked activity is the restricted one) and stops attributing the age to
- * alcohol sales unless the ficha says so. `content` did not change.
+ * off-topic. All three features gain one clause per finding, with the
+ * overlapping clauses merged. `chat_venue`'s age rules treat the minimum age as
+ * covering the whole venue unless the listing TEXT explicitly scopes it to a
+ * time, area or activity (only then may an unrestricted part get a "yes"), and
+ * forbid adding a reason for the age beyond the verbatim legal notice.
+ * `content` did not change.
  *
  * ## How the update is scoped
  *
