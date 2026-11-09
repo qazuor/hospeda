@@ -200,8 +200,17 @@ describe.skipIf(!isServiceTestDbAvailable())(
         it('ADMIN without the action 20 permission is rejected by all three creations with zero rows', async () => {
             const { entitlement, limit } = await keys();
             const slug = `b13b-denied-${crypto.randomUUID()}`;
-            const addonId = crypto.randomUUID();
-            const versionId = crypto.randomUUID();
+            const allowed = await createAddon({
+                actor,
+                input: {
+                    slug: `b13b-authorized-${crypto.randomUUID()}`,
+                    name: 'Authorized catalog',
+                    description: null,
+                    firstVersion: firstVersion(entitlement, limit)
+                }
+            });
+            const addonId = allowed.addon.id;
+            const versionId = allowed.version.id;
             await expect(
                 createAddon({
                     actor: admin,
@@ -241,11 +250,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             compatibleVerticals: ['accommodation']
                         }
                     },
-                    {
-                        addonPolicy: async () => {
-                            throw new Error('Gate bypassed');
-                        }
-                    }
+                    policy
                 )
             ).rejects.toMatchObject({
                 reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN',
@@ -254,8 +259,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const db = getServiceTestDb();
             expect(await db.select().from(addons).where(eq(addons.slug, slug))).toHaveLength(0);
             expect(
-                await db.select().from(addonVersions).where(eq(addonVersions.addonId, addonId))
-            ).toHaveLength(0);
+                await db
+                    .select({ id: addonVersions.id })
+                    .from(addonVersions)
+                    .where(eq(addonVersions.addonId, addonId))
+            ).toEqual([{ id: versionId }]);
             expect(
                 await db.select().from(addonProducts).where(eq(addonProducts.addonId, addonId))
             ).toHaveLength(0);
