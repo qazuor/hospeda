@@ -36,6 +36,7 @@ import type {
 } from '@repo/schemas';
 import {
     amenityAttributesMatch,
+    buildAmenityAttributeUpdate,
     resolveDesiredAmenityAttributes
 } from '../../utils/amenity-relation-attributes';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
@@ -99,6 +100,7 @@ interface AmenityJunctionRow {
     readonly amenityId: string;
     readonly scope?: AmenityScopeEnum | null;
     readonly availability?: AmenityAvailabilityEnum | null;
+    readonly isOptional?: boolean | null;
 }
 
 /**
@@ -195,7 +197,8 @@ export async function syncAmenityJunction({
             {
                 accommodationId,
                 amenityId,
-                isOptional: false,
+                // HOS-2084: `extraCharge` -> is_optional; false unless sent.
+                isOptional: attributes?.isOptional ?? false,
                 // additionalCost and additionalCostPercent default to null in DB schema.
                 // HOS-2058: scope/availability stay NULL ("not declared") unless sent.
                 ...(attributes
@@ -216,7 +219,7 @@ export async function syncAmenityJunction({
         if (amenityAttributesMatch({ row, want })) continue;
         await junctionModel.update(
             { accommodationId, amenityId },
-            { scope: want.scope, availability: want.availability },
+            buildAmenityAttributeUpdate({ want }),
             tx
         );
     }
