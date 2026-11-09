@@ -191,7 +191,7 @@ test.describe('TEST:B10:16 AC:B10:14 the addon end to end @p0 @billing @clock', 
                     authorizationId: principalAuthorizationId
                 })
             ).snapshot.amount
-        ).toBe(principalAmount);
+        ).toEqual(principalAmount);
     });
 
     test('abandoned recurring checkout: our mail first, then exactly one cancellation', async ({
