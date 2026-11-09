@@ -3,7 +3,7 @@ import { billingOptions, eq, planVersions, providerLinks, subscriptions, users }
 import { PermissionEnum } from '@repo/schemas';
 import { setCyclePrice } from '../../../../src/services/billing/pricing/cycle-price.service.js';
 import { publishPlanVersion } from '../../../../src/services/plan-catalog/plan-publication.service.js';
-import { getServiceTestDb } from '../helpers.js';
+import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
 import { startCyclePriceCustomer } from './cycle-price-fixtures.js';
 import { retirePlanChanges, seedPlanChange } from './plan-change-fixtures.js';
 
@@ -18,6 +18,22 @@ export async function createPlanMigrationCase(
         readonly addPendingCustomer?: boolean;
     } = {}
 ) {
+    const client = await getServiceTestPool().connect();
+    let locked = false;
+    try {
+        await client.query('SELECT pg_advisory_lock(1612, 2)');
+        locked = true;
+        return await createUnlockedPlanMigrationCase(args);
+    } finally {
+        if (locked) await client.query('SELECT pg_advisory_unlock(1612, 2)');
+        client.release();
+    }
+}
+
+async function createUnlockedPlanMigrationCase(args: {
+    readonly sourceCycle?: 'monthly' | 'annual';
+    readonly addPendingCustomer?: boolean;
+}) {
     const seeded = await seedPlanChange({ sourceCycle: args.sourceCycle });
     const db = getServiceTestDb();
     let pendingCustomer: { subscriptionId: string; userId: string } | null = null;
