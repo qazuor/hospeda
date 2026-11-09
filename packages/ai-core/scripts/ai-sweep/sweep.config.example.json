@@ -1,15 +1,12 @@
 {
     "providers": [{ "id": "openai", "apiKeyEnv": "OPENAI_API_KEY" }],
     "models": [
-        { "id": "gpt-4o-mini", "provider": "openai", "reasoning": false },
-        {
-            "id": "gpt-5-mini",
-            "provider": "openai",
-            "reasoning": true
-        }
+        { "id": "gpt-5.4-nano", "provider": "openai", "reasoning": true },
+        { "id": "gpt-5-nano", "provider": "openai", "reasoning": true },
+        { "id": "gpt-5-mini", "provider": "openai", "reasoning": true }
     ],
     "reasoningEfforts": ["minimal", "low", "medium"],
-    "maxOutputTokens": [1024, 2048, 4096],
+    "maxOutputTokens": [1024, 4096],
     "repetitions": 2,
     "caseIds": [],
     "concurrency": 2,
