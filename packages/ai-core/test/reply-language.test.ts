@@ -118,6 +118,44 @@ describe('detectMessageLanguage — unsure cases return null', () => {
     });
 });
 
+/**
+ * Review of #4253 (B1/B2): English loanwords ("pet friendly", "bed and
+ * breakfast") and web addresses (`com`, `ar` are Portuguese words) used to
+ * flip Spanish and Portuguese questions.
+ */
+const LOANWORD_AND_ADDRESS_CASES: ReadonlyArray<
+    readonly [string, ReadonlyArray<'es' | 'en' | 'pt' | null>]
+> = [
+    ['es pet friendly?', ['es', null]],
+    ['son pet friendly?', ['es', null]],
+    ['es family friendly?', ['es', null]],
+    ['es dog friendly?', ['es', null]],
+    ['es dog-friendly?', ['es', null]],
+    ['tiene bed and breakfast?', ['es', null]],
+    ['hacen B&B?', ['es', null]],
+    ['tem pet friendly?', ['pt', null]],
+    ['is it pet friendly?', ['en']],
+    ['vi esto en www.lacasona.com.ar, es así?', ['es', null]],
+    ['me pasás la web lacasona.com.ar', ['es', null]],
+    ['tienen mail? info@lacasona.com.ar', ['es', null]],
+    ['lo vi en https://hospeda.com.ar/alojamientos/la-casona, tienen pileta?', ['es']],
+    ['vi en hospeda.com.ar que tienen cochera', ['es']],
+    ['tienen instagram? @lacasona.ar', ['es', null]],
+    ['I saw it on hospeda.com.ar, is breakfast included?', ['en']]
+];
+
+describe('detectMessageLanguage — loanwords and addresses never flip the language', () => {
+    it.each(LOANWORD_AND_ADDRESS_CASES)('"%s" → one of %j', (text, allowed) => {
+        expect(allowed).toContain(detectMessageLanguage({ text }).language);
+    });
+
+    it('a web address alone never scores Portuguese', () => {
+        expect(
+            detectMessageLanguage({ text: 'www.lacasona.com.ar info@lacasona.com.ar' }).scores.pt
+        ).toBe(0);
+    });
+});
+
 describe('detectMessageLanguage — accuracy over the whole set', () => {
     it('gets every confident case right and never guesses on an unsure one', () => {
         // Arrange
@@ -159,6 +197,8 @@ describe('buildReplyLanguageInstruction', () => {
     it('tells the model a foreign-language question about the listing is on-topic', () => {
         expect(REPLY_LANGUAGE_INSTRUCTIONS.en).toContain('on-topic');
         expect(REPLY_LANGUAGE_INSTRUCTIONS.pt).toContain('dentro do tema');
+        // Review M4: the Spanish line says it too, for consistency.
+        expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('dentro del tema');
     });
 
     it('returns the instruction for a confident message and null otherwise', () => {

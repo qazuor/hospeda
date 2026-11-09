@@ -43,8 +43,8 @@ const WEAK_WORDS: Readonly<Record<ReplyLanguage, string>> = {
 };
 
 const STRONG_WORDS: Readonly<Record<ReplyLanguage, string>> = {
-    es: 'hay tienen tiene tenes tengo puedo puede pueden podes quiero queres aceptan acepta pileta mascota mascotas perro perros gato gatos ninos nino nenes nene chicos hijo hijos desayuno cochera habitacion habitaciones noche noches cuanto cuanta cuesta precio lejos cerca playa gracias muy mucho tambien ustedes vos che llevar almorzar cenar queda donde cual cuales menores estamos salida aire acondicionado tarjeta hacen ofrecen sirven incluye parrilla dormitorios',
-    en: 'breakfast included include includes allow allowed pets pet dog dogs cat cats bring pool room rooms night nights price prices people far near beach time leave leaves open lunch dinner kids children family fit thanks thank please have has sundays cost costs pay card serve food located suitable friendly adults air conditioning bed beds bathroom need grill smoking',
+    es: 'hay tienen tiene tenes tengo puedo puede pueden podes quiero queres aceptan acepta pileta mascota mascotas perro perros gato gatos ninos nino nenes nene chicos hijo hijos desayuno cochera habitacion habitaciones noche noches cuanto cuanta cuesta precio lejos cerca playa gracias muy mucho tambien ustedes vos che llevar almorzar cenar queda donde cual cuales menores estamos salida aire acondicionado tarjeta hacen ofrecen sirven incluye parrilla dormitorios asi',
+    en: 'breakfast included include includes allow allowed dog dogs cat cats bring pool room rooms night nights price prices people far near beach time leave leaves open lunch dinner kids children family fit thanks thank please have has sundays cost costs pay card serve food located suitable adults air conditioning bed beds bathroom need grill smoking',
     pt: 'voce voces um uma com nao tem aceita aceitam posso meu minha quanto custa diaria duas dois pessoas criancas estacionamento quarto quartos qual quais passeio fica perto longe praia manha obrigado obrigada tambem muito onde animais estimacao ar servem cabemos cartao gostaria quero pode churrasqueira'
 };
 
@@ -54,8 +54,48 @@ const STRONG_WORDS: Readonly<Record<ReplyLanguage, string>> = {
  * question English.
  */
 const LOANWORDS: ReadonlySet<string> = new Set(
-    'parking camping living wifi spa delivery brunch happy check ok okay tour pub show'.split(' ')
+    'parking camping living wifi spa delivery brunch happy check ok okay tour pub show pet pets friendly'.split(
+        ' '
+    )
 );
+
+/**
+ * Multi-word loanwords ("pet friendly", "dog-friendly", "bed and breakfast",
+ * "B&B") replaced by one neutral token before tokenizing (review of #4253):
+ * "es pet friendly?" used to read as English because `pet` and `friendly` were
+ * English markers. The placeholder still counts as a word, so "tiene bed and
+ * breakfast?" keeps enough length to be decided by `tiene`.
+ */
+const LOANWORD_PHRASES: readonly RegExp[] = [
+    /\p{L}+[- ]friendly\b/gu,
+    /\bbed (?:and|&|n) breakfast\b/gu,
+    /\bb ?& ?b\b/gu,
+    /\bbnb\b/gu
+];
+
+/** Neutral placeholder a loanword phrase is replaced with. */
+const NEUTRAL_TOKEN = ' loanword ';
+
+/**
+ * Web addresses, e-mails and @handles, removed before tokenizing (review of
+ * #4253): `com` and `ar` are Portuguese marker words, so "tienen mail?
+ * info@lacasona.com.ar" used to score Portuguese. They are not words the
+ * visitor chose a language for, so they are dropped, not neutralized.
+ */
+const ADDRESS_PATTERNS: readonly RegExp[] = [
+    /\b(?:https?:\/\/|www\.)\S+/gu,
+    /\S+@\S+/gu,
+    /@[\p{L}\d_.]+/gu,
+    /\b[\p{L}\d-]+(?:\.[\p{L}\d-]+)*\.(?:com|net|org|ar|br|uy|io|info|tur|gob|gov|edu|app)\b(?:\/\S*)?/gu
+];
+
+/** Lowercases the message and removes addresses and loanword phrases. */
+function normalizeMessage(text: string): string {
+    let value = text.normalize('NFC').toLowerCase().replace(/[’`´]/g, "'");
+    for (const pattern of ADDRESS_PATTERNS) value = value.replace(pattern, ' ');
+    for (const pattern of LOANWORD_PHRASES) value = value.replace(pattern, NEUTRAL_TOKEN);
+    return value;
+}
 
 /** Builds the `word → weight` lookup of one language. */
 function buildMarkers(language: ReplyLanguage): ReadonlyMap<string, 1 | 2> {
@@ -147,7 +187,7 @@ export function detectMessageLanguage({
     readonly text: string;
 }): DetectMessageLanguageResult {
     const scores: Record<ReplyLanguage, number> = { es: 0, en: 0, pt: 0 };
-    const lower = text.normalize('NFC').toLowerCase().replace(/[’`´]/g, "'");
+    const lower = normalizeMessage(text);
 
     for (const [pattern, language] of CHAR_CUES) {
         if (pattern.test(lower)) {
@@ -205,7 +245,7 @@ export function detectMessageLanguage({
  */
 export const REPLY_LANGUAGE_INSTRUCTIONS: Readonly<Record<ReplyLanguage, string>> = {
     en: "- Reply in English. The visitor's latest message is written in English; a question in English about this listing is on-topic and gets a normal answer.",
-    es: '- Respondé en español. El último mensaje del visitante está escrito en español.',
+    es: '- Respondé en español. El último mensaje del visitante está escrito en español; una pregunta en español sobre este aviso está dentro del tema y recibe una respuesta normal.',
     pt: '- Responda em português. A última mensagem do visitante está escrita em português; uma pergunta em português sobre este anúncio está dentro do tema e recebe uma resposta normal.'
 } as const;
 
