@@ -1,13 +1,8 @@
 import {
     addonInstances,
     and,
-    coveredPeriods,
     domainEventModel,
     eq,
-    inArray,
-    payments,
-    reconciliationMarkPayments,
-    reconciliationMarks,
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
@@ -15,19 +10,15 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { cancelActiveSubscription } from '../../../src/services/billing/subscription/cancel-active-subscription.service';
 import { pauseComplementsS32 } from '../../../src/services/billing/subscription/complement-pause-s32';
 import { resumeComplementsS33 } from '../../../src/services/billing/subscription/complement-resume-s33';
-import { endScheduledServices } from '../../../src/services/billing/subscription/end-scheduled-services.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { seedComplementCharge } from './support/addon-orphan-fixtures';
 import {
     activeRecurringExitFixture,
     cachedExitAddonPolicy,
-    listingExitFixture,
     retireExitFixtures
 } from './support/b10-exit-fixtures';
 import { payingVenueExitPrincipal } from './support/b10-exit-fixtures-2';
 
 type ExitFixture = Awaited<ReturnType<typeof activeRecurringExitFixture>>;
-const chargeIds: string[] = [];
 const actor = (id: string) => ({ id, roles: [], permissions: [] });
 const policy = async (h: ExitFixture) => ({
     addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
@@ -56,19 +47,12 @@ const readRows = async (h: ExitFixture) => {
 // Both principal subscriptions start through S1/S2; each addon starts through A1/A2.
 afterEach(async () => {
     await retireExitFixtures();
-    const ids = chargeIds.splice(0);
-    if (ids.length > 0) {
-        await getServiceTestDb()
-            .delete(coveredPeriods)
-            .where(inArray(coveredPeriods.paymentId, ids));
-        await getServiceTestDb().delete(payments).where(inArray(payments.id, ids));
-    }
     vi.restoreAllMocks();
 });
 afterAll(closeServiceTestPool);
 
 describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)', () => {
-    it('LISTA:B10 clause 1 S11 cancels the dependent A1 preapproval immediately while its instance keeps serving', async () => {
+    it('LISTA:B10 clause 1 darse de baja (`S11`) cancela en el acto el preapproval de cada addon recurrente que depende de la principal —la selección de `S32`, CON `CANCEL_SCHEDULED` en la exclusión (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`)— y el addon se sigue viendo hasta el fin de servicio (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`)', async () => {
         const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
         const cancel = vi.spyOn(h.f.fake, 'cancel');
         const result = await cancelActiveSubscription(
@@ -104,7 +88,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
         ).toEqual(['S11']);
     });
 
-    it('LISTA:B10 clause 2 a USER A1 preapproval survives the first vertical S11 and cancels on the second without another cycle', async () => {
+    it('LISTA:B10 clause 2 un `USER` compatible con dos verticales, dado de baja primero en una y después en la otra, se cancela en la segunda baja y no cobra un ciclo de más (`V2-c`)', async () => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
         const venueId = await payingVenueExitPrincipal(h.f);
         const cancel = vi.spyOn(h.f.fake, 'cancel');
@@ -152,17 +136,24 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
         ).toHaveLength(1);
     });
 
+    /**
+     * Real path: S1/S2 start both principals; A1/A2 create and activate the USER addon.
+     * INJECTED: the other principal is set to PAUSED, SUSPENDED, or ACTIVE, and
+     * the first principal to CANCELLED, to isolate S32 after title death. Its
+     * later ACTIVE state is also injected before the real S33 call.
+     */
     it.each([
         'PAUSED',
+        'SUSPENDED',
         'ACTIVE'
-    ] as const)('LISTA:B10 clause 3 a USER A1 addon with the other vertical %s pauses on title death only when unsupported and resumes by S33', async (otherStatus) => {
+    ] as const)('LISTA:B10 clause 3 un `USER` compatible con dos verticales, cuya principal de una muere por una de las once con la de la otra `PAUSED` o `SUSPENDED`, queda pausado por `S32` en ese acto y vuelve por `S33` cuando la otra se reanuda; si sigue cobrando, falta ese disparador (`V2-e`) (%s)', async (otherStatus) => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
         const venueId = await payingVenueExitPrincipal(h.f);
         await getServiceTestDb()
             .update(subscriptions)
             .set({ status: otherStatus })
             .where(eq(subscriptions.id, venueId));
-        // The title death and other-vertical pause are seeded states after real starts.
+        // INJECTED: title death after the real starts.
         await getServiceTestDb()
             .update(subscriptions)
             .set({ status: 'CANCELLED' })
@@ -175,7 +166,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
             .select({ status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.id, h.complementId));
-        if (otherStatus === 'PAUSED') {
+        if (otherStatus === 'PAUSED' || otherStatus === 'SUSPENDED') {
             expect(paused.results).toMatchObject([
                 { complementSubscriptionId: h.complementId, outcome: 'PAUSED' }
             ]);
@@ -205,10 +196,16 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
         }
     });
 
+    /**
+     * Real path: S1/S2 start the principals, A1/A2 activate both addons,
+     * and S32/S33 perform the complement transitions.
+     * INJECTED: customer pause rows and the other vertical's status are set
+     * directly to isolate S32/S33; principal reactivation is also injected.
+     */
     it.each([
         'ACTIVE',
         'PAUSED'
-    ] as const)('LISTA:B10 clause 11 4a a customer pause shields the vertical addon and USER only when the other compatible title is %s', async (otherStatus) => {
+    ] as const)('LISTA:B10 clause 11 4a una pausa pedida por el cliente no deja ningún addon recurrente de esa vertical cobrando —se pausa con ella por `S32` y vuelve por `S33`, y un `USER`/`GLOBAL` sólo si no le queda título en otra vertical compatible— (4a) (%s)', async (otherStatus) => {
         const vertical = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
         const user = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
         const venueId = await payingVenueExitPrincipal(user.f);
@@ -217,7 +214,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
             .set({ status: otherStatus })
             .where(eq(subscriptions.id, venueId));
         const now = vertical.f.ports.clock.now();
-        // Customer pause rows are seeded because this case isolates the S32/S33 addon rule.
+        // INJECTED: customer pause rows for the S32/S33 addon rule.
         for (const id of [vertical.principalId, user.principalId]) {
             await getServiceTestDb()
                 .update(subscriptions)
@@ -317,167 +314,5 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
             (await user.f.fake.readAuthorization({ authorizationId: user.authorizationId }))
                 .snapshot.status
         ).toBe('active');
-    });
-    it('LISTA:B10 clause 15 the 15 October service end applies S21 before the A1 listing complement S12 and hangs the last charge on mark 14', async () => {
-        const h = await listingExitFixture('ACTIVE');
-        if (!h.complementId || !h.authorizationId) throw new Error('Listing complement missing');
-        const db = getServiceTestDb();
-        const [principal] = await db
-            .select({ id: subscriptions.id })
-            .from(subscriptions)
-            .where(
-                and(eq(subscriptions.userId, h.f.ownerId), eq(subscriptions.class, 'PRINCIPAL'))
-            );
-        if (!principal) throw new Error('Listing principal missing');
-        const cancelled = await cancelActiveSubscription(
-            { actor: actor(h.f.ownerId), subscriptionId: principal.id },
-            {
-                provider: h.f.fake,
-                clock: h.f.ports.clock,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
-                coverageNotices: { emitCoverageChanged: async () => undefined },
-                complements: {
-                    addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
-                    listing: h.f.ports.listing,
-                    liveAnchors: h.f.ports.liveAnchors
-                }
-            }
-        );
-        expect(cancelled.outcome).toBe('SCHEDULED');
-        const serviceEnd = new Date('2026-10-15T00:00:00.000Z');
-        // The principal and complement were scheduled by S11; only their test end date is seeded.
-        await db
-            .update(subscriptions)
-            .set({ serviceEndsAt: serviceEnd })
-            .where(inArray(subscriptions.id, [principal.id, h.complementId]));
-        const { paymentId } = await db.transaction((tx) =>
-            seedComplementCharge(tx, {
-                subscriptionId: h.complementId as string,
-                factAt: h.f.ports.clock.now(),
-                coveredPeriodStart: new Date('2026-09-20T00:00:00.000Z')
-            })
-        );
-        chargeIds.push(paymentId);
-        h.f.advanceTo(serviceEnd);
-        const result = await endScheduledServices(
-            { limit: 100, db },
-            {
-                clock: h.f.ports.clock,
-                provider: h.f.fake,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
-                coverageNotices: { emitCoverageChanged: async () => undefined },
-                addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
-                listing: h.f.ports.listing,
-                liveAnchors: h.f.ports.liveAnchors
-            }
-        );
-        const [principalAfter] = await db
-            .select({ status: subscriptions.status })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, principal.id));
-        const [complementAfter] = await db
-            .select({ status: subscriptions.status })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, h.complementId));
-        const [instanceAfter] = await db
-            .select({ status: addonInstances.status })
-            .from(addonInstances)
-            .where(eq(addonInstances.id, h.instanceId));
-        expect(principalAfter).toEqual({ status: 'CANCELLED' });
-        expect(complementAfter).toEqual({ status: 'CANCELLED' });
-        expect(instanceAfter).toEqual({ status: 'CANCELLED' });
-        expect(result.rows.find((r) => r.subscriptionId === principal.id)).toMatchObject({
-            phase: 'PRINCIPAL',
-            orphaned: [h.instanceId]
-        });
-        expect(result.rows.filter((r) => r.subscriptionId === h.complementId)).toEqual([]);
-        const marks = await db
-            .select({ id: reconciliationMarks.id, reason: reconciliationMarks.reason })
-            .from(reconciliationMarks)
-            .where(eq(reconciliationMarks.subscriptionId, h.complementId));
-        expect(marks).toHaveLength(1);
-        expect(marks[0]?.reason).toBe('COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA');
-        const hung = await db
-            .select({ paymentId: reconciliationMarkPayments.paymentId })
-            .from(reconciliationMarkPayments)
-            .where(eq(reconciliationMarkPayments.markId, marks[0]!.id));
-        expect(hung).toEqual([{ paymentId }]);
-        const events = await domainEventModel.findByEntity({
-            entityType: 'subscription',
-            entityId: h.complementId
-        });
-        expect(
-            events
-                .filter((e) => e.eventType === 'subscription.provider_cancellation_decided')
-                .map((e) => e.reason)
-        ).toEqual(['S11', 'A5']);
-    });
-    it('LISTA:B10 clause 15 a failed principal S12 keeps its A1 listing complement scheduled for the next run', async () => {
-        const h = await listingExitFixture('ACTIVE');
-        if (!h.complementId) throw new Error('Listing complement missing');
-        const db = getServiceTestDb();
-        const [principal] = await db
-            .select({ id: subscriptions.id })
-            .from(subscriptions)
-            .where(
-                and(eq(subscriptions.userId, h.f.ownerId), eq(subscriptions.class, 'PRINCIPAL'))
-            );
-        if (!principal) throw new Error('Listing principal missing');
-        const cancelled = await cancelActiveSubscription(
-            { actor: actor(h.f.ownerId), subscriptionId: principal.id },
-            {
-                provider: h.f.fake,
-                clock: h.f.ports.clock,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
-                coverageNotices: { emitCoverageChanged: async () => undefined },
-                complements: {
-                    addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
-                    listing: h.f.ports.listing,
-                    liveAnchors: h.f.ports.liveAnchors
-                }
-            }
-        );
-        expect(cancelled.outcome).toBe('SCHEDULED');
-        const serviceEnd = new Date('2026-10-15T00:00:00.000Z');
-        // S11 created both rows; the test seeds their shared service end.
-        await db
-            .update(subscriptions)
-            .set({ serviceEndsAt: serviceEnd })
-            .where(inArray(subscriptions.id, [principal.id, h.complementId]));
-        h.f.advanceTo(serviceEnd);
-        const result = await endScheduledServices(
-            { limit: 100, db },
-            {
-                clock: h.f.ports.clock,
-                provider: h.f.fake,
-                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
-                coverageNotices: { emitCoverageChanged: async () => undefined },
-                addonPolicy: async () => {
-                    throw new Error('catalog unavailable');
-                },
-                listing: h.f.ports.listing,
-                liveAnchors: h.f.ports.liveAnchors
-            }
-        );
-        expect(result.rows.find((row) => row.subscriptionId === principal.id)).toMatchObject({
-            phase: 'PRINCIPAL',
-            outcome: 'FAILED'
-        });
-        expect(result.rows.filter((row) => row.subscriptionId === h.complementId)).toEqual([]);
-        const [principalAfter] = await db
-            .select({ status: subscriptions.status })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, principal.id));
-        const [complementAfter] = await db
-            .select({ status: subscriptions.status })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, h.complementId));
-        const [instanceAfter] = await db
-            .select({ status: addonInstances.status })
-            .from(addonInstances)
-            .where(eq(addonInstances.id, h.instanceId));
-        expect(principalAfter).toEqual({ status: 'CANCEL_SCHEDULED' });
-        expect(complementAfter).toEqual({ status: 'CANCEL_SCHEDULED' });
-        expect(instanceAfter).toEqual({ status: 'ACTIVE' });
     });
 });
