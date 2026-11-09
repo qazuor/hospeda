@@ -16,6 +16,8 @@ export interface AccommodationAmenityRow {
     readonly type?: string | null;
     readonly scope?: 'private' | 'shared' | null;
     readonly availability?: 'year_round' | 'seasonal' | null;
+    /** HOS-2084: `is_optional` -- paid separately ("Con cargo extra"). */
+    readonly isOptional?: boolean | null;
 }
 
 /** Props for {@link AccommodationAmenitiesList}. */
@@ -57,7 +59,9 @@ export function selectAccommodationAmenities(
 
 /**
  * Amenities of one accommodation, grouped by amenity type. Shows a badge for
- * each declared relation attribute (scope, availability); undeclared shows nothing.
+ * each declared relation attribute (scope, availability, and the HOS-2084
+ * extra-charge flag); undeclared shows nothing. Read-only: the admin has no
+ * editor for relation attributes in any vertical (owners declare them).
  */
 export const AccommodationAmenitiesList = ({ amenities }: AccommodationAmenitiesListProps) => {
     const { t } = useTranslations();
@@ -120,6 +124,13 @@ export const AccommodationAmenitiesList = ({ amenities }: AccommodationAmenities
                                                 {t(AVAILABILITY_KEYS[amenity.availability])}
                                             </Badge>
                                         )}
+                                    {amenity.isOptional === true && (
+                                        <Badge variant="outline">
+                                            {t(
+                                                'accommodations.amenityAttributes.extraCharge.badge'
+                                            )}
+                                        </Badge>
+                                    )}
                                 </li>
                             ))}
                         </ul>
