@@ -4,6 +4,8 @@
  * values, and feature grouping only when something is classified.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     groupFeaturesForDisplay,
@@ -32,6 +34,29 @@ describe('resolveAmenityAttributeBadges', () => {
         expect(
             resolveAmenityAttributeBadges({ scope: null, availability: 'year_round', t })
         ).toEqual(['Todo el año']);
+    });
+
+    it('renders the "Con cargo" badge only when extraCharge is true (HOS-2084)', () => {
+        expect(
+            resolveAmenityAttributeBadges({ scope: null, availability: null, extraCharge: true, t })
+        ).toEqual(['Con cargo']);
+        expect(
+            resolveAmenityAttributeBadges({
+                scope: 'shared',
+                availability: null,
+                extraCharge: true,
+                t
+            })
+        ).toEqual(['Compartido', 'Con cargo']);
+        expect(
+            resolveAmenityAttributeBadges({
+                scope: null,
+                availability: null,
+                extraCharge: false,
+                t
+            })
+        ).toEqual([]);
+        expect(resolveAmenityAttributeBadges({ t })).toEqual([]);
     });
 
     it('ignores an unknown value instead of inventing a label', () => {
@@ -78,5 +103,25 @@ describe('groupFeaturesForDisplay', () => {
         });
 
         expect(groups?.map((g) => g.label)).toEqual(['Estilo', 'Otras']);
+    });
+});
+
+describe('AmenitiesGrid extra-charge badge wiring (HOS-2084)', () => {
+    // Vitest cannot render `.astro` here, so the wiring is pinned from source:
+    // the one grid every vertical's detail page mounts must feed the amenity's
+    // `isOptional` flag into the badge resolver, which is tested above.
+    const grid = readFileSync(
+        resolve(__dirname, '../../src/components/accommodation/AmenitiesGrid.astro'),
+        'utf8'
+    );
+
+    it('passes the relation isOptional flag to resolveAmenityAttributeBadges', () => {
+        expect(grid).toMatch(
+            /resolveAmenityAttributeBadges\(\{[^}]*extraCharge:\s*amenity\.isOptional/s
+        );
+    });
+
+    it('renders each resolved badge in an amenity-item__badge element', () => {
+        expect(grid).toContain('class="amenity-item__badge"');
     });
 });

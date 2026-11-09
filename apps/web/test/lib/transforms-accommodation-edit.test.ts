@@ -236,6 +236,30 @@ describe('transformAccommodationEdit', () => {
         });
     });
 
+    it('reads the extra-charge flag (`isOptional`) as extraCharge, only when true (HOS-2084)', () => {
+        const raw = {
+            id: 'a6b',
+            amenities: [
+                { id: 'am-1', slug: 'pool', scope: null, availability: null, isOptional: true },
+                { id: 'am-2', slug: 'wifi', scope: null, availability: null, isOptional: false },
+                {
+                    id: 'am-3',
+                    slug: 'grill',
+                    scope: 'private',
+                    availability: null,
+                    isOptional: true
+                }
+            ]
+        };
+
+        const result = transformAccommodationEdit({ item: raw });
+
+        expect(result.amenityAttributes).toEqual({
+            'am-1': { scope: null, availability: null, extraCharge: true },
+            'am-3': { scope: 'private', availability: null, extraCharge: true }
+        });
+    });
+
     it('yields an empty attribute map when there are no amenities', () => {
         expect(transformAccommodationEdit({ item: { id: 'a7' } }).amenityAttributes).toEqual({});
     });

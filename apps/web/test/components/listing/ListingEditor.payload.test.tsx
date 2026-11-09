@@ -964,6 +964,48 @@ describe('ListingEditor — amenity relation attributes (HOS-2061)', () => {
         });
     });
 
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('%s: checking "Con cargo extra" sends extraCharge true (HOS-2084)', async (vertical) => {
+        // Arrange
+        renderAmenities(vertical);
+        const box = screen.getByRole('checkbox', { name: 'Con cargo extra' });
+        expect(box).not.toBeChecked();
+
+        // Act
+        fireEvent.click(box);
+        fireEvent.click(saveButton());
+
+        // Assert
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: true }
+            ]
+        });
+    });
+
+    it('seeds the stored flag and sends extraCharge false when it is unchecked (HOS-2084)', async () => {
+        renderAmenities('venue', {
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: true }
+            ]
+        });
+        const box = screen.getByRole('checkbox', { name: 'Con cargo extra' });
+        expect(box).toBeChecked();
+
+        fireEvent.click(box);
+        fireEvent.click(saveButton());
+
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: false }
+            ]
+        });
+    });
+
     it('sends amenityIds and no attributes for a newly checked amenity with nothing declared', async () => {
         renderAmenities('venue', { amenityAttributes: [] });
 

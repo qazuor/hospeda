@@ -30,7 +30,7 @@ export function toAmenityAvailability(value: unknown): AmenityAvailabilityValue 
  *
  * @param items - The protected accommodation `amenities` array, or the
  *   venue/experience `amenityAttributes` list
- * @returns Declared scope/availability per amenity id
+ * @returns Declared scope/availability/extra-charge per amenity id
  */
 export function extractAmenityAttributes(
     items: readonly (Record<string, unknown> | string)[] | undefined
@@ -44,8 +44,11 @@ export function extractAmenityAttributes(
         if (id.length === 0) continue;
         const scope = toAmenityScope(entry.scope);
         const availability = toAmenityAvailability(entry.availability);
-        if (scope === null && availability === null) continue;
-        result[id] = { scope, availability };
+        // HOS-2084: the owner read-back says `extraCharge`; the accommodation
+        // protected rows carry the raw column name `isOptional`.
+        const extraCharge = entry.extraCharge === true || entry.isOptional === true;
+        if (scope === null && availability === null && !extraCharge) continue;
+        result[id] = { scope, availability, ...(extraCharge ? { extraCharge: true } : {}) };
     }
     return result;
 }
