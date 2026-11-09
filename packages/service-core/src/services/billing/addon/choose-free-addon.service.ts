@@ -78,6 +78,14 @@ export async function chooseFreeAddon(
     let createdCoverageVerticals: readonly string[] = [];
     try {
         const result = await getDb().transaction(async (tx): Promise<ChooseFreeAddonResult> => {
+            const [saleability] = await tx
+                .select({ retiredAt: addonProducts.retiredAt })
+                .from(addonProducts)
+                .where(eq(addonProducts.id, product.id))
+                .for('share')
+                .limit(1);
+            if (!saleability || saleability.retiredAt !== null)
+                return { outcome: 'REFUSED', reason: 'PRODUCT_NOT_FOUND' };
             const target = await resolvePurchaseTarget(
                 {
                     tx,
