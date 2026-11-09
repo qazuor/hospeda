@@ -66,6 +66,23 @@ describe('venue welcome tour copy is vertical-neutral (HOS-2093)', () => {
     });
 });
 
+describe('es welcome tour is written with accents and voseo (HOS-2093)', () => {
+    const tour = esAccount.welcomeTour as unknown as Record<string, Record<string, string>>;
+    const all = Object.entries(tour).flatMap(([group, entries]) =>
+        Object.entries(entries).map(([key, value]) => [`${group}.${key}`, value] as const)
+    );
+    const UNACCENTED =
+        /\b(aca|podes|tenes|necesitas|rapido|facil|mas|donde|seccion|informacion|configuracion|descripcion|publico|publica|codigo|cuantas|estadias|anfitrion)\b/i;
+    const TUTEO_IMPERATIVE = /^(Guarda|Activa|Revisa|Segui|Edita|Crea|Publica|Actualiza|Genera) /;
+
+    for (const [path, value] of all) {
+        it(`es welcomeTour.${path} has no unaccented words or tuteo imperatives`, () => {
+            expect(value).not.toMatch(UNACCENTED);
+            expect(value).not.toMatch(TUTEO_IMPERATIVE);
+        });
+    }
+});
+
 describe('account menu label is translated (HOS-2093)', () => {
     it('es keeps the Spanish label', () => {
         expect(esAccount.menu).toBe('Menú de cuenta');
