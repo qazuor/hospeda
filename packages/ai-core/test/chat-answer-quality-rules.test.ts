@@ -33,7 +33,11 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — shared answer-quality rules',
             'You MUST NOT offer, promise or imply that you can make, hold, change or cancel a booking or reservation'
         );
         expect(rules).toContain('check availability');
-        expect(rules).toContain('contact or booking options shown on this page');
+        // Review: Hospeda has no on-page booking and contact may not be shown.
+        expect(rules).not.toContain('booking options');
+        expect(rules).toContain('the contact options shown on this page, if there are any');
+        expect(rules).toContain('contact the place directly');
+        expect(rules).toContain('never imply that Hospeda takes, manages or confirms bookings');
     });
 
     it('#4 forbids sharing contact details that are not in the context', () => {
@@ -73,6 +77,23 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
 
     it('#6 requires an explicit "no" first when someone below the minimum age asks to enter', () => {
         expect(DEFAULT_RULES.chat_venue).toContain('your answer MUST start with an explicit "no"');
+    });
+
+    it('#6 scopes the "no" to the age-restricted part and keeps the confirm-with-the-venue close', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'the part or activity of the venue that the minimum age applies to'
+        );
+        expect(rules).toContain('then close by telling the visitor to confirm it with the venue');
+        expect(rules).toContain('it does not make the condition final');
+    });
+
+    it('#6 mixed venue: a question about the part with no age limit does not get a "no"', () => {
+        // "¿Puedo ir a almorzar con mi hijo?" at a restaurant-by-day, club-by-night venue.
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain('applies only to part of what the venue offers');
+        expect(rules).toContain('do NOT answer "no"');
+        expect(rules).toContain('the ficha does not state an age limit for the rest');
     });
 
     it('#6 the old rule that allowed nothing but the age and the legal notice is gone', () => {
