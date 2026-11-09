@@ -447,6 +447,45 @@ export function createDbMock() {
             }
         ),
         /**
+         * Experience catalog-membership clause builders (HOS-2085). Same
+         * reason as the venue ones above: `ExperienceService._executeCount`
+         * sits on the limits-middleware path, so an unnamed export is a 503.
+         * An EMPTY array when no filter is active keeps the no-filter path
+         * identical to before the filter existed.
+         */
+        buildExperienceFeatureIntersectionClause: vi.fn((featureIds: readonly string[]) => ({
+            type: 'experienceFeatureIntersection',
+            featureIds
+        })),
+        buildExperienceAmenityIntersectionClause: vi.fn((amenityIds: readonly string[]) => ({
+            type: 'experienceAmenityIntersection',
+            amenityIds
+        })),
+        buildExperienceCatalogConditions: vi.fn(
+            ({
+                amenities,
+                features
+            }: {
+                readonly amenities?: readonly string[];
+                readonly features?: readonly string[];
+            }) => {
+                const conditions: unknown[] = [];
+                if (amenities && amenities.length > 0) {
+                    conditions.push({
+                        type: 'experienceAmenityIntersection',
+                        amenityIds: amenities
+                    });
+                }
+                if (features && features.length > 0) {
+                    conditions.push({
+                        type: 'experienceFeatureIntersection',
+                        featureIds: features
+                    });
+                }
+                return conditions;
+            }
+        ),
+        /**
          * Venue business-line clause builder (HOS-1787 leaves 7.1 and 6.8).
          *
          * `VenueService` calls it from both the admin search and the public

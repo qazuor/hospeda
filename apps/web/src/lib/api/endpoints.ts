@@ -13,6 +13,7 @@ import type {
     EventOrganizerPublic,
     EventPublic,
     EventSummary,
+    ExperiencePublicFilterOptions,
     ExternalReputationBlock,
     FeaturePublic,
     NearbyPoi,
@@ -1713,12 +1714,30 @@ export const experiencesApi = {
         readonly isFeatured?: boolean;
         readonly minRating?: number;
         readonly maxRating?: number;
+        /** Comma-separated amenity UUIDs the listing must ALL carry (HOS-2085). */
+        readonly amenities?: string;
+        /** Comma-separated feature UUIDs the listing must ALL carry (HOS-2085). */
+        readonly features?: string;
         readonly sortBy?: string;
         readonly sortOrder?: 'asc' | 'desc';
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
         return apiClient.getList({ path: `${BASE}/experiences`, params });
+    },
+
+    /**
+     * Get the amenity and feature ids held by at least one published
+     * experience, so the sidebar never offers a filter with no results (HOS-2085).
+     *
+     * Deliberately NOT opted into the SSR cache, like the venue equivalent: a
+     * render right after an experience write could otherwise read the pre-purge
+     * options and freeze them into the edge-cached page.
+     *
+     * GET /api/v1/public/experiences/filter-options
+     */
+    getFilterOptions(): Promise<ApiResult<ExperiencePublicFilterOptions>> {
+        return apiClient.get({ path: `${BASE}/experiences/filter-options` });
     },
 
     /**

@@ -284,6 +284,13 @@ describe('ai_usage schema', () => {
         expect(names).toContain('aiUsage_provider_feature_created_idx');
     });
 
+    it('should carry a nullable consumer_user_id with its quota index (HOS-2095)', () => {
+        const consumerCol = col(aiUsage, 'consumer_user_id');
+        expect(consumerCol?.columnType).toBe('PgUUID');
+        expect(consumerCol?.notNull).toBe(false);
+        expect(indexNames(aiUsage)).toContain('aiUsage_consumerUserId_feature_created_idx');
+    });
+
     it('user_id should be nullable (deleted user rows survive anonymised, owner-approved 2026-06-04)', () => {
         // Arrange + Act
         const userIdCol = col(aiUsage, 'user_id');

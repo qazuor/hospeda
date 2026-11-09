@@ -1,4 +1,5 @@
 export * from './experience.model.ts';
+export * from './experience-catalog-filters.ts';
 export * from './experienceCertificate.model.ts';
 export * from './experienceFaq.model.ts';
 export * from './experienceMedia.model.ts';

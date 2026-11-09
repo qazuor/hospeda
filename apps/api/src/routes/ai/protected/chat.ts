@@ -23,8 +23,8 @@
  * 3. Fetch `ownerId` from the target listing row (pre-stream 404 guard).
  * 4. Assemble the listing-scoped context and system message.
  * 5. Stream tokens from `aiService.streamText({ feature, system, messages, locale })`.
- * 6. After drain, `recordAiUsage` TWICE: owner-keyed + consumer-keyed
- *     (telemetry, fire-and-try, non-fatal).
+ * 6. After drain, `recordAiUsage` ONCE (HOS-2095): owner-keyed (`userId`)
+ *     with the tourist on `consumerUserId` (fire-and-try, non-fatal).
  * 7. Race `persistChatTurn(...)` vs 1500 ms and add `conversationId` to the
  *     `done` frame only on win.
  *
@@ -312,7 +312,12 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             vertical: VerticalEnum.TOURIST,
             feature: ownerFeature,
             limitKey: 'max_ai_chat_consumer_per_month',
-            limitMessage: 'accommodations.aiChat.consumerLimitReached'
+            limitMessage: 'accommodations.aiChat.consumerLimitReached',
+            // HOS-2095: the tourist's chats live on the owner-keyed row's
+            // `consumer_user_id`. Counting by `user_id` would read the rows
+            // billed to this user AS AN OWNER (other tourists' questions on
+            // their listings) instead of the questions they asked.
+            countKeyedBy: 'consumer'
         });
 
         const listingSections = (() => {
@@ -424,19 +429,27 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 );
             }
 
-            // DB rate overrides (ai_settings.modelRates), read once for both rows.
+            // DB rate overrides (ai_settings.modelRates).
             const rateOverrides = await loadModelRateOverrides();
 
             // -------------------------------------------------------------------
-            // Owner-keyed usage metering (telemetry).
+            // Usage metering: exactly ONE ai_usage row per chat request (HOS-2095).
             //
-            // recordAiUsage is keyed by ownerId — the listing owner bears the
-            // metered cost. Fire-and-try: a metering failure is logged but must
-            // NOT affect the tourist's already-completed stream.
+            // The listing owner bears the cost (`userId: ownerId`, which the
+            // owner quota counts); the tourist who asked rides on the same row
+            // (`consumerUserId: actor.id`, which the consumer quota counts). A
+            // second, consumer-keyed row used to be written here with the full
+            // tokens and cost, doubling every chat's spend for the cost ceiling
+            // and the admin dashboards, and burning a self-chatting owner's
+            // quota twice per question.
+            //
+            // Fire-and-try: a metering failure is logged but must NOT affect the
+            // tourist's already-completed stream.
             // -------------------------------------------------------------------
             try {
                 await recordAiUsage({
                     userId: ownerId,
+                    consumerUserId: actor.id,
                     feature: FEATURE,
                     provider: resolvedMeta.provider,
                     model: resolvedMeta.model,
@@ -451,36 +464,6 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         ownerId,
-                        entityId,
-                        error:
-                            meteringError instanceof Error
-                                ? meteringError.message
-                                : String(meteringError)
-                    },
-                    'ai-chat: failed to record owner usage (non-fatal — stream already complete)'
-                );
-            }
-
-            // -------------------------------------------------------------------
-            // Consumer-keyed usage metering (telemetry, keyed by actor.id).
-            // Same fire-and-try contract as the owner row above.
-            // -------------------------------------------------------------------
-            try {
-                await recordAiUsage({
-                    userId: actor.id,
-                    feature: FEATURE,
-                    provider: resolvedMeta.provider,
-                    model: resolvedMeta.model,
-                    promptTokens: resolvedMeta.usage.promptTokens,
-                    completionTokens: resolvedMeta.usage.completionTokens,
-                    latencyMs: Date.now() - handlerStartMs,
-                    status: usageStatus,
-                    rateOverrides,
-                    onMissingRate: warnMissingModelRate
-                });
-            } catch (meteringError) {
-                apiLogger.warn(
-                    {
                         userId: actor.id,
                         entityId,
                         error:
@@ -488,7 +471,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                                 ? meteringError.message
                                 : String(meteringError)
                     },
-                    'ai-chat: failed to record consumer usage (non-fatal — stream already complete)'
+                    'ai-chat: failed to record usage (non-fatal — stream already complete)'
                 );
             }
 
