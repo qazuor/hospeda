@@ -142,6 +142,7 @@ vi.mock('@repo/ai-core', () => {
         AiFeatureNotConfiguredError,
         getMonthlyCallCount: vi.fn(async () => getMonthlyCallCountReturn.current),
         recordAiUsage: vi.fn(async () => undefined),
+        resolveConfig: vi.fn(async () => ({ providers: {}, features: {} })),
         resolveSystemPrompt: vi.fn(async () => ({
             content: resolvedPromptForTest.current,
             rules: '',

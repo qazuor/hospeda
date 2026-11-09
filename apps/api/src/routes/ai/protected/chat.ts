@@ -74,6 +74,7 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory.
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
+import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -404,6 +405,9 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 );
             }
 
+            // DB rate overrides (ai_settings.modelRates), read once for both rows.
+            const rateOverrides = await loadModelRateOverrides();
+
             // -------------------------------------------------------------------
             // Owner-keyed usage metering (telemetry).
             //
@@ -421,6 +425,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
                     status: usageStatus,
+                    rateOverrides,
                     onMissingRate: warnMissingModelRate
                 });
             } catch (meteringError) {
@@ -451,6 +456,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
                     status: usageStatus,
+                    rateOverrides,
                     onMissingRate: warnMissingModelRate
                 });
             } catch (meteringError) {

@@ -74,6 +74,7 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory'
 import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate';
+import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides';
 import { env } from '../../../utils/env';
 import { requireAccommodationImportAccess } from '../../../utils/listing-access/accommodation-import-access';
 import {
@@ -197,6 +198,7 @@ export function buildImportAiExtract(deps: {
                     completionTokens: result.usage.completionTokens,
                     latencyMs: Date.now() - startedAt,
                     status: 'success',
+                    rateOverrides: await loadModelRateOverrides(),
                     onMissingRate: warnMissingModelRate
                 });
             } catch (meterErr) {
