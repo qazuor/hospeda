@@ -14,10 +14,10 @@ it('a. covers exactly the 25 catalog actions, in order', () => {
     expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
     expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
 });
-it('b. checks exactly 74 bindings across 24 bound rows', () => {
-    expect(BOUND_ACTIONS).toHaveLength(24);
+it('b. checks exactly 77 bindings across 25 bound rows', () => {
+    expect(BOUND_ACTIONS).toHaveLength(25);
     const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf({ action }).length, 0);
-    expect(total).toBe(74);
+    expect(total).toBe(77);
 });
 it('e. every unbound row names a reason and is not silently known-misaligned', () => {
     expect(UNBOUND_ROWS.length).toBeGreaterThan(0);
