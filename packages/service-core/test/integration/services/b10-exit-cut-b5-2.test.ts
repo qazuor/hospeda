@@ -10,9 +10,10 @@ import { seedComplementCharge } from './support/addon-orphan-fixtures';
 import {
     activeRecurringExitFixture,
     authorizedUnpaidExitPrincipal,
+    cachedExitAddonPolicy,
     retireExitFixtures
 } from './support/b10-exit-fixtures';
-import { addonPolicyFromTx, seedCoverageUser } from './support/coverage-fixtures';
+import { seedCoverageUser } from './support/coverage-fixtures';
 import {
     currentFloorPolicy,
     grantSignerActor,
@@ -56,7 +57,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: { emitCoverageChanged: async () => undefined },
             orphanhood: {
-                addonPolicy: addonPolicyFromTx(getServiceTestDb()),
+                addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
                 listing: async () => {
                     throw new Error('No LISTING target');
                 }
@@ -139,7 +140,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: { emitCoverageChanged: async () => undefined },
             orphanhood: {
-                addonPolicy: addonPolicyFromTx(getServiceTestDb()),
+                addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
                 listing: async () => {
                     throw new Error('No LISTING target');
                 }

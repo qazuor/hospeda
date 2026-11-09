@@ -9,6 +9,7 @@ import {
 } from '@repo/db';
 import { encodeFakeNotice } from '@repo/payments/fake';
 import { applyA2Recurring } from '../../../../src/services/billing/addon/addon-instance-a2';
+import type { AddonOrphanhoodPorts } from '../../../../src/services/billing/addon/addon-orphanhood-ports';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
 import { processProviderNotice } from '../../../../src/services/billing/notice/process-provider-notice.service';
 import { startSubscription } from '../../../../src/services/billing/subscription/start-subscription.service';
@@ -16,6 +17,7 @@ import { getServiceTestDb } from '../helpers';
 import { payingPrincipal } from './addon-a2-fixtures';
 import { createA6Fixture, retireA6Fixtures } from './addon-a6-fixtures';
 import { purchaseFixture, retirePurchaseFixtures } from './addon-purchase-fixtures';
+import { addonPolicyFromTx } from './coverage-fixtures';
 import { noTouristVip } from './tourist-vip';
 
 /** Creates a recurring LISTING instance through A1 and, when requested, A2. */
@@ -242,6 +244,14 @@ export async function authorizedUnpaidExitPrincipal(
     );
     if (applied.outcome !== 'APPLIED') throw new Error(`Unpaid S2 returned ${applied.outcome}`);
     return started.subscriptionId;
+}
+
+/** Caches catalog policy before a billing service opens its own transaction. */
+export async function cachedExitAddonPolicy(
+    versionId: string
+): Promise<AddonOrphanhoodPorts['addonPolicy']> {
+    const policy = await addonPolicyFromTx(getServiceTestDb())({ addonVersionId: versionId });
+    return async () => policy;
 }
 
 /** Retires only committed rows owned by this fixture composition. */

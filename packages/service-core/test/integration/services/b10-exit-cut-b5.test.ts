@@ -1,6 +1,7 @@
 import {
     addonInstances,
     and,
+    coveredPeriods,
     domainEventModel,
     eq,
     inArray,
@@ -13,7 +14,11 @@ import {
     subscriptions
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { applyA5, runOrphanhood } from '../../../src/services/billing/addon/addon-instance-a5';
+import {
+    applyA5,
+    cancelAddonComplementsAtProvider,
+    runOrphanhood
+} from '../../../src/services/billing/addon/addon-instance-a5';
 import { runZeroCallChecks } from '../../../src/services/billing/reconciliation/sweep/zero-call-checks.service';
 import { applyS21 } from '../../../src/services/billing/subscription/complement-s21';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
@@ -22,6 +27,7 @@ import { seedComplementCharge } from './support/addon-orphan-fixtures';
 import {
     activeRecurringExitFixture,
     authorizedUnpaidExitPrincipal,
+    cachedExitAddonPolicy,
     retireExitFixtures
 } from './support/b10-exit-fixtures';
 import { addonPolicyFromTx } from './support/coverage-fixtures';
@@ -31,8 +37,8 @@ const chargeIds: string[] = [];
 const markedComplements: string[] = [];
 
 afterEach(async () => {
-    if (chargeIds.length > 0) {
-        const ids = chargeIds.splice(0);
+    const ids = chargeIds.splice(0);
+    if (ids.length > 0) {
         await getServiceTestDb().delete(refunds).where(inArray(refunds.paymentId, ids));
     }
     if (markedComplements.length > 0) {
@@ -59,6 +65,12 @@ afterEach(async () => {
                     )
                 );
         }
+    }
+    if (ids.length > 0) {
+        await getServiceTestDb()
+            .delete(coveredPeriods)
+            .where(inArray(coveredPeriods.paymentId, ids));
+        await getServiceTestDb().delete(payments).where(inArray(payments.id, ids));
     }
     await retireRevocationRows();
     await retireExitFixtures();
@@ -101,7 +113,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             'listDeferredCourtesiesWithActiveSuccessorPage'
         ).mockResolvedValue([]);
         const orphanhood = {
-            addonPolicy: addonPolicyFromTx(getServiceTestDb()),
+            addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
             listing: async () => {
                 throw new Error('No LISTING target');
             },
@@ -140,10 +152,21 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         const orphan = await getServiceTestDb().transaction((tx) =>
             runOrphanhood(
                 { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
-                orphanhood
+                { ...orphanhood, addonPolicy: addonPolicyFromTx(tx) }
             )
         );
         expect(orphan.cancelled.map(({ instanceId }) => instanceId)).toEqual([h.instanceId]);
+        const provider = await cancelAddonComplementsAtProvider(
+            { cancelled: orphan.cancelled },
+            {
+                provider: h.f.fake,
+                clock: h.f.ports.clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            }
+        );
+        expect(provider.results).toEqual([{ subscriptionId: h.complementId, cancelCall: 'SENT' }]);
+        const after = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
+        expect(after.snapshot.status).toBe('cancelled');
         const [instance] = await getServiceTestDb()
             .select({ id: addonInstances.id, status: addonInstances.status })
             .from(addonInstances)
@@ -187,7 +210,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
                 beforeCancelNotice: { beforeCancel: async () => 'SENT' },
                 coverageNotices: { emitCoverageChanged: async () => undefined },
                 orphanhood: {
-                    addonPolicy: addonPolicyFromTx(getServiceTestDb()),
+                    addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
                     listing: async () => {
                         throw new Error('No LISTING target');
                     }
@@ -236,6 +259,15 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
 
     it('LISTA:B10 clause 10 A5 turns off an A1 addon and S21 cancels its complement without grace or refund', async () => {
         const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
+        markedComplements.push(h.complementId);
+        // The charged complement payment models a completed provider charge; A5 must not refund it.
+        const charge = await seedComplementCharge(getServiceTestDb(), {
+            subscriptionId: h.complementId,
+            factAt: h.f.ports.clock.now(),
+            coveredPeriodStart: h.f.ports.clock.now(),
+            amount: 25000
+        });
+        chargeIds.push(charge.paymentId);
         const cancel = vi.spyOn(h.f.fake, 'cancel');
         const result = await getServiceTestDb().transaction((tx) =>
             applyA5(
@@ -271,12 +303,11 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             graceStartedAt: null,
             graceEndsAt: null
         });
-        expect(
-            await getServiceTestDb()
-                .select({ id: payments.id })
-                .from(payments)
-                .where(eq(payments.subscriptionId, h.complementId))
-        ).toHaveLength(0);
+        const chargeRefunds = await getServiceTestDb()
+            .select({ id: refunds.id })
+            .from(refunds)
+            .where(eq(refunds.paymentId, charge.paymentId));
+        expect(chargeRefunds).toHaveLength(0);
         expect(
             cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
         ).toHaveLength(0);
