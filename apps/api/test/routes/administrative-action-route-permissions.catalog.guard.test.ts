@@ -20,7 +20,9 @@ it('b. checks exactly 77 bindings across 25 bound rows', () => {
     expect(total).toBe(77);
 });
 it('e. every unbound row names a reason and is not silently known-misaligned', () => {
-    expect(UNBOUND_ROWS.length).toBeGreaterThan(0);
+    // B12 (HOS-1612) bound ACC_17, the last unbound row: the catalog is now fully bound.
+    // A row unbound again must carry a reason and fails this pin until it is recounted.
+    expect(UNBOUND_ROWS).toEqual([]);
     for (const { action, reason } of UNBOUND_ROWS) {
         expect(reason.trim().length).toBeGreaterThan(0);
         expect(action in KNOWN_MISALIGNED).toBe(false);
