@@ -94,7 +94,7 @@ describe('TourController — listing step copy without a menu (HOS-2073)', () =>
 
         const description = driverStepDescription({ selector: '[data-tour="comercio-listings"]' });
         expect(description).toBeTruthy();
-        expect(description).not.toMatch(/men[uú]/i);
+        expect(description).not.toMatch(/men[uú]|carta/i);
     });
 
     it('keeps the menu mention in the listing step when the venue-qr anchor is present', async () => {
@@ -110,8 +110,9 @@ describe('TourController — listing step copy without a menu (HOS-2073)', () =>
 
         await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
 
+        // HOS-2093: the es copy names the offering «carta o barra», not «menú».
         expect(driverStepDescription({ selector: '[data-tour="comercio-listings"]' })).toMatch(
-            /men[uú]/i
+            /carta/i
         );
     });
 });
