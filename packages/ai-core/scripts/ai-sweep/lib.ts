@@ -241,7 +241,10 @@ export interface SummaryRow {
     readonly visibleRate: number;
     readonly finishReasons: Readonly<Record<string, number>>;
     readonly p50LatencyMs: number;
+    readonly p90LatencyMs: number;
     readonly p95LatencyMs: number;
+    readonly maxLatencyMs: number;
+    readonly p50TtftMs: number | null;
     readonly avgTtftMs: number | null;
     readonly avgAnswerChars: number;
     readonly avgOutputTokens: number;
@@ -356,7 +359,10 @@ export function aggregateResults(input: {
             visibleRate: visible.length / list.length,
             finishReasons,
             p50LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 50 }),
+            p90LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 90 }),
             p95LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 95 }),
+            maxLatencyMs: list.length === 0 ? 0 : Math.max(...list.map((r) => r.latencyMs)),
+            p50TtftMs: ttfts.length === 0 ? null : percentile({ values: ttfts, p: 50 }),
             avgTtftMs: ttfts.length === 0 ? null : avg(ttfts),
             avgAnswerChars: avg(list.map((r) => r.text.length)),
             avgOutputTokens: avg(list.map((r) => r.outputTokens)),
@@ -405,8 +411,11 @@ export function renderSummaryMarkdown(input: {
         'visible',
         'finishReason',
         'p50 ms',
+        'p90 ms',
         'p95 ms',
+        'max ms',
         'TTFT ms',
+        'TTFT p50 ms',
         'avg chars',
         'avg out tok',
         'avg reasoning tok',
@@ -438,8 +447,11 @@ export function renderSummaryMarkdown(input: {
                 pct(r.visibleRate),
                 reasons,
                 fmt(r.p50LatencyMs),
+                fmt(r.p90LatencyMs),
                 fmt(r.p95LatencyMs),
+                fmt(r.maxLatencyMs),
                 fmt(r.avgTtftMs),
+                fmt(r.p50TtftMs),
                 fmt(r.avgAnswerChars),
                 fmt(r.avgOutputTokens, 1),
                 fmt(r.avgReasoningTokens, 1),

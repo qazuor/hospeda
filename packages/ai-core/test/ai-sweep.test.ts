@@ -133,6 +133,13 @@ describe('percentile', () => {
         expect(percentile({ values: [10, 20, 30, 40], p: 95 })).toBe(40);
         expect(percentile({ values: [], p: 50 })).toBe(0);
     });
+
+    it('computes p90 and a single-value list', () => {
+        const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        expect(percentile({ values, p: 90 })).toBe(9);
+        expect(percentile({ values: [7], p: 90 })).toBe(7);
+        expect(percentile({ values: [30, 10, 20], p: 100 })).toBe(30);
+    });
 });
 
 describe('cost', () => {
@@ -157,6 +164,19 @@ describe('cost', () => {
 });
 
 describe('aggregateResults', () => {
+    it('reports p50, p90, max latency and TTFT p50 from the raw values', () => {
+        const rows = aggregateResults({
+            quotas: [],
+            results: [100, 200, 300, 400, 5000].map((latencyMs, i) =>
+                result({ latencyMs, ttftMs: (i + 1) * 10 })
+            )
+        });
+        expect(rows[0]?.p50LatencyMs).toBe(300);
+        expect(rows[0]?.p90LatencyMs).toBe(5000);
+        expect(rows[0]?.maxLatencyMs).toBe(5000);
+        expect(rows[0]?.p50TtftMs).toBe(30);
+    });
+
     it('computes visible rate, reasoning share, cost projection and rule pass rate', () => {
         const rows = aggregateResults({
             quotas: [20, 100],
