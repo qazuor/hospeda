@@ -15,6 +15,13 @@ export const PlanMigrationPreviewRequestSchema = z
 /** Validated action 17 preview input. */
 export type PlanMigrationPreviewRequest = z.infer<typeof PlanMigrationPreviewRequestSchema>;
 
+/** Strict confirmation of the cohort shown in action 17 preview. */
+export const LaunchPlanMigrationRequestSchema = PlanMigrationPreviewRequestSchema.extend({
+    cohortFingerprint: z.string()
+}).strict();
+/** Validated action 17 launch input. */
+export type LaunchPlanMigrationRequest = z.infer<typeof LaunchPlanMigrationRequestSchema>;
+
 /** One affected or excluded subscription. */
 export const PlanMigrationPreviewRowSchema = z.object({
     subscriptionId: Id,
@@ -50,6 +57,29 @@ export const PlanMigrationPreviewSchema = z.object({
 });
 /** Validated preview response. */
 export type PlanMigrationPreview = z.infer<typeof PlanMigrationPreviewSchema>;
+
+/** Persisted migration and each included or excluded customer. */
+export const PlanMigrationLaunchResponseSchema = z.object({
+    planMigrationId: Id,
+    announcedAt: z.date(),
+    deadlineVersion: z.number().int().positive(),
+    noticeDays: z.number().int().nonnegative(),
+    rows: z.array(
+        z.object({
+            subscriptionId: Id,
+            outcome: z.enum(['PENDIENTE', 'PARA_RESOLVER']),
+            applicationDate: LocalDate
+        })
+    ),
+    excluded: z.array(
+        z.object({
+            subscriptionId: Id,
+            excludedReason: z.enum(['ACTOR_IS_SUBJECT', 'ALREADY_IN_MIGRATION'])
+        })
+    )
+});
+/** Validated action 17 launch result. */
+export type PlanMigrationLaunchResponse = z.infer<typeof PlanMigrationLaunchResponseSchema>;
 
 /** Retired source versions and sellable current targets grouped by vertical. */
 export const PlanMigrationOptionsSchema = z.object({

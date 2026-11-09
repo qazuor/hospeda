@@ -8,5 +8,6 @@ export {
     REJECTION_CODES as PLAN_MIGRATION_REJECTION_CODES
 } from './plan-migration-authorization.js';
 export * from './plan-migration-cohort.js';
+export * from './plan-migration-launch.service.js';
 export * from './plan-migration-options.service.js';
 export * from './plan-migration-preview.service.js';
