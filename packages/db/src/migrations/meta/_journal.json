@@ -1373,6 +1373,13 @@
       "when": 1794109298691,
       "tag": "0195_hos_2061_venue_experience_amenity_attributes",
       "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1794193221385,
+      "tag": "0196_hos_2060_drop_legacy_policy_columns",
+      "breakpoints": true
     }
   ]
 }

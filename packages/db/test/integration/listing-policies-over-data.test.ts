@@ -1,5 +1,5 @@
-// HOS-2060 — apply 0194 (add `policies` + backfill) and 0195 (release N+1:
-// drop the legacy fields) over live-style rows in an isolated pre-0194 database.
+// HOS-2060 — apply 0194 (add `policies` + backfill) and the release N+1 drop of the
+// legacy fields over live-style rows in an isolated pre-0194 database.
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -165,8 +165,10 @@ beforeAll(async () => {
     );
 
     // Act
-    const next = journal.entries.find((entry) => entry.tag.startsWith('0195_'));
-    if (!next) throw new Error('0195 migration absent from journal');
+    const next = journal.entries.find((entry) =>
+        entry.tag.endsWith('_hos_2060_drop_legacy_policy_columns')
+    );
+    if (!next) throw new Error('HOS-2060 drop migration absent from journal');
     await apply(target.tag);
     await apply(next.tag);
 }, 240_000);
@@ -177,7 +179,7 @@ afterAll(async () => {
     await admin?.end();
 });
 
-describe('HOS-2060 migrations 0194 + 0195 over data', () => {
+describe('HOS-2060 migrations 0194 + release N+1 drop over data', () => {
     it('gives every listing at least cash', async () => {
         for (const table of ['accommodations', 'venues', 'experiences']) {
             const { rows } = await db.query<{ total: number; covered: number }>(
