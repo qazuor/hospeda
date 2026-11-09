@@ -23,7 +23,9 @@ import { describe, expect, it } from 'vitest';
 import { FEATURE_LABELS } from '@/features/ai-settings';
 import {
     ALL_FEATURES,
+    CHAT_DEFAULT_MAX_TOKENS,
     DEFAULT_SETTINGS,
+    getMaxTokensHint,
     toFormValues
 } from '../../../../src/routes/_authed/ai/-components/ai-settings-features.utils';
 import {
@@ -142,5 +144,27 @@ describe('AI settings feature coverage', () => {
                 expect(PLAYGROUND_UNSUPPORTED_REASON[feature]?.length ?? 0).toBeGreaterThan(0);
             }
         });
+    });
+});
+
+describe('getMaxTokensHint (HOS-2095)', () => {
+    it.each([
+        'chat',
+        'chat_venue',
+        'chat_experience'
+    ] as const)('shows the real chat default for %s', (featureId) => {
+        const hint = getMaxTokensHint({ featureId });
+        expect(hint.placeholder).toBe(String(CHAT_DEFAULT_MAX_TOKENS));
+        expect(hint.placeholder).not.toBe('4096');
+    });
+
+    it('claims no default for features that ignore params and says so', () => {
+        const others = ALL_FEATURES.filter((f) => !f.startsWith('chat'));
+        expect(others.length).toBeGreaterThan(0);
+        for (const featureId of others) {
+            const hint = getMaxTokensHint({ featureId });
+            expect(hint.placeholder).toBe('');
+            expect(hint.helpText).toContain('Not applied yet');
+        }
     });
 });

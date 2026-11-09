@@ -456,6 +456,10 @@ describe('useSearchChat', () => {
         expect(result.current.errorStatus).toBeNull();
         expect(result.current.isStreaming).toBe(false);
         expect(result.current.currentReply).toBe('');
+        // The filters frame delivered value: the results stay, only the reply is replaced.
+        expect(result.current.hasSearched).toBe(true);
+        expect(result.current.results.length).toBeGreaterThan(0);
+        expect(result.current.currentFilters).not.toBeNull();
     });
 
     it('localizes the empty-answer error with the hook locale', async () => {
