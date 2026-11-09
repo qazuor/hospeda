@@ -85,9 +85,20 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 own clauses over rows created by A1', (
     });
 
     /**
-     * El marcado ADDON_SIN_APAGAR de una fila viva con objetivo muerto ya lo cubre
-     * reconciliation-addon-without-shutdown.test.ts:153; esta rama prueba que esa
-     * fila no nace por el camino real.
+     * Two parts, kept apart on purpose:
+     *
+     * 1. Real path (up to the payments assertion): the late authorization notice
+     *    arrives after S36/A5 cancelled the preapproval and S21 closed the
+     *    complement. The instance stays CANCELLED, no status event, no coverage
+     *    notice, no payment.
+     * 2. Injected step (after the `INJECTED` marker): the complement row is forced
+     *    back to PENDING_AUTHORIZATION to simulate a stale reader racing S21. This
+     *    state is NOT reachable through the real path; it exists only to exercise
+     *    A2's instance guard (`addon-instance-a2.ts:59`) directly.
+     *
+     * The sweep marking ADDON_SIN_APAGAR for a live row with a dead target is
+     * already covered by reconciliation-addon-without-shutdown.test.ts:153; this
+     * case proves that such a row is not born through the real path.
      */
     it('LISTA:B10 clause 8 un addon cuyo título muere mientras su checkout está abierto no llega a cobrar nunca —se le cancela el preapproval esperando autorización, y si igual autoriza, el barrido lo encuentra vivo con el objetivo muerto (`03` §8, `16` §4.2 y §4.3, `09` §3 cuarta comprobación)— (late authorization)', async () => {
         const h = await revokeOpenCheckout();
@@ -136,8 +147,9 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 own clauses over rows created by A1', (
                 .where(eq(payments.addonInstanceId, h.instanceId))
         ).toHaveLength(0);
 
-        // A stale authorization reader can race with S21. Re-open only the complement
-        // state to reach A2's instance guard; the cancelled instance must stay terminal.
+        // INJECTED: not reachable through the real path. Simulates a stale
+        // authorization reader racing S21 by re-opening only the complement state,
+        // so A2's instance guard is exercised; the cancelled instance must stay terminal.
         await getServiceTestDb()
             .update(subscriptions)
             .set({ status: 'PENDING_AUTHORIZATION' })
