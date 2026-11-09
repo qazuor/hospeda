@@ -84,8 +84,11 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
             "you MUST NOT offer to consult, ask, confirm, forward or check anything with the place on the visitor's behalf"
         );
         expect(rules).toContain('decime las fechas y te digo si hay lugar');
-        expect(rules).toContain('Never close an answer with such an offer or question');
-        expect(rules).toContain('at most, suggest that the visitor contact the place');
+        // Review M1: the "no closing question" ban is scoped to availability/booking.
+        expect(rules).toContain(
+            'never close an answer with an availability or booking offer or question'
+        );
+        expect(rules).not.toContain('Never close an answer with such an offer or question');
     });
 
     it('R2-3 caps the answer length and forbids listing amenities nobody asked about', () => {
@@ -103,7 +106,6 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         );
         expect(rules).toContain('"pet-friendly" does not say how many pets');
         expect(rules).toContain('does not mean every room has it');
-        expect(rules).toContain('say that the listing does not detail it');
     });
 
     it('R2-4 makes a capacity answer compare the group with the stated capacity, inventing no combinations', () => {
@@ -113,25 +115,27 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain('never invent combinations of units, rooms or beds');
     });
 
-    it('R2-6 requires naming the missing fact when only a related one is present', () => {
+    it('M1 a capacity question without a group size gets the capacity, not an invented comparison', () => {
         expect(rules).toContain(
-            'give the related fact AND say plainly that the one they asked for is not in the listing'
+            'if the visitor gives no group size, state the capacity and stop, or ask in one short question how many they are'
         );
+    });
+
+    it('R2-6 requires naming the missing fact and giving the related one when it is there', () => {
+        expect(rules).toContain('say plainly that the listing does not detail it');
+        expect(rules).toContain('if a related fact is there, give it too');
+        expect(rules).toContain('the meeting point is listed, the departure time is not');
     });
 
     it('R2-7 forbids pointing to a page section that is not in the context', () => {
         expect(rules).toContain('Only refer the visitor to a section of this page');
-        expect(rules).toContain(
-            'never tell them to check on the page something your context does not contain'
-        );
+        expect(rules).toContain('when that information is in your context');
     });
 
     it('R2-8 makes the off-topic decline the whole reply: no recipe, no listing, no agreeing opener', () => {
-        expect(rules).toContain('That one sentence is the whole reply to an off-topic message');
-        expect(rules).toContain(
-            'give no recipe, instructions, general information or partial answer'
-        );
-        expect(rules).toContain('do not open with an agreeing phrase');
+        expect(rules).toContain('that sentence is the whole reply');
+        expect(rules).toContain('no recipe, instructions, general information or partial answer');
+        expect(rules).toContain('no agreeing opener');
     });
 
     it('R2-9 states that a question in another language about the listing is on-topic', () => {
@@ -139,6 +143,14 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
             'A question about this listing is on-topic whatever language it is written in'
         );
         expect(rules).toContain('you MUST NOT decline it');
+    });
+
+    it('M2 says each thing once: the availability, off-topic and confirm clauses are not repeated', () => {
+        const count = (needle: string): number => rules.split(needle).length - 1;
+        expect(count('check availability')).toBeLessThanOrEqual(3);
+        expect(count('decline in ONE short sentence')).toBe(1);
+        expect(count('suggest confirming')).toBeLessThanOrEqual(1);
+        expect(count('at most, suggest that the visitor contact the place')).toBe(0);
     });
 
     it('keeps the round 2 clauses out of the descriptive prompt', () => {
@@ -176,25 +188,65 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
         expect(rules).toContain('the ficha does not state an age limit for the rest');
     });
 
-    it('R2-5 mixed venue: decide first whether the asked activity is the restricted one, then answer "yes" for the rest', () => {
+    it('R2-5 decide first whether the asked activity is the restricted one, from the listing TEXT only', () => {
         const rules = DEFAULT_RULES.chat_venue;
         expect(rules).toContain(
             'first decide whether the activity the visitor asks about is the one the minimum age applies to'
         );
-        expect(rules).toContain('answer "yes" for that activity');
+        // Review A1: the context always prints "Edad mínima: 18" unscoped, so only
+        // an explicit statement in the listing text may narrow it.
         expect(rules).toContain(
-            'mention the restriction only as the minimum age of the restricted part (for example "a la noche, la edad mínima es 18")'
+            'treat the minimum age as covering the whole venue unless the listing text explicitly says it applies only to a time, an area or an activity'
         );
-        expect(rules).toContain('that rule covers only the part the minimum age applies to');
-        // The decision step comes BEFORE the mixed-venue sentence it governs.
+        expect(rules).toContain('a venue type, a menu or opening hours alone do not say so');
         expect(rules.indexOf('first decide whether the activity')).toBeLessThan(
             rules.indexOf('applies only to part of what the venue offers')
         );
     });
 
-    it('R2-5 forbids attributing the minimum age to alcohol sales unless the context says so', () => {
-        expect(DEFAULT_RULES.chat_venue).toContain(
-            'You MUST NOT attribute the minimum age to alcohol sales, or give any other reason for it, unless your context states that reason.'
+    it('A1 mixed venue WHOSE TEXT says "sólo de noche": "yes" for the unrestricted part', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'If the listing text explicitly says that the minimum age applies only to part of what the venue offers'
+        );
+        expect(rules).toContain('answer "yes" for that activity');
+        expect(rules).toContain('"la edad mínima rige sólo de noche"');
+        expect(rules).toContain('(for example "a la noche, la edad mínima es 18")');
+    });
+
+    it('A1 pure nightclub, "¿puedo ir con mi hijo de 15 a comer unas picadas temprano?": no permission wording', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'In every other case, including eating early or any part of a venue whose listing text does not scope the minimum age'
+        );
+        expect(rules).toContain('do NOT answer "yes" or use permission wording');
+        expect(rules).toContain(
+            'say that the listing does not give a separate limit for that part and refer the visitor to the venue'
+        );
+        // Age + legal notice verbatim still apply: that rule covers EVERY age question.
+        expect(rules).toContain(
+            'For any question about age, minors, or alcohol, give the minimum age and the legal notice'
+        );
+    });
+
+    it('A1 never "yes" for the restricted part, and the entry rule is scoped instead of contradicted', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'You MUST NOT state or imply that anyone below the minimum age in your context may enter this venue, except for a time, an area or an activity that the listing text explicitly excludes from that minimum age'
+        );
+        expect(rules).toContain('Never answer "yes" for the part the minimum age applies to');
+        expect(rules).not.toContain(
+            'This does not contradict the rule on entry below the minimum age'
+        );
+    });
+
+    it('A2 forbids adding a reason for the age, and says the verbatim legal notice is not one', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'You MUST NOT add your own reason for the minimum age (for example alcohol sales, safety or the type of venue) unless your context states that reason'
+        );
+        expect(rules).toContain(
+            'repeating the legal notice verbatim, even when it mentions alcohol, is not giving a reason and is still required'
         );
     });
 
@@ -209,6 +261,6 @@ describe('the venue-only clauses stay out of the other verticals', () => {
         expect(DEFAULT_RULES[f]).not.toContain('from the carta');
         expect(DEFAULT_RULES[f]).not.toContain('explicit "no"');
         expect(DEFAULT_RULES[f]).not.toContain('first decide whether the activity');
-        expect(DEFAULT_RULES[f]).not.toContain('attribute the minimum age');
+        expect(DEFAULT_RULES[f]).not.toContain('your own reason for the minimum age');
     });
 });

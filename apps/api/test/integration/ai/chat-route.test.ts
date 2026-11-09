@@ -942,6 +942,16 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             expect(system.split('\n').at(-1)).toBe(REPLY_LANGUAGE_INSTRUCTIONS.en);
         });
 
+        it('never takes the language from an assistant turn when there is no user turn (review M3)', async () => {
+            const system = await send([
+                {
+                    role: 'assistant',
+                    content: 'Hi! Breakfast is included in every stay, ask me anything.'
+                }
+            ]);
+            expect(system).toBe('SYSTEM MESSAGE');
+        });
+
         it('leaves the system message untouched when the message is too short to decide', async () => {
             const system = await send([{ role: 'user', content: 'ok' }], 'en');
             expect(system).toBe('SYSTEM MESSAGE');
