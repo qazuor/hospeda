@@ -16,6 +16,7 @@ import type { AiModelRate } from '@repo/schemas';
 import type { InsertAiUsageInput, SelectAiUsage } from '../storage/index.js';
 import { insertAiUsage } from '../storage/index.js';
 import { calculateCostMicroUsd } from './cost-calculator.js';
+import { type MissingModelRateHook, reportMissingModelRate } from './model-rate-resolver.js';
 
 // ---------------------------------------------------------------------------
 // Input type
@@ -56,6 +57,11 @@ export interface RecordAiUsageInput {
      * (decision A, owner-approved 2026-06-04).
      */
     readonly rateOverrides?: Readonly<Record<string, AiModelRate>>;
+    /**
+     * Optional hook fired once per process per model that has no cost rate
+     * (HOS-2096). Cost stays 0 either way; this only makes the gap visible.
+     */
+    readonly onMissingRate?: MissingModelRateHook;
     /** Optional Drizzle transaction client. Falls back to `getDb()` via storage. */
     readonly tx?: InsertAiUsageInput['tx'];
 }
@@ -104,16 +110,19 @@ export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAi
         latencyMs,
         status,
         rateOverrides,
+        onMissingRate,
         tx
     } = input;
 
-    const { costMicroUsd } = calculateCostMicroUsd({
+    const { costMicroUsd, rated } = calculateCostMicroUsd({
         provider,
         model,
         promptTokens,
         completionTokens,
         rateOverrides
     });
+
+    if (!rated) reportMissingModelRate({ provider, model, onMissingRate });
 
     return insertAiUsage({
         userId,
