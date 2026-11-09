@@ -1425,6 +1425,54 @@
             "errorEndBeforeStart": "La fecha de fin debe ser posterior a la de inicio"
         }
     },
+    "planMigration": {
+        "title": "Migrar un plan retirado",
+        "intro": "Elegí la versión retirada y la versión destino. Revisá cada cliente antes de confirmar.",
+        "loading": "Cargando opciones…",
+        "source": "Versión retirada",
+        "target": "Versión destino",
+        "chooseSource": "Elegí una versión",
+        "chooseTarget": "Elegí un destino",
+        "sourceOption": "{name} · {count} clientes",
+        "preview": "Previsualizar",
+        "confirm": "Confirmar migración",
+        "notice": "Aviso de {days} días · versión de plazos {version}",
+        "notAvailable": "—",
+        "toResolve": "A resolver",
+        "waits": "Espera a que vuelva",
+        "losesPromo": "Pierde la promoción",
+        "excludedBadge": "Excluida",
+        "result": "Migración {id}: {rows} filas escritas y {excluded} excluidas.",
+        "columns": {
+            "customer": "Cliente",
+            "direction": "Cambio",
+            "currentAmount": "Precio actual",
+            "newAmount": "Precio nuevo",
+            "promotion": "Promoción",
+            "date": "Fecha de aplicación"
+        },
+        "direction": {
+            "UP": "Sube",
+            "DOWN": "Baja"
+        },
+        "excluded": {
+            "ACTOR_IS_SUBJECT": "Es tu propia cuenta",
+            "ALREADY_IN_MIGRATION": "Ya está en otra migración"
+        },
+        "errors": {
+            "generic": "No pudimos completar la operación. Intentá de nuevo.",
+            "invalidSelection": "Elegí un origen y un destino válidos.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para migrar planes.",
+            "INVALID_PLAN_MIGRATION_INPUT": "Los datos de la migración no son válidos.",
+            "PLAN_VERSION_NOT_FOUND": "No encontramos una de las versiones.",
+            "PLAN_MIGRATION_SOURCE_NOT_RETIRED": "El origen ya no está retirado.",
+            "PLAN_MIGRATION_TARGET_NOT_SELLABLE": "El destino ya no está vigente y vendible.",
+            "PLAN_MIGRATION_VERTICAL_MISMATCH": "Las versiones son de verticales distintas.",
+            "PLAN_MIGRATION_SAME_VERSION": "Elegí una versión destino diferente.",
+            "PLAN_MIGRATION_COHORT_CHANGED": "La cohorte cambió. Volvé a previsualizar antes de confirmar.",
+            "PLAN_MIGRATION_EMPTY_COHORT": "No hay clientes para migrar."
+        }
+    },
     "billing": {
         "title": "Mi facturación",
         "subtitle": "Revisá tu plan, uso y opciones de pago",

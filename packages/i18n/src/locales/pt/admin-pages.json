@@ -1425,6 +1425,54 @@
             "errorEndBeforeStart": "A data de término deve ser posterior à de início"
         }
     },
+    "planMigration": {
+        "title": "Migrar um plano retirado",
+        "intro": "Escolha a versão retirada e a de destino. Revise cada cliente antes de confirmar.",
+        "loading": "Carregando opções…",
+        "source": "Versão retirada",
+        "target": "Versão de destino",
+        "chooseSource": "Escolha uma versão",
+        "chooseTarget": "Escolha um destino",
+        "sourceOption": "{name} · {count} clientes",
+        "preview": "Pré-visualizar",
+        "confirm": "Confirmar migração",
+        "notice": "Aviso de {days} dias · versão de prazos {version}",
+        "notAvailable": "—",
+        "toResolve": "A resolver",
+        "waits": "Aguarda o retorno",
+        "losesPromo": "Perde a promoção",
+        "excludedBadge": "Excluída",
+        "result": "Migração {id}: {rows} linhas gravadas e {excluded} excluídas.",
+        "columns": {
+            "customer": "Cliente",
+            "direction": "Mudança",
+            "currentAmount": "Preço atual",
+            "newAmount": "Novo preço",
+            "promotion": "Promoção",
+            "date": "Data de aplicação"
+        },
+        "direction": {
+            "UP": "Sobe",
+            "DOWN": "Desce"
+        },
+        "excluded": {
+            "ACTOR_IS_SUBJECT": "É sua própria conta",
+            "ALREADY_IN_MIGRATION": "Já está em outra migração"
+        },
+        "errors": {
+            "generic": "Não foi possível concluir a operação. Tente novamente.",
+            "invalidSelection": "Escolha origem e destino válidos.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não pode migrar planos.",
+            "INVALID_PLAN_MIGRATION_INPUT": "Dados da migração inválidos.",
+            "PLAN_VERSION_NOT_FOUND": "Uma das versões não foi encontrada.",
+            "PLAN_MIGRATION_SOURCE_NOT_RETIRED": "A origem não está mais retirada.",
+            "PLAN_MIGRATION_TARGET_NOT_SELLABLE": "O destino não está mais vigente e vendável.",
+            "PLAN_MIGRATION_VERTICAL_MISMATCH": "As versões pertencem a verticais diferentes.",
+            "PLAN_MIGRATION_SAME_VERSION": "Escolha outra versão de destino.",
+            "PLAN_MIGRATION_COHORT_CHANGED": "A coorte mudou. Pré-visualize novamente antes de confirmar.",
+            "PLAN_MIGRATION_EMPTY_COHORT": "Não há clientes para migrar."
+        }
+    },
     "billing": {
         "title": "Meu faturamento",
         "subtitle": "Revise seu plano, uso e opções de pagamento",
