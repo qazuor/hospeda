@@ -1,4 +1,11 @@
-import { and, type DrizzleClient, eq, type SelectAddonProduct, subscriptions } from '@repo/db';
+import {
+    addonProducts,
+    and,
+    type DrizzleClient,
+    eq,
+    type SelectAddonProduct,
+    subscriptions
+} from '@repo/db';
 import { permanentGrantLiveAnchors } from '../grant/permanent-grant-live-anchors';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger';
 import type { AddonScopeType } from './addon-orphanhood';
@@ -11,7 +18,7 @@ export type PurchaseTitleResult =
     | {
           readonly reason: Extract<
               PurchaseAddonRefusalReason,
-              'TARGET_NOT_FOUND' | 'NO_VALID_TITLE'
+              'TARGET_NOT_FOUND' | 'NO_VALID_TITLE' | 'PRODUCT_NOT_FOUND'
           >;
       };
 
@@ -117,6 +124,13 @@ export async function resolvePurchaseTitle(
     },
     ports: PurchaseAddonPorts
 ): Promise<PurchaseTitleResult> {
+    const [saleability] = await input.tx
+        .select({ retiredAt: addonProducts.retiredAt })
+        .from(addonProducts)
+        .where(eq(addonProducts.id, input.product.id))
+        .for('share')
+        .limit(1);
+    if (!saleability || saleability.retiredAt !== null) return { reason: 'PRODUCT_NOT_FOUND' };
     const target = await resolvePurchaseTarget(input, ports);
     if ('reason' in target) return target;
     if (target.vertical === null) {

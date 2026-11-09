@@ -56,30 +56,41 @@ describe('addon catalog route feedback', () => {
     });
 
     it('displays 250000 cents in es-AR while retaining the integer price', async () => {
-        fetchApi.mockResolvedValueOnce({
-            data: {
-                data: {
-                    items: [
-                        {
-                            id: '11111111-1111-4111-8111-111111111111',
-                            slug: 'featured',
-                            name: 'Featured',
-                            description: null,
-                            versions: [],
-                            product: {
-                                id: '22222222-2222-4222-8222-222222222222',
-                                versionId: '33333333-3333-4333-8333-333333333333',
-                                price: 250000,
-                                currency: 'ARS',
-                                chargeKind: 'PERIODICO',
-                                cycle: 'monthly',
-                                compatibleVerticals: [VerticalEnum.ACCOMMODATION]
-                            }
-                        }
-                    ]
-                }
-            }
-        });
+        fetchApi.mockImplementation(async (input?: { path: string }) =>
+            input?.path.endsWith('/retirement')
+                ? {
+                      data: {
+                          data: {
+                              productId: '22222222-2222-4222-8222-222222222222',
+                              retiredAt: null
+                          }
+                      }
+                  }
+                : {
+                      data: {
+                          data: {
+                              items: [
+                                  {
+                                      id: '11111111-1111-4111-8111-111111111111',
+                                      slug: 'featured',
+                                      name: 'Featured',
+                                      description: null,
+                                      versions: [],
+                                      product: {
+                                          id: '22222222-2222-4222-8222-222222222222',
+                                          versionId: '33333333-3333-4333-8333-333333333333',
+                                          price: 250000,
+                                          currency: 'ARS',
+                                          chargeKind: 'PERIODICO',
+                                          cycle: 'monthly',
+                                          compatibleVerticals: [VerticalEnum.ACCOMMODATION]
+                                      }
+                                  }
+                              ]
+                          }
+                      }
+                  }
+        );
         renderCatalog();
         const row = await screen.findByTestId(
             'addon-catalog-row-11111111-1111-4111-8111-111111111111'

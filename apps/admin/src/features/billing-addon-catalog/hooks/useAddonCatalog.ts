@@ -21,6 +21,10 @@ const CreatedAddonSchema = z.object({
 });
 const CreatedVersionSchema = z.object({ id: z.uuid() });
 const CreatedProductSchema = AdminAddonProductSchema.extend({ addonId: z.uuid() });
+const RetirementSchema = z.strictObject({
+    productId: z.uuid(),
+    retiredAt: z.iso.datetime().nullable()
+});
 type AddonCreate = typeof CreateAddonRequestSchema._output;
 type ProductCreate = typeof CreateAddonProductRequestSchema._output;
 type VersionContent = typeof AddonVersionContentSchema._output;
@@ -37,6 +41,37 @@ export function useAddonCatalog() {
             });
             return AdminAddonCatalogResponseSchema.parse(response.data.data);
         },
+        retry: false
+    });
+}
+
+/** Reads the persisted retirement state without changing the shared catalog response. */
+export function useAddonProductRetirement(input: { readonly productId: string }) {
+    return useQuery({
+        queryKey: [...catalogKey, 'retirement', input.productId],
+        queryFn: async () => {
+            const response = await fetchApi<{ data: unknown }>({
+                path: `/api/v1/admin/billing-addon-products/${input.productId}/retirement`
+            });
+            return RetirementSchema.parse(response.data.data);
+        },
+        retry: false
+    });
+}
+
+/** Retires or restores a product while preserving every acquired instance. */
+export function useChangeAddonProductRetirement(input: { readonly productId: string }) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (retire: boolean) => {
+            const response = await fetchApi<{ data: unknown }>({
+                path: `/api/v1/admin/billing-addon-products/${input.productId}/retirement`,
+                method: retire ? 'POST' : 'DELETE'
+            });
+            return RetirementSchema.parse(response.data.data);
+        },
+        onSuccess: (state) =>
+            queryClient.setQueryData([...catalogKey, 'retirement', input.productId], state),
         retry: false
     });
 }

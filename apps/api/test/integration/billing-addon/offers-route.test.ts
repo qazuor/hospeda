@@ -10,7 +10,7 @@ import {
     users
 } from '@repo/db';
 import { PermissionEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
-import { grantPermanentGrant } from '@repo/service-core';
+import { grantPermanentGrant, retireAddonProduct, unretireAddonProduct } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -151,6 +151,30 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
+    it('TEST:B13b:3 AC:B13b:3 retiring an addon stops selling it and restoration returns it to offers', async () => {
+        // Only catalog identity is seeded; saleability changes use the action 20 service.
+        const fixture = await catalog({ scopeType: 'LISTING' });
+        const actor = {
+            id: crypto.randomUUID(),
+            roles: [RoleEnum.SUPER_ADMIN],
+            permissions: [PermissionEnum.BILLING_PUBLISH_ADDON_VERSION]
+        };
+        const { app } = purchaseApp();
+        const offers = async () => {
+            const response = await app.request(offersPath, {
+                headers: ownerHeaders(fixture.ownerId)
+            });
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { items: { productId: string }[] } };
+            return body.data.items.filter((item) => item.productId === fixture.productId);
+        };
+        expect(await offers()).toHaveLength(1);
+        await retireAddonProduct({ actor, productId: fixture.productId });
+        expect(await offers()).toHaveLength(0);
+        await unretireAddonProduct({ actor, productId: fixture.productId });
+        expect(await offers()).toHaveLength(1);
+    });
+
     it('requires a session for offers', async () => {
         const { app } = purchaseApp();
         const response = await app.request(offersPath, { headers: { 'user-agent': 'vitest' } });

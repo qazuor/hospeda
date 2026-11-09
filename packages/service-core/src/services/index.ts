@@ -88,6 +88,7 @@ export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';
 export * from './billing/addon/withdraw-addon.service.js';
 export * from './billing/addon-catalog/addon-product-creation.service.js';
+export * from './billing/addon-catalog/addon-product-retirement.service.js';
 export * from './billing/addon-catalog/addon-version-publication.service.js';
 export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
 export {

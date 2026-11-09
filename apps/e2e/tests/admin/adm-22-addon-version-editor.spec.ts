@@ -258,6 +258,29 @@ test.describe('TEST:B13b:3 AC:B13b:3 AC:B13b:4 the action 20 editor @p0 @admin @
             purchased_version_id: oldVersionId,
             price
         });
+
+        // The editor retires future sales; the previously authorized purchase remains anchored.
+        await row.getByTestId(`addon-product-retire-${productId}`).click();
+        await expect(page.getByRole('alertdialog')).toContainText(copy.retireConfirm);
+        await page.getByRole('alertdialog').getByRole('button', { name: copy.retire }).click();
+        await expect(row.getByTestId(`addon-product-retired-${productId}`)).toHaveText(
+            copy.retired
+        );
+        const [retirement] = await execSQL<{
+            retired_at: Date;
+            instance_status: string;
+            instance_version_id: string;
+        }>(
+            `SELECT ap.retired_at, ai.status AS instance_status, ai.addon_version_id AS instance_version_id
+             FROM addon_product ap JOIN addon_instance ai ON ai.product_id = ap.id
+             WHERE ap.id = $1 AND ai.id = $2`,
+            [productId, purchased.instanceId]
+        );
+        expect(retirement).toEqual({
+            retired_at: expect.any(Date),
+            instance_status: 'ACTIVE',
+            instance_version_id: oldVersionId
+        });
     });
 
     test('un admin sin SUPER_ADMIN no tiene el editor', async ({ page }) => {

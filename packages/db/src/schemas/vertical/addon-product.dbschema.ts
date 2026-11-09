@@ -53,6 +53,7 @@ export const addonProducts = pgTable(
         cycle: varchar('cycle', { length: 16 }),
         /** verticales compatibles */
         compatibleVerticals: varchar('compatible_verticals', { length: 32 }).array().notNull(),
+        retiredAt: timestamp('retired_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },

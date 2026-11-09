@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors/api-error';
+import { AddonProductRetirement } from './AddonProductRetirement';
 import { AddonVersionForm } from './AddonVersionForm';
 import { CreateAddonDialog } from './CreateAddonDialog';
 import { useAddonCatalog } from './hooks/useAddonCatalog';
@@ -93,6 +94,7 @@ export function AddonCatalogScreen() {
                     ) : (
                         <p>{tr('noProduct')}</p>
                     )}
+                    {addon.product ? <AddonProductRetirement productId={addon.product.id} /> : null}
                     {editingId === addon.id ? (
                         <AddonVersionForm
                             addon={addon}

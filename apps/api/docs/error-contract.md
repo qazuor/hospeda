@@ -161,6 +161,8 @@ These route codes and messages are proposed for owner approval under BS.
 
 ### Addon catalog editor creation (ACC:20, HOS-1625)
 
+Product retirement uses `GET`, `POST` and `DELETE /api/v1/admin/billing-addon-products/{productId}/retirement`. All require `billing.publishAddonVersion`; the response order is 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 400 `VALIDATION_ERROR` for malformed UUID, then 404 `NOT_FOUND` (`ADDON_PRODUCT_NOT_FOUND`). The response is `{ productId, retiredAt }`, with an ISO timestamp or `null`. `POST` and `DELETE` are idempotent and audit `BILLING_MUTATION` with `ACC_20`. Retired products leave offers and paid purchases return the existing 404 `ADDON_PRODUCT_NOT_FOUND`; acquired instances keep their status and version.
+
 `GET /api/v1/admin/addon-catalog` reads addons, immutable versions, saleable
 products and live instance counts. `POST /api/v1/admin/addon-catalog/addons`
 creates an addon with its first version; `POST /api/v1/admin/addon-catalog/addons/{addonId}/versions`

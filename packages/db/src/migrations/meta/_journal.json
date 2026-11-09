@@ -1436,6 +1436,13 @@
       "when": 1794151149160,
       "tag": "0204_hos1595_addon_version_publication",
       "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1794236570899,
+      "tag": "0205_lucky_hiroim",
+      "breakpoints": true
     }
   ]
 }
