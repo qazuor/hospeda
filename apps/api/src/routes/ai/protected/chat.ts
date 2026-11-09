@@ -212,9 +212,15 @@ function toEngineMessages(
     };
 }
 
+/**
+ * Content of the visitor's latest user turn, or `''` when the request carries
+ * none. It never falls back to an assistant turn (review of #4253): that text
+ * is the model's own, so it must neither decide the reply language nor be
+ * persisted as what the visitor said.
+ */
 function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
     const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user');
-    return lastUserMessage?.content ?? messages[messages.length - 1]?.content ?? '';
+    return lastUserMessage?.content ?? '';
 }
 
 export const protectedAiChatRoute = createProtectedStreamingRoute({
