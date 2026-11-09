@@ -79,7 +79,7 @@ afterEach(async () => {
 afterAll(closeServiceTestPool);
 
 describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)', () => {
-    it('LISTA:B10 clause 4 a principal lost by another path leaves the addon preapproval live until A5 and the sweep sees it', async () => {
+    it('LISTA:B10 clause 4 la principal que se va por otro camino deja vivo el preapproval hasta que corre la orfandad, y el barrido lo ve', async () => {
         const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
         markedComplements.push(h.complementId);
         // Simulate a different principal writer after both starting rows came from services.
@@ -190,7 +190,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
     it.each([
         { label: 'inside', chargeAt: new Date('2026-10-16T12:00:00.000Z'), refunded: true },
         { label: 'outside', chargeAt: new Date('2026-10-01T12:00:00.000Z'), refunded: false }
-    ])('LISTA:B10 clause 5 S36 orphans an A1 addon and requests RF1 $label ten days', async ({
+    ])('LISTA:B10 clause 5 una revocación (`S36`) corre la orfandad en el mismo acto y crea `RF1` sobre el último cobro del complemento sólo si cae dentro de sus propios 10 días (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`) ($label)', async ({
         chargeAt,
         refunded
     }) => {
@@ -271,7 +271,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         ).toHaveLength(1);
     });
 
-    it('LISTA:B10 clause 10 A5 turns off an A1 addon and S21 cancels its complement without grace or refund', async () => {
+    it('LISTA:B10 clause 10 cuando un addon se apaga, su suscripción de complemento queda `CANCELLED` en el mismo acto —sin período de gracia, sin fecha de fin de servicio y sin reembolso automático de lo ya cobrado—, así que no queda ninguna fila de complemento viva colgando de una instancia terminal (`S21`, `03` §3.2 y §8, `16` §4.4, `09` §3 salvedad 1)', async () => {
         const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
         markedComplements.push(h.complementId);
         // The charged complement payment models a completed provider charge; A5 must not refund it.
@@ -341,9 +341,9 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         ).toHaveLength(1);
     });
 
-    it('LISTA:B10 clause 11 4d a USER addon with only an unpaid live principal and no anchor is orphaned', async () => {
+    it('LISTA:B10 clause 11 4d un `USER`/`GLOBAL` sin principal viva y pagando ni ancla viva en sus verticales compatibles queda huérfano (unpaid live principal)', async () => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
-        const unpaidId = await authorizedUnpaidExitPrincipal(h.f);
+        const unpaidId = await authorizedUnpaidExitPrincipal({ f: h.f });
         const [unpaid] = await getServiceTestDb()
             .select({ id: subscriptions.id, status: subscriptions.status })
             .from(subscriptions)
@@ -394,16 +394,16 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         ).toHaveLength(1);
     });
 
-    it('LISTA:B10 clause 11 4d an unpaid successor with an unpaid predecessor does not rescue a USER addon', async () => {
+    it('LISTA:B10 clause 11 4d un `USER`/`GLOBAL` sin principal viva y pagando ni ancla viva en sus verticales compatibles queda huérfano (unpaid successor)', async () => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
-        const predecessorId = await authorizedUnpaidExitPrincipal(h.f);
+        const predecessorId = await authorizedUnpaidExitPrincipal({ f: h.f });
         // Seed only the non-paying predecessor state and link: startSuccession would request
         // a future first provider charge, which G11 forbids for this test fixture.
         await getServiceTestDb()
             .update(subscriptions)
             .set({ status: 'CANCELLED' })
             .where(eq(subscriptions.id, predecessorId));
-        const successorId = await authorizedUnpaidExitPrincipal(h.f);
+        const successorId = await authorizedUnpaidExitPrincipal({ f: h.f });
         await getServiceTestDb()
             .update(subscriptions)
             .set({ succeedsId: predecessorId })

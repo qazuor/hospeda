@@ -35,7 +35,7 @@ afterEach(async () => {
 afterAll(closeServiceTestPool);
 
 describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)', () => {
-    it('LISTA:B10 clause 9 a Free Forever grant cancels the A1 complement without refund and anchors the instance', async () => {
+    it('LISTA:B10 clause 9 a un beneficiario de Free Forever con `includesAddons: true` no se le cobra ni un peso más por un addon compatible —su suscripción de complemento queda `CANCELLED` en el mismo acto del otorgamiento, sin reembolso de lo ya cobrado, la instancia sigue `ACTIVE` colgando del ancla, y al revocar el grant se apaga y no vuelve sola, ni siquiera con scope `USER` o `GLOBAL`, aunque la persona conserve otro título (`16` §3.3, owner 2026-09-25) (`S20`, `03` §3.2 y §8, `16` §3.3 y §3.4)— (grant)', async () => {
         const h = await activeRecurringExitFixture('USER');
         // The fake provider charge has no service writer; S20 must preserve money already collected.
         const charge = await seedComplementCharge(getServiceTestDb(), {
@@ -126,10 +126,10 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         ).toHaveLength(1);
     });
 
-    it('LISTA:B10 clause 9 revoking the grant turns off the anchored A1 instance without reviving its charge', async () => {
+    it('LISTA:B10 clause 9 a un beneficiario de Free Forever con `includesAddons: true` no se le cobra ni un peso más por un addon compatible —su suscripción de complemento queda `CANCELLED` en el mismo acto del otorgamiento, sin reembolso de lo ya cobrado, la instancia sigue `ACTIVE` colgando del ancla, y al revocar el grant se apaga y no vuelve sola, ni siquiera con scope `USER` o `GLOBAL`, aunque la persona conserve otro título (`16` §3.3, owner 2026-09-25) (`S20`, `03` §3.2 y §8, `16` §3.3 y §3.4)— (revocation)', async () => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
         const cancel = vi.spyOn(h.f.fake, 'cancel');
-        const otherTitleId = await authorizedUnpaidExitPrincipal(h.f);
+        const otherTitleId = await authorizedUnpaidExitPrincipal({ f: h.f });
         grantUsers.push(h.f.ownerId);
         const admin = await seedCoverageUser(getServiceTestDb());
         grantUsers.push(admin.userId);

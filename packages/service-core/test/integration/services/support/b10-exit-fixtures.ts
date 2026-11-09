@@ -162,9 +162,11 @@ export async function activeRecurringExitFixture(
 }
 
 /** Starts and authorizes a second vertical principal without crediting a charge. */
-export async function authorizedUnpaidExitPrincipal(
-    f: Awaited<ReturnType<typeof purchaseFixture>>
-): Promise<string> {
+export async function authorizedUnpaidExitPrincipal({
+    f
+}: {
+    readonly f: Awaited<ReturnType<typeof purchaseFixture>>;
+}): Promise<string> {
     const db = getServiceTestDb();
     const optionId = await db.transaction(async (tx) => {
         // The plan catalog has no purchase service.
