@@ -86,6 +86,7 @@ export * from './billing/addon/read-addon-purchase.js';
 export * from './billing/addon/scheduled-downgrade-addon-notice.js';
 export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';
+export * from './billing/addon/withdraw-addon.service.js';
 export * from './billing/addon-catalog/addon-version-publication.service.js';
 export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
 export {
