@@ -44,13 +44,22 @@ const target = {
     name: 'Nuevo',
     vertical: 'accommodation'
 };
+const downTarget = {
+    id: '14141414-1414-4414-8414-141414141414',
+    planId: '15151515-1515-4515-8515-151515151515',
+    name: 'Destino de bajada',
+    vertical: 'accommodation'
+};
 const other = {
     id: '55555555-5555-4555-8555-555555555555',
     planId: '66666666-6666-4666-8666-666666666666',
     name: 'Otra vertical',
     vertical: 'venue'
 };
-const options = { sources: [source], targets: { accommodation: [target], venue: [other] } };
+const options = {
+    sources: [source],
+    targets: { accommodation: [target, downTarget], venue: [other] }
+};
 const rows = [
     {
         subscriptionId: '77777777-7777-4777-8777-777777777777',
@@ -177,6 +186,7 @@ function setup({
                 : input?.path.endsWith('/preview')
                   ? {
                         ...preview,
+                        target: direction === 'DOWN' ? downTarget : target,
                         launchable,
                         direction,
                         rows: preview.rows.map((row) => ({
@@ -195,10 +205,10 @@ function setup({
         </QueryClientProvider>
     );
 }
-async function previewSelection() {
+async function previewSelection(targetId: string = target.id) {
     await screen.findByTestId('plan-migration-source');
     fireEvent.change(screen.getByTestId('plan-migration-source'), { target: { value: source.id } });
-    fireEvent.change(screen.getByTestId('plan-migration-target'), { target: { value: target.id } });
+    fireEvent.change(screen.getByTestId('plan-migration-target'), { target: { value: targetId } });
     fireEvent.click(screen.getByTestId('plan-migration-preview-button'));
     await screen.findByTestId(`plan-migration-row-${rows[0].subscriptionId}`);
 }
@@ -255,7 +265,12 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
     });
     it('AC:B12:2 muestra la bajada de una segunda previsualización del par de versiones', async () => {
         setup({ direction: 'DOWN' });
-        await previewSelection();
+        await previewSelection(downTarget.id);
+        expect(fetchApi.mock.calls[1]?.[0]).toEqual({
+            path: '/api/v1/admin/plan-migrations/preview',
+            method: 'POST',
+            body: { sourcePlanVersionId: source.id, targetPlanVersionId: downTarget.id }
+        });
         expect(
             within(screen.getByTestId(`plan-migration-row-${rows[0].subscriptionId}`)).getByTestId(
                 'plan-migration-row-direction'
@@ -272,7 +287,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
             Array.from(
                 (screen.getByTestId('plan-migration-target') as HTMLSelectElement).options
             ).map((option) => option.value)
-        ).toEqual(['', target.id]);
+        ).toEqual(['', target.id, downTarget.id]);
         expect(
             (screen.getByTestId('plan-migration-source') as HTMLSelectElement).options[1]
                 ?.textContent
