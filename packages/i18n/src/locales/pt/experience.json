@@ -23,6 +23,8 @@
         "destination": "Destino",
         "type": "Tipo de experiência",
         "featured": "Apenas destaques",
+        "amenities": "Comodidades",
+        "features": "Características",
         "minRating": "Avaliação mínima",
         "sort": {
             "featured": "Destaques primeiro",
