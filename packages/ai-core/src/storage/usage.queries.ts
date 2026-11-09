@@ -31,6 +31,13 @@
 import type { DrizzleClient } from '@repo/db';
 import { aiUsage, and, count, eq, getDb, gte, lt, sql } from '@repo/db';
 
+/**
+ * Column a per-user quota count is keyed on (HOS-2095): `'user'` matches
+ * `ai_usage.user_id` (the cost bearer), `'consumer'` matches
+ * `ai_usage.consumer_user_id` (the tourist in a listing chat).
+ */
+export type AiUsageQuotaKey = 'user' | 'consumer';
+
 // ---------------------------------------------------------------------------
 // aggregateAiUsageByMonth
 // ---------------------------------------------------------------------------
@@ -330,6 +337,15 @@ export async function aggregateAiUsageByFeature(
 export interface CountAiUsageForUserFeatureMonthInput {
     /** UUID of the authenticated user. */
     readonly userId: string;
+    /**
+     * Which column `userId` is matched against (HOS-2095).
+     *
+     * - `'user'` (default): `ai_usage.user_id` — the cost bearer. Every quota
+     *   except the listing chat's tourist-side one.
+     * - `'consumer'`: `ai_usage.consumer_user_id` — the user who consumed a
+     *   call somebody else paid for (the tourist in a listing chat).
+     */
+    readonly keyedBy?: AiUsageQuotaKey;
     /** AI feature to count (e.g. `'text_improve'`, `'chat'`). */
     readonly feature: string;
     /**
@@ -394,10 +410,17 @@ export async function countAiUsageForUserFeatureMonth(
     input: CountAiUsageForUserFeatureMonthInput
 ): Promise<number> {
     const { userId, feature, monthStart, monthEnd, statuses, tx } = input;
+    const keyedBy: AiUsageQuotaKey = input.keyedBy ?? 'user';
     const db = tx ?? getDb();
 
-    // Build base conditions using the shared helper.
-    const baseConditions = buildConditions({ since: monthStart, until: monthEnd, userId, feature });
+    // Build base conditions using the shared helper. The user filter goes on
+    // the column `keyedBy` names (HOS-2095), never on both.
+    const baseConditions = buildConditions({
+        since: monthStart,
+        until: monthEnd,
+        feature,
+        ...(keyedBy === 'consumer' ? { consumerUserId: userId } : { userId })
+    });
 
     // Build the status IN (...) condition via sql template because `inArray`
     // is not re-exported by `@repo/db` and `drizzle-orm` is not a direct
@@ -852,11 +875,12 @@ function buildConditions(filters: {
     readonly since?: Date;
     readonly until?: Date;
     readonly userId?: string;
+    readonly consumerUserId?: string;
     readonly feature?: string;
     readonly model?: string;
     readonly provider?: string;
 }): ReturnType<typeof gte | typeof lt | typeof eq>[] {
-    const { since, until, userId, feature, model, provider } = filters;
+    const { since, until, userId, consumerUserId, feature, model, provider } = filters;
     const conditions: ReturnType<typeof gte | typeof lt | typeof eq>[] = [];
 
     if (since !== undefined) {
@@ -867,6 +891,9 @@ function buildConditions(filters: {
     }
     if (userId !== undefined) {
         conditions.push(eq(aiUsage.userId, userId));
+    }
+    if (consumerUserId !== undefined) {
+        conditions.push(eq(aiUsage.consumerUserId, consumerUserId));
     }
     if (feature !== undefined) {
         conditions.push(eq(aiUsage.feature, feature));
