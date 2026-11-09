@@ -16,9 +16,9 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
-import { isApiError } from '@/lib/errors/api-error';
 import { AddonVersionFields } from './AddonVersionFields';
 import { useCreateAddon, useCreateAddonProduct } from './hooks/useAddonCatalog';
+import { addonCatalogErrorMessage } from './lib/addon-catalog-error';
 import { toAddonVersionContent, toAddonVersionDraft } from './lib/addon-version-draft';
 
 type CreateValues = {
@@ -112,11 +112,11 @@ export function CreateAddonDialog({
                 onOpenChange(false);
             } catch (reason) {
                 setError(
-                    productAttempted
-                        ? tr('productFailed')
-                        : isApiError(reason)
-                          ? tr('rejected', { message: reason.message })
-                          : tr('genericError')
+                    addonCatalogErrorMessage({
+                        error: reason,
+                        t,
+                        fallback: productAttempted ? tr('productFailed') : tr('genericError')
+                    })
                 );
             }
         }

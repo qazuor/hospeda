@@ -3,7 +3,7 @@ import es from '@repo/i18n/locales/es/admin-billing.json';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError } from '@/lib/errors/api-error';
+import { ApiError, type ApiErrorCode } from '@/lib/errors/api-error';
 import { CreateAddonDialog } from '../CreateAddonDialog';
 
 const fetchApi = vi.hoisted(() => vi.fn());
@@ -29,6 +29,7 @@ describe('TEST:B13b:3 AC:B13b:3 creating an addon keeps its first version when p
         fetchApi.mockRejectedValueOnce(
             new ApiError('product failure', {
                 status: 409,
+                code: 'ALREADY_EXISTS' as ApiErrorCode,
                 body: { error: { reason: 'ADDON_PRODUCT_ALREADY_EXISTS' } }
             })
         );
@@ -67,7 +68,7 @@ describe('TEST:B13b:3 AC:B13b:3 creating an addon keeps its first version when p
         });
         fireEvent.click(screen.getByTestId('addon-create-submit'));
         expect(await screen.findByRole('alert')).toHaveTextContent(
-            es.addonCatalogEditor.productFailed
+            es.addonCatalogEditor.errors.ALREADY_EXISTS
         );
         fireEvent.click(screen.getByTestId('addon-create-submit'));
         await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));

@@ -2338,6 +2338,12 @@
         "empty": "Todavía no hay complementos.",
         "forbidden": "No tenés permiso para editar complementos.",
         "loadError": "No se pudo leer el catálogo.",
+        "errors": {
+            "NOT_FOUND": "No encontramos el complemento o la versión solicitada.",
+            "CONFLICT": "El catálogo cambió. Recargá la página y volvé a intentar.",
+            "ALREADY_EXISTS": "El complemento o producto ya existe. Revisá los datos antes de reintentar.",
+            "VALIDATION_ERROR": "Los datos del complemento no son válidos. Revisalos y volvé a intentar."
+        },
         "create": "Crear complemento",
         "createTitle": "Crear complemento",
         "createIntro": "Primero se crea la versión; después, el producto vendible.",
@@ -2357,6 +2363,7 @@
         "addEntitlement": "Agregar beneficio",
         "addLimit": "Agregar límite",
         "price": "Precio en centavos ARS",
+        "priceDisplay": "Precio",
         "chargeKind": "Tipo de cobro",
         "recurring": "Recurrente",
         "oneTime": "Una vez",

@@ -1,3 +1,4 @@
+import { formatCurrency } from '@repo/i18n';
 import { describe, expect, it } from 'vitest';
 import type { CatalogVersion } from '../addon-version-draft';
 import { diffAddonVersion } from '../addon-version-draft';
@@ -42,7 +43,12 @@ describe('TEST:B13b:3 AC:B13b:3 publishing an addon version shows each change ag
             { kind: 'added', key: 'limit:add_limit', from: null, to: '7' },
             { kind: 'changed', key: 'limit:change', from: '2', to: '4' },
             { kind: 'removed', key: 'limit:remove_limit', from: '3', to: null },
-            { kind: 'changed', key: 'price', from: '100', to: '120' },
+            {
+                kind: 'changed',
+                key: 'price',
+                from: formatCurrency({ value: 1, locale: 'es-AR', currency: 'ARS' }),
+                to: formatCurrency({ value: 1.2, locale: 'es-AR', currency: 'ARS' })
+            },
             { kind: 'changed', key: 'scope', from: 'LISTING', to: 'USER' },
             {
                 kind: 'changed',
@@ -51,5 +57,17 @@ describe('TEST:B13b:3 AC:B13b:3 publishing an addon version shows each change ag
                 to: 'FIXED_DAYS:30'
             }
         ]);
+    });
+
+    it('shows a 250000-cent price as ARS 2500 without changing the draft cents', () => {
+        const changes = diffAddonVersion({
+            current,
+            proposed: current,
+            currentPrice: 100,
+            proposedPrice: 250000
+        });
+        expect(changes.find((change) => change.key === 'price')?.to).toBe(
+            formatCurrency({ value: 2500, locale: 'es-AR', currency: 'ARS' })
+        );
     });
 });

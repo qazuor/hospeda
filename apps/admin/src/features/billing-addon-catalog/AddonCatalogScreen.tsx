@@ -1,4 +1,4 @@
-import type { TranslationKey } from '@repo/i18n';
+import { formatCurrency, type TranslationKey } from '@repo/i18n';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -6,6 +6,7 @@ import { isApiError } from '@/lib/errors/api-error';
 import { AddonVersionForm } from './AddonVersionForm';
 import { CreateAddonDialog } from './CreateAddonDialog';
 import { useAddonCatalog } from './hooks/useAddonCatalog';
+import { addonCatalogErrorMessage } from './lib/addon-catalog-error';
 
 /** Lists the action 20 catalog and composes creation and publication in one screen. */
 export function AddonCatalogScreen() {
@@ -44,7 +45,11 @@ export function AddonCatalogScreen() {
                 <p role="alert">
                     {isApiError(catalog.error) && catalog.error.status === 403
                         ? tr('forbidden')
-                        : tr('loadError')}
+                        : addonCatalogErrorMessage({
+                              error: catalog.error,
+                              t,
+                              fallback: tr('loadError')
+                          })}
                 </p>
             ) : null}
             {catalog.data?.items.length === 0 ? <p>{tr('empty')}</p> : null}
@@ -75,8 +80,14 @@ export function AddonCatalogScreen() {
                     </div>
                     {addon.product ? (
                         <p className="text-sm">
-                            {tr('currentVersion')}: {addon.product.versionId} · {tr('price')}:{' '}
-                            {addon.product.price} ARS ·{' '}
+                            {tr('currentVersion')}: {addon.product.versionId} · {tr('priceDisplay')}
+                            :{' '}
+                            {formatCurrency({
+                                value: addon.product.price / 100,
+                                locale: 'es-AR',
+                                currency: 'ARS'
+                            })}{' '}
+                            ·{' '}
                             {tr(addon.product.chargeKind === 'PERIODICO' ? 'recurring' : 'oneTime')}
                         </p>
                     ) : (

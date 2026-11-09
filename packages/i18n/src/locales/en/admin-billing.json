@@ -2338,6 +2338,12 @@
         "empty": "There are no add-ons yet.",
         "forbidden": "You cannot edit add-ons.",
         "loadError": "Could not load the catalog.",
+        "errors": {
+            "NOT_FOUND": "We could not find the requested add-on or version.",
+            "CONFLICT": "The catalog changed. Reload the page and try again.",
+            "ALREADY_EXISTS": "The add-on or product already exists. Check the details before retrying.",
+            "VALIDATION_ERROR": "The add-on details are invalid. Check them and try again."
+        },
         "create": "Create add-on",
         "createTitle": "Create add-on",
         "createIntro": "The version is created first, then the saleable product.",
@@ -2357,6 +2363,7 @@
         "addEntitlement": "Add entitlement",
         "addLimit": "Add limit",
         "price": "Price in ARS cents",
+        "priceDisplay": "Price",
         "chargeKind": "Charge type",
         "recurring": "Recurring",
         "oneTime": "One time",

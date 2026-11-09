@@ -2338,6 +2338,12 @@
         "empty": "Ainda não há complementos.",
         "forbidden": "Você não tem permissão para editar complementos.",
         "loadError": "Não foi possível carregar o catálogo.",
+        "errors": {
+            "NOT_FOUND": "Não encontramos o complemento ou a versão solicitada.",
+            "CONFLICT": "O catálogo mudou. Recarregue a página e tente novamente.",
+            "ALREADY_EXISTS": "O complemento ou produto já existe. Revise os dados antes de tentar novamente.",
+            "VALIDATION_ERROR": "Os dados do complemento são inválidos. Revise-os e tente novamente."
+        },
         "create": "Criar complemento",
         "createTitle": "Criar complemento",
         "createIntro": "A versão é criada primeiro; depois, o produto vendável.",
@@ -2357,6 +2363,7 @@
         "addEntitlement": "Adicionar benefício",
         "addLimit": "Adicionar limite",
         "price": "Preço em centavos ARS",
+        "priceDisplay": "Preço",
         "chargeKind": "Tipo de cobrança",
         "recurring": "Recorrente",
         "oneTime": "Uma vez",

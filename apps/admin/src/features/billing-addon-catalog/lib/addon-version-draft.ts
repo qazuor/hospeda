@@ -1,3 +1,4 @@
+import { formatCurrency } from '@repo/i18n';
 import type { AdminAddonCatalogResponse } from '@repo/schemas';
 
 /** One catalog row returned by the action 20 read endpoint. */
@@ -77,8 +78,14 @@ export function diffAddonVersion({
     after.set('scope', proposed.scopeType);
     before.set('validity', `${current.validity}:${current.validityDays ?? ''}`);
     after.set('validity', `${proposed.validity}:${proposed.validityDays ?? ''}`);
-    before.set('price', String(currentPrice));
-    after.set('price', String(proposedPrice));
+    before.set(
+        'price',
+        formatCurrency({ value: currentPrice / 100, locale: 'es-AR', currency: 'ARS' })
+    );
+    after.set(
+        'price',
+        formatCurrency({ value: proposedPrice / 100, locale: 'es-AR', currency: 'ARS' })
+    );
     return [...new Set([...before.keys(), ...after.keys()])]
         .sort()
         .flatMap((key): AddonVersionChange[] => {
