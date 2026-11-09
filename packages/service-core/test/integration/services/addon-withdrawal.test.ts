@@ -179,6 +179,48 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(await eventsFor(s.instanceId)).toHaveLength(eventsBefore.length);
         });
 
+        it('two concurrent withdrawals of the same ACTIVE instance cancel it only once', async () => {
+            const s = await withdrawalFixture();
+            if (!s.authorizationId) throw new Error('Authorization missing');
+            expect((await s.readInstance())?.status).toBe('ACTIVE');
+            const eventsBefore = await eventsFor(s.instanceId);
+
+            const results = await Promise.all(
+                [s.ports, s.ports].map((ports) =>
+                    withdrawAddon({ actor: s.actor, instanceId: s.instanceId }, ports).then(
+                        (value) => ({ outcome: 'fulfilled' as const, value }),
+                        (error: unknown) => ({ outcome: 'rejected' as const, error })
+                    )
+                )
+            );
+
+            expect(results.filter((result) => result.outcome === 'fulfilled')).toEqual([
+                {
+                    outcome: 'fulfilled',
+                    value: { instanceId: s.instanceId, status: 'CANCELLED', providerCall: 'SENT' }
+                }
+            ]);
+            expect(results.filter((result) => result.outcome === 'rejected')).toEqual([
+                {
+                    outcome: 'rejected',
+                    error: expect.objectContaining({ reason: 'ADDON_NOT_WITHDRAWABLE' })
+                }
+            ]);
+            const eventsAfter = await eventsFor(s.instanceId);
+            expect(
+                eventsAfter.filter(
+                    ({ changes }) =>
+                        Array.isArray(changes) &&
+                        changes.some((change) => change.new === 'CANCELLED')
+                )
+            ).toHaveLength(1);
+            expect(eventsAfter).toHaveLength(eventsBefore.length + 1);
+            expect(s.cancel.mock.calls.map(([call]) => call.authorizationId)).toEqual([
+                s.authorizationId
+            ]);
+            expect(s.coverage).toHaveBeenCalledTimes(1);
+        });
+
         it('PENDING_AUTHORIZATION withdrawal cancels its waiting preapproval once', async () => {
             const s = await withdrawalFixture({ state: 'PENDING_AUTHORIZATION' });
             if (!s.authorizationId) throw new Error('Authorization missing');

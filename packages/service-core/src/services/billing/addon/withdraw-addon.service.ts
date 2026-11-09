@@ -85,6 +85,7 @@ export async function withdrawAddon(
             },
             ports.orphanhood
         );
+        // The earlier FOR UPDATE makes this unreachable in normal races; keep it as a defensive guard.
         if (result.outcome === 'NOT_APPLICABLE')
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
