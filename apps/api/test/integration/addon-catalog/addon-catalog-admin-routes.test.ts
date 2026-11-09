@@ -277,4 +277,46 @@ describe('TEST:B13b:3 AC:B13b:3 the action 20 editor routes', () => {
             'ALREADY_EXISTS'
         ]);
     });
+
+    it('returns 404 when a missing product addon is paired with another addon version', async () => {
+        const id = await actorId();
+        const created = await post(`${catalogPath}/addons`, id, {
+            slug: `missing-target-${crypto.randomUUID()}`,
+            name: 'Existing version owner',
+            description: null,
+            firstVersion
+        });
+        expect(created.status).toBe(201);
+        const versionId = ((await data(created)).data as { version: { id: string } }).version.id;
+        const response = await post(productPath, id, {
+            addonId: crypto.randomUUID(),
+            versionId,
+            price: 5000,
+            chargeKind: 'UNA_VEZ',
+            cycle: null,
+            compatibleVerticals: ['accommodation']
+        });
+        expect([response.status, (await data(response)).error?.code]).toEqual([404, 'NOT_FOUND']);
+
+        const other = await post(`${catalogPath}/addons`, id, {
+            slug: `other-target-${crypto.randomUUID()}`,
+            name: 'Existing target',
+            description: null,
+            firstVersion
+        });
+        expect(other.status).toBe(201);
+        const otherAddonId = ((await data(other)).data as { addon: { id: string } }).addon.id;
+        const mismatch = await post(productPath, id, {
+            addonId: otherAddonId,
+            versionId,
+            price: 5000,
+            chargeKind: 'UNA_VEZ',
+            cycle: null,
+            compatibleVerticals: ['accommodation']
+        });
+        expect([mismatch.status, (await data(mismatch)).error?.code]).toEqual([
+            409,
+            'ALREADY_EXISTS'
+        ]);
+    });
 });

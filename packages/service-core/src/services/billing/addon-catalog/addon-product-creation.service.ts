@@ -1,6 +1,6 @@
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { SelectAddonProduct } from '@repo/db';
-import { addonProducts, eq, getDb, sql } from '@repo/db';
+import { addonProducts, addons, eq, getDb, sql } from '@repo/db';
 import { CreateAddonProductRequestSchema, ServiceErrorCode } from '@repo/schemas';
 import { CatalogVersionNotFoundError } from '@repo/verticals';
 import type { Actor } from '../../../types/index.js';
@@ -31,6 +31,19 @@ export async function createAddonProduct(
     const parsed = CreateAddonProductRequestSchema.safeParse(args.input);
     if (!parsed.success) reject('INVALID_ADDON_VERSION_PUBLICATION_INPUT');
     const input = parsed.data;
+    const [addon] = await getDb()
+        .select({ id: addons.id })
+        .from(addons)
+        .where(eq(addons.id, input.addonId))
+        .limit(1);
+    if (!addon) {
+        throw new ServiceError(
+            ServiceErrorCode.NOT_FOUND,
+            'ADDON_NOT_FOUND',
+            undefined,
+            'ADDON_NOT_FOUND'
+        );
+    }
     let policy: Awaited<ReturnType<AddonProductCreationPorts['addonPolicy']>>;
     try {
         policy = await ports.addonPolicy({ addonVersionId: input.versionId });

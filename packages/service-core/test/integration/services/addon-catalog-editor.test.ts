@@ -349,5 +349,37 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     .where(eq(addonProducts.addonId, created.addon.id))
             ).toHaveLength(1);
         });
+
+        it('returns 404 for a missing addon before checking whether the version belongs to it', async () => {
+            const owner = await createdCatalog();
+            const input = {
+                addonId: crypto.randomUUID(),
+                versionId: owner.version.id,
+                price: 5000,
+                chargeKind: 'UNA_VEZ' as const,
+                cycle: null,
+                compatibleVerticals: ['accommodation'] as const
+            };
+            await expect(createAddonProduct({ actor, input }, policy)).rejects.toMatchObject({
+                reason: 'ADDON_NOT_FOUND',
+                code: ServiceErrorCode.NOT_FOUND
+            });
+
+            const target = await createAddon({
+                actor,
+                input: {
+                    slug: `b13b-other-${crypto.randomUUID()}`,
+                    name: 'Other addon',
+                    description: null,
+                    firstVersion: firstVersion(owner.entitlement, owner.limit)
+                }
+            });
+            await expect(
+                createAddonProduct({ actor, input: { ...input, addonId: target.addon.id } }, policy)
+            ).rejects.toMatchObject({
+                reason: 'ADDON_VERSION_OF_ANOTHER_ADDON',
+                code: ServiceErrorCode.VALIDATION_ERROR
+            });
+        });
     }
 );
