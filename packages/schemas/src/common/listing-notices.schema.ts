@@ -99,6 +99,9 @@ export const ListingNoticesItemSchema = z.object({
      * date) target this listing: they keep being charged until cancelled (H7).
      */
     recurringListingAddons: z.number().int().nonnegative(),
+    recurringListingAddonItems: z.array(
+        z.object({ addonVersionId: z.string().uuid(), name: z.string() })
+    ),
     notices: z.array(ListingNoticeSchema)
 });
 

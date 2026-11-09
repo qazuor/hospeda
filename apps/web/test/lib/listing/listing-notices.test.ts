@@ -25,6 +25,7 @@ function item(notice: ListingNotice, recurringListingAddons = 0): ListingNotices
         listingId: LISTING_ID,
         publicationStatus: 'PURGED' as ListingNoticesItem['publicationStatus'],
         recurringListingAddons,
+        recurringListingAddonItems: [],
         notices: [notice]
     };
 }
