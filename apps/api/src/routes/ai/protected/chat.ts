@@ -73,6 +73,7 @@ import {
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
+import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -419,7 +420,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     promptTokens: resolvedMeta.usage.promptTokens,
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
-                    status: usageStatus
+                    status: usageStatus,
+                    onMissingRate: warnMissingModelRate
                 });
             } catch (meteringError) {
                 apiLogger.warn(
@@ -448,7 +450,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     promptTokens: resolvedMeta.usage.promptTokens,
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
-                    status: usageStatus
+                    status: usageStatus,
+                    onMissingRate: warnMissingModelRate
                 });
             } catch (meteringError) {
                 apiLogger.warn(
