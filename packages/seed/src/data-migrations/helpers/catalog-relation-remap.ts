@@ -63,7 +63,7 @@ export const CATALOG_VERTICALS: readonly CatalogVertical[] = [
     'experience'
 ] as const;
 
-/** One owner's link to an amenity, with the attributes only accommodations carry. */
+/** One owner's link to an amenity, with the attributes all three relation tables carry (0195). */
 interface AmenityLink {
     readonly ownerId: string;
     readonly isOptional: boolean;
@@ -154,8 +154,36 @@ const AMENITY_FILLABLE = [
 /** Feature columns a collapse may fill. */
 const FEATURE_FILLABLE = ['hostReWriteName', 'comments'] as const;
 
-/** A `fill` for relation tables with no attribute columns. */
-const fillNothing = async (): Promise<number> => 0;
+/** The attribute columns shared by the three amenity relation tables (HOS-2058, 0195). */
+interface AmenityAttributeRow {
+    readonly isOptional: boolean;
+    readonly additionalCost?: PriceType | null;
+    readonly additionalCostPercent?: number | null;
+    readonly scope?: string | null;
+    readonly availability?: string | null;
+}
+
+/** Reads the amenity attributes of a relation row, `undefined` read as `null`. */
+const amenityAttributesOf = (row: AmenityAttributeRow): Omit<AmenityLink, 'ownerId'> => ({
+    isOptional: row.isOptional,
+    additionalCost: row.additionalCost ?? null,
+    additionalCostPercent: row.additionalCostPercent ?? null,
+    scope: row.scope ?? null,
+    availability: row.availability ?? null
+});
+
+/** The attributes a collapse may copy onto a surviving row that left them empty. */
+const amenityFillPatch = ({
+    row,
+    link
+}: {
+    readonly row: AmenityAttributeRow;
+    readonly link: AmenityLink;
+}): Partial<Omit<AmenityLink, 'ownerId' | 'isOptional'>> => {
+    const { isOptional: _existing, ...existing } = amenityAttributesOf(row);
+    const { ownerId: _owner, isOptional: _incoming, ...incoming } = link;
+    return nullsToFill({ existing, incoming, keys: AMENITY_FILLABLE });
+};
 
 const accommodationAmenity: RelationAdapter<AmenityLink> = {
     read: async (db, catalogId) => {
@@ -323,18 +351,42 @@ const venueAmenity: RelationAdapter<AmenityLink> = {
             .select()
             .from(rVenueAmenity)
             .where(eq(rVenueAmenity.amenityId, catalogId));
-        return rows.map((row) => bareAmenityLink(row.venueId));
+        return rows.map((row) => ({ ...amenityAttributesOf(row), ownerId: row.venueId }));
     },
     insert: async (db, catalogId, links) => {
         if (links.length === 0) return [];
         const inserted = await db
             .insert(rVenueAmenity)
-            .values(links.map((link) => ({ venueId: link.ownerId, amenityId: catalogId })))
+            .values(
+                links.map(({ ownerId, ...attributes }) => ({
+                    ...attributes,
+                    venueId: ownerId,
+                    amenityId: catalogId
+                }))
+            )
             .onConflictDoNothing()
             .returning({ ownerId: rVenueAmenity.venueId });
         return inserted.map((row) => row.ownerId);
     },
-    fill: fillNothing,
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rVenueAmenity.amenityId, catalogId),
+                eq(rVenueAmenity.venueId, link.ownerId)
+            );
+            const [row] = await db.select().from(rVenueAmenity).where(where);
+            if (!row) continue;
+            const patch = amenityFillPatch({ row, link });
+            if (Object.keys(patch).length === 0) continue;
+            await db
+                .update(rVenueAmenity)
+                .set(patch as Partial<typeof rVenueAmenity.$inferInsert>)
+                .where(where);
+            changed += 1;
+        }
+        return changed;
+    },
     remove: async (db, catalogId) => {
         const removed = await db
             .delete(rVenueAmenity)
@@ -438,18 +490,42 @@ const experienceAmenity: RelationAdapter<AmenityLink> = {
             .select()
             .from(rExperienceAmenity)
             .where(eq(rExperienceAmenity.amenityId, catalogId));
-        return rows.map((row) => bareAmenityLink(row.experienceId));
+        return rows.map((row) => ({ ...amenityAttributesOf(row), ownerId: row.experienceId }));
     },
     insert: async (db, catalogId, links) => {
         if (links.length === 0) return [];
         const inserted = await db
             .insert(rExperienceAmenity)
-            .values(links.map((link) => ({ experienceId: link.ownerId, amenityId: catalogId })))
+            .values(
+                links.map(({ ownerId, ...attributes }) => ({
+                    ...attributes,
+                    experienceId: ownerId,
+                    amenityId: catalogId
+                }))
+            )
             .onConflictDoNothing()
             .returning({ ownerId: rExperienceAmenity.experienceId });
         return inserted.map((row) => row.ownerId);
     },
-    fill: fillNothing,
+    fill: async (db, catalogId, links) => {
+        let changed = 0;
+        for (const link of links) {
+            const where = and(
+                eq(rExperienceAmenity.amenityId, catalogId),
+                eq(rExperienceAmenity.experienceId, link.ownerId)
+            );
+            const [row] = await db.select().from(rExperienceAmenity).where(where);
+            if (!row) continue;
+            const patch = amenityFillPatch({ row, link });
+            if (Object.keys(patch).length === 0) continue;
+            await db
+                .update(rExperienceAmenity)
+                .set(patch as Partial<typeof rExperienceAmenity.$inferInsert>)
+                .where(where);
+            changed += 1;
+        }
+        return changed;
+    },
     remove: async (db, catalogId) => {
         const removed = await db
             .delete(rExperienceAmenity)
