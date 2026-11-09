@@ -380,4 +380,72 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
                 .map((e) => e.reason)
         ).toEqual(['S11', 'A5']);
     });
+    it('LISTA:B10 clause 15 a failed principal S12 keeps its A1 listing complement scheduled for the next run', async () => {
+        const h = await listingExitFixture('ACTIVE');
+        if (!h.complementId) throw new Error('Listing complement missing');
+        const db = getServiceTestDb();
+        const [principal] = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(
+                and(eq(subscriptions.userId, h.f.ownerId), eq(subscriptions.class, 'PRINCIPAL'))
+            );
+        if (!principal) throw new Error('Listing principal missing');
+        const cancelled = await cancelActiveSubscription(
+            { actor: actor(h.f.ownerId), subscriptionId: principal.id },
+            {
+                provider: h.f.fake,
+                clock: h.f.ports.clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+                coverageNotices: { emitCoverageChanged: async () => undefined },
+                complements: {
+                    addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
+                    listing: h.f.ports.listing,
+                    liveAnchors: h.f.ports.liveAnchors
+                }
+            }
+        );
+        expect(cancelled.outcome).toBe('SCHEDULED');
+        const serviceEnd = new Date('2026-10-15T00:00:00.000Z');
+        // S11 created both rows; the test seeds their shared service end.
+        await db
+            .update(subscriptions)
+            .set({ serviceEndsAt: serviceEnd })
+            .where(inArray(subscriptions.id, [principal.id, h.complementId]));
+        h.f.advanceTo(serviceEnd);
+        const result = await endScheduledServices(
+            { limit: 100, db },
+            {
+                clock: h.f.ports.clock,
+                provider: h.f.fake,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+                coverageNotices: { emitCoverageChanged: async () => undefined },
+                addonPolicy: async () => {
+                    throw new Error('catalog unavailable');
+                },
+                listing: h.f.ports.listing,
+                liveAnchors: h.f.ports.liveAnchors
+            }
+        );
+        expect(result.rows.find((row) => row.subscriptionId === principal.id)).toMatchObject({
+            phase: 'PRINCIPAL',
+            outcome: 'FAILED'
+        });
+        expect(result.rows.filter((row) => row.subscriptionId === h.complementId)).toEqual([]);
+        const [principalAfter] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, principal.id));
+        const [complementAfter] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        const [instanceAfter] = await db
+            .select({ status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(principalAfter).toEqual({ status: 'CANCEL_SCHEDULED' });
+        expect(complementAfter).toEqual({ status: 'CANCEL_SCHEDULED' });
+        expect(instanceAfter).toEqual({ status: 'ACTIVE' });
+    });
 });
