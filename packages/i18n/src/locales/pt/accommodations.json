@@ -1014,7 +1014,10 @@
         "expand": "Expandir painel",
         "collapse": "Recolher painel",
         "consumerLimitReached": "Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.",
-        "consumerLimitUpgradeCta": "Ver planos"
+        "consumerLimitUpgradeCta": "Ver planos",
+        "error": {
+            "EMPTY_ANSWER": "Não conseguimos gerar uma resposta. Tente novamente em instantes."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

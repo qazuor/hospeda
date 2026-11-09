@@ -251,13 +251,20 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
     createConfiguredAiService: vi.fn(async () => ({
         streamText: vi.fn(async () => {
             const deltas = nextStreamDeltas.current;
+            // Like the real engine, `meta` settles only AFTER the stream drains
+            // (it awaits usage + finishReason), so the route reads the full text.
+            let markDrained: () => void = () => undefined;
+            const drained = new Promise<void>((resolve) => {
+                markDrained = resolve;
+            });
             return {
                 stream: (async function* () {
                     for (const delta of deltas) {
                         yield { delta };
                     }
+                    markDrained();
                 })(),
-                meta: nextMeta.current
+                meta: drained.then(() => nextMeta.current)
             };
         })
     }))
@@ -301,6 +308,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
+import { persistChatTurn } from '../../../src/services/ai-chat-persistence';
 import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
@@ -607,5 +615,71 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 
         });
 
         expect(res.status).toBe(401);
+    });
+
+    // =========================================================================
+    // HOS-2095: an empty drained stream must not burn quota or persist a turn
+    // =========================================================================
+
+    describe('HOS-2095 — empty answer (reasoning model spent every token reasoning)', () => {
+        const postChat = () =>
+            app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: TOURIST_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: [{ role: 'user', content: '¿Tiene piscina?' }],
+                    locale: 'es'
+                })
+            });
+
+        it('records both usage rows as error, persists nothing and warns', async () => {
+            nextStreamDeltas.current = [];
+            nextMeta.current = Promise.resolve({
+                usage: { promptTokens: 11, completionTokens: 1024, totalTokens: 1035 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'length'
+            });
+
+            const res = await postChat();
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(2);
+            const statuses = mockRecordAiUsage.mock.calls.map(
+                (call) => (call as unknown[])[0] as { userId: string | null; status: string }
+            );
+            expect(statuses.map((c) => c.status)).toEqual(['error', 'error']);
+            expect(statuses.map((c) => c.userId)).toEqual([OWNER_ID, TOURIST_ID]);
+            expect(persistChatTurn).not.toHaveBeenCalled();
+            expect(mockApiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    feature: 'chat',
+                    model: 'stub-model',
+                    finishReason: 'length',
+                    completionTokens: 1024
+                }),
+                expect.stringContaining('empty')
+            );
+        });
+
+        it('keeps success and persists a non-empty answer truncated by length', async () => {
+            nextMeta.current = Promise.resolve({
+                usage: { promptTokens: 11, completionTokens: 1024, totalTokens: 1035 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'length'
+            });
+
+            const res = await postChat();
+            await readSseFrames(res);
+
+            const statuses = mockRecordAiUsage.mock.calls.map(
+                (call) => ((call as unknown[])[0] as { status: string }).status
+            );
+            expect(statuses).toEqual(['success', 'success']);
+            expect(persistChatTurn).toHaveBeenCalledTimes(1);
+        });
     });
 });

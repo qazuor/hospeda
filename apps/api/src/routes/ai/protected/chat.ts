@@ -80,6 +80,7 @@ import {
     createProtectedStreamingRoute,
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
+import { resolveChatUsageStatus } from './chat.usage-status.js';
 
 const DEFAULT_LOCALE: LanguageEnum = 'es';
 
@@ -384,6 +385,24 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const augmentedMeta = meta.then(async (resolvedMeta) => {
             let resolvedConversationId: string | null = null;
 
+            // HOS-2095: an empty answer (e.g. a reasoning model that spent the whole
+            // output cap reasoning) must not count against any quota nor be persisted.
+            const { status: usageStatus, isEmpty: isEmptyAnswer } = resolveChatUsageStatus({
+                text: accumulatedAssistantText
+            });
+            if (isEmptyAnswer) {
+                apiLogger.warn(
+                    {
+                        feature: FEATURE,
+                        entityId,
+                        model: resolvedMeta.model,
+                        finishReason: resolvedMeta.finishReason,
+                        completionTokens: resolvedMeta.usage.completionTokens
+                    },
+                    'ai-chat: model produced an empty answer (usage recorded as error, turn not persisted)'
+                );
+            }
+
             // -------------------------------------------------------------------
             // Owner-keyed usage metering (telemetry).
             //
@@ -400,7 +419,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     promptTokens: resolvedMeta.usage.promptTokens,
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
-                    status: 'success'
+                    status: usageStatus
                 });
             } catch (meteringError) {
                 apiLogger.warn(
@@ -429,7 +448,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     promptTokens: resolvedMeta.usage.promptTokens,
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
-                    status: 'success'
+                    status: usageStatus
                 });
             } catch (meteringError) {
                 apiLogger.warn(
@@ -445,40 +464,42 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 );
             }
 
-            try {
-                const persistPromise = persistChatTurn({
-                    userId: actor.id,
-                    entityType,
-                    entityId,
-                    conversationId: body.conversationId ?? null,
-                    userMessage: getLastUserTurn(body.messages),
-                    assistantMessage: accumulatedAssistantText,
-                    meta: resolvedMeta
-                }).then((result) => result.conversationId);
+            if (!isEmptyAnswer) {
+                try {
+                    const persistPromise = persistChatTurn({
+                        userId: actor.id,
+                        entityType,
+                        entityId,
+                        conversationId: body.conversationId ?? null,
+                        userMessage: getLastUserTurn(body.messages),
+                        assistantMessage: accumulatedAssistantText,
+                        meta: resolvedMeta
+                    }).then((result) => result.conversationId);
 
-                const timeoutPromise = new Promise<null>((resolve) => {
-                    setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
-                });
+                    const timeoutPromise = new Promise<null>((resolve) => {
+                        setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
+                    });
 
-                resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
+                    resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
 
-                if (resolvedConversationId === null) {
-                    apiLogger.warn(
+                    if (resolvedConversationId === null) {
+                        apiLogger.warn(
+                            {
+                                entityId,
+                                timeoutMs: PERSISTENCE_TIMEOUT_MS
+                            },
+                            'ai-chat: persistence timed out after 1500 ms (non-fatal)'
+                        );
+                    }
+                } catch (error) {
+                    apiLogger.error(
                         {
                             entityId,
-                            timeoutMs: PERSISTENCE_TIMEOUT_MS
+                            error: error instanceof Error ? error.message : String(error)
                         },
-                        'ai-chat: persistence timed out after 1500 ms (non-fatal)'
+                        'ai-chat: persistence failed (non-fatal)'
                     );
                 }
-            } catch (error) {
-                apiLogger.error(
-                    {
-                        entityId,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'ai-chat: persistence failed (non-fatal)'
-                );
             }
 
             captureChatEvent(actor.id, 'ai_chat_response_completed', {
