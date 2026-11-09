@@ -12,17 +12,23 @@ vi.mock('@/hooks/use-translations', async () => {
     const es = await import('@repo/i18n/locales/es/admin-pages.json');
     return {
         useTranslations: () => ({
-            t: (key: string, values?: Record<string, string | number>) => {
-                const parts = key.split('.').slice(1);
-                let node: unknown = es.default;
-                for (const part of parts) node = (node as Record<string, unknown>)[part];
-                return Object.entries(values ?? {}).reduce(
-                    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-                    String(node)
-                );
-            }
+            tPlural: (key: string, count: number, values?: Record<string, string | number>) =>
+                translate(`${key}_${count === 1 ? 'one' : 'other'}`, { ...values, count }),
+            t: translate
         })
     };
+    function translate(key: string, values?: Record<string, string | number>) {
+        const parts = key.split('.').slice(1);
+        let node: unknown = es.default;
+        for (const part of parts) node = (node as Record<string, unknown>)[part];
+        return Object.entries(values ?? {}).reduce(
+            (text, [name, value]) =>
+                text
+                    .replaceAll(`{{${name}}}`, String(value))
+                    .replaceAll(`{${name}}`, String(value)),
+            String(node)
+        );
+    }
 });
 
 const source = {
@@ -233,7 +239,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
             result.planMigrationId
         );
         expect(screen.getByTestId('plan-migration-result')).toHaveTextContent(
-            '1 filas escritas y 1 excluidas'
+            'Filas escritas: 1. Excluidas: 1'
         );
         expect(fetchApi.mock.calls.at(-1)?.[0]).toEqual({
             path: '/api/v1/admin/plan-migrations',

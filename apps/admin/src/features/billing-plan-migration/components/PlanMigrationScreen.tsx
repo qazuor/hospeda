@@ -28,7 +28,7 @@ const errorCodes = new Set([
 
 /** Selects versions, previews every customer, and confirms action 17. */
 export function PlanMigrationScreen() {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const tr = (key: string, values?: Record<string, string | number>) =>
         t(`admin-pages.planMigration.${key}` as TranslationKey, values);
     const options = usePlanMigrationOptions();
@@ -124,10 +124,11 @@ export function PlanMigrationScreen() {
                                             key={source.id}
                                             value={source.id}
                                         >
-                                            {tr('sourceOption', {
-                                                name: source.name,
-                                                count: source.customerCount
-                                            })}
+                                            {tPlural(
+                                                'admin-pages.planMigration.sourceOption',
+                                                source.customerCount,
+                                                { name: source.name }
+                                            )}
                                         </option>
                                     ))}
                                 </select>
