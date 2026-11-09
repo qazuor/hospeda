@@ -22,7 +22,7 @@ OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config my.c
 ### Quality: automatic checks, blind export, grades
 
 Each case in `fixtures.json` carries a `rubric`: `mustInclude` and `mustNotClaim` (label + regex), `expectsUnknown`,
-`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 14 cases cover chat (accommodation),
+`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 31 cases cover chat (accommodation; 17 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
 chat_venue (restaurant, bar, cafe, nightclub) and chat_experience, including absent-fact traps (price, hours, pets,
 duration), an English question, an off-topic question and a prompt injection.
 
@@ -68,6 +68,11 @@ The example config compares `gpt-5.4-nano`, `gpt-5-nano`, `gpt-5-mini` and `gpt-
 **gpt-5.4 models may not accept `minimal` effort.** A provider error never aborts the sweep: the call is recorded
 with its error, the sweep continues, and the summary ends with a per-variant error list (count and first message).
 Errored calls are excluded from the quality columns and count in `errors`.
+
+`sweep.config.accommodation.json` runs only the `acc-real-*` cases with a per-model `reasoningEfforts` override
+(`none`/`low` for gpt-5.4-*, `minimal`/`low` for gpt-5-*); a model without the override uses the top-level list.
+The `acc-real-*` contexts are the real `buildMarkdownContext` output over the public detail endpoint (no owner
+contact data); the public payload has no `policies`/`iaData`, so those blocks are absent.
 
 See `sweep.config.example.json`. `reasoningEfforts` (`minimal|low|medium|high`) are applied via
 `providerOptions.openai.reasoningEffort` only to models with `reasoning: true`. A model's `rates`
