@@ -9,8 +9,22 @@
  */
 
 import { z } from 'zod';
-import { type AnswerQuality, checkUnknownMustSayDontKnow, RubricSchema } from './quality.js';
+import type { PromptCase, RuleId } from './cases.js';
+import { type AnswerQuality, checkUnknownMustSayDontKnow } from './quality.js';
 
+export {
+    type FixtureCase,
+    FixtureCaseSchema,
+    FixtureFileSchema,
+    type GeneratedFile,
+    GeneratedFileSchema,
+    joinGeneratedCases,
+    type PromptCase,
+    RULE_IDS,
+    type RuleId,
+    SWEEP_FEATURES,
+    SWEEP_LOCALES
+} from './cases.js';
 export { checkUnknownMustSayDontKnow };
 
 /** Reasoning effort values accepted by the OpenAI `reasoningEffort` option. */
@@ -18,12 +32,6 @@ export const REASONING_EFFORTS = ['none', 'minimal', 'low', 'medium', 'high'] as
 
 /** One reasoning effort value. */
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
-
-/** Heuristic rule ids a prompt case can request. */
-export const RULE_IDS = ['minor-must-not-affirm-entry', 'unknown-must-say-dont-know'] as const;
-
-/** One rule id. */
-export type RuleId = (typeof RULE_IDS)[number];
 
 /** Default monthly chat quotas used for the cost projection. */
 export const DEFAULT_MONTHLY_QUOTAS = [20, 50, 100, 250, 1250] as const;
@@ -69,30 +77,6 @@ export const SweepConfigSchema = z.object({
 
 /** Parsed sweep config. */
 export type SweepConfig = z.infer<typeof SweepConfigSchema>;
-
-/** One prompt case, as stored in `fixtures.json` (system text is composed at run time). */
-export const PromptCaseSchema = z.object({
-    id: z.string().min(1),
-    feature: z.enum(['chat', 'chat_venue', 'chat_experience']),
-    /** Real builder file:line the context block mirrors. */
-    source: z.string().min(1),
-    /** Synthetic listing block in the real builders' output format. */
-    context: z.string(),
-    /** What the tourist types. */
-    question: z.string().min(1),
-    /** Ground truth for the automatic checks and the blind grader. */
-    rubric: RubricSchema,
-    /** Legacy heuristic rules (kept alongside the rubric). */
-    rules: z.array(z.enum(RULE_IDS)).default([])
-});
-
-/** One prompt case. */
-export type PromptCase = z.infer<typeof PromptCaseSchema>;
-
-/** Shape of `fixtures.json`. */
-export const FixtureFileSchema = z.object({
-    cases: z.array(PromptCaseSchema).min(1)
-});
 
 /** One planned call of the sweep matrix. */
 export interface PlannedCall {
@@ -257,7 +241,10 @@ export interface SummaryRow {
     readonly visibleRate: number;
     readonly finishReasons: Readonly<Record<string, number>>;
     readonly p50LatencyMs: number;
+    readonly p90LatencyMs: number;
     readonly p95LatencyMs: number;
+    readonly maxLatencyMs: number;
+    readonly p50TtftMs: number | null;
     readonly avgTtftMs: number | null;
     readonly avgAnswerChars: number;
     readonly avgOutputTokens: number;
@@ -280,6 +267,12 @@ export interface SummaryRow {
     readonly declinePassRate: number | null;
     /** Share of answers in the expected language. */
     readonly languageOkRate: number | null;
+    /** Share of answers that leaked a raw enum code or slug. */
+    readonly rawCodeRate: number | null;
+    /** Share of answers written in the owner's first-person voice. */
+    readonly ownerVoiceRate: number | null;
+    /** Share of answers that promised booking, availability checks or a contact. */
+    readonly impossiblePromiseRate: number | null;
     /** Mean human/LLM score 1-5 over graded calls (null without grades). */
     readonly avgScore: number | null;
     readonly gradedCount: number;
@@ -366,7 +359,10 @@ export function aggregateResults(input: {
             visibleRate: visible.length / list.length,
             finishReasons,
             p50LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 50 }),
+            p90LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 90 }),
             p95LatencyMs: percentile({ values: list.map((r) => r.latencyMs), p: 95 }),
+            maxLatencyMs: list.length === 0 ? 0 : Math.max(...list.map((r) => r.latencyMs)),
+            p50TtftMs: ttfts.length === 0 ? null : percentile({ values: ttfts, p: 50 }),
             avgTtftMs: ttfts.length === 0 ? null : avg(ttfts),
             avgAnswerChars: avg(list.map((r) => r.text.length)),
             avgOutputTokens: avg(list.map((r) => r.outputTokens)),
@@ -386,6 +382,9 @@ export function aggregateResults(input: {
             declinePassRate: rate(qualities.map((q) => q.declineHandled)),
             languageOkRate:
                 qualities.length === 0 ? null : rate(qualities.map((q) => q.languageOk)),
+            rawCodeRate: rate(qualities.map((q) => (q.rawCodes ?? []).length > 0)),
+            ownerVoiceRate: rate(qualities.map((q) => q.ownerVoice ?? null)),
+            impossiblePromiseRate: rate(qualities.map((q) => q.impossiblePromise ?? null)),
             avgScore,
             gradedCount: scores.length,
             scorePerDollar:
@@ -412,8 +411,11 @@ export function renderSummaryMarkdown(input: {
         'visible',
         'finishReason',
         'p50 ms',
+        'p90 ms',
         'p95 ms',
+        'max ms',
         'TTFT ms',
+        'TTFT p50 ms',
         'avg chars',
         'avg out tok',
         'avg reasoning tok',
@@ -426,6 +428,9 @@ export function renderSummaryMarkdown(input: {
         'unknown ok',
         'decline ok',
         'lang ok',
+        'raw code',
+        'owner voice',
+        'impossible promise',
         'errors',
         'avg score',
         'score per $/1k'
@@ -442,8 +447,11 @@ export function renderSummaryMarkdown(input: {
                 pct(r.visibleRate),
                 reasons,
                 fmt(r.p50LatencyMs),
+                fmt(r.p90LatencyMs),
                 fmt(r.p95LatencyMs),
+                fmt(r.maxLatencyMs),
                 fmt(r.avgTtftMs),
+                fmt(r.p50TtftMs),
                 fmt(r.avgAnswerChars),
                 fmt(r.avgOutputTokens, 1),
                 fmt(r.avgReasoningTokens, 1),
@@ -456,6 +464,9 @@ export function renderSummaryMarkdown(input: {
                 pct(r.unknownPassRate),
                 pct(r.declinePassRate),
                 pct(r.languageOkRate),
+                pct(r.rawCodeRate),
+                pct(r.ownerVoiceRate),
+                pct(r.impossiblePromiseRate),
                 r.errors,
                 fmt(r.avgScore, 2),
                 fmt(r.scorePerDollar, 1)

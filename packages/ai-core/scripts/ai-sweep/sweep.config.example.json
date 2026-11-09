@@ -13,25 +13,8 @@
             "rates": {
                 "inputUsdPerMillion": 0.2,
                 "outputUsdPerMillion": 1.25
-            }
-        },
-        {
-            "id": "gpt-5-nano",
-            "provider": "openai",
-            "reasoning": true,
-            "rates": {
-                "inputUsdPerMillion": 0.05,
-                "outputUsdPerMillion": 0.4
-            }
-        },
-        {
-            "id": "gpt-5-mini",
-            "provider": "openai",
-            "reasoning": true,
-            "rates": {
-                "inputUsdPerMillion": 0.25,
-                "outputUsdPerMillion": 2.0
-            }
+            },
+            "reasoningEfforts": ["none", "low"]
         },
         {
             "id": "gpt-5.4-mini",
@@ -40,14 +23,53 @@
             "rates": {
                 "inputUsdPerMillion": 0.75,
                 "outputUsdPerMillion": 4.5
-            }
+            },
+            "reasoningEfforts": ["none", "low"]
+        },
+        {
+            "id": "gpt-5-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.05,
+                "outputUsdPerMillion": 0.4
+            },
+            "reasoningEfforts": ["minimal", "low"]
+        },
+        {
+            "id": "gpt-5-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.25,
+                "outputUsdPerMillion": 2.0
+            },
+            "reasoningEfforts": ["minimal", "low"]
         }
     ],
-    "reasoningEfforts": ["minimal", "low"],
     "maxOutputTokens": [2048],
     "repetitions": 2,
-    "caseIds": [],
+    "caseIds": [
+        "venue-nightclub-minor",
+        "venue-restaurant-price-range",
+        "venue-bar-price-absent",
+        "venue-cafe-hours-present",
+        "venue-restaurant-hours-absent",
+        "venue-parking-accessibility-faq",
+        "venue-pet-friendly-absent",
+        "venue-reservation-policy",
+        "experience-unknown-duration",
+        "experience-meeting-point",
+        "accommodation-checkin",
+        "accommodation-english-question",
+        "accommodation-off-topic",
+        "venue-prompt-injection",
+        "venue-mixed-lunch-with-child",
+        "venue-hours-missing-day",
+        "experience-price-cents",
+        "acc-ac-past-position-20"
+    ],
     "concurrency": 2,
-    "maxCalls": 250,
+    "maxCalls": 300,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

@@ -14,8 +14,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-import { composeSystemPrompt } from '../../src/config/prompt-resolver.js';
-import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../../src/engine/default-prompts.js';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
 import { type BlindKey, buildBlindExport, entriesToJsonl, ingestGrades } from './blind.js';
 import {
@@ -25,7 +23,9 @@ import {
     estimateCostUsd,
     expandMatrix,
     FixtureFileSchema,
+    GeneratedFileSchema,
     type Grade,
+    joinGeneratedCases,
     type PlannedCall,
     type PromptCase,
     RULE_IDS,
@@ -83,39 +83,33 @@ function parseArgs(argv: readonly string[]): CliArgs {
     };
 }
 
-/** Same layout as `buildChatSystemMessage` in apps/api/src/services/ai-context/owner-data-fence.ts:134. */
-function buildSystem(promptCase: PromptCase): string {
-    const resolved = composeSystemPrompt({
-        content: DEFAULT_PROMPTS[promptCase.feature],
-        rules: DEFAULT_RULES[promptCase.feature]
-    });
-    return [
-        promptCase.context,
-        '',
-        '---',
-        '',
-        resolved,
-        '',
-        `- You MUST respond in the user's language: locale is "es".`
-    ].join('\n');
+/**
+ * Loads the cases joined with their generated contexts. The system message of
+ * each case is the exact text production sends (see README, "Contexts").
+ */
+function loadCases(): PromptCase[] {
+    const fixtures = FixtureFileSchema.parse(
+        JSON.parse(readFileSync(resolve(HERE, 'fixtures.json'), 'utf8'))
+    );
+    const generated = GeneratedFileSchema.parse(
+        JSON.parse(readFileSync(resolve(HERE, 'contexts.generated.json'), 'utf8'))
+    );
+    return joinGeneratedCases({ fixtures: fixtures.cases, generated });
 }
 
 function main(): void {
     const args = parseArgs(process.argv.slice(2));
     const config = SweepConfigSchema.parse(JSON.parse(readFileSync(args.configPath, 'utf8')));
-    const fixtures = FixtureFileSchema.parse(
-        JSON.parse(readFileSync(resolve(HERE, 'fixtures.json'), 'utf8'))
-    );
+    const cases = loadCases();
     if (args.resultsPath) {
-        runOffline({ args, config, cases: fixtures.cases });
+        runOffline({ args, config, cases });
         return;
     }
     const maxCalls = args.maxCalls ?? config.maxCalls;
     const concurrency = args.concurrency ?? config.concurrency;
-    const cases = fixtures.cases;
     const calls = expandMatrix({ config, cases });
     const caseById = new Map(cases.map((c) => [c.id, c]));
-    const systemById = new Map(cases.map((c) => [c.id, buildSystem(c)]));
+    const systemById = new Map(cases.map((c) => [c.id, c.system]));
     const warnings: string[] = [];
 
     const ratesFor = (model: string): UsdRates | null => {
@@ -152,7 +146,9 @@ function main(): void {
     }
     console.log(`Mode: ${args.execute ? 'EXECUTE' : 'DRY-RUN (no network calls)'}`);
     console.log(`Config: ${args.configPath}`);
-    console.log(`Cases: ${cases.map((c) => c.id).join(', ')}`);
+    console.log(
+        `Cases (${new Set(calls.map((c) => c.caseId)).size}): ${[...new Set(calls.map((c) => c.caseId))].join(', ')}`
+    );
     console.log(`Matrix variants (model | effort | cap): ${perVariant.size}`);
     for (const [key, n] of perVariant) console.log(`  ${key}  x${n} calls`);
     console.log(`Total calls: ${calls.length} (hard cap ${maxCalls}, concurrency ${concurrency})`);
@@ -399,10 +395,18 @@ function runOffline(input: {
 }): void {
     const { args } = input;
     const source = args.resultsPath ?? '';
+    const caseById = new Map(input.cases.map((c) => [c.id, c]));
+    // Quality is recomputed with the CURRENT rubric, so a rubric fix re-scores old answers.
     const results = readFileSync(source, 'utf8')
         .split('\n')
         .filter((l) => l.trim() !== '')
-        .map((l) => JSON.parse(l) as CallResult);
+        .map((l) => JSON.parse(l) as CallResult)
+        .map((r) => {
+            const promptCase = caseById.get(r.caseId);
+            return promptCase
+                ? { ...r, quality: checkAnswer({ text: r.text, rubric: promptCase.rubric }) }
+                : r;
+        });
     console.log(`Offline mode: ${results.length} results from ${source}`);
     if (args.blindExport) {
         writeBlindExport({ path: args.blindExport, results, cases: input.cases });

@@ -87,6 +87,66 @@ export function detectLanguage(text: string): 'es' | 'en' | 'pt' | 'unknown' {
     return en === max ? 'en' : 'pt';
 }
 
+/**
+ * Acronyms a good answer may legitimately write in capitals. Anything else in
+ * SCREAMING_CASE of 3+ letters reads as a leaked enum code (MID, CABIN,
+ * COUNTRY_HOUSE). Heuristic: an all-caps emphasis word also trips it.
+ */
+const ALLOWED_UPPERCASE: ReadonlySet<string> = new Set([
+    'ARS',
+    'USD',
+    'WIFI',
+    'DNI',
+    'GPS',
+    'LED',
+    'IVA',
+    'CBU',
+    'CVU',
+    'PDF',
+    'ATM',
+    'SUBE',
+    'VIP',
+    'BBQ',
+    'UTC'
+]);
+
+const UPPER_CODE = /(?<![\p{L}\p{N}_])[A-Z]{3,}(?:_[A-Z]+)*(?![\p{L}\p{N}_])/gu;
+const SNAKE_SLUG = /(?<![\p{L}\p{N}_])[a-z]+(?:_[a-z]+)+(?![\p{L}\p{N}_])/gu;
+
+/**
+ * Raw enum codes or catalog slugs the answer leaked (HOS-2095): a closed value
+ * must reach the visitor as its human label, never as `MID` or `air_conditioning`.
+ *
+ * @param text - The answer.
+ * @returns The distinct leaked tokens, in order of appearance.
+ */
+export function findRawCodes(text: string): string[] {
+    const upper = (text.match(UPPER_CODE) ?? []).filter((t) => !ALLOWED_UPPERCASE.has(t));
+    const slugs = text.match(SNAKE_SLUG) ?? [];
+    return [...new Set([...upper, ...slugs])];
+}
+
+/**
+ * First-person owner voice (HOS-2095): the assistant talks ABOUT the place, so
+ * "aceptamos", "tenemos", "nuestro", "te esperamos" mean it copied the owner's
+ * voice from a FAQ or description. Spanish, English and Portuguese forms.
+ */
+export function looksLikeOwnerVoice(text: string): boolean {
+    return /(?<!\p{L})(aceptamos|tenemos|contamos con|ofrecemos|disponemos|brindamos|nuestr[oa]s?|te esperamos|los esperamos|somos un|we accept|we have|we offer|our (place|cabin|house|apartment|restaurant|bar|venue|rooms?|pool)|aceitamos|temos|oferecemos|nosso|nossa)(?!\p{L})/iu.test(
+        text
+    );
+}
+
+/**
+ * The answer promised something the assistant cannot do (HOS-2095): book, check
+ * availability, confirm a reservation, or hand over / relay a contact.
+ */
+export function promisesImpossibleCapability(text: string): boolean {
+    return /(?<!\p{L})(te reservo|reservo|te hago la reserva|confirmo (tu|la) reserva|te confirmo la reserva|chequeo (la )?disponibilidad|verifico (la )?disponibilidad|consulto (la )?disponibilidad|te paso el (whatsapp|n[uú]mero|tel[eé]fono|contacto)|le (escribo|paso tu)|te pongo en contacto|I(?:'ll| will) (book|reserve|check (the )?availability)|I can (book|reserve)|eu reservo|vou reservar)(?!\p{L})/iu.test(
+        text
+    );
+}
+
 /** Automatic quality checks of one answer. */
 export interface AnswerQuality {
     /** Fraction of `mustInclude` facts found; `null` when the rubric has none. */
@@ -101,6 +161,12 @@ export interface AnswerQuality {
     readonly languageOk: boolean;
     readonly empty: boolean;
     readonly chars: number;
+    /** Leaked enum codes / slugs (global check, every case). */
+    readonly rawCodes: readonly string[];
+    /** Answer spoke as the owner (global check, every case). */
+    readonly ownerVoice: boolean;
+    /** Answer promised booking, availability checks or a contact (global check). */
+    readonly impossiblePromise: boolean;
 }
 
 const stripAccents = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -132,6 +198,9 @@ export function checkAnswer(input: {
         declineHandled: rubric.expectsDecline ? looksLikeDecline(text) : null,
         languageOk: !empty && detectLanguage(text) === rubric.expectedLanguage,
         empty,
-        chars: text.length
+        chars: text.length,
+        rawCodes: findRawCodes(text),
+        ownerVoice: looksLikeOwnerVoice(text),
+        impossiblePromise: promisesImpossibleCapability(text)
     };
 }
