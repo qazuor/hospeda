@@ -263,8 +263,10 @@ test.describe('TEST:B13b:3 AC:B13b:3 AC:B13b:4 the action 20 editor @p0 @admin @
     test('un admin sin SUPER_ADMIN no tiene el editor', async ({ page }) => {
         if (!admin) throw new Error('Expected case-local ADMIN.');
         await useAdminSession(page, admin.sessionCookie);
-        await page.goto(`${ADMIN_URL}/dashboard`);
-        await expect(page.locator('a[href="/billing/addon-catalog"]')).toHaveCount(0);
+        await page.goto(`${ADMIN_URL}/billing/reconciliation`);
+        const billingSidebar = page.getByRole('navigation', { name: 'Secondary navigation' });
+        await expect(billingSidebar.locator('a[href="/billing/reconciliation"]')).toHaveCount(1);
+        await expect(billingSidebar.locator('a[href="/billing/addon-catalog"]')).toHaveCount(0);
         await page.goto(`${ADMIN_URL}/billing/addon-catalog`);
         await expect(page.getByTestId('addon-catalog-screen')).toHaveCount(0);
         const forbidden = await fetch(`${API_URL}/api/v1/admin/addon-catalog`, {
