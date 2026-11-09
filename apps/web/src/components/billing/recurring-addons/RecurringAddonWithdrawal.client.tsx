@@ -4,7 +4,7 @@ import {
     OwnerRecurringAddonsQuerySchema,
     OwnerRecurringAddonsResponseSchema
 } from '@repo/schemas';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -25,6 +25,27 @@ export function RecurringAddonWithdrawal({
     const [confirmId, setConfirmId] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [withdrawn, setWithdrawn] = useState(false);
+    const confirmButtonRef = useRef<HTMLButtonElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const statusRef = useRef<HTMLParagraphElement>(null);
+    const focusReturnIdRef = useRef<string | null>(null);
+    const restoreTriggerFocusRef = useRef(false);
+    const focusWithdrawalStatusRef = useRef(false);
+
+    useLayoutEffect(() => {
+        if (confirmId) confirmButtonRef.current?.focus();
+        else if (restoreTriggerFocusRef.current) {
+            triggerRef.current?.focus();
+            restoreTriggerFocusRef.current = false;
+        }
+    }, [confirmId]);
+
+    useLayoutEffect(() => {
+        if (focusWithdrawalStatusRef.current && withdrawn) {
+            statusRef.current?.focus();
+            focusWithdrawalStatusRef.current = false;
+        }
+    });
 
     useEffect(() => {
         let active = true;
@@ -79,6 +100,7 @@ export function RecurringAddonWithdrawal({
                 setError(t('billing.addonPurchase.recurringAddons.withdrawError'));
                 return;
             }
+            focusWithdrawalStatusRef.current = true;
             setItems((current) => current.filter((item) => item.addonInstanceId !== instanceId));
             setConfirmId(null);
             setWithdrawn(true);
@@ -95,7 +117,9 @@ export function RecurringAddonWithdrawal({
             {error && <p role="alert">{error}</p>}
             {withdrawn && (
                 <p
+                    ref={statusRef}
                     role="status"
+                    tabIndex={-1}
                     data-testid="recurring-addon-withdrawn"
                 >
                     {t('billing.addonPurchase.recurringAddons.withdrawn')}
@@ -125,6 +149,7 @@ export function RecurringAddonWithdrawal({
                         >
                             <p>{t('billing.addonPurchase.recurringAddons.confirmText')}</p>
                             <button
+                                ref={confirmButtonRef}
                                 type="button"
                                 disabled={busy}
                                 onClick={() =>
@@ -136,16 +161,27 @@ export function RecurringAddonWithdrawal({
                             <button
                                 type="button"
                                 disabled={busy}
-                                onClick={() => setConfirmId(null)}
+                                onClick={() => {
+                                    restoreTriggerFocusRef.current = true;
+                                    setConfirmId(null);
+                                }}
                             >
                                 {t('billing.addonPurchase.recurringAddons.cancel')}
                             </button>
                         </div>
                     ) : (
                         <button
+                            ref={
+                                item.addonInstanceId === focusReturnIdRef.current
+                                    ? triggerRef
+                                    : undefined
+                            }
                             type="button"
                             data-testid={`recurring-addon-withdraw-${item.addonInstanceId}`}
-                            onClick={() => setConfirmId(item.addonInstanceId)}
+                            onClick={() => {
+                                focusReturnIdRef.current = item.addonInstanceId;
+                                setConfirmId(item.addonInstanceId);
+                            }}
                         >
                             {t('billing.addonPurchase.recurringAddons.withdraw')}
                         </button>

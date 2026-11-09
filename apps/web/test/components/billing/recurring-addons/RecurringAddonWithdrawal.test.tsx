@@ -52,12 +52,34 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
         expect(screen.getByTestId('recurring-addon-withdraw-confirm')).toHaveTextContent(
             'No hay reembolso'
         );
-        fireEvent.click(screen.getByRole('button', { name: 'Confirmar baja' }));
+        const confirmButton = screen.getByRole('button', { name: 'Confirmar baja' });
+        expect(document.activeElement).toBe(confirmButton);
+        fireEvent.click(confirmButton);
         await waitFor(() => expect(withdrawAddon).toHaveBeenCalledWith({ instanceId }));
         await waitFor(() =>
             expect(screen.queryAllByTestId(`recurring-addon-${instanceId}`)).toHaveLength(0)
         );
         expect(screen.getByTestId('recurring-addon-withdrawn')).toHaveTextContent('dado de baja');
+        expect(document.activeElement).toBe(screen.getByTestId('recurring-addon-withdrawn'));
+    });
+
+    it('restores focus to the withdrawal button when cancelling', async () => {
+        listRecurringAddons.mockResolvedValue({ ok: true, data: { items: [item] } });
+        render(
+            <RecurringAddonWithdrawal
+                locale="es"
+                listingId={listingId}
+            />
+        );
+        const trigger = await screen.findByTestId(`recurring-addon-withdraw-${instanceId}`);
+        trigger.focus();
+        fireEvent.click(trigger);
+        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Confirmar baja' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+        expect(document.activeElement).toBe(
+            screen.getByTestId(`recurring-addon-withdraw-${instanceId}`)
+        );
     });
 
     it('shows a 409 response text without removing the row', async () => {
