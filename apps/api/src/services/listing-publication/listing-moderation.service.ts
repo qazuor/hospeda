@@ -16,7 +16,13 @@ import {
 import { liftModeration } from '../../../../../packages/verticals/src/publication/lift-moderation';
 import { takeDownListing } from '../../../../../packages/verticals/src/publication/moderate-listing';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
+import { getListingAccessPorts } from '../../utils/listing-access/ports';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
+import { apiLogger } from '../../utils/logger';
+import {
+    listRecurringListingAddons,
+    readRecurringListingAddonNames
+} from '../listing-notices/recurring-listing-addons';
 
 const LISTING_TABLES: Readonly<Record<PublicationVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
@@ -78,7 +84,33 @@ export class ListingModerationService {
                 break;
             }
             case 'TAKE_DOWN': {
-                const result = await takeDownListing({ ...common, afterCommit: ports.afterCommit });
+                let recurringListingAddons: readonly { readonly name: string }[] | undefined;
+                try {
+                    const coverage = await getListingAccessPorts().billing.coverage({
+                        userId: ownerId,
+                        vertical: args.vertical
+                    });
+                    const addonNames = await readRecurringListingAddonNames({
+                        coverage,
+                        listingIds: [args.id]
+                    });
+                    recurringListingAddons = listRecurringListingAddons({
+                        coverage,
+                        listingId: args.id,
+                        readAddonNames: () => addonNames
+                    }).items.map(({ name }) => ({ name }));
+                } catch (error) {
+                    // A failed names read must not block the moderation sanction; the email uses its legacy fallback.
+                    apiLogger.warn(
+                        { error, listingId: args.id, vertical: args.vertical },
+                        'Recurring listing add-on names read failed before moderation'
+                    );
+                }
+                const result = await takeDownListing({
+                    ...common,
+                    afterCommit: ports.afterCommit,
+                    recurringListingAddons
+                });
                 failure = result.ok ? null : result.reason;
                 break;
             }
@@ -120,10 +152,27 @@ export class ListingModerationService {
         const result = await getDb().execute(
             sql<{
                 publicationStatus: PublicationStatusEnum;
-            }>`SELECT publication_status AS "publicationStatus" FROM ${sql.identifier(table)} WHERE id = ${args.id}::uuid AND deleted_at IS NULL`
+                ownerId: string;
+            }>`SELECT publication_status AS "publicationStatus", owner_id AS "ownerId" FROM ${sql.identifier(table)} WHERE id = ${args.id}::uuid AND deleted_at IS NULL`
         );
         const row = result.rows[0];
         if (!row) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+        const ownerId: unknown = row.ownerId;
+        if (typeof ownerId !== 'string')
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+        const coverage = await getListingAccessPorts().billing.coverage({
+            userId: ownerId,
+            vertical: args.vertical
+        });
+        const addonNames = await readRecurringListingAddonNames({
+            coverage,
+            listingIds: [args.id]
+        });
+        const recurringListingAddons = listRecurringListingAddons({
+            coverage,
+            listingId: args.id,
+            readAddonNames: () => addonNames
+        }).items;
         const tx = getDb();
         const request = await listingModerationModel.readOpenFixRequest({
             tx,
@@ -132,6 +181,7 @@ export class ListingModerationService {
         });
         return {
             publicationStatus: row.publicationStatus,
+            recurringListingAddons: [...recurringListingAddons],
             fixRequest: request
                 ? {
                       reason: request.reason,

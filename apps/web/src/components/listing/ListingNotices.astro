@@ -47,6 +47,12 @@ const views = buildListingNoticeViews({ locale, t, tPlural, item });
 			{view.lines.map((line) => (
 				<p class={styles.body}>{line}</p>
 			))}
+			{view.recurringAddons?.map((name) => (
+				<p class={styles.body} data-testid="listing-notice-recurring-addon">{name}</p>
+			))}
+			{view.withdrawHref && (
+				<a class={styles.body} data-testid="listing-notice-withdraw-link" href={view.withdrawHref}>{t('listing.notices.moderated.withdrawLink')}</a>
+			)}
 			{view.reportFixed && (
 				<ReportFixedButton
 					client:idle

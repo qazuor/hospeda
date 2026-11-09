@@ -3,7 +3,7 @@ import type { AddonOffersResponse } from '@repo/schemas';
 import { AddonOffersResponseSchema } from '@repo/schemas';
 import { findIncludesAddonsAnchor } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 /** Reads saleable products, their verticals policy and the owner's free grant options in one snapshot. */
@@ -27,6 +27,7 @@ export async function readAddonOffers(input: {
             })
             .from(addonProducts)
             .innerJoin(addons, eq(addons.id, addonProducts.addonId))
+            .where(isNull(addonProducts.retiredAt))
             .orderBy(asc(addons.name), asc(addonProducts.id));
         const reader = new Proxy(planCatalogModel, {
             get(target, property, receiver) {

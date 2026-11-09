@@ -400,7 +400,8 @@
             "hidden": "Não aparece no site até que um admin retire a moderação.",
             "canDo": "Enquanto isso você pode vê-lo, exportá-lo, editá-lo e apagá-lo, mas não publicá-lo.",
             "recurring_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado até você cancelá-lo.",
-            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados até você cancelá-los."
+            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados até você cancelá-los.",
+            "withdrawLink": "Cancelar estes destaques"
         },
         "fixRequest": {
             "title": "Pediram uma correção neste anúncio",

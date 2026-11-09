@@ -842,6 +842,20 @@
             "quarterly": "Trimestral",
             "semiannual": "Semestral",
             "annual": "Anual"
+        },
+        "recurringAddons": {
+            "title": "Seus destaques recorrentes",
+            "loading": "Carregando destaques recorrentes…",
+            "empty": "Você não tem destaques recorrentes ativos.",
+            "loadError": "Não foi possível carregar seus destaques recorrentes.",
+            "invalidListing": "O anúncio informado é inválido.",
+            "noListing": "Sem anúncio associado",
+            "withdraw": "Cancelar",
+            "confirmText": "Ao confirmar, a cobrança é interrompida e o destaque é desligado hoje. Não há reembolso. O provedor pode enviar um email de cancelamento.",
+            "confirm": "Confirmar cancelamento",
+            "cancel": "Voltar",
+            "withdrawn": "O destaque foi cancelado.",
+            "withdrawError": "Não foi possível cancelar o destaque."
         }
     }
 }

@@ -74,6 +74,7 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
                     listingId: LISTING_ID,
                     publicationStatus: 'PURGED',
                     recurringListingAddons: 0,
+                    recurringListingAddonItems: [],
                     notices: [{ kind: 'PURGED_BY_INACTIVITY' }]
                 }
             ]
@@ -95,6 +96,7 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
                     listingId: LISTING_ID,
                     publicationStatus: 'DRAFT',
                     recurringListingAddons: -1,
+                    recurringListingAddonItems: [],
                     notices: []
                 }
             ]
@@ -105,6 +107,22 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
 
         // Assert
         expect(result.success).toBe(false);
+    });
+
+    it('requires the named recurring add-on items', () => {
+        expect(
+            ListingNoticesResponseSchema.safeParse({
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: LISTING_ID,
+                        publicationStatus: 'DRAFT',
+                        recurringListingAddons: 0,
+                        notices: []
+                    }
+                ]
+            }).success
+        ).toBe(false);
     });
 });
 

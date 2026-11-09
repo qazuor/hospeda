@@ -167,6 +167,18 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/addon-catalog"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons/:addonId/versions"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/ai/credentials"
         },
         {
@@ -352,6 +364,22 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/auth/signup-as-host"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
         },
         {
             "method": "POST",
@@ -2672,6 +2700,14 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/billing/addons/free-choices"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/instances"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/instances/:instanceId/withdrawal"
         },
         {
             "method": "GET",

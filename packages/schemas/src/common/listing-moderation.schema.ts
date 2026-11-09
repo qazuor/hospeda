@@ -4,6 +4,9 @@ import { PublicationStatusEnumSchema } from '../enums/publication-status.schema.
 /** Read-only listing and open fix-request state for moderation controls. */
 export const ListingModerationStateSchema = z.object({
     publicationStatus: PublicationStatusEnumSchema,
+    recurringListingAddons: z.array(
+        z.object({ addonVersionId: z.string().uuid(), name: z.string() })
+    ),
     fixRequest: z
         .object({
             reason: z.string(),

@@ -342,6 +342,19 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Purchase screen and purge preview captures; read-only addon, complement, principal and outbox rows; sandbox preapproval and cancellation records; B10 integration and E2E P0 CI results.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
 
+### S22 — B13b moderation, unpublication, withdrawal and action 20 (HOS-1625)
+
+- **Preconditions:** Staging has the Phase 3 epic deployed, Mercado Pago sandbox, a paying owner with a published listing and a live recurring listing boost, a `SUPER_ADMIN`, and an `ADMIN` without `billing.publishAddonVersion`.
+- **Steps:**
+  1. As the owner, start unpublishing the listing. Confirm the dialog names the boost, says its charge continues while unpublished, and links to withdrawal. Unpublish and publish the listing again.
+  2. As an admin with moderation access, take down the listing. Confirm the moderation dialog names the boost. Read the moderation email and the owner's My Account notice; each names the boost and offers the withdrawal link.
+  3. Follow the link to `/es/mi-cuenta/complementos/`, withdraw the recurring boost, and observe our cancellation email before the sandbox provider cancellation email. Read the addon's preapproval by ID and confirm the principal amount is unchanged.
+  4. As `SUPER_ADMIN`, create an addon and publish a new version in the action 20 editor. Check the confirmation diff and its statement that earlier purchases remain anchored to their version. Retire and restore the test product; verify it leaves and returns to sale while existing purchases stay anchored.
+  5. As the `ADMIN` without the action 20 permission, confirm the editor link is absent and the admin route and API reject access.
+- **Expected:** The unpublish and moderation surfaces name the live recurring boost and offer its withdrawal. Withdrawal closes its own instance after our email and before the provider cancellation, without changing the principal. Action 20 shows the version diff, preserves earlier purchases, retires and restores saleability, and rejects the unpermitted admin. Total retirement of live purchases is outside this smoke and belongs to HOS-2097.
+- **Evidence:** Dialog, email, My Account, withdrawal and editor captures; read-only instance, complement, product, version, principal and outbox rows; sandbox preapproval and cancellation records; E2E P0 CI result.
+- **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -474,6 +487,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Owner purchase screen and deletion preview; read-only provider, addon, complement, principal, payment and outbox records; card statement and both email observations; E2E P0 CI result.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
 
+### P13 — B13b real owner withdrawal (HOS-1625)
+
+- **Preconditions:** The owner's internal production account has a paying principal, a published listing with a live recurring boost, and the owner's approved card; only the owner runs this item.
+- **Steps:** From the listing's unpublish confirmation, read the named boost and continuing charge without completing unpublication. Follow its withdrawal link to `/es/mi-cuenta/complementos/` and withdraw that one boost. Observe our cancellation email before the provider's cancellation email; read the addon's preapproval and subsequent charge history.
+- **Expected:** The boost and its complement become `CANCELLED`, the principal remains active and its amount unchanged, the provider preapproval is cancelled after our email, and the boost has no next charge. Action 20 is not executed in production smoke. Total retirement of live purchases belongs to HOS-2097.
+- **Evidence:** Owner confirmation and withdrawal captures; read-only addon, complement, principal and outbox rows; provider preapproval and charge history; both email observations; E2E P0 CI result.
+- **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3. The editor and retirement coverage is from staging S22 and CI, not a production action.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -496,6 +517,7 @@ The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains activ
 Phase 3 (B10, HOS-1373) starts with HOS-1593: S18 and P9.
 Phase 3 (B10, HOS-1373) continues with HOS-1595: S20 and P11.
 Phase 3 (B10, HOS-1373) closes with HOS-1596: S21 and P12.
+Phase 3 (B13b, HOS-1625): S22 and P13.
 
 ## Related
 

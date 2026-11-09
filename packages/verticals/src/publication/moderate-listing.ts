@@ -38,6 +38,7 @@ export async function takeDownListing(args: {
     readonly listingId: string;
     readonly reason: string;
     readonly correlationId: string;
+    readonly recurringListingAddons?: readonly { readonly name: string }[];
 }): Promise<TakeDownListingResult> {
     const reason = args.reason.trim();
     if (!reason) return { ok: false, reason: 'REASON_REQUIRED' };
@@ -102,7 +103,10 @@ export async function takeDownListing(args: {
                         vertical: args.vertical,
                         listingId: listing.id,
                         reason,
-                        fixRequestOpen: Boolean(open)
+                        fixRequestOpen: Boolean(open),
+                        ...(args.recurringListingAddons === undefined
+                            ? {}
+                            : { recurringListingAddons: args.recurringListingAddons })
                     })
                 },
                 correlationId: args.correlationId,

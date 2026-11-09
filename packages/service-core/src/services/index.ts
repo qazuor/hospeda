@@ -86,6 +86,9 @@ export * from './billing/addon/read-addon-purchase.js';
 export * from './billing/addon/scheduled-downgrade-addon-notice.js';
 export * from './billing/addon/send-one-time-order.service.js';
 export * from './billing/addon/send-one-time-order-types.js';
+export * from './billing/addon/withdraw-addon.service.js';
+export * from './billing/addon-catalog/addon-product-creation.service.js';
+export * from './billing/addon-catalog/addon-product-retirement.service.js';
 export * from './billing/addon-catalog/addon-version-publication.service.js';
 export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
 export {
@@ -95,6 +98,7 @@ export {
     assertAddonVersionPublicationPermitted,
     mapAddonVersionPublicationWriteError
 } from './billing/addon-catalog/addon-version-publication-authorization.js';
+export * from './billing/addon-catalog/admin-addon-catalog.read.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
 export * from './billing/coverage/can-charge.js';
@@ -400,6 +404,7 @@ export * from './partner/partner-mention.service';
 export * from './partner/partner-stats.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
+export * from './plan-catalog/addon-version-creation.service.js';
 export * from './plan-catalog/plan-catalog.admin-reader.js';
 export { buildPublicationContext } from './plan-catalog/plan-publication.reader.js';
 // HOS-1436 (V2.3, AC:V2:6/7): the action 18 — publish a plan version.

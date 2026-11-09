@@ -68,6 +68,9 @@ export interface UnpublishButtonProps {
      * counted any.
      */
     readonly recurringNote?: string;
+    readonly recurringAddonNames?: readonly string[];
+    readonly withdrawHref?: string;
+    readonly withdrawLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +95,10 @@ export function UnpublishButton({
     confirmNo,
     errorText,
     trialNote,
-    recurringNote
+    recurringNote,
+    recurringAddonNames,
+    withdrawHref,
+    withdrawLabel
 }: UnpublishButtonProps): JSX.Element {
     const [state, setState] = useState<UnpublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -190,6 +196,25 @@ export function UnpublishButton({
                     >
                         {recurringNote}
                     </span>
+                )}
+                {recurringAddonNames?.map((name, index) => (
+                    <span
+                        className={styles.note}
+                        data-testid="unpublish-recurring-addon"
+                        // biome-ignore lint/suspicious/noArrayIndexKey: Catalog names can repeat; these static labels have no state.
+                        key={`${name}-${index}`}
+                    >
+                        {name}
+                    </span>
+                ))}
+                {withdrawHref && withdrawLabel && (
+                    <a
+                        className={styles.note}
+                        data-testid="unpublish-recurring-withdraw-link"
+                        href={withdrawHref}
+                    >
+                        {withdrawLabel}
+                    </a>
                 )}
                 <button
                     type="button"

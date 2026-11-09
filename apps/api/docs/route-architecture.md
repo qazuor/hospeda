@@ -21,6 +21,8 @@ All entity routes are split across three URL prefixes. Each tier enforces its ow
 | Protected | `/api/v1/protected/<entity>` | User session required | CRUD on own resources |
 | Admin | `/api/v1/admin/<entity>` | Admin-access permission + `PermissionEnum` | Full CRUD, all resources |
 
+Owner addon routes use the protected tier: `GET /api/v1/protected/billing/addons/instances` lists the actor's live recurring instances (optionally filtered by `listingId`), and `POST /api/v1/protected/billing/addons/instances/{instanceId}/withdrawal` cancels one owned instance. Neither route declares a separate permission; ownership is enforced by the read predicate and the A5 service.
+
 ### How Authorization Is Enforced
 
 Authorization is applied per-route via the factory functions. Each factory injects a pre-configured middleware into the route's middleware chain before the handler executes.
@@ -944,6 +946,15 @@ this branch — only the free structured pass runs. See the module doc on
 | `HOSPEDA_IMPORT_AI_MAX_CHARS` | `12000` | Char cap for AI-assisted (Strategy B) extraction; not available on the async status route's fallback. |
 
 ---
+
+## Addon catalog editor routes (HOS-1625, ACC:20)
+
+| Method | Path | `requiredPermissions` | Notes |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/addon-catalog` | `BILLING_PUBLISH_ADDON_VERSION` | Composed catalog of addons, versions, product and live counts. |
+| `POST` | `/api/v1/admin/addon-catalog/addons` | `BILLING_PUBLISH_ADDON_VERSION` | Creates addon and first immutable version; audits `ACC_20`. |
+| `POST` | `/api/v1/admin/addon-catalog/addons/{addonId}/versions` | `BILLING_PUBLISH_ADDON_VERSION` | Appends an immutable version; audits `ACC_20`. |
+| `POST` | `/api/v1/admin/billing-addon-products` | `BILLING_PUBLISH_ADDON_VERSION` | Creates the one saleable product; audits `ACC_20`. |
 
 ## Anti-Patterns
 

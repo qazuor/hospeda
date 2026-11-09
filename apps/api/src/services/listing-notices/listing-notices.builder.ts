@@ -18,6 +18,7 @@ import {
     TrialStatusEnum,
     type TrialSummaryResponse
 } from '@repo/schemas';
+import { listRecurringListingAddons } from './recurring-listing-addons';
 
 const DAY_MS = 86_400_000;
 
@@ -85,13 +86,10 @@ export function countRecurringListingAddons(input: {
     readonly listingId: string;
 }): { readonly count: number } {
     return {
-        count: input.coverage.sources.filter(
-            (source) =>
-                source.type === 'ADDON' &&
-                source.scope === 'LISTING' &&
-                source.target === input.listingId &&
-                source.until === 'NO_KNOWN_DATE'
-        ).length
+        count: listRecurringListingAddons({
+            ...input,
+            readAddonNames: ({ addonVersionIds }) => new Map(addonVersionIds.map((id) => [id, id]))
+        }).items.length
     };
 }
 
@@ -162,6 +160,7 @@ export function buildListingNoticeItems(input: {
     readonly coverage: CoverageResponse;
     readonly now: Date;
     readonly publishLimit?: number | null;
+    readonly addonNames?: ReadonlyMap<string, string>;
 }): readonly ListingNoticesItem[] {
     const published = input.rows.filter(
         (row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED
@@ -206,13 +205,17 @@ export function buildListingNoticeItems(input: {
                 ...(unpublishedBecause ? { unpublishedBecause } : {})
             });
         }
+        const recurringListingAddonItems = listRecurringListingAddons({
+            coverage: input.coverage,
+            listingId: row.id,
+            readAddonNames: ({ addonVersionIds }) =>
+                input.addonNames ?? new Map(addonVersionIds.map((id) => [id, id]))
+        }).items;
         return {
             listingId: row.id,
             publicationStatus: row.publicationStatus,
-            recurringListingAddons: countRecurringListingAddons({
-                coverage: input.coverage,
-                listingId: row.id
-            }).count,
+            recurringListingAddons: recurringListingAddonItems.length,
+            recurringListingAddonItems: [...recurringListingAddonItems],
             notices
         };
     });

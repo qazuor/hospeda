@@ -159,6 +159,29 @@ publication records a `BILLING_MUTATION` audit with `administrativeAction: ACC_2
 
 These route codes and messages are proposed for owner approval under BS.
 
+### Addon catalog editor creation (ACC:20, HOS-1625)
+
+Product retirement uses `GET`, `POST` and `DELETE /api/v1/admin/billing-addon-products/{productId}/retirement`. All require `billing.publishAddonVersion`; the response order is 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 400 `VALIDATION_ERROR` for malformed UUID, then 404 `NOT_FOUND` (`ADDON_PRODUCT_NOT_FOUND`). The response is `{ productId, retiredAt }`, with an ISO timestamp or `null`. `POST` and `DELETE` are idempotent and audit `BILLING_MUTATION` with `ACC_20`. Retired products leave offers and paid purchases return the existing 404 `ADDON_PRODUCT_NOT_FOUND`; acquired instances keep their status and version.
+
+`GET /api/v1/admin/addon-catalog` reads addons, immutable versions, saleable
+products and live instance counts. `POST /api/v1/admin/addon-catalog/addons`
+creates an addon with its first version; `POST /api/v1/admin/addon-catalog/addons/{addonId}/versions`
+appends a version; `POST /api/v1/admin/billing-addon-products` creates its product.
+All four require `billing.publishAddonVersion`. Each successful creation records
+`BILLING_MUTATION` with `administrativeAction: ACC_20`. The HTTP order is 401,
+403, 400, 404, then business rules.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| Malformed body or path | 400 | `VALIDATION_ERROR` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `INVALID_ADDON_CREATION_INPUT`, `INVALID_ADDON_VERSION_CREATION_INPUT`, `ADDON_CATALOG_KEY_INVALID` | 400 | `VALIDATION_ERROR` |
+| `ADDON_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_ALREADY_EXISTS`, `ADDON_VERSION_DUPLICATE_KEY`, `ADDON_PRODUCT_ALREADY_EXISTS`, `ADDON_VERSION_OF_ANOTHER_ADDON` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These editor creation responses are proposed for owner approval under BS.
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a
@@ -877,6 +900,8 @@ administrator as actor.
 Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `MONTHS_EXHAUSTED` with 409 `CONFLICT`; `NOT_PRINCIPAL`, `MANUAL_PAYER`, `NOT_MONTHLY`, `PLAN_DISALLOWS_PAUSE`, `MONTHS_OUT_OF_RANGE`, and `NO_PROVIDER_LINK` with 422 `VALIDATION_ERROR`. Resume refuses `NOT_PAUSED`, `NO_OPEN_PAUSE`, and `PAUSE_NOT_CUSTOMER_REQUEST` with 409; provider calls are forbidden for a courtesy pause. `NOT_APPLIED` and `LOST_RACE` are 409. Each typed error carries `error.reason` and `error.details.reason`. Provider rejection is 422 `PROVIDER_REJECTED`; transient provider failure is 503 with `Retry-After` when available. The preview records `BILLING_READ`, and only a successful POST records `BILLING_MUTATION` with `administrativeAction: ACC_9` and the admin as actor.
 
 Protected addon purchase (`POST /api/v1/protected/billing/addons/purchases`) requires a non-guest session; absent authentication returns 401. The strict body rejects extra fields with 400. A one-time product requires payment details; its optional payer email defaults to the account email. Recurring products reject supplied payment details with 400. Product and target refusals return 404 `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND`; an inaccessible or ineligible listing has the same `ADDON_TARGET_NOT_FOUND` response. The 409 purchase codes are `ADDON_NO_VALID_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ADDON_ALREADY_ACTIVE`, and `ADDON_ORDER_REQUEST_REUSED`. `PENDING_ELSEWHERE` returns 200 with `processing: true`. Provider authorization rejection returns 422 `PROVIDER_REJECTED`; transient authorization failures return 503 as in signup. Unresolved one-time order outcomes return 202 with `processing: true`; the route does not abandon the order. `GET /api/v1/protected/billing/addons/purchases/{orderRequestId}` returns 404 `ADDON_PURCHASE_NOT_FOUND` for an absent purchase or one owned by another actor.
+
+Protected owner recurring addons (`GET /api/v1/protected/billing/addons/instances`) require a non-guest session and return only the actor's `PERIODICO` instances in `PENDING_AUTHORIZATION` or `ACTIVE`, ordered by acquisition time and id. Optional `listingId` must be a UUID. `POST /api/v1/protected/billing/addons/instances/{instanceId}/withdrawal` withdraws one such instance through A5 and returns 200 with its cancelled status and provider call result. Both routes reject without a session or for a guest with 401. The withdrawal rejects a malformed UUID with 400 `VALIDATION_ERROR`, an absent or foreign instance with 404 `NOT_FOUND`, and a one-time or terminal instance with 409 `ALREADY_EXISTS` and `error.reason: ADDON_NOT_WITHDRAWABLE`. No permission beyond the owner's session is required. A successful withdrawal records `BILLING_MUTATION` with the requesting actor id.
 
 Protected free addon choice (`POST /api/v1/protected/billing/addons/free-choices`) requires a non-guest session and a strict body without payment fields. The order is 401 authentication → 400 shape → 404 product or target existence and ownership → 409 business rules. `PRODUCT_NOT_FOUND` and `TARGET_NOT_FOUND` map to `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND` (404). `NO_FREE_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ALREADY_ACTIVE`, `PENDING_ELSEWHERE`, and `ORDER_REQUEST_REUSED` map to their `ADDON_*` codes (409). A valid choice returns 201 with an `ACTIVE` instance; replay or an already live free choice returns 200 with the same instance id. The paid purchase path rejects `FREE_UNDER_GRANT` with 409 `ADDON_FREE_UNDER_GRANT` before provider authorization.
 

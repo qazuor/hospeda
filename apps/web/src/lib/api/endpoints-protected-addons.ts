@@ -5,7 +5,9 @@ import type {
     AddonOffersResponse,
     AddonPurchaseReadResponseSchema,
     AddonPurchaseRequestSchema,
-    AddonPurchaseResponseSchema
+    AddonPurchaseResponseSchema,
+    AddonWithdrawalResponseSchema,
+    OwnerRecurringAddonsResponseSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { apiClient } from './client';
@@ -15,6 +17,28 @@ const PROTECTED = '/api/v1/protected';
 
 /** Reads offers, starts purchases, resumes a purchase and chooses a free addon. */
 export const billingAddonApi = {
+    /** List this owner's live recurring addons, optionally for one listing. */
+    listRecurringAddons({
+        listingId
+    }: {
+        readonly listingId?: string;
+    } = {}): Promise<ApiResult<z.infer<typeof OwnerRecurringAddonsResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/addons/instances`,
+            params: { listingId }
+        });
+    },
+    /** Withdraw one of this owner's live recurring addon instances. */
+    withdrawAddon({
+        instanceId
+    }: {
+        readonly instanceId: string;
+    }): Promise<ApiResult<z.infer<typeof AddonWithdrawalResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/addons/instances/${encodeURIComponent(instanceId)}/withdrawal`,
+            body: {}
+        });
+    },
     /**
      * Read the current addon catalog with this owner's free grant options.
      * @example const result = await billingAddonApi.offers();

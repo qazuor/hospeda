@@ -1,4 +1,4 @@
-import { addonInstances, domainEventModel, eq, payments, receipts } from '@repo/db';
+import { addonInstances, addonProducts, domainEventModel, eq, payments, receipts } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { chooseFreeAddon } from '../../../src/services/billing/addon/choose-free-addon.service';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
@@ -82,6 +82,38 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:14 AC:B10:12 free addon u
             outcome: 'EXISTING'
         });
         expect(await f.instances()).toHaveLength(1);
+    });
+
+    it('refuses a retired product without creating a free instance', async () => {
+        const f = await freeChoiceFixture();
+        await getServiceTestDb()
+            .update(addonProducts)
+            .set({ retiredAt: new Date() })
+            .where(eq(addonProducts.id, f.productId));
+
+        expect(await chooseFreeAddon(f.freeInput(), f.freePorts)).toEqual({
+            outcome: 'REFUSED',
+            reason: 'PRODUCT_NOT_FOUND'
+        });
+        expect(await f.instances()).toHaveLength(0);
+    });
+
+    it('refuses an order replay after retirement while preserving its existing instance', async () => {
+        const f = await freeChoiceFixture();
+        const input = f.freeInput();
+        const created = await chooseFreeAddon(input, f.freePorts);
+        expect(created.outcome).toBe('CREATED');
+        const before = await f.instances();
+        await getServiceTestDb()
+            .update(addonProducts)
+            .set({ retiredAt: new Date() })
+            .where(eq(addonProducts.id, f.productId));
+
+        expect(await chooseFreeAddon(input, f.freePorts)).toEqual({
+            outcome: 'REFUSED',
+            reason: 'PRODUCT_NOT_FOUND'
+        });
+        expect(await f.instances()).toEqual(before);
     });
 
     it('leaves the end open for a while-subscription-alive policy', async () => {

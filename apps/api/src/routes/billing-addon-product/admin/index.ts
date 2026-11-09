@@ -15,7 +15,13 @@ import { AuditEventType, auditLog } from '../../../utils/audit-logger.js';
 import { createRouter } from '../../../utils/create-app.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
 import { buildAddonVersionPublicationPorts } from './ports.js';
+import { adminCreateAddonProductRoute } from './product-creation.js';
 import { answerAddonVersionPublicationRejection } from './rejections.js';
+import {
+    adminReadAddonProductRetirementRoute,
+    adminRetireAddonProductRoute,
+    adminUnretireAddonProductRoute
+} from './retirement.js';
 
 const requestParams = { productId: z.uuid() };
 
@@ -101,7 +107,11 @@ export const adminPublishAddonVersionRoute = createAdminRoute({
 });
 
 const router = createRouter();
+router.route('/', adminCreateAddonProductRoute);
 router.route('/', adminPreviewAddonVersionPublicationRoute);
 router.route('/', adminPublishAddonVersionRoute);
+router.route('/', adminReadAddonProductRetirementRoute);
+router.route('/', adminRetireAddonProductRoute);
+router.route('/', adminUnretireAddonProductRoute);
 
 export { router as adminBillingAddonProductRoutes };

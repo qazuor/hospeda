@@ -1145,7 +1145,8 @@
                 "title": "Retirar a ficha",
                 "description": "Você vai retirar «{name}». A ficha sai do site público até que você a libere.",
                 "ownerNotice": "O dono recebe o aviso com o motivo. Pode vê-la, editá-la e excluí-la, mas não publicá-la.",
-                "featured": "Se ela tiver destaques recorrentes, eles continuam sendo cobrados até que o dono os cancele."
+                "recurringIntro": "Destaques recorrentes deste anúncio:",
+                "recurringChargeNotice": "O dono continua sendo cobrado até cancelá-los. O aviso ao dono oferece o cancelamento."
             },
             "lift": {
                 "title": "Suspender a moderação",

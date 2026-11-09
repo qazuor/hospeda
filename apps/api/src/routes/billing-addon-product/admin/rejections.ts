@@ -41,14 +41,17 @@ export function answerAddonVersionPublicationRejection(input: {
     const { error, ctx } = input;
     if (
         !(error instanceof ServiceError) ||
-        !ADDON_VERSION_PUBLICATION_REJECTIONS.includes(error.reason as never)
+        (error.reason !== 'ADDON_PRODUCT_ALREADY_EXISTS' &&
+            !ADDON_VERSION_PUBLICATION_REJECTIONS.includes(error.reason as never))
     ) {
         throw error;
     }
     const answer =
-        ADDON_VERSION_PUBLICATION_REJECTION_ANSWERS[
-            error.reason as AddonVersionPublicationRejection
-        ];
+        error.reason === 'ADDON_PRODUCT_ALREADY_EXISTS'
+            ? CONFLICT
+            : ADDON_VERSION_PUBLICATION_REJECTION_ANSWERS[
+                  error.reason as AddonVersionPublicationRejection
+              ];
     return createErrorResponse(
         { code: answer.code, message: error.message, reason: error.reason },
         ctx,
