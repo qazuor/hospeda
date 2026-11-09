@@ -269,6 +269,10 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
                 { complementSubscriptionId: user.complementId, outcome: 'PAUSED' }
             ]);
             expect(userRow).toEqual({ status: 'PAUSED' });
+            expect(
+                (await user.f.fake.readAuthorization({ authorizationId: user.authorizationId }))
+                    .snapshot.status
+            ).toBe('paused');
         }
         await getServiceTestDb()
             .update(subscriptions)
@@ -285,6 +289,34 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B7, B8a)
         expect(resumed.results).toMatchObject([
             { complementSubscriptionId: vertical.complementId, outcome: 'REACTIVATED' }
         ]);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'ACTIVE' })
+            .where(eq(subscriptions.id, user.principalId));
+        const userResumed = await resumeComplementsS33(
+            { principalSubscriptionId: user.principalId, trigger: 'PRINCIPAL_ACTIVE' },
+            { provider: user.f.fake, clock: user.f.ports.clock, policy: await policy(user) }
+        );
+        expect(userResumed.results).toEqual(
+            otherStatus === 'PAUSED'
+                ? [
+                      {
+                          complementSubscriptionId: user.complementId,
+                          instanceId: user.instanceId,
+                          outcome: 'REACTIVATED'
+                      }
+                  ]
+                : []
+        );
+        const [userAfter] = await getServiceTestDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, user.complementId));
+        expect(userAfter).toEqual({ status: 'ACTIVE' });
+        expect(
+            (await user.f.fake.readAuthorization({ authorizationId: user.authorizationId }))
+                .snapshot.status
+        ).toBe('active');
     });
     it('LISTA:B10 clause 15 the 15 October service end applies S21 before the A1 listing complement S12 and hangs the last charge on mark 14', async () => {
         const h = await listingExitFixture('ACTIVE');
