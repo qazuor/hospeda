@@ -5,6 +5,7 @@
 
 export * from './account-stats-response.schema.js';
 export * from './addon.schema.js';
+export * from './addon-catalog-admin.schema.js';
 export * from './addon-free-choice.schema.js';
 export * from './addon-offers.schema.js';
 export * from './addon-purchase.schema.js';
