@@ -1,18 +1,6 @@
 /**
- * @file listing-notices.ts
- * @description The owner's listing notices in Mi Cuenta (HOS-1492, V8a.1b):
- * rows 8/9, 18, 20, 24, 30 and 31 of `V/19` §4, and the unpublish
- * confirmation lines of rows 2 and 25.
- *
- * The surface only READS what the core resolved (AC:V8a:1). Every decision —
- * why a listing is `PURGED`, whether an archive returns on its own, whether a
- * listing sits out by surplus — was taken by
- * `GET /api/v1/protected/publish/listing-notices/{vertical}`. This module maps
- * each `ListingNotice` to its copy through ONE exhaustive `Record` keyed by
- * `kind`, and never compares a status or a destination outside of it.
- *
- * A failed read is "no notices" (never an invented one): see
- * {@link indexListingNotices}.
+ * Owner listing notices (HOS-1492): maps the API read to copy for Mi Cuenta.
+ * A failed read yields no notices; decisions stay in the core read.
  */
 
 import type {
@@ -44,6 +32,10 @@ export interface ListingNoticeView {
     readonly title: string;
     /** Body lines, in order. */
     readonly lines: readonly string[];
+    /** Recurring addon names for the moderated owner notice only. */
+    readonly recurringAddons?: readonly string[];
+    /** Owner withdrawal destination for a moderated listing. */
+    readonly withdrawHref?: string;
     /**
      * Row 30 only: the "I fixed it" button. `reportedAt` is the ISO instant the
      * owner already reported the fix, or `null` while they have not.
@@ -58,6 +50,8 @@ interface CopyContext {
     readonly tPlural: PluralTranslationFn;
     /** Recurring add-ons on the listing (H7): read, never computed here. */
     readonly recurringListingAddons: number;
+    readonly recurringAddonNames: readonly string[];
+    readonly listingId: string;
 }
 
 /** Each notice narrowed by its kind. */
@@ -71,14 +65,7 @@ type NoticeViewBuilders = {
     ) => ListingNoticeView | null;
 };
 
-/**
- * Formats an ISO instant as a long local date (day, month, year) in the site
- * time zone.
- *
- * @param params.iso - ISO-8601 instant.
- * @param params.locale - The page locale.
- * @returns The date label, or `null` when the instant cannot be read.
- */
+/** Format an ISO instant in the market time zone; invalid values yield null. */
 export function formatNoticeInstant({
     iso,
     locale
@@ -247,6 +234,15 @@ const NOTICE_VIEW: NoticeViewBuilders = {
                 t('listing.notices.moderated.canDo'),
                 ...recurringLine({ key: 'listing.notices.moderated.recurring', ctx })
             ],
+            ...(ctx.recurringAddonNames.length > 0
+                ? {
+                      recurringAddons: ctx.recurringAddonNames,
+                      withdrawHref: recurringWithdrawalHref({
+                          locale: ctx.locale,
+                          listingId: ctx.listingId
+                      })
+                  }
+                : {}),
             reportFixed: null
         };
     },
@@ -355,7 +351,9 @@ export function buildListingNoticeViews({
         locale,
         t,
         tPlural,
-        recurringListingAddons: item.recurringListingAddons
+        recurringListingAddons: item.recurringListingAddons,
+        recurringAddonNames: item.recurringListingAddonItems.map((addon) => addon.name),
+        listingId: item.listingId
     };
     return item.notices
         .map((notice) => buildOne({ kind: notice.kind, notice, ctx }))
@@ -406,40 +404,49 @@ export interface UnpublishConfirmNotes {
     readonly trialNote?: string;
     /** Row 25: the recurring boosts keep being charged. `undefined` without any. */
     readonly recurringNote?: string;
+    readonly recurringAddonNames?: readonly string[];
+    readonly withdrawHref?: string;
 }
 
-/**
- * The unpublish confirmation lines read from the listing-notices read. With
- * an unknown trial or no item (failed read), nothing is added: today's
- * confirmation, never an invented line.
- *
- * @param params.t - Translation function bound to the locale.
- * @param params.tPlural - Plural translation function bound to the locale.
- * @param params.trialRunning - From the read; `null` when unknown.
- * @param params.item - The listing's entry of the read, if any.
- * @returns The lines to add.
- */
+/** Destination for an owner's recurring addons on one listing. */
+function recurringWithdrawalHref({
+    locale,
+    listingId
+}: {
+    readonly locale: SupportedLocale;
+    readonly listingId: string;
+}): string {
+    return `/${locale}/mi-cuenta/complementos/?listing=${encodeURIComponent(listingId)}#recurring-addons`;
+}
+
+/** Build unpublish notes from the listing read; unknown data adds no line. */
 export function buildUnpublishConfirmNotes({
+    locale,
     t,
     tPlural,
     trialRunning,
     item
 }: {
+    readonly locale: SupportedLocale;
     readonly t: TranslationFn;
     readonly tPlural: PluralTranslationFn;
     readonly trialRunning: boolean | null;
     readonly item: ListingNoticesItem | undefined;
 }): UnpublishConfirmNotes {
-    const count = item?.recurringListingAddons ?? 0;
+    const names = item?.recurringListingAddonItems.map((addon) => addon.name) ?? [];
+    const count = names.length;
+    const listingId = item?.listingId;
     return {
         ...(trialRunning === true
             ? { trialNote: t('host.properties.card.unpublishTrialNote') }
             : {}),
-        ...(count > 0
+        ...(count > 0 && listingId
             ? {
                   recurringNote: tPlural('host.properties.card.unpublishRecurringNote', count, {
                       count
-                  })
+                  }),
+                  recurringAddonNames: names,
+                  withdrawHref: recurringWithdrawalHref({ locale, listingId })
               }
             : {})
     };

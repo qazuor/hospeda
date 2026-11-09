@@ -808,6 +808,20 @@
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     },
+    "recurringAddons": {
+        "title": "Tus destaques recurrentes",
+        "loading": "Cargando destaques recurrentes…",
+        "empty": "No tenés destaques recurrentes activos.",
+        "loadError": "No pudimos cargar tus destaques recurrentes.",
+        "invalidListing": "La ficha indicada no es válida.",
+        "noListing": "Sin ficha asociada",
+        "withdraw": "Dar de baja",
+        "confirmText": "Al confirmar, se corta el cobro y el destaque se apaga hoy. No hay reembolso. El proveedor puede enviarte un correo de cancelación.",
+        "confirm": "Confirmar baja",
+        "cancel": "Cancelar",
+        "withdrawn": "El destaque fue dado de baja.",
+        "withdrawError": "No pudimos dar de baja el destaque."
+    },
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Elegí un complemento",

@@ -808,6 +808,20 @@
         "max_experiences": "Quantas experiências você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa de um plano maior para somar outra.",
         "max_active_private_galleries": "Quantas galerias privadas você pode manter vivas ao mesmo tempo. Cada galeria expira sozinha quando o prazo termina e é apagada, então as vagas voltam à medida que vencem."
     },
+    "recurringAddons": {
+        "title": "Seus destaques recorrentes",
+        "loading": "Carregando destaques recorrentes…",
+        "empty": "Você não tem destaques recorrentes ativos.",
+        "loadError": "Não foi possível carregar seus destaques recorrentes.",
+        "invalidListing": "O anúncio informado é inválido.",
+        "noListing": "Sem anúncio associado",
+        "withdraw": "Cancelar",
+        "confirmText": "Ao confirmar, a cobrança é interrompida e o destaque é desligado hoje. Não há reembolso. O provedor pode enviar um email de cancelamento.",
+        "confirm": "Confirmar cancelamento",
+        "cancel": "Voltar",
+        "withdrawn": "O destaque foi cancelado.",
+        "withdrawError": "Não foi possível cancelar o destaque."
+    },
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Escolha um complemento",

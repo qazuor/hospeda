@@ -25,7 +25,10 @@ function item(notice: ListingNotice, recurringListingAddons = 0): ListingNotices
         listingId: LISTING_ID,
         publicationStatus: 'PURGED' as ListingNoticesItem['publicationStatus'],
         recurringListingAddons,
-        recurringListingAddonItems: [],
+        recurringListingAddonItems: Array.from({ length: recurringListingAddons }, (_, index) => ({
+            addonVersionId: `version-${index}`,
+            name: `Destaque ${index + 1}`
+        })),
         notices: [notice]
     };
 }
@@ -377,18 +380,21 @@ describe('buildUnpublishConfirmNotes — rows 2 and 25', () => {
     it('TEST:V8a:7 row 2: says the trial clock keeps running only while the trial runs', () => {
         // Act
         const running = buildUnpublishConfirmNotes({
+            locale: 'es',
             t: es.t,
             tPlural: es.tPlural,
             trialRunning: true,
             item: undefined
         });
         const notRunning = buildUnpublishConfirmNotes({
+            locale: 'es',
             t: es.t,
             tPlural: es.tPlural,
             trialRunning: false,
             item: undefined
         });
         const unknown = buildUnpublishConfirmNotes({
+            locale: 'es',
             t: es.t,
             tPlural: es.tPlural,
             trialRunning: null,
@@ -406,6 +412,7 @@ describe('buildUnpublishConfirmNotes — rows 2 and 25', () => {
     it('TEST:V8a:7 row 25: the recurring boosts keep being charged while unpublished', () => {
         // Act
         const notes = buildUnpublishConfirmNotes({
+            locale: 'es',
             t: es.t,
             tPlural: es.tPlural,
             trialRunning: false,
@@ -417,6 +424,42 @@ describe('buildUnpublishConfirmNotes — rows 2 and 25', () => {
             'Tenés 3 destaques recurrentes sobre esta ficha: se siguen cobrando aunque no esté publicada, hasta que los des de baja.'
         );
         expect(notes.trialNote).toBeUndefined();
+    });
+});
+
+describe('TEST:B13b:1 AC:B13b:1 — el aviso de moderación nombra los destaques recurrentes que se siguen cobrando y ofrece la baja', () => {
+    const moderated: ListingNotice = { kind: 'MODERATED', reason: 'Fotos ajenas', since: null };
+
+    it('passes two names and a filtered withdrawal link only to MODERATED', () => {
+        const views = buildListingNoticeViews({
+            locale: 'es',
+            t: es.t,
+            tPlural: es.tPlural,
+            item: item(moderated, 2)
+        });
+        expect(views).toHaveLength(1);
+        expect(views[0]?.recurringAddons).toEqual(['Destaque 1', 'Destaque 2']);
+        expect(views[0]?.withdrawHref).toBe(
+            `/es/mi-cuenta/complementos/?listing=${LISTING_ID}#recurring-addons`
+        );
+        const archived = buildListingNoticeViews({
+            locale: 'es',
+            t: es.t,
+            tPlural: es.tPlural,
+            item: item({ kind: 'ARCHIVED', deletionAnnouncedAt: null, returnsOnItsOwn: false }, 2)
+        });
+        expect(archived[0]?.recurringAddons ?? []).toEqual([]);
+    });
+
+    it('adds no names or withdrawal link without live addons', () => {
+        const views = buildListingNoticeViews({
+            locale: 'es',
+            t: es.t,
+            tPlural: es.tPlural,
+            item: item(moderated)
+        });
+        expect(views[0]?.recurringAddons ?? []).toHaveLength(0);
+        expect(views[0]?.withdrawHref ?? '').toBe('');
     });
 });
 
