@@ -72,7 +72,8 @@ describe('meterAiUsage', () => {
                 promptTokens: 100,
                 completionTokens: 40,
                 latencyMs: 820,
-                status: 'success'
+                status: 'success',
+                onMissingRate: expect.any(Function)
             });
             expect(mockWarn).not.toHaveBeenCalled();
         });

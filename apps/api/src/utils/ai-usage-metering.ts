@@ -41,6 +41,7 @@
 
 import { recordAiUsage } from '@repo/ai-core';
 import type { AiFeature } from '@repo/schemas';
+import { warnMissingModelRate } from './ai-missing-model-rate';
 import { apiLogger } from './logger';
 
 // ---------------------------------------------------------------------------
@@ -164,7 +165,8 @@ export async function meterAiUsage(input: MeterAiUsageInput): Promise<void> {
             promptTokens: toTokenCount({ value: promptTokens }),
             completionTokens: toTokenCount({ value: completionTokens }),
             latencyMs,
-            status
+            status,
+            onMissingRate: warnMissingModelRate
         })
             .then(() => undefined)
             .catch((meteringError: unknown) => {
