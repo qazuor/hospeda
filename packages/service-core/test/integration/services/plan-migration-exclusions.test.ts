@@ -148,5 +148,49 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .where(eq(planMigrationSubscriptions.subscriptionId, seeded.predecessor.id));
             expect(migrationRows).toHaveLength(0);
         });
+
+        it('excludes the actor subscription and still offers the other customer for launch', async () => {
+            const seeded = await createPlanMigrationCase({ addPendingCustomer: true });
+            if (!seeded.pendingCustomer) throw new Error('Pending customer fixture missing');
+            await setMigrationTargetCycle({
+                actor: seeded.actor,
+                planVersionId: seeded.targetPlanVersionId,
+                cycle: 'monthly',
+                amount: 300000
+            });
+            const preview = await previewPlanMigration({
+                actor: { ...seeded.actor, id: seeded.user.id },
+                input: {
+                    sourcePlanVersionId: seeded.planVersionId,
+                    targetPlanVersionId: seeded.targetPlanVersionId
+                },
+                verticals: seeded.verticals,
+                clock: migrationClock
+            });
+            expect(
+                preview.rows.map((row) => ({
+                    subscriptionId: row.subscriptionId,
+                    direction: row.direction,
+                    outcome: row.outcome,
+                    excludedReason: row.excludedReason
+                }))
+            ).toEqual(
+                [
+                    {
+                        subscriptionId: seeded.predecessor.id,
+                        direction: null,
+                        outcome: 'EXCLUDED',
+                        excludedReason: 'ACTOR_IS_SUBJECT'
+                    },
+                    {
+                        subscriptionId: seeded.pendingCustomer.subscriptionId,
+                        direction: 'UP',
+                        outcome: 'PENDIENTE',
+                        excludedReason: null
+                    }
+                ].sort((a, b) => a.subscriptionId.localeCompare(b.subscriptionId))
+            );
+            expect(preview.launchable).toBe(true);
+        });
     }
 );
