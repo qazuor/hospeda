@@ -29,7 +29,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { aiUsage, and, count, eq, getDb, gte, lt, sql } from '@repo/db';
+import { aiUsage, and, count, eq, getDb, gte, isNull, lt, or, sql } from '@repo/db';
 
 /**
  * Column a per-user quota count is keyed on (HOS-2095): `'user'` matches
@@ -343,7 +343,10 @@ export interface CountAiUsageForUserFeatureMonthInput {
      * - `'user'` (default): `ai_usage.user_id` — the cost bearer. Every quota
      *   except the listing chat's tourist-side one.
      * - `'consumer'`: `ai_usage.consumer_user_id` — the user who consumed a
-     *   call somebody else paid for (the tourist in a listing chat).
+     *   call somebody else paid for (the tourist in a listing chat). Legacy
+     *   rows written before that column existed (`consumer_user_id IS NULL`)
+     *   are counted by `user_id`, so the cutover month never resets a
+     *   tourist's used quota to zero.
      */
     readonly keyedBy?: AiUsageQuotaKey;
     /** AI feature to count (e.g. `'text_improve'`, `'chat'`). */
@@ -413,14 +416,25 @@ export async function countAiUsageForUserFeatureMonth(
     const keyedBy: AiUsageQuotaKey = input.keyedBy ?? 'user';
     const db = tx ?? getDb();
 
-    // Build base conditions using the shared helper. The user filter goes on
-    // the column `keyedBy` names (HOS-2095), never on both.
-    const baseConditions = buildConditions({
-        since: monthStart,
-        until: monthEnd,
-        feature,
-        ...(keyedBy === 'consumer' ? { consumerUserId: userId } : { userId })
-    });
+    // Build base conditions using the shared helper. The user filter is added
+    // below, on the column `keyedBy` names (HOS-2095).
+    const baseConditions = buildConditions({ since: monthStart, until: monthEnd, feature });
+
+    // HOS-2095 cutover: before `consumer_user_id` existed, the listing chat
+    // recorded the consumer as a SEPARATE row keyed by `user_id`. Those legacy
+    // rows carry `consumer_user_id IS NULL`. Every chat row written since
+    // carries it set (the chat never omits it), so a NULL here means "written
+    // before the cutover" by construction, without a date to configure. Counting
+    // them the old way keeps a tourist's already-used quota for the cutover
+    // month instead of resetting it to zero (fail-open); they age out of the
+    // window at the next month boundary.
+    const userCondition =
+        keyedBy === 'consumer'
+            ? or(
+                  eq(aiUsage.consumerUserId, userId),
+                  and(isNull(aiUsage.consumerUserId), eq(aiUsage.userId, userId))
+              )
+            : eq(aiUsage.userId, userId);
 
     // Build the status IN (...) condition via sql template because `inArray`
     // is not re-exported by `@repo/db` and `drizzle-orm` is not a direct
@@ -438,7 +452,7 @@ export async function countAiUsageForUserFeatureMonth(
     const placeholders = statuses.map((s) => sql`${s}`);
     const statusCondition = sql`${aiUsage.status} IN (${sql.join(placeholders, sql`, `)})`;
 
-    const allConditions = [...baseConditions, statusCondition];
+    const allConditions = [...baseConditions, userCondition, statusCondition];
 
     const [row] = await db
         .select({ total: count(aiUsage.id) })
@@ -875,12 +889,11 @@ function buildConditions(filters: {
     readonly since?: Date;
     readonly until?: Date;
     readonly userId?: string;
-    readonly consumerUserId?: string;
     readonly feature?: string;
     readonly model?: string;
     readonly provider?: string;
 }): ReturnType<typeof gte | typeof lt | typeof eq>[] {
-    const { since, until, userId, consumerUserId, feature, model, provider } = filters;
+    const { since, until, userId, feature, model, provider } = filters;
     const conditions: ReturnType<typeof gte | typeof lt | typeof eq>[] = [];
 
     if (since !== undefined) {
@@ -891,9 +904,6 @@ function buildConditions(filters: {
     }
     if (userId !== undefined) {
         conditions.push(eq(aiUsage.userId, userId));
-    }
-    if (consumerUserId !== undefined) {
-        conditions.push(eq(aiUsage.consumerUserId, consumerUserId));
     }
     if (feature !== undefined) {
         conditions.push(eq(aiUsage.feature, feature));

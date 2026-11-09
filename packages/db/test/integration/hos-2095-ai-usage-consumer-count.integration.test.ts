@@ -79,6 +79,59 @@ describe.skipIf(!DB_AVAILABLE)('HOS-2095 · ai_usage consumer-keyed quota count'
         });
     });
 
+    it('cutover month: legacy consumer-keyed rows (consumer_user_id NULL) still count', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange — a tourist who already chatted BEFORE the fix shipped
+            // (legacy pair: owner row + consumer row keyed by user_id, both
+            // with consumer_user_id NULL), then once AFTER it (one row).
+            const owner = testData.user({ displayName: 'Owner' });
+            const tourist = testData.user({ displayName: 'Tourist' });
+            await tx.insert(users).values([owner, tourist]);
+
+            const insert = (userId: string, consumerUserId?: string, status = 'success') =>
+                insertAiUsage({
+                    userId,
+                    ...(consumerUserId ? { consumerUserId } : {}),
+                    feature: 'chat',
+                    provider: 'stub',
+                    model: 'stub-model',
+                    tokensIn: 10,
+                    tokensOut: 5,
+                    costEstimateMicroUsd: 100,
+                    latencyMs: 1,
+                    status,
+                    tx
+                });
+
+            // Legacy (pre-HOS-2095) pairs: two questions.
+            await insert(owner.id);
+            await insert(tourist.id);
+            await insert(owner.id);
+            await insert(tourist.id);
+            // Legacy quota_exceeded row: never counted.
+            await insert(tourist.id, undefined, 'quota_exceeded');
+            // Post-fix: one question, one row.
+            await insert(owner.id, tourist.id);
+
+            const count = (userId: string, keyedBy?: 'user' | 'consumer') =>
+                countAiUsageForUserFeatureMonth({
+                    userId,
+                    feature: 'chat',
+                    monthStart: MONTH_START,
+                    monthEnd: MONTH_END,
+                    statuses: QUOTA_STATUSES,
+                    ...(keyedBy ? { keyedBy } : {}),
+                    tx
+                });
+
+            // Assert — the tourist keeps the 2 legacy questions + 1 new = 3
+            // (not reset to 1: the cutover must not fail open).
+            expect(await count(tourist.id, 'consumer')).toBe(3);
+            // Owner side is unchanged by the cutover: 2 legacy + 1 new.
+            expect(await count(owner.id)).toBe(3);
+        });
+    });
+
     it('a self-chat is one row that advances each side exactly once', async () => {
         await withTestTransaction(async (tx) => {
             const owner = testData.user({ displayName: 'Self chatter' });
