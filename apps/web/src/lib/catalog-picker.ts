@@ -56,10 +56,28 @@ export function normalizeCatalogSearchText({ text }: { readonly text: string }):
         .trim();
 }
 
+/** Minimum token length for inflection stemming; shorter words stay exact. */
+const MIN_STEM_TOKEN_LENGTH = 4;
+
+/**
+ * Strips Spanish plural and gender endings from an already-normalized word: a
+ * trailing `s`, then a trailing `o`, `a` or `e`. Words shorter than
+ * {@link MIN_STEM_TOKEN_LENGTH} are returned unchanged ("wifi", "spa", "bar").
+ *
+ * @param params.word - Normalized word
+ * @returns The stem used to compare inflected variants
+ */
+function stemSpanishWord({ word }: { readonly word: string }): string {
+    if (word.length < MIN_STEM_TOKEN_LENGTH) return word;
+    return word.replace(/s$/, '').replace(/[oae]$/, '');
+}
+
 /**
  * Whether an item matches a query. Matches against the localized label (what
  * the owner reads) and, as a fallback, the slug with separators read as
- * spaces. Every whitespace-separated query term must appear.
+ * spaces. Every whitespace-separated query term must appear, either as a
+ * substring or as an inflection-tolerant prefix of a label word ("vegano"
+ * finds "veganas").
  *
  * @param params.item - Catalog item
  * @param params.query - Raw query typed by the owner
@@ -80,7 +98,14 @@ export function matchesCatalogQuery({
     const haystack = normalizeCatalogSearchText({
         text: `${getLabel(item)} ${item.slug.replace(/[-_]+/g, ' ')}`
     });
-    return terms.every((term) => haystack.includes(term));
+    const words = haystack.split(/\s+/).filter(Boolean);
+    const stems = words.map((word) => stemSpanishWord({ word }));
+    return terms.every((term) => {
+        if (haystack.includes(term)) return true;
+        if (term.length < MIN_STEM_TOKEN_LENGTH) return false;
+        const termStem = stemSpanishWord({ word: term });
+        return stems.some((stem) => stem.startsWith(termStem));
+    });
 }
 
 /**
