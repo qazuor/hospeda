@@ -169,12 +169,12 @@
                 },
                 "experience": {
                     "title": "Experiencias",
-                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Creá tu cuenta, cargá los datos de tu experiencia y publicala desde tu panel.",
                     "cta": "Publicá tu experiencia"
                 },
                 "venue": {
                     "title": "Comer y salir",
-                    "description": "Sumá tu local a Hospeda: para comer o salir. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "description": "Sumá tu local a Hospeda: para comer o salir. Creá tu cuenta, cargá los datos de tu local y publicalo desde tu panel.",
                     "cta": "Publicá tu local"
                 }
             }

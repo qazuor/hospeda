@@ -156,6 +156,55 @@ describe('neutral venue funnel copy', () => {
         }
     });
 
+    it('keeps venue marketing copy free of a named city, the audience word and an approval step (HOS-2092)', () => {
+        const checked: Record<string, string[]> = {
+            es: [
+                'viajeros',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprobamos',
+                'ficha por cuenta'
+            ],
+            en: ['travelers', 'travellers', 'concepción del uruguay', 'entre ríos', 'we approve'],
+            pt: [
+                'viajantes',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprovamos',
+                'ficha por conta'
+            ]
+        };
+        const keys = [
+            'venue.landing.benefits.item1.desc',
+            'venue.landing.faq.a3',
+            'publish.venue.meta.description',
+            'publish.venue.benefits.item1.desc',
+            'pricing.index.cards.venue.highlights.item2',
+            'account.doors.publish.options.venue.description',
+            'account.doors.publish.options.experience.description'
+        ];
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const read = (file: string): Locale =>
+                JSON.parse(readFileSync(`src/locales/${lang}/${file}.json`, 'utf8')) as Locale;
+            const docs: Record<string, Locale> = {
+                venue: read('venue'),
+                publish: read('publish'),
+                pricing: read('pricing'),
+                account: read('account')
+            };
+            for (const fullKey of keys) {
+                const [file, ...key] = fullKey.split('.');
+                const value = getString(docs[file], key.join('.')).toLocaleLowerCase(lang);
+                for (const word of checked[lang]) {
+                    if (fullKey.includes('experience') && word === 'viajeros') continue;
+                    if (fullKey.includes('experience') && word === 'travelers') continue;
+                    if (fullKey.includes('experience') && word === 'viajantes') continue;
+                    expect(value, `${lang} ${fullKey}`).not.toContain(word);
+                }
+            }
+        }
+    });
+
     it('keeps the approved vertical name in account and footer titles', () => {
         const approved = {
             es: 'Comer y salir',
