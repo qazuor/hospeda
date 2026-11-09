@@ -428,6 +428,54 @@ describe('useSearchChat', () => {
         expect(result.current.conversationId).toBe(CONV_ID);
     });
 
+    // ── HOS-2095: an empty reply never becomes a blank assistant bubble ─────
+
+    it.each([
+        ['no tokens at all', [] as string[]],
+        ['only whitespace', ['  ', '\n']]
+    ])('done with %s sets a localized error and appends no assistant message', async (_label, deltas) => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent(makeFiltersEvent());
+            for (const delta of deltas) p.onEvent({ type: 'token', delta });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(result.current.messages).toHaveLength(1);
+        expect(result.current.messages[0]?.role).toBe('user');
+        expect(result.current.error).toBe(
+            'No pudimos generar una respuesta. Probá de nuevo en un momento.'
+        );
+        expect(result.current.errorStatus).toBeNull();
+        expect(result.current.isStreaming).toBe(false);
+        expect(result.current.currentReply).toBe('');
+    });
+
+    it('localizes the empty-answer error with the hook locale', async () => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({ type: 'done', conversationId: null });
+        });
+
+        const { result } = renderHook(() => useSearchChat({ ...baseParams, locale: 'en' }));
+
+        await act(async () => {
+            result.current.send('cabin');
+        });
+
+        expect(result.current.error).toBe(
+            "We couldn't generate an answer. Please try again in a moment."
+        );
+    });
+
     // ── conversationId stored and threaded ───────────────────────────────────
 
     it('stores conversationId from done and passes it on next turn', async () => {

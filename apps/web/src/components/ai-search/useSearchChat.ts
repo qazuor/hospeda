@@ -38,6 +38,7 @@ import {
 } from '@/lib/api/search-chat-stream';
 import type { PaginatedResponse } from '@/lib/api/types';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { createTranslations } from '@/lib/i18n';
 
 // ─── Public types ──────────────────────────────────────────────────────────────
 
@@ -443,6 +444,22 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
 
                     if (event.type === 'done') {
                         setState((prev) => {
+                            // HOS-2095: a model that spent its whole output budget
+                            // reasoning ends with ZERO text. Never append a blank
+                            // assistant bubble; surface a retryable error instead.
+                            if (prev.currentReply.trim() === '') {
+                                return {
+                                    ...prev,
+                                    currentReply: '',
+                                    isStreaming: false,
+                                    conversationId: event.conversationId,
+                                    error: createTranslations(locale).t(
+                                        'aiSearch.chat.errorEmptyAnswer',
+                                        'No pudimos generar una respuesta. Probá de nuevo en un momento.'
+                                    ),
+                                    errorStatus: null
+                                };
+                            }
                             const assistantMessage: SearchChatHistoryMessage = {
                                 role: 'assistant',
                                 content: prev.currentReply
