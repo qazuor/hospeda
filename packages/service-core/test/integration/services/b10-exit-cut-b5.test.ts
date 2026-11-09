@@ -379,4 +379,60 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             )
         ).toHaveLength(1);
     });
+
+    it('LISTA:B10 clause 11 4d an unpaid successor with an unpaid predecessor does not rescue a USER addon', async () => {
+        const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
+        const predecessorId = await authorizedUnpaidExitPrincipal(h.f);
+        // Seed only the non-paying predecessor state and link: startSuccession would request
+        // a future first provider charge, which G11 forbids for this test fixture.
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, predecessorId));
+        const successorId = await authorizedUnpaidExitPrincipal(h.f);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ succeedsId: predecessorId })
+            .where(eq(subscriptions.id, successorId));
+        const [successor] = await getServiceTestDb()
+            .select({
+                id: subscriptions.id,
+                status: subscriptions.status,
+                predecessorId: subscriptions.succeedsId
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, successorId));
+        expect(successor).toEqual({ id: successorId, status: 'ACTIVE', predecessorId });
+        const unpaidCharges = await getServiceTestDb()
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, [predecessorId, successorId]));
+        expect(unpaidCharges).toHaveLength(0);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, h.principalId));
+        const result = await getServiceTestDb().transaction((tx) =>
+            runOrphanhood(
+                { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
+                {
+                    addonPolicy: addonPolicyFromTx(tx),
+                    listing: async () => {
+                        throw new Error('No LISTING target');
+                    }
+                }
+            )
+        );
+        expect(result.cancelled.map(({ instanceId }) => instanceId)).toEqual([h.instanceId]);
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const [complement] = await getServiceTestDb()
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        expect(complement).toEqual({ id: h.complementId, status: 'CANCELLED' });
+    });
 });
