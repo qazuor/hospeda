@@ -19,6 +19,8 @@ export interface ListingModerationLevelChangedProps {
     readonly fixRequestOpen: boolean;
     readonly accountUrl: string;
     readonly subscriptionUrl: string;
+    readonly recurringListingAddons?: readonly { readonly name: string }[];
+    readonly withdrawalUrl?: string;
 }
 
 /**
@@ -34,7 +36,9 @@ export function ListingModerationLevelChanged({
     quotaFull,
     fixRequestOpen,
     accountUrl,
-    subscriptionUrl
+    subscriptionUrl,
+    recurringListingAddons,
+    withdrawalUrl
 }: ListingModerationLevelChangedProps) {
     return (
         <EmailLayout previewText="Cambió la moderación de tu ficha">
@@ -44,6 +48,8 @@ export function ListingModerationLevelChanged({
                     listingName={listingName}
                     reason={reason}
                     subscriptionUrl={subscriptionUrl}
+                    recurringListingAddons={recurringListingAddons}
+                    withdrawalUrl={withdrawalUrl}
                 />
             ) : (
                 <>

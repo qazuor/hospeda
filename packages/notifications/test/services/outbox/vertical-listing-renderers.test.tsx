@@ -322,6 +322,43 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
     });
 });
 
+describe('TEST:B13b:1 AC:B13b:1 the moderation email names the recurring features and offers the withdrawal', () => {
+    const templates = ['verticals.listing-moderated', 'verticals.listing-moderation-level-changed'];
+    const basePayload = {
+        vertical: 'accommodation',
+        listingId: LISTING_ID,
+        reason: 'Fotos que no son del lugar',
+        fixRequestOpen: true
+    };
+
+    it.each(templates)('%s names each recurring feature and links withdrawal', async (template) => {
+        const { html } = await render(template, {
+            ...basePayload,
+            recurringListingAddons: [{ name: 'Destaque Alfa' }, { name: 'Destaque Beta' }]
+        });
+        expect((html.match(/Destaque Alfa/g) ?? []).length).toBe(1);
+        expect((html.match(/Destaque Beta/g) ?? []).length).toBe(1);
+        expect((html.match(/destaques recurrentes se siguen cobrando/g) ?? []).length).toBe(1);
+        expect(html).toContain(
+            `href="https://hospeda.test/es/mi-cuenta/complementos/?listing=${LISTING_ID}#recurring-addons"`
+        );
+    });
+
+    it.each(templates)('%s omits the recurring section for an empty list', async (template) => {
+        const { html } = await render(template, { ...basePayload, recurringListingAddons: [] });
+        expect((html.match(/destaques recurrentes/g) ?? []).length).toBe(0);
+        expect((html.match(/Destaque Alfa/g) ?? []).length).toBe(0);
+        expect((html.match(/recurring-addons/g) ?? []).length).toBe(0);
+    });
+
+    it.each(templates)('%s preserves legacy conditional copy for undefined', async (template) => {
+        const { html } = await render(template, basePayload);
+        expect((html.match(/Si tenés destaques recurrentes/g) ?? []).length).toBe(1);
+        expect((html.match(/Mi Suscripción/g) ?? []).length).toBe(1);
+        expect((html.match(/recurring-addons/g) ?? []).length).toBe(0);
+    });
+});
+
 describe('TEST:1675:1 AC:1675:1 AC:1675:3 the support content-edit notice (row 26) renders', () => {
     it('uses carried name, market date, ordered parts, unchanged status and contact link', async () => {
         const reader = vi.fn<ListingNamesReader>(async () => new Map());

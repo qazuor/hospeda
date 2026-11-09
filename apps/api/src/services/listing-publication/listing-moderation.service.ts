@@ -18,6 +18,7 @@ import { takeDownListing } from '../../../../../packages/verticals/src/publicati
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
+import { apiLogger } from '../../utils/logger';
 import {
     listRecurringListingAddons,
     readRecurringListingAddonNames
@@ -83,7 +84,33 @@ export class ListingModerationService {
                 break;
             }
             case 'TAKE_DOWN': {
-                const result = await takeDownListing({ ...common, afterCommit: ports.afterCommit });
+                let recurringListingAddons: readonly { readonly name: string }[] | undefined;
+                try {
+                    const coverage = await getListingAccessPorts().billing.coverage({
+                        userId: ownerId,
+                        vertical: args.vertical
+                    });
+                    const addonNames = await readRecurringListingAddonNames({
+                        coverage,
+                        listingIds: [args.id]
+                    });
+                    recurringListingAddons = listRecurringListingAddons({
+                        coverage,
+                        listingId: args.id,
+                        readAddonNames: () => addonNames
+                    }).items.map(({ name }) => ({ name }));
+                } catch (error) {
+                    // A failed names read must not block the moderation sanction; the email uses its legacy fallback.
+                    apiLogger.warn(
+                        { error, listingId: args.id, vertical: args.vertical },
+                        'Recurring listing add-on names read failed before moderation'
+                    );
+                }
+                const result = await takeDownListing({
+                    ...common,
+                    afterCommit: ports.afterCommit,
+                    recurringListingAddons
+                });
                 failure = result.ok ? null : result.reason;
                 break;
             }
