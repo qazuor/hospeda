@@ -47,20 +47,24 @@ export function purchaseApp() {
 export async function purchaseCatalog(input: {
     readonly scopeType?: 'LISTING' | 'USER';
     readonly chargeKind?: 'UNA_VEZ' | 'PERIODICO';
+    readonly owner?: { readonly id: string; readonly email: string };
 }) {
     await ensureBillingDeadlineVersion1();
     const db = getDb();
-    const [user] = await db
-        .insert(users)
-        .values({
-            email: `addon-route-${crypto.randomUUID()}@example.test`,
-            displayName: 'Addon route',
-            emailVerified: true,
-            lifecycleState: 'ACTIVE'
-        })
-        .returning({ id: users.id, email: users.email });
+    const [seededUser] = input.owner
+        ? []
+        : await db
+              .insert(users)
+              .values({
+                  email: `addon-route-${crypto.randomUUID()}@example.test`,
+                  displayName: 'Addon route',
+                  emailVerified: true,
+                  lifecycleState: 'ACTIVE'
+              })
+              .returning({ id: users.id, email: users.email });
+    const user = input.owner ?? seededUser;
     if (!user) throw new Error('Missing owner');
-    owners.push(user.id);
+    if (seededUser) owners.push(user.id);
     const [addon] = await db
         .insert(addons)
         .values({

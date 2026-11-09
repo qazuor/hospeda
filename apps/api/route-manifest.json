@@ -2675,6 +2675,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/billing/addons/instances"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/instances/:instanceId/withdrawal"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/billing/addons/offers"
         },
         {

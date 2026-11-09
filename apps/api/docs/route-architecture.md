@@ -21,6 +21,8 @@ All entity routes are split across three URL prefixes. Each tier enforces its ow
 | Protected | `/api/v1/protected/<entity>` | User session required | CRUD on own resources |
 | Admin | `/api/v1/admin/<entity>` | Admin-access permission + `PermissionEnum` | Full CRUD, all resources |
 
+Owner addon routes use the protected tier: `GET /api/v1/protected/billing/addons/instances` lists the actor's live recurring instances (optionally filtered by `listingId`), and `POST /api/v1/protected/billing/addons/instances/{instanceId}/withdrawal` cancels one owned instance. Neither route declares a separate permission; ownership is enforced by the read predicate and the A5 service.
+
 ### How Authorization Is Enforced
 
 Authorization is applied per-route via the factory functions. Each factory injects a pre-configured middleware into the route's middleware chain before the handler executes.
