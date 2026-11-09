@@ -33,7 +33,7 @@ vi.mock('../../hooks/useModerateListingMutation', () => ({
     useModerateListingMutation: () => ({ mutateAsync: vi.fn(), isPending: false })
 }));
 
-const moderationState = vi.hoisted(() => ({
+const readStateFixture = vi.hoisted(() => ({
     data: {
         publicationStatus: 'PUBLISHED',
         fixRequest: null,
@@ -42,7 +42,7 @@ const moderationState = vi.hoisted(() => ({
 }));
 vi.mock('../../hooks/useListingModerationStateQuery', () => ({
     useListingModerationStateQuery: () => ({
-        data: moderationState.data,
+        data: readStateFixture.data,
         isPending: false,
         isError: false
     })
@@ -62,7 +62,7 @@ async function openDialog({
     readonly action: 'TAKE_DOWN' | 'LIFT' | 'REQUEST_FIX';
     readonly addons: typeof recurringAddons;
 }) {
-    moderationState.data = {
+    readStateFixture.data = {
         publicationStatus: status,
         fixRequest: null,
         recurringListingAddons: addons
@@ -79,7 +79,7 @@ async function openDialog({
 }
 
 beforeEach(() => {
-    moderationState.data = {
+    readStateFixture.data = {
         publicationStatus: PublicationStatusEnum.PUBLISHED,
         fixRequest: null,
         recurringListingAddons: []
