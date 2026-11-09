@@ -43,7 +43,8 @@ describe('TEST:1704:7 AC:1704:8 row moderation disclosure', () => {
                         suggestedDate: null,
                         openedAt: item.openedAt,
                         ownerReportedFixedAt: null
-                    }
+                    },
+                    recurringListingAddons: []
                 }
             }
         });
