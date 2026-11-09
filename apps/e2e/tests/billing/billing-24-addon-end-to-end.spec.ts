@@ -33,7 +33,8 @@ import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const ADDON_NAME = 'E2E listing boost recurring';
-const PURCHASE_PRICE = /\$\s?2\.500,00/;
+// The purchase summary renders whole pesos ("$ 2.500"); other surfaces may add cents.
+const PURCHASE_PRICE = /\$\s?2\.500(?:,00)?(?!\d)/;
 const MAIL_TIMEOUT_MS = 30_000;
 
 /** Assert the catalog's name, cycle and price in the pre-confirmation summary. */
