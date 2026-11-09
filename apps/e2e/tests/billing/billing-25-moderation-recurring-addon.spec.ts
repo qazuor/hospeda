@@ -202,7 +202,25 @@ test.describe('TEST:B13b:1 AC:B13b:1 AC:B13b:4 moderating a listing with a live 
                     authorizationId: live.addonAuthorizationId
                 })
             ).toHaveLength(0);
+            const mailsBeforeCancellation = world.mailCapture.mailsTo({ to: owner.email }).length;
             await runCron({ jobName: 'email-outbox-sender', adminCookie: admin.sessionCookie });
+            const deliveredOutbox = await execSQL<{ status: string; template: string }>(
+                `SELECT status, template FROM email_outbox WHERE recipient_user_id = $1
+                 AND template = 'billing.addon-cancelled' AND payload->>'subscriptionId' = $2`,
+                [owner.id, live.complementSubscriptionId]
+            );
+            expect(deliveredOutbox).toEqual([
+                { status: 'sent', template: 'billing.addon-cancelled' }
+            ]);
+            expect(world.mailCapture.mailsTo({ to: owner.email })).toHaveLength(
+                mailsBeforeCancellation + 1
+            );
+            expect(
+                cancelRequestsFor({
+                    requests: world.fakeServer.requests(),
+                    authorizationId: live.addonAuthorizationId
+                })
+            ).toHaveLength(0);
             await runCron({
                 jobName: 'billing-deferred-cancellation-retry',
                 adminCookie: admin.sessionCookie
