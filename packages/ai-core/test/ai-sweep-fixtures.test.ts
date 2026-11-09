@@ -32,6 +32,10 @@ import {
 } from '../scripts/ai-sweep/quality.js';
 import { composeSystemPrompt } from '../src/config/prompt-resolver.js';
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../src/engine/default-prompts.js';
+import {
+    appendReplyLanguageInstruction,
+    REPLY_LANGUAGE_INSTRUCTIONS
+} from '../src/language/reply-language.js';
 
 const DIR = resolve(__dirname, '../scripts/ai-sweep');
 const readJson = (name: string): unknown => JSON.parse(readFileSync(resolve(DIR, name), 'utf8'));
@@ -280,5 +284,48 @@ describe('global answer checks', () => {
         });
         const md = renderSummaryMarkdown({ rows: summary ? [summary] : [], quotas: [] });
         expect(md).toContain('raw code | owner voice | impossible promise');
+    });
+});
+
+describe('sweep system message carries the production reply-language line', () => {
+    const first = fixtures.cases[0];
+    if (!first) throw new Error('no fixtures');
+    const base = joinGeneratedCases({
+        fixtures: [{ ...first, question: '.' }],
+        generated
+    })[0]?.system;
+    const systemFor = (question: string): string => {
+        const joined = joinGeneratedCases({ fixtures: [{ ...first, question }], generated })[0];
+        if (!joined) throw new Error('join failed');
+        return joined.system;
+    };
+
+    it.each([
+        ['en', 'Do you allow dogs and is breakfast included?'],
+        ['pt', 'Vocês aceitam animais de estimação e tem estacionamento?'],
+        ['es', 'Tienen pileta y aceptan mascotas?']
+    ] as const)('ends with the %s instruction production would add', (language, question) => {
+        // Act
+        const system = systemFor(question);
+        const production = appendReplyLanguageInstruction({
+            system: base ?? '',
+            latestUserMessage: question
+        });
+
+        // Assert
+        expect(system.endsWith(`\n${REPLY_LANGUAGE_INSTRUCTIONS[language]}`)).toBe(true);
+        expect(production.language).toBe(language);
+        expect(system).toBe(production.system);
+    });
+
+    it('adds no line for an ambiguous question', () => {
+        // Act
+        const system = systemFor('ok');
+
+        // Assert
+        expect(system).toBe(base);
+        expect(Object.values(REPLY_LANGUAGE_INSTRUCTIONS).some((l) => system.includes(l))).toBe(
+            false
+        );
     });
 });

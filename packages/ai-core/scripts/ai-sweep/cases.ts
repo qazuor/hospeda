@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { appendReplyLanguageInstruction } from '../../src/language/reply-language.js';
 import { RubricSchema } from './quality.js';
 
 /** Heuristic rule ids a prompt case can request. */
@@ -85,7 +86,8 @@ export type PromptCase = FixtureCase & {
 
 /**
  * Joins the stored cases with their generated contexts. The system message is
- * `context + systemSuffixes[feature][locale]`: plain concatenation of strings the
+ * `context + systemSuffixes[feature][locale]` plus the reply-language line
+ * (`appendReplyLanguageInstruction`, as the chat route does): plain concatenation of strings the
  * real `buildChatSystemMessage` produced, so nothing here re-implements it.
  *
  * Throws when a case has no generated entry or its entity/feature/locale changed
@@ -102,11 +104,13 @@ export function joinGeneratedCases(input: {
             stale.push(c.id);
             return null;
         }
-        return {
-            ...c,
-            context: g.context,
-            system: g.context + input.generated.systemSuffixes[c.feature][c.locale]
-        };
+        // Same step as `toEngineMessages` in apps/api chat.ts (HOS-2095 round 2):
+        // the reply-language line is the LAST line of the system message.
+        const { system } = appendReplyLanguageInstruction({
+            system: g.context + input.generated.systemSuffixes[c.feature][c.locale],
+            latestUserMessage: c.question
+        });
+        return { ...c, context: g.context, system };
     });
     if (stale.length > 0) {
         throw new Error(
