@@ -334,6 +334,14 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:B10:8, AC:B10:11, AC:B10:12, AC:B10:13; TEST:B10:9, TEST:B10:13, TEST:B10:14, TEST:B10:15.
 - **Nota:** pago único: ver HOS-2094.
 
+### S21 — B10 addon exit and end-to-end rehearsal (HOS-1596)
+
+- **Preconditions:** Staging has the Phase 3 epic deployed, Mercado Pago sandbox, a paying owner with a published listing, and an approved recurring addon amount.
+- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` and authorize its own sandbox checkout; verify the instance is `ACTIVE`. Open listing deletion and read which addon is lost and its price before confirming. Purge the listing; observe our email before the addon preapproval is cancelled. Under Q1 option 3, the one-time order and its refund are deferred to HOS-2094 and are outside the web flow.
+- **Expected:** The addon has its own preapproval; the principal amount stays unchanged. The purge closes the instance and complement once, after our email, and the exit suites cover all LISTA:B10 clauses on real A1 rows where required.
+- **Evidence:** Purchase screen and purge preview captures; read-only addon, complement, principal and outbox rows; sandbox preapproval and cancellation records; B10 integration and E2E P0 CI results.
+- **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -458,6 +466,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
 - **Nota:** pago único: ver HOS-2094.
 
+### P12 — B10 real recurring addon and exit smoke (HOS-1596)
+
+- **Preconditions:** The owner's internal production account has an active paying principal, a published listing, an approved recurring addon amount and the owner's approved card; only the owner runs this item.
+- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` with the owner's card and follow its real checkout. Inspect the addon and principal charges, then read the deletion preview before purging the listing. Observe our email before the provider cancellation. Under Q1 option 3, the real one-time order and its refund are deferred to HOS-2094 and are outside the web flow.
+- **Expected:** The addon reaches `ACTIVE` with a separate preapproval and charge, while the principal amount stays unchanged. Purging closes the addon and complement once; our notice arrives before cancellation and no later addon charge occurs.
+- **Evidence:** Owner purchase screen and deletion preview; read-only provider, addon, complement, principal, payment and outbox records; card statement and both email observations; E2E P0 CI result.
+- **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -479,6 +495,7 @@ B8b phase 2 (HOS-1411) is covered by S15, S16 and P6/P7; courtesy pause follows 
 The TEST:B8b:25 row 5 variant (PM-374: pause denied while courtesy remains active) is verified with HOS-1592.
 Phase 3 (B10, HOS-1373) starts with HOS-1593: S18 and P9.
 Phase 3 (B10, HOS-1373) continues with HOS-1595: S20 and P11.
+Phase 3 (B10, HOS-1373) closes with HOS-1596: S21 and P12.
 
 ## Related
 
