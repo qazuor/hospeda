@@ -521,11 +521,11 @@
         },
         "venue-pro": {
             "name": "Profesional",
-            "description": "Sumá la carta cargada en Hospeda, el menú del día y los eventos del local."
+            "description": "Sumá tu carta o barra cargada en Hospeda, la propuesta del día y los eventos del local."
         },
         "venue-premium": {
             "name": "Premium",
-            "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y muchas más consultas al chat con IA."
+            "description": "Todo lo anterior con fotos de tus productos, carta o barra en varios idiomas, ficha en PDF y muchas más consultas al chat con IA."
         },
         "experience-basico": {
             "name": "Básico",

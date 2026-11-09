@@ -169,12 +169,12 @@
                 },
                 "experience": {
                     "title": "Experiences",
-                    "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "description": "Do you offer tours, activities, or experiences for travelers? Create your account, add your experience's details and publish it from your dashboard.",
                     "cta": "List your experience"
                 },
                 "venue": {
                     "title": "Food & nightlife",
-                    "description": "Add your venue to Hospeda, for food or nightlife. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "description": "Add your venue to Hospeda, for food or nightlife. Create your account, add your venue's details and publish it from your dashboard.",
                     "cta": "List your venue"
                 }
             }
