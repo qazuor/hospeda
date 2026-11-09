@@ -13,6 +13,7 @@
         "thinking": "Pensando…",
         "newConversation": "Nova conversa",
         "errorDefault": "Ocorreu um erro. Tente novamente.",
+        "errorEmptyAnswer": "Não conseguimos gerar uma resposta. Tente novamente em instantes.",
         "emptyState": "Faça sua primeira pergunta e eu ajudo a encontrar a acomodação ideal.",
         "resultsLabel": "Resultados encontrados",
         "resultsEmpty": "Nenhuma acomodação encontrada com esses filtros.",

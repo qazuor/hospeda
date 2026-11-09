@@ -13,6 +13,7 @@
         "thinking": "Pensando…",
         "newConversation": "Nueva conversación",
         "errorDefault": "Ocurrió un error. Intentalo de nuevo.",
+        "errorEmptyAnswer": "No pudimos generar una respuesta. Probá de nuevo en un momento.",
         "emptyState": "Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.",
         "resultsLabel": "Resultados encontrados",
         "resultsEmpty": "No encontramos alojamientos con esos filtros.",

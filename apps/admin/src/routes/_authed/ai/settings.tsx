@@ -39,6 +39,7 @@ import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import {
     ALL_FEATURES,
     DEFAULT_SETTINGS,
+    getMaxTokensHint,
     toFormValues
 } from './-components/ai-settings-features.utils';
 import {
@@ -515,9 +516,14 @@ function AiSettingsPage() {
                                                     )
                                                 }
                                                 onBlur={field.handleBlur}
-                                                placeholder="4096"
+                                                placeholder={
+                                                    getMaxTokensHint({ featureId }).placeholder
+                                                }
                                                 className="mt-2"
                                             />
+                                            <p className="mt-1 text-muted-foreground text-xs">
+                                                {getMaxTokensHint({ featureId }).helpText}
+                                            </p>
                                         </div>
                                     )}
                                 </form.Field>
