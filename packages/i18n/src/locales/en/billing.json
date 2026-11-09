@@ -808,20 +808,6 @@
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
     },
-    "recurringAddons": {
-        "title": "Your recurring featured add-ons",
-        "loading": "Loading recurring featured add-ons…",
-        "empty": "You have no active recurring featured add-ons.",
-        "loadError": "We could not load your recurring featured add-ons.",
-        "invalidListing": "The listing is invalid.",
-        "noListing": "No associated listing",
-        "withdraw": "Withdraw",
-        "confirmText": "Confirming stops charges and turns off the featured add-on today. There is no refund. The provider may send a cancellation email.",
-        "confirm": "Confirm withdrawal",
-        "cancel": "Cancel",
-        "withdrawn": "The featured add-on was withdrawn.",
-        "withdrawError": "We could not withdraw the featured add-on."
-    },
     "addonPurchase": {
         "title": "Buy add-ons",
         "chooseOffer": "Choose an add-on",
@@ -856,6 +842,20 @@
             "quarterly": "Quarterly",
             "semiannual": "Every six months",
             "annual": "Yearly"
+        },
+        "recurringAddons": {
+            "title": "Your recurring featured add-ons",
+            "loading": "Loading recurring featured add-ons…",
+            "empty": "You have no active recurring featured add-ons.",
+            "loadError": "We could not load your recurring featured add-ons.",
+            "invalidListing": "The listing is invalid.",
+            "noListing": "No associated listing",
+            "withdraw": "Withdraw",
+            "confirmText": "Confirming stops charges and turns off the featured add-on today. There is no refund. The provider may send a cancellation email.",
+            "confirm": "Confirm withdrawal",
+            "cancel": "Cancel",
+            "withdrawn": "The featured add-on was withdrawn.",
+            "withdrawError": "We could not withdraw the featured add-on."
         }
     }
 }

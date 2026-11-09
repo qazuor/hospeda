@@ -22,7 +22,7 @@ const listingId = Astro.url.searchParams.get('listing');
     <AccountPageHeader title={title} />
     <AddonPurchase client:load locale={locale} returnOrderRequestId={returnOrderRequestId} accountEmail={user.email} />
     <section id="recurring-addons">
-        <h2>{t('billing.recurringAddons.title')}</h2>
+        <h2>{t('billing.addonPurchase.recurringAddons.title')}</h2>
         <RecurringAddonWithdrawal client:visible locale={locale} listingId={listingId} />
     </section>
 </AccountLayout>
