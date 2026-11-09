@@ -238,7 +238,7 @@ describe('buildVenueMarkdownContext — nightInfo', () => {
         expect(block).toContain('**Edad mínima**: 18');
         expect(block).toContain(`**Aviso legal**: ${LEGAL_ES}`);
         expect(block).toContain('**Entrada**: Entrada paga');
-        expect(block).toContain('**Precio de entrada desde**: $5000');
+        expect(block).toMatch(/\*\*Precio de entrada desde\*\*: \$\s5\.000/);
         expect(block).toContain('**Código de vestimenta**: Sport elegante');
     });
 
@@ -253,7 +253,9 @@ describe('buildVenueMarkdownContext — nightInfo', () => {
         const block = buildVenueMarkdownContext(VENUE, [], [], false, null);
 
         expect(block).toContain('## Local: ');
-        expect(block).toContain('**Tipo de local**: BOLICHE');
+        // HOS-2095: the localized label, never the raw enum.
+        expect(block).toContain('**Tipo de local**: Boliche');
+        expect(block).not.toContain('BOLICHE');
         expect(block).not.toContain('Restaurante');
         expect(block).not.toContain('Tipo de cocina');
     });
