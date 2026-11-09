@@ -159,6 +159,27 @@ publication records a `BILLING_MUTATION` audit with `administrativeAction: ACC_2
 
 These route codes and messages are proposed for owner approval under BS.
 
+### Addon catalog editor creation (ACC:20, HOS-1625)
+
+`GET /api/v1/admin/addon-catalog` reads addons, immutable versions, saleable
+products and live instance counts. `POST /api/v1/admin/addon-catalog/addons`
+creates an addon with its first version; `POST /api/v1/admin/addon-catalog/addons/{addonId}/versions`
+appends a version; `POST /api/v1/admin/billing-addon-products` creates its product.
+All four require `billing.publishAddonVersion`. Each successful creation records
+`BILLING_MUTATION` with `administrativeAction: ACC_20`. The HTTP order is 401,
+403, 400, 404, then business rules.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| Malformed body or path | 400 | `VALIDATION_ERROR` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `INVALID_ADDON_CREATION_INPUT`, `INVALID_ADDON_VERSION_CREATION_INPUT`, `ADDON_CATALOG_KEY_INVALID` | 400 | `VALIDATION_ERROR` |
+| `ADDON_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_ALREADY_EXISTS`, `ADDON_VERSION_DUPLICATE_KEY`, `ADDON_PRODUCT_ALREADY_EXISTS`, `ADDON_VERSION_OF_ANOTHER_ADDON` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These editor creation responses are proposed for owner approval under BS.
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a

@@ -23,6 +23,7 @@ import {
 import { adminExternalReputationRoutes } from './accommodation-external-reputation/admin/index.js';
 import { protectedExternalReputationRoutes } from './accommodation-external-reputation/protected/index.js';
 import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
+import { adminAddonCatalogRoutes } from './addon-catalog/admin/index.js';
 import {
     adminAiCredentialsRoutes,
     adminAiPostGenerateRoute,
@@ -689,6 +690,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-promo-codes', adminBillingPromoCodeRoutes);
         app.route('/api/v1/admin/billing-prices', adminBillingPriceRoutes);
         app.route('/api/v1/admin/billing-addon-products', adminBillingAddonProductRoutes);
+        app.route('/api/v1/admin/addon-catalog', adminAddonCatalogRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
         app.route('/api/v1/admin/listing-fix-requests', adminListingFixRequestRoutes);

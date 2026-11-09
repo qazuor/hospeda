@@ -167,6 +167,18 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/addon-catalog"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons/:addonId/versions"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/ai/credentials"
         },
         {
@@ -352,6 +364,10 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/auth/signup-as-host"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products"
         },
         {
             "method": "POST",

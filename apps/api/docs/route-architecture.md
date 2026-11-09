@@ -947,6 +947,15 @@ this branch — only the free structured pass runs. See the module doc on
 
 ---
 
+## Addon catalog editor routes (HOS-1625, ACC:20)
+
+| Method | Path | `requiredPermissions` | Notes |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/addon-catalog` | `BILLING_PUBLISH_ADDON_VERSION` | Composed catalog of addons, versions, product and live counts. |
+| `POST` | `/api/v1/admin/addon-catalog/addons` | `BILLING_PUBLISH_ADDON_VERSION` | Creates addon and first immutable version; audits `ACC_20`. |
+| `POST` | `/api/v1/admin/addon-catalog/addons/{addonId}/versions` | `BILLING_PUBLISH_ADDON_VERSION` | Appends an immutable version; audits `ACC_20`. |
+| `POST` | `/api/v1/admin/billing-addon-products` | `BILLING_PUBLISH_ADDON_VERSION` | Creates the one saleable product; audits `ACC_20`. |
+
 ## Anti-Patterns
 
 **Never PUT/POST/DELETE in the public tier.**
