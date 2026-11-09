@@ -8,6 +8,7 @@
  * @module ai-core/scripts/ai-sweep/sweep
  */
 
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,15 +17,19 @@ import { streamText } from 'ai';
 import { composeSystemPrompt } from '../../src/config/prompt-resolver.js';
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../../src/engine/default-prompts.js';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
+import { type BlindKey, buildBlindExport, entriesToJsonl, ingestGrades } from './blind.js';
 import {
     aggregateResults,
     approxTokens,
     type CallResult,
     estimateCostUsd,
     expandMatrix,
+    FixtureFileSchema,
+    type Grade,
     type PlannedCall,
     type PromptCase,
     RULE_IDS,
+    renderErrorSummary,
     renderSummaryMarkdown,
     resolveRates,
     runRule,
@@ -32,6 +37,7 @@ import {
     SweepConfigSchema,
     type UsdRates
 } from './lib.js';
+import { checkAnswer } from './quality.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -43,6 +49,11 @@ interface CliArgs {
     readonly outDir: string;
     readonly maxCalls: number | null;
     readonly concurrency: number | null;
+    readonly apiKeyFile: string | null;
+    readonly blindExport: string | null;
+    readonly gradesPath: string | null;
+    readonly keyPath: string | null;
+    readonly resultsPath: string | null;
 }
 
 function parseArgs(argv: readonly string[]): CliArgs {
@@ -54,12 +65,21 @@ function parseArgs(argv: readonly string[]): CliArgs {
         const v = value(flag);
         return v === null ? null : Number(v);
     };
+    const path = (flag: string): string | null => {
+        const v = value(flag);
+        return v === null ? null : resolve(v);
+    };
     return {
         execute: argv.includes('--execute') && !argv.includes('--dry-run'),
         configPath: resolve(value('--config') ?? resolve(HERE, 'sweep.config.example.json')),
         outDir: resolve(value('--out') ?? resolve(HERE, 'out')),
         maxCalls: num('--max-calls'),
-        concurrency: num('--concurrency')
+        concurrency: num('--concurrency'),
+        apiKeyFile: path('--api-key-file'),
+        blindExport: path('--blind-export'),
+        gradesPath: path('--grades'),
+        keyPath: path('--key'),
+        resultsPath: path('--results')
     };
 }
 
@@ -70,7 +90,7 @@ function buildSystem(promptCase: PromptCase): string {
         rules: DEFAULT_RULES[promptCase.feature]
     });
     return [
-        promptCase.contextBlock,
+        promptCase.context,
         '',
         '---',
         '',
@@ -83,9 +103,13 @@ function buildSystem(promptCase: PromptCase): string {
 function main(): void {
     const args = parseArgs(process.argv.slice(2));
     const config = SweepConfigSchema.parse(JSON.parse(readFileSync(args.configPath, 'utf8')));
-    const fixtures = JSON.parse(readFileSync(resolve(HERE, 'fixtures.json'), 'utf8')) as {
-        cases: PromptCase[];
-    };
+    const fixtures = FixtureFileSchema.parse(
+        JSON.parse(readFileSync(resolve(HERE, 'fixtures.json'), 'utf8'))
+    );
+    if (args.resultsPath) {
+        runOffline({ args, config, cases: fixtures.cases });
+        return;
+    }
     const maxCalls = args.maxCalls ?? config.maxCalls;
     const concurrency = args.concurrency ?? config.concurrency;
     const cases = fixtures.cases;
@@ -115,7 +139,7 @@ function main(): void {
         perVariant.set(call.variantKey, (perVariant.get(call.variantKey) ?? 0) + 1);
         const inTok =
             approxTokens(systemById.get(call.caseId) ?? '') +
-            approxTokens(caseById.get(call.caseId)?.userMessage ?? '');
+            approxTokens(caseById.get(call.caseId)?.question ?? '');
         worstInputTokens += inTok;
         worstOutputTokens += call.maxOutputTokens;
         const cost = estimateCostUsd({
@@ -158,9 +182,16 @@ function main(): void {
             console.error(`ABORT: model references unknown provider "${id}".`);
             process.exit(2);
         }
-        const apiKey = process.env[def.apiKeyEnv];
+        // The key is never logged, echoed or measured.
+        const apiKey = args.apiKeyFile
+            ? readFileSync(args.apiKeyFile, 'utf8').trim()
+            : process.env[def.apiKeyEnv];
         if (!apiKey) {
-            console.error(`ABORT: env var ${def.apiKeyEnv} is not set (provider "${id}").`);
+            console.error(
+                args.apiKeyFile
+                    ? `ABORT: the key file is empty (provider "${id}").`
+                    : `ABORT: env var ${def.apiKeyEnv} is not set (provider "${id}"); or pass --api-key-file.`
+            );
             process.exit(2);
         }
         providers.set(
@@ -193,7 +224,7 @@ async function runOne(input: {
         const result = streamText({
             model,
             system: input.system,
-            messages: [{ role: 'user', content: promptCase.userMessage }],
+            messages: [{ role: 'user', content: promptCase.question }],
             maxOutputTokens: call.maxOutputTokens,
             maxRetries: 1,
             ...(call.effort
@@ -239,6 +270,7 @@ async function runOne(input: {
         latencyMs,
         costUsd: estimateCostUsd({ inputTokens, outputTokens, rates: input.rates }),
         ruleChecks,
+        quality: checkAnswer({ text, rubric: promptCase.rubric }),
         error
     };
 }
@@ -283,13 +315,106 @@ async function runAll(input: {
         }
     };
     await Promise.all(Array.from({ length: input.concurrency }, worker));
-    const md = renderSummaryMarkdown({
-        rows: aggregateResults({ results, quotas: input.config.monthlyQuotas }),
-        quotas: input.config.monthlyQuotas
-    });
     const mdPath = jsonlPath.replace(/\.jsonl$/, '.md');
-    writeFileSync(mdPath, `${md}\n`);
-    console.log(`\n${md}\n\nRaw: ${jsonlPath}\nSummary: ${mdPath}`);
+    writeSummary({
+        results,
+        config: input.config,
+        mdPath,
+        grades: loadGrades(input.args)
+    });
+    console.log(`Raw: ${jsonlPath}`);
+    if (input.args.blindExport) {
+        writeBlindExport({
+            path: input.args.blindExport,
+            results,
+            cases: [...input.caseById.values()]
+        });
+    }
+}
+
+function writeSummary(input: {
+    readonly results: readonly CallResult[];
+    readonly config: SweepConfig;
+    readonly mdPath: string;
+    readonly grades: Readonly<Record<string, Grade>> | undefined;
+}): void {
+    const rows = aggregateResults({
+        results: input.results,
+        quotas: input.config.monthlyQuotas,
+        grades: input.grades
+    });
+    const errors = renderErrorSummary(rows);
+    const md = renderSummaryMarkdown({ rows, quotas: input.config.monthlyQuotas });
+    const text = `${md}\n${errors ? `\n${errors}\n` : ''}`;
+    writeFileSync(input.mdPath, text);
+    console.log(`\n${text}\nSummary: ${input.mdPath}`);
+}
+
+/** Writes the blind JSONL plus its key file (`<path>.key.json`). */
+function writeBlindExport(input: {
+    readonly path: string;
+    readonly results: readonly CallResult[];
+    readonly cases: readonly PromptCase[];
+}): void {
+    const { entries, key } = buildBlindExport({
+        results: input.results,
+        cases: input.cases,
+        salt: randomBytes(8).toString('hex')
+    });
+    mkdirSync(dirname(input.path), { recursive: true });
+    writeFileSync(input.path, entriesToJsonl(entries));
+    writeFileSync(`${input.path}.key.json`, `${JSON.stringify(key, null, 2)}\n`);
+    console.log(
+        `Blind export: ${input.path} (${entries.length} answers)\n` +
+            `Key (keep it away from the grader): ${input.path}.key.json\n` +
+            'Grade as {"<id>": {"score": 1-5, "notes": "..."}}, then re-run with ' +
+            '--results <jsonl> --grades <file> --key <key.json>.'
+    );
+}
+
+function loadGrades(args: CliArgs): Record<string, Grade> | undefined {
+    if (!args.gradesPath) return undefined;
+    const keyPath = args.keyPath ?? (args.blindExport ? `${args.blindExport}.key.json` : null);
+    if (!keyPath) {
+        console.error('ABORT: --grades needs --key <key.json> (written by --blind-export).');
+        process.exit(2);
+    }
+    const key = JSON.parse(readFileSync(keyPath, 'utf8')) as BlindKey;
+    const { grades, unknownIds } = ingestGrades({
+        grades: JSON.parse(readFileSync(args.gradesPath, 'utf8')),
+        key
+    });
+    console.log(`Grades merged: ${Object.keys(grades).length}`);
+    if (unknownIds.length > 0) {
+        console.warn(`WARNING: unknown grade ids ignored: ${unknownIds.join(', ')}`);
+    }
+    return grades;
+}
+
+/** Offline mode: re-summarize or blind-export an existing results JSONL. Never touches the network. */
+function runOffline(input: {
+    readonly args: CliArgs;
+    readonly config: SweepConfig;
+    readonly cases: readonly PromptCase[];
+}): void {
+    const { args } = input;
+    const source = args.resultsPath ?? '';
+    const results = readFileSync(source, 'utf8')
+        .split('\n')
+        .filter((l) => l.trim() !== '')
+        .map((l) => JSON.parse(l) as CallResult);
+    console.log(`Offline mode: ${results.length} results from ${source}`);
+    if (args.blindExport) {
+        writeBlindExport({ path: args.blindExport, results, cases: input.cases });
+    }
+    if (args.gradesPath || !args.blindExport) {
+        writeSummary({
+            results,
+            config: input.config,
+            mdPath: `${source.replace(/\.jsonl$/, '')}.graded.md`,
+            grades: loadGrades(args)
+        });
+    }
 }
 
 main();

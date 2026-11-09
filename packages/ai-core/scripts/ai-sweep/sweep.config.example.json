@@ -1,15 +1,53 @@
 {
-    "providers": [{ "id": "openai", "apiKeyEnv": "OPENAI_API_KEY" }],
-    "models": [
-        { "id": "gpt-5.4-nano", "provider": "openai", "reasoning": true },
-        { "id": "gpt-5-nano", "provider": "openai", "reasoning": true },
-        { "id": "gpt-5-mini", "provider": "openai", "reasoning": true }
+    "providers": [
+        {
+            "id": "openai",
+            "apiKeyEnv": "OPENAI_API_KEY"
+        }
     ],
-    "reasoningEfforts": ["minimal", "low", "medium"],
-    "maxOutputTokens": [1024, 4096],
+    "models": [
+        {
+            "id": "gpt-5.4-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.2,
+                "outputUsdPerMillion": 1.25
+            }
+        },
+        {
+            "id": "gpt-5-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.05,
+                "outputUsdPerMillion": 0.4
+            }
+        },
+        {
+            "id": "gpt-5-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.25,
+                "outputUsdPerMillion": 2.0
+            }
+        },
+        {
+            "id": "gpt-5.4-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.75,
+                "outputUsdPerMillion": 4.5
+            }
+        }
+    ],
+    "reasoningEfforts": ["minimal", "low"],
+    "maxOutputTokens": [2048],
     "repetitions": 2,
     "caseIds": [],
     "concurrency": 2,
-    "maxCalls": 150,
+    "maxCalls": 250,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }
