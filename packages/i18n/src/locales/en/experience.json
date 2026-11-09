@@ -23,6 +23,8 @@
         "destination": "Destination",
         "type": "Experience type",
         "featured": "Featured only",
+        "amenities": "Amenities",
+        "features": "Features",
         "minRating": "Minimum rating",
         "sort": {
             "featured": "Featured first",
