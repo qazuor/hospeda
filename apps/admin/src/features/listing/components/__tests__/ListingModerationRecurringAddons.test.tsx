@@ -78,6 +78,15 @@ async function openDialog({
     return screen.getByTestId('listing-moderation-dialog');
 }
 
+function recurringParagraphs() {
+    return Array.from(screen.getByTestId('listing-moderation-dialog').querySelectorAll('p')).filter(
+        (paragraph) =>
+            paragraph.textContent?.startsWith(
+                esAdminEntities.listingModeration.dialog.takeDown.recurringIntro
+            )
+    );
+}
+
 beforeEach(() => {
     readStateFixture.data = {
         publicationStatus: PublicationStatusEnum.PUBLISHED,
@@ -102,6 +111,7 @@ describe('TEST:B13b:1 AC:B13b:1 the moderation dialog names the recurring featur
         expect(dialog).toHaveTextContent(
             esAdminEntities.listingModeration.dialog.takeDown.recurringChargeNotice
         );
+        expect(recurringParagraphs()).toHaveLength(1);
     });
 
     it('shows no recurring paragraph when the state has zero features', async () => {
@@ -111,9 +121,7 @@ describe('TEST:B13b:1 AC:B13b:1 the moderation dialog names the recurring featur
             addons: []
         });
         expect(screen.queryAllByTestId('moderation-recurring-addon')).toHaveLength(0);
-        expect(
-            screen.queryAllByText(esAdminEntities.listingModeration.dialog.takeDown.recurringIntro)
-        ).toHaveLength(0);
+        expect(recurringParagraphs()).toHaveLength(0);
     });
 
     it.each([
@@ -122,8 +130,6 @@ describe('TEST:B13b:1 AC:B13b:1 the moderation dialog names the recurring featur
     ] as const)('%s %s does not show the recurring paragraph', async (status, action) => {
         await openDialog({ status, action, addons: recurringAddons });
         expect(screen.queryAllByTestId('moderation-recurring-addon')).toHaveLength(0);
-        expect(
-            screen.queryAllByText(esAdminEntities.listingModeration.dialog.takeDown.recurringIntro)
-        ).toHaveLength(0);
+        expect(recurringParagraphs()).toHaveLength(0);
     });
 });
