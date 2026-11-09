@@ -64,7 +64,9 @@ const RETIRED_FEATURES = new Set([
     ...HOS_2061_MERGES.filter((merge) => merge.source.kind === 'feature').map(
         (merge) => merge.source.slug
     ),
-    ...HOS_2061_RETIRED_FEATURES
+    ...HOS_2061_RETIRED_FEATURES,
+    // HOS-2086 (0158) retires `family_friendly` into `family_suitable`.
+    'family_friendly'
 ]);
 
 /** Amenities a later migration retired (HOS-2061 / 0155), so not looked up. */

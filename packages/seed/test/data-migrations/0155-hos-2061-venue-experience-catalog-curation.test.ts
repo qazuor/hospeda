@@ -108,6 +108,8 @@ describe('baseline dual-write (HOS-25)', () => {
             // HOS-2061 follow-up: migration 0157 narrows `towels` back to
             // accommodation and moves the experience item to `towels_provided`.
             if (row.kind === 'amenity' && row.slug === 'towels') continue;
+            // HOS-2086: migration 0158 retires `family_friendly` into `family_suitable`.
+            if (row.kind === 'feature' && row.slug === 'family_friendly') continue;
             const fixture = (row.kind === 'amenity' ? amenityFixtures : featureFixtures).get(
                 row.slug
             );
