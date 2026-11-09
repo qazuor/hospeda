@@ -1,0 +1,870 @@
+{
+    "_note": "Synthetic listings rendered with the real builders. Codes are real enum values; money is in centavos where the column stores centavos (menu priceCents, night entryPriceFrom, experience priceFrom). heladeria-dia-sin-cargar has no `sun` key ON PURPOSE (a partial pre-schema row the builder must state as not informed).",
+    "entities": {
+        "club-nocturno-uruguay": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Club Nocturno Uruguay",
+                "summary": "Boliche con DJs en vivo los fines de semana.",
+                "description": "Boliche bailable con pista principal, barra de tragos y reservados. Música electrónica y cumbia.",
+                "type": "BOLICHE",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "wed": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "thu": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "00:00",
+                                    "close": "06:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "00:00",
+                                    "close": "06:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "dressCode": "smart_casual"
+                }
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": null,
+                "entryPriceFrom": 800000
+            }
+        },
+        "parrilla-la-costanera": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Parrilla La Costanera",
+                "summary": "Parrilla frente al río con menú del día.",
+                "description": "Parrilla tradicional con vista al río Uruguay. Cortes a la leña, pastas caseras y postres.",
+                "type": "PARRILLA",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "00:00"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Parrilla",
+                    "name": "Asado de tira",
+                    "description": null,
+                    "priceCents": 950000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Parrilla",
+                    "name": "Vacío",
+                    "description": null,
+                    "priceCents": 1100000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Postres",
+                    "name": "Flan casero",
+                    "description": null,
+                    "priceCents": 350000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": null
+        },
+        "bar-el-muelle": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Bar El Muelle",
+                "summary": "Bar con terraza sobre la costanera.",
+                "description": "Bar de copas con terraza sobre la costanera. Cervezas artesanales y tragos de autor.",
+                "type": "BAR",
+                "priceRange": null,
+                "menuUrl": null,
+                "openingHours": null,
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "bar-el-muelle-con-horarios": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Bar El Muelle",
+                "summary": "Bar con terraza sobre la costanera.",
+                "description": "Bar de copas con terraza sobre la costanera.",
+                "type": "BAR",
+                "priceRange": null,
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "wed": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "20:00",
+                                    "close": "02:00"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "20:00",
+                                    "close": "02:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "20:00",
+                                    "close": "02:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "cafe-plaza": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Café Plaza",
+                "summary": "Café de especialidad frente a la plaza.",
+                "description": "Café de especialidad, medialunas y tostados, con mesas en vereda y salón interior. Wi-Fi para clientes.",
+                "type": "CAFE",
+                "priceRange": null,
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "08:00",
+                                    "close": "20:00"
+                                }
+                            ]
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "08:00",
+                                    "close": "20:00"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "08:00",
+                                    "close": "20:00"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "08:00",
+                                    "close": "20:00"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "08:00",
+                                    "close": "20:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "09:00",
+                                    "close": "14:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "pizzeria-don-luis": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Pizzería Don Luis",
+                "summary": "Pizzas a la piedra y empanadas.",
+                "description": "Pizzería de barrio con horno a leña. Pizzas a la piedra, empanadas y cerveza tirada.",
+                "type": "RESTAURANT",
+                "priceRange": "BUDGET",
+                "menuUrl": null,
+                "openingHours": null,
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "restaurante-los-sauces": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Restaurante Los Sauces",
+                "summary": "Cocina regional en un parque arbolado.",
+                "description": "Cocina regional, pescados de río y carnes. Salón amplio y patio.",
+                "type": "RESTAURANT",
+                "priceRange": null,
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "16:00"
+                                },
+                                {
+                                    "open": "20:00",
+                                    "close": "23:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [
+                {
+                    "question": "¿Hay estacionamiento?",
+                    "answer": "Sí, estacionamiento propio para 20 autos, gratis para clientes."
+                },
+                {
+                    "question": "¿Es accesible?",
+                    "answer": "Hay rampa de acceso y baño adaptado."
+                },
+                {
+                    "question": "¿Hay que reservar?",
+                    "answer": "Aceptamos reservas por WhatsApp hasta 2 horas antes. Para grupos de más de 8 personas hace falta reservar con 48 horas de anticipación."
+                }
+            ],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "la-terraza-mixto": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "La Terraza",
+                "summary": "Restaurante familiar al mediodía, boliche los fines de semana a la noche.",
+                "description": "Al mediodía somos un restaurante familiar con menú ejecutivo y platos para chicos. Los viernes y sábados, desde la medianoche, el salón se transforma en boliche con DJ.",
+                "type": "RESTAURANT",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18
+                }
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Menú ejecutivo",
+                    "name": "Milanesa con puré",
+                    "description": null,
+                    "priceCents": 1200000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Para chicos",
+                    "name": "Patitas de pollo con papas fritas",
+                    "description": null,
+                    "priceCents": 800000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": {
+                    "es": "La noche de boliche es viernes y sábados desde las 00:30.",
+                    "en": "",
+                    "pt": ""
+                },
+                "entryPriceFrom": 600000
+            }
+        },
+        "heladeria-dia-sin-cargar": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Heladería Del Puerto",
+                "summary": "Helados artesanales frente al puerto.",
+                "description": "Heladería artesanal con más de 30 gustos, cucuruchos y potes para llevar.",
+                "type": "HELADERIA",
+                "priceRange": null,
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "14:00",
+                                    "close": "23:00"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "14:00",
+                                    "close": "23:00"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "14:00",
+                                    "close": "23:00"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "14:00",
+                                    "close": "00:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "00:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": null
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": null
+        },
+        "paseo-lancha-sin-duracion": {
+            "kind": "experience",
+            "source": "synthetic",
+            "experience": {
+                "name": "Paseo en lancha por el río Uruguay",
+                "summary": "Recorrido en lancha con guía local.",
+                "description": "Salimos desde el puerto y recorremos las islas del río con parada para sacar fotos. Se recomienda llevar protector solar.",
+                "type": "BOAT_TRIP",
+                "durationMinutes": null,
+                "priceFrom": 2500000,
+                "priceUnit": "per_person",
+                "isPriceOnRequest": false,
+                "meetingPoint": null,
+                "meetingPointDirections": null,
+                "whatToBring": null,
+                "requirements": null,
+                "policies": {
+                    "privateGroups": true
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "openingHours": null
+            },
+            "faqs": [],
+            "includeDirections": true
+        },
+        "paseo-lancha-punto-encuentro": {
+            "kind": "experience",
+            "source": "synthetic",
+            "experience": {
+                "name": "Paseo en lancha por el río Uruguay",
+                "summary": "Recorrido en lancha con guía local.",
+                "description": "Salimos desde el puerto y recorremos las islas del río con parada para sacar fotos.",
+                "type": "BOAT_TRIP",
+                "durationMinutes": 120,
+                "priceFrom": 2500000,
+                "priceUnit": "per_person",
+                "isPriceOnRequest": false,
+                "meetingPoint": "Muelle del Puerto Viejo, frente a la Aduana. Llegar 15 minutos antes de la salida.",
+                "meetingPointDirections": null,
+                "whatToBring": null,
+                "requirements": null,
+                "policies": null,
+                "averageRating": null,
+                "reviewsCount": 0,
+                "openingHours": null
+            },
+            "faqs": [],
+            "includeDirections": true
+        },
+        "kayak-precio-centavos": {
+            "kind": "experience",
+            "source": "synthetic",
+            "experience": {
+                "name": "Kayak al atardecer en el arroyo",
+                "summary": "Salida en kayak doble por el arroyo con instructor.",
+                "description": "Remamos por el arroyo hasta la desembocadura y volvemos con la puesta del sol. No hace falta experiencia previa.",
+                "type": "KAYAK_RENTAL",
+                "durationMinutes": 90,
+                "priceFrom": 1850000,
+                "priceUnit": "per_person",
+                "isPriceOnRequest": false,
+                "meetingPoint": null,
+                "meetingPointDirections": null,
+                "whatToBring": null,
+                "requirements": null,
+                "policies": null,
+                "averageRating": null,
+                "reviewsCount": 0,
+                "openingHours": null
+            },
+            "faqs": [],
+            "includeDirections": true
+        },
+        "cabanas-del-rio": {
+            "kind": "accommodation",
+            "source": "synthetic",
+            "accommodation": {
+                "name": "Cabañas del Río",
+                "summary": "Cabañas junto al río con parrilla propia.",
+                "description": "Cabañas equipadas con cocina, aire acondicionado y parrilla. A 200 metros de la playa.",
+                "type": "CABIN",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 4,
+                    "bedrooms": 2,
+                    "bathrooms": 1
+                },
+                "price": {
+                    "price": 60000,
+                    "currency": "ARS"
+                }
+            },
+            "faqs": [
+                {
+                    "question": "¿Tienen check-in tardío?",
+                    "answer": "Sí, hasta las 22:00 avisando antes."
+                }
+            ],
+            "amenities": ["wifi", "pool", "parking"],
+            "features": []
+        },
+        "casa-ac-posicion-26": {
+            "kind": "accommodation",
+            "source": "synthetic",
+            "accommodation": {
+                "name": "Casa Los Aromos",
+                "summary": "Casa amplia con parque y quincho, ideal para familias.",
+                "description": "Casa de dos plantas con parque, quincho con parrilla y galería. Living amplio y cocina equipada.",
+                "type": "HOUSE",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 6,
+                    "bedrooms": 3,
+                    "bathrooms": 2,
+                    "beds": 4
+                },
+                "price": {
+                    "price": 90000,
+                    "currency": "ARS"
+                }
+            },
+            "faqs": [],
+            "amenities": [
+                "bed_linens",
+                "towels",
+                "full_kitchen",
+                "refrigerator_freezer",
+                "microwave",
+                "electric_kettle",
+                "kitchen_utensils",
+                "gas_electric_stove",
+                "soap_dispensers",
+                "hair_dryer",
+                "cable_tv",
+                "smart_tv",
+                "fan",
+                "heating",
+                "washer",
+                "patio",
+                "outdoor_furniture",
+                "bbq_grill",
+                "quincho",
+                "outdoor_lighting",
+                "first_aid_kit",
+                "fire_extinguisher",
+                "blackout_curtains",
+                "board_games",
+                "crib",
+                "air_conditioning",
+                "wifi",
+                "parking",
+                "private_garden",
+                "beach_chairs_umbrellas"
+            ],
+            "features": ["family_suitable", "silent_environment"]
+        }
+    }
+}

@@ -3,8 +3,6 @@
  * (matrix expansion, aggregation, heuristic rule checks). No network.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildBlindExport, entriesToJsonl, ingestGrades } from '../scripts/ai-sweep/blind.js';
 import {
@@ -14,7 +12,6 @@ import {
     checkUnknownMustSayDontKnow,
     estimateCostUsd,
     expandMatrix,
-    FixtureFileSchema,
     type PromptCase,
     percentile,
     renderErrorSummary,
@@ -36,8 +33,11 @@ const emptyRubric = RubricSchema.parse({ notes: 'n' });
 const cases: PromptCase[] = ['a', 'b', 'c'].map((id) => ({
     id,
     feature: 'chat',
+    entity: 'e',
+    locale: 'es',
     source: 'test',
     context: 'ctx',
+    system: 'ctx\n---\nprompt',
     question: 'hi',
     rubric: emptyRubric,
     rules: []
@@ -52,6 +52,9 @@ const quality = (over: Partial<CallResult['quality']> = {}): CallResult['quality
     languageOk: true,
     empty: false,
     chars: 4,
+    rawCodes: [],
+    ownerVoice: false,
+    impossiblePromise: false,
     ...over
 });
 
@@ -282,77 +285,6 @@ describe('checkAnswer', () => {
         ).toBe('es');
         expect(looksLikeDecline('Solo puedo ayudarte con preguntas sobre este local.')).toBe(true);
         expect(looksLikeDecline('Claro, la receta lleva harina')).toBe(false);
-    });
-});
-
-describe('fixtures', () => {
-    const fixtures = FixtureFileSchema.parse(
-        JSON.parse(readFileSync(resolve(__dirname, '../scripts/ai-sweep/fixtures.json'), 'utf8'))
-    );
-
-    it('has 31 unique cases across the three features, each with a rubric', () => {
-        expect(fixtures.cases).toHaveLength(31);
-        expect(new Set(fixtures.cases.map((c) => c.id)).size).toBe(31);
-        expect(new Set(fixtures.cases.map((c) => c.feature))).toEqual(
-            new Set(['chat', 'chat_venue', 'chat_experience'])
-        );
-        expect(fixtures.cases.every((c) => c.rubric.notes.length > 0)).toBe(true);
-    });
-
-    it('the accommodation config targets exactly the acc-real cases with per-model efforts', () => {
-        const accConfig = SweepConfigSchema.parse(
-            JSON.parse(
-                readFileSync(
-                    resolve(__dirname, '../scripts/ai-sweep/sweep.config.accommodation.json'),
-                    'utf8'
-                )
-            )
-        );
-        const accIds = fixtures.cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
-        expect(accIds).toHaveLength(17);
-        expect([...accConfig.caseIds].sort()).toEqual([...accIds].sort());
-        const calls = expandMatrix({ config: accConfig, cases: fixtures.cases });
-        expect(calls).toHaveLength(17 * 8 * 2);
-        expect(calls.length).toBeLessThanOrEqual(accConfig.maxCalls);
-    });
-
-    it('acc-real contexts carry no contact data and expose the owner-data fence', () => {
-        for (const c of fixtures.cases.filter((x) => x.id.startsWith('acc-real-'))) {
-            expect(c.context).not.toMatch(/\+?\d{2}[\d ()-]{7,}|[\w.]+@[\w.]+\.\w+|https?:\/\//);
-            expect(c.context.split('<<<OWNER_DATA_START>>>').length).toBe(
-                c.context.split('<<<OWNER_DATA_END>>>').length
-            );
-        }
-    });
-
-    it('scores a known-good nightclub answer clean and a bad one with violations', () => {
-        const club = fixtures.cases.find((c) => c.id === 'venue-nightclub-minor');
-        expect(club).toBeDefined();
-        const good = checkAnswer({
-            text: 'La edad mínima es 18. Aviso legal: Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788). Confirmalo con el local.',
-            rubric: club?.rubric as Rubric
-        });
-        expect(good.includeCoverage).toBe(1);
-        expect(good.violations).toEqual([]);
-        const bad = checkAnswer({
-            text: 'Sí, podés entrar sin problema.',
-            rubric: club?.rubric as Rubric
-        });
-        expect(bad.includeCoverage).toBe(0);
-        expect(bad.violations).toContain('afirma que puede entrar');
-    });
-
-    it('the price-absent bar case flags an invented price', () => {
-        const bar = fixtures.cases.find((c) => c.id === 'venue-bar-price-absent');
-        expect(
-            checkAnswer({ text: 'Sale $3500', rubric: bar?.rubric as Rubric }).violations
-        ).toHaveLength(1);
-        expect(
-            checkAnswer({
-                text: 'No figura el precio en la ficha, consultá con el bar.',
-                rubric: bar?.rubric as Rubric
-            })
-        ).toMatchObject({ violations: [], unknownHandled: true });
     });
 });
 
