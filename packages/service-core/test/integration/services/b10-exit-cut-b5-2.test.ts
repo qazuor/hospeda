@@ -128,6 +128,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
 
     it('LISTA:B10 clause 9 revoking the grant turns off the anchored A1 instance without reviving its charge', async () => {
         const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
         const otherTitleId = await authorizedUnpaidExitPrincipal(h.f);
         grantUsers.push(h.f.ownerId);
         const admin = await seedCoverageUser(getServiceTestDb());
@@ -180,5 +181,18 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             .from(subscriptions)
             .where(eq(subscriptions.id, otherTitleId));
         expect(otherTitle).toEqual({ id: otherTitleId, status: 'ACTIVE' });
+        expect(
+            cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
+        ).toHaveLength(1);
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            events.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'S20'
+            )
+        ).toHaveLength(1);
     });
 });

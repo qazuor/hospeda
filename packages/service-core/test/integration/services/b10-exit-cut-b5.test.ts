@@ -149,6 +149,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         expect(marks).toEqual([{ reason: 'ADDON_SIN_APAGAR', subscriptionId: h.complementId }]);
         const stillLive = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
         expect(stillLive.snapshot.status).toBe('active');
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
         const orphan = await getServiceTestDb().transaction((tx) =>
             runOrphanhood(
                 { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
@@ -167,11 +168,24 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
         expect(provider.results).toEqual([{ subscriptionId: h.complementId, cancelCall: 'SENT' }]);
         const after = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
         expect(after.snapshot.status).toBe('cancelled');
+        expect(
+            cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
+        ).toHaveLength(1);
         const [instance] = await getServiceTestDb()
             .select({ id: addonInstances.id, status: addonInstances.status })
             .from(addonInstances)
             .where(eq(addonInstances.id, h.instanceId));
         expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const decisions = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            decisions.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
     });
     it.each([
         { label: 'inside', chargeAt: new Date('2026-10-16T12:00:00.000Z'), refunded: true },
@@ -434,5 +448,15 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             .from(subscriptions)
             .where(eq(subscriptions.id, h.complementId));
         expect(complement).toEqual({ id: h.complementId, status: 'CANCELLED' });
+        const decisions = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            decisions.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
     });
 });
