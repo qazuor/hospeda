@@ -19,6 +19,7 @@
  * @module test/services/ai-context/chat-quality-hos2095
  */
 
+import { appendReplyLanguageInstruction, REPLY_LANGUAGE_INSTRUCTIONS } from '@repo/ai-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -108,6 +109,36 @@ describe('HOS-2095 #1 — the answer language follows the latest user message', 
 
     it('the accommodation chat uses the SAME shared system-message builder', () => {
         expect(accommodationBuildChatSystemMessage).toBe(buildChatSystemMessage);
+    });
+});
+
+describe('HOS-2095 round 2 — explicit reply language over the real system message', () => {
+    it.each([
+        ['Hi! Is breakfast included?', 'en'],
+        ['oi, aceita cachorro?', 'pt'],
+        ['hola, tienen pileta?', 'es']
+    ] as const)('"%s" on a Spanish page: the %s line comes LAST, after the locale fallback', (question, language) => {
+        // Arrange
+        const base = buildChatSystemMessage('ctx', 'prompt', 'es');
+
+        // Act
+        const { system } = appendReplyLanguageInstruction({
+            system: base,
+            latestUserMessage: question
+        });
+
+        // Assert
+        const lines = system.split('\n');
+        expect(lines.at(-1)).toBe(REPLY_LANGUAGE_INSTRUCTIONS[language]);
+        expect(lines.at(-2)).toContain('page locale is "es"');
+        expect(system.startsWith(base)).toBe(true);
+    });
+
+    it('keeps the generic rule alone when the message cannot be decided', () => {
+        const base = buildChatSystemMessage('ctx', 'prompt', 'en');
+        expect(
+            appendReplyLanguageInstruction({ system: base, latestUserMessage: 'wifi?' }).system
+        ).toBe(base);
     });
 });
 

@@ -251,6 +251,13 @@ export function buildFencedFaqLines({
  * stated as a FALLBACK only, and the rule names the latest message as the
  * deciding signal.
  *
+ * HOS-2095 round 2: that generic rule was still not enough for the cheapest
+ * model, so the chat route appends ONE more line after this message — an
+ * explicit "Reply in English." decided server-side from the latest message by
+ * `appendReplyLanguageInstruction` (`@repo/ai-core`). It is kept out of this
+ * function on purpose: the assemblers build the message without the
+ * conversation, and the sweep composes this output the same way.
+ *
  * @param contextBlock - The Markdown context built by a vertical's assembler.
  * @param resolvedPrompt - The prompt resolved by `resolveSystemPrompt({ feature })`.
  * @param locale - The page locale, used only as the fallback answer language.

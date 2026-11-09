@@ -105,7 +105,13 @@ const {
  * Mock @repo/ai-core — stub getMonthlyCallCount and recordAiUsage so we can
  * control their return values and spy on their call arguments.
  */
-vi.mock('@repo/ai-core', () => {
+vi.mock('@repo/ai-core', async () => {
+    // HOS-2095: the route appends the reply-language line through the REAL
+    // detector; a whole-module mock would leave it `undefined`.
+    const language = await vi.importActual<
+        typeof import('../../../../../packages/ai-core/src/language/reply-language.js')
+    >('../../../../../packages/ai-core/src/language/reply-language.js');
+
     class AiEngineError extends Error {
         readonly engineCode: string;
         constructor(engineCode: string, message?: string) {
@@ -128,6 +134,7 @@ vi.mock('@repo/ai-core', () => {
     }
 
     return {
+        appendReplyLanguageInstruction: language.appendReplyLanguageInstruction,
         AiEngineError,
         AiFeatureNotConfiguredError,
         getMonthlyCallCount: mockGetMonthlyCallCount,
