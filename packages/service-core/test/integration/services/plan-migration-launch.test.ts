@@ -100,6 +100,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
             });
             expect(launched.deadlineVersion).toBe(preview.deadlineVersion);
             expect(launched.noticeDays).toBe(preview.noticeDays);
+            const laterCase = await createPlanMigrationCase();
+            await setMigrationTargetCycle({
+                actor: laterCase.actor,
+                planVersionId: laterCase.targetPlanVersionId,
+                cycle: 'monthly',
+                amount: 300000
+            });
             // The deadline table is immutable. Publish through the real service inside a rolled-back test transaction.
             const rollback = new Error('rollback test deadline publication');
             try {
@@ -119,6 +126,18 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             confirmed: true
                         });
                         expect(changed.version).toBe(preview.deadlineVersion + 1);
+                        const { launched: laterLaunch } = await previewAndLaunch(laterCase);
+                        const [laterStored] = await tx
+                            .select()
+                            .from(planMigrations)
+                            .where(eq(planMigrations.id, laterLaunch.planMigrationId));
+                        expect({
+                            deadlineVersion: laterStored?.deadlineVersion,
+                            noticeDays: laterStored?.noticeDays
+                        }).toEqual({
+                            deadlineVersion: changed.version,
+                            noticeDays: changed.values['12'].noticeDays
+                        });
                         const [reloaded] = await tx
                             .select()
                             .from(planMigrations)
