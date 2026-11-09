@@ -20,7 +20,7 @@
 
 import { AiFeatureSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { FEATURE_LABELS } from '@/features/ai-settings';
+import { type AiSettingsValue, FEATURE_LABELS } from '@/features/ai-settings';
 import {
     ALL_FEATURES,
     CHAT_DEFAULT_MAX_TOKENS,
@@ -128,6 +128,29 @@ describe('AI settings feature coverage', () => {
             const result = toFormValues(partial);
 
             expect(result.features.chat_venue?.enabled).toBe(false);
+        });
+
+        it('carries through the top-level fields the form does not edit (HOS-2096)', () => {
+            // The form submits toFormValues() output to a PUT that REPLACES the whole
+            // blob, so any field dropped here is erased from the DB on the next save.
+            const blob = {
+                providers: { stub: { enabled: true } },
+                features: DEFAULT_SETTINGS.features,
+                costCeilings: { globalMonthlyMicroUsd: 5_000_000 },
+                modelRates: {
+                    'gpt-4o-mini': {
+                        inputMicroUsdPerMillionTokens: 150_000,
+                        outputMicroUsdPerMillionTokens: 600_000
+                    }
+                },
+                moderation: { providerId: 'openai' }
+            } satisfies AiSettingsValue;
+
+            const result = toFormValues(blob);
+
+            expect(result.costCeilings).toEqual(blob.costCeilings);
+            expect(result.modelRates).toEqual(blob.modelRates);
+            expect(result.moderation).toEqual(blob.moderation);
         });
 
         it('falls back to the full defaults when there is no blob at all', () => {

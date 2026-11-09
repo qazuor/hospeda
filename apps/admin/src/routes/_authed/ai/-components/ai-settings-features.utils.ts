@@ -84,7 +84,8 @@ export const DEFAULT_SETTINGS: AiSettingsValue = {
  *
  * @param settings - The blob from `GET /api/v1/admin/ai/settings`, or `undefined`
  *   before it loads.
- * @returns A complete blob safe to seed the form with.
+ * @returns A complete blob safe to seed the form with. Top-level fields the form
+ *   does not edit are carried through untouched.
  */
 export function toFormValues(settings: AiSettingsValue | undefined): AiSettingsValue {
     if (!settings) {
@@ -98,7 +99,11 @@ export function toFormValues(settings: AiSettingsValue | undefined): AiSettingsV
         ])
     ) as AiSettingsValue['features'];
 
+    // Spread first: the PUT replaces the whole blob, so every top-level field the
+    // form does not edit (costCeilings, modelRates, moderation, any future one)
+    // must round-trip unchanged or the next save silently erases it (HOS-2096).
     return {
+        ...settings,
         providers: settings.providers ?? DEFAULT_SETTINGS.providers,
         features
     };
