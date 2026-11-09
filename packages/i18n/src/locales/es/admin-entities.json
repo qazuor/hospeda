@@ -1145,7 +1145,8 @@
                 "title": "Bajar la ficha",
                 "description": "Vas a bajar «{name}». La ficha sale del sitio público hasta que la levantes.",
                 "ownerNotice": "El dueño recibe el aviso con el motivo. Puede verla, editarla y borrarla, pero no publicarla.",
-                "featured": "Si tiene destaques recurrentes, se le siguen cobrando hasta que los dé de baja."
+                "recurringIntro": "Destaques recurrentes sobre esta ficha:",
+                "recurringChargeNotice": "Se le siguen cobrando al dueño hasta que los dé de baja. El aviso al dueño le ofrece la baja."
             },
             "lift": {
                 "title": "Levantar la moderación",

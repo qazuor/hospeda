@@ -1145,7 +1145,8 @@
                 "title": "Take the listing down",
                 "description": "You are taking \"{name}\" down. The listing leaves the public site until you lift the moderation.",
                 "ownerNotice": "The owner gets a notice with the reason. They can view, edit and delete it, but not publish it.",
-                "featured": "If it has recurring featured placements, they keep being charged until the owner cancels them."
+                "recurringIntro": "Recurring featured placements on this listing:",
+                "recurringChargeNotice": "The owner keeps being charged until they cancel them. The notice to the owner offers cancellation."
             },
             "lift": {
                 "title": "Lift the moderation",
