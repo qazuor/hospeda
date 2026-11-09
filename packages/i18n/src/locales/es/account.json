@@ -81,10 +81,10 @@
         },
         "greetingVenue": {
             "title": "Bienvenido a tu panel de Comer y salir",
-            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local."
+            "body": "Desde acá podés gestionar tu cuenta y el contenido público de tu local."
         },
         "listingVenue": {
-            "body": "Edita el menu, los horarios y los datos visibles de tu local."
+            "body": "Editá la carta o barra, los horarios y los datos visibles de tu local."
         },
         "listingVenueNoMenu": {
             "body": "Edita los horarios y los datos visibles de tu local."
@@ -94,8 +94,8 @@
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
         },
         "venueQr": {
-            "title": "QR de tu menu",
-            "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
+            "title": "QR de tu carta o barra",
+            "body": "Generá el código QR de tu carta o barra y consultá cuántas veces lo escanearon tus clientes."
         },
         "listingViews": {
             "title": "Visitas a tu ficha",

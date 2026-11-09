@@ -36,6 +36,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.venue'
     ],
     en: [
@@ -65,6 +70,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.listVenue',
         'footer.venue'
     ],
@@ -94,6 +104,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.venue'
     ]
 };

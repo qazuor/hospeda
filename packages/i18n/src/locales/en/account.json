@@ -80,11 +80,11 @@
             "body": "Edit the public content, opening hours and visible details of your business."
         },
         "greetingVenue": {
-            "title": "Welcome to your restaurant dashboard",
-            "body": "From here you can manage your account and the public content of your restaurant."
+            "title": "Welcome to your venue dashboard",
+            "body": "From here you can manage your account and the public content of your venue."
         },
         "listingVenue": {
-            "body": "Edit the menu, opening hours and visible details of your restaurant."
+            "body": "Edit your food or drinks, opening hours and visible details of your venue."
         },
         "listingVenueNoMenu": {
             "body": "Edit the opening hours and visible details of your venue."
@@ -94,8 +94,8 @@
             "body": "Review the status of each of your businesses and edit them."
         },
         "venueQr": {
-            "title": "Your menu QR code",
-            "body": "Generate your menu's QR code and check how many times your customers scanned it."
+            "title": "Your food or drinks QR code",
+            "body": "Generate the QR code for your food or drinks and check how many times your customers scanned it."
         },
         "listingViews": {
             "title": "Views on your listing",
@@ -1533,7 +1533,7 @@
         }
     },
     "description": "Gestioná tu cuenta en Hospeda",
-    "menu": "Menú de cuenta",
+    "menu": "Account menu",
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Change password",
