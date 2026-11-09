@@ -31,6 +31,12 @@ export interface RecordAiUsageInput {
      * `null` for system-initiated calls or when actor resolution failed.
      */
     readonly userId: string | null;
+    /**
+     * UUID of the user who consumed the call when it is not the cost bearer
+     * (`userId`). The listing chat passes the tourist here so ONE row advances
+     * both the owner's and the tourist's quota (HOS-2095). Omit otherwise.
+     */
+    readonly consumerUserId?: string | null;
     /** AI feature that was invoked (e.g. `'text_improve'`, `'chat'`). */
     readonly feature: string;
     /** Provider that served or attempted the call (e.g. `'openai'`). */
@@ -102,6 +108,7 @@ export interface RecordAiUsageInput {
 export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAiUsage> {
     const {
         userId,
+        consumerUserId,
         feature,
         provider,
         model,
@@ -126,6 +133,7 @@ export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAi
 
     return insertAiUsage({
         userId,
+        consumerUserId: consumerUserId ?? null,
         feature,
         provider,
         model,

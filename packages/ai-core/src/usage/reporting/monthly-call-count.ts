@@ -26,6 +26,7 @@
  * @module ai-core/usage/reporting/monthly-call-count
  */
 
+import type { AiUsageQuotaKey } from '../../storage/index.js';
 import { countAiUsageForUserFeatureMonth } from '../../storage/index.js';
 import { getUtcMonthRange } from './month-range.js';
 
@@ -65,6 +66,13 @@ export interface GetMonthlyCallCountInput {
      * for deterministic results.
      */
     readonly now: Date;
+    /**
+     * Column `userId` is matched against (HOS-2095). Default `'user'` (the
+     * cost bearer). The listing chat's tourist-side quota passes
+     * `'consumer'` so it counts the rows the tourist consumed on somebody
+     * else's listing, never the rows billed to the tourist as an owner.
+     */
+    readonly keyedBy?: AiUsageQuotaKey;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,7 +105,7 @@ export interface GetMonthlyCallCountInput {
  * ```
  */
 export async function getMonthlyCallCount(input: GetMonthlyCallCountInput): Promise<number> {
-    const { userId, feature, now } = input;
+    const { userId, feature, now, keyedBy } = input;
 
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth() + 1; // getUTCMonth() is 0-based
@@ -109,6 +117,7 @@ export async function getMonthlyCallCount(input: GetMonthlyCallCountInput): Prom
         feature,
         monthStart,
         monthEnd,
-        statuses: QUOTA_COUNT_STATUSES
+        statuses: QUOTA_COUNT_STATUSES,
+        ...(keyedBy === undefined ? {} : { keyedBy })
     });
 }

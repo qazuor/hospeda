@@ -1207,8 +1207,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             });
         });
 
-        it('successful chat records usage for BOTH owner (ownerId) AND consumer (actor.id) — SPEC-283', async () => {
-            // Both owner and consumer have explicit headroom; usage remains double-metered.
+        it('successful chat records ONE usage row: owner pays, consumer rides on it — HOS-2095', async () => {
+            // Both owner and consumer have explicit headroom.
             currentLimitsForTest.current = new Map([
                 [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
@@ -1223,30 +1223,19 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             });
 
             expect(res.status).toBe(200);
-            // Drain so augmentedMeta settles and both recordAiUsage calls complete.
+            // Drain so augmentedMeta settles and the recordAiUsage call completes.
             await readSseFrames(res);
 
             const mockedRecord = vi.mocked(recordAiUsage);
-            // SPEC-283: two calls — owner-keyed (cost) then consumer-keyed (quota advance).
-            expect(mockedRecord).toHaveBeenCalledTimes(2);
-
-            // Owner call (SPEC-211).
-            expect(mockedRecord).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: OWNER_ID,
-                    feature: 'chat',
-                    status: 'success'
-                })
-            );
-
-            // Consumer call (SPEC-283) — keyed by actor.id, which is DISTINCT from ownerId.
-            expect(mockedRecord).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: UNIQUE_USER_ID,
-                    feature: 'chat',
-                    status: 'success'
-                })
-            );
+            // HOS-2095: exactly one row per request. The owner bears the cost
+            // (`userId`, owner quota) and the tourist is `consumerUserId`
+            // (consumer quota) — no second, full-cost consumer row.
+            expect(mockedRecord).toHaveBeenCalledTimes(1);
+            const [onlyCall] = mockedRecord.mock.calls;
+            expect(onlyCall?.[0].userId).toBe(OWNER_ID);
+            expect(onlyCall?.[0].consumerUserId).toBe(UNIQUE_USER_ID);
+            expect(onlyCall?.[0].feature).toBe('chat');
+            expect(onlyCall?.[0].status).toBe('success');
 
             // Sanity: the two IDs are different so the assertions above are not aliased.
             expect(UNIQUE_USER_ID).not.toBe(OWNER_ID);
