@@ -258,6 +258,13 @@
             "row": 20,
             "subject": "addon_instance",
             "why": "AC:B10:8 Q2: action 20 counts PENDING_AUTHORIZATION and ACTIVE addon instances before changing a live product price."
+        },
+        {
+            "file": "apps/api/src/services/billing-addon/owner-recurring-addons.service.ts",
+            "symbol": "readOwnerRecurringAddons",
+            "row": null,
+            "subject": "addon_instance",
+            "why": "AC:B13b:1 and AC:B13b:2: the owner's withdrawal screen lists only PENDING_AUTHORIZATION and ACTIVE recurring addon instances."
         }
     ],
     "grant_vivo_ancla_viva": [
