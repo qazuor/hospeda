@@ -42,6 +42,7 @@
 import { recordAiUsage } from '@repo/ai-core';
 import type { AiFeature } from '@repo/schemas';
 import { warnMissingModelRate } from './ai-missing-model-rate';
+import { loadModelRateOverrides } from './ai-rate-overrides';
 import { apiLogger } from './logger';
 
 // ---------------------------------------------------------------------------
@@ -157,17 +158,23 @@ export async function meterAiUsage(input: MeterAiUsageInput): Promise<void> {
 
         // The write promise always carries its own catch, so it stays handled
         // even once the timeout below stops us awaiting it.
-        const writePromise = recordAiUsage({
-            userId,
-            feature,
-            provider,
-            model,
-            promptTokens: toTokenCount({ value: promptTokens }),
-            completionTokens: toTokenCount({ value: completionTokens }),
-            latencyMs,
-            status,
-            onMissingRate: warnMissingModelRate
-        })
+        // The settings read (cached; a DB read only on a cache miss) lives inside
+        // the same promise so it is bounded by METERING_TIMEOUT_MS too.
+        const writePromise = (async () => {
+            const rateOverrides = await loadModelRateOverrides();
+            return recordAiUsage({
+                userId,
+                feature,
+                provider,
+                model,
+                promptTokens: toTokenCount({ value: promptTokens }),
+                completionTokens: toTokenCount({ value: completionTokens }),
+                latencyMs,
+                status,
+                rateOverrides,
+                onMissingRate: warnMissingModelRate
+            });
+        })()
             .then(() => undefined)
             .catch((meteringError: unknown) => {
                 const payload = {

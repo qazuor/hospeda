@@ -22,7 +22,8 @@ const { mockRecordAiUsage, mockWarn, mockDebug } = vi.hoisted(() => ({
 }));
 
 vi.mock('@repo/ai-core', () => ({
-    recordAiUsage: mockRecordAiUsage
+    recordAiUsage: mockRecordAiUsage,
+    resolveConfig: vi.fn().mockResolvedValue({ providers: {}, features: {} })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
