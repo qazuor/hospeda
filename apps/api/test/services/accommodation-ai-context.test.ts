@@ -5,11 +5,11 @@
  *
  * `buildMarkdownContext` (pure helper):
  *   1. Renders all required sections (Accommodation/Type/Destino/Summary/Capacidad/Precio/Valoración/Description/Información Especial/Amenities/Features/FAQs).
- *   2. Truncates description at 800 chars with "…" suffix (AC-2.1).
- *   3. Accepts exactly 800 chars unchanged (no truncation).
- *   4. Caps FAQs at 10 entries (AC-2.2).
- *   5. Caps amenities at 20 entries (AC-2.2).
- *   6. Caps features at 20 entries (AC-2.2).
+ *   2. Truncates description at CONTEXT_DESCRIPTION_MAX_CHARS (3000 since HOS-2095) with "…" suffix (AC-2.1).
+ *   3. Accepts exactly CONTEXT_DESCRIPTION_MAX_CHARS chars unchanged (no truncation).
+ *   4. Caps FAQs at CONTEXT_FAQ_MAX entries (AC-2.2; 30 since HOS-2095).
+ *   5. Caps amenities at CONTEXT_AMENITY_MAX entries (AC-2.2; 80 since HOS-2095).
+ *   6. Caps features at CONTEXT_FEATURE_MAX entries (AC-2.2; 60 since HOS-2095).
  *   7. Omits the FAQs section when the FAQ list is empty.
  *   8. Renders capacity fields when present in extraInfo.
  *   9. Renders pricing when price.price is non-null.
@@ -148,6 +148,10 @@ import {
     assembleAccommodationContext,
     buildChatSystemMessage,
     buildMarkdownContext,
+    CONTEXT_AMENITY_MAX,
+    CONTEXT_DESCRIPTION_MAX_CHARS,
+    CONTEXT_FAQ_MAX,
+    CONTEXT_FEATURE_MAX,
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START
 } from '../../src/services/accommodation-ai-context';
@@ -311,7 +315,9 @@ describe('buildMarkdownContext', () => {
         expect(ctx).toContain(
             `## Accommodation: ${OWNER_DATA_DELIMITER_START}Cabañas del Río${OWNER_DATA_DELIMITER_END}`
         );
-        expect(ctx).toContain('**Type**: CABIN');
+        // HOS-2095: the closed enum renders as its localized label, never raw.
+        expect(ctx).toContain('**Type**: Cabaña');
+        expect(ctx).not.toContain('CABIN');
         expect(ctx).toContain('**Destino**: Concepción del Uruguay');
         expect(ctx).toContain(
             `**Summary**: ${OWNER_DATA_DELIMITER_START}Hospedaje tranquilo a orillas del río Uruguay.${OWNER_DATA_DELIMITER_END}`
@@ -325,8 +331,8 @@ describe('buildMarkdownContext', () => {
         expect(ctx).toContain('### FAQs');
     });
 
-    it('should truncate the description at 800 chars with "…" suffix', () => {
-        const long = 'a'.repeat(900);
+    it(`should truncate the description at ${CONTEXT_DESCRIPTION_MAX_CHARS} chars with "…" suffix`, () => {
+        const long = 'a'.repeat(CONTEXT_DESCRIPTION_MAX_CHARS + 100);
         const ctx = buildMarkdownContext(
             makeAccommodation({ description: long }) as never,
             makeFaqs(),
@@ -337,13 +343,13 @@ describe('buildMarkdownContext', () => {
         const match = ctx.match(descriptionBodyPattern());
         expect(match).not.toBeNull();
         const body = match?.[1]?.trimEnd() ?? '';
-        // 800 chars + "…" suffix
+        // cap + "…" suffix
         expect(body.endsWith('…')).toBe(true);
-        expect(body.length).toBe(801);
+        expect(body.length).toBe(CONTEXT_DESCRIPTION_MAX_CHARS + 1);
     });
 
-    it('should accept exactly 800 chars without truncation (boundary)', () => {
-        const exact = 'b'.repeat(800);
+    it(`should accept exactly ${CONTEXT_DESCRIPTION_MAX_CHARS} chars without truncation (boundary)`, () => {
+        const exact = 'b'.repeat(CONTEXT_DESCRIPTION_MAX_CHARS);
         const ctx = buildMarkdownContext(
             makeAccommodation({ description: exact }) as never,
             makeFaqs(),
@@ -352,12 +358,12 @@ describe('buildMarkdownContext', () => {
         );
         const match = ctx.match(descriptionBodyPattern());
         const body = match?.[1]?.trimEnd() ?? '';
-        expect(body.length).toBe(800);
+        expect(body.length).toBe(CONTEXT_DESCRIPTION_MAX_CHARS);
         expect(body.endsWith('…')).toBe(false);
     });
 
-    it('should cap FAQs at 10 entries', () => {
-        const twelve = Array.from({ length: 12 }, (_, i) => ({
+    it(`should cap FAQs at ${CONTEXT_FAQ_MAX} entries`, () => {
+        const twelve = Array.from({ length: CONTEXT_FAQ_MAX + 2 }, (_, i) => ({
             question: `Q${i + 1}`,
             answer: `A${i + 1}`
         }));
@@ -365,23 +371,27 @@ describe('buildMarkdownContext', () => {
         // Count occurrences of "Q<digit>" pattern in the FAQs section
         const faqsSection = ctx.split('### FAQs')[1] ?? '';
         const faqEntries = (faqsSection.match(/\*\*Q:/g) ?? []).length;
-        expect(faqEntries).toBe(10);
+        expect(faqEntries).toBe(CONTEXT_FAQ_MAX);
     });
 
-    it('should cap amenities at 20 entries', () => {
-        const twentyOne = Array.from({ length: 21 }, (_, i) => ({ name: `Amenity ${i + 1}` }));
+    it(`should cap amenities at ${CONTEXT_AMENITY_MAX} entries`, () => {
+        const twentyOne = Array.from({ length: CONTEXT_AMENITY_MAX + 1 }, (_, i) => ({
+            name: `Amenity ${i + 1}`
+        }));
         const ctx = buildMarkdownContext(makeAccommodation() as never, makeFaqs(), twentyOne, []);
         const amenitiesSection = ctx.split('### Amenities')[1]?.split('### Features')[0] ?? '';
         const lines = amenitiesSection.split('\n').filter((l) => l.startsWith('- '));
-        expect(lines).toHaveLength(20);
+        expect(lines).toHaveLength(CONTEXT_AMENITY_MAX);
     });
 
-    it('should cap features at 20 entries', () => {
-        const twentyOne = Array.from({ length: 21 }, (_, i) => ({ name: `Feature ${i + 1}` }));
+    it(`should cap features at ${CONTEXT_FEATURE_MAX} entries`, () => {
+        const twentyOne = Array.from({ length: CONTEXT_FEATURE_MAX + 1 }, (_, i) => ({
+            name: `Feature ${i + 1}`
+        }));
         const ctx = buildMarkdownContext(makeAccommodation() as never, makeFaqs(), [], twentyOne);
         const featuresSection = ctx.split('### Features')[1]?.split('### FAQs')[0] ?? '';
         const lines = featuresSection.split('\n').filter((l) => l.startsWith('- '));
-        expect(lines).toHaveLength(20);
+        expect(lines).toHaveLength(CONTEXT_FEATURE_MAX);
     });
 
     it('should omit the FAQs section when the FAQ list is empty', () => {
@@ -663,7 +673,8 @@ describe('buildMarkdownContext', () => {
 
     it('should render pricing when price.price is non-null', () => {
         const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], []);
-        expect(ctx).toContain('**Precio base**: $15000 ARS/noche');
+        // HOS-2095: currency-formatted (es-AR grouping), not a bare integer.
+        expect(ctx).toMatch(/\*\*Precio base\*\*: \$\s15\.000 ARS\/noche/);
     });
 
     it('should omit Precio section when price is null', () => {
