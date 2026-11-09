@@ -32,9 +32,9 @@
  *     `done` frame) hostage. The insert itself is not cancelled: it keeps
  *     running and still lands, we simply stop blocking the caller on it.
  *
- * `chat.ts` predates this helper and keeps its own inline metering blocks with
- * feature-specific log context (owner-keyed vs consumer-keyed rows); it is
- * deliberately left untouched.
+ * `chat.ts` predates this helper and keeps its own inline metering block: one
+ * owner-keyed row that also carries the tourist as `consumerUserId`
+ * (HOS-2095); it is deliberately left untouched.
  *
  * @module utils/ai-usage-metering
  */

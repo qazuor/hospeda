@@ -1,4 +1,4 @@
-import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
+import { type AiUsageQuotaKey, getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
 import { type AiFeature, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import {
@@ -37,6 +37,11 @@ export async function evaluateAiQuota(args: {
     readonly entitlementKey?: string;
     readonly limitKey: string;
     readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
+    /**
+     * Column the monthly count is keyed on (HOS-2095). Default `'user'`. The
+     * listing chat's tourist-side gate passes `'consumer'`.
+     */
+    readonly countKeyedBy?: AiUsageQuotaKey;
 }): Promise<AiQuotaDecision> {
     const snapshot = args.effectiveSetSnapshot;
     const effectiveSet = snapshot ? async () => snapshot : getListingAccessPorts().effectiveSet;
@@ -61,7 +66,8 @@ export async function evaluateAiQuota(args: {
     const count = await getMonthlyCallCount({
         userId: args.userId,
         feature: args.feature,
-        now: new Date()
+        now: new Date(),
+        ...(args.countKeyedBy === undefined ? {} : { keyedBy: args.countKeyedBy })
     });
     const requested = count + 1;
     const limit = await resolveLimitStep({
@@ -92,6 +98,8 @@ export async function enforceAiQuota(args: {
     readonly entitlementMessage?: string;
     readonly limitMessage?: string;
     readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
+    /** @see evaluateAiQuota */
+    readonly countKeyedBy?: AiUsageQuotaKey;
 }): Promise<void> {
     const decision = await evaluateAiQuota(args);
     if (decision.allowed) return;
