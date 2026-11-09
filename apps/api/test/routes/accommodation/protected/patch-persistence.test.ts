@@ -238,6 +238,15 @@ describe('PATCH /protected/accommodations/:id — flat to domain conversion (SPE
         ]);
     });
 
+    it('passes the extraCharge flag of amenityAttributes straight through (HOS-2084)', async () => {
+        const input = await patch({
+            amenityIds: [AMENITY_UUID_1],
+            amenityAttributes: [{ amenityId: AMENITY_UUID_1, extraCharge: true }]
+        });
+
+        expect(input.amenityAttributes).toEqual([{ amenityId: AMENITY_UUID_1, extraCharge: true }]);
+    });
+
     it('passes summary straight through', async () => {
         const input = await patch({ summary: 'A short summary text here' });
 
