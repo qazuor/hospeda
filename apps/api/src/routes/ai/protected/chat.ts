@@ -41,6 +41,7 @@
  */
 
 import {
+    appendReplyLanguageInstruction,
     composeSystemPrompt,
     recordAiUsage,
     resolveFeatureConfig,
@@ -189,12 +190,24 @@ interface EngineMessages {
     readonly messages: AiMessage[];
 }
 
+/**
+ * Maps the request into the engine's `system` + `messages` pair.
+ *
+ * HOS-2095 (round 2): the reply language is decided HERE, from the visitor's
+ * latest message, and appended as the last line of `system` (see
+ * `appendReplyLanguageInstruction` in `@repo/ai-core`). When the message is too
+ * short or mixed to decide, `system` is the assembler's message unchanged.
+ */
 function toEngineMessages(
     systemMessage: string,
     messages: ReadonlyArray<AiChatMessage>
 ): EngineMessages {
-    return {
+    const { system } = appendReplyLanguageInstruction({
         system: systemMessage,
+        latestUserMessage: getLastUserTurn(messages)
+    });
+    return {
+        system,
         messages: messages.map((message) => ({ role: message.role, content: message.content }))
     };
 }
@@ -540,7 +553,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                       debug: {
                           contextBlock,
                           resolvedPrompt,
-                          systemMessage,
+                          // What the model actually received, language line included.
+                          systemMessage: engineSystem,
                           feature: FEATURE,
                           entityId
                       }
