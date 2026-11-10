@@ -25,6 +25,7 @@ import {
     seedCourtesyPrincipal
 } from './support/courtesy-fixtures.js';
 import { pausePlanPolicy, seedClosedPause } from './support/pause-fixtures.js';
+import { setNextChargeAt } from './support/payment-fixtures.js';
 
 const actor = {
     id: crypto.randomUUID(),
@@ -42,6 +43,10 @@ async function expectedBase(input: {
     readonly planVersionId: string;
     readonly email: string;
     readonly displayName: string | null;
+    /** Literal value asserted instead of the DB read when the test seeds it. */
+    readonly nextChargeAt?: Date | null;
+    /** Literal value asserted instead of the DB read when the test seeds it. */
+    readonly serviceEndsAt?: Date | null;
 }) {
     const [subscription] = await db()
         .select()
@@ -76,9 +81,11 @@ async function expectedBase(input: {
         },
         cycle: option.cycle,
         paymentMethod: subscription.paymentMethod,
-        nextChargeAt: subscription.nextChargeAt,
+        nextChargeAt:
+            input.nextChargeAt === undefined ? subscription.nextChargeAt : input.nextChargeAt,
         createdAt: subscription.createdAt,
-        serviceEndsAt: subscription.serviceEndsAt,
+        serviceEndsAt:
+            input.serviceEndsAt === undefined ? subscription.serviceEndsAt : input.serviceEndsAt,
         planVersion: {
             id: input.planVersionId,
             current: version.current,
@@ -105,13 +112,22 @@ afterAll(closeServiceTestPool);
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-2081 el detalle de suscripción con su estado, plan, próximo cobro, pausa y cortesía vigentes',
     () => {
-        describe('HOS-2081 CA-2 desde el detalle llega a cada acción para la que tiene permiso; las que no puede ejecutar no se muestran', () => {
+        describe('HOS-2081 reads the detail, rejects unknown ids, and authorizes before reading', () => {
             it('returns the entire active detail with persisted version and price', async () => {
                 const owner = await seedAdminSubscriptionReadPrincipal({
                     token: crypto.randomUUID(),
                     label: 'active'
                 });
-                expect(await detail(owner.subscriptionId)).toEqual(await expectedBase(owner));
+                const nextChargeAt = new Date('2026-11-01T09:30:00.000Z');
+                const serviceEndsAt = new Date('2026-12-01T09:30:00.000Z');
+                await setNextChargeAt(owner.subscriptionId, nextChargeAt);
+                await db()
+                    .update(subscriptions)
+                    .set({ serviceEndsAt })
+                    .where(eq(subscriptions.id, owner.subscriptionId));
+                expect(await detail(owner.subscriptionId)).toEqual(
+                    await expectedBase({ ...owner, nextChargeAt, serviceEndsAt })
+                );
             });
 
             it('reads a customer pause written by the real pause service', async () => {
@@ -201,6 +217,17 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 expect(
                     await detail(owner.subscriptionId, new Date(result.endsAt.getTime() + 1))
                 ).toEqual({
+                    ...base,
+                    pause: {
+                        reason: 'COURTESY',
+                        startsAt: pause.startsAt,
+                        expectedEndAt: pause.expectedEndAt,
+                        requestedMonths: pause.requestedMonths
+                    },
+                    courtesy: null
+                });
+                // Boundary: at the exact end instant the endsAt > now predicate is false.
+                expect(await detail(owner.subscriptionId, result.endsAt)).toEqual({
                     ...base,
                     pause: {
                         reason: 'COURTESY',

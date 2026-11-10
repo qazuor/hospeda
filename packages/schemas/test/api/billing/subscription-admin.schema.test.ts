@@ -24,7 +24,7 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
     });
 });
 
-describe('HOS-2081 CA-2 desde el detalle llega a cada acción para la que tiene permiso; las que no puede ejecutar no se muestran', () => {
+describe('HOS-2081 the admin subscription detail schemas validate ids and strip extra fields', () => {
     it('requires a UUID and rejects unknown parameters', () => {
         expect(
             AdminSubscriptionDetailParamsSchema.safeParse({ subscriptionId: 'bad' }).success

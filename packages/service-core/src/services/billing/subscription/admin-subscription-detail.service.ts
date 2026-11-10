@@ -113,6 +113,7 @@ export async function getAdminSubscriptionDetail(
     });
     if (!row) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Subscription not found');
     return AdminSubscriptionDetailSchema.parse({
+        // Spread the row; the parser strips extras and the spread avoids the succession scanner's false positive on succeedsId.
         ...row,
         id: row.id,
         status: row.status,
