@@ -954,6 +954,9 @@ this branch — only the free structured pass runs. See the module doc on
 | `GET` | `/api/v1/admin/plan-migrations/options` | `BILLING_MIGRATE_PLAN` | Retired sources and sellable current targets. |
 | `POST` | `/api/v1/admin/plan-migrations/preview` | `BILLING_MIGRATE_PLAN` | Customer direction, amounts, dates and exclusions. |
 | `POST` | `/api/v1/admin/plan-migrations` | `BILLING_MIGRATE_PLAN` | Launches and audits `ACC_17`. |
+| `GET` | `/api/v1/admin/plan-migrations` | `BILLING_MIGRATE_PLAN` | Paginated migrations and counts by cohort status. |
+| `GET` | `/api/v1/admin/plan-migrations/{id}` | `BILLING_MIGRATE_PLAN` | Cohort detail with unresolved age. |
+| `POST` | `/api/v1/admin/plan-migrations/{id}/cancel` | `BILLING_MIGRATE_PLAN` | Cancels pending rows and audits `ACC_17` on success. |
 
 ## Addon catalog editor routes (HOS-1625, ACC:20)
 
