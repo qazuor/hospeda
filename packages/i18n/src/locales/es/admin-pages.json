@@ -1461,6 +1461,57 @@
             "ACTOR_IS_SUBJECT": "Es tu propia cuenta",
             "ALREADY_IN_MIGRATION": "Ya está en otra migración"
         },
+        "list": {
+            "show": "Ver migraciones anunciadas",
+            "hide": "Ocultar migraciones",
+            "title": "Migraciones anunciadas",
+            "loading": "Cargando migraciones…",
+            "empty": "Todavía no hay migraciones anunciadas.",
+            "plans": "Origen → destino",
+            "reason": "Motivo",
+            "announcedAt": "Anuncio",
+            "status": "Estado",
+            "counts": "Filas por estado",
+            "detail": "Ver detalle",
+            "active": "Activa",
+            "cancelled": "Cancelada",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "page": "Página {page} de {total}"
+        },
+        "reasons": { "RETIREMENT": "Retiro del catálogo", "PRICE_INCREASE": "Aumento de precio" },
+        "states": {
+            "PENDIENTE": "Pendiente",
+            "PARA_RESOLVER": "Para resolver",
+            "APLICADA": "Aplicada",
+            "FUERA": "Fuera",
+            "CANCELADA": "Cancelada"
+        },
+        "outReasons": {
+            "CAMBIO_DE_PLAN": "Cambió de plan",
+            "SE_DIO_DE_BAJA": "Se dio de baja",
+            "TERMINO": "Terminó"
+        },
+        "detail": {
+            "back": "Volver al listado",
+            "loading": "Cargando detalle…",
+            "notice": "Aviso de {days} días",
+            "announced": "Anunciada el {date}",
+            "subscription": "Suscripción",
+            "ageHeading": "Antigüedad desde el anuncio",
+            "applicationDate": "Fecha de aplicación",
+            "outReason": "Motivo de salida",
+            "noRows": "Sin filas en este estado.",
+            "age_one": "hace {{count}} día",
+            "age_other": "hace {{count}} días"
+        },
+        "cancel": {
+            "action": "Cancelar migración",
+            "title": "¿Cancelar esta migración?",
+            "description": "{restored} filas pendientes o para resolver vuelven a quedar como estaban. {started} filas cuyo cambio ya empezó siguen su curso. No se toca ningún cobro.",
+            "dismiss": "Conservar migración",
+            "confirm": "Confirmar cancelación"
+        },
         "errors": {
             "generic": "No pudimos completar la operación. Intentá de nuevo.",
             "invalidSelection": "Elegí un origen y un destino válidos.",
@@ -1472,7 +1523,9 @@
             "PLAN_MIGRATION_VERTICAL_MISMATCH": "Las versiones son de verticales distintas.",
             "PLAN_MIGRATION_SAME_VERSION": "Elegí una versión destino diferente.",
             "PLAN_MIGRATION_COHORT_CHANGED": "La cohorte cambió. Volvé a previsualizar antes de confirmar.",
-            "PLAN_MIGRATION_EMPTY_COHORT": "No hay clientes para migrar."
+            "PLAN_MIGRATION_EMPTY_COHORT": "No hay clientes para migrar.",
+            "PLAN_MIGRATION_NOT_FOUND": "La migración no existe.",
+            "PLAN_MIGRATION_ALREADY_CANCELLED": "La migración ya estaba cancelada."
         }
     },
     "billing": {
