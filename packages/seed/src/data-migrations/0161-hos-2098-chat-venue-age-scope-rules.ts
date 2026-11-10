@@ -30,6 +30,13 @@
  * `0160` wrote. A row an operator reworded is left alone; a second run matches
  * nothing and reports zero.
  *
+ * "Zero" alone would not tell "already applied" from "an operator edited the
+ * rules", so after the UPDATE a SELECT lists the `chat_venue` rows that hold
+ * NEITHER side's string: each is logged as a warning with its prompt-version
+ * id and counted under `chat_venue_operator_edited`. Those venues keep their
+ * edited rules and do NOT get the age-scope clauses until someone merges them
+ * by hand.
+ *
  * ## Both sides are frozen — nothing is imported from `@repo/ai-core`
  *
  * The colocated `.data.json` was produced by EXECUTING code, never transcribed
@@ -41,7 +48,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aiPromptVersions, and, eq } from '@repo/db';
+import { aiPromptVersions, and, eq, ne } from '@repo/db';
+import { logger } from '../utils/logger.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -99,6 +107,19 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             .returning({ id: aiPromptVersions.id });
         counts[feature] = rows.length;
         total += rows.length;
+
+        const edited = await ctx.db
+            .select({ id: aiPromptVersions.id })
+            .from(aiPromptVersions)
+            .where(
+                and(eq(aiPromptVersions.feature, feature), ne(aiPromptVersions.rules, newRules))
+            );
+        counts[`${feature}_operator_edited`] = edited.length;
+        for (const { id } of edited) {
+            logger.warn(
+                `HOS-2098: skipped ai_prompt_versions ${id} (${feature}): its rules differ from the 0160 baseline (operator-edited), so it did NOT get the age-scope clauses — merge them by hand.`
+            );
+        }
     }
 
     return {

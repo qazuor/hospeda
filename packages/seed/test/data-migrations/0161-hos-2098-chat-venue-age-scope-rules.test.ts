@@ -23,6 +23,12 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
+
+const { warnSpy } = vi.hoisted(() => ({ warnSpy: vi.fn() }));
+vi.mock('../../src/utils/logger.js', () => ({
+    logger: { warn: warnSpy, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
 // Read from SOURCE, never from the built package that `@repo/ai-core` resolves
 // to: a stale build would make this sync check compare old strings.
 import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
@@ -79,8 +85,20 @@ interface UpdateCapture {
     readonly whereArgs: unknown[];
 }
 
-function buildCtx(rows: readonly unknown[]): { ctx: SeedMigrationCtx; captures: UpdateCapture[] } {
+function buildCtx(
+    rows: readonly unknown[],
+    editedRows: readonly { id: string }[] = []
+): { ctx: SeedMigrationCtx; captures: UpdateCapture[]; selectWhere: unknown[] } {
     const captures: UpdateCapture[] = [];
+    const selectWhere: unknown[] = [];
+    const select = vi.fn().mockImplementation(() => ({
+        from: vi.fn().mockImplementation(() => ({
+            where: vi.fn().mockImplementation((arg: unknown) => {
+                selectWhere.push(arg);
+                return Promise.resolve(editedRows);
+            })
+        }))
+    }));
     const update = vi.fn().mockImplementation(() => {
         const capture: UpdateCapture = { setArgs: [], whereArgs: [] };
         captures.push(capture);
@@ -96,13 +114,13 @@ function buildCtx(rows: readonly unknown[]): { ctx: SeedMigrationCtx; captures: 
         return { set };
     });
     const ctx = {
-        db: { update },
+        db: { update, select },
         actor: STUB_ACTOR,
         models: {},
         services: {},
         helpers: {}
     } as unknown as SeedMigrationCtx;
-    return { ctx, captures };
+    return { ctx, captures, selectWhere };
 }
 
 describe('0161-hos-2098-chat-venue-age-scope-rules', () => {
@@ -119,7 +137,7 @@ describe('0161-hos-2098-chat-venue-age-scope-rules', () => {
         expect(where).toContain('chat_venue');
         expect(where).toContain(before.rules.chat_venue);
         expect(captures[0]?.setArgs[0]).toEqual({ rules: after.rules.chat_venue });
-        expect(result.counts).toEqual({ chat_venue: 1 });
+        expect(result.counts).toEqual({ chat_venue: 1, chat_venue_operator_edited: 0 });
     });
 
     it('AC-2: writes only the rules column', async () => {
@@ -131,8 +149,34 @@ describe('0161-hos-2098-chat-venue-age-scope-rules', () => {
     it('AC-3: is idempotent — reports no change when nothing matches', async () => {
         const { ctx } = buildCtx([]);
         const result = await migration.up(ctx);
-        expect(result.counts).toEqual({ chat_venue: 0 });
+        expect(result.counts).toEqual({ chat_venue: 0, chat_venue_operator_edited: 0 });
         expect(result.summary?.toLowerCase()).toContain('no change');
+    });
+
+    it('AC-3b: warns, per prompt-version id, about each operator-edited row it skipped', async () => {
+        // Arrange
+        warnSpy.mockClear();
+        const { ctx, selectWhere } = buildCtx([], [{ id: 'pv-edited-1' }, { id: 'pv-edited-2' }]);
+
+        // Act
+        const result = await migration.up(ctx);
+
+        // Assert
+        expect(result.counts).toEqual({ chat_venue: 0, chat_venue_operator_edited: 2 });
+        const where = flattenSql(selectWhere[0]);
+        expect(where).toContain('chat_venue');
+        expect(where).toContain(after.rules.chat_venue);
+        expect(warnSpy).toHaveBeenCalledTimes(2);
+        expect(String(warnSpy.mock.calls[0]?.[0])).toContain('pv-edited-1');
+        expect(String(warnSpy.mock.calls[1]?.[0])).toContain('pv-edited-2');
+        expect(String(warnSpy.mock.calls[0]?.[0])).toContain('operator-edited');
+    });
+
+    it('AC-3c: an already-applied run warns about nothing', async () => {
+        warnSpy.mockClear();
+        const { ctx } = buildCtx([]);
+        await migration.up(ctx);
+        expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it('AC-4: "after" narrows the age only from the scope line; "before" read the listing text', () => {
