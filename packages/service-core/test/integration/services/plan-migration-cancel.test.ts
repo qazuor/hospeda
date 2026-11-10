@@ -12,6 +12,10 @@ import {
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { cancelPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-cancel.service.js';
+import {
+    PLAN_MIGRATION_CANCELLED_TEMPLATE,
+    planMigrationNoticeDedupKey
+} from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
 import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
 import { cancelPendingAttempt } from '../../../src/services/billing/subscription/cancel-pending-attempt.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -57,16 +61,38 @@ async function cancellationMail(userId: string) {
         .then((rows) => rows.filter((row) => row.template === 'billing.plan-migration-cancelled'));
 }
 
+async function announcementPayload(userId: string): Promise<Record<string, unknown>> {
+    const rows = await db
+        .select({ template: emailOutbox.template, payload: emailOutbox.payload })
+        .from(emailOutbox)
+        .where(eq(emailOutbox.recipientUserId, userId));
+    const announcement = rows.find((row) => row.template === 'billing.plan-migration-announced');
+    if (
+        !announcement ||
+        typeof announcement.payload !== 'object' ||
+        announcement.payload === null ||
+        Array.isArray(announcement.payload)
+    )
+        throw new Error('Announcement payload missing');
+    return announcement.payload as Record<string, unknown>;
+}
+
 describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B12:7 AC:B12:7 cancelar una migración anunciada',
     () => {
         it('cancels pending and unresolved rows, keeps started rows, and preserves subscriptions and their queue', async () => {
-            const { seeded, pendingCustomer, additionalCustomers, migrationId } =
-                await createAnnouncedExitCase({
-                    addPendingCustomer: true,
-                    additionalPendingCustomers: 3
-                });
-            if (!pendingCustomer || additionalCustomers.length !== 3)
+            const {
+                seeded,
+                pendingCustomer,
+                additionalCustomers,
+                unresolvedCustomer,
+                migrationId
+            } = await createAnnouncedExitCase({
+                addPendingCustomer: true,
+                additionalPendingCustomers: 3,
+                addUnresolvedCustomer: true
+            });
+            if (!pendingCustomer || !unresolvedCustomer || additionalCustomers.length !== 3)
                 throw new Error('Cancellation cohort fixture missing');
             const [targetOption] = await db
                 .select()
@@ -81,9 +107,17 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const recipients = [
                 seeded.user.id,
                 pendingCustomer.userId,
+                unresolvedCustomer.userId,
                 ...additionalCustomers.map((c) => c.userId)
             ];
             usersToClean.push(...recipients);
+            const announced = new Map(
+                await Promise.all(
+                    recipients.map(
+                        async (userId) => [userId, await announcementPayload(userId)] as const
+                    )
+                )
+            );
             const future = await scopeFor(seeded.predecessor.id);
             const past = await scopeFor(additionalCustomers[0]!.subscriptionId);
             const futureDate = new Date('2026-10-12T12:00:00.000Z');
@@ -117,6 +151,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const ids = [
                 seeded.predecessor.id,
                 pendingCustomer.subscriptionId,
+                unresolvedCustomer.subscriptionId,
                 ...additionalCustomers.map((c) => c.subscriptionId)
             ];
             const beforeSubscriptions = await db
@@ -134,7 +169,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(result).toEqual({
                 planMigrationId: migrationId,
                 cancelledAt: clock.now(),
-                rows: { cancelled: 2, alreadyStarted: 1, untouched: 2 }
+                rows: { cancelled: 3, alreadyStarted: 1, untouched: 2 }
             });
             const [migration] = await db
                 .select()
@@ -146,6 +181,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 future,
                 past,
                 await scopeFor(pendingCustomer.subscriptionId),
+                await scopeFor(unresolvedCustomer.subscriptionId),
                 await scopeFor(additionalCustomers[1]!.subscriptionId),
                 await scopeFor(additionalCustomers[2]!.subscriptionId)
             ];
@@ -209,19 +245,55 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     .from(subscriptionScheduledChanges)
                     .where(eq(subscriptionScheduledChanges.id, queued.id))
             ).toEqual(beforeQueue);
-            expect((await cancellationMail(seeded.user.id)).map((mail) => mail.payload)).toEqual([
-                expect.objectContaining({
-                    variant: 'ALREADY_STARTED',
-                    newAmountMinor: targetOption.amount,
-                    applicationDate: '2026-10-12'
-                })
+            expect(announced.get(seeded.user.id)?.newAmountMinor).toBe(targetOption.amount);
+            expect(
+                (await cancellationMail(seeded.user.id)).map((mail) => ({
+                    payload: mail.payload,
+                    dedupKey: mail.dedupKey
+                }))
+            ).toEqual([
+                {
+                    payload: {
+                        ...announced.get(seeded.user.id),
+                        variant: 'ALREADY_STARTED',
+                        applicationDate: '2026-10-12'
+                    },
+                    dedupKey: planMigrationNoticeDedupKey({
+                        recipientUserId: seeded.user.id,
+                        template: PLAN_MIGRATION_CANCELLED_TEMPLATE,
+                        planMigrationSubscriptionId: future.id,
+                        milestone: 'mig:cancel',
+                        targetDate: '2026-10-11'
+                    })
+                }
             ]);
             expect(await cancellationMail(pendingCustomer.userId)).toHaveLength(0);
+            expect(await cancellationMail(unresolvedCustomer.userId)).toHaveLength(0);
             expect(await cancellationMail(additionalCustomers[0]!.userId)).toHaveLength(0);
-            for (const customer of additionalCustomers.slice(1))
+            for (const customer of additionalCustomers.slice(1)) {
+                const scope = await scopeFor(customer.subscriptionId);
                 expect(
-                    (await cancellationMail(customer.userId)).map((mail) => mail.payload)
-                ).toEqual([expect.objectContaining({ variant: 'NOTHING_CHANGES' })]);
+                    (await cancellationMail(customer.userId)).map((mail) => ({
+                        payload: mail.payload,
+                        dedupKey: mail.dedupKey
+                    }))
+                ).toEqual([
+                    {
+                        payload: {
+                            ...announced.get(customer.userId),
+                            variant: 'NOTHING_CHANGES',
+                            applicationDate: null
+                        },
+                        dedupKey: planMigrationNoticeDedupKey({
+                            recipientUserId: customer.userId,
+                            template: PLAN_MIGRATION_CANCELLED_TEMPLATE,
+                            planMigrationSubscriptionId: scope.id,
+                            milestone: 'mig:cancel',
+                            targetDate: '2026-10-11'
+                        })
+                    }
+                ]);
+            }
             await expect(
                 cancelPlanMigration(
                     { actor: seeded.actor, planMigrationId: migrationId, db },

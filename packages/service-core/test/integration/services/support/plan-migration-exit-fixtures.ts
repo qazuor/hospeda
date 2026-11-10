@@ -1,4 +1,6 @@
 import {
+    and,
+    billingOptions,
     eq,
     planMigrationSubscriptions,
     planMigrations,
@@ -26,6 +28,7 @@ export async function createAnnouncedExitCase(
         readonly unresolved?: boolean;
         readonly addPendingCustomer?: boolean;
         readonly additionalPendingCustomers?: number;
+        readonly addUnresolvedCustomer?: boolean;
     } = {}
 ) {
     const seeded = await createPlanMigrationCase({
@@ -44,6 +47,37 @@ export async function createAnnouncedExitCase(
     const pendingCustomer =
         started && pendingOwner?.userId ? { ...started, userId: pendingOwner.userId } : null;
     if (pendingCustomer) pendingCustomers.push(pendingCustomer);
+    let unresolvedCustomer: { subscriptionId: string; userId: string } | null = null;
+    if (args.addUnresolvedCustomer) {
+        // Seed a second source-cycle option; its subscription still starts through startSubscription.
+        const [sourceAnnual] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: seeded.planVersionId,
+                cycle: 'annual',
+                amount: 250000,
+                currency: 'ARS'
+            })
+            .returning();
+        if (!sourceAnnual) throw new Error('Annual source option seed missing');
+        const startedAnnual = await startCyclePriceCustomer(sourceAnnual.id);
+        const [owner] = await getServiceTestDb()
+            .select({ userId: subscriptions.userId })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, startedAnnual.subscriptionId));
+        if (!owner?.userId) throw new Error('Unresolved customer missing');
+        unresolvedCustomer = { subscriptionId: startedAnnual.subscriptionId, userId: owner.userId };
+        pendingCustomers.push(unresolvedCustomer);
+        // The destination lacks annual: this is catalog fixture setup, not a subscription transition.
+        await getServiceTestDb()
+            .delete(billingOptions)
+            .where(
+                and(
+                    eq(billingOptions.planVersionId, seeded.targetPlanVersionId),
+                    eq(billingOptions.cycle, 'annual')
+                )
+            );
+    }
     const additionalCustomers: Array<{ subscriptionId: string; userId: string }> = [];
     for (let index = 0; index < (args.additionalPendingCustomers ?? 0); index++) {
         const additional = await startCyclePriceCustomer(seeded.predecessorBillingOptionId);
@@ -80,7 +114,13 @@ export async function createAnnouncedExitCase(
         clock: migrationClock
     });
     migrationIds.push(launched.planMigrationId);
-    return { seeded, pendingCustomer, additionalCustomers, migrationId: launched.planMigrationId };
+    return {
+        seeded,
+        pendingCustomer,
+        additionalCustomers,
+        unresolvedCustomer,
+        migrationId: launched.planMigrationId
+    };
 }
 
 /** Remove only this test's migration rows before the shared customer fixture cleanup. */
