@@ -128,7 +128,9 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // Plan price-increase advance notice (HOS-176)
     // TODO(HOS-176 D-3): PROVISIONAL copy — pending legal sign-off before enabling the increase flag.
     [NotificationType.PLAN_PRICE_CHANGE_NOTICE]:
-        'Aviso previo: el precio de tu plan {planName} aumentará desde el {effectiveDate}'
+        'Aviso previo: el precio de tu plan {planName} aumentará desde el {effectiveDate}',
+    // HOS-2101: the only localised email; the payload carries the built subject.
+    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: '{digestSubject}'
 };
 
 /**
