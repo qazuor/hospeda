@@ -34,7 +34,10 @@ async function readScope(subscriptionId: string) {
     return row;
 }
 
-async function expectTerminalExit(subscriptionId: string, status: 'ABANDONED' | 'CANCELLED') {
+async function expectTerminalExit(
+    subscriptionId: string,
+    status: 'ABANDONED' | 'CANCELLED' | 'CHARGE_DECLINED'
+) {
     const [subscription] = await getServiceTestDb()
         .select({ status: subscriptions.status })
         .from(subscriptions)
@@ -137,6 +140,22 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .set({ status: 'CANCELLED' })
                 .where(eq(subscriptions.id, seeded.predecessor.id));
             await expectTerminalExit(seeded.predecessor.id, 'CANCELLED');
+        });
+
+        it.each([
+            { scopeStatus: 'PENDIENTE' as const, unresolved: false },
+            { scopeStatus: 'PARA_RESOLVER' as const, unresolved: true }
+        ])('a $scopeStatus row exits when its subscription is CHARGE_DECLINED', async ({
+            scopeStatus,
+            unresolved
+        }) => {
+            const { seeded } = await createAnnouncedExitCase({ unresolved });
+            expect((await readScope(seeded.predecessor.id)).status).toBe(scopeStatus);
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'CHARGE_DECLINED' })
+                .where(eq(subscriptions.id, seeded.predecessor.id));
+            await expectTerminalExit(seeded.predecessor.id, 'CHARGE_DECLINED');
         });
 
         it('rolls back the terminal status and scope exit together', async () => {
