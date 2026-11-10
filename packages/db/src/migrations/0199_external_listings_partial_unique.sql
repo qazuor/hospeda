@@ -1,0 +1,2 @@
+DROP INDEX "accommodation_external_listings_accommodation_platform_uniq";--> statement-breakpoint
+CREATE UNIQUE INDEX "accommodation_external_listings_accommodation_platform_uniq" ON "accommodation_external_listings" USING btree ("accommodation_id","platform") WHERE "accommodation_external_listings"."deleted_at" is null;
