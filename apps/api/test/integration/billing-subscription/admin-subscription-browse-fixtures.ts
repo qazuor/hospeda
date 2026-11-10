@@ -3,7 +3,10 @@
  *
  * The plan, its non-sellable version, the billing option and the principal subscription are
  * inserted directly (never through `publishPlanVersion`; PM-474/PM-476). Timestamps are fixed
- * so the HTTP serialization is deterministic. Every row is registered and deleted by id.
+ * so the HTTP serialization is deterministic. The user, subscription and billing option are
+ * registered and deleted by id, children first; the plan and its version stay because
+ * `plan_version` is immutable by trigger (`reject_plan_version_effect_change`) and both are
+ * neither current nor sellable.
  */
 import {
     billingOptions,
@@ -33,7 +36,11 @@ export const BROWSE_SERVICE_ENDS_AT = new Date('2026-12-01T09:30:00.000Z');
 /** Creation instant of the seeded plan version. */
 export const BROWSE_PLAN_VERSION_CREATED_AT = new Date('2026-01-15T08:00:00.000Z');
 
-const created = { users: [] as string[], subscriptions: [] as string[] };
+const created = {
+    users: [] as string[],
+    subscriptions: [] as string[],
+    billingOptions: [] as string[]
+};
 
 /** A seeded owner and their principal subscription with every related id. */
 export interface SeededBrowseSubscription {
@@ -97,6 +104,7 @@ export async function seedBrowseSubscription(label: string): Promise<SeededBrows
         })
         .returning({ id: billingOptions.id });
     if (!option) throw new Error('Expected billing option');
+    created.billingOptions.push(option.id);
 
     const [row] = await db
         .insert(subscriptions)
@@ -127,10 +135,16 @@ export async function seedBrowseSubscription(label: string): Promise<SeededBrows
     };
 }
 
-/** Delete the seeded subscriptions (and their side rows) and users, children first. */
+/**
+ * Delete the seeded rows that can be deleted, children first: pauses and
+ * courtesies, subscriptions, billing options, then users. The plan and its
+ * version stay because `plan_version` is immutable by trigger
+ * (`reject_plan_version_effect_change`), exactly as in `real-coverage-wiring`.
+ */
 export async function retireBrowseRows(): Promise<void> {
     const db = getDb();
     const subscriptionIds = created.subscriptions.splice(0);
+    const billingOptionIds = created.billingOptions.splice(0);
     const userIds = created.users.splice(0);
     if (subscriptionIds.length > 0) {
         await db
@@ -140,6 +154,9 @@ export async function retireBrowseRows(): Promise<void> {
             .delete(subscriptionPauses)
             .where(inArray(subscriptionPauses.subscriptionId, subscriptionIds));
         await db.delete(subscriptions).where(inArray(subscriptions.id, subscriptionIds));
+    }
+    if (billingOptionIds.length > 0) {
+        await db.delete(billingOptions).where(inArray(billingOptions.id, billingOptionIds));
     }
     if (userIds.length > 0) {
         await db.delete(users).where(inArray(users.id, userIds));

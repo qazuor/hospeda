@@ -124,6 +124,7 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
         const seeded = await seedBrowseSubscription('no-session');
         const response = await app.request(`${listPath}?q=${seeded.email}`, { headers: headers() });
         expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
     });
 
     it('returns 401 to a guest actor, never 403 or 200', async () => {
@@ -132,6 +133,7 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
             headers: guestActor()
         });
         expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
     });
 
     it('returns 403 to an admin without the inspection permission', async () => {
@@ -140,6 +142,7 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
             headers: nonInspectionActor()
         });
         expect(response.status).toBe(403);
+        expect((await response.json()).error.code).toBe('FORBIDDEN');
     });
 
     it('finds the subscription by the owner email and audits the read', async () => {
@@ -182,6 +185,9 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
         expect([unknownParam.status, oversize.status, unknownStatus.status]).toEqual([
             400, 400, 400
         ]);
+        expect((await unknownParam.json()).error.code).toBe('INVALID_PAGINATION_PARAMS');
+        expect((await oversize.json()).error.code).toBe('VALIDATION_ERROR');
+        expect((await unknownStatus.json()).error.code).toBe('VALIDATION_ERROR');
     });
 
     it('keeps the inspect route answering its own contract', async () => {
@@ -218,6 +224,7 @@ describe('HOS-2081 el detalle de suscripción', () => {
             headers: headers()
         });
         expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
     });
 
     it('returns 401 to a guest actor, never 403 or 200', async () => {
@@ -226,6 +233,7 @@ describe('HOS-2081 el detalle de suscripción', () => {
             headers: guestActor()
         });
         expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
     });
 
     it('returns 403 to an admin without the inspection permission', async () => {
@@ -234,6 +242,7 @@ describe('HOS-2081 el detalle de suscripción', () => {
             headers: nonInspectionActor()
         });
         expect(response.status).toBe(403);
+        expect((await response.json()).error.code).toBe('FORBIDDEN');
     });
 
     it('returns the detail with ISO dates and audits the read', async () => {
@@ -259,6 +268,7 @@ describe('HOS-2081 el detalle de suscripción', () => {
             headers: inspectionActor()
         });
         expect(malformed.status).toBe(400);
+        expect((await malformed.json()).error.code).toBe('VALIDATION_ERROR');
 
         const missing = crypto.randomUUID();
         const unknown = await app.request(overviewPath(missing), { headers: inspectionActor() });
