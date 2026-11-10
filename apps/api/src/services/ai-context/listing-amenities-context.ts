@@ -118,20 +118,30 @@ export async function safeLoadListingAmenities({
             isFeatured: amenities.isFeatured,
             displayWeight: amenities.displayWeight
         };
-        const rows =
-            vertical === 'venue'
-                ? await db
-                      .select(select)
-                      .from(rVenueAmenity)
-                      .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
-                      .where(eq(rVenueAmenity.venueId, listingId))
-                      .limit(LISTING_AMENITY_FETCH_MAX)
-                : await db
-                      .select(select)
-                      .from(rExperienceAmenity)
-                      .innerJoin(amenities, eq(rExperienceAmenity.amenityId, amenities.id))
-                      .where(eq(rExperienceAmenity.experienceId, listingId))
-                      .limit(LISTING_AMENITY_FETCH_MAX);
+        // Exhaustive switch, not a binary ternary (HOS-1079, guard G1(b)): a third
+        // vertical must be a compile error, never a silent read of the wrong table.
+        const rows = await (async () => {
+            switch (vertical) {
+                case 'venue':
+                    return db
+                        .select(select)
+                        .from(rVenueAmenity)
+                        .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
+                        .where(eq(rVenueAmenity.venueId, listingId))
+                        .limit(LISTING_AMENITY_FETCH_MAX);
+                case 'experience':
+                    return db
+                        .select(select)
+                        .from(rExperienceAmenity)
+                        .innerJoin(amenities, eq(rExperienceAmenity.amenityId, amenities.id))
+                        .where(eq(rExperienceAmenity.experienceId, listingId))
+                        .limit(LISTING_AMENITY_FETCH_MAX);
+                default: {
+                    const exhaustive: never = vertical;
+                    throw new Error(`Unsupported amenity vertical: ${String(exhaustive)}`);
+                }
+            }
+        })();
         return rows.map((row) => ({
             slug: row.slug ?? '',
             isFeatured: row.isFeatured ?? false,
