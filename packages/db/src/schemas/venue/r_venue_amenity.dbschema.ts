@@ -33,6 +33,10 @@ export const rVenueAmenity = pgTable(
          * HOS-2061: relation attributes, identical in shape to
          * `r_accommodation_amenity` (one standard across verticals).
          */
+        /**
+         * HOS-2084: "paid separately / extra charge" (UI: "Con cargo extra"). A flag
+         * only: no amount is captured. Written by the owner editor as `extraCharge`.
+         */
         isOptional: boolean('is_optional').notNull().default(false),
         additionalCost: jsonb('additional_cost').$type<PriceType>(),
         additionalCostPercent: doublePrecision('additional_cost_percent'),

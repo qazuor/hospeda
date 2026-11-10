@@ -42,6 +42,10 @@ export interface ExperienceListingEmptyStateFilters {
     readonly type: string | undefined;
     readonly isFeatured: boolean | undefined;
     readonly minRating: number | undefined;
+    /** Raw `?amenities=` CSV (HOS-2085). */
+    readonly amenities?: string | undefined;
+    /** Raw `?features=` CSV (HOS-2085). */
+    readonly features?: string | undefined;
 }
 
 /** Parsed accommodation filters relevant to the listing empty-state copy. */
@@ -110,14 +114,18 @@ export function hasActiveExperienceListingFilters({
     destinationId,
     type,
     isFeatured,
-    minRating
+    minRating,
+    amenities,
+    features
 }: ExperienceListingEmptyStateFilters): boolean {
     return Boolean(
         hasNonEmptyText(q) ||
             hasNonEmptyText(destinationId) ||
             hasNonEmptyText(type) ||
             isFeatured === true ||
-            hasFiniteNumber(minRating)
+            hasFiniteNumber(minRating) ||
+            hasNonEmptyCsv(amenities) ||
+            hasNonEmptyCsv(features)
     );
 }
 

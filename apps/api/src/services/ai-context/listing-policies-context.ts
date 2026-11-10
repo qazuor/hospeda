@@ -27,6 +27,8 @@ export interface ListingPoliciesContextInput {
     readonly checkOut?: { readonly from?: string; readonly to?: string } | null;
     readonly minNights?: number | null;
     readonly maxNights?: number | null;
+    /** Venue reservation policy (HOS-2095: was stored but never rendered). */
+    readonly reservations?: string | null;
 }
 
 /** Spanish labels, matching the rest of the context block. */
@@ -41,6 +43,11 @@ const PETS_LABELS: Readonly<Record<string, string>> = {
     yes: 'sí, se admiten',
     on_request: 'a consultar',
     no: 'no se admiten'
+};
+const RESERVATION_LABELS: Readonly<Record<string, string>> = {
+    required: 'se requiere reserva',
+    recommended: 'se recomienda reservar',
+    not_accepted: 'no toma reservas'
 };
 const SMOKING_LABELS: Readonly<Record<string, string>> = {
     yes: 'se permite fumar',
@@ -90,5 +97,9 @@ export function buildListingPoliciesLines({
     if (checkOut) body.push(`**Check-out**: ${checkOut}`);
     if (policies.minNights != null) body.push(`**Mínimo de noches**: ${policies.minNights}`);
     if (policies.maxNights != null) body.push(`**Máximo de noches**: ${policies.maxNights}`);
+    const reservations = policies.reservations
+        ? RESERVATION_LABELS[policies.reservations]
+        : undefined;
+    if (reservations) body.push(`**Reservas**: ${reservations}`);
     return { lines: body.length > 0 ? ['', '### Normas de la casa', ...body] : [] };
 }

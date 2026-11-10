@@ -16,6 +16,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ExperienceCard from '@/components/experience/ExperienceCard.astro';
 import ExperienceGrid from '@/components/experience/ExperienceGrid.astro';
+import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -26,7 +27,13 @@ import {
     buildExperienceListingSummary,
     DEFAULT_EXPERIENCE_TYPES
 } from '@/lib/listing-summary';
-import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
+import {
+    experiencesApi,
+    destinationsApi,
+    amenitiesApi,
+    featuresApi,
+    SSR_PUBLIC_CACHE_TTL_MS
+} from '@/lib/api/endpoints';
 import { toExperienceCardProps } from '@/lib/api/transforms';
 import { getExperienceTypeIcon } from '@/lib/experience-type-icons';
 import { createTranslations } from '@/lib/i18n';
@@ -35,6 +42,10 @@ import { hasActiveExperienceListingFilters } from '@/lib/listing-empty-state-fil
 import { buildUrl } from '@/lib/urls';
 import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
+import {
+    buildExperienceCatalogFilterGroups,
+    narrowExperienceCatalog
+} from '@/lib/experience/experience-listing-filters';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -54,7 +65,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
-	// `minRating`, `sortBy` — all read in the frontmatter, all
+	// `minRating`, `amenities`, `features`, `sortBy` — all read in the frontmatter, all
 	// changing the SSR HTML. Anything beyond pagination makes the render an
 	// arbitrary slice and stays private.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
@@ -78,6 +89,14 @@ const minRating = url.searchParams.get('minRating')
     : undefined;
 
 /**
+ * The amenities and features filters (HOS-2085): comma-separated catalog UUIDs
+ * the listing must ALL carry. The page only forwards the raw strings, as the
+ * venue listing does: the API's HTTP schema splits and validates each UUID.
+ */
+const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
+const featuresParam = url.searchParams.get('features') ?? undefined;
+
+/**
  * Maps the URL's user-friendly sort key (matching the `sortOptions` below) to
  * the backend `(sortBy, sortOrder)` pair. BETA-119: previously the actual API
  * call ignored `sortBy` entirely (always sorted `isFeatured desc`), while the
@@ -96,22 +115,52 @@ const DEFAULT_SORT_KEY = 'featured';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// --- Fetch destinations (CITY) for filter dropdown ---
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
-const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+// --- Fetch destinations (CITY), the experience catalogs, the filter options and the listings ---
+// Both catalog reads are scoped with `applicableVertical: 'experience'` (the
+// shared catalog also holds accommodation and venue rows) and use the
+// fixed-catalog TTL, exactly as the venue listing does.
+const [destinationsResult, amenitiesResult, featuresResult, filterOptionsResult, result] =
+    await Promise.all([
+        destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+        amenitiesApi.list({
+            pageSize: 100,
+            applicableVertical: 'experience',
+            sortBy: 'displayWeight',
+            sortOrder: 'desc',
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        }),
+        featuresApi.list({
+            pageSize: 100,
+            applicableVertical: 'experience',
+            sortBy: 'displayWeight',
+            sortOrder: 'desc',
+            cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+        }),
+        experiencesApi.getFilterOptions(),
+        experiencesApi.list({
+            page,
+            pageSize,
+            q,
+            destinationId,
+            type,
+            isFeatured,
+            minRating,
+            amenities: amenitiesParam,
+            features: featuresParam,
+            sortBy: sortResolved.sortBy,
+            sortOrder: sortResolved.sortOrder
+        })
+    ]);
 
-// --- Fetch experience listings ---
-const result = await experiencesApi.list({
-    page,
-    pageSize,
-    q,
-    destinationId,
-    type,
-    isFeatured,
-    minRating,
-    sortBy: sortResolved.sortBy,
-    sortOrder: sortResolved.sortOrder
-});
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const amenityCatalog = amenitiesResult.ok ? amenitiesResult.data.items : [];
+const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
+
+// A failed options read must not offer a filter without published listings,
+// and the render must not be frozen into the shared cache while it shows that
+// poorer sidebar. `null` makes the narrowing fail closed; the rendered
+// `VenueFilterOptionsDegradation` marks the response degraded.
+const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -140,6 +189,8 @@ const hasActiveFilters = hasActiveExperienceListingFilters({
 	type,
 	isFeatured,
 	minRating,
+	amenities: amenitiesParam,
+	features: featuresParam
 });
 
 // --- Experience types for filter (from the confirmed enum) ---
@@ -159,6 +210,20 @@ const EXPERIENCE_TYPES = [
     'OUTDOOR_ADVENTURE',
     'OTHER'
 ] as const;
+
+// --- Catalog filter groups (narrowed to the values present on published listings) ---
+const splitIds = (value: string | undefined): readonly string[] =>
+    (value ?? '')
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+
+const narrowedCatalog = narrowExperienceCatalog({
+    filterOptions,
+    amenities: amenityCatalog,
+    features: featureCatalog,
+    active: { amenityIds: splitIds(amenitiesParam), featureIds: splitIds(featuresParam) }
+});
 
 // --- Filter groups ---
 const filterGroups: FilterGroup[] = [
@@ -196,6 +261,11 @@ const filterGroups: FilterGroup[] = [
         label: t('experience.listing.featured', 'Solo destacadas'),
         type: 'toggle'
     },
+    ...buildExperienceCatalogFilterGroups({
+        t,
+        amenities: narrowedCatalog.amenities,
+        features: narrowedCatalog.features
+    }),
     {
         id: 'minRating',
         label: t('experience.listing.minRating', 'Calificación mínima'),
@@ -220,6 +290,8 @@ if (destinationId) initialParams.destinationId = destinationId;
 if (type) initialParams.type = type;
 if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (amenitiesParam) initialParams.amenities = amenitiesParam;
+if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
 
 /**
@@ -340,6 +412,8 @@ const itemListEntries = cards.map((card) => ({
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
     />
+
+    <VenueFilterOptionsDegradation failed={!filterOptionsResult.ok || !amenitiesResult.ok || !featuresResult.ok} />
 
     {hasError && !result.ok && (
         <ErrorBanner

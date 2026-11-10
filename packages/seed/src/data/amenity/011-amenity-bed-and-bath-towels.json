@@ -7,7 +7,7 @@
         "en": "Toallas incluidas",
         "pt": "Toallas incluidas"
     },
-    "applicableVerticals": ["accommodation", "experience"],
+    "applicableVerticals": ["accommodation"],
     "type": "BED_AND_BATH",
     "icon": "TowelsIcon",
     "isBuiltin": false,

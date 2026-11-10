@@ -25,6 +25,17 @@ export {
     type CalculateCostResult,
     calculateCostMicroUsd
 } from './cost-calculator.js';
+export {
+    hasModelRate,
+    type MissingModelRateHook,
+    type MissingModelRateInput,
+    type ModelRateSource,
+    type ResolveModelRateInput,
+    type ResolveModelRateResult,
+    reportMissingModelRate,
+    resetMissingModelRateWarnings,
+    resolveModelRate
+} from './model-rate-resolver.js';
 export { DEFAULT_COST_CEILINGS, MODEL_RATES } from './model-rates.js';
 // Read-only usage reporting (SPEC-173 T-018)
 // Monthly call-count helper for quota enforcement (SPEC-173 T-031)

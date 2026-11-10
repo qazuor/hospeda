@@ -8,7 +8,7 @@
  *   1. A brand-new owner with a single BOLICHE opens `/es/mi-cuenta/comercio/`
  *      and the venue welcome tour starts by itself.
  *   2. The tour runs to the last step and never shows
- *      `account.welcomeTour.venueQr.title` ("QR de tu menu").
+ *      `account.welcomeTour.venueQr.title` ("QR de tu carta o barra", HOS-2093).
  *   3. The same flow for a RESTAURANT owner with a trial DOES show that step.
  *
  * The tour starts on this page because the page mounts `TourController` next to
@@ -45,7 +45,7 @@ const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 /** The `account.welcomeTour.venueQr.title` copy in `es`. */
-const VENUE_QR_TITLE = 'QR de tu menu';
+const VENUE_QR_TITLE = 'QR de tu carta o barra';
 
 /** The last step of `web.venue.welcome` (`account.welcomeTour.listingViews.title`). */
 const LAST_STEP_TITLE = 'Visitas a tu ficha';

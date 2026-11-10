@@ -667,6 +667,10 @@
             "yearRound": "Year-round",
             "seasonal": "Seasonal",
             "unset": "Not specified"
+        },
+        "extraCharge": {
+            "label": "Extra charge",
+            "badge": "Extra charge"
         }
     },
     "amenityNames": {
@@ -844,7 +848,8 @@
         "baby_changing_table": "Baby changing table",
         "boat_included": "Boat included",
         "changing_rooms": "Changing rooms",
-        "life_jacket_included": "Life jacket included"
+        "life_jacket_included": "Life jacket included",
+        "towels_provided": "Towels"
     },
     "featureNames": {
         "river_front": "Riverfront",
@@ -1014,7 +1019,10 @@
         "expand": "Expand panel",
         "collapse": "Collapse panel",
         "consumerLimitReached": "You've reached your monthly AI chat limit. Upgrade your plan for more access.",
-        "consumerLimitUpgradeCta": "View plans"
+        "consumerLimitUpgradeCta": "View plans",
+        "error": {
+            "EMPTY_ANSWER": "We couldn't generate an answer. Please try again in a moment."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

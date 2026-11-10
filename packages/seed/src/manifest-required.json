@@ -1176,7 +1176,8 @@
         "175-amenity-family-friendly-baby-changing-table.json",
         "176-amenity-general-appliances-boat-included.json",
         "177-amenity-services-changing-rooms.json",
-        "178-amenity-safety-life-jacket-included.json"
+        "178-amenity-safety-life-jacket-included.json",
+        "179-amenity-general-appliances-towels-provided.json"
     ],
     "features": [
         "001-feature-river_front.json",
@@ -1245,7 +1246,6 @@
         "082-feature-vegan_options.json",
         "083-feature-vegetarian_options.json",
         "084-feature-kids_menu.json",
-        "085-feature-family_friendly.json",
         "086-feature-romantic_ambiance.json",
         "087-feature-organic_products.json",
         "088-feature-craft_beer.json",

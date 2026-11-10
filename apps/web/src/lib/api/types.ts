@@ -401,6 +401,12 @@ export type AmenityAvailabilityValue = 'year_round' | 'seasonal';
 export interface AmenityAttributeValue {
     readonly scope: AmenityScopeValue | null;
     readonly availability: AmenityAvailabilityValue | null;
+    /**
+     * HOS-2084: "Con cargo extra" (`is_optional` on the relation row, sent as
+     * `extraCharge`). `undefined` = never touched, which the API reads as "keep
+     * the stored value"; an explicit `false` clears it.
+     */
+    readonly extraCharge?: boolean;
 }
 
 export interface AmenityData {

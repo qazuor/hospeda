@@ -1377,8 +1377,15 @@
     {
       "idx": 196,
       "version": "7",
-      "when": 1794193221385,
-      "tag": "0196_hos_2060_drop_legacy_policy_columns",
+      "when": 1794264300530,
+      "tag": "0196_hos_2095_ai_usage_consumer_user",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1794274812894,
+      "tag": "0197_hos_2060_drop_legacy_policy_columns",
       "breakpoints": true
     }
   ]

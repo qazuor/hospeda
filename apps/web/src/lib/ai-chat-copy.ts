@@ -164,6 +164,7 @@ function errorFallback(entityType: AiChatEntityType, code: string): string | und
         FEATURE_DISABLED: 'El chat de IA está deshabilitado temporalmente.',
         CEILING_HIT: 'Se alcanzó el límite de costo de IA. Intentá más tarde.',
         SERVICE_UNAVAILABLE: 'Servicio temporalmente no disponible. Intentá más tarde.',
+        EMPTY_ANSWER: 'No pudimos generar una respuesta. Probá de nuevo en un momento.',
         NETWORK_INTERRUPTED: 'Se cortó la conexión. Reintentá.',
         INTERNAL_ERROR: 'Ocurrió un error inesperado. Intentá de nuevo.'
     };

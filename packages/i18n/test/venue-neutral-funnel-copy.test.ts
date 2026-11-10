@@ -36,6 +36,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.venue'
     ],
     en: [
@@ -65,6 +70,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.listVenue',
         'footer.venue'
     ],
@@ -94,6 +104,11 @@ const paths: Record<string, readonly string[]> = {
         'account.doors.publish.options.venue.title',
         'account.doors.publish.options.venue.description',
         'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
         'footer.venue'
     ]
 };
@@ -137,6 +152,76 @@ describe('neutral venue funnel copy', () => {
                 const value = getString(docs[file], key.join('.')).toLocaleLowerCase(lang);
                 for (const word of banned[lang])
                     expect(value, `${lang} ${fullKey}`).not.toContain(word);
+            }
+        }
+    });
+
+    it('keeps venue marketing copy free of a named city, the audience word and an approval step (HOS-2092)', () => {
+        const checked: Record<string, string[]> = {
+            es: [
+                'viajeros',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprobamos',
+                'ficha por cuenta'
+            ],
+            en: ['travelers', 'travellers', 'concepción del uruguay', 'entre ríos', 'we approve'],
+            pt: [
+                'viajantes',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprovamos',
+                'ficha por conta'
+            ]
+        };
+        const keys = [
+            'venue.landing.benefits.item1.desc',
+            'venue.landing.faq.a3',
+            'publish.venue.meta.description',
+            'publish.venue.benefits.item1.desc',
+            'pricing.index.cards.venue.highlights.item2',
+            'account.doors.publish.options.venue.description',
+            'account.doors.publish.options.experience.description'
+        ];
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const read = (file: string): Locale =>
+                JSON.parse(readFileSync(`src/locales/${lang}/${file}.json`, 'utf8')) as Locale;
+            const docs: Record<string, Locale> = {
+                venue: read('venue'),
+                publish: read('publish'),
+                pricing: read('pricing'),
+                account: read('account')
+            };
+            for (const fullKey of keys) {
+                const [file, ...key] = fullKey.split('.');
+                const value = getString(docs[file], key.join('.')).toLocaleLowerCase(lang);
+                for (const word of checked[lang]) {
+                    if (fullKey.includes('experience') && word === 'viajeros') continue;
+                    if (fullKey.includes('experience') && word === 'travelers') continue;
+                    if (fullKey.includes('experience') && word === 'viajantes') continue;
+                    expect(value, `${lang} ${fullKey}`).not.toContain(word);
+                }
+            }
+        }
+    });
+
+    it('keeps the plan-card item for product photos free of kitchen-only words (HOS-2092)', () => {
+        // The pricing card lists this entitlement without the rubro tag the
+        // comparison table adds, so it must read for a bar or a boliche too.
+        const dishWords = {
+            es: ['plato'],
+            en: ['dish'],
+            pt: ['prato']
+        } as const;
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const billing = JSON.parse(
+                readFileSync(`src/locales/${lang}/billing.json`, 'utf8')
+            ) as Locale;
+            const value = getString(billing, 'entitlement.menu_item_photos').toLocaleLowerCase(
+                lang
+            );
+            for (const word of dishWords[lang]) {
+                expect(value, `${lang} entitlement.menu_item_photos`).not.toContain(word);
             }
         }
     });

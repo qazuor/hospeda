@@ -142,6 +142,10 @@
             "yearRound": "Todo el año",
             "seasonal": "De temporada",
             "unset": "Sin indicar"
+        },
+        "extraCharge": {
+            "label": "Con cargo extra",
+            "badge": "Con cargo"
         }
     },
     "amenityNames": {
@@ -319,7 +323,8 @@
         "baby_changing_table": "Cambiador para bebés",
         "boat_included": "Embarcación incluida",
         "changing_rooms": "Vestuarios",
-        "life_jacket_included": "Chaleco salvavidas incluido"
+        "life_jacket_included": "Chaleco salvavidas incluido",
+        "towels_provided": "Toallas"
     },
     "featureNames": {
         "river_front": "Frente al río",
@@ -1014,7 +1019,10 @@
         "expand": "Expandir panel",
         "collapse": "Reducir panel",
         "consumerLimitReached": "Alcanzaste tu límite mensual de chats con IA. Actualizá tu plan para obtener más acceso.",
-        "consumerLimitUpgradeCta": "Ver planes"
+        "consumerLimitUpgradeCta": "Ver planes",
+        "error": {
+            "EMPTY_ANSWER": "No pudimos generar una respuesta. Probá de nuevo en un momento."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

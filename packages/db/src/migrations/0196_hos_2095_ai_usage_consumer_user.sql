@@ -1,0 +1,3 @@
+ALTER TABLE "ai_usage" ADD COLUMN "consumer_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "ai_usage" ADD CONSTRAINT "ai_usage_consumer_user_id_users_id_fk" FOREIGN KEY ("consumer_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "aiUsage_consumerUserId_feature_created_idx" ON "ai_usage" USING btree ("consumer_user_id","feature","created_at" DESC NULLS LAST);

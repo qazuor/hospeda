@@ -1,0 +1,1059 @@
+{
+    "_note": "Catalog curation (isFeatured, displayWeight) per slug, from GET https://api.hospeda.com.ar/api/v1/public/amenities and /features on 2026-11-09. buildMarkdownContext orders amenities/features by it before capping, as production does with the DB columns.",
+    "amenities": {
+        "24h_reception": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "accepts_cards": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "accepts_reservations": {
+            "isFeatured": true,
+            "displayWeight": 75
+        },
+        "access_ramp": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "adapted_bathroom": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "air_conditioning": {
+            "isFeatured": true,
+            "displayWeight": 90
+        },
+        "alarm_system": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "baby_bathtub": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "baby_monitor": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "balcony": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "bar": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "bar_service": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "basketball_court": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "bath_towels": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "bathroom_underfloor_heating": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "bbq_grill": {
+            "isFeatured": true,
+            "displayWeight": 72
+        },
+        "beach_chairs_umbrellas": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "beach_equipment": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "bed_linens": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "bicycles": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "bidet": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "bike_parking": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "blackout_curtains": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "bluetooth_speaker": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "board_games": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "boat_moorings": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "boat_ramp": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "books_magazines": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "breakfast": {
+            "isFeatured": true,
+            "displayWeight": 75
+        },
+        "cable_tv": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "carbon_monoxide_detector": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "catering": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "children_games": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "clothesline": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "coffee_maker": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "conditioner": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "covered_parking": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "coworking_space": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "crib": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "daily_cleaning": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "deck": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "delivery": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "desk": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "dishwasher": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "dock": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "double_glazed_windows": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "dryer": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "electric_blankets": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "electric_heater": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "electric_kettle": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "elevator": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "equipment_included": {
+            "isFeatured": true,
+            "displayWeight": 80
+        },
+        "ergonomic_chair": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "fan": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "fire_extinguisher": {
+            "isFeatured": false,
+            "displayWeight": 10
+        },
+        "fireplace": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "first_aid_kit": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "fishing_equipment": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "food_included": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "foosball_table": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "freezer": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "full_board": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "full_kitchen": {
+            "isFeatured": true,
+            "displayWeight": 75
+        },
+        "full_tableware": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "game_console": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "gas_burner": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "gas_electric_stove": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "gas_heater": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "gazebo": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "griddle": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "grill_utensils": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "grocery_service": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "ground_floor_room": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "guide_included": {
+            "isFeatured": true,
+            "displayWeight": 85
+        },
+        "gym": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "hair_dryer": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "half_board": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "hammocks": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "hand_towels": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "happy_hour": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "heated_pool": {
+            "isFeatured": true,
+            "displayWeight": 88
+        },
+        "heating": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "high_chair": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "hotel_pickup": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "hydromassage_bathtub": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "insurance_included": {
+            "isFeatured": true,
+            "displayWeight": 80
+        },
+        "international_adapters": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "iron": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "jacuzzi": {
+            "isFeatured": true,
+            "displayWeight": 85
+        },
+        "kayaks": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "kids_play_area": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "kitchen_utensils": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "laundry_service": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "live_music": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "lockers_available": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "luggage_storage": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "microwave": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "mini_bar": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "mosquito_nets": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "motorhome_parking": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "onsite_store": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "organic_garden": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "outdoor_chairs": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "outdoor_furniture": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "outdoor_games": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "outdoor_kitchen": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "outdoor_lighting": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "oven": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "padel_court": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "parking": {
+            "isFeatured": true,
+            "displayWeight": 80
+        },
+        "patio": {
+            "isFeatured": true,
+            "displayWeight": 42
+        },
+        "pet_friendly": {
+            "isFeatured": true,
+            "displayWeight": 72
+        },
+        "photos_included": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "ping_pong_table": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "playground": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "plow_disc_grill": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "pool": {
+            "isFeatured": true,
+            "displayWeight": 92
+        },
+        "pool_fence": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "pool_table": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "pool_towels": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "pool_toys": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "private_events": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "private_garden": {
+            "isFeatured": true,
+            "displayWeight": 48
+        },
+        "quincho": {
+            "isFeatured": true,
+            "displayWeight": 68
+        },
+        "refrigerator_freezer": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "relaxation_area": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "restaurant": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "room_service": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "safe": {
+            "isFeatured": true,
+            "displayWeight": 40
+        },
+        "sauna": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "security_cameras": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "security_parking": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "shampoo": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "shower_grab_bars": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "smart_tv": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "smoke_detector": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "smoke_free": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "soap_dispensers": {
+            "isFeatured": false,
+            "displayWeight": 10
+        },
+        "soccer_field": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "solarium": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "spa": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "sports_balls": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "step_free_shower": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "streaming_services": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "sun_umbrella": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "takeaway": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "tankless_water_heater": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "tennis_court": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "terrace": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "toaster": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "towels": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "transfer_service": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "transport_included": {
+            "isFeatured": true,
+            "displayWeight": 75
+        },
+        "trestle_tables": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "tv_per_room": {
+            "isFeatured": true,
+            "displayWeight": 35
+        },
+        "underfloor_heating": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "vehicle_rental": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "volleyball_court": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "washer": {
+            "isFeatured": true,
+            "displayWeight": 45
+        },
+        "water_dispenser": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "water_heater": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "wheelchair_accessible": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "wifi": {
+            "isFeatured": true,
+            "displayWeight": 95
+        },
+        "wood_stove": {
+            "isFeatured": true,
+            "displayWeight": 50
+        }
+    },
+    "features": {
+        "24h_security": {
+            "isFeatured": false,
+            "displayWeight": 55
+        },
+        "adults_only_area": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "animal_activities": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "animal_corral": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "argentine_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "asian_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "autonomous_checkin": {
+            "isFeatured": false,
+            "displayWeight": 55
+        },
+        "balneario_front": {
+            "isFeatured": false,
+            "displayWeight": 85
+        },
+        "beginner_friendly": {
+            "isFeatured": true,
+            "displayWeight": 70
+        },
+        "bilingual_services": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "camping_area": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "central_area": {
+            "isFeatured": false,
+            "displayWeight": 70
+        },
+        "countryside_view": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "couple_suitable": {
+            "isFeatured": false,
+            "displayWeight": 65
+        },
+        "covered_gallery": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "craft_beer": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "dairy_farm_production": {
+            "isFeatured": false,
+            "displayWeight": 22
+        },
+        "digital_detox_zone": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "dock_access": {
+            "isFeatured": false,
+            "displayWeight": 75
+        },
+        "ecological_construction": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "educational_farm": {
+            "isFeatured": false,
+            "displayWeight": 28
+        },
+        "english_guide_available": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "event_suitable": {
+            "isFeatured": false,
+            "displayWeight": 38
+        },
+        "exclusive_kids_area": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "family_friendly": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "family_suitable": {
+            "isFeatured": false,
+            "displayWeight": 68
+        },
+        "fire_pit_area": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "full_rental": {
+            "isFeatured": false,
+            "displayWeight": 60
+        },
+        "fusion_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 58
+        },
+        "gluten_free_options": {
+            "isFeatured": true,
+            "displayWeight": 60
+        },
+        "gravel_access": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "ideal_for_groups": {
+            "isFeatured": false,
+            "displayWeight": 48
+        },
+        "ideal_for_seniors": {
+            "isFeatured": false,
+            "displayWeight": 38
+        },
+        "international_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 61
+        },
+        "isolated_no_neighbors": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "italian_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 63
+        },
+        "kid_friendly": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "kids_menu": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "lactose_free_options": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "lagoon_view": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "lgbtq_friendly": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "local_artisan_decor": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "mediterranean_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 59
+        },
+        "minimalist_style": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "minimum_stay_required": {
+            "isFeatured": false,
+            "displayWeight": 15
+        },
+        "modern_style": {
+            "isFeatured": false,
+            "displayWeight": 48
+        },
+        "natural_environment": {
+            "isFeatured": false,
+            "displayWeight": 72
+        },
+        "no_cell_signal": {
+            "isFeatured": false,
+            "displayWeight": 12
+        },
+        "no_tv_area": {
+            "isFeatured": false,
+            "displayWeight": 18
+        },
+        "nut_free_options": {
+            "isFeatured": true,
+            "displayWeight": 50
+        },
+        "organic_products": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "organized_activities": {
+            "isFeatured": false,
+            "displayWeight": 42
+        },
+        "outdoor_activity": {
+            "isFeatured": true,
+            "displayWeight": 65
+        },
+        "own_production": {
+            "isFeatured": false,
+            "displayWeight": 28
+        },
+        "panoramic_view_extended": {
+            "isFeatured": false,
+            "displayWeight": 80
+        },
+        "paved_access": {
+            "isFeatured": false,
+            "displayWeight": 52
+        },
+        "perimeter_fence": {
+            "isFeatured": false,
+            "displayWeight": 45
+        },
+        "permanent_professional_staff": {
+            "isFeatured": false,
+            "displayWeight": 33
+        },
+        "peruvian_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 62
+        },
+        "pet_friendly_area": {
+            "isFeatured": false,
+            "displayWeight": 28
+        },
+        "pet_suitable": {
+            "isFeatured": false,
+            "displayWeight": 68
+        },
+        "plastic_free_policy": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "pool_view": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "portuguese_guide_available": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "pregnancy_safe": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "private_available": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "private_viewpoint": {
+            "isFeatured": false,
+            "displayWeight": 78
+        },
+        "quiet_zone": {
+            "isFeatured": false,
+            "displayWeight": 42
+        },
+        "rainwater_harvesting": {
+            "isFeatured": false,
+            "displayWeight": 18
+        },
+        "renewable_energy": {
+            "isFeatured": false,
+            "displayWeight": 33
+        },
+        "residential_area": {
+            "isFeatured": false,
+            "displayWeight": 42
+        },
+        "river_access": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "river_cuisine": {
+            "isFeatured": true,
+            "displayWeight": 64
+        },
+        "river_front": {
+            "isFeatured": false,
+            "displayWeight": 90
+        },
+        "river_view": {
+            "isFeatured": true,
+            "displayWeight": 78
+        },
+        "romantic_ambiance": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "room_rental": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "rural_activities_stay": {
+            "isFeatured": false,
+            "displayWeight": 32
+        },
+        "rural_area": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "rustic_style": {
+            "isFeatured": false,
+            "displayWeight": 48
+        },
+        "senior_friendly": {
+            "isFeatured": false,
+            "displayWeight": 40
+        },
+        "shared_space": {
+            "isFeatured": false,
+            "displayWeight": 28
+        },
+        "silent_environment": {
+            "isFeatured": false,
+            "displayWeight": 58
+        },
+        "smart_home": {
+            "isFeatured": false,
+            "displayWeight": 55
+        },
+        "smoking_area": {
+            "isFeatured": false,
+            "displayWeight": 22
+        },
+        "solar_showers": {
+            "isFeatured": false,
+            "displayWeight": 18
+        },
+        "spiritual_retreat_suitable": {
+            "isFeatured": false,
+            "displayWeight": 25
+        },
+        "stream_view": {
+            "isFeatured": false,
+            "displayWeight": 50
+        },
+        "sustainable_accommodation": {
+            "isFeatured": false,
+            "displayWeight": 35
+        },
+        "themed_rooms": {
+            "isFeatured": false,
+            "displayWeight": 30
+        },
+        "tourism_certification": {
+            "isFeatured": false,
+            "displayWeight": 32
+        },
+        "tourist_info_available": {
+            "isFeatured": false,
+            "displayWeight": 28
+        },
+        "vegan_options": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "vegetarian_options": {
+            "isFeatured": true,
+            "displayWeight": 55
+        },
+        "walking_circuit": {
+            "isFeatured": false,
+            "displayWeight": 38
+        },
+        "waste_recycling": {
+            "isFeatured": false,
+            "displayWeight": 20
+        },
+        "wedding_suitable": {
+            "isFeatured": false,
+            "displayWeight": 36
+        },
+        "workshop_training_space": {
+            "isFeatured": false,
+            "displayWeight": 22
+        },
+        "yoga_meditation_area": {
+            "isFeatured": false,
+            "displayWeight": 38
+        }
+    }
+}

@@ -2,7 +2,8 @@
  * @file AmenityAttributeControls.client.tsx
  * @description The collapsed "Detalles" disclosure a CHECKED amenity carries in
  * the catalog picker: two radio groups, scope (private / shared / not
- * specified) and availability (year-round / seasonal / not specified).
+ * specified), availability (year-round / seasonal / not specified) and, since
+ * HOS-2084, an "extra charge" checkbox (paid separately, no amount).
  *
  * Moved out of the accommodation editor's `AmenitiesSection` (HOS-2058) when
  * the three owner editors adopted one picker (HOS-2061). "Not specified" is
@@ -151,6 +152,17 @@ export function AmenityAttributeControls({
                 t={t}
                 onChange={(value) => onChange(amenityId, 'availability', value)}
             />
+            <label className={styles.attributeOption}>
+                <input
+                    type="checkbox"
+                    name={`${idPrefix}-amenity-${amenityId}-extra-charge`}
+                    checked={declared.extraCharge === true}
+                    onChange={(event) => onChange(amenityId, 'extraCharge', event.target.checked)}
+                />
+                <span>
+                    {t('accommodations.amenityAttributes.extraCharge.label', 'Con cargo extra')}
+                </span>
+            </label>
         </details>
     );
 }

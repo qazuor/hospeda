@@ -35,6 +35,11 @@ export interface InsertAiUsageInput {
      * `null` for system-initiated calls or when actor resolution failed.
      */
     readonly userId: string | null;
+    /**
+     * UUID of the user who consumed the call when it is not the cost bearer
+     * (`userId`). Only the listing chat sets it (HOS-2095). Omit otherwise.
+     */
+    readonly consumerUserId?: string | null;
     /** AI feature that was invoked. */
     readonly feature: string;
     /** Provider that served or attempted the call. */
@@ -91,6 +96,7 @@ export async function insertAiUsage(input: InsertAiUsageInput): Promise<SelectAi
 
     const values: InsertAiUsage = {
         userId: rest.userId,
+        consumerUserId: rest.consumerUserId ?? null,
         feature: rest.feature,
         provider: rest.provider,
         model: rest.model,

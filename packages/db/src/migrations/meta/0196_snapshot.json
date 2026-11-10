@@ -1,5 +1,5 @@
 {
-  "id": "168e10bf-831f-4996-8ef6-6d562dd3c77a",
+  "id": "2351101b-0ad1-4499-9555-51e1fbccc329",
   "prevId": "437fb2ad-e242-471e-aa8c-1a287cf3ce02",
   "version": "7",
   "dialect": "postgresql",
@@ -3728,6 +3728,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "consumer_user_id": {
+          "name": "consumer_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "feature": {
           "name": "feature",
           "type": "varchar(50)",
@@ -3812,6 +3818,33 @@
           "method": "btree",
           "with": {}
         },
+        "aiUsage_consumerUserId_feature_created_idx": {
+          "name": "aiUsage_consumerUserId_feature_created_idx",
+          "columns": [
+            {
+              "expression": "consumer_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "feature",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "aiUsage_provider_feature_created_idx": {
           "name": "aiUsage_provider_feature_created_idx",
           "columns": [
@@ -3847,6 +3880,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "ai_usage_consumer_user_id_users_id_fk": {
+          "name": "ai_usage_consumer_user_id_users_id_fk",
+          "tableFrom": "ai_usage",
+          "tableTo": "users",
+          "columnsFrom": [
+            "consumer_user_id"
           ],
           "columnsTo": [
             "id"
@@ -11092,6 +11138,19 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "cancellation_policy": {
+          "name": "cancellation_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepts_private_groups": {
+          "name": "accepts_private_groups",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "contact_info": {
           "name": "contact_info",
@@ -25155,6 +25214,25 @@
           "primaryKey": false,
           "notNull": false
         },
+        "min_age": {
+          "name": "min_age",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dress_code": {
+          "name": "dress_code",
+          "type": "venue_dress_code_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dress_code_note_i18n": {
+          "name": "dress_code_note_i18n",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "menu_url": {
           "name": "menu_url",
           "type": "text",
@@ -34087,6 +34165,16 @@
       "values": [
         "plus",
         "vip"
+      ]
+    },
+    "public.venue_dress_code_enum": {
+      "name": "venue_dress_code_enum",
+      "schema": "public",
+      "values": [
+        "casual",
+        "smart_casual",
+        "elegant",
+        "no_restrictions"
       ]
     },
     "public.venue_entry_kind_enum": {

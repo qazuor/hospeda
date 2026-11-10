@@ -20,10 +20,12 @@
 
 import { AiFeatureSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { FEATURE_LABELS } from '@/features/ai-settings';
+import { type AiSettingsValue, FEATURE_LABELS } from '@/features/ai-settings';
 import {
     ALL_FEATURES,
+    CHAT_DEFAULT_MAX_TOKENS,
     DEFAULT_SETTINGS,
+    getMaxTokensHint,
     toFormValues
 } from '../../../../src/routes/_authed/ai/-components/ai-settings-features.utils';
 import {
@@ -128,6 +130,29 @@ describe('AI settings feature coverage', () => {
             expect(result.features.chat_venue?.enabled).toBe(false);
         });
 
+        it('carries through the top-level fields the form does not edit (HOS-2096)', () => {
+            // The form submits toFormValues() output to a PUT that REPLACES the whole
+            // blob, so any field dropped here is erased from the DB on the next save.
+            const blob = {
+                providers: { stub: { enabled: true } },
+                features: DEFAULT_SETTINGS.features,
+                costCeilings: { globalMonthlyMicroUsd: 5_000_000 },
+                modelRates: {
+                    'gpt-4o-mini': {
+                        inputMicroUsdPerMillionTokens: 150_000,
+                        outputMicroUsdPerMillionTokens: 600_000
+                    }
+                },
+                moderation: { providerId: 'openai' }
+            } satisfies AiSettingsValue;
+
+            const result = toFormValues(blob);
+
+            expect(result.costCeilings).toEqual(blob.costCeilings);
+            expect(result.modelRates).toEqual(blob.modelRates);
+            expect(result.moderation).toEqual(blob.moderation);
+        });
+
         it('falls back to the full defaults when there is no blob at all', () => {
             expect(Object.keys(toFormValues(undefined).features).sort()).toEqual(ENUM_FEATURES);
         });
@@ -142,5 +167,27 @@ describe('AI settings feature coverage', () => {
                 expect(PLAYGROUND_UNSUPPORTED_REASON[feature]?.length ?? 0).toBeGreaterThan(0);
             }
         });
+    });
+});
+
+describe('getMaxTokensHint (HOS-2095)', () => {
+    it.each([
+        'chat',
+        'chat_venue',
+        'chat_experience'
+    ] as const)('shows the real chat default for %s', (featureId) => {
+        const hint = getMaxTokensHint({ featureId });
+        expect(hint.placeholder).toBe(String(CHAT_DEFAULT_MAX_TOKENS));
+        expect(hint.placeholder).not.toBe('4096');
+    });
+
+    it('claims no default for features that ignore params and says so', () => {
+        const others = ALL_FEATURES.filter((f) => !f.startsWith('chat'));
+        expect(others.length).toBeGreaterThan(0);
+        for (const featureId of others) {
+            const hint = getMaxTokensHint({ featureId });
+            expect(hint.placeholder).toBe('');
+            expect(hint.helpText).toContain('Not applied yet');
+        }
     });
 });

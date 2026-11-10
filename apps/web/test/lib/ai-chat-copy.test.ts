@@ -86,6 +86,15 @@ describe('resolveChatError', () => {
         expect(resolveChatError({ ...base, entityType, code })).not.toMatch(/alojamiento/i);
     });
 
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('should resolve EMPTY_ANSWER for %s to readable copy (HOS-2095)', (entityType) => {
+        const out = resolveChatError({ ...base, entityType, code: 'EMPTY_ANSWER' });
+        expect(out).toBe('No pudimos generar una respuesta. Probá de nuevo en un momento.');
+    });
+
     it('should keep saying alojamiento for an accommodation', () => {
         expect(resolveChatError({ ...base, entityType: 'accommodation', code: 'NOT_FOUND' })).toBe(
             'No encontramos este alojamiento.'

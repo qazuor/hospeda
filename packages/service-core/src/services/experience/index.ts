@@ -66,12 +66,13 @@ export {
     projectExperiencePublic,
     projectExperiencePublicList
 } from './experience.projections';
+// Main service
+export { getExperiencePublicFilterOptions } from './experience.public-filter-options';
 // Review service
 export {
     type ExperienceReviewModerateInput,
     ExperienceReviewService
 } from './experience.review.service';
-// Main service
 export { ExperienceService } from './experience.service';
 
 // Types

@@ -70,6 +70,44 @@ describe('matchesCatalogQuery', () => {
     });
 });
 
+describe('matchesCatalogQuery Spanish inflections', () => {
+    const labels: Record<string, string> = {
+        vegan_options: 'Opciones veganas',
+        vegetarian_options: 'Opciones vegetarianas',
+        heated_pool: 'Pileta climatizada',
+        gluten_free: 'Sin TACC',
+        grill: 'Parrilla',
+        wifi: 'WiFi',
+        terrace: 'Terraza'
+    };
+    const label = (item: AmenityData): string => labels[item.slug] ?? item.slug;
+    const make = (slug: string): AmenityData => ({ id: slug, slug, category: null });
+    const matches = (slug: string, query: string): boolean =>
+        matchesCatalogQuery({ item: make(slug), query, getLabel: label });
+
+    it.each([
+        ['vegan_options', 'vegano'],
+        ['vegetarian_options', 'vegetariano'],
+        ['heated_pool', 'climatizado']
+    ])('matches gender variant %s <- "%s"', (slug, query) => {
+        expect(matches(slug, query)).toBe(true);
+    });
+
+    it.each([
+        ['gluten_free', 'sin tacc'],
+        ['grill', 'parrilla'],
+        ['wifi', 'wifi'],
+        ['terrace', 'terra']
+    ])('keeps existing match %s <- "%s"', (slug, query) => {
+        expect(matches(slug, query)).toBe(true);
+    });
+
+    it('keeps short tokens exact and does not over-match', () => {
+        expect(matches('vegetarian_options', 'vegano')).toBe(false);
+        expect(matches('heated_pool', 'climatizado techado')).toBe(false);
+    });
+});
+
 describe('selectFeaturedCatalogItems', () => {
     it('returns only featured items, highest displayWeight first', () => {
         const featured = selectFeaturedCatalogItems({ items: ITEMS, getLabel });

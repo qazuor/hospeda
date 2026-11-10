@@ -53,6 +53,7 @@ export {
     type AiUsageByUserAggRow,
     type AiUsageDailyAggRow,
     type AiUsageMonthlyAggRow,
+    type AiUsageQuotaKey,
     aggregateAiUsageByFeature,
     aggregateAiUsageByFeatureModel,
     aggregateAiUsageByModel,

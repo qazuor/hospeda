@@ -521,11 +521,11 @@
         },
         "venue-pro": {
             "name": "Professional",
-            "description": "Add the menu loaded into Hospeda, the dish of the day and your venue's events."
+            "description": "Add your menu or bar list loaded into Hospeda, the daily special and your venue's events."
         },
         "venue-premium": {
             "name": "Premium",
-            "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and many more AI chat queries."
+            "description": "All of the above plus photos of your products, a menu or bar list in several languages, a PDF listing and many more AI chat queries."
         },
         "experience-basico": {
             "name": "Basic",
@@ -558,7 +558,7 @@
         "download_listing_pdf": "Printable PDF listing sheet",
         "issue_experience_certificate": "Experience certificates",
         "manage_venue_menu": "Structured menu with sections, dishes and link to your menu",
-        "menu_item_photos": "Photo for each dish on the menu",
+        "menu_item_photos": "Photo for each item on the menu or bar list",
         "manage_experience_directions": "Meeting point map and how to get there",
         "manage_venue_daily_special": "Dish of the day with its own validity window",
         "view_basic_stats": "Basic statistics",

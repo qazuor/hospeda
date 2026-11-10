@@ -119,7 +119,8 @@ vi.mock('@repo/db', async (importActual) => {
             amenityId: 'raa.amenityId',
             accommodationId: 'raa.accommodationId',
             scope: 'raa.scope',
-            availability: 'raa.availability'
+            availability: 'raa.availability',
+            isOptional: 'raa.isOptional'
         },
         rAccommodationFeature: {
             __table: 'raf',
@@ -385,7 +386,7 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
     it('carries the HOS-2058 relation attributes and the feature category', async () => {
         // Arrange
         queueSelectResults(
-            [{ ...AMENITY_ROW, scope: 'shared', availability: null }],
+            [{ ...AMENITY_ROW, scope: 'shared', availability: null, isOptional: true }],
             [{ ...FEATURE_ROW, category: 'ACCESS' }]
         );
         const app = buildApp(ownerActor);
@@ -398,10 +399,13 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
         const body = await res.json();
         expect(body.data.amenities[0].scope).toBe('shared');
         expect(body.data.amenities[0].availability).toBeNull();
+        // HOS-2084: the extra-charge flag reaches the owner editor baseline.
+        expect(body.data.amenities[0].isOptional).toBe(true);
         expect(body.data.features[0].category).toBe('ACCESS');
         const amenityQuery = capturedQueries[0] as CapturedQuery;
         expect(amenityQuery.projection.scope).toBe('raa.scope');
         expect(amenityQuery.projection.availability).toBe('raa.availability');
+        expect(amenityQuery.projection.isOptional).toBe('raa.isOptional');
     });
 
     it('omits both arrays when the accommodation has no junction rows', async () => {
