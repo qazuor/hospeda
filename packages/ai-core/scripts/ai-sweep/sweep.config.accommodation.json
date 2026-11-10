@@ -69,9 +69,11 @@
         "acc-real-monogris-parking-kid-pets-absent",
         "acc-real-balcones-group-over-capacity",
         "acc-real-isla-english-two-families",
-        "acc-real-casa-portuguese-group"
+        "acc-real-casa-portuguese-group",
+        "acc-real-monogris-group-over-capacity",
+        "acc-real-casa-group-over-capacity"
     ],
     "concurrency": 2,
-    "maxCalls": 340,
+    "maxCalls": 360,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

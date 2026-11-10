@@ -51,10 +51,10 @@ const rubricOf = (id: string): Rubric => {
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
 describe('fixtures joined with the generated contexts', () => {
-    it('has 39 unique cases across the three features, each with a rubric', () => {
+    it('has 41 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(39);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(39);
+        expect(cases).toHaveLength(41);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(41);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -135,14 +135,14 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(39 * 8 * 2);
+        expect(calls).toHaveLength(41 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 
     it('accommodation: exactly the acc-real cases; example: exactly the others', () => {
         const accIds = cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
         const otherIds = cases.filter((c) => !c.id.startsWith('acc-real-')).map((c) => c.id);
-        expect(accIds).toHaveLength(20);
+        expect(accIds).toHaveLength(22);
         expect([...config('sweep.config.accommodation.json').caseIds].sort()).toEqual(
             accIds.sort()
         );
@@ -218,20 +218,31 @@ describe('rubrics', () => {
         }
     });
 
-    it('HOS-2100 over capacity: a plain no, never the distribution hedge', () => {
-        const r = rubricOf('acc-real-balcones-group-over-capacity');
-        expect(
-            checkAnswer({
-                rubric: r,
-                text: 'No, 7 no entran: la capacidad es de 4 huéspedes.'
-            })
-        ).toMatchObject({ includeCoverage: 1, violations: [] });
-        expect(
-            checkAnswer({
-                rubric: r,
-                text: 'La capacidad es de 4; depende de cómo se repartan y de la disponibilidad.'
-            }).violations
-        ).toContain('cierra con el reparto aunque no entran');
+    it.each([
+        [
+            'acc-real-balcones-group-over-capacity',
+            'No, 7 no entran: la capacidad es de 4 huéspedes.'
+        ],
+        [
+            'acc-real-monogris-group-over-capacity',
+            'No, 5 no entran: la capacidad es de 2 huéspedes.'
+        ],
+        ['acc-real-casa-group-over-capacity', 'No, 14 no entran: la capacidad es de 11 huéspedes.']
+    ])('HOS-2100 over capacity (%s): only "no" and the capacity, nothing else', (id, clean) => {
+        const r = rubricOf(id);
+        expect(checkAnswer({ rubric: r, text: clean })).toMatchObject({
+            includeCoverage: 1,
+            violations: []
+        });
+        for (const hope of [
+            `${clean} Depende de la disponibilidad.`,
+            `${clean} Podrían ver otras unidades.`,
+            `${clean} Consultá con el lugar.`
+        ]) {
+            expect(checkAnswer({ rubric: r, text: hope }).violations).toContain(
+                'agrega esperanza falsa (unidades, disponibilidad, consultar)'
+            );
+        }
     });
 
     it('HOS-2100 en/pt groups: the close is translated, never copied in Spanish', () => {

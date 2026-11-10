@@ -1268,13 +1268,13 @@
                         "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
                     },
                     {
-                        "label": "cierra con el reparto aunque no entran",
-                        "pattern": "depende de c[oó]mo se (repart|distribu)"
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
                     }
                 ],
                 "expectsUnknown": false,
                 "expectedLanguage": "es",
-                "notes": "HOS-2100: the group (7) is larger than the total capacity (4 guests). A good answer says plainly that 7 do not fit because the capacity is 4, with no «depende de cómo se repartan» hedge (that would be false hope); it may suggest asking the place or looking for another option."
+                "notes": "HOS-2100 (owner decision 10/11): the group (7) is larger than the total capacity (4 guests). The answer says only that 7 do not fit and that the capacity is 4. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
             },
             "rules": []
         },
@@ -1343,6 +1343,74 @@
                 "expectsUnknown": false,
                 "expectedLanguage": "pt",
                 "notes": "HOS-2100: the house takes 11 guests (3 bedrooms, 8 beds). 9 is within 11: a good answer, in Portuguese, gives the capacity (and bedrooms/beds), says it depends on how they split and on availability, and to confirm with the place, translated, never copied in Spanish. Wrong language caps at 2."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-monogris-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-monogris",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-monogris",
+            "question": "Somos 5, ¿podemos quedarnos en el depto?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 2",
+                        "pattern": "\\b(2|dos)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100 (owner decision 10/11): the group (5) is larger than the total capacity (2 guests). The answer says only that 5 do not fit and that the capacity is 2. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Somos 14 entre familia y amigos, ¿entramos todos en la casa?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 11",
+                        "pattern": "\\b(11|once)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100 (owner decision 10/11): the group (14) is larger than the total capacity (11 guests). The answer says only that 14 do not fit and that the capacity is 11. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
             },
             "rules": []
         }
