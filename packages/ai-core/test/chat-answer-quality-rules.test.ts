@@ -115,20 +115,26 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
 
     it('HOS-2100 group over capacity: compare explicitly and say plainly it does not fit', () => {
         expect(rules).toContain(
-            "compare the visitor's group with the total capacity your context states, explicitly"
+            "first compare the visitor's group with the total capacity your context states"
         );
         expect(rules).toContain(
-            'If the group is larger than that total, say plainly that it does not fit and stop there: do not add the distribution or availability close'
+            'If the group is larger than the total capacity, answer only that they do not fit and state the total capacity. Stop there: do not mention other units, availability or alternatives, and do not suggest asking the place.'
         );
     });
 
     it('HOS-2100 group close is said in the reply language', () => {
         expect(rules).toContain('to confirm it with the place, in the reply language');
+        // The close lives inside the in-capacity branch, after the over-capacity one.
+        expect(rules.indexOf('Stop there: do not mention other units')).toBeLessThan(
+            rules.indexOf('depende de cómo se repartan')
+        );
         expect(rules).toContain('confirmalo con el lugar" in Spanish');
     });
 
     it('HOS-2100 group answers within capacity: total, the stated split, and confirm with the place', () => {
-        expect(rules).toContain('If it is within the total, do not answer "yes, you fit"');
+        expect(rules).toContain(
+            'Only when the group fits within the total capacity: do not answer "yes, you fit"'
+        );
         expect(rules).toContain('say the group is within the total capacity');
         expect(rules).toContain('the split into units, rooms or beds');
         expect(rules).toContain('it depends on how they are distributed and on availability');

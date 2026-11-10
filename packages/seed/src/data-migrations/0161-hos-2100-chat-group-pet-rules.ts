@@ -18,9 +18,9 @@
  * Only the `rules` column, and only two clauses of the block the three
  * features share:
  *
- * - the capacity clause becomes the owner's group rule (09/11/2026): compare
- *   the group with the total capacity explicitly; a group over the total gets
- *   a plain "it does not fit" with no hedge; a group within it gets the total
+ * - the capacity clause becomes the owner's group rule (09-10/11/2026): compare
+ *   the group with the total capacity first; a group over the total gets only
+ *   "it does not fit" and the capacity, nothing else; a group within it gets the total
  *   and, when the listing states it, the split by units, rooms or beds, closed
  *   with "depends on how they are distributed and on availability, confirm it
  *   with the place" in the reply language; never "entran sin problema"; reuse
