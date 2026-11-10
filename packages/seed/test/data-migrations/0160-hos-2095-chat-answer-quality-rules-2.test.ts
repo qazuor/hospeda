@@ -12,7 +12,7 @@
  * 4. **Data coherence.** The `after` side carries the round 2 clauses and the
  *    `before` side does not (guards against swapped halves).
  * 5. **Chain.** `before` is byte-identical to 0159's frozen `after`.
- * 6. **No drift.** `after` equals `DEFAULT_RULES` read from source.
+ * 6. **Chain forward.** `after` equals 0161's `before` (the drift check moved there).
  *
  * @module test/data-migrations/0160-hos-2095-chat-answer-quality-rules-2
  */
@@ -22,9 +22,6 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
-// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
-// to: a stale build would make this sync check compare old strings.
-import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0160-hos-2095-chat-answer-quality-rules-2.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -53,6 +50,17 @@ const previous = JSON.parse(
         path.resolve(
             path.dirname(fileURLToPath(import.meta.url)),
             '../../src/data-migrations/0159-hos-2095-chat-answer-quality-rules.data.json'
+        ),
+        'utf-8'
+    )
+) as FrozenBaseline;
+
+/** 0161's frozen snapshot: its `before` must equal this migration's `after`. */
+const next = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0161-hos-2100-chat-group-pet-rules.data.json'
         ),
         'utf-8'
     )
@@ -183,9 +191,12 @@ describe('0160-hos-2095-chat-answer-quality-rules-2', () => {
         }
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
+    it('AC-5: the frozen "after" rules are exactly what 0161 starts from (chain without a gap)', () => {
+        // DEFAULT_RULES moved on in HOS-2100, so the anti-drift check against
+        // source now lives in 0161. What 0160 must still guarantee is that its
+        // output is byte-identical to 0161's `before`.
         for (const feature of migration.CHAT_FEATURES) {
-            expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+            expect(after.rules[feature]).toBe(next.before.rules[feature]);
         }
     });
 

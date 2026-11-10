@@ -104,21 +104,31 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             'You MUST NOT extend a fact in your context to a quantity, a room, a unit or a condition the context does not state'
         );
-        expect(rules).toContain('"pet-friendly" does not say how many pets');
         expect(rules).toContain('does not mean every room has it');
     });
 
-    it('R2-4 makes a capacity answer compare the group with the stated capacity, inventing no combinations', () => {
-        expect(rules).toContain(
-            "compare the visitor's group with the capacity your context states, explicitly"
-        );
-        expect(rules).toContain('never invent combinations of units, rooms or beds');
+    it('HOS-2100 never answers "yes" to a number or size of pets', () => {
+        expect(rules).toContain('"pets accepted" does not say how many or which size');
+        expect(rules).toContain('never answer "yes" to a number or size of pets');
+        expect(rules).toContain('say only whether pets are accepted');
     });
 
-    it('M1 a capacity question without a group size gets the capacity, not an invented comparison', () => {
+    it('HOS-2100 group answers: total capacity, the stated split, and always confirm with the place', () => {
+        expect(rules).toContain('give the total capacity in your context');
+        expect(rules).toContain('the split into units, rooms or beds');
+        expect(rules).toContain('it depends on how they are distributed and on availability');
         expect(rules).toContain(
-            'if the visitor gives no group size, state the capacity and stop, or ask in one short question how many they are'
+            'depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar'
         );
+        expect(rules).toContain('Never say the group surely fits ("entran sin problema")');
+        expect(rules).toContain('never invent a split');
+        expect(rules).toContain('if your context states no capacity, say so');
+    });
+
+    it('HOS-2100 reuses the group size the visitor already gave instead of asking again', () => {
+        expect(rules).toContain('Use a group size the visitor already gave');
+        expect(rules).toContain('ask it only if they never did');
+        expect(rules).not.toContain('state the capacity and stop');
     });
 
     it('R2-6 requires naming the missing fact and giving the related one when it is there', () => {
