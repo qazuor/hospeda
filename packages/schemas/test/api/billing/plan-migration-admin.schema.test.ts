@@ -95,6 +95,24 @@ describe('TEST:B12:6 AC:B12:6 y el panel la lista sin plazo y con su antigüedad
         expect(
             PlanMigrationDetailSchema.safeParse({
                 ...detail,
+                rows: [{ ...row, status: 'PENDIENTE' }]
+            }).success
+        ).toBe(false);
+        expect(
+            PlanMigrationDetailSchema.safeParse({
+                ...detail,
+                rows: [{ ...row, ageDays: null }]
+            }).success
+        ).toBe(false);
+        expect(
+            PlanMigrationDetailSchema.safeParse({
+                ...detail,
+                rows: [{ ...row, applicationDate: '2026-12-01' }]
+            }).success
+        ).toBe(false);
+        expect(
+            PlanMigrationDetailSchema.safeParse({
+                ...detail,
                 rows: [{ ...row, deadline: '2026-12-01' }]
             }).success
         ).toBe(false);

@@ -159,16 +159,31 @@ export const PlanMigrationListSchema = z.strictObject({
 export type PlanMigrationList = z.infer<typeof PlanMigrationListSchema>;
 
 /** A scope row; only unresolved rows have an age since announcement. */
-export const PlanMigrationDetailRowSchema = z.strictObject({
-    id: Id,
-    subscriptionId: Id,
-    ownerUserId: Id,
-    status: PlanMigrationStatusSchema,
-    outReason: z.enum(['CAMBIO_DE_PLAN', 'SE_DIO_DE_BAJA', 'TERMINO']).nullable(),
-    applicationDate: LocalDate.nullable(),
-    appliedAt: z.date().nullable(),
-    ageDays: z.number().int().nullable()
-});
+export const PlanMigrationDetailRowSchema = z
+    .strictObject({
+        id: Id,
+        subscriptionId: Id,
+        ownerUserId: Id,
+        status: PlanMigrationStatusSchema,
+        outReason: z.enum(['CAMBIO_DE_PLAN', 'SE_DIO_DE_BAJA', 'TERMINO']).nullable(),
+        applicationDate: LocalDate.nullable(),
+        appliedAt: z.date().nullable(),
+        ageDays: z.number().int().nullable()
+    })
+    .superRefine((row, ctx) => {
+        if ((row.status === 'PARA_RESOLVER') !== (row.ageDays !== null))
+            ctx.addIssue({
+                code: 'custom',
+                path: ['ageDays'],
+                message: 'Age must match unresolved status'
+            });
+        if (row.status === 'PARA_RESOLVER' && row.applicationDate !== null)
+            ctx.addIssue({
+                code: 'custom',
+                path: ['applicationDate'],
+                message: 'Unresolved rows have no date'
+            });
+    });
 /** Validated scope row. */
 export type PlanMigrationDetailRow = z.infer<typeof PlanMigrationDetailRowSchema>;
 
