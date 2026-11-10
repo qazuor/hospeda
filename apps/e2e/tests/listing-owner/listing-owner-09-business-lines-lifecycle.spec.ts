@@ -256,7 +256,9 @@ test.describe('HOS-1859 business-line lifecycle @p0 @listing-owner', () => {
             }),
             { waitUntil: 'load' }
         );
-        await expect(page.getByLabel('Edad mínima')).toHaveValue('18', { timeout: 20_000 });
+        await expect(page.getByLabel('Edad mínima', { exact: true })).toHaveValue('18', {
+            timeout: 20_000
+        });
 
         // ── A BOLICHE cannot uncheck its only line ────────────────────────
         const boliche = await createOwnerWithVenue({

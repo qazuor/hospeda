@@ -12,7 +12,8 @@
  * 4. **Data coherence.** The `after` side carries the round 2 clauses and the
  *    `before` side does not (guards against swapped halves).
  * 5. **Chain.** `before` is byte-identical to 0159's frozen `after`.
- * 6. **Chain forward.** `after` equals 0161's `before` (the drift check moved there).
+ * 6. **Chain.** `after` is the `before` of the next migration per feature
+ *    (0161-hos-2098 for `chat_venue`, 0162-hos-2100 for the other two).
  *
  * @module test/data-migrations/0160-hos-2095-chat-answer-quality-rules-2
  */
@@ -22,6 +23,8 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
+// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
+// to: a stale build would make this sync check compare old strings.
 import * as migration from '../../src/data-migrations/0160-hos-2095-chat-answer-quality-rules-2.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -55,12 +58,23 @@ const previous = JSON.parse(
     )
 ) as FrozenBaseline;
 
-/** 0161's frozen snapshot: its `before` must equal this migration's `after`. */
+/** 0161's frozen snapshot: its `before` is this migration's `chat_venue` `after`. */
 const next = JSON.parse(
     readFileSync(
         path.resolve(
             path.dirname(fileURLToPath(import.meta.url)),
-            '../../src/data-migrations/0161-hos-2100-chat-group-pet-rules.data.json'
+            '../../src/data-migrations/0161-hos-2098-chat-venue-age-scope-rules.data.json'
+        ),
+        'utf-8'
+    )
+) as { readonly before: { readonly rules: { readonly chat_venue: string } } };
+
+/** 0162's frozen snapshot: its `chat`/`chat_experience` `before` is this `after`. */
+const nextShared = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0162-hos-2100-chat-group-pet-rules.data.json'
         ),
         'utf-8'
     )
@@ -191,12 +205,17 @@ describe('0160-hos-2095-chat-answer-quality-rules-2', () => {
         }
     });
 
-    it('AC-5: the frozen "after" rules are exactly what 0161 starts from (chain without a gap)', () => {
-        // DEFAULT_RULES moved on in HOS-2100, so the anti-drift check against
-        // source now lives in 0161. What 0160 must still guarantee is that its
-        // output is byte-identical to 0161's `before`.
+    it('AC-5: the frozen "after" rules are what the next migrations start from (no gap)', () => {
+        // HOS-2098 moved `chat_venue` on (0161) and HOS-2100 moved the other
+        // two (0162), so the anti-drift checks against source live there. What
+        // 0160 must still guarantee is that its output is byte-identical to the
+        // `before` of whichever migration comes next for each feature.
         for (const feature of migration.CHAT_FEATURES) {
-            expect(after.rules[feature]).toBe(next.before.rules[feature]);
+            if (feature === 'chat_venue') {
+                expect(after.rules[feature]).toBe(next.before.rules.chat_venue);
+            } else {
+                expect(after.rules[feature]).toBe(nextShared.before.rules[feature]);
+            }
         }
     });
 

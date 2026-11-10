@@ -22,7 +22,7 @@ OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config scri
 ### Quality: automatic checks, blind export, grades
 
 Each case in `fixtures.json` carries a `rubric`: `mustInclude` and `mustNotClaim` (label + regex), `expectsUnknown`,
-`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 41 cases cover chat (accommodation; 22 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
+`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 46 cases cover chat (accommodation; 22 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
 chat_venue (restaurant, parrilla, bar, cafe, heladería, boliche, a restaurant that turns into a boliche at night) and
 chat_experience, including absent-fact traps (price, hours, pets, duration, a schedule day that is not informed), a scoped
 minor rule (lunch with a child at a venue whose 18+ applies only to the night), a price stored in centavos, an amenity
@@ -82,8 +82,8 @@ All three configs run the same 8 variants, cap 2048, 2 repetitions, with a per-m
 
 | Config | Cases | Calls (cap) | Worst case |
 | --- | --- | --- | --- |
-| `sweep.config.all.json` | all 41 | 656 (700) | ~$3.20 |
-| `sweep.config.example.json` | the 19 synthetic venue/experience/accommodation cases | 304 (320) | ~$1.48 |
+| `sweep.config.all.json` | all 46 | 736 (800) | ~$3.59 |
+| `sweep.config.example.json` | the 24 synthetic venue/experience/accommodation cases | 384 (400) | ~$1.87 |
 | `sweep.config.accommodation.json` | the 22 `acc-real-*` cases | 352 (360) | ~$1.72 |
 
 **gpt-5.4 models may not accept `minimal` effort.** A provider error never aborts the sweep: the call is recorded

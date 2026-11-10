@@ -51,10 +51,10 @@ const rubricOf = (id: string): Rubric => {
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
 describe('fixtures joined with the generated contexts', () => {
-    it('has 41 unique cases across the three features, each with a rubric', () => {
+    it('has 46 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(41);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(41);
+        expect(cases).toHaveLength(46);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(46);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -135,7 +135,7 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(41 * 8 * 2);
+        expect(calls).toHaveLength(46 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 

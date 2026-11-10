@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0161-hos-2100-chat-group-pet-rules
+ * Data migration: 0162-hos-2100-chat-group-pet-rules
  *
  * HOS-2100 edits to the shared answer-quality rules of the three listing-chat
  * features (`chat`, `chat_venue`, `chat_experience`), carried into
@@ -33,14 +33,17 @@
  * ## How the update is scoped
  *
  * One UPDATE per feature, each rewriting `rules` only when it still holds the
- * EXACT string `0160` wrote. A row an operator reworded — or one 0160 never
- * reached — is left alone; a second run matches nothing and reports zero.
+ * EXACT string the previous migration wrote: `0161-hos-2098-...` for
+ * `chat_venue`, `0160` for `chat` and `chat_experience`. A row an operator
+ * reworded — or one those never reached — is left alone; a second run matches
+ * nothing and reports zero.
  *
  * ## Both sides are frozen — nothing is imported from `@repo/ai-core`
  *
  * The colocated `.data.json` was produced by EXECUTING code, never transcribed
  * by hand: `before` is `DEFAULT_RULES` evaluated from `origin/staging`'s
- * `default-prompts.ts` (byte-identical to 0160's frozen `after`), and `after`
+ * `default-prompts.ts` after HOS-2098 merged (byte-identical to 0161-hos-2098's
+ * `after` for `chat_venue` and to 0160's `after` for the other two), and `after`
  * is `DEFAULT_RULES` evaluated from this branch's source. Importing it live is
  * the trap `0100` documents: the package resolves to its build output, so a
  * stale build would hand this migration the old strings.
@@ -52,7 +55,7 @@ import { aiPromptVersions, and, eq } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0161-hos-2100-chat-group-pet-rules',
+    name: '0162-hos-2100-chat-group-pet-rules',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
@@ -60,7 +63,7 @@ export const meta = {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** Colocated snapshot of the three chat features' rules on both sides of HOS-2100. */
-const DATA_PATH = path.resolve(__dirname, '0161-hos-2100-chat-group-pet-rules.data.json');
+const DATA_PATH = path.resolve(__dirname, '0162-hos-2100-chat-group-pet-rules.data.json');
 
 /** The chat features this migration touches, in update order. */
 export const CHAT_FEATURES = ['chat', 'chat_venue', 'chat_experience'] as const;
@@ -80,7 +83,7 @@ interface FrozenBaseline {
 }
 
 /**
- * Rewrites each chat feature's `rules` from the exact string 0160 wrote to the
+ * Rewrites each chat feature's `rules` from the exact string the previous migration wrote to the
  * HOS-2100 one, only on rows that still hold that exact string.
  *
  * @param ctx - Seed migration context (only `ctx.db` is used).

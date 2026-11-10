@@ -1,20 +1,21 @@
 /**
  * @fileoverview
- * Unit tests for the `0161-hos-2100-chat-group-pet-rules` data migration,
+ * Unit tests for the `0162-hos-2100-chat-group-pet-rules` data migration,
  * with a fully mocked `ctx.db` — the same "mock the drizzle chain" style as
  * `0134-hos1864-chat-venue-neutral-prompt.test.ts`.
  *
  * Contract:
  * 1. **Scope.** Every update filters on the feature AND the exact `rules`
- *    string 0160 wrote, so an operator-edited row is never overwritten.
+ *    string the previous migration wrote, so an operator-edited row is never overwritten.
  * 2. **Rules only.** Only the `rules` column is written; `content` is untouched.
  * 3. **Idempotency.** Zero matches reports "no change" without throwing.
  * 4. **Data coherence.** The `after` side carries the HOS-2100 clauses and the
  *    `before` side does not (guards against swapped halves).
- * 5. **Chain.** `before` is byte-identical to 0160's frozen `after`.
+ * 5. **Chain.** `before` is byte-identical to the previous frozen `after`:
+ *    0161-hos-2098 for `chat_venue`, 0160 for `chat` and `chat_experience`.
  * 6. **No drift.** `after` equals `DEFAULT_RULES` read from source.
  *
- * @module test/data-migrations/0161-hos-2100-chat-group-pet-rules
+ * @module test/data-migrations/0162-hos-2100-chat-group-pet-rules
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -25,7 +26,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Read from SOURCE, never from the built package that `@repo/ai-core` resolves
 // to: a stale build would make this sync check compare old strings.
 import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
-import * as migration from '../../src/data-migrations/0161-hos-2100-chat-group-pet-rules.js';
+import * as migration from '../../src/data-migrations/0162-hos-2100-chat-group-pet-rules.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const STUB_ACTOR: Actor = {
@@ -43,7 +44,7 @@ interface FrozenBaseline {
 
 const DATA_PATH = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    '../../src/data-migrations/0161-hos-2100-chat-group-pet-rules.data.json'
+    '../../src/data-migrations/0162-hos-2100-chat-group-pet-rules.data.json'
 );
 const { before, after } = JSON.parse(readFileSync(DATA_PATH, 'utf-8')) as FrozenBaseline;
 
@@ -57,6 +58,17 @@ const previous = JSON.parse(
         'utf-8'
     )
 ) as FrozenBaseline;
+
+/** 0161-hos-2098's frozen snapshot: its `chat_venue` `after` is this `before`. */
+const venueAgeScope = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0161-hos-2098-chat-venue-age-scope-rules.data.json'
+        ),
+        'utf-8'
+    )
+) as { readonly after: { readonly rules: { readonly chat_venue: string } } };
 
 /** One anchor per HOS-2100 shared clause. */
 const HOS_2100_CLAUSES = [
@@ -120,12 +132,12 @@ function buildCtx(rows: readonly unknown[]): { ctx: SeedMigrationCtx; captures: 
 
 const changedFeatures = migration.CHAT_FEATURES.filter((f) => before.rules[f] !== after.rules[f]);
 
-describe('0161-hos-2100-chat-group-pet-rules', () => {
+describe('0162-hos-2100-chat-group-pet-rules', () => {
     it('sanity: all three chat features changed their rules', () => {
         expect(changedFeatures).toEqual(['chat', 'chat_venue', 'chat_experience']);
     });
 
-    it('AC-1: scopes each update to the feature AND the exact rules 0160 wrote', async () => {
+    it('AC-1: scopes each update to the feature AND the exact rules the previous migration wrote', async () => {
         // Arrange
         const { ctx, captures } = buildCtx([{ id: 'row-id' }]);
 
@@ -178,10 +190,10 @@ describe('0161-hos-2100-chat-group-pet-rules', () => {
         expect(ageClauses(after.rules.chat_venue)).toBe(ageClauses(before.rules.chat_venue));
     });
 
-    it('AC-4b: "before" is exactly the rules 0160 wrote (chain without a gap)', () => {
-        for (const feature of migration.CHAT_FEATURES) {
-            expect(before.rules[feature]).toBe(previous.after.rules[feature]);
-        }
+    it('AC-4b: "before" is exactly what the previous migrations wrote (chain without a gap)', () => {
+        expect(before.rules.chat_venue).toBe(venueAgeScope.after.rules.chat_venue);
+        expect(before.rules.chat).toBe(previous.after.rules.chat);
+        expect(before.rules.chat_experience).toBe(previous.after.rules.chat_experience);
     });
 
     it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
@@ -193,6 +205,6 @@ describe('0161-hos-2100-chat-group-pet-rules', () => {
     it('is declared non-destructive and belongs to the required group', () => {
         expect(migration.meta.destructive).toBe(false);
         expect(migration.meta.group).toBe('required');
-        expect(migration.meta.name).toBe('0161-hos-2100-chat-group-pet-rules');
+        expect(migration.meta.name).toBe('0162-hos-2100-chat-group-pet-rules');
     });
 });

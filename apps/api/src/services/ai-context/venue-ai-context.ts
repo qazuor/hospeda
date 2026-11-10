@@ -50,7 +50,11 @@ import {
     truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
-import { toVenueNightContext, type VenueNightContext } from './venue-night-context.js';
+import {
+    AGE_SCOPE_AREA_SLOT,
+    toVenueNightContext,
+    type VenueNightContext
+} from './venue-night-context.js';
 
 // ---------------------------------------------------------------------------
 // Context size caps
@@ -264,6 +268,16 @@ export function buildVenueMarkdownContext(
         lines.push('', '### Info para salir');
         if (night.minAge !== null) {
             lines.push(`**Edad mínima**: ${night.minAge}`);
+        }
+        // HOS-2098: the scope the ficha prints next to the age. Only the
+        // owner's sector/activity text is fenced; the label is ours.
+        if (night.minAgeScope) {
+            const { label, area } = night.minAgeScope;
+            const value =
+                area === null
+                    ? label
+                    : label.split(AGE_SCOPE_AREA_SLOT).join(fenceOwnerValue(area));
+            lines.push(`**Alcance de la edad mínima**: ${value}`);
         }
         if (night.legalNotice) {
             lines.push(`**Aviso legal**: ${night.legalNotice}`);

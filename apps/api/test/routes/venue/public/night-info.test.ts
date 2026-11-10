@@ -68,8 +68,8 @@ const NIGHT_INFO_FIELDS = [
     'entryPriceUpdatedAt'
 ] as const;
 
-/** The policy keys the section owns since HOS-2060 (`policyKeys`). */
-const NIGHT_INFO_POLICY_KEYS = ['minAge', 'dressCode', 'dressCodeNote'] as const;
+/** The policy keys the section owns since HOS-2060 (`policyKeys`); the scope since HOS-2098. */
+const NIGHT_INFO_POLICY_KEYS = ['minAge', 'minAgeScope', 'dressCode', 'dressCodeNote'] as const;
 
 const NIGHT_INFO_VALUES = {
     entryKind: 'paid',
@@ -79,6 +79,7 @@ const NIGHT_INFO_VALUES = {
     policies: {
         paymentMethods: ['cash', 'debit'],
         minAge: 18,
+        minAgeScope: { kind: 'from_time', from: '00:00' },
         dressCode: 'smart_casual',
         dressCodeNote: { es: 'Salvo verano', en: 'Except summer', pt: 'Exceto verão' }
     }
