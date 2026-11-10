@@ -720,13 +720,14 @@
                 "intro": "What visitors asked your listing's assistant. Questions are anonymous and kept for 12 months.",
                 "loading": "Loading questions…",
                 "error": "We could not load the questions. Please try again later.",
+                "notOwner": "Only the listing's owner can see the questions asked to its assistant.",
                 "empty": "Nobody has asked this listing's assistant anything yet.",
                 "answerLabel": "Assistant's answer:",
                 "addAsFaq": "Add as a FAQ",
                 "unansweredTitle": "Unanswered",
                 "unansweredHint": "The assistant could not find the answer in your listing. Adding them as FAQs helps it answer next time.",
                 "othersTitle": "Other questions",
-                "truncated": "Questions shown: {{shown}} of {{total}} (the most recent)."
+                "truncated": "Questions shown: {{shown}} of {{total}}. Unanswered ones come first."
             }
         },
         "empty": {

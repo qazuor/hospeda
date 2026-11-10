@@ -720,13 +720,14 @@
                 "intro": "Lo que los visitantes le preguntaron al asistente de tu ficha. Las preguntas son anónimas y se guardan 12 meses.",
                 "loading": "Cargando preguntas…",
                 "error": "No pudimos cargar las preguntas. Probá de nuevo en un rato.",
+                "notOwner": "Solo el dueño de la ficha puede ver las preguntas que le hicieron al asistente.",
                 "empty": "Todavía nadie le hizo preguntas al asistente de esta ficha.",
                 "answerLabel": "Respuesta del asistente:",
                 "addAsFaq": "Agregar como pregunta frecuente",
                 "unansweredTitle": "Sin responder",
                 "unansweredHint": "El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.",
                 "othersTitle": "Otras preguntas",
-                "truncated": "Preguntas mostradas: {{shown}} de {{total}} (las más recientes)."
+                "truncated": "Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero."
             }
         },
         "empty": {

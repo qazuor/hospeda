@@ -38,13 +38,18 @@ export interface AiQuestionsPanelProps {
     readonly entityType: AiChatEntityType;
     /** Listing id. */
     readonly entityId: string;
-    /** URL of the listing's FAQ section, the target of «Agregar como pregunta frecuente». */
+    /**
+     * URL of the listing's FAQ section, the target of «Agregar como pregunta
+     * frecuente». Empty when the vertical has no FAQ section: the shortcut is
+     * then hidden instead of linking back to this page.
+     */
     readonly faqUrl: string;
 }
 
 type LoadState =
     | { readonly kind: 'loading' }
     | { readonly kind: 'error' }
+    | { readonly kind: 'notOwner' }
     | { readonly kind: 'ready'; readonly data: AiListingQuestionsResponse };
 
 /**
@@ -87,7 +92,13 @@ export function AiQuestionsPanel({
                 params: { entityType, entityId }
             });
             if (cancelled) return;
-            setState(result.ok ? { kind: 'ready', data: result.data } : { kind: 'error' });
+            if (result.ok) {
+                setState({ kind: 'ready', data: result.data });
+                return;
+            }
+            // 404 is the API's answer for a listing the viewer does not own
+            // (e.g. staff opening another owner's editor): not a failure.
+            setState(result.error.status === 404 ? { kind: 'notOwner' } : { kind: 'error' });
         };
         void load();
         return () => {
@@ -113,6 +124,20 @@ export function AiQuestionsPanel({
                     aria-live="polite"
                 >
                     {t('host.properties.editor.aiQuestions.loading', 'Cargando preguntas…')}
+                </p>
+            </div>
+        );
+    }
+
+    if (state.kind === 'notOwner') {
+        return (
+            <div className={styles.panel}>
+                {intro}
+                <p className={styles.status}>
+                    {t(
+                        'host.properties.editor.aiQuestions.notOwner',
+                        'Solo el dueño de la ficha puede ver las preguntas que le hicieron al asistente.'
+                    )}
                 </p>
             </div>
         );
@@ -174,7 +199,7 @@ export function AiQuestionsPanel({
                         options: { day: 'numeric', month: 'short', year: 'numeric' }
                     })}
                 </time>
-                {withAction && (
+                {withAction && faqUrl !== '' && (
                     <a
                         className={styles.addFaq}
                         href={buildFaqPrefillHref({ faqUrl, question: item.question }).href}
@@ -233,7 +258,7 @@ export function AiQuestionsPanel({
                 <p className={styles.status}>
                     {t(
                         'host.properties.editor.aiQuestions.truncated',
-                        'Preguntas mostradas: {{shown}} de {{total}} (las más recientes).',
+                        'Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero.',
                         { shown: data.items.length, total: data.total }
                     )}
                 </p>

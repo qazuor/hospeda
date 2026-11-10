@@ -37,13 +37,13 @@ const item = (
     answerStatus
 });
 
-function renderPanel() {
+function renderPanel(faqUrl: string = FAQ_URL) {
     return render(
         <AiQuestionsPanel
             locale="es"
             entityType="venue"
             entityId={LISTING_ID}
-            faqUrl={FAQ_URL}
+            faqUrl={faqUrl}
         />
     );
 }
@@ -119,11 +119,37 @@ describe('AiQuestionsPanel', () => {
     });
 
     it('shows an error when the request fails', async () => {
-        mockGetProtected.mockResolvedValue({ ok: false, error: { status: 404 } });
+        mockGetProtected.mockResolvedValue({ ok: false, error: { status: 500 } });
 
         renderPanel();
 
         expect(await screen.findByRole('alert')).toBeTruthy();
+    });
+
+    it('shows a neutral note, not an error, when the viewer does not own the listing', async () => {
+        mockGetProtected.mockResolvedValue({ ok: false, error: { status: 404 } });
+
+        renderPanel();
+
+        expect(await screen.findByText(/solo el due.o de la ficha/i)).toBeTruthy();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('hides the FAQ shortcut when the vertical has no FAQ section', async () => {
+        mockGetProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [item('b', '¿Aceptan mascotas?', 'unanswered')],
+                total: 1,
+                unansweredCount: 1,
+                truncated: false
+            }
+        });
+
+        renderPanel('');
+
+        expect(await screen.findByText('¿Aceptan mascotas?')).toBeTruthy();
+        expect(screen.queryByRole('link')).toBeNull();
     });
 
     it('notes when the list is truncated', async () => {

@@ -720,13 +720,14 @@
                 "intro": "O que os visitantes perguntaram ao assistente do seu anúncio. As perguntas são anônimas e ficam guardadas por 12 meses.",
                 "loading": "Carregando perguntas…",
                 "error": "Não conseguimos carregar as perguntas. Tente novamente mais tarde.",
+                "notOwner": "Somente o dono do anúncio pode ver as perguntas feitas ao assistente.",
                 "empty": "Ninguém fez perguntas ao assistente deste anúncio ainda.",
                 "answerLabel": "Resposta do assistente:",
                 "addAsFaq": "Adicionar como pergunta frequente",
                 "unansweredTitle": "Sem resposta",
                 "unansweredHint": "O assistente não encontrou a resposta no seu anúncio. Adicioná-las como perguntas frequentes o ajuda a responder na próxima vez.",
                 "othersTitle": "Outras perguntas",
-                "truncated": "Perguntas exibidas: {{shown}} de {{total}} (as mais recentes)."
+                "truncated": "Perguntas exibidas: {{shown}} de {{total}}. As sem resposta vêm primeiro."
             }
         },
         "empty": {
