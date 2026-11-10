@@ -3438,6 +3438,18 @@
             "min": "A idade mínima deve ser pelo menos 13",
             "max": "A idade mínima não pode ultrapassar 30"
         },
+        "minAgeScope": {
+            "kind": {
+                "invalid": "Escolha um alcance válido para a idade mínima"
+            },
+            "from": {
+                "invalid": "Informe um horário válido no formato HH:MM"
+            },
+            "area": {
+                "required": "Escreva o setor ou a atividade",
+                "tooLong": "O setor ou a atividade não pode passar de 60 caracteres"
+            }
+        },
         "entryPriceFrom": {
             "int": "O preço de entrada deve ser um número inteiro de centavos",
             "nonnegative": "O preço de entrada não pode ser negativo"

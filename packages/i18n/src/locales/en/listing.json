@@ -306,7 +306,16 @@
                 "priceUpdatedAt": "Updated {{month}}",
                 "localeEs": "Spanish",
                 "localeEn": "English",
-                "localePt": "Portuguese"
+                "localePt": "Portuguese",
+                "minAgeScopeLabel": "Minimum-age scope",
+                "minAgeScopeOption": {
+                    "all_day": "Applies all day",
+                    "from_time": "Applies from a time",
+                    "area": "Applies only to one area or activity"
+                },
+                "minAgeScopeFromLabel": "Applies from",
+                "minAgeScopeAreaLabel": "Area or activity, for example \"dance floor\" or \"show\" (es/en/pt)",
+                "minAgeScopeHint": "Shown next to the minimum age on your listing, and the assistant uses it to answer."
             },
             "errorPage": {
                 "title": "We could not load the editor",

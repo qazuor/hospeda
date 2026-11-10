@@ -3438,6 +3438,18 @@
             "min": "The minimum age must be at least 13",
             "max": "The minimum age cannot exceed 30"
         },
+        "minAgeScope": {
+            "kind": {
+                "invalid": "Choose a valid minimum-age scope"
+            },
+            "from": {
+                "invalid": "Enter a valid time in HH:MM format"
+            },
+            "area": {
+                "required": "Write the area or activity",
+                "tooLong": "The area or activity cannot exceed 60 characters"
+            }
+        },
         "entryPriceFrom": {
             "int": "The entry price must be an integer number of cents",
             "nonnegative": "The entry price cannot be negative"

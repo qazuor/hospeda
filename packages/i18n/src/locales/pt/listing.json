@@ -306,7 +306,16 @@
                 "priceUpdatedAt": "Atualizado {{month}}",
                 "localeEs": "Espanhol",
                 "localeEn": "Inglês",
-                "localePt": "Português"
+                "localePt": "Português",
+                "minAgeScopeLabel": "Alcance da idade mínima",
+                "minAgeScopeOption": {
+                    "all_day": "Vale o dia todo",
+                    "from_time": "Vale a partir de um horário",
+                    "area": "Vale só para um setor ou atividade"
+                },
+                "minAgeScopeFromLabel": "Vale a partir das",
+                "minAgeScopeAreaLabel": "Setor ou atividade, por exemplo \"pista\" ou \"show\" (es/en/pt)",
+                "minAgeScopeHint": "Aparece ao lado da idade mínima no seu anúncio, e o assistente usa para responder."
             },
             "errorPage": {
                 "title": "Não foi possível carregar o editor",
