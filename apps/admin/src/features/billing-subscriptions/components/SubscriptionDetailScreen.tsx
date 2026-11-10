@@ -199,9 +199,9 @@ function planVersionLabel(detail: Detail, t: Translate, locale: string): string 
     const retired = detail.planVersion.sellable
         ? ''
         : ` (${t('admin-billing.subscriptionAdmin.detail.planVersionRetired')})`;
-    return unavailableWhenEmpty(
+    return (
         t('admin-billing.subscriptionAdmin.detail.planVersionCreatedAt', { date: createdAt }) +
-            retired
+        retired
     );
 }
 
@@ -216,10 +216,6 @@ function priceLabel(detail: Detail, t: Translate, locale: string): string {
         `admin-billing.subscriptionAdmin.cycles.${detail.price.cycle}` as TranslationKey
     );
     return `${amount} · ${cycle}`;
-}
-
-function unavailableWhenEmpty(value: string): string {
-    return value.trim().length > 0 ? value : '—';
 }
 
 function PauseSection({

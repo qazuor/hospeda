@@ -129,13 +129,21 @@ const listPage = {
     pagination: { page: 1, pageSize: 20, total: 21, totalPages: 2 }
 };
 
-function renderScreen() {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(
+function screenElement(client: QueryClient) {
+    return (
         <QueryClientProvider client={client}>
             <SubscriptionsListScreen />
         </QueryClientProvider>
     );
+}
+
+function renderScreen() {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const result = render(screenElement(client));
+    return {
+        ...result,
+        rerenderScreen: () => result.rerender(screenElement(client))
+    };
 }
 
 function lastArgs(): HookArgs {
@@ -216,6 +224,73 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
     it('marks a deleted owner', () => {
         renderScreen();
         expect(screen.getAllByText(/Cuenta borrada/)).toHaveLength(1);
+    });
+});
+
+describe('HOS-2081 estados de la lista', () => {
+    beforeEach(() => {
+        listHook.args = [];
+        listHook.result.current = {
+            isLoading: false,
+            isError: false,
+            data: listPage,
+            refetch: vi.fn()
+        };
+    });
+
+    it('keeps the filters visible when the result is empty', () => {
+        listHook.result.current = {
+            isLoading: false,
+            isError: false,
+            data: { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } },
+            refetch: vi.fn()
+        };
+        renderScreen();
+        expect(screen.getByText('No hay suscripciones para estos filtros.')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-search')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-filter-vertical')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-filter-status')).toBeInTheDocument();
+    });
+
+    it('keeps the filters and the typed search value visible while loading', () => {
+        const view = renderScreen();
+        fireEvent.change(screen.getByTestId('subscriptions-search'), {
+            target: { value: 'owner@example.test' }
+        });
+        expect(screen.getByTestId('subscriptions-search')).toHaveValue('owner@example.test');
+
+        listHook.result.current = {
+            isLoading: true,
+            isError: false,
+            data: undefined,
+            refetch: vi.fn()
+        };
+        view.rerenderScreen();
+
+        expect(screen.getByText('Cargando suscripciones…')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-search')).toHaveValue('owner@example.test');
+        expect(screen.getByTestId('subscriptions-filter-vertical')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-filter-status')).toBeInTheDocument();
+    });
+
+    it('shows the error with a retry that refetches and keeps the filters visible', () => {
+        const refetch = vi.fn();
+        listHook.result.current = {
+            isLoading: false,
+            isError: true,
+            error: new Error('boom'),
+            data: undefined,
+            refetch
+        };
+        renderScreen();
+
+        expect(screen.getByText('No se pudieron cargar las suscripciones.')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-search')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-filter-vertical')).toBeInTheDocument();
+        expect(screen.getByTestId('subscriptions-filter-status')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+        expect(refetch).toHaveBeenCalledTimes(1);
     });
 });
 

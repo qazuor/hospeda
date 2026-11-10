@@ -4,9 +4,10 @@ import { formatCurrency } from '@repo/i18n';
 import es from '@repo/i18n/locales/es/admin-billing.json';
 import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import { SubscriptionDetailScreen } from '../SubscriptionDetailScreen';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -177,6 +178,32 @@ describe('HOS-2081 CA-2 desde el detalle llega a cada acción para la que tiene 
         ]);
     });
 
+    it('shows only the plan-change link with the plan-change permission', () => {
+        permissions.current = [
+            PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+            PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN
+        ];
+        renderScreen();
+        expect(actionHrefs()).toEqual([`/billing/subscriptions/${ID}/plan-change`]);
+        expect(screen.queryByTestId('subscription-action-cancellation')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-revocation')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-pause')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-courtesy')).toBeNull();
+    });
+
+    it('shows only the courtesy link with the courtesy permission', () => {
+        permissions.current = [
+            PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+            PermissionEnum.BILLING_GRANT_COMPLIMENTARY
+        ];
+        renderScreen();
+        expect(actionHrefs()).toEqual([`/billing/subscriptions/${ID}/courtesy`]);
+        expect(screen.queryByTestId('subscription-action-cancellation')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-revocation')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-pause')).toBeNull();
+        expect(screen.queryByTestId('subscription-action-plan-change')).toBeNull();
+    });
+
     it('shows no action links and a notice with inspection only', () => {
         permissions.current = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
         renderScreen();
@@ -232,5 +259,52 @@ describe('HOS-2081 CA-2 desde el detalle llega a cada acción para la que tiene 
         renderScreen();
         expect(screen.getAllByText('Activa')).toHaveLength(1);
         expect(screen.queryAllByText('ACTIVE')).toHaveLength(0);
+    });
+});
+
+describe('HOS-2081 estados del detalle', () => {
+    beforeEach(() => {
+        permissions.current = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
+    });
+
+    it('shows the loading message', () => {
+        detailHook.result.current = {
+            isLoading: true,
+            isError: false,
+            data: undefined,
+            refetch: vi.fn()
+        };
+        renderScreen();
+        expect(screen.getByText('Cargando la suscripción…')).toBeInTheDocument();
+    });
+
+    it('shows the generic error and retries', () => {
+        const refetch = vi.fn();
+        detailHook.result.current = {
+            isLoading: false,
+            isError: true,
+            error: new Error('boom'),
+            data: undefined,
+            refetch
+        };
+        renderScreen();
+        expect(
+            screen.getByText('No se pudo cargar el detalle de la suscripción.')
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+        expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the not-found message without a retry button', () => {
+        detailHook.result.current = {
+            isLoading: false,
+            isError: true,
+            error: new ApiError('missing', { status: 404 }),
+            data: undefined,
+            refetch: vi.fn()
+        };
+        renderScreen();
+        expect(screen.getByText('Esta suscripción no existe.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
     });
 });

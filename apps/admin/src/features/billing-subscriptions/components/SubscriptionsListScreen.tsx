@@ -85,6 +85,7 @@ function SubscriptionsBody() {
             {
                 id: 'owner',
                 header: t('admin-billing.subscriptionAdmin.columns.owner'),
+                enableSorting: false,
                 cell: ({ row }) => (
                     <Link
                         to="/billing/subscriptions/$subscriptionId"
@@ -105,36 +106,43 @@ function SubscriptionsBody() {
             {
                 id: 'name',
                 header: t('admin-billing.subscriptionAdmin.columns.name'),
+                enableSorting: false,
                 cell: ({ row }) => row.owner?.displayName ?? unknown
             },
             {
                 id: 'vertical',
                 header: t('admin-billing.subscriptionAdmin.columns.vertical'),
+                enableSorting: false,
                 cell: ({ row }) => (row.vertical ? verticalLabel(row.vertical) : unknown)
             },
             {
                 id: 'plan',
                 header: t('admin-billing.subscriptionAdmin.columns.plan'),
+                enableSorting: false,
                 cell: ({ row }) => row.plan?.planName ?? unknown
             },
             {
                 id: 'class',
                 header: t('admin-billing.subscriptionAdmin.columns.class'),
+                enableSorting: false,
                 cell: ({ row }) => classLabel(row.class)
             },
             {
                 id: 'status',
                 header: t('admin-billing.subscriptionAdmin.columns.status'),
+                enableSorting: false,
                 cell: ({ row }) => statusLabel(row.status)
             },
             {
                 id: 'cycle',
                 header: t('admin-billing.subscriptionAdmin.columns.cycle'),
+                enableSorting: false,
                 cell: ({ row }) => (row.cycle ? cycleLabel(row.cycle) : unknown)
             },
             {
                 id: 'nextCharge',
                 header: t('admin-billing.subscriptionAdmin.columns.nextCharge'),
+                enableSorting: false,
                 cell: ({ row }) =>
                     row.nextChargeAt
                         ? formatDateWithTime({ date: row.nextChargeAt, locale })
@@ -143,41 +151,13 @@ function SubscriptionsBody() {
             {
                 id: 'createdAt',
                 header: t('admin-billing.subscriptionAdmin.columns.createdAt'),
+                enableSorting: false,
                 cell: ({ row }) => formatDateWithTime({ date: row.createdAt, locale })
             }
         ];
     }, [t, locale]);
 
-    if (query.isLoading) {
-        return (
-            <div data-testid="subscriptions-list">
-                <p>{t('admin-billing.subscriptionAdmin.loading')}</p>
-            </div>
-        );
-    }
-    if (query.isError) {
-        return (
-            <div
-                data-testid="subscriptions-list"
-                role="alert"
-                className="space-y-2"
-            >
-                <p>{t('admin-billing.subscriptionAdmin.error')}</p>
-                <Button onClick={() => void query.refetch()}>
-                    {t('admin-billing.subscriptionAdmin.retry')}
-                </Button>
-            </div>
-        );
-    }
-
     const data = query.data;
-    if (!data) {
-        return (
-            <div data-testid="subscriptions-list">
-                <p>{t('admin-billing.subscriptionAdmin.empty')}</p>
-            </div>
-        );
-    }
 
     return (
         <div
@@ -250,7 +230,19 @@ function SubscriptionsBody() {
                     </select>
                 </label>
             </div>
-            {data.items.length === 0 ? (
+            {query.isLoading ? (
+                <p>{t('admin-billing.subscriptionAdmin.loading')}</p>
+            ) : query.isError ? (
+                <div
+                    role="alert"
+                    className="space-y-2"
+                >
+                    <p>{t('admin-billing.subscriptionAdmin.error')}</p>
+                    <Button onClick={() => void query.refetch()}>
+                        {t('admin-billing.subscriptionAdmin.retry')}
+                    </Button>
+                </div>
+            ) : !data || data.items.length === 0 ? (
                 <p>{t('admin-billing.subscriptionAdmin.empty')}</p>
             ) : (
                 <DataTable<Item>
