@@ -314,6 +314,7 @@
                     "area": "Vale só para um setor ou atividade"
                 },
                 "minAgeScopeFromLabel": "Vale a partir das",
+                "minAgeScopeFromHint": "Vale a partir desse horário até o fechamento, incluindo a madrugada depois da meia-noite. Só as horas do mesmo dia antes desse horário ficam de fora.",
                 "minAgeScopeAreaLabel": "Setor ou atividade, por exemplo \"pista\" ou \"show\" (es/en/pt)",
                 "minAgeScopeHint": "Aparece ao lado da idade mínima no seu anúncio, e o assistente usa para responder."
             },

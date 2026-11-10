@@ -122,7 +122,7 @@
             "minAgeLabel": "Idade mínima",
             "minAgeScope": {
                 "allDay": "Vale o dia todo",
-                "fromTime": "Vale a partir das {{time}}",
+                "fromTime": "Vale das {{time}} até o fechamento",
                 "area": "Vale só para: {{area}}"
             },
             "legalAge": "Proibida a venda de bebidas alcoólicas a menores de 18 anos (Lei argentina 24.788)."

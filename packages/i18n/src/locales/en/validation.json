@@ -3448,7 +3448,8 @@
             "area": {
                 "required": "Write the area or activity",
                 "tooLong": "The area or activity cannot exceed 60 characters"
-            }
+            },
+            "requiresMinAge": "Set the minimum age before saying where or when it applies"
         },
         "entryPriceFrom": {
             "int": "The entry price must be an integer number of cents",

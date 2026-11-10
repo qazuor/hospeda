@@ -314,6 +314,7 @@
                     "area": "Rige solo en un sector o actividad"
                 },
                 "minAgeScopeFromLabel": "Rige desde las",
+                "minAgeScopeFromHint": "Rige desde esa hora hasta el cierre, incluida la madrugada después de la medianoche. Solo las horas del mismo día antes de esa hora quedan afuera.",
                 "minAgeScopeAreaLabel": "Sector o actividad, por ejemplo «pista» o «show» (es/en/pt)",
                 "minAgeScopeHint": "Se muestra junto a la edad mínima en tu ficha y el asistente lo usa para responder."
             },

@@ -3448,7 +3448,8 @@
             "area": {
                 "required": "Escribí el sector o la actividad",
                 "tooLong": "El sector o la actividad no puede superar los 60 caracteres"
-            }
+            },
+            "requiresMinAge": "Cargá la edad mínima antes de indicar dónde o cuándo rige"
         },
         "entryPriceFrom": {
             "int": "El precio de entrada debe ser un número entero de centavos",
