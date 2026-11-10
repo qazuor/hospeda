@@ -1,9 +1,11 @@
 import {
+    type DrizzleClient,
     emailOutbox,
     eq,
     inArray,
     planMigrationSubscriptions,
     planMigrations,
+    setDb,
     subscriptions
 } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
@@ -42,7 +44,7 @@ beforeEach(async () => {
 });
 
 // The shared fixture seeds catalog versions and an actor; startSubscription creates the principal.
-async function launch(seeded: Case) {
+async function launch(seeded: Case, reader: DrizzleClient = db) {
     const input = {
         sourcePlanVersionId: seeded.planVersionId,
         targetPlanVersionId: seeded.targetPlanVersionId
@@ -62,7 +64,7 @@ async function launch(seeded: Case) {
     migrationIds.push(launched.planMigrationId);
     recipientIds.push(seeded.user.id);
     if (seeded.pendingCustomer) recipientIds.push(seeded.pendingCustomer.userId);
-    const [scope] = await db
+    const [scope] = await reader
         .select()
         .from(planMigrationSubscriptions)
         .where(eq(planMigrationSubscriptions.planMigrationId, launched.planMigrationId));
@@ -70,8 +72,8 @@ async function launch(seeded: Case) {
     return { launched, scope, preview };
 }
 
-async function outboxFor(userId: string) {
-    return db
+async function outboxFor(userId: string, reader: DrizzleClient = db) {
+    return reader
         .select({
             template: emailOutbox.template,
             payload: emailOutbox.payload,
@@ -91,8 +93,12 @@ function movableClock(initial: string) {
     };
 }
 
-async function runForScope(scopeId: string, clock: { readonly now: () => Date }) {
-    const result = await sendPlanMigrationNotices({ limit: 100, db }, { clock });
+async function runForScope(
+    scopeId: string,
+    clock: { readonly now: () => Date },
+    reader: DrizzleClient = db
+) {
+    const result = await sendPlanMigrationNotices({ limit: 100, db: reader }, { clock });
     const rows = result.rows.filter((row) => row.planMigrationSubscriptionId === scopeId);
     return { rows, notDue: rows.filter((row) => row.outcome === 'NOT_DUE').length };
 }
@@ -353,40 +359,44 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 cycle: 'monthly',
                 amount: 300000
             });
-            const { launched, scope } = await launch(seeded);
-            const before = await getCurrentBillingDeadlines();
+            // The deadline table is immutable. Publish through the real service inside a rolled-back test transaction.
+            const rollback = new Error('rollback test deadline publication');
             try {
-                await changeBillingDeadline({
-                    actor: seeded.actor,
-                    key: 12,
-                    value: { noticeDays: 90, contactDays: [45, 10] },
-                    expectedVersion: before.version,
-                    confirmed: true
+                await db.transaction(async (tx) => {
+                    setDb(tx as unknown as DrizzleClient);
+                    const reader = tx as unknown as DrizzleClient;
+                    try {
+                        const { launched, scope } = await launch(seeded, reader);
+                        const before = await getCurrentBillingDeadlines();
+                        await changeBillingDeadline({
+                            actor: seeded.actor,
+                            key: 12,
+                            value: { noticeDays: 90, contactDays: [45, 10] },
+                            expectedVersion: before.version,
+                            confirmed: true
+                        });
+                        const clock = movableClock('2026-11-11T12:00:00.000Z');
+                        const run = () => runForScope(scope.id, clock, reader);
+                        expect((await run()).rows[0]?.milestone).toBe('mig:-30d');
+                        const [after] = await reader
+                            .select()
+                            .from(planMigrationSubscriptions)
+                            .where(eq(planMigrationSubscriptions.id, scope.id));
+                        expect(after?.applicationDate).toEqual(scope.applicationDate);
+                        const upcoming = (await outboxFor(seeded.user.id, reader)).filter(
+                            (row) => row.template === 'billing.plan-migration-upcoming'
+                        );
+                        expect(upcoming).toHaveLength(1);
+                        expect(
+                            (upcoming[0]?.payload as { deadlinesVersion: number }).deadlinesVersion
+                        ).toBe(launched.deadlineVersion);
+                    } finally {
+                        setDb(db);
+                    }
+                    throw rollback;
                 });
-                const clock = movableClock('2026-11-11T12:00:00.000Z');
-                const run = () => runForScope(scope.id, clock);
-                expect((await run()).rows[0]?.milestone).toBe('mig:-30d');
-                const [after] = await db
-                    .select()
-                    .from(planMigrationSubscriptions)
-                    .where(eq(planMigrationSubscriptions.id, scope.id));
-                expect(after?.applicationDate).toEqual(scope.applicationDate);
-                const upcoming = (await outboxFor(seeded.user.id)).filter(
-                    (row) => row.template === 'billing.plan-migration-upcoming'
-                );
-                expect(upcoming).toHaveLength(1);
-                expect(
-                    (upcoming[0]?.payload as { deadlinesVersion: number }).deadlinesVersion
-                ).toBe(launched.deadlineVersion);
-            } finally {
-                const current = await getCurrentBillingDeadlines();
-                await changeBillingDeadline({
-                    actor: seeded.actor,
-                    key: 12,
-                    value: before.values['12'],
-                    expectedVersion: current.version,
-                    confirmed: true
-                });
+            } catch (error) {
+                if (error !== rollback) throw error;
             }
         });
     }
