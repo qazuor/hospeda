@@ -179,6 +179,17 @@ test.describe('HOS-2081 CA-1 CA-2 CA-3 encontrar una suscripción por email y ll
         await markProfileCompleted({ userId: admin.id });
         await markAdminToursSeen({ userId: admin.id });
         userIds.push(subscriber.user.id, subscriber.admin.id, admin.id);
+        // The E2E database does not give the ADMIN role INSPECT, so grant it explicitly
+        // (same as adm-13) and leave every action permission absent.
+        const inspectGrant = await fetch(`${API_URL}/api/v1/admin/users/${admin.id}/permissions`, {
+            method: 'POST',
+            headers: {
+                cookie: subscriber.admin.sessionCookie,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({ permission: 'billing.subscription.inspect', effect: 'grant' })
+        });
+        expect(inspectGrant.ok).toBe(true);
         const card = await createApiCardSubscription({
             user: subscriber.user,
             billingOptionId: await monthlyOptionForSlug('owner-basico')
