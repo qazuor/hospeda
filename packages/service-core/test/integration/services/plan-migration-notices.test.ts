@@ -15,6 +15,7 @@ import {
 } from '../../../src/services/billing/deadlines/billing-deadlines.service.js';
 import { launchPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
+import { applyPlanMigrationUpcomingNotice } from '../../../src/services/billing/plan-migration/plan-migration-upcoming-notice.js';
 import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
 import {
     closeServiceTestPool,
@@ -122,6 +123,54 @@ afterAll(closeServiceTestPool);
 describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B12:3 AC:B12:3 el aviso, sus correos y la fecha de cada cliente',
     () => {
+        it('visits later pending rows when the first page already has its notice', async () => {
+            const scopes: Array<{ id: string; userId: string }> = [];
+            for (let index = 0; index < 5; index += 1) {
+                const seeded = await createPlanMigrationCase();
+                await setMigrationTargetCycle({
+                    actor: seeded.actor,
+                    planVersionId: seeded.targetPlanVersionId,
+                    cycle: 'monthly',
+                    amount: 300000
+                });
+                const { scope } = await launch(seeded);
+                scopes.push({ id: scope.id, userId: seeded.user.id });
+            }
+            scopes.sort((left, right) => left.id.localeCompare(right.id));
+            const clock = movableClock('2026-11-11T12:00:00.000Z');
+            for (const scope of scopes.slice(0, 2)) {
+                expect(
+                    await db.transaction((tx) =>
+                        applyPlanMigrationUpcomingNotice({
+                            tx,
+                            planMigrationSubscriptionId: scope.id,
+                            now: clock.now()
+                        })
+                    )
+                ).toMatchObject({ outcome: 'ENQUEUED' });
+            }
+
+            const run = () => sendPlanMigrationNotices({ limit: 2, db }, { clock });
+            const first = await run();
+            const ownIds = new Set(scopes.map((scope) => scope.id));
+            const ownRows = first.rows.filter((row) => ownIds.has(row.planMigrationSubscriptionId));
+            expect(ownRows).toHaveLength(5);
+            expect(ownRows.filter((row) => row.outcome === 'ALREADY_ENQUEUED')).toHaveLength(2);
+            expect(ownRows.filter((row) => row.outcome === 'ENQUEUED')).toHaveLength(3);
+            const second = await run();
+            const secondOwnRows = second.rows.filter((row) =>
+                ownIds.has(row.planMigrationSubscriptionId)
+            );
+            expect(secondOwnRows).toHaveLength(5);
+            expect(secondOwnRows.every((row) => row.outcome === 'ALREADY_ENQUEUED')).toBe(true);
+            for (const scope of scopes)
+                expect(
+                    (await outboxFor(scope.userId)).filter(
+                        (row) => row.template === 'billing.plan-migration-upcoming'
+                    )
+                ).toHaveLength(1);
+        });
+
         it('monthly ACTIVE receives 30 and 7 local days before its application, with exact payload and dedup', async () => {
             const seeded = await createPlanMigrationCase();
             await setMigrationTargetCycle({

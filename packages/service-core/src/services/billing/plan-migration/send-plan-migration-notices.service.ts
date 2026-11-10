@@ -5,7 +5,9 @@ import {
     type DrizzleClient,
     eq,
     getDb,
+    gt,
     isNull,
+    or,
     planMigrationSubscriptions,
     planMigrations
 } from '@repo/db';
@@ -42,8 +44,9 @@ export interface SendPlanMigrationNoticesResult {
     readonly rows: readonly PlanMigrationNoticeRunRow[];
 }
 
-/** Evaluate pending retirement rows in stable order, with one transaction per row. */
+/** Evaluate every pending retirement row in keyset pages, with one transaction per row. */
 export async function sendPlanMigrationNotices(
+    /** `limit` is the page size, not a cap on the number of rows processed. */
     input: { readonly limit: number; readonly db?: DrizzleClient },
     ports: { readonly clock: Clock }
 ): Promise<SendPlanMigrationNoticesResult> {
@@ -57,26 +60,8 @@ export async function sendPlanMigrationNotices(
         );
     const db = input.db ?? getDb();
     const now = ports.clock.now();
-    const selected = await db
-        .select({ id: planMigrationSubscriptions.id })
-        .from(planMigrationSubscriptions)
-        .innerJoin(
-            planMigrations,
-            eq(planMigrations.id, planMigrationSubscriptions.planMigrationId)
-        )
-        .where(
-            and(
-                eq(planMigrationSubscriptions.status, 'PENDIENTE'),
-                eq(planMigrations.reason, 'RETIREMENT'),
-                isNull(planMigrations.cancelledAt)
-            )
-        )
-        .orderBy(
-            asc(planMigrationSubscriptions.applicationDate),
-            asc(planMigrationSubscriptions.id)
-        )
-        .limit(parsed.data.limit);
     const rows: PlanMigrationNoticeRunRow[] = [];
+    const visitedIds = new Set<string>();
     const counts = {
         enqueued: 0,
         alreadyEnqueued: 0,
@@ -86,33 +71,77 @@ export async function sendPlanMigrationNotices(
         skipped: 0,
         failed: 0
     };
-    for (const { id: planMigrationSubscriptionId } of selected) {
-        try {
-            const result = await db.transaction((tx) =>
-                applyPlanMigrationUpcomingNotice({ tx, planMigrationSubscriptionId, now })
-            );
-            if (result.outcome === 'ENQUEUED') counts.enqueued += 1;
-            if (result.outcome === 'ALREADY_ENQUEUED') counts.alreadyEnqueued += 1;
-            if (result.outcome === 'NOT_DUE') counts.notDue += 1;
-            if (result.outcome === 'WAITING') counts.waiting += 1;
-            if (result.outcome === 'SKIPPED') counts.skipped += 1;
-            if (result.recalculated) counts.recalculated += 1;
-            rows.push({ planMigrationSubscriptionId, ...result });
-        } catch (error) {
-            counts.failed += 1;
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error({ planMigrationSubscriptionId, error }, 'Migration notice row failed');
-            rows.push({
-                planMigrationSubscriptionId,
-                outcome: 'FAILED',
-                milestone: null,
-                recalculated: false,
-                error: message
-            });
+    let cursor: { readonly applicationDate: Date; readonly id: string } | undefined;
+    while (true) {
+        const selected = await db
+            .select({
+                id: planMigrationSubscriptions.id,
+                applicationDate: planMigrationSubscriptions.applicationDate
+            })
+            .from(planMigrationSubscriptions)
+            .innerJoin(
+                planMigrations,
+                eq(planMigrations.id, planMigrationSubscriptions.planMigrationId)
+            )
+            .where(
+                and(
+                    eq(planMigrationSubscriptions.status, 'PENDIENTE'),
+                    eq(planMigrations.reason, 'RETIREMENT'),
+                    isNull(planMigrations.cancelledAt),
+                    cursor
+                        ? or(
+                              gt(
+                                  planMigrationSubscriptions.applicationDate,
+                                  cursor.applicationDate
+                              ),
+                              and(
+                                  eq(
+                                      planMigrationSubscriptions.applicationDate,
+                                      cursor.applicationDate
+                                  ),
+                                  gt(planMigrationSubscriptions.id, cursor.id)
+                              )
+                          )
+                        : undefined
+                )
+            )
+            .orderBy(
+                asc(planMigrationSubscriptions.applicationDate),
+                asc(planMigrationSubscriptions.id)
+            )
+            .limit(parsed.data.limit);
+        if (selected.length === 0) break;
+        for (const { id: planMigrationSubscriptionId } of selected) {
+            // A row recalculated to a later date can appear again in a subsequent page.
+            if (visitedIds.has(planMigrationSubscriptionId)) continue;
+            visitedIds.add(planMigrationSubscriptionId);
+            try {
+                const result = await db.transaction((tx) =>
+                    applyPlanMigrationUpcomingNotice({ tx, planMigrationSubscriptionId, now })
+                );
+                if (result.outcome === 'ENQUEUED') counts.enqueued += 1;
+                if (result.outcome === 'ALREADY_ENQUEUED') counts.alreadyEnqueued += 1;
+                if (result.outcome === 'NOT_DUE') counts.notDue += 1;
+                if (result.outcome === 'WAITING') counts.waiting += 1;
+                if (result.outcome === 'SKIPPED') counts.skipped += 1;
+                if (result.recalculated) counts.recalculated += 1;
+                rows.push({ planMigrationSubscriptionId, ...result });
+            } catch (error) {
+                counts.failed += 1;
+                const message = error instanceof Error ? error.message : String(error);
+                logger.error({ planMigrationSubscriptionId, error }, 'Migration notice row failed');
+                rows.push({
+                    planMigrationSubscriptionId,
+                    outcome: 'FAILED',
+                    milestone: null,
+                    recalculated: false,
+                    error: message
+                });
+            }
         }
+        cursor = selected[selected.length - 1];
+        if (selected.length < parsed.data.limit) break;
     }
-    if (selected.length === parsed.data.limit)
-        logger.warn({ limit: parsed.data.limit }, 'Migration notice page is full');
     logger.info(counts, 'Migration notice run finished');
     return { ...counts, rows };
 }
