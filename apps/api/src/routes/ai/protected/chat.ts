@@ -23,10 +23,14 @@
  * 3. Fetch `ownerId` from the target listing row (pre-stream 404 guard).
  * 4. Assemble the listing-scoped context and system message.
  * 5. Stream tokens from `aiService.streamText({ feature, system, messages, locale })`.
- * 6. After drain, `recordAiUsage` ONCE (HOS-2095): owner-keyed (`userId`)
- *     with the tourist on `consumerUserId` (fire-and-try, non-fatal).
- * 7. Race `persistChatTurn(...)` vs 1500 ms and add `conversationId` to the
- *     `done` frame only on win.
+ * 6. After drain, `finalizeChatTurn` (`chat.finalize.ts`): `recordAiUsage` ONCE
+ *     (HOS-2095), owner-keyed (`userId`) with the tourist on `consumerUserId`
+ *     (fire-and-try, non-fatal).
+ * 7. It races `persistChatTurn(...)` vs 1500 ms; the route adds
+ *     `conversationId` to the `done` frame only on win.
+ *
+ * HOS-2100 split the helpers (`chat.helpers.ts`) and the post-stream
+ * finalization (`chat.finalize.ts`) out of this file; the flow is unchanged.
  *
  * ## Analytics
  *
@@ -40,21 +44,13 @@
  * @module apps/api/routes/ai/protected/chat
  */
 
-import {
-    appendReplyLanguageInstruction,
-    composeSystemPrompt,
-    recordAiUsage,
-    resolveFeatureConfig,
-    resolveSystemPrompt
-} from '@repo/ai-core';
+import { composeSystemPrompt, resolveSystemPrompt } from '@repo/ai-core';
 import { accommodations, experiences, getDb, venues } from '@repo/db';
 import {
     AI_CHAT_MAX_MESSAGES,
-    type AiChatMessage,
     type AiChatRequest,
     AiChatRequestSchema,
     type AiFeature,
-    type AiMessage,
     type LanguageEnum,
     PermissionEnum,
     resolveAiChatTarget,
@@ -64,10 +60,7 @@ import {
 import { ServiceError } from '@repo/service-core';
 import { resolveListingSections } from '@repo/verticals';
 import { eq } from 'drizzle-orm';
-import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
-import { scheduleChatAnswerClassification } from '../../../services/ai-chat-answer-classifier.js';
-import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
 import {
     CHAT_CONTEXT_ASSEMBLERS,
     CHAT_FEATURE_BY_ENTITY_TYPE
@@ -75,16 +68,19 @@ import {
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
-import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
-import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
-import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
-import { resolveChatUsageStatus } from './chat.usage-status.js';
+import { finalizeChatTurn } from './chat.finalize.js';
+import {
+    captureChatEvent,
+    getLastUserTurn,
+    resolveChatMaxOutputTokens,
+    toEngineMessages
+} from './chat.helpers.js';
 
 const DEFAULT_LOCALE: LanguageEnum = 'es';
 
@@ -117,112 +113,6 @@ const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
     venue: 'max_ai_chat_venue_per_month',
     experience: 'max_ai_chat_experience_per_month'
 } as const;
-
-const PERSISTENCE_TIMEOUT_MS = 1500;
-
-/**
- * Default per-call output token cap for the chat feature.
- *
- * Applied when the admin feature config does NOT carry an explicit
- * `params.maxTokens` value. Bounds the cost of a single chat answer so an
- * unlimited-quota tier cannot trigger an unbounded-output cost bomb. The
- * resolved feature-config value (when present) always wins over this default.
- */
-const DEFAULT_CHAT_MAX_OUTPUT_TOKENS = 1024;
-
-/**
- * Resolves the per-call output token cap for the chat feature.
- *
- * Prefers the admin-configured `features.chat.params.maxTokens` when present,
- * falling back to {@link DEFAULT_CHAT_MAX_OUTPUT_TOKENS}. Config-resolution
- * failures are non-fatal: the call still proceeds with the safe default so a
- * transient settings read cannot take the chat feature down — the cap is a
- * cost guard, not a correctness gate.
- */
-async function resolveChatMaxOutputTokens(feature: AiFeature): Promise<number> {
-    try {
-        const featureConfig = await resolveFeatureConfig({ feature });
-        return featureConfig.params.maxTokens ?? DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
-    } catch (error) {
-        apiLogger.warn(
-            { feature, error: error instanceof Error ? error.message : String(error) },
-            'ai-chat: failed to resolve feature config for maxTokens cap; using default'
-        );
-        return DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
-    }
-}
-
-interface ChatPostHogProperties {
-    readonly entityId: string;
-    readonly locale: LanguageEnum;
-    readonly messageCount?: number;
-    readonly conversationId?: string;
-    readonly provider?: string;
-    readonly model?: string;
-    readonly promptTokens?: number;
-    readonly completionTokens?: number;
-}
-
-function captureChatEvent(actorId: string, event: string, properties: ChatPostHogProperties): void {
-    const client = getPostHogClient();
-    if (!client) {
-        return;
-    }
-
-    client.capture({
-        distinctId: actorId,
-        event,
-        properties
-    });
-}
-
-/**
- * Result of {@link toEngineMessages}: the assembled `system` content plus the
- * mapped conversation `messages`, ready for `aiService.streamText({ system,
- * messages })`.
- *
- * `messages` never contains a `role: 'system'` entry — the accommodation
- * context + resolved prompt is forwarded via the engine's native `system`
- * option instead of a mid-array system message (avoids the AI SDK's
- * security-risk warning for stacked system messages).
- */
-interface EngineMessages {
-    readonly system: string;
-    readonly messages: AiMessage[];
-}
-
-/**
- * Maps the request into the engine's `system` + `messages` pair.
- *
- * HOS-2095 (round 2): the reply language is decided HERE, from the visitor's
- * latest message, and appended as the last line of `system` (see
- * `appendReplyLanguageInstruction` in `@repo/ai-core`). When the message is too
- * short or mixed to decide, `system` is the assembler's message unchanged.
- */
-function toEngineMessages(
-    systemMessage: string,
-    messages: ReadonlyArray<AiChatMessage>
-): EngineMessages {
-    const { system } = appendReplyLanguageInstruction({
-        system: systemMessage,
-        latestUserMessage: getLastUserTurn(messages)
-    });
-    return {
-        system,
-        messages: messages.map((message) => ({ role: message.role, content: message.content }))
-    };
-}
-
-/**
- * Content of the visitor's latest user turn, or `''` when the request carries
- * none. It never falls back to an assistant turn (review of #4253): that text
- * is the model's own, so it must neither decide the reply language nor be
- * persisted as what the visitor said.
- */
-function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
-    const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user');
-    return lastUserMessage?.content ?? '';
-}
 
 export const protectedAiChatRoute = createProtectedStreamingRoute({
     path: '/',
@@ -298,6 +188,9 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             vertical: ownerVertical
         });
 
+        // HOS-2100: a rejected attempt is recorded with the same owner/visitor
+        // pair as a served one, whichever gate rejects it.
+        const usageAttribution = { userId: ownerId, consumerUserId: actor.id } as const;
         await enforceAiQuota({
             userId: ownerId,
             vertical: ownerVertical,
@@ -306,7 +199,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
             entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
             effectiveSetSnapshot: ownerEffectiveSet,
-            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.'
+            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.',
+            usageAttribution
         });
         await enforceAiQuota({
             userId: actor.id,
@@ -318,7 +212,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             // `consumer_user_id`. Counting by `user_id` would read the rows
             // billed to this user AS AN OWNER (other tourists' questions on
             // their listings) instead of the questions they asked.
-            countKeyedBy: 'consumer'
+            countKeyedBy: 'consumer',
+            usageAttribution
         });
 
         const listingSections = (() => {
@@ -410,129 +305,19 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         })();
 
         const augmentedMeta = meta.then(async (resolvedMeta) => {
-            let resolvedConversationId: string | null = null;
-
-            // HOS-2095: an empty answer (e.g. a reasoning model that spent the whole
-            // output cap reasoning) must not count against any quota nor be persisted.
-            const { status: usageStatus, isEmpty: isEmptyAnswer } = resolveChatUsageStatus({
-                text: accumulatedAssistantText
-            });
-            if (isEmptyAnswer) {
-                apiLogger.warn(
-                    {
-                        feature: FEATURE,
-                        entityId,
-                        model: resolvedMeta.model,
-                        finishReason: resolvedMeta.finishReason,
-                        completionTokens: resolvedMeta.usage.completionTokens
-                    },
-                    'ai-chat: model produced an empty answer (usage recorded as error, turn not persisted)'
-                );
-            }
-
-            // DB rate overrides (ai_settings.modelRates).
-            const rateOverrides = await loadModelRateOverrides();
-
-            // -------------------------------------------------------------------
-            // Usage metering: exactly ONE ai_usage row per chat request (HOS-2095).
-            //
-            // The listing owner bears the cost (`userId: ownerId`, which the
-            // owner quota counts); the tourist who asked rides on the same row
-            // (`consumerUserId: actor.id`, which the consumer quota counts). A
-            // second, consumer-keyed row used to be written here with the full
-            // tokens and cost, doubling every chat's spend for the cost ceiling
-            // and the admin dashboards, and burning a self-chatting owner's
-            // quota twice per question.
-            //
-            // Fire-and-try: a metering failure is logged but must NOT affect the
-            // tourist's already-completed stream.
-            // -------------------------------------------------------------------
-            try {
-                await recordAiUsage({
-                    userId: ownerId,
-                    consumerUserId: actor.id,
-                    feature: FEATURE,
-                    provider: resolvedMeta.provider,
-                    model: resolvedMeta.model,
-                    promptTokens: resolvedMeta.usage.promptTokens,
-                    completionTokens: resolvedMeta.usage.completionTokens,
-                    latencyMs: Date.now() - handlerStartMs,
-                    status: usageStatus,
-                    rateOverrides,
-                    onMissingRate: warnMissingModelRate
-                });
-            } catch (meteringError) {
-                apiLogger.warn(
-                    {
-                        ownerId,
-                        userId: actor.id,
-                        entityId,
-                        error:
-                            meteringError instanceof Error
-                                ? meteringError.message
-                                : String(meteringError)
-                    },
-                    'ai-chat: failed to record usage (non-fatal — stream already complete)'
-                );
-            }
-
-            if (!isEmptyAnswer) {
-                try {
-                    const persistPromise = persistChatTurn({
-                        userId: actor.id,
-                        entityType,
-                        entityId,
-                        conversationId: body.conversationId ?? null,
-                        userMessage: getLastUserTurn(body.messages),
-                        assistantMessage: accumulatedAssistantText,
-                        meta: resolvedMeta
-                    }).then((result) => {
-                        // HOS-2101: detached, never awaited — see the classifier module.
-                        scheduleChatAnswerClassification({
-                            assistantMessageId: result.assistantMessageId,
-                            question: getLastUserTurn(body.messages),
-                            answer: accumulatedAssistantText,
-                            feature: FEATURE,
-                            locale
-                        });
-                        return result.conversationId;
-                    });
-
-                    const timeoutPromise = new Promise<null>((resolve) => {
-                        setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
-                    });
-
-                    resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
-
-                    if (resolvedConversationId === null) {
-                        apiLogger.warn(
-                            {
-                                entityId,
-                                timeoutMs: PERSISTENCE_TIMEOUT_MS
-                            },
-                            'ai-chat: persistence timed out after 1500 ms (non-fatal)'
-                        );
-                    }
-                } catch (error) {
-                    apiLogger.error(
-                        {
-                            entityId,
-                            error: error instanceof Error ? error.message : String(error)
-                        },
-                        'ai-chat: persistence failed (non-fatal)'
-                    );
-                }
-            }
-
-            captureChatEvent(actor.id, 'ai_chat_response_completed', {
+            const { conversationId: resolvedConversationId } = await finalizeChatTurn({
+                resolvedMeta,
+                assistantText: accumulatedAssistantText,
+                feature: FEATURE,
+                entityType,
                 entityId,
+                ownerId,
+                actorId: actor.id,
                 locale,
-                provider: resolvedMeta.provider,
-                model: resolvedMeta.model,
-                promptTokens: resolvedMeta.usage.promptTokens,
-                completionTokens: resolvedMeta.usage.completionTokens
+                conversationId: body.conversationId ?? null,
+                userMessage: getLastUserTurn(body.messages),
+                handlerStartMs
             });
-
             return {
                 ...resolvedMeta,
                 ...(resolvedConversationId ? { conversationId: resolvedConversationId } : {})

@@ -65,11 +65,17 @@
         "accommodation-off-topic",
         "venue-prompt-injection",
         "venue-mixed-lunch-with-child",
+        "venue-from-time-after-midnight",
+        "venue-mixed-free-text-no-scope",
+        "venue-area-scope-same-area",
+        "venue-from-time-ambiguous-question",
+        "venue-area-scope-injection",
         "venue-hours-missing-day",
         "experience-price-cents",
-        "acc-ac-past-position-20"
+        "acc-ac-past-position-20",
+        "venue-amenities-ac-parking"
     ],
     "concurrency": 2,
-    "maxCalls": 300,
+    "maxCalls": 400,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

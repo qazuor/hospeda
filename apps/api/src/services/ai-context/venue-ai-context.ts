@@ -31,6 +31,11 @@ import { ServiceErrorCode, type VenuePolicies } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
+import {
+    buildListingAmenityLines,
+    type ListingContextAmenity,
+    safeLoadListingAmenities
+} from './listing-amenities-context.js';
 import { formatContextMoney, priceRangeLabel, venueTypeLabel } from './listing-labels.js';
 import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
@@ -45,7 +50,11 @@ import {
     truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
-import { toVenueNightContext, type VenueNightContext } from './venue-night-context.js';
+import {
+    AGE_SCOPE_AREA_SLOT,
+    toVenueNightContext,
+    type VenueNightContext
+} from './venue-night-context.js';
 
 // ---------------------------------------------------------------------------
 // Context size caps
@@ -134,6 +143,7 @@ export interface VenueContextMenuItem {
  * @param includeMenu - Whether the menu section is available.
  * @param night - The resolved `nightInfo` section, or `null`/omitted when absent.
  * @param locale - Page locale for the closed-value labels and money (HOS-2095).
+ * @param amenities - The venue's amenities (HOS-2100); omitted means none.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
@@ -142,7 +152,8 @@ export function buildVenueMarkdownContext(
     menuItems: ReadonlyArray<VenueContextMenuItem>,
     includeMenu: boolean,
     night?: VenueNightContext | null,
-    locale: Locale = 'es'
+    locale: Locale = 'es',
+    amenities: ReadonlyArray<ListingContextAmenity> = []
 ): string {
     const cappedFaqs = faqs.slice(0, VENUE_CONTEXT_FAQ_MAX);
     const cappedItems = includeMenu ? menuItems.slice(0, VENUE_CONTEXT_MENU_ITEM_MAX) : [];
@@ -258,6 +269,16 @@ export function buildVenueMarkdownContext(
         if (night.minAge !== null) {
             lines.push(`**Edad mínima**: ${night.minAge}`);
         }
+        // HOS-2098: the scope the ficha prints next to the age. Only the
+        // owner's sector/activity text is fenced; the label is ours.
+        if (night.minAgeScope) {
+            const { label, area } = night.minAgeScope;
+            const value =
+                area === null
+                    ? label
+                    : label.split(AGE_SCOPE_AREA_SLOT).join(fenceOwnerValue(area));
+            lines.push(`**Alcance de la edad mínima**: ${value}`);
+        }
         if (night.legalNotice) {
             lines.push(`**Aviso legal**: ${night.legalNotice}`);
         }
@@ -287,6 +308,9 @@ export function buildVenueMarkdownContext(
             );
         }
     }
+
+    // --- Amenities (closed catalog values, localized; HOS-2100) ---
+    lines.push(...buildListingAmenityLines({ amenities, locale }).lines);
 
     // --- House rules (closed values only; night keys render with nightInfo) ---
     lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
@@ -351,9 +375,10 @@ export async function assembleVenueContext(
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Venue '${entityId}' not found.`);
     }
 
-    const [faqs, menuItems] = await Promise.all([
+    const [faqs, menuItems, amenities] = await Promise.all([
         safeLoadFaqs(entityId),
-        safeLoadMenuItems(entityId)
+        safeLoadMenuItems(entityId),
+        safeLoadListingAmenities({ vertical: 'venue', listingId: entityId })
     ]);
 
     // Availability comes from the section map, never from the venue type or the
@@ -371,7 +396,8 @@ export async function assembleVenueContext(
         menuItems,
         input.listingSections.get('menu')?.state === 'available',
         night,
-        locale
+        locale,
+        amenities
     );
 
     return {

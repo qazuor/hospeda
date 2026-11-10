@@ -21,7 +21,7 @@ import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../src/engine/default-prompts.js
 
 /** One sentence per DEC-FAC-053 obligation, as it appears in the rules. */
 const AGE_CLAUSES = [
-    // HOS-2095 review A1: the sentence continues with the explicit-text exception.
+    // The sentence continues with the scope exception (HOS-2098: the stored scope line only).
     'You MUST NOT state or imply that anyone below the minimum age in your context may enter this venue',
     'You MUST NOT suggest any way to get around that minimum age',
     'repeat both verbatim',

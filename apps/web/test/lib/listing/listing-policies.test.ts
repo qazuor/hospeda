@@ -56,6 +56,19 @@ describe('parseListingPolicyValues', () => {
         // Assert
         expect(result).toEqual({});
     });
+    it('reads a valid minimum-age scope and drops a malformed one (HOS-2098)', () => {
+        // Arrange / Act / Assert
+        expect(
+            parseListingPolicyValues({
+                raw: { minAge: 18, minAgeScope: { kind: 'from_time', from: '00:00' } }
+            })
+        ).toEqual({ minAge: 18, minAgeScope: { kind: 'from_time', from: '00:00' } });
+        expect(
+            parseListingPolicyValues({
+                raw: { minAge: 18, minAgeScope: { kind: 'from_time', from: '25:00' } }
+            })
+        ).toEqual({ minAge: 18 });
+    });
 });
 
 describe('buildListingPoliciesPatch', () => {

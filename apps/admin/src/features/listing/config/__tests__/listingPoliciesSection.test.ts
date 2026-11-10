@@ -45,7 +45,7 @@ describe('createListingPoliciesSection', () => {
         );
 
         // Assert
-        for (const key of ['minAge', 'dressCode', 'dressCodeNote']) {
+        for (const key of ['minAge', 'minAgeScope', 'dressCode', 'dressCodeNote']) {
             expect(ids).not.toContain(`policies.${key}`);
         }
     });
