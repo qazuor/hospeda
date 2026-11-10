@@ -90,6 +90,12 @@ function movableClock(initial: string) {
     };
 }
 
+async function runForScope(scopeId: string, clock: { readonly now: () => Date }) {
+    const result = await sendPlanMigrationNotices({ limit: 100, db }, { clock });
+    const rows = result.rows.filter((row) => row.planMigrationSubscriptionId === scopeId);
+    return { rows, notDue: rows.filter((row) => row.outcome === 'NOT_DUE').length };
+}
+
 afterEach(async () => {
     try {
         if (recipientIds.length)
@@ -128,7 +134,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(launched.noticeDays).toBe(60);
             expect(scope.applicationDate).toEqual(new Date('2026-12-11T12:00:00.000Z'));
             const clock = movableClock('2026-11-10T12:00:00.000Z');
-            const run = () => sendPlanMigrationNotices({ limit: 100, db }, { clock });
+            const run = () => runForScope(scope.id, clock);
             expect((await run()).rows).toEqual([
                 {
                     planMigrationSubscriptionId: scope.id,
@@ -236,7 +242,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const { scope } = await launch(seeded);
             expect(getLocalDateString({ instant: scope.applicationDate })).toBe('2027-12-10');
             const clock = movableClock('2027-11-09T12:00:00.000Z');
-            const run = () => sendPlanMigrationNotices({ limit: 100, db }, { clock });
+            const run = () => runForScope(scope.id, clock);
             expect((await run()).notDue).toBe(1);
             clock.set('2027-11-10T12:00:00.000Z');
             expect((await run()).rows[0]?.milestone).toBe('mig:-30d');
@@ -265,7 +271,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const { scope } = await launch(seeded);
             expect(getLocalDateString({ instant: scope.applicationDate })).toBe('2027-08-11');
             const clock = movableClock('2027-07-11T12:00:00.000Z');
-            const run = () => sendPlanMigrationNotices({ limit: 100, db }, { clock });
+            const run = () => runForScope(scope.id, clock);
             expect((await run()).rows[0]?.outcome).toBe('NOT_DUE');
             expect(await outboxFor(seeded.user.id)).toHaveLength(1);
             clock.set('2027-07-12T12:00:00.000Z');
@@ -309,7 +315,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     confirmed: true
                 });
                 const clock = movableClock('2026-11-11T12:00:00.000Z');
-                const run = () => sendPlanMigrationNotices({ limit: 100, db }, { clock });
+                const run = () => runForScope(scope.id, clock);
                 expect((await run()).rows[0]?.milestone).toBe('mig:-30d');
                 const [after] = await db
                     .select()

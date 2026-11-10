@@ -96,7 +96,23 @@ async function messages(userId: string) {
 }
 
 async function run(at: string) {
-    return sendPlanMigrationNotices({ limit: 100, db }, { clock: { now: () => new Date(at) } });
+    const result = await sendPlanMigrationNotices(
+        { limit: 100, db },
+        { clock: { now: () => new Date(at) } }
+    );
+    const scopes = migrationIds.length
+        ? await db
+              .select({ id: planMigrationSubscriptions.id })
+              .from(planMigrationSubscriptions)
+              .where(inArray(planMigrationSubscriptions.planMigrationId, migrationIds))
+        : [];
+    const ownIds = new Set(scopes.map((scope) => scope.id));
+    const rows = result.rows.filter((row) => ownIds.has(row.planMigrationSubscriptionId));
+    return {
+        rows,
+        failed: rows.filter((row) => row.outcome === 'FAILED').length,
+        enqueued: rows.filter((row) => row.outcome === 'ENQUEUED').length
+    };
 }
 
 afterEach(async () => {
