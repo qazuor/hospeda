@@ -43,6 +43,7 @@ import {
 } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -147,6 +148,13 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [addFieldErrors, setAddFieldErrors] = useState<FaqFieldErrors>({});
+    // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
+    useFaqPrefill({
+        onPrefill: useCallback((question: string) => {
+            setAddValues((values) => ({ ...values, question }));
+            setIsAdding(true);
+        }, [])
+    });
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [faqPendingDelete, setFaqPendingDelete] = useState<AccommodationFaqItem | null>(null);

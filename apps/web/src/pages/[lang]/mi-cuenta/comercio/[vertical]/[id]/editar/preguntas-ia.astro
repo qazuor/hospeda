@@ -1,0 +1,52 @@
+---
+/**
+ * @file preguntas-ia.astro
+ * @description «Preguntas a la IA» section of the venue/experience editor (HOS-2101).
+ *
+ * Read-only: what visitors asked the listing's AI chat. The page renders only
+ * the shell; `AiQuestionsPanel` fetches the questions in the browser with the
+ * owner's own session, so nothing per-user is baked into this HTML.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/preguntas-ia/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped shell)
+ */
+
+import { AiQuestionsPanel } from '@/components/listing/ai-questions/AiQuestionsPanel.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { buildEditorSectionUrl, findEditorSectionBySlug } from '@/lib/editor/editor-registry';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'preguntas-ia' });
+
+if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+const faqSection = findEditorSectionBySlug({ registry, slug: 'preguntas' });
+const faqUrl = faqSection
+	? buildEditorSectionUrl({ locale, registry, entityId: listingId, section: faqSection })
+	: '';
+---
+
+<ListingEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="preguntas-ia"
+	title={t('listing.owner.editor.sectionNav.aiQuestions', 'Preguntas a la IA')}
+>
+	<AiQuestionsPanel
+		client:load
+		locale={locale}
+		entityType={vertical}
+		entityId={listingId}
+		faqUrl={faqUrl}
+	/>
+</ListingEditorSectionLayout>

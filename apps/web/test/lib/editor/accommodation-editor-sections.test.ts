@@ -52,8 +52,8 @@ function resolveHostKey(key: string): string | undefined {
 }
 
 describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
-    it('should declare exactly the eleven sections (ten from the spec plus G7 smoke SEO)', () => {
-        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(11);
+    it('should declare exactly the twelve sections (ten from the spec, G7 smoke SEO, HOS-2101 AI questions)', () => {
+        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(12);
     });
 
     it('should have a unique slug per section', () => {
@@ -240,14 +240,14 @@ describe('getVisibleEditorSections', () => {
     it('should include translations when translation data exists', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
-        expect(visible).toHaveLength(11);
+        expect(visible).toHaveLength(12);
         expect(visible.map((section) => section.id)).toContain('translations');
     });
 
     it('should drop translations when there is no translation data', () => {
         const visible = getVisibleEditorSections({ hasTranslations: false });
 
-        expect(visible).toHaveLength(10);
+        expect(visible).toHaveLength(11);
         expect(visible.map((section) => section.id)).not.toContain('translations');
     });
 
@@ -257,5 +257,20 @@ describe('getVisibleEditorSections', () => {
         expect(visible.map((section) => section.id)).toEqual(
             ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)
         );
+    });
+});
+
+describe('HOS-2101 — the AI questions section', () => {
+    it('should sit right after the FAQs, in the content group, always visible', () => {
+        const ids = ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id);
+        const section = ACCOMMODATION_EDITOR_SECTIONS.find((entry) => entry.id === 'aiQuestions');
+
+        expect(ids.indexOf('aiQuestions')).toBe(ids.indexOf('faqs') + 1);
+        expect(section).toEqual({
+            id: 'aiQuestions',
+            slug: 'preguntas-ia',
+            group: 'content',
+            labelKey: 'host.properties.editor.section.aiQuestions'
+        });
     });
 });

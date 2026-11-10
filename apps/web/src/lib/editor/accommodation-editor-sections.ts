@@ -88,6 +88,14 @@ export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = [
         labelKey: 'host.properties.editor.section.faqs'
     },
     {
+        // HOS-2101: read-only list of what visitors asked the AI chat. Sits
+        // right after the FAQs because its main action creates one.
+        id: 'aiQuestions',
+        slug: 'preguntas-ia',
+        group: 'content',
+        labelKey: 'host.properties.editor.section.aiQuestions'
+    },
+    {
         id: 'contact',
         slug: 'contacto',
         group: 'content',

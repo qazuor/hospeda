@@ -68,11 +68,13 @@ describe('buildVenueEditorSections: the vertical split', () => {
         expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
     });
 
-    it('should place nightInfo after the FAQ page and in the property group', () => {
+    it('should place nightInfo after the FAQ pages and in the property group', () => {
         const ids = venue.map((section) => section.id);
         const nightInfo = venue.find((section) => section.id === 'nightInfo');
 
-        expect(ids.indexOf('nightInfo')).toBe(ids.indexOf('faqs') + 1);
+        // HOS-2101: the web-only «Preguntas a la IA» page sits between them.
+        expect(ids.indexOf('aiQuestions')).toBe(ids.indexOf('faqs') + 1);
+        expect(ids.indexOf('nightInfo')).toBe(ids.indexOf('aiQuestions') + 1);
         expect(nightInfo?.group).toBe('property');
     });
 

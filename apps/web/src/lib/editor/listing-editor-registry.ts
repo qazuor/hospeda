@@ -52,11 +52,11 @@ export function buildListingEditorSections({
     readonly vertical: VenueOrExperience;
     readonly sectionStates: ListingSectionStates;
 }): readonly EditorSection[] {
-    return LISTING_SECTIONS[vertical]
+    const sections = LISTING_SECTIONS[vertical]
         .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
         .slice()
         .sort((a, b) => a.order - b.order)
-        .map((definition) => {
+        .map((definition): EditorSection => {
             const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
 
             return {
@@ -66,6 +66,43 @@ export function buildListingEditorSections({
                 labelKey: presentation.labelKey
             };
         });
+    return insertAiQuestionsSection({ sections });
+}
+
+/**
+ * The «Preguntas a la IA» page (HOS-2101). Web-only: it edits nothing, so it is
+ * not a section of the domain catalog (`@repo/schemas` `LISTING_SECTIONS`),
+ * which describes what a listing CONTAINS and drives completeness and the
+ * section PATCH. Every vertical with a chat gets it, whatever its plan.
+ */
+export const LISTING_AI_QUESTIONS_SECTION: EditorSection = {
+    id: 'aiQuestions',
+    slug: 'preguntas-ia',
+    group: 'content',
+    labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+};
+
+/**
+ * Places {@link LISTING_AI_QUESTIONS_SECTION} right after the FAQs (its main
+ * action creates one), or last when the vertical has no FAQ section.
+ *
+ * @param params - The catalog-derived sections.
+ * @returns The sections with the AI questions page inserted.
+ */
+function insertAiQuestionsSection({
+    sections
+}: {
+    readonly sections: readonly EditorSection[];
+}): readonly EditorSection[] {
+    const faqIndex = sections.findIndex((section) => section.id === 'faqs');
+    if (faqIndex === -1) {
+        return [...sections, LISTING_AI_QUESTIONS_SECTION];
+    }
+    return [
+        ...sections.slice(0, faqIndex + 1),
+        LISTING_AI_QUESTIONS_SECTION,
+        ...sections.slice(faqIndex + 1)
+    ];
 }
 
 /**

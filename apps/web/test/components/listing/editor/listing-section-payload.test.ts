@@ -164,17 +164,18 @@ describe('the owning sections are real sections', () => {
         }
     });
 
-    it('should leave exactly the two self-persisting sections without keys', () => {
-        // `media` and `faqs` persist through their own endpoints, so they own no
-        // PATCH key and their routes render no form. Any OTHER section missing
-        // from the map would be a page with a Save button that saves nothing.
+    it('should leave exactly the self-persisting and read-only sections without keys', () => {
+        // `media` and `faqs` persist through their own endpoints, and
+        // `aiQuestions` (HOS-2101) edits nothing, so they own no PATCH key and
+        // their routes render no form. Any OTHER section missing from the map
+        // would be a page with a Save button that saves nothing.
         const registryIds = buildListingEditorSections({
             vertical: 'experience',
             sectionStates: {}
         }).map((section) => section.id);
         const withoutKeys = registryIds.filter((id) => !(id in LISTING_SECTION_PAYLOAD_KEYS));
 
-        expect(withoutKeys.sort()).toEqual(['faqs', 'media']);
+        expect(withoutKeys.sort()).toEqual(['aiQuestions', 'faqs', 'media']);
     });
 });
 
