@@ -22,6 +22,7 @@ import {
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { cancelActiveSubscription } from '../../../src/services/billing/subscription/cancel-active-subscription.service.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
+import { extractPostgresErrorCause } from '../../../src/utils/postgres-error-cause.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     cleanupPlanMigrationCases,
@@ -59,6 +60,8 @@ afterEach(async () => {
 });
 afterAll(closeServiceTestPool);
 
+// The shared fixture seeds catalog plan versions and the administrative actor directly;
+// subscriptions and customer state are reached through the real billing services.
 type Case = Awaited<ReturnType<typeof createPlanMigrationCase>>;
 
 async function planName(planVersionId: string): Promise<string> {
@@ -304,6 +307,23 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 )?.excludedReason
             ).toBe('ALREADY_IN_MIGRATION');
             expect(await outboxFor([seeded.pendingCustomer.userId])).toHaveLength(0);
+            // An attempted duplicate scope row probes the database's partial unique index.
+            const duplicateError = await getServiceTestDb()
+                .insert(planMigrationSubscriptions)
+                .values({
+                    planMigrationId: launched.planMigrationId,
+                    subscriptionId: seeded.pendingCustomer.subscriptionId,
+                    applicationDate: new Date('2027-01-11T12:00:00.000Z'),
+                    status: 'PENDIENTE'
+                })
+                .then(
+                    () => null,
+                    (error: unknown) => error
+                );
+            expect(extractPostgresErrorCause(duplicateError)).toMatchObject({
+                code: '23505',
+                constraint: 'uq_plan_migration_subscription_one_pending'
+            });
             expect(await outboxFor([seeded.user.id])).toEqual([
                 await expectedAnnouncement({
                     seeded,
