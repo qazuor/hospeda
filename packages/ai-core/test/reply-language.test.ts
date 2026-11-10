@@ -237,3 +237,39 @@ describe('appendReplyLanguageInstruction', () => {
         });
     });
 });
+
+describe('detectMessageLanguage — adversarial input stays linear (CodeQL ReDoS)', () => {
+    const cases: ReadonlyArray<readonly [string, string]> = [
+        ['a long run of "!" (address patterns)', '!'.repeat(50_000)],
+        ['a long run of apostrophes (token trim)', `${"'".repeat(50_000)}a`],
+        ['a long word with no "friendly" (loanword phrase)', 'a'.repeat(50_000)],
+        ['a long dotted label with no TLD (domain pattern)', `${'a.'.repeat(25_000)}x`],
+        ['a long run of "@" (e-mail pattern)', '@'.repeat(50_000)]
+    ];
+
+    it.each(cases)('handles %s quickly', (_label, text) => {
+        // Arrange
+        const startedAt = performance.now();
+
+        // Act
+        const result = detectMessageLanguage({ text });
+
+        // Assert
+        expect(result.language).toBeNull();
+        expect(performance.now() - startedAt).toBeLessThan(250);
+    });
+
+    it('still drops addresses and loanword phrases after the rewrite', () => {
+        // Arrange
+        const text =
+            'tienen mail? (info@lacasona.com.ar) o la web www.lacasona.com.ar/contacto, es pet friendly?';
+
+        // Act
+        const { language, scores } = detectMessageLanguage({ text });
+
+        // Assert
+        expect(language).toBe('es');
+        expect(scores.pt).toBe(0);
+        expect(scores.en).toBe(0);
+    });
+});

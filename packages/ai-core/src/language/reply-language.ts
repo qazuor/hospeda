@@ -67,7 +67,9 @@ const LOANWORDS: ReadonlySet<string> = new Set(
  * breakfast?" keeps enough length to be decided by `tiene`.
  */
 const LOANWORD_PHRASES: readonly RegExp[] = [
-    /\p{L}+[- ]friendly\b/gu,
+    // The lookbehind pins the start to a word start: without it every letter of
+    // a long word restarted the scan (quadratic, CodeQL js/polynomial-redos).
+    /(?<!\p{L})\p{L}+[- ]friendly\b/gu,
     /\bbed (?:and|&|n) breakfast\b/gu,
     /\bb ?& ?b\b/gu,
     /\bbnb\b/gu
@@ -81,20 +83,49 @@ const NEUTRAL_TOKEN = ' loanword ';
  * #4253): `com` and `ar` are Portuguese marker words, so "tienen mail?
  * info@lacasona.com.ar" used to score Portuguese. They are not words the
  * visitor chose a language for, so they are dropped, not neutralized.
+ *
+ * Matched per whitespace-separated token with ANCHORED patterns whose
+ * repetitions cannot overlap: the earlier unanchored `\S+@\S+` and dotted-domain
+ * patterns restarted at every position and went quadratic on long runs of
+ * one character (CodeQL js/polynomial-redos, the input is the visitor's text).
  */
-const ADDRESS_PATTERNS: readonly RegExp[] = [
-    /\b(?:https?:\/\/|www\.)\S+/gu,
-    /\S+@\S+/gu,
-    /@[\p{L}\d_.]+/gu,
-    /\b[\p{L}\d-]+(?:\.[\p{L}\d-]+)*\.(?:com|net|org|ar|br|uy|io|info|tur|gob|gov|edu|app)\b(?:\/\S*)?/gu
-];
+const URL_TOKEN = /^[^\p{L}\d-]*(?:https?:\/\/|www\.)/u;
+const DOMAIN_TOKEN =
+    /^[^\p{L}\d-]*(?:[\p{L}\d-]+\.)+(?:com|net|org|ar|br|uy|io|info|tur|gob|gov|edu|app)(?![\p{L}\d-])/u;
+
+/** True when a whitespace-separated token is an address, an e-mail or a handle. */
+function isAddressToken(token: string): boolean {
+    return token.includes('@') || URL_TOKEN.test(token) || DOMAIN_TOKEN.test(token);
+}
+
+/**
+ * Characters of the message the detector looks at. A visitor's language shows in
+ * the first sentences; the cap also bounds every pass below.
+ */
+const MAX_DETECTION_CHARS = 2000;
 
 /** Lowercases the message and removes addresses and loanword phrases. */
 function normalizeMessage(text: string): string {
-    let value = text.normalize('NFC').toLowerCase().replace(/[’`´]/g, "'");
-    for (const pattern of ADDRESS_PATTERNS) value = value.replace(pattern, ' ');
+    const lower = text
+        .slice(0, MAX_DETECTION_CHARS)
+        .normalize('NFC')
+        .toLowerCase()
+        .replace(/[’`´]/g, "'");
+    let value = lower
+        .split(/\s+/u)
+        .filter((token) => !isAddressToken(token))
+        .join(' ');
     for (const pattern of LOANWORD_PHRASES) value = value.replace(pattern, NEUTRAL_TOKEN);
     return value;
+}
+
+/** Strips leading and trailing apostrophes without a backtracking regex. */
+function trimApostrophes(token: string): string {
+    let start = 0;
+    let end = token.length;
+    while (start < end && token[start] === "'") start += 1;
+    while (end > start && token[end - 1] === "'") end -= 1;
+    return token.slice(start, end);
 }
 
 /** Builds the `word → weight` lookup of one language. */
@@ -197,7 +228,7 @@ export function detectMessageLanguage({
 
     const tokens = lower.match(/[\p{L}']+/gu) ?? [];
     for (const rawToken of tokens) {
-        const token = rawToken.replace(/^'+|'+$/g, '');
+        const token = trimApostrophes(rawToken);
         if (token === '') continue;
         const raw = RAW_MARKERS[token];
         if (raw) {
