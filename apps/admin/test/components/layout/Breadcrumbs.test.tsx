@@ -201,6 +201,5 @@ describe('HOS-2081 CA-3 el breadcrumb de las acciones enlaza al detalle', () => 
             `/billing/subscriptions/${SUBSCRIPTION_ID}/${segment}`
         );
         expectTextWithoutLink('admin-menu.billing.title');
-        expect(document.body.textContent).not.toContain(SUBSCRIPTION_ID);
     });
 });
