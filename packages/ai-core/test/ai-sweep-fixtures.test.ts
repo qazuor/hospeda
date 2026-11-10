@@ -182,6 +182,28 @@ describe('HOS-2098 age-scope config', () => {
         );
     });
 
+    it('the smoke bars carry the scope resolved into explicit windows (HOS-2098 root fix)', () => {
+        const ctx = (id: string): string => cases.find((c) => c.id === id)?.context ?? '';
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '- Sábado de 21:00 a 00:00 (medianoche): sin edad mínima informada'
+        );
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '- Sábado, pasada la medianoche, de 00:00 a 03:00: edad mínima 18'
+        );
+        expect(ctx('venue-scope-2330-saturday-22-leave-23')).toContain(
+            '- Sábado de 21:00 a 23:30: sin edad mínima informada'
+        );
+        expect(ctx('venue-mixed-lunch-with-child')).toContain(
+            '- Sábado de 12:00 a 15:30: sin edad mínima informada'
+        );
+        // The "only at night" free-text venue has no scope: every hour, no free window.
+        const freeText = ctx('venue-mixed-free-text-no-scope');
+        expect(freeText).toContain(
+            '- Todos los días, a toda hora (mediodía, tarde y noche) y en todo el local: edad mínima 18'
+        );
+        expect(freeText).not.toContain('sin edad mínima informada');
+    });
+
     it('an outside-scope case fails an answer that opens with "No" and passes one that opens with "Sí"', () => {
         const r = rubricOf('venue-scope-00-saturday-22');
         const no = checkAnswer({
