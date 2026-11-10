@@ -283,8 +283,12 @@ export function buildChatSystemMessage(
 /**
  * The answer-language rule appended to every listing-chat system message
  * (HOS-2095). Kept as a constant so the three verticals cannot word it apart.
+ *
+ * HOS-2100: a Portuguese answer still carried a Spanish clause and the Spanish
+ * amenity label "pileta"; the rule now says that field names and values are
+ * translated too and that no sentence may stay in another language.
  */
 const CHAT_LANGUAGE_RULE =
     "- Answer in the language of the visitor's latest message — whatever language that is — even if earlier messages, a greeting, or the page used another language. " +
     'The listing data above is partly written in Spanish; that is NOT a reason to answer in Spanish. ' +
-    'Translate the information you relay into the language you answer in, keeping proper names unchanged.';
+    'Translate the information you relay into the language you answer in, field names and values included (amenities, rules, labels), keeping proper names unchanged; never leave a word or a sentence in another language.';

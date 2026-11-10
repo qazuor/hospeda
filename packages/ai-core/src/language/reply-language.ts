@@ -273,11 +273,17 @@ export function detectMessageLanguage({
  * The English and Portuguese lines also state that a question in that language
  * about the listing is on-topic: the sweep caught the model opening a legitimate
  * English question with "I can only help with questions about this property".
+ *
+ * HOS-2100: a Portuguese answer leaked a Spanish clause and the Spanish amenity
+ * label "pileta" (the context is written in Spanish), and a Spanish answer read
+ * "lo mejor es que lo chequear" / "voses". The `en`/`pt` lines now demand every
+ * word in that language, field values included; the `es` line adds a grammar
+ * reminder.
  */
 export const REPLY_LANGUAGE_INSTRUCTIONS: Readonly<Record<ReplyLanguage, string>> = {
-    en: "- Reply in English. The visitor's latest message is written in English; a question in English about this listing is on-topic and gets a normal answer.",
-    es: '- Respondé en español. El último mensaje del visitante está escrito en español; una pregunta en español sobre este aviso está dentro del tema y recibe una respuesta normal.',
-    pt: '- Responda em português. A última mensagem do visitante está escrita em português; uma pergunta em português sobre este anúncio está dentro do tema e recebe uma resposta normal.'
+    en: '- Reply in English. The visitor\'s latest message is written in English; a question in English about this listing is on-topic and gets a normal answer. Write every word of the answer in English: translate the Spanish words of the listing data (field names and amenities, such as "pileta" → "pool"), keeping only proper names unchanged.',
+    es: '- Respondé en español. El último mensaje del visitante está escrito en español; una pregunta en español sobre este aviso está dentro del tema y recibe una respuesta normal. Escribí oraciones completas y bien conjugadas (por ejemplo «lo mejor es que lo consultes con el lugar»); el plural de «vos» es «ustedes».',
+    pt: '- Responda em português. A última mensagem do visitante está escrita em português; uma pergunta em português sobre este anúncio está dentro do tema e recebe uma resposta normal. Escreva toda a resposta em português, sem nenhuma frase em espanhol: traduza as palavras em espanhol dos dados do anúncio (nomes de campos e comodidades, como "pileta" → "piscina"), mantendo apenas os nomes próprios.'
 } as const;
 
 /** Result of {@link buildReplyLanguageInstruction}. */

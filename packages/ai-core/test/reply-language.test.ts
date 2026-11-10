@@ -201,6 +201,28 @@ describe('buildReplyLanguageInstruction', () => {
         expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('dentro del tema');
     });
 
+    it('HOS-2100: demands every word in the reply language, translating Spanish listing values', () => {
+        // Arrange / Act: the instruction table is the unit under test.
+        const { en, pt } = REPLY_LANGUAGE_INSTRUCTIONS;
+
+        // Assert
+        expect(en).toContain('Write every word of the answer in English');
+        expect(en).toContain('"pileta" → "pool"');
+        expect(pt).toContain('Escreva toda a resposta em português, sem nenhuma frase em espanhol');
+        expect(pt).toContain('"pileta" → "piscina"');
+        // Proper names are still never translated.
+        expect(en).toContain('keeping only proper names unchanged');
+        expect(pt).toContain('mantendo apenas os nomes próprios');
+    });
+
+    it('HOS-2100: the Spanish line reminds conjugation and the plural of vos', () => {
+        expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('oraciones completas y bien conjugadas');
+        expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain(
+            'lo mejor es que lo consultes con el lugar'
+        );
+        expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('el plural de «vos» es «ustedes»');
+    });
+
     it('returns the instruction for a confident message and null otherwise', () => {
         expect(
             buildReplyLanguageInstruction({ latestUserMessage: 'Is breakfast included?' })

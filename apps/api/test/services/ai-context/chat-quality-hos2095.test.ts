@@ -107,6 +107,16 @@ describe('HOS-2095 #1 — the answer language follows the latest user message', 
         expect(msg).toContain('written in Spanish');
     });
 
+    it('HOS-2100: field names and values are translated too, never a word left in another language', () => {
+        // Arrange / Act
+        const msg = buildChatSystemMessage('ctx', 'prompt', 'pt');
+
+        // Assert
+        expect(msg).toContain('field names and values included (amenities, rules, labels)');
+        expect(msg).toContain('never leave a word or a sentence in another language');
+        expect(msg).toContain('keeping proper names unchanged');
+    });
+
     it('the accommodation chat uses the SAME shared system-message builder', () => {
         expect(accommodationBuildChatSystemMessage).toBe(buildChatSystemMessage);
     });
