@@ -8,7 +8,7 @@
  * payload test alone cannot see.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { NightInfoSection } from '@/components/listing/editor/NightInfoSection.client';
 import { ListingEditor } from '@/components/listing/ListingEditor.client';
@@ -135,6 +135,128 @@ describe('NightInfoSection', () => {
 
         fireEvent.change(document.getElementById('ce-entryNoteI18n') as HTMLElement, {
             target: { value: 'a'.repeat(201) }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+        expect(apiClient.patch).not.toHaveBeenCalled();
+    });
+
+    it('removes the age scope together with the age (HOS-2098)', () => {
+        const { onPolicyChange } = renderSection('', {
+            policies: { minAge: 18, minAgeScope: { kind: 'from_time', from: '00:00' } }
+        });
+
+        fireEvent.change(screen.getByLabelText('Edad mínima'), { target: { value: '' } });
+
+        expect(onPolicyChange).toHaveBeenCalledWith('minAge', undefined);
+        expect(onPolicyChange).toHaveBeenCalledWith('minAgeScope', undefined);
+    });
+});
+
+describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
+    it('has no scope selector while no age is set', () => {
+        renderSection('');
+
+        expect(screen.queryByTestId('night-info-age-scope')).toBeNull();
+    });
+
+    it('shows an unset scope as "all day", the default of existing venues', () => {
+        renderSection('', { policies: { minAge: 18 } });
+
+        expect(screen.getByLabelText('Alcance de la edad mínima')).toHaveValue('all_day');
+        expect(screen.queryByLabelText('Rige desde las')).toBeNull();
+    });
+
+    it('starts "from a time" with an empty time the owner must fill', () => {
+        const { onPolicyChange } = renderSection('', { policies: { minAge: 18 } });
+
+        fireEvent.change(screen.getByLabelText('Alcance de la edad mínima'), {
+            target: { value: 'from_time' }
+        });
+
+        expect(onPolicyChange).toHaveBeenCalledWith('minAgeScope', {
+            kind: 'from_time',
+            from: ''
+        });
+    });
+
+    it('writes the time of a "from a time" scope', () => {
+        const { onPolicyChange } = renderSection('', {
+            policies: { minAge: 18, minAgeScope: { kind: 'from_time', from: '' } }
+        });
+
+        fireEvent.change(screen.getByLabelText('Rige desde las'), { target: { value: '00:00' } });
+
+        expect(onPolicyChange).toHaveBeenCalledWith('minAgeScope', {
+            kind: 'from_time',
+            from: '00:00'
+        });
+    });
+
+    it('writes the localized text of an "area" scope, capped at 60 characters', () => {
+        const { onPolicyChange } = renderSection('', {
+            policies: {
+                minAge: 18,
+                minAgeScope: { kind: 'area', area: { es: '', en: '', pt: '' } }
+            }
+        });
+        const es = within(screen.getByTestId('night-info-age-scope')).getByLabelText('Español');
+
+        fireEvent.change(es, { target: { value: 'la pista' } });
+
+        expect(es).toHaveAttribute('maxLength', '60');
+        expect(onPolicyChange).toHaveBeenCalledWith('minAgeScope', {
+            kind: 'area',
+            area: { es: 'la pista', en: '', pt: '' }
+        });
+    });
+
+    it('saves the scope through the policies PATCH', async () => {
+        // Arrange
+        vi.mocked(apiClient.patch).mockReset();
+        vi.mocked(apiClient.patch).mockResolvedValue({ ok: true, data: {} } as never);
+        render(
+            <ListingEditor
+                vertical="venue"
+                sectionId="nightInfo"
+                listingId="abc"
+                locale="es"
+                initialData={buildListing({ policies: { minAge: 18 } })}
+            />
+        );
+
+        // Act
+        fireEvent.change(screen.getByLabelText('Alcance de la edad mínima'), {
+            target: { value: 'from_time' }
+        });
+        fireEvent.change(screen.getByLabelText('Rige desde las'), { target: { value: '00:00' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        // Assert
+        await waitFor(() => expect(apiClient.patch).toHaveBeenCalledTimes(1));
+        const body = JSON.parse(
+            JSON.stringify(vi.mocked(apiClient.patch).mock.calls[0]?.[0]?.body)
+        ) as Record<string, unknown>;
+        expect(body).toEqual({
+            policies: { minAgeScope: { kind: 'from_time', from: '00:00' } }
+        });
+    });
+
+    it('blocks a "from a time" scope without a time before calling the API', () => {
+        vi.mocked(apiClient.patch).mockReset();
+        render(
+            <ListingEditor
+                vertical="venue"
+                sectionId="nightInfo"
+                listingId="abc"
+                locale="es"
+                initialData={buildListing({ policies: { minAge: 18 } })}
+            />
+        );
+
+        fireEvent.change(screen.getByLabelText('Alcance de la edad mínima'), {
+            target: { value: 'from_time' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 

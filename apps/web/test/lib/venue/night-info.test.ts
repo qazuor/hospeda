@@ -14,6 +14,8 @@ import { describe, expect, it } from 'vitest';
 import { createTranslations, type SupportedLocale } from '../../../src/lib/i18n';
 import {
     ageNotice,
+    ageScopeLabel,
+    fillLabel,
     hasNightInfoContent,
     nightInfoHeadingKey,
     toVenueNightInfo,
@@ -51,6 +53,7 @@ function emptyData(): VenueNightInfoData {
         entryPriceFromCents: null,
         entryPriceUpdatedAt: null,
         minAge: null,
+        minAgeScope: null,
         dressCode: null,
         dressCodeNote: null,
         multiLine: false
@@ -67,6 +70,7 @@ describe('toVenueNightInfo', () => {
             entryPriceFromCents: 500000,
             entryPriceUpdatedAt: '2026-03-01T00:00:00.000Z',
             minAge: 18,
+            minAgeScope: { kind: 'all_day' },
             dressCode: 'smart_casual',
             dressCodeNote: 'Salvo verano',
             multiLine: true
@@ -213,5 +217,97 @@ describe('nightInfoHeadingKey (AC:4:4, DEC-FAC-050)', () => {
         const { t } = createTranslations('es');
         expect(t(nightInfoHeadingKey({ multiLine: true }))).toBe('De noche');
         expect(t(nightInfoHeadingKey({ multiLine: false }))).not.toBe('De noche');
+    });
+});
+
+/** Builds a venue payload carrying only an age and, optionally, its scope. */
+function ageItem(minAge: number | null, minAgeScope?: unknown): Record<string, unknown> {
+    return {
+        policies: {
+            ...(minAge === null ? {} : { minAge }),
+            ...(minAgeScope === undefined ? {} : { minAgeScope })
+        }
+    };
+}
+
+/** Renders the scope label exactly as the component does. */
+function renderScope(locale: SupportedLocale, item: Record<string, unknown>): string | null {
+    const data = toVenueNightInfo({ item, locale });
+    const notice = ageNotice({ minAge: data.minAge, scope: data.minAgeScope });
+    if (!notice) return null;
+    const { t } = createTranslations(locale);
+    return fillLabel({ text: t(notice.scopeTextKey), params: notice.scopeParams });
+}
+
+describe('minimum-age scope (HOS-2098)', () => {
+    const AREA = { es: 'la pista', en: 'the dance floor', pt: 'a pista' };
+
+    it.each([
+        ['es', 'Rige todo el día', 'Rige desde las 00:00', 'Rige solo en: la pista'],
+        ['en', 'Applies all day', 'Applies from 00:00', 'Applies only to: the dance floor'],
+        ['pt', 'Vale o dia todo', 'Vale a partir das 00:00', 'Vale só para: a pista']
+    ] as const)('renders each option in %s', (locale, allDay, fromTime, area) => {
+        // Arrange / Act / Assert
+        expect(renderScope(locale, ageItem(18, { kind: 'all_day' }))).toBe(allDay);
+        expect(renderScope(locale, ageItem(18, { kind: 'from_time', from: '00:00' }))).toBe(
+            fromTime
+        );
+        expect(renderScope(locale, ageItem(18, { kind: 'area', area: AREA }))).toBe(area);
+    });
+
+    it('reads an unset scope as "all day", the default of existing venues', () => {
+        expect(renderScope('es', ageItem(18))).toBe('Rige todo el día');
+    });
+
+    it('falls back to the es area when the page locale is blank', () => {
+        const item = ageItem(18, { kind: 'area', area: { es: 'el show', en: '', pt: '' } });
+        expect(renderScope('en', item)).toBe('Applies only to: el show');
+    });
+
+    it('reads a malformed scope as "all day" (never a narrower one)', () => {
+        for (const bad of [
+            { kind: 'from_time', from: '24:00' },
+            { kind: 'area', area: { es: ' ', en: '', pt: '' } },
+            { kind: 'tonight' },
+            'from 0h'
+        ]) {
+            expect(toVenueNightInfo({ item: ageItem(18, bad), locale: 'es' }).minAgeScope).toEqual({
+                kind: 'all_day'
+            });
+        }
+    });
+
+    it('drops the scope when there is no minimum age', () => {
+        const data = toVenueNightInfo({
+            item: ageItem(null, { kind: 'from_time', from: '00:00' }),
+            locale: 'es'
+        });
+        expect(data.minAgeScope).toBeNull();
+        expect(renderScope('es', ageItem(null, { kind: 'from_time', from: '00:00' }))).toBeNull();
+    });
+
+    it('never touches the legal text: every scope keeps the approved notice', () => {
+        for (const scope of [
+            { kind: 'all_day' as const },
+            { kind: 'from_time' as const, from: '00:00' },
+            { kind: 'area' as const, area: 'la pista' }
+        ]) {
+            const notice = ageNotice({ minAge: 18, scope });
+            for (const locale of LOCALES) {
+                const { t } = createTranslations(locale);
+                expect(t(notice?.legalTextKey as string)).toBe(APPROVED_LEGAL_TEXT[locale]);
+            }
+        }
+    });
+
+    it('ageScopeLabel maps each kind to its key and placeholder', () => {
+        expect(ageScopeLabel({ scope: null }).key).toMatch(/\.minAgeScope\.allDay$/);
+        expect(ageScopeLabel({ scope: { kind: 'from_time', from: '20:30' } })).toEqual({
+            key: expect.stringMatching(/\.minAgeScope\.fromTime$/),
+            params: { time: '20:30' }
+        });
+        expect(ageScopeLabel({ scope: { kind: 'area', area: 'show' } }).params).toEqual({
+            area: 'show'
+        });
     });
 });

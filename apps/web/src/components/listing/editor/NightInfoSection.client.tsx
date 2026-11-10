@@ -28,9 +28,23 @@
  * still claimed by this section in the catalog. They are edited through
  * `onPolicyChange`; an emptied control removes its key, which the PATCH sends
  * as `null` (delete that key) without touching any other policy.
+ *
+ * ## Minimum-age scope (HOS-2098)
+ *
+ * Under the age: «Rige todo el día» (also what an unset scope shows), «Rige
+ * desde las HH:MM», or «Rige solo en un sector o actividad» with an es/en/pt
+ * short text. The selector only exists while an age is set, and clearing the
+ * age removes the scope too: a scope means nothing on its own.
  */
 
-import { VenueDressCodeEnum, VenueEntryKindEnum } from '@repo/schemas';
+import {
+    VENUE_MIN_AGE_SCOPE_AREA_MAX,
+    VENUE_MIN_AGE_SCOPE_KINDS,
+    VenueDressCodeEnum,
+    VenueEntryKindEnum,
+    type VenueMinAgeScope,
+    type VenueMinAgeScopeKind
+} from '@repo/schemas';
 import type { JSX } from 'react';
 import { TextField } from '@/components/ui/TextField';
 import { formatMonthYearLabel } from '@/lib/format-utils';
@@ -47,11 +61,24 @@ import type { ListingPolicyChange } from './PoliciesPanel.client';
 /** The note shown while the owner has not written one. */
 const EMPTY_NOTE = { es: '', en: '', pt: '' } as const;
 
+/**
+ * The scope a newly picked kind starts from (HOS-2098). The time and the area
+ * start empty on purpose: the owner fills them, and an empty one is a
+ * validation error on save rather than an invented default.
+ */
+function scopeForKind(kind: VenueMinAgeScopeKind): VenueMinAgeScope {
+    if (kind === 'from_time') return { kind, from: '' };
+    if (kind === 'area') return { kind, area: { ...EMPTY_NOTE } };
+    return { kind: 'all_day' };
+}
+
 /** One localized note control set. */
 interface I18nNoteFieldProps {
     readonly locale: SupportedLocale;
-    readonly baseName: 'entryNoteI18n' | 'policies.dressCodeNote';
+    readonly baseName: 'entryNoteI18n' | 'policies.dressCodeNote' | 'policies.minAgeScope.area';
     readonly legend: string;
+    /** Per-locale character cap; 200 (the notes' cap) when omitted. */
+    readonly maxLength?: number;
     readonly values: { readonly es: string; readonly en: string; readonly pt: string };
     readonly errors: Readonly<Record<string, string | undefined>>;
     readonly onChange: (next: { es: string; en: string; pt: string }) => void;
@@ -68,6 +95,7 @@ function I18nNoteField({
     locale,
     baseName,
     legend,
+    maxLength = 200,
     values,
     errors,
     onChange
@@ -93,7 +121,7 @@ function I18nNoteField({
                 className={fieldStyles.input}
                 error={code === 'es' ? (errors[baseName] ?? errors[name]) : errors[name]}
                 value={values[code]}
-                maxLength={200}
+                maxLength={maxLength}
                 onChange={(event) => onChange({ ...values, [code]: event.target.value })}
             />
         );
@@ -131,6 +159,8 @@ export function NightInfoSection({
 }: NightInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
     const { policies } = data;
+    // HOS-2098: an unset scope IS "all day" (the default of existing venues).
+    const scope: VenueMinAgeScope = policies.minAgeScope ?? { kind: 'all_day' };
 
     const updatedAt = data.entryPriceUpdatedAt === null ? null : new Date(data.entryPriceUpdatedAt);
     const hasValidUpdatedAt = updatedAt !== null && !Number.isNaN(updatedAt.getTime());
@@ -223,12 +253,95 @@ export function NightInfoSection({
                 onChange={(event) => {
                     const raw = event.target.value.trim();
                     const parsed = raw === '' ? undefined : Number(raw);
-                    onPolicyChange(
-                        'minAge',
-                        parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined
-                    );
+                    const next =
+                        parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined;
+                    onPolicyChange('minAge', next);
+                    // HOS-2098: no age, no scope.
+                    if (next === undefined) onPolicyChange('minAgeScope', undefined);
                 }}
             />
+
+            {policies.minAge !== undefined && (
+                <div
+                    className={styles.priceField}
+                    data-testid="night-info-age-scope"
+                >
+                    <TextField
+                        as="select"
+                        prefix={LISTING_FIELD_PREFIX}
+                        name="policies.minAgeScope"
+                        label={t(
+                            'listing.owner.editor.nightInfo.minAgeScopeLabel',
+                            'Alcance de la edad mínima'
+                        )}
+                        labelClassName={fieldStyles.label}
+                        className={fieldStyles.input}
+                        error={errors['policies.minAgeScope']}
+                        value={scope.kind}
+                        onChange={(event) =>
+                            onPolicyChange(
+                                'minAgeScope',
+                                scopeForKind(event.target.value as VenueMinAgeScopeKind)
+                            )
+                        }
+                    >
+                        {VENUE_MIN_AGE_SCOPE_KINDS.map((kind) => (
+                            <option
+                                key={kind}
+                                value={kind}
+                            >
+                                {t(
+                                    `listing.owner.editor.nightInfo.minAgeScopeOption.${kind}`,
+                                    kind
+                                )}
+                            </option>
+                        ))}
+                    </TextField>
+                    <p className={fieldStyles.hint}>
+                        {t(
+                            'listing.owner.editor.nightInfo.minAgeScopeHint',
+                            'Se muestra junto a la edad mínima en tu ficha y el asistente lo usa para responder.'
+                        )}
+                    </p>
+                    {scope.kind === 'from_time' && (
+                        <TextField
+                            prefix={LISTING_FIELD_PREFIX}
+                            name="policies.minAgeScope.from"
+                            label={t(
+                                'listing.owner.editor.nightInfo.minAgeScopeFromLabel',
+                                'Rige desde las'
+                            )}
+                            labelClassName={fieldStyles.label}
+                            className={fieldStyles.input}
+                            error={errors['policies.minAgeScope.from']}
+                            type="time"
+                            value={scope.from}
+                            onChange={(event) =>
+                                onPolicyChange('minAgeScope', {
+                                    kind: 'from_time',
+                                    from: event.target.value
+                                })
+                            }
+                        />
+                    )}
+                    {scope.kind === 'area' && (
+                        <I18nNoteField
+                            locale={locale}
+                            baseName="policies.minAgeScope.area"
+                            legend={t(
+                                'listing.owner.editor.nightInfo.minAgeScopeAreaLabel',
+                                'Sector o actividad (es/en/pt)'
+                            )}
+                            maxLength={VENUE_MIN_AGE_SCOPE_AREA_MAX}
+                            values={scope.area}
+                            errors={errors}
+                            onChange={(next) =>
+                                onPolicyChange('minAgeScope', { kind: 'area', area: next })
+                            }
+                        />
+                    )}
+                </div>
+            )}
 
             <I18nNoteField
                 locale={locale}
