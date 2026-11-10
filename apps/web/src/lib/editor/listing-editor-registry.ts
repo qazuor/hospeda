@@ -43,7 +43,7 @@ export type ListingSectionStates = Readonly<Record<string, ListingSectionStateEn
  *
  * @param params - The vertical and the resolved state map.
  * @returns The non-absent catalog sections, in the order and group the
- * catalog declares.
+ * catalog declares, followed by the web-only AI questions page (HOS-2101).
  */
 export function buildListingEditorSections({
     vertical,
@@ -66,7 +66,10 @@ export function buildListingEditorSections({
                 labelKey: presentation.labelKey
             };
         });
-    return insertAiQuestionsSection({ sections });
+    // Appended, not placed by section id: this file is under G-FAC-05 (no
+    // dispatch by section id). The nav groups by `group`, so it renders as the
+    // last «content» page.
+    return [...sections, LISTING_AI_QUESTIONS_SECTION];
 }
 
 /**
@@ -81,29 +84,6 @@ export const LISTING_AI_QUESTIONS_SECTION: EditorSection = {
     group: 'content',
     labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
 };
-
-/**
- * Places {@link LISTING_AI_QUESTIONS_SECTION} right after the FAQs (its main
- * action creates one), or last when the vertical has no FAQ section.
- *
- * @param params - The catalog-derived sections.
- * @returns The sections with the AI questions page inserted.
- */
-function insertAiQuestionsSection({
-    sections
-}: {
-    readonly sections: readonly EditorSection[];
-}): readonly EditorSection[] {
-    const faqIndex = sections.findIndex((section) => section.id === 'faqs');
-    if (faqIndex === -1) {
-        return [...sections, LISTING_AI_QUESTIONS_SECTION];
-    }
-    return [
-        ...sections.slice(0, faqIndex + 1),
-        LISTING_AI_QUESTIONS_SECTION,
-        ...sections.slice(faqIndex + 1)
-    ];
-}
 
 /**
  * Builds the editor registry for one listing's vertical.

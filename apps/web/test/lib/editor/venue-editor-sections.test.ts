@@ -68,13 +68,11 @@ describe('buildVenueEditorSections: the vertical split', () => {
         expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
     });
 
-    it('should place nightInfo after the FAQ pages and in the property group', () => {
+    it('should place nightInfo after the FAQ page and in the property group', () => {
         const ids = venue.map((section) => section.id);
         const nightInfo = venue.find((section) => section.id === 'nightInfo');
 
-        // HOS-2101: the web-only «Preguntas a la IA» page sits between them.
-        expect(ids.indexOf('aiQuestions')).toBe(ids.indexOf('faqs') + 1);
-        expect(ids.indexOf('nightInfo')).toBe(ids.indexOf('aiQuestions') + 1);
+        expect(ids.indexOf('nightInfo')).toBe(ids.indexOf('faqs') + 1);
         expect(nightInfo?.group).toBe('property');
     });
 
@@ -141,5 +139,20 @@ describe('buildVenueEditorRegistry: paths', () => {
         expect(buildListingEditorRegistry({ vertical: 'venue', sectionStates }).indexPath).toBe(
             'mi-cuenta/comercio'
         );
+    });
+});
+
+describe('HOS-2101 — the AI questions page', () => {
+    it('should close the list as a content page on both verticals', () => {
+        for (const vertical of ['venue', 'experience'] as const) {
+            const sections = buildListingEditorSections({ vertical, sectionStates });
+
+            expect(sections.at(-1)).toEqual({
+                id: 'aiQuestions',
+                slug: 'preguntas-ia',
+                group: 'content',
+                labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+            });
+        }
     });
 });
