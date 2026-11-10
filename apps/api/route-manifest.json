@@ -483,6 +483,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/billing-subscription"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId"
         },
         {
@@ -548,6 +552,10 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/open-refunds"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/overview"
         },
         {
             "method": "POST",

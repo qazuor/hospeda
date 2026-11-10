@@ -37,6 +37,7 @@ import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
 } from './revocation';
+import { adminListSubscriptionsRoute, adminSubscriptionOverviewRoute } from './subscription-browse';
 
 /** Inspect one subscription with the entity-specific permission. */
 export const adminInspectSubscriptionRoute = createAdminRoute({
@@ -70,6 +71,8 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
 });
 
 const router = createRouter();
+router.route('/', adminListSubscriptionsRoute);
+router.route('/', adminSubscriptionOverviewRoute);
 router.route('/', adminInspectSubscriptionRoute);
 router.route('/', adminSubscriptionOpenRefundsRoute);
 router.route('/', adminSubscriptionRevocationPreviewRoute);
