@@ -1,25 +1,20 @@
-/**
- * @fileoverview HOS-1595 grants the action 20 permission to SUPER_ADMIN only.
- * Run `db:migrate` first or the new enum value fails with
- * `invalid input value for enum permission_enum`.
- */
+/** @fileoverview HOS-1551 grant for administrative action 13 (confirm a refund request). */
 import { rolePermission } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
-/** Required additive migration metadata. */
 export const meta = {
-    name: '0157-hos1595-publish-addon-version-permission',
+    name: '0139-hos1551-billing-refund-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
-/** Exact grant paired with the HOS-1595 structural migration (SUPER_ADMIN only). */
+/** The refund confirmation permission is granted only to SUPER_ADMIN. */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
-    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_PUBLISH_ADDON_VERSION }
+    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_REFUND }
 ];
 
-/** Inserts the new grant without modifying existing assignments. */
+/** Inserts the additive grant without changing existing role assignments. */
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const inserted = await ctx.db
         .insert(rolePermission)
@@ -27,7 +22,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         .onConflictDoNothing()
         .returning();
     return {
-        summary: `Granted ${inserted.length} of ${GRANTS.length} HOS-1595 SUPER_ADMIN role_permission row(s) (rest already present).`,
+        summary: `Granted ${inserted.length} of ${GRANTS.length} HOS-1551 refund role_permission row(s) (rest already present).`,
         counts: { granted: inserted.length, alreadyPresent: GRANTS.length - inserted.length }
     };
 }
