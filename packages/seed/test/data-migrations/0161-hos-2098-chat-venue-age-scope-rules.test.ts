@@ -12,7 +12,8 @@
  * 4. **Data coherence.** `after` reads the structured scope line; `before`
  *    still narrowed the age from the listing text (guards swapped halves).
  * 5. **Chain.** `before` is byte-identical to 0160's frozen `chat_venue` `after`.
- * 6. **No drift.** `after` equals `DEFAULT_RULES.chat_venue` read from source.
+ * 6. **Chain.** `after` is exactly what 0162-hos-2100 starts from; the
+ *    anti-drift check against source moved there when HOS-2100 changed the rules.
  * 7. **Legal floor.** Every clause that protects the legal notice survives.
  *
  * @module test/data-migrations/0161-hos-2098-chat-venue-age-scope-rules
@@ -31,7 +32,6 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 // Read from SOURCE, never from the built package that `@repo/ai-core` resolves
 // to: a stale build would make this sync check compare old strings.
-import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0161-hos-2098-chat-venue-age-scope-rules.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -54,6 +54,7 @@ const readFrozen = (file: string): FrozenBaseline =>
 
 const { before, after } = readFrozen('0161-hos-2098-chat-venue-age-scope-rules.data.json');
 const previous = readFrozen('0160-hos-2095-chat-answer-quality-rules-2.data.json');
+const next = readFrozen('0162-hos-2100-chat-group-pet-rules.data.json');
 
 /** Clauses that keep the legal notice and the age boundary intact (DEC-FAC-053). */
 const LEGAL_FLOOR = [
@@ -192,8 +193,8 @@ describe('0161-hos-2098-chat-venue-age-scope-rules', () => {
         expect(before.rules.chat_venue).toBe(previous.after.rules.chat_venue);
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES.chat_venue read from source', () => {
-        expect(after.rules.chat_venue).toBe(DEFAULT_RULES.chat_venue);
+    it('AC-5: the frozen "after" rules are exactly what 0162 starts from (chain without a gap)', () => {
+        expect(after.rules.chat_venue).toBe(next.before.rules.chat_venue);
     });
 
     it.each(LEGAL_FLOOR)('AC-6: keeps the legal-floor clause on both sides: %s', (clause) => {

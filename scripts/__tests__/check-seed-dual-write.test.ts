@@ -380,6 +380,21 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.exitCode).toBe(0);
     });
 
+    it.each([
+        'packages/ai-core/src/engine/listing-chat-rules.ts',
+        'packages/ai-core/src/engine/brand-voice-fragments.ts'
+    ])('HOS-2100: FAILS %s (split out of default-prompts.ts) without a migration', (file) => {
+        // Arrange: DEFAULT_RULES/DEFAULT_PROMPTS are composed from these files.
+        const changed = `M\t${file}`;
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain(file);
+    });
+
     it('does NOT guard unrelated ai-core engine files — the entry is one exact path', () => {
         // Arrange: `packages/ai-core/src/engine` is a DIFF ROOT, so every file
         // under it now reaches the predicate. Only default-prompts.ts is a

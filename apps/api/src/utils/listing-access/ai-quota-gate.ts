@@ -100,6 +100,21 @@ export async function enforceAiQuota(args: {
     readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
     /** @see evaluateAiQuota */
     readonly countKeyedBy?: AiUsageQuotaKey;
+    /**
+     * Who the rejected attempt's `quota_exceeded` row is attributed to
+     * (HOS-2100). Defaults to `{ userId }` with no consumer.
+     *
+     * The listing chat passes `{ userId: ownerId, consumerUserId: visitorId }`
+     * to BOTH its gates, so every `chat*` row has HOS-2095's shape: the owner
+     * on `user_id`, the visitor on `consumer_user_id`. Before, the visitor-side
+     * rejection put the visitor on `user_id`, which reads as a chat billed to
+     * them as an owner. The move is quota-neutral: `quota_exceeded` rows are
+     * excluded from every monthly count by status, and they cost 0.
+     */
+    readonly usageAttribution?: {
+        readonly userId: string;
+        readonly consumerUserId: string;
+    };
 }): Promise<void> {
     const decision = await evaluateAiQuota(args);
     if (decision.allowed) return;
@@ -114,7 +129,10 @@ export async function enforceAiQuota(args: {
 
     try {
         await recordAiUsage({
-            userId: args.userId,
+            userId: args.usageAttribution?.userId ?? args.userId,
+            ...(args.usageAttribution
+                ? { consumerUserId: args.usageAttribution.consumerUserId }
+                : {}),
             feature: args.feature,
             provider: 'none',
             model: 'none',

@@ -110,6 +110,69 @@ describe('AI quota gate', () => {
         );
     });
 
+    it('HOS-2100: without an attribution the quota_exceeded row is keyed to userId only', async () => {
+        // Arrange
+        state.count = 5;
+
+        // Act
+        await expect(
+            enforceAiQuota({
+                userId: 'owner',
+                vertical: VerticalEnum.ACCOMMODATION,
+                feature: 'text_improve',
+                entitlementKey: 'ai_text_improve',
+                limitKey: 'max_ai_text_improve_per_month'
+            })
+        ).rejects.toMatchObject({ code: 'LIMIT_REACHED' });
+
+        // Assert: exact shape, so a stray consumer would turn this red.
+        expect(vi.mocked(recordAiUsage).mock.calls[0]?.[0]).toEqual({
+            userId: 'owner',
+            feature: 'text_improve',
+            provider: 'none',
+            model: 'none',
+            promptTokens: 0,
+            completionTokens: 0,
+            latencyMs: 0,
+            status: 'quota_exceeded'
+        });
+    });
+
+    it('HOS-2100: a consumer-side chat rejection is recorded owner-keyed with the visitor as consumer', async () => {
+        // Arrange: the visitor's own quota is exhausted.
+        state.count = 5;
+
+        // Act
+        await expect(
+            enforceAiQuota({
+                userId: 'tourist',
+                vertical: VerticalEnum.TOURIST,
+                feature: 'chat',
+                limitKey: 'max_ai_chat_consumer_per_month',
+                countKeyedBy: 'consumer',
+                usageAttribution: { userId: 'owner', consumerUserId: 'tourist' }
+            })
+        ).rejects.toMatchObject({ code: 'LIMIT_REACHED' });
+
+        // Assert: the count still ran keyed by the visitor...
+        expect(vi.mocked(getMonthlyCallCount).mock.calls[0]?.[0]).toMatchObject({
+            userId: 'tourist',
+            keyedBy: 'consumer'
+        });
+        // ...but the rejected-attempt row has the HOS-2095 owner/visitor shape.
+        expect(vi.mocked(recordAiUsage).mock.calls[0]?.[0]).toEqual({
+            userId: 'owner',
+            consumerUserId: 'tourist',
+            feature: 'chat',
+            provider: 'none',
+            model: 'none',
+            promptTokens: 0,
+            completionTokens: 0,
+            latencyMs: 0,
+            status: 'quota_exceeded'
+        });
+    });
+
     it('treats an absent limit as zero', async () => {
         state.effectiveSet.mockImplementation(async () => makeEffectiveSet({ entitlement: 1 }));
         await expect(

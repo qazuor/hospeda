@@ -72,7 +72,8 @@
         "venue-area-scope-injection",
         "venue-hours-missing-day",
         "experience-price-cents",
-        "acc-ac-past-position-20"
+        "acc-ac-past-position-20",
+        "venue-amenities-ac-parking"
     ],
     "concurrency": 2,
     "maxCalls": 400,

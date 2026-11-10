@@ -104,21 +104,54 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             'You MUST NOT extend a fact in your context to a quantity, a room, a unit or a condition the context does not state'
         );
-        expect(rules).toContain('"pet-friendly" does not say how many pets');
         expect(rules).toContain('does not mean every room has it');
     });
 
-    it('R2-4 makes a capacity answer compare the group with the stated capacity, inventing no combinations', () => {
-        expect(rules).toContain(
-            "compare the visitor's group with the capacity your context states, explicitly"
-        );
-        expect(rules).toContain('never invent combinations of units, rooms or beds');
+    it('HOS-2100 never answers "yes" to a number or size of pets', () => {
+        expect(rules).toContain('"pets accepted" does not say how many or which size');
+        expect(rules).toContain('never answer "yes" to a number or size of pets');
+        expect(rules).toContain('say only whether pets are accepted');
     });
 
-    it('M1 a capacity question without a group size gets the capacity, not an invented comparison', () => {
+    it('HOS-2100 group over capacity: compare explicitly and say plainly it does not fit', () => {
         expect(rules).toContain(
-            'if the visitor gives no group size, state the capacity and stop, or ask in one short question how many they are'
+            "first compare the visitor's group with the total capacity your context states"
         );
+        expect(rules).toContain(
+            'If the group is larger than the total capacity, answer only that they do not fit and state the total capacity. Stop there: do not mention other units, availability or alternatives, and do not suggest asking the place.'
+        );
+    });
+
+    it('HOS-2100 group close is said in the reply language', () => {
+        expect(rules).toContain('to confirm it with the place, in the reply language');
+        // The close lives inside the in-capacity branch, after the over-capacity one.
+        expect(rules.indexOf('Stop there: do not mention other units')).toBeLessThan(
+            rules.indexOf('depende de cómo se repartan')
+        );
+        expect(rules).toContain('confirmalo con el lugar" in Spanish');
+    });
+
+    it('HOS-2100 group answers within capacity: total, the stated split, and confirm with the place', () => {
+        expect(rules).toContain(
+            'Only when the group fits within the total capacity: do not answer "yes, you fit"'
+        );
+        expect(rules).toContain('say the group is within the total capacity');
+        expect(rules).toContain('the split into units, rooms or beds');
+        expect(rules).toContain('it depends on how they are distributed and on availability');
+        expect(rules).toContain(
+            'depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar'
+        );
+        expect(rules).toContain(
+            'Never say the group surely fits ("entran sin problema", "sí, entran")'
+        );
+        expect(rules).toContain('never invent a split');
+        expect(rules).toContain('if your context states no capacity, say so');
+    });
+
+    it('HOS-2100 reuses the group size the visitor already gave instead of asking again', () => {
+        expect(rules).toContain('Use a group size the visitor already gave');
+        expect(rules).toContain('ask it only if they never did');
+        expect(rules).not.toContain('state the capacity and stop');
     });
 
     it('R2-6 requires naming the missing fact and giving the related one when it is there', () => {
