@@ -221,6 +221,32 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(await queueFor(caseRow.subscriptionId)).toHaveLength(0);
         });
 
+        it('APPLICATION_DATE_MISMATCH revierte el tercer correo y toda escritura parcial: la fila queda intacta', async () => {
+            const caseRow = await createS37MigrationCase({ paymentMethod: 'MANUAL' });
+            // Declared seed: when the notice enqueuer recalculates it, `next_charge_at`
+            // lands on the local day 2026-11-15 while the notice date moves to
+            // 2026-12-15. D-4 compares those again and rejects the row.
+            await db
+                .update(subscriptions)
+                .set({ nextChargeAt: new Date('2026-11-15T11:00:00.000Z') })
+                .where(eq(subscriptions.id, caseRow.subscriptionId));
+            const before = await scopeRow(caseRow.scope.id);
+            if (!before) throw new Error('S37 migration scope row missing');
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'SKIPPED',
+                reason: 'APPLICATION_DATE_MISMATCH'
+            });
+
+            // The notice was enqueued inside the transaction, then rolled back:
+            // no new outgoing mail, no queue row, no partial recalculation.
+            expect(await upcomingFor(caseRow)).toHaveLength(0);
+            expect(await queueFor(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+            expect(before).toMatchObject({ status: 'PENDIENTE', appliedAt: null });
+            expect(before.applicationDate).toEqual(new Date('2026-12-11T12:00:00.000Z'));
+        });
+
         it('el día -8 no está en la ventana y no escribe; una segunda corrida el mismo día queda SKIPPED', async () => {
             const caseRow = await createS37MigrationCase({
                 paymentMethod: 'MANUAL',

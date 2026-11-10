@@ -5,7 +5,8 @@ import {
     eq,
     planMigrationSubscriptions,
     subscriptionScheduledChanges,
-    subscriptions
+    subscriptions,
+    users
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { cancelPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-cancel.service.js';
@@ -23,8 +24,10 @@ import {
     cleanupS37Cases,
     createS37MigrationCase,
     S37_DAY,
+    S37_NEXT_CHARGE_AT,
     type S37Case
 } from './support/plan-migration-s37-fixtures.js';
+import { seedScheduledChange } from './support/scheduled-change-fixtures.js';
 
 registerPlanMigrationNoticeSerial();
 
@@ -94,6 +97,13 @@ async function scopeRow(scopeId: string) {
         .from(planMigrationSubscriptions)
         .where(eq(planMigrationSubscriptions.id, scopeId));
     return row;
+}
+
+async function setNextChargeAt(subscriptionId: string, at: Date) {
+    await db
+        .update(subscriptions)
+        .set({ nextChargeAt: at })
+        .where(eq(subscriptions.id, subscriptionId));
 }
 
 async function anchor(subscriptionId: string) {
@@ -271,6 +281,86 @@ describe.skipIf(!isServiceTestDbAvailable())(
             });
             expect(afterRead.snapshot.amount).toEqual(beforeRead.snapshot.amount);
             expect(S37_DAY).toEqual(caseRow.clock.now());
+        });
+
+        it('APPLICATION_DATE_MISMATCH también corta al pagador con tarjeta sin llamar al proveedor', async () => {
+            const caseRow = await createS37MigrationCase();
+            // Declared seed: the notice enqueuer recalcula a 2026-12-15 mientras el
+            // día local de `next_charge_at` es 2026-11-15. D-4 corre antes de mutar.
+            await setNextChargeAt(caseRow.subscriptionId, new Date('2026-11-15T11:00:00.000Z'));
+            const readAuthorization = vi.spyOn(caseRow.fake, 'readAuthorization');
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+            const before = await scopeRow(caseRow.scope.id);
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'SKIPPED',
+                reason: 'APPLICATION_DATE_MISMATCH'
+            });
+
+            expect(readAuthorization).toHaveBeenCalledTimes(0);
+            expect(changeAmount).toHaveBeenCalledTimes(0);
+            vi.restoreAllMocks();
+            expect(await upcomingRows(caseRow)).toHaveLength(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+            expect(before).toMatchObject({ status: 'PENDIENTE', appliedAt: null });
+        });
+
+        it('QUEUED_CHANGE_EXISTS saltea una fila PENDIENTE que ya tiene un cambio encolado', async () => {
+            const caseRow = await createS37MigrationCase();
+            // Declared seed: direct insert into the queue, because requestPlanChange
+            // moves the scope to FUERA. The row must stay PENDIENTE for this branch.
+            await seedScheduledChange({
+                subscriptionId: caseRow.subscriptionId,
+                effectiveAt: S37_NEXT_CHARGE_AT
+            });
+            const before = await scopeRow(caseRow.scope.id);
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'SKIPPED',
+                reason: 'QUEUED_CHANGE_EXISTS'
+            });
+
+            expect(await upcomingRows(caseRow)).toHaveLength(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(1);
+            expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+            expect(before).toMatchObject({ status: 'PENDIENTE', appliedAt: null });
+        });
+
+        it('SUCCESSION_IN_PROGRESS espera una suscripción en sucesión sin escribir', async () => {
+            const caseRow = await createS37MigrationCase();
+            // Declared seed: the subscription is its own successor, so one of the
+            // two succession slots is non-null without a second live principal.
+            await db
+                .update(subscriptions)
+                .set({ succeededById: caseRow.subscriptionId })
+                .where(eq(subscriptions.id, caseRow.subscriptionId));
+            const before = await scopeRow(caseRow.scope.id);
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'WAITING',
+                reason: 'SUCCESSION_IN_PROGRESS'
+            });
+
+            expect(await upcomingRows(caseRow)).toHaveLength(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+        });
+
+        it('D-5: con el destinatario del tercer correo borrado, la mutación sale escalada', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            expect(await upcomingRows(caseRow)).toHaveLength(1);
+
+            // Declared seed: the recipient is soft-deleted after the mail left.
+            await db.update(users).set({ deletedAt: S37_DAY }).where(eq(users.id, caseRow.userId));
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'READY_TO_MUTATE',
+                escalated: true
+            });
+            const [mail] = await upcomingRows(caseRow);
+            expect(mail).toMatchObject({ status: 'pending' });
         });
     }
 );

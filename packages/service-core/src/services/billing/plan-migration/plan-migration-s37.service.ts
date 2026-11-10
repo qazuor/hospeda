@@ -106,7 +106,7 @@ export async function runPlanMigrationS37ForRow(
         if (error instanceof ApplicationDateMismatch) {
             logger.error(
                 { ...error.details, correlationId: parsed.correlationId },
-                'S37 manual payer has a next charge day different from its application date'
+                'S37 next charge day differs from the application date'
             );
             return { outcome: 'SKIPPED', reason: 'APPLICATION_DATE_MISMATCH' };
         }
