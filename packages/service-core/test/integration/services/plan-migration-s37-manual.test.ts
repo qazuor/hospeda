@@ -3,6 +3,7 @@ import {
     billingOptions,
     emailOutbox,
     eq,
+    getDb,
     manualPayments,
     planMigrationSubscriptions,
     promoRedemptions,
@@ -105,9 +106,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 userId: caseRow.userId
             });
             const before = await anchor(caseRow.subscriptionId);
+            const transaction = vi.spyOn(getDb(), 'transaction');
 
             const result = await run(caseRow);
 
+            // The whole manual act — queue, promo and APLICADA — is one transaction.
+            expect(transaction).toHaveBeenCalledTimes(1);
+            vi.restoreAllMocks();
             expect(result).toEqual({ outcome: 'APPLIED_MANUAL' });
             const queue = await queueFor(caseRow.subscriptionId);
             expect(queue).toHaveLength(1);

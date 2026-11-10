@@ -27,8 +27,12 @@ import {
 
 /** Destination list price seeded through action 19 for every S37 case. */
 export const S37_TARGET_AMOUNT_MINOR = 300000;
-/** The row's next charge, which is also its migration application day. */
-export const S37_NEXT_CHARGE_AT = new Date('2026-12-11T13:00:00.000Z');
+/**
+ * The row's next charge, which is also its migration application day.
+ * It is before noon UTC on purpose: a queue effective at the application date's
+ * noon would not be due yet when `MP5` opens the period at this instant.
+ */
+export const S37_NEXT_CHARGE_AT = new Date('2026-12-11T11:00:00.000Z');
 /** Seven local days before {@link S37_NEXT_CHARGE_AT}. */
 export const S37_DAY = new Date('2026-12-04T13:00:00.000Z');
 

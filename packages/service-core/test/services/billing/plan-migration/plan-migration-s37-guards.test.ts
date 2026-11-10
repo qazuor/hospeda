@@ -121,6 +121,21 @@ describe('S37 guards', () => {
         ).toEqual({ verdict: 'PROCEED' });
     });
 
+    it('proceeds early in the local day seven days before', () => {
+        // 2026-12-04T03:30Z is 2026-12-04 00:30 in Buenos Aires: the same local
+        // day as the boundary, but an instant comparison would place it outside.
+        expect(
+            evaluateS37Guards(baseInput({ today: new Date('2026-12-04T03:30:00.000Z') }))
+        ).toEqual({ verdict: 'PROCEED' });
+    });
+
+    it('is not due late in the local day eight days before', () => {
+        // 2026-12-04T02:30Z is 2026-12-03 23:30 in Buenos Aires, still -8 local.
+        expect(
+            evaluateS37Guards(baseInput({ today: new Date('2026-12-04T02:30:00.000Z') }))
+        ).toEqual({ verdict: 'NOT_DUE', reason: 'NOT_YET_DUE' });
+    });
+
     it('proceeds the local day before the application date', () => {
         expect(
             evaluateS37Guards(baseInput({ today: new Date('2026-12-10T12:00:00.000Z') }))
