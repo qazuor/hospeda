@@ -204,8 +204,13 @@ test.describe('TEST:B12:2 AC:B12:2 la previsualización @p0 @admin @billing @clo
         await useAdminSession({ page, admin, adminUrl: ADMIN_URL });
         await page.goto(`${ADMIN_URL}/billing/plan-migration`);
         await expect(page.getByTestId('plan-migration-screen')).toBeVisible();
-        await page.getByTestId('plan-migration-source').selectOption(source.versionId);
-        await page.getByTestId('plan-migration-target').selectOption(up.versionId);
+        const sourceSelect = page.getByTestId('plan-migration-source');
+        await expect(sourceSelect).toBeVisible({ timeout: 30_000 });
+        await expect(sourceSelect.locator(`option[value="${source.versionId}"]`)).toHaveCount(1);
+        await sourceSelect.selectOption(source.versionId);
+        const targetSelect = page.getByTestId('plan-migration-target');
+        await expect(targetSelect).toBeVisible();
+        await targetSelect.selectOption(up.versionId);
         const upResponse = page.waitForResponse(
             (response) =>
                 response.url().endsWith('/api/v1/admin/plan-migrations/preview') &&

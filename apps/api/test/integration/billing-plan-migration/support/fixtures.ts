@@ -3,6 +3,9 @@ import {
     getDb,
     planMigrationSubscriptions,
     planMigrations,
+    plans,
+    planVersionLimits,
+    planVersions,
     providerLinks,
     subscriptions,
     users
@@ -16,8 +19,6 @@ import {
 } from '../../billing-price/cycle-price-fixtures.js';
 import { ensureBillingDeadlineVersion1 } from '../../helpers/billing-deadline-version.js';
 import {
-    insertPlan,
-    insertVersion,
     publishBody,
     publishUrl,
     restoreProductionPlanCatalog
@@ -27,6 +28,44 @@ export const path = '/api/v1/admin/plan-migrations';
 const migrations: string[] = [];
 const customers: Array<{ userId: string; subscriptionId: string }> = [];
 const actorIds: string[] = [];
+
+/** Make the initial current version visible at the same time as its plan. */
+async function insertCurrentPlan(args: {
+    readonly slug: string;
+    readonly rank: number;
+    readonly sellable: boolean;
+    readonly limit?: number;
+}) {
+    return getDb().transaction(async (tx) => {
+        const [plan] = await tx
+            .insert(plans)
+            .values({ vertical: 'accommodation', slug: args.slug, name: `Plan ${args.slug}` })
+            .returning({ id: plans.id });
+        if (!plan) throw new Error('Missing plan');
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: plan.id,
+                vertical: 'accommodation',
+                rank: args.rank,
+                sellable: args.sellable,
+                current: true,
+                trialDays: 0,
+                graceDays: 5,
+                allowsPause: true,
+                inheritsTouristVip: false
+            })
+            .returning({ id: planVersions.id });
+        if (!version) throw new Error('Missing initial version');
+        if (args.limit !== undefined)
+            await tx.insert(planVersionLimits).values({
+                planVersionId: version.id,
+                key: 'max_photos_per_accommodation',
+                value: args.limit
+            });
+        return { planId: plan.id, versionId: version.id };
+    });
+}
 
 /** Headers for the real seeded actor under the API mock-auth bridge. */
 export function headers(actorId: string, allowed = true) {
@@ -88,18 +127,14 @@ export async function migrationCase() {
             200
         );
     const rankBase = 1_000_000_000 + Math.floor(Math.random() * 100_000_000) * 3;
-    const sourcePlanId = await insertPlan({
-        vertical: 'accommodation',
-        slug: `migration-source-${crypto.randomUUID()}`
-    });
-    const sourceId = await insertVersion({
-        planId: sourcePlanId,
-        vertical: 'accommodation',
+    const source = await insertCurrentPlan({
+        slug: `migration-source-${crypto.randomUUID()}`,
         rank: rankBase,
         sellable: true,
-        current: true,
-        limits: [{ key: 'max_photos_per_accommodation', value: 10 }]
+        limit: 10
     });
+    const sourcePlanId = source.planId;
+    const sourceId = source.versionId;
     const sourcePrice = await setPrice(sourceId, 250000);
     const customer = await startPriceCustomer({
         billingOptionId: sourcePrice.billingOption.id,
@@ -118,17 +153,11 @@ export async function migrationCase() {
         limits: [{ key: 'max_photos_per_accommodation', value: 10 }]
     });
     const target = async (limit: number, amount: number, rank: number) => {
-        const planId = await insertPlan({
-            vertical: 'accommodation',
-            slug: `migration-target-${crypto.randomUUID()}`
-        });
         // The seed is a starting catalog row; action 18 publishes the saleable destination.
-        await insertVersion({
-            planId,
-            vertical: 'accommodation',
+        const { planId } = await insertCurrentPlan({
+            slug: `migration-target-${crypto.randomUUID()}`,
             rank,
-            sellable: false,
-            current: true
+            sellable: false
         });
         const version = await publish(planId, {
             rank,
