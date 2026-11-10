@@ -107,6 +107,32 @@ describe('AiQuestionsPanel', () => {
         expect(regions[0]).toBe(unanswered);
     });
 
+    it('renders the assistant answer markdown instead of showing the raw markers', async () => {
+        // Arrange — regression: the owner saw literal **bold** markers in staging.
+        mockGetProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    {
+                        ...item('a', '¿Hay estacionamiento?', 'unanswered'),
+                        answer: 'En la ficha de **Bar Smoke** no figura si hay estacionamiento.'
+                    }
+                ],
+                total: 1,
+                unansweredCount: 1,
+                truncated: false
+            }
+        });
+
+        // Act
+        renderPanel();
+
+        // Assert
+        const bold = await screen.findByText('Bar Smoke');
+        expect(bold.tagName).toBe('STRONG');
+        expect(screen.queryByText(/\*\*/)).toBeNull();
+    });
+
     it('says so when nobody asked anything', async () => {
         mockGetProtected.mockResolvedValue({
             ok: true,
