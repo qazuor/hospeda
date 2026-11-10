@@ -887,6 +887,7 @@ export enum PermissionEnum {
     BILLING_MANAGE_PROMO_CODES = 'billing.managePromoCodes', // Allows creating or closing a promotional code (administrative action 21, NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_SET_CYCLE_PRICE = 'billing.setCyclePrice', // Allows setting the price of one billing cycle of a plan version with no customers (administrative action 19, NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_PUBLISH_ADDON_VERSION = 'billing.publishAddonVersion', // Allows publishing an addon version with its price (administrative action 20, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_MIGRATE_PLAN = 'billing.migratePlan', // Allows announcing or cancelling the migration of a retired plan version's customers (administrative action 17, NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_PAUSE_SUBSCRIPTION = 'billing.pauseSubscription', // Allows pausing or resuming a customer's subscription (administrative action 9, NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_CHANGE_SUBSCRIPTION_PLAN = 'billing.changeSubscriptionPlan', // Allows changing a customer's subscription plan (administrative action 10, NUCLEO/08 §3). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).

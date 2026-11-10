@@ -1498,6 +1498,18 @@
             "path": "/api/v1/admin/plan-catalog/plans/:planId/versions/preview"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/options"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations/preview"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/platform-settings/:key"
         },

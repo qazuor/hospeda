@@ -55,6 +55,7 @@
     },
     "billing": {
         "planCatalog": "Planes y claves",
+        "planMigration": "Migrar plan retirado",
         "title": "Facturación",
         "plans": "Planes",
         "subscriptions": "Suscripciones",

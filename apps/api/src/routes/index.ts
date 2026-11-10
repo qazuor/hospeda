@@ -59,6 +59,7 @@ import { protectedAddonPurchaseRoutes } from './billing-addon/index.js';
 import { adminBillingAddonProductRoutes } from './billing-addon-product/admin/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
 import { adminBillingPermanentGrantRoutes } from './billing-permanent-grant/admin/index.js';
+import { adminPlanMigrationRoutes } from './billing-plan-migration/admin/index.js';
 import { adminBillingPriceRoutes } from './billing-price/admin/index.js';
 import { adminBillingPromoCodeRoutes } from './billing-promo/admin/index.js';
 import { protectedBillingPromoRoutes } from './billing-promo/index.js';
@@ -689,6 +690,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-permanent-grants', adminBillingPermanentGrantRoutes);
         app.route('/api/v1/admin/billing-promo-codes', adminBillingPromoCodeRoutes);
         app.route('/api/v1/admin/billing-prices', adminBillingPriceRoutes);
+        app.route('/api/v1/admin/plan-migrations', adminPlanMigrationRoutes);
         app.route('/api/v1/admin/billing-addon-products', adminBillingAddonProductRoutes);
         app.route('/api/v1/admin/addon-catalog', adminAddonCatalogRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);

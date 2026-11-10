@@ -947,6 +947,14 @@ this branch — only the free structured pass runs. See the module doc on
 
 ---
 
+## Plan retirement migration routes (HOS-1612, ACC:17)
+
+| Method | Path | `requiredPermissions` | Notes |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/plan-migrations/options` | `BILLING_MIGRATE_PLAN` | Retired sources and sellable current targets. |
+| `POST` | `/api/v1/admin/plan-migrations/preview` | `BILLING_MIGRATE_PLAN` | Customer direction, amounts, dates and exclusions. |
+| `POST` | `/api/v1/admin/plan-migrations` | `BILLING_MIGRATE_PLAN` | Launches and audits `ACC_17`. |
+
 ## Addon catalog editor routes (HOS-1625, ACC:20)
 
 | Method | Path | `requiredPermissions` | Notes |

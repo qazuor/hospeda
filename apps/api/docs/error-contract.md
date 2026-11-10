@@ -138,6 +138,31 @@ eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
 This PR proposes these messages and codes (BS); a separate documentation PR
 records them in the spec after merge.
 
+### Plan retirement migration (ACC:17, HOS-1612)
+
+`GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`
+and `POST /api/v1/admin/plan-migrations` require `billing.migratePlan`. The order is
+401 (missing session or guest), 403 (missing permission), 400 (invalid body),
+404 (unknown version), then business rules. A version outside the eligible
+catalog is reported as 404 only when it does not exist. Each owned rejection
+uses its literal reason as `error.code` and `error.reason`.
+
+| `error.code` | Status |
+|---|---:|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 |
+| `INVALID_PLAN_MIGRATION_INPUT` | 400 |
+| `PLAN_VERSION_NOT_FOUND` | 404 |
+| `PLAN_MIGRATION_SOURCE_NOT_RETIRED` | 422 |
+| `PLAN_MIGRATION_TARGET_NOT_SELLABLE` | 422 |
+| `PLAN_MIGRATION_VERTICAL_MISMATCH` | 422 |
+| `PLAN_MIGRATION_SAME_VERSION` | 422 |
+| `PLAN_MIGRATION_COHORT_CHANGED` | 409 |
+| `PLAN_MIGRATION_EMPTY_COHORT` | 409 |
+
+Route-level authentication and validation retain the standard `UNAUTHORIZED`,
+`FORBIDDEN` and `VALIDATION_ERROR` codes. Successful launch records one
+`BILLING_MUTATION` audit with `administrativeAction: ACC_17`.
+
 ### Addon version publication (ACC:20, HOS-1595)
 
 `POST /api/v1/admin/billing-addon-products/{productId}/version-publication/preview`

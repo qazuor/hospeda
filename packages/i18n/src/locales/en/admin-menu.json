@@ -55,6 +55,7 @@
     },
     "billing": {
         "planCatalog": "Plans and keys",
+        "planMigration": "Migrate retired plan",
         "title": "Billing",
         "plans": "Plans",
         "subscriptions": "Subscriptions",

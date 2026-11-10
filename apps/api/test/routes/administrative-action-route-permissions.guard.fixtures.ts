@@ -325,7 +325,25 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
             }
         ]
     },
-    ACC_17: { unbound: 'B12 (HOS-1612) builds it' },
+    ACC_17: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/index.ts',
+                route: 'adminPlanMigrationOptionsRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/index.ts',
+                route: 'adminPreviewPlanMigrationRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/index.ts',
+                route: 'adminLaunchPlanMigrationRoute'
+            }
+        ]
+    },
     ACC_18: {
         bindings: [
             {

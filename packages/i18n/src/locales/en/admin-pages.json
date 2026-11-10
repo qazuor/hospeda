@@ -1425,6 +1425,56 @@
             "errorEndBeforeStart": "End date must be after the start date"
         }
     },
+    "planMigration": {
+        "title": "Migrate a retired plan",
+        "intro": "Choose the retired version and destination. Review every customer before confirming.",
+        "loading": "Loading options…",
+        "source": "Retired version",
+        "target": "Destination version",
+        "chooseSource": "Choose a version",
+        "chooseTarget": "Choose a destination",
+        "sourceOption_one": "{name} · {{count}} customer",
+        "sourceOption_other": "{name} · {{count}} customers",
+        "preview": "Preview",
+        "confirm": "Confirm migration",
+        "notice_one": "{{count}} day notice · deadline version {version}",
+        "notice_other": "{{count}} days notice · deadline version {version}",
+        "notAvailable": "—",
+        "toResolve": "To resolve",
+        "waits": "Waits until active again",
+        "losesPromo": "Loses promotion",
+        "excludedBadge": "Excluded",
+        "result": "Migration {id}. Rows written: {rows}. Excluded: {excluded}.",
+        "columns": {
+            "customer": "Customer",
+            "direction": "Change",
+            "currentAmount": "Current price",
+            "newAmount": "New price",
+            "promotion": "Promotion",
+            "date": "Application date"
+        },
+        "direction": {
+            "UP": "Increase",
+            "DOWN": "Decrease"
+        },
+        "excluded": {
+            "ACTOR_IS_SUBJECT": "This is your own account",
+            "ALREADY_IN_MIGRATION": "Already in another migration"
+        },
+        "errors": {
+            "generic": "Could not complete the operation. Try again.",
+            "invalidSelection": "Choose a valid source and destination.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You cannot migrate plans.",
+            "INVALID_PLAN_MIGRATION_INPUT": "Invalid migration details.",
+            "PLAN_VERSION_NOT_FOUND": "One of the versions was not found.",
+            "PLAN_MIGRATION_SOURCE_NOT_RETIRED": "The source is no longer retired.",
+            "PLAN_MIGRATION_TARGET_NOT_SELLABLE": "The destination is no longer current and sellable.",
+            "PLAN_MIGRATION_VERTICAL_MISMATCH": "The versions belong to different verticals.",
+            "PLAN_MIGRATION_SAME_VERSION": "Choose a different destination version.",
+            "PLAN_MIGRATION_COHORT_CHANGED": "The cohort changed. Preview again before confirming.",
+            "PLAN_MIGRATION_EMPTY_COHORT": "There are no customers to migrate."
+        }
+    },
     "billing": {
         "title": "My billing",
         "subtitle": "Review your plan, usage and payment options",

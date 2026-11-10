@@ -142,6 +142,35 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('B12 (HOS-1612) assigns ACC_17 only its own migrate-plan permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_17).toEqual({
+            permissions: [PermissionEnum.BILLING_MIGRATE_PLAN],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_MIGRATE_PLAN)).toBe(
+            true
+        );
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_MIGRATE_PLAN)).toBe(
+            true
+        );
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_17',
+                actorPermissions: [
+                    PermissionEnum.BILLING_SET_CYCLE_PRICE,
+                    PermissionEnum.MAINTENANCE_MODE_WRITE,
+                    PermissionEnum.BILLING_PUBLISH_ADDON_VERSION
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_17',
+                actorPermissions: [PermissionEnum.BILLING_MIGRATE_PLAN]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:HOS-1551:5 assigns ACC_13 only its own refund confirmation permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_13).toEqual({
             permissions: [PermissionEnum.BILLING_REFUND],

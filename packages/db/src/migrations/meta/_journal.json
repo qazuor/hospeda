@@ -1443,6 +1443,13 @@
       "when": 1794236570899,
       "tag": "0205_lucky_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1794247095283,
+      "tag": "0206_hos1612_migrate_plan_permission",
+      "breakpoints": true
     }
   ]
 }

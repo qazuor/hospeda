@@ -654,6 +654,19 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'plan-migration',
+            label: {
+                es: 'Migrar plan retirado',
+                en: 'Migrate retired plan',
+                pt: 'Migrar plano retirado'
+            },
+            icon: 'SettingsIcon',
+            route: '/billing/plan-migration',
+            permissions: ['BILLING_MIGRATE_PLAN'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'addon-catalog',
             label: { es: 'Complementos', en: 'Add-ons', pt: 'Complementos' },
             icon: 'SettingsIcon',
