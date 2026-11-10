@@ -22,10 +22,12 @@ OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config scri
 ### Quality: automatic checks, blind export, grades
 
 Each case in `fixtures.json` carries a `rubric`: `mustInclude` and `mustNotClaim` (label + regex), `expectsUnknown`,
-`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 46 cases cover chat (accommodation; 22 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
+`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 55 cases cover chat (accommodation; 22 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
 chat_venue (restaurant, parrilla, bar, cafe, heladería, boliche, a restaurant that turns into a boliche at night) and
 chat_experience, including absent-fact traps (price, hours, pets, duration, a schedule day that is not informed), a scoped
-minor rule (lunch with a child at a venue whose 18+ applies only to the night), a price stored in centavos, an amenity
+minor rule (lunch with a child at a venue whose 18+ applies only to the night), the HOS-2098 smoke questions at a bar open
+21:00-03:00 with the 18+ scoped from 00:00, from 23:30 or all day (a time before the scope, after midnight, no time) and
+another area than the scoped dance floor, a price stored in centavos, an amenity
 past position 20, venue amenities, three groups over capacity and English/Portuguese group questions (HOS-2100), an English and a Portuguese question, an off-topic question and a prompt injection.
 
 Automatic checks per answer (`quality.ts`) are REGEX HEURISTICS, not a judge: `mustInclude` coverage, `mustNotClaim`
@@ -76,15 +78,16 @@ reasoning tokens, reasoning share, avg cost per answer, projected USD/month at e
 
 ## Config
 
-All three configs run the same 8 variants, cap 2048, 2 repetitions, with a per-model `reasoningEfforts` override
+The first three configs run the same 8 variants, cap 2048, 2 repetitions, with a per-model `reasoningEfforts` override
 (`none`/`low` for gpt-5.4-nano/mini, `minimal`/`low` for gpt-5-nano/mini). `rates` are USD per 1M tokens per model
 (OpenAI standard prices; check them before trusting the cost columns).
 
 | Config | Cases | Calls (cap) | Worst case |
 | --- | --- | --- | --- |
-| `sweep.config.all.json` | all 46 | 736 (800) | ~$3.59 |
-| `sweep.config.example.json` | the 24 synthetic venue/experience/accommodation cases | 384 (400) | ~$1.87 |
+| `sweep.config.all.json` | all 55 | 880 (900) | ~$4.65 |
+| `sweep.config.example.json` | the 33 synthetic venue/experience/accommodation cases | 528 (540) | ~$2.84 |
 | `sweep.config.accommodation.json` | the 22 `acc-real-*` cases | 352 (360) | ~$1.72 |
+| `sweep.config.age-scope.json` | the 16 `chat_venue` minimum-age cases (HOS-2098 smoke), gpt-5.4-nano / none, 3 repetitions | 48 (60) | ~$0.16 |
 
 **gpt-5.4 models may not accept `minimal` effort.** A provider error never aborts the sweep: the call is recorded
 with its error, the sweep continues, and the summary ends with a per-variant error list (count and first message).
