@@ -19,7 +19,14 @@ const { mockGetDb, mockApiLogger, tables } = vi.hoisted(() => {
         id: `${name}.id`,
         amenityId: `${name}.amenityId`,
         venueId: `${name}.venueId`,
-        experienceId: `${name}.experienceId`
+        experienceId: `${name}.experienceId`,
+        deletedAt: `${name}.deletedAt`,
+        lifecycleState: `${name}.lifecycleState`,
+        isOptional: `${name}.isOptional`,
+        additionalCost: `${name}.additionalCost`,
+        additionalCostPercent: `${name}.additionalCostPercent`,
+        scope: `${name}.scope`,
+        availability: `${name}.availability`
     });
     return {
         mockGetDb: vi.fn(),
@@ -39,6 +46,13 @@ const { mockGetDb, mockApiLogger, tables } = vi.hoisted(() => {
 });
 
 vi.mock('@repo/db', () => ({ getDb: mockGetDb, ...tables }));
+// Readable predicates, so a test can assert which filters the loader applies.
+vi.mock('drizzle-orm', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('drizzle-orm')>()),
+    eq: (column: unknown, value: unknown) => `${String(column)} = ${String(value)}`,
+    isNull: (column: unknown) => `${String(column)} IS NULL`,
+    and: (...parts: unknown[]) => `(${parts.map(String).join(' AND ')})`
+}));
 vi.mock('../../../src/utils/logger.js', () => ({ apiLogger: mockApiLogger }));
 
 import { buildExperienceMarkdownContext } from '../../../src/services/ai-context/experience-ai-context.js';
@@ -118,6 +132,25 @@ describe('buildListingAmenityLines', () => {
         expect(lines.slice(2)).toEqual(['- Microondas', '- Calefacción', '- WiFi', '- Cafetera']);
     });
 
+    it('appends the owner-declared attributes; undeclared ones render nothing (HOS-2100)', () => {
+        // Arrange
+        const amenities = [
+            { slug: 'parking', extraCharge: true, scope: 'shared' as const, availability: null },
+            { slug: 'wifi', extraCharge: false, scope: null, availability: 'seasonal' as const },
+            { slug: 'heating' }
+        ];
+
+        // Act
+        const { lines } = buildListingAmenityLines({ amenities, locale: 'es' });
+
+        // Assert
+        expect(lines.slice(2)).toEqual([
+            '- Estacionamiento (con cargo extra, compartido)',
+            '- WiFi (de temporada)',
+            '- Calefacción'
+        ]);
+    });
+
     it(`caps the block at ${LISTING_CONTEXT_AMENITY_MAX} amenities`, () => {
         // Arrange
         const amenities = Array.from({ length: LISTING_CONTEXT_AMENITY_MAX + 5 }, (_, i) => ({
@@ -156,17 +189,24 @@ describe('context builders carry the amenities block (HOS-2100)', () => {
 
 describe('safeLoadListingAmenities', () => {
     /** Installs a select chain that records the junction table it reads from. */
-    function installDb(rows: ReadonlyArray<unknown>): { readonly fromTables: unknown[] } {
+    function installDb(rows: ReadonlyArray<unknown>): {
+        readonly fromTables: unknown[];
+        readonly wheres: unknown[];
+    } {
         const fromTables: unknown[] = [];
+        const wheres: unknown[] = [];
         const limit = vi.fn().mockResolvedValue(rows);
-        const where = vi.fn(() => ({ limit }));
+        const where = vi.fn((predicate: unknown) => {
+            wheres.push(predicate);
+            return { limit };
+        });
         const innerJoin = vi.fn(() => ({ where }));
         const from = vi.fn((table: unknown) => {
             fromTables.push(table);
             return { innerJoin };
         });
         mockGetDb.mockReturnValue({ select: vi.fn(() => ({ from })) });
-        return { fromTables };
+        return { fromTables, wheres };
     }
 
     beforeEach(() => {
@@ -182,7 +222,51 @@ describe('safeLoadListingAmenities', () => {
 
         // Assert
         expect(fromTables).toEqual([tables.rVenueAmenity]);
-        expect(result).toEqual([{ slug: 'wifi', isFeatured: false, displayWeight: 50 }]);
+        expect(result).toEqual([
+            {
+                slug: 'wifi',
+                isFeatured: false,
+                displayWeight: 50,
+                extraCharge: false,
+                scope: null,
+                availability: null
+            }
+        ]);
+    });
+
+    it.each([
+        { label: 'is_optional', row: { isOptional: true } },
+        { label: 'additional_cost', row: { isOptional: false, additionalCost: { price: 500 } } },
+        { label: 'additional_cost_percent', row: { isOptional: false, additionalCostPercent: 10 } }
+    ])('maps $label to extraCharge and carries scope/availability', async ({ row }) => {
+        // Arrange
+        installDb([{ slug: 'parking', scope: 'private', availability: 'year_round', ...row }]);
+
+        // Act
+        const [result] = await safeLoadListingAmenities({ vertical: 'venue', listingId: 'v1' });
+
+        // Assert
+        expect(result).toMatchObject({
+            extraCharge: true,
+            scope: 'private',
+            availability: 'year_round'
+        });
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('%s: reads only active, non-deleted catalog amenities', async (vertical) => {
+        // Arrange
+        const { wheres } = installDb([]);
+
+        // Act
+        await safeLoadListingAmenities({ vertical, listingId: 'x1' });
+
+        // Assert
+        expect(wheres).toHaveLength(1);
+        expect(String(wheres[0])).toContain('amenities.deletedAt IS NULL');
+        expect(String(wheres[0])).toContain('amenities.lifecycleState = ACTIVE');
     });
 
     it('reads r_experience_amenity for an experience', async () => {

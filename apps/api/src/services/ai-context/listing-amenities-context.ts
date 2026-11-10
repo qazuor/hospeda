@@ -12,12 +12,19 @@
  * what survives a cap (featured first, then higher `displayWeight`), and each
  * slug renders as its localized label, never as the raw slug.
  *
+ * Each line also carries the attributes the OWNER declared on the relation
+ * (HOS-2061/HOS-2084, migration 0195), compactly: «con cargo extra», «privado» /
+ * «compartido», «todo el año» / «de temporada». Without them «¿el
+ * estacionamiento está incluido?» could become «sí» for a paid one. A NULL
+ * attribute is not declared and renders nothing (never inferred). Only active,
+ * non-deleted catalog amenities are read.
+ *
  * @module apps/api/services/ai-context/listing-amenities-context
  */
 
 import { amenities, getDb, rExperienceAmenity, rVenueAmenity } from '@repo/db';
 import type { Locale } from '@repo/i18n';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import { amenityLabel } from './listing-labels.js';
 
@@ -41,6 +48,25 @@ export interface ListingContextAmenity {
     readonly isFeatured?: boolean;
     /** Catalog display weight; higher is listed first. */
     readonly displayWeight?: number;
+    /** Owner-declared «paid separately» (`is_optional`, or any additional cost). */
+    readonly extraCharge?: boolean;
+    /** Owner-declared scope; `null`/absent = not declared. */
+    readonly scope?: 'private' | 'shared' | null;
+    /** Owner-declared availability; `null`/absent = not declared. */
+    readonly availability?: 'year_round' | 'seasonal' | null;
+}
+
+/** Labels of the owner-declared attributes (the context is written in Spanish). */
+const SCOPE_LABEL = { private: 'privado', shared: 'compartido' } as const;
+const AVAILABILITY_LABEL = { year_round: 'todo el año', seasonal: 'de temporada' } as const;
+
+/** The parenthesized attribute suffix of one amenity line, or `''`. */
+function attributeSuffix(row: ListingContextAmenity): string {
+    const parts: string[] = [];
+    if (row.extraCharge) parts.push('con cargo extra');
+    if (row.scope) parts.push(SCOPE_LABEL[row.scope]);
+    if (row.availability) parts.push(AVAILABILITY_LABEL[row.availability]);
+    return parts.length > 0 ? ` (${parts.join(', ')})` : '';
 }
 
 /** The two verticals whose amenities this module loads. */
@@ -89,7 +115,10 @@ export function buildListingAmenityLines({
         lines: [
             '',
             '### Comodidades',
-            ...capped.map((row) => `- ${amenityLabel({ slug: row.slug, locale }).label}`)
+            ...capped.map(
+                (row) =>
+                    `- ${amenityLabel({ slug: row.slug, locale }).label}${attributeSuffix(row)}`
+            )
         ]
     };
 }
@@ -113,28 +142,46 @@ export async function safeLoadListingAmenities({
 }): Promise<ListingContextAmenity[]> {
     try {
         const db = getDb();
-        const select = {
-            slug: amenities.slug,
-            isFeatured: amenities.isFeatured,
-            displayWeight: amenities.displayWeight
-        };
+        // Soft-deleted or non-active catalog amenities never reach the visitor.
+        const activeCatalog = and(
+            isNull(amenities.deletedAt),
+            eq(amenities.lifecycleState, 'ACTIVE')
+        );
         // Exhaustive switch, not a binary ternary (HOS-1079, guard G1(b)): a third
         // vertical must be a compile error, never a silent read of the wrong table.
         const rows = await (async () => {
             switch (vertical) {
                 case 'venue':
                     return db
-                        .select(select)
+                        .select({
+                            slug: amenities.slug,
+                            isFeatured: amenities.isFeatured,
+                            displayWeight: amenities.displayWeight,
+                            isOptional: rVenueAmenity.isOptional,
+                            additionalCost: rVenueAmenity.additionalCost,
+                            additionalCostPercent: rVenueAmenity.additionalCostPercent,
+                            scope: rVenueAmenity.scope,
+                            availability: rVenueAmenity.availability
+                        })
                         .from(rVenueAmenity)
                         .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
-                        .where(eq(rVenueAmenity.venueId, listingId))
+                        .where(and(eq(rVenueAmenity.venueId, listingId), activeCatalog))
                         .limit(LISTING_AMENITY_FETCH_MAX);
                 case 'experience':
                     return db
-                        .select(select)
+                        .select({
+                            slug: amenities.slug,
+                            isFeatured: amenities.isFeatured,
+                            displayWeight: amenities.displayWeight,
+                            isOptional: rExperienceAmenity.isOptional,
+                            additionalCost: rExperienceAmenity.additionalCost,
+                            additionalCostPercent: rExperienceAmenity.additionalCostPercent,
+                            scope: rExperienceAmenity.scope,
+                            availability: rExperienceAmenity.availability
+                        })
                         .from(rExperienceAmenity)
                         .innerJoin(amenities, eq(rExperienceAmenity.amenityId, amenities.id))
-                        .where(eq(rExperienceAmenity.experienceId, listingId))
+                        .where(and(eq(rExperienceAmenity.experienceId, listingId), activeCatalog))
                         .limit(LISTING_AMENITY_FETCH_MAX);
                 default: {
                     const exhaustive: never = vertical;
@@ -145,7 +192,13 @@ export async function safeLoadListingAmenities({
         return rows.map((row) => ({
             slug: row.slug ?? '',
             isFeatured: row.isFeatured ?? false,
-            displayWeight: row.displayWeight ?? DEFAULT_DISPLAY_WEIGHT
+            displayWeight: row.displayWeight ?? DEFAULT_DISPLAY_WEIGHT,
+            extraCharge:
+                row.isOptional === true ||
+                row.additionalCost != null ||
+                row.additionalCostPercent != null,
+            scope: row.scope ?? null,
+            availability: row.availability ?? null
         }));
     } catch (error) {
         apiLogger.warn(
