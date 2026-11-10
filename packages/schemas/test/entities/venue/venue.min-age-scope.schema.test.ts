@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { LISTING_SECTIONS } from '../../../src/catalog/listing-sections.js';
 import {
+    resolveVenueMinAgeScope,
     VENUE_MIN_AGE_SCOPE_AREA_MAX,
     VenueMinAgeScopeSchema,
     VenuePoliciesSchema
@@ -93,5 +94,56 @@ describe('VenuePoliciesSchema.minAgeScope', () => {
         expect(nightInfo && 'policyKeys' in nightInfo ? nightInfo.policyKeys : []).toContain(
             'minAgeScope'
         );
+    });
+});
+
+describe('area normalization on write (HOS-2098 review)', () => {
+    it('trims every locale, so whitespace never reaches a reader', () => {
+        const parsed = VenueMinAgeScopeSchema.parse({
+            kind: 'area',
+            area: { es: '  la pista ', en: '   ', pt: '\ta pista\n' }
+        });
+        expect(parsed).toEqual({ kind: 'area', area: { es: 'la pista', en: '', pt: 'a pista' } });
+    });
+
+    it('rejects an area that is whitespace in every locale', () => {
+        const result = VenueMinAgeScopeSchema.safeParse({
+            kind: 'area',
+            area: { es: '  ', en: '\t', pt: '' }
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('resolveVenueMinAgeScope — the one reader of the ficha and the chat', () => {
+    it.each([
+        ['es', { es: '  la pista  ', en: '', pt: '' }, 'la pista'],
+        ['en', { es: 'el show', en: '   ', pt: '' }, 'el show'],
+        ['es', { es: '', en: '', pt: 'a pista' }, 'a pista'],
+        ['es', { es: ' ', en: 'the floor', pt: 'a pista' }, 'the floor'],
+        ['pt', { es: 'la pista', en: 'the floor', pt: '' }, 'la pista']
+    ] as const)('in %s, %j resolves to %s (locale, then es, en, pt)', (locale, area, expected) => {
+        expect(resolveVenueMinAgeScope({ value: { kind: 'area', area }, locale })).toEqual({
+            kind: 'area',
+            area: expected
+        });
+    });
+
+    it('resolves a from-time scope as is', () => {
+        expect(
+            resolveVenueMinAgeScope({ value: { kind: 'from_time', from: '20:00' }, locale: 'es' })
+        ).toEqual({ kind: 'from_time', from: '20:00' });
+    });
+
+    it.each([
+        undefined,
+        null,
+        { kind: 'all_day' },
+        { kind: 'from_time', from: '24:00' },
+        { kind: 'area', area: { es: ' ', en: '', pt: '' } },
+        { kind: 'tonight' },
+        'from 0h'
+    ])('reads %j as all day, never a narrower scope', (value) => {
+        expect(resolveVenueMinAgeScope({ value, locale: 'es' })).toEqual({ kind: 'all_day' });
     });
 });
