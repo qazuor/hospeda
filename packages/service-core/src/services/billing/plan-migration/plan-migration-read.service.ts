@@ -29,23 +29,21 @@ import {
     planMigrationRejection
 } from './plan-migration-authorization.js';
 
-const sourceVersion = alias(planVersions, 'migration_source_version');
-const targetVersion = alias(planVersions, 'migration_target_version');
-const sourcePlan = alias(plans, 'migration_source_plan');
-const targetPlan = alias(plans, 'migration_target_plan');
-
-const migrationColumns = {
-    id: planMigrations.id,
-    reason: planMigrations.reason,
-    sourcePlanVersionId: planMigrations.sourcePlanVersionId,
-    targetPlanVersionId: planMigrations.targetPlanVersionId,
-    sourcePlanName: sourcePlan.name,
-    targetPlanName: targetPlan.name,
-    announcedAt: planMigrations.announcedAt,
-    cancelledAt: planMigrations.cancelledAt
-};
-
 function migrationNames<T extends DrizzleClient>(db: T) {
+    const sourceVersion = alias(planVersions, 'migration_source_version');
+    const targetVersion = alias(planVersions, 'migration_target_version');
+    const sourcePlan = alias(plans, 'migration_source_plan');
+    const targetPlan = alias(plans, 'migration_target_plan');
+    const migrationColumns = {
+        id: planMigrations.id,
+        reason: planMigrations.reason,
+        sourcePlanVersionId: planMigrations.sourcePlanVersionId,
+        targetPlanVersionId: planMigrations.targetPlanVersionId,
+        sourcePlanName: sourcePlan.name,
+        targetPlanName: targetPlan.name,
+        announcedAt: planMigrations.announcedAt,
+        cancelledAt: planMigrations.cancelledAt
+    };
     return db
         .select(migrationColumns)
         .from(planMigrations)
