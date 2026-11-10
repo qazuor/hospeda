@@ -12,7 +12,8 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import type { PoolClient } from 'pg';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { launchPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { applyPlanMigrationUpcomingNotice } from '../../../src/services/billing/plan-migration/plan-migration-upcoming-notice.js';
@@ -23,7 +24,12 @@ import { grantTemporaryCourtesy } from '../../../src/services/billing/subscripti
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
 import { resumeSubscription } from '../../../src/services/billing/subscription/resume-subscription.service.js';
 import { suspendForArrears } from '../../../src/services/billing/subscription/suspend-for-arrears.service.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import { startCyclePriceCustomer } from './support/cycle-price-fixtures.js';
 import {
     cleanupPlanMigrationCases,
@@ -37,6 +43,12 @@ const db = getServiceTestDb();
 const migrationIds: string[] = [];
 const recipientIds: string[] = [];
 const extraCustomers: Array<{ subscriptionId: string; userId: string }> = [];
+let deadlineLock: PoolClient | null = null;
+
+beforeEach(async () => {
+    deadlineLock = await getServiceTestPool().connect();
+    await deadlineLock.query('SELECT pg_advisory_lock(1613, 5)');
+});
 type Case = Awaited<ReturnType<typeof createPlanMigrationCase>>;
 const complements = {
     addonPolicy: async () => {
@@ -88,38 +100,48 @@ async function run(at: string) {
 }
 
 afterEach(async () => {
-    const recipients = recipientIds.splice(0);
-    if (recipients.length)
-        await db.delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, recipients));
-    for (const id of migrationIds.splice(0)) {
-        await db
-            .delete(planMigrationSubscriptions)
-            .where(eq(planMigrationSubscriptions.planMigrationId, id));
-        await db.delete(planMigrations).where(eq(planMigrations.id, id));
+    try {
+        const recipients = recipientIds.splice(0);
+        if (recipients.length)
+            await db.delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, recipients));
+        for (const id of migrationIds.splice(0)) {
+            await db
+                .delete(planMigrationSubscriptions)
+                .where(eq(planMigrationSubscriptions.planMigrationId, id));
+            await db.delete(planMigrations).where(eq(planMigrations.id, id));
+        }
+        // S8/S9 create dependent rows through real services; remove only this fixture's rows.
+        const affected = recipients.length
+            ? await db
+                  .select({ id: subscriptions.id })
+                  .from(subscriptions)
+                  .where(inArray(subscriptions.userId, recipients))
+            : [];
+        if (affected.length) {
+            const ids = affected.map((row) => row.id);
+            await db.delete(courtesyGrants).where(inArray(courtesyGrants.subscriptionId, ids));
+            await db
+                .delete(subscriptionPauses)
+                .where(inArray(subscriptionPauses.subscriptionId, ids));
+            await db
+                .delete(reconciliationMarks)
+                .where(inArray(reconciliationMarks.subscriptionId, ids));
+        }
+        for (const extra of extraCustomers.splice(0)) {
+            await db
+                .delete(providerLinks)
+                .where(eq(providerLinks.subscriptionId, extra.subscriptionId));
+            await db.delete(subscriptions).where(eq(subscriptions.id, extra.subscriptionId));
+            await db.delete(users).where(eq(users.id, extra.userId));
+        }
+        await cleanupPlanMigrationCases();
+    } finally {
+        if (deadlineLock) {
+            await deadlineLock.query('SELECT pg_advisory_unlock(1613, 5)');
+            deadlineLock.release();
+            deadlineLock = null;
+        }
     }
-    // S8/S9 create dependent rows through real services; remove only this fixture's rows.
-    const affected = recipients.length
-        ? await db
-              .select({ id: subscriptions.id })
-              .from(subscriptions)
-              .where(inArray(subscriptions.userId, recipients))
-        : [];
-    if (affected.length) {
-        const ids = affected.map((row) => row.id);
-        await db.delete(courtesyGrants).where(inArray(courtesyGrants.subscriptionId, ids));
-        await db.delete(subscriptionPauses).where(inArray(subscriptionPauses.subscriptionId, ids));
-        await db
-            .delete(reconciliationMarks)
-            .where(inArray(reconciliationMarks.subscriptionId, ids));
-    }
-    for (const extra of extraCustomers.splice(0)) {
-        await db
-            .delete(providerLinks)
-            .where(eq(providerLinks.subscriptionId, extra.subscriptionId));
-        await db.delete(subscriptions).where(eq(subscriptions.id, extra.subscriptionId));
-        await db.delete(users).where(eq(users.id, extra.userId));
-    }
-    await cleanupPlanMigrationCases();
 });
 afterAll(closeServiceTestPool);
 

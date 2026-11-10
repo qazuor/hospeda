@@ -7,7 +7,8 @@ import {
     subscriptions
 } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import type { PoolClient } from 'pg';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     changeBillingDeadline,
     getCurrentBillingDeadlines
@@ -15,7 +16,12 @@ import {
 import { launchPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import {
     cleanupPlanMigrationCases,
     createPlanMigrationCase,
@@ -27,6 +33,12 @@ type Case = Awaited<ReturnType<typeof createPlanMigrationCase>>;
 const migrationIds: string[] = [];
 const recipientIds: string[] = [];
 const db = getServiceTestDb();
+let deadlineLock: PoolClient | null = null;
+
+beforeEach(async () => {
+    deadlineLock = await getServiceTestPool().connect();
+    await deadlineLock.query('SELECT pg_advisory_lock(1613, 5)');
+});
 
 // The shared fixture seeds catalog versions and an actor; startSubscription creates the principal.
 async function launch(seeded: Case) {
@@ -79,17 +91,25 @@ function movableClock(initial: string) {
 }
 
 afterEach(async () => {
-    if (recipientIds.length)
-        await db
-            .delete(emailOutbox)
-            .where(inArray(emailOutbox.recipientUserId, recipientIds.splice(0)));
-    for (const id of migrationIds.splice(0)) {
-        await db
-            .delete(planMigrationSubscriptions)
-            .where(eq(planMigrationSubscriptions.planMigrationId, id));
-        await db.delete(planMigrations).where(eq(planMigrations.id, id));
+    try {
+        if (recipientIds.length)
+            await db
+                .delete(emailOutbox)
+                .where(inArray(emailOutbox.recipientUserId, recipientIds.splice(0)));
+        for (const id of migrationIds.splice(0)) {
+            await db
+                .delete(planMigrationSubscriptions)
+                .where(eq(planMigrationSubscriptions.planMigrationId, id));
+            await db.delete(planMigrations).where(eq(planMigrations.id, id));
+        }
+        await cleanupPlanMigrationCases();
+    } finally {
+        if (deadlineLock) {
+            await deadlineLock.query('SELECT pg_advisory_unlock(1613, 5)');
+            deadlineLock.release();
+            deadlineLock = null;
+        }
     }
-    await cleanupPlanMigrationCases();
 });
 afterAll(closeServiceTestPool);
 
