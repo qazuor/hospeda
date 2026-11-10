@@ -170,6 +170,62 @@ export function extractPlaceNameFromPath(parsed: URL): string | null {
 }
 
 /**
+ * Extracts the search query from a Google `/search?q=…` canonical URL.
+ *
+ * A `share.google/…` link does not always redirect to `/maps/place/<name>`. The
+ * measured production chain lands on a Google search results page instead:
+ * `https://www.google.com/search?…&q=Cheroga+Casa+Quinta&…` (usually carrying a
+ * `kgmid`). That URL has no `/maps/place/` segment, so
+ * {@link extractPlaceNameFromPath} returns `null` and the `q` parameter is the
+ * only usable place name. A search URL also has no `@lat,lng` token, so callers
+ * get no coordinates from it (see {@link extractCoordsFromPath}).
+ *
+ * Restricted to Google hosts on the exact `/search` path so unrelated URLs that
+ * happen to carry a `q` param cannot steer a Text Search call.
+ *
+ * @param parsed - The parsed canonical URL.
+ * @returns The trimmed `q` value, or `null` when the URL is not a Google search
+ *   URL or `q` is missing / empty.
+ */
+export function extractSearchQueryFromUrl(parsed: URL): string | null {
+    const host = parsed.hostname.toLowerCase();
+    if (host !== 'www.google.com' && !host.endsWith('.google.com')) {
+        return null;
+    }
+
+    // Google may answer an automated `/search` request with its rate-limit
+    // interstitial (`/sorry/index?continue=<original search URL>&q=<token>`),
+    // and the redirect follower then stops there (reproduced with `curl -L`
+    // from a residential IP). Its own `q` is an opaque token, never the place
+    // name, so read the wrapped `continue` URL instead — one level only: the
+    // inner URL must itself be a Google `/search` URL.
+    if (parsed.pathname === '/sorry/index') {
+        const continueUrl = parsed.searchParams.get('continue');
+        if (continueUrl === null) {
+            return null;
+        }
+        let inner: URL;
+        try {
+            inner = new URL(continueUrl);
+        } catch {
+            return null;
+        }
+        return inner.pathname === '/search' ? extractSearchQueryFromUrl(inner) : null;
+    }
+
+    if (parsed.pathname !== '/search') {
+        return null;
+    }
+
+    const query = parsed.searchParams.get('q')?.trim();
+    if (query === undefined || query.length === 0) {
+        return null;
+    }
+
+    return query;
+}
+
+/**
  * Extracts the `@lat,lng` coordinate pair from a Google Maps URL.
  *
  * The `@` token introduces the viewport immediately after the place name:
@@ -297,9 +353,13 @@ async function resolvePlaceIdViaTextSearch(input: {
  *    (`/maps/place/Name/@lat,lng,17z`) carries a hexadecimal `ftid`, never a
  *    `ChIJ` token, so rung 2 always fails on it. One `places:searchText` call
  *    with an ID-only field mask closes the gap.
+ * 4. **Text Search by `/search?q=…`** — a `share.google/…` redirect can land on
+ *    a Google search results page rather than `/maps/place/…`. There is no path
+ *    name and no `@lat,lng`, but the `q` parameter still names the place, so it
+ *    feeds the same Text Search call with no location bias.
  *
  * @param input.rawUrl - The listing URL as stored.
- * @param input.apiKey - Google Places API key (needed for rung 3).
+ * @param input.apiKey - Google Places API key (needed for rungs 3 and 4).
  * @returns A {@link PlaceIdResolution} — the Place ID, or why no strategy found one.
  */
 export async function resolvePlaceIdFromUrl(input: {
@@ -329,15 +389,26 @@ export async function resolvePlaceIdFromUrl(input: {
 
     // Rung 3: resolve by name + viewport via Text Search.
     const placeName = extractPlaceNameFromPath(parsed);
-    if (placeName === null) {
-        // Nothing in this URL identifies a place: no token, no name. A share
-        // link whose redirect could not be followed lands here too.
-        return { ok: false, reason: 'unresolvable_url' };
+    if (placeName !== null) {
+        return resolvePlaceIdViaTextSearch({
+            name: placeName,
+            coords: extractCoordsFromPath(parsed),
+            apiKey
+        });
     }
 
-    return resolvePlaceIdViaTextSearch({
-        name: placeName,
-        coords: extractCoordsFromPath(parsed),
-        apiKey
-    });
+    // Rung 4: `/search?q=…` fallback — the `share.google` redirect target in
+    // production. Names the place, but carries no coordinates to bias with.
+    const searchQuery = extractSearchQueryFromUrl(parsed);
+    if (searchQuery !== null) {
+        return resolvePlaceIdViaTextSearch({
+            name: searchQuery,
+            coords: null,
+            apiKey
+        });
+    }
+
+    // Nothing in this URL identifies a place: no token, no name, no query. A
+    // share link whose redirect could not be followed lands here too.
+    return { ok: false, reason: 'unresolvable_url' };
 }
