@@ -149,6 +149,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización, por el panel
 
     it('rejects business failures with their exact status and code', async () => {
         const seeded = await migrationCase();
+        audit.mockClear();
         const cases = [
             {
                 sourceId: seeded.sourceId,
@@ -190,6 +191,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización, por el panel
 
     it('rejects a changed cohort at confirmation with 409 and no audit', async () => {
         const seeded = await migrationCase();
+        audit.mockClear();
         const response = await request({
             path,
             actorId: seeded.actorId,
