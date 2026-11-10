@@ -26,6 +26,11 @@ import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import {
+    buildListingAmenityLines,
+    type ListingContextAmenity,
+    safeLoadListingAmenities
+} from './listing-amenities-context.js';
+import {
     experiencePriceUnitLabel,
     experienceTypeLabel,
     formatContextMoney
@@ -138,13 +143,15 @@ export interface ExperienceContextFaq {
  *   not re-check availability, it renders what
  *   the caller decided.
  * @param locale - Page locale for the closed-value labels and money (HOS-2095).
+ * @param amenities - The experience's amenities (HOS-2100); omitted means none.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildExperienceMarkdownContext(
     experience: ExperienceContextRow,
     faqs: ReadonlyArray<ExperienceContextFaq>,
     includeDirections: boolean,
-    locale: Locale = 'es'
+    locale: Locale = 'es',
+    amenities: ReadonlyArray<ListingContextAmenity> = []
 ): string {
     const cappedFaqs = faqs.slice(0, EXPERIENCE_CONTEXT_FAQ_MAX);
     const truncatedDescription = truncateAtWord(
@@ -282,6 +289,9 @@ export function buildExperienceMarkdownContext(
         );
     }
 
+    // --- Amenities (closed catalog values, localized; HOS-2100) ---
+    lines.push(...buildListingAmenityLines({ amenities, locale }).lines);
+
     // --- House rules (closed values; the cancellation paragraph is above) ---
     lines.push(...buildListingPoliciesLines({ policies }).lines);
 
@@ -366,13 +376,17 @@ export async function assembleExperienceContext(
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Experience '${entityId}' not found.`);
     }
 
-    const faqs = await safeLoadFaqs(entityId);
+    const [faqs, amenities] = await Promise.all([
+        safeLoadFaqs(entityId),
+        safeLoadListingAmenities({ vertical: 'experience', listingId: entityId })
+    ]);
 
     const contextBlock = buildExperienceMarkdownContext(
         experience,
         faqs,
         input.listingSections.get('meetingPoint')?.traits.get('directions') === 'available',
-        locale
+        locale,
+        amenities
     );
 
     return {
