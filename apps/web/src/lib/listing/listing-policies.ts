@@ -33,6 +33,8 @@ import {
     type ListingSmokingPolicy,
     VENUE_RESERVATION_POLICY_VALUES,
     VenueDressCodeEnum,
+    type VenueMinAgeScope,
+    VenueMinAgeScopeSchema,
     type VenueReservationPolicy
 } from '@repo/schemas';
 
@@ -84,6 +86,11 @@ export interface ListingPolicyValues {
     readonly reservations?: VenueReservationPolicy;
     /** Venue only (claimed by the `nightInfo` section). */
     readonly minAge?: number;
+    /**
+     * Venue only (claimed by the `nightInfo` section, HOS-2098): where or when
+     * `minAge` applies. Absent means all day.
+     */
+    readonly minAgeScope?: VenueMinAgeScope;
     /** Venue only (claimed by the `nightInfo` section). */
     readonly dressCode?: VenueDressCodeEnum;
     /** Venue only (claimed by the `nightInfo` section). */
@@ -124,6 +131,11 @@ function readWindow(value: unknown): ListingPolicyTimeWindow | undefined {
     const to = typeof value.to === 'string' && HHMM.test(value.to) ? value.to : undefined;
     if (from === undefined && to === undefined) return undefined;
     return { ...(from ? { from } : {}), ...(to ? { to } : {}) };
+}
+
+function readMinAgeScope(value: unknown): VenueMinAgeScope | undefined {
+    const parsed = VenueMinAgeScopeSchema.safeParse(value);
+    return parsed.success ? parsed.data : undefined;
 }
 
 function readPositiveInt(value: unknown): number | undefined {
@@ -194,6 +206,7 @@ export function parseListingPolicyValues({ raw }: { readonly raw: unknown }): Li
         cancellation,
         reservations: readEnum(raw.reservations, VENUE_RESERVATION_POLICY_VALUES),
         minAge: readPositiveInt(raw.minAge),
+        minAgeScope: readMinAgeScope(raw.minAgeScope),
         dressCode: readEnum(raw.dressCode, DRESS_CODES as readonly VenueDressCodeEnum[]),
         dressCodeNote: readNote(raw.dressCodeNote)
     };

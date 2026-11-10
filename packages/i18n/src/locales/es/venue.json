@@ -120,6 +120,11 @@
                 "no_restrictions": "Sin restricciones"
             },
             "minAgeLabel": "Edad mínima",
+            "minAgeScope": {
+                "allDay": "Rige todo el día",
+                "fromTime": "Rige desde las {{time}} hasta el cierre",
+                "area": "Rige solo en: {{area}}"
+            },
             "legalAge": "Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788)."
         }
     },

@@ -436,7 +436,14 @@ function buildPatchPayload({
  * (G-FAC-05).
  */
 const VERTICAL_POLICY_KEYS: Readonly<Record<VenueOrExperience, readonly ListingPolicyKey[]>> = {
-    venue: [...LISTING_BASE_POLICY_KEYS, 'reservations', 'minAge', 'dressCode', 'dressCodeNote'],
+    venue: [
+        ...LISTING_BASE_POLICY_KEYS,
+        'reservations',
+        'minAge',
+        'minAgeScope',
+        'dressCode',
+        'dressCodeNote'
+    ],
     experience: [...LISTING_BASE_POLICY_KEYS, 'privateGroups', 'cancellation']
 };
 
