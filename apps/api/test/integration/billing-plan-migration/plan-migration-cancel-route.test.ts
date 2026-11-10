@@ -97,15 +97,17 @@ describe('TEST:B12:7 AC:B12:7 cancelar una migración anunciada', () => {
             .where(eq(planMigrationSubscriptions.planMigrationId, id));
         expect(rows).toEqual([{ status: 'CANCELADA' }]);
         const outbox = await getDb()
-            .select({ template: emailOutbox.template })
+            .select({ template: emailOutbox.template, status: emailOutbox.status })
             .from(emailOutbox)
             .where(eq(emailOutbox.recipientUserId, seeded.customer.userId));
         expect(
             outbox
-                .map((mail) => mail.template)
-                .filter((name) => name.startsWith('billing.plan-migration-'))
-                .sort()
-        ).toEqual(['billing.plan-migration-announced', 'billing.plan-migration-cancelled']);
+                .filter((mail) => mail.template.startsWith('billing.plan-migration-'))
+                .sort((a, b) => a.template.localeCompare(b.template))
+        ).toEqual([
+            { template: 'billing.plan-migration-announced', status: 'pending' },
+            { template: 'billing.plan-migration-cancelled', status: 'pending' }
+        ]);
         expect(migrationAudits(id)).toHaveLength(1);
         expect(migrationAudits(id)[0]?.[0]).toMatchObject({
             actorId: seeded.actorId,
