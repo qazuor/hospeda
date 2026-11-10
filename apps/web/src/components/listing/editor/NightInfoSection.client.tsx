@@ -58,6 +58,12 @@ import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
 import styles from './NightInfoSection.module.css';
 import type { ListingPolicyChange } from './PoliciesPanel.client';
 
+/** Id of the hint announced with the scope selector (HOS-2098). */
+const AGE_SCOPE_HINT_ID = 'night-info-age-scope-hint';
+
+/** Id of the hint announced with the "from a time" input (HOS-2098). */
+const AGE_SCOPE_FROM_HINT_ID = 'night-info-age-scope-from-hint';
+
 /** The note shown while the owner has not written one. */
 const EMPTY_NOTE = { es: '', en: '', pt: '' } as const;
 
@@ -263,7 +269,7 @@ export function NightInfoSection({
 
             {policies.minAge !== undefined && (
                 <div
-                    className={styles.priceField}
+                    className={styles.scopeField}
                     data-testid="night-info-age-scope"
                 >
                     <TextField
@@ -277,6 +283,7 @@ export function NightInfoSection({
                         labelClassName={fieldStyles.label}
                         className={fieldStyles.input}
                         error={errors['policies.minAgeScope']}
+                        describedByExtraId={AGE_SCOPE_HINT_ID}
                         value={scope.kind}
                         onChange={(event) =>
                             onPolicyChange(
@@ -297,7 +304,10 @@ export function NightInfoSection({
                             </option>
                         ))}
                     </TextField>
-                    <p className={fieldStyles.hint}>
+                    <p
+                        id={AGE_SCOPE_HINT_ID}
+                        className={fieldStyles.hint}
+                    >
                         {t(
                             'listing.owner.editor.nightInfo.minAgeScopeHint',
                             'Se muestra junto a la edad mínima en tu ficha y el asistente lo usa para responder.'
@@ -314,6 +324,7 @@ export function NightInfoSection({
                             labelClassName={fieldStyles.label}
                             className={fieldStyles.input}
                             error={errors['policies.minAgeScope.from']}
+                            describedByExtraId={AGE_SCOPE_FROM_HINT_ID}
                             type="time"
                             value={scope.from}
                             onChange={(event) =>
@@ -323,6 +334,17 @@ export function NightInfoSection({
                                 })
                             }
                         />
+                    )}
+                    {scope.kind === 'from_time' && (
+                        <p
+                            id={AGE_SCOPE_FROM_HINT_ID}
+                            className={fieldStyles.hint}
+                        >
+                            {t(
+                                'listing.owner.editor.nightInfo.minAgeScopeFromHint',
+                                'Rige desde esa hora hasta el cierre, incluida la madrugada después de la medianoche. Solo las horas del mismo día antes de esa hora quedan afuera.'
+                            )}
+                        </p>
                     )}
                     {scope.kind === 'area' && (
                         <I18nNoteField

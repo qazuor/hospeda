@@ -239,13 +239,49 @@ function renderScope(locale: SupportedLocale, item: Record<string, unknown>): st
     return fillLabel({ text: t(notice.scopeTextKey), params: notice.scopeParams });
 }
 
+/**
+ * HOS-2098 review: the ficha and the chat resolve the area with ONE function
+ * (`resolveVenueMinAgeScope`), so these cases are asserted with the SAME
+ * expected strings in `apps/web/test/lib/venue/night-info.test.ts` and
+ * `apps/api/test/services/ai-context/venue-ai-context-age-scope.test.ts`.
+ */
+const SHARED_AREA_CASES = [
+    ['es', { es: '  la pista  ', en: '', pt: '' }, 'la pista'],
+    ['en', { es: 'el show', en: '   ', pt: '' }, 'el show'],
+    ['es', { es: '', en: '', pt: 'a pista' }, 'a pista'],
+    ['es', { es: ' ', en: 'the floor', pt: 'a pista' }, 'the floor'],
+    ['pt', { es: 'la pista', en: 'the floor', pt: '' }, 'la pista']
+] as const;
+
+describe('area resolution is the one the chat uses (HOS-2098 review)', () => {
+    it.each(SHARED_AREA_CASES)('in %s, %j resolves to %s', (locale, area, expected) => {
+        const data = toVenueNightInfo({ item: ageItem(18, { kind: 'area', area }), locale });
+        expect(data.minAgeScope).toEqual({ kind: 'area', area: expected });
+    });
+
+    it('a whitespace-only area in every locale reads as "all day"', () => {
+        const item = ageItem(18, { kind: 'area', area: { es: ' ', en: '\t', pt: '  ' } });
+        expect(toVenueNightInfo({ item, locale: 'en' }).minAgeScope).toEqual({ kind: 'all_day' });
+    });
+});
+
 describe('minimum-age scope (HOS-2098)', () => {
     const AREA = { es: 'la pista', en: 'the dance floor', pt: 'a pista' };
 
     it.each([
-        ['es', 'Rige todo el día', 'Rige desde las 00:00', 'Rige solo en: la pista'],
-        ['en', 'Applies all day', 'Applies from 00:00', 'Applies only to: the dance floor'],
-        ['pt', 'Vale o dia todo', 'Vale a partir das 00:00', 'Vale só para: a pista']
+        [
+            'es',
+            'Rige todo el día',
+            'Rige desde las 00:00 hasta el cierre',
+            'Rige solo en: la pista'
+        ],
+        [
+            'en',
+            'Applies all day',
+            'Applies from 00:00 until closing',
+            'Applies only to: the dance floor'
+        ],
+        ['pt', 'Vale o dia todo', 'Vale das 00:00 até o fechamento', 'Vale só para: a pista']
     ] as const)('renders each option in %s', (locale, allDay, fromTime, area) => {
         // Arrange / Act / Assert
         expect(renderScope(locale, ageItem(18, { kind: 'all_day' }))).toBe(allDay);

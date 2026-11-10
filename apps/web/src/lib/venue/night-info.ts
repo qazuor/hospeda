@@ -15,7 +15,11 @@
  * text only with a badge) are unit-testable without rendering Astro.
  */
 
-import { LISTING_SECTIONS, VenueMinAgeScopeSchema } from '@repo/schemas';
+import {
+    LISTING_SECTIONS,
+    type ResolvedVenueMinAgeScope,
+    resolveVenueMinAgeScope
+} from '@repo/schemas';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
 /** How a venue charges for entry (`VenueEntryKindEnum`). */
@@ -26,10 +30,7 @@ export type VenueNightEntryKind = 'free' | 'paid' | 'varies';
  * resolved to the page locale. `all_day` also stands for "the owner never set
  * a scope": that is the default of every venue saved before HOS-2098.
  */
-export type VenueNightAgeScope =
-    | { readonly kind: 'all_day' }
-    | { readonly kind: 'from_time'; readonly from: string }
-    | { readonly kind: 'area'; readonly area: string };
+export type VenueNightAgeScope = ResolvedVenueMinAgeScope;
 
 /** Closed dress-code list (`VenueDressCodeEnum`). */
 export type VenueNightDressCode = 'casual' | 'smart_casual' | 'elegant' | 'no_restrictions';
@@ -157,29 +158,6 @@ function readNote(value: unknown, locale: string): string | null {
 }
 
 /**
- * Reads the minimum-age scope (HOS-2098) and resolves its area to the locale.
- *
- * Everything that is not a valid `from_time` or `area` scope — absent, `all_day`,
- * malformed, or an area blank in every locale — reads as `all_day`, the
- * conservative default.
- *
- * @param value - Raw `policies.minAgeScope`, of unknown shape.
- * @param locale - Active page locale.
- * @returns The scope as the page renders it.
- */
-function readAgeScope(value: unknown, locale: string): VenueNightAgeScope {
-    const parsed = VenueMinAgeScopeSchema.safeParse(value);
-    if (!parsed.success) return { kind: 'all_day' };
-    const scope = parsed.data;
-    if (scope.kind === 'from_time') return { kind: 'from_time', from: scope.from };
-    if (scope.kind === 'area') {
-        const area = readNote(scope.area, locale);
-        return area === null ? { kind: 'all_day' } : { kind: 'area', area };
-    }
-    return { kind: 'all_day' };
-}
-
-/**
  * Maps a raw venue detail payload into {@link VenueNightInfoData}.
  *
  * @param args.item - Raw API venue payload.
@@ -217,7 +195,11 @@ export function toVenueNightInfo({
         entryPriceFromCents,
         entryPriceUpdatedAt,
         minAge,
-        minAgeScope: minAge === null ? null : readAgeScope(policies.minAgeScope, locale),
+        // HOS-2098: the shared reader the chat context uses too, so both agree.
+        minAgeScope:
+            minAge === null
+                ? null
+                : resolveVenueMinAgeScope({ value: policies.minAgeScope, locale }),
         dressCode: readDressCode(policies.dressCode),
         dressCodeNote: readNote(policies.dressCodeNote, locale),
         multiLine: item.multiLine === true

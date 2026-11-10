@@ -168,6 +168,32 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
         expect(screen.queryByLabelText('Rige desde las')).toBeNull();
     });
 
+    it('announces the hint with the scope selector (aria-describedby)', () => {
+        renderSection('', { policies: { minAge: 18 } });
+
+        const select = screen.getByLabelText('Alcance de la edad mínima');
+        expect(select.getAttribute('aria-describedby') ?? '').toContain(
+            'night-info-age-scope-hint'
+        );
+        expect(document.getElementById('night-info-age-scope-hint')).not.toBeNull();
+        expect(screen.getByTestId('night-info-age-scope').className).not.toMatch(/priceField/);
+    });
+
+    it('explains, under the time input, that "from a time" runs through closing after midnight', () => {
+        renderSection('', {
+            policies: { minAge: 18, minAgeScope: { kind: 'from_time', from: '20:00' } }
+        });
+
+        const input = screen.getByLabelText('Rige desde las');
+        expect(input.getAttribute('aria-describedby') ?? '').toContain(
+            'night-info-age-scope-from-hint'
+        );
+        const hint = document.getElementById('night-info-age-scope-from-hint');
+        expect(hint?.textContent).toContain('hasta el cierre');
+        expect(hint?.textContent).toContain('después de la medianoche');
+        expect(hint?.textContent).toContain('antes de esa hora quedan afuera');
+    });
+
     it('starts "from a time" with an empty time the owner must fill', () => {
         const { onPolicyChange } = renderSection('', { policies: { minAge: 18 } });
 
