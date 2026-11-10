@@ -86,16 +86,11 @@ describe('nightInfo schema from empty (HOS-1846, AC:4:1)', () => {
                 )
               ORDER BY column_name`
         );
-        // min_age, dress_code and dress_code_note_i18n are legacy until release
-        // N+1 drops them; no code reads or writes them.
         expect(result.rows.map((row) => row.column_name)).toEqual([
-            'dress_code',
-            'dress_code_note_i18n',
             'entry_kind',
             'entry_note_i18n',
             'entry_price_from',
             'entry_price_updated_at',
-            'min_age',
             'policies'
         ]);
         for (const row of result.rows) expect(row.is_nullable).toBe('YES');
