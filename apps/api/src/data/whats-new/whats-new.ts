@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4221
     {
         id: '2026-11-08-venue-experience-services-editor',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T01:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -173,7 +173,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4217, #4228
     {
         id: '2026-11-08-listing-policies',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T00:05:30Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -191,7 +191,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4200
     {
         id: '2026-11-07-publish-bars-and-boliches-in-comer-y-salir',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-09T23:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER'],
         title: {
