@@ -66,9 +66,12 @@
         "acc-real-balcones-4-people-beds-absent",
         "acc-real-balcones-english-restaurant-bikes",
         "acc-real-monogris-couple-central-cooking",
-        "acc-real-monogris-parking-kid-pets-absent"
+        "acc-real-monogris-parking-kid-pets-absent",
+        "acc-real-balcones-group-over-capacity",
+        "acc-real-isla-english-two-families",
+        "acc-real-casa-portuguese-group"
     ],
     "concurrency": 2,
-    "maxCalls": 300,
+    "maxCalls": 340,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

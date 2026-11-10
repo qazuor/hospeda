@@ -51,10 +51,10 @@ const rubricOf = (id: string): Rubric => {
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
 describe('fixtures joined with the generated contexts', () => {
-    it('has 36 unique cases across the three features, each with a rubric', () => {
+    it('has 39 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(36);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(36);
+        expect(cases).toHaveLength(39);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(39);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -135,14 +135,14 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(36 * 8 * 2);
+        expect(calls).toHaveLength(39 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 
     it('accommodation: exactly the acc-real cases; example: exactly the others', () => {
         const accIds = cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
         const otherIds = cases.filter((c) => !c.id.startsWith('acc-real-')).map((c) => c.id);
-        expect(accIds).toHaveLength(17);
+        expect(accIds).toHaveLength(20);
         expect([...config('sweep.config.accommodation.json').caseIds].sort()).toEqual(
             accIds.sort()
         );
@@ -186,6 +186,13 @@ describe('rubrics', () => {
         expect(violations('Tiene un descuento por estadía larga.')).toContain(
             'inventa descuentos o seña'
         );
+        // A negation in an earlier clause does not cover the discount.
+        expect(violations('No incluye desayuno, pero hay descuento por semana.')).toContain(
+            'inventa descuentos o seña'
+        );
+        expect(violations('No se indica ningún descuento.')).not.toContain(
+            'inventa descuentos o seña'
+        );
     });
 
     it('HOS-2100 group cases: close with distribution/availability, never "entran sin problema"', () => {
@@ -204,7 +211,50 @@ describe('rubrics', () => {
                     text: 'Depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar.'
                 }).includeMissed
             ).not.toContain('remite reparto o disponibilidad al lugar');
+            // A bare "confirm" is not the close.
+            expect(
+                checkAnswer({ rubric: r, text: 'No puedo confirmar eso.' }).includeMissed
+            ).toContain('remite reparto o disponibilidad al lugar');
         }
+    });
+
+    it('HOS-2100 over capacity: a plain no, never the distribution hedge', () => {
+        const r = rubricOf('acc-real-balcones-group-over-capacity');
+        expect(
+            checkAnswer({
+                rubric: r,
+                text: 'No, 7 no entran: la capacidad es de 4 huéspedes.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({
+                rubric: r,
+                text: 'La capacidad es de 4; depende de cómo se repartan y de la disponibilidad.'
+            }).violations
+        ).toContain('cierra con el reparto aunque no entran');
+    });
+
+    it('HOS-2100 en/pt groups: the close is translated, never copied in Spanish', () => {
+        const en = rubricOf('acc-real-isla-english-two-families');
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: 'The complex takes 12 guests in apartments for 2 and for 4. It depends on how you split and on availability: confirm it with the place.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: '12 guests. Depende de la disponibilidad: confirmalo.'
+            }).violations
+        ).toContain('cierre copiado en español');
+        const pt = rubricOf('acc-real-casa-portuguese-group');
+        expect(
+            checkAnswer({
+                rubric: pt,
+                text: 'A casa recebe até 11 hóspedes. Depende de como se distribuírem e da disponibilidade: confirme com o lugar.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
     });
 
     it('HOS-2100 venue amenities: AC yes, parking not listed', () => {
