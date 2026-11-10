@@ -153,13 +153,36 @@ export function buildPanelUrl(input: {
     return { url: `${base}/${input.locale}/${hub}/preguntas-ia/` };
 }
 
+/** Time zone the digest week is counted in (the market's). */
+export const DIGEST_TIME_ZONE = 'America/Argentina/Buenos_Aires';
+
 /**
- * The digest week a run belongs to, as the UTC date of the window start.
- * Used in the idempotency key so a re-run in the same week sends nothing new.
+ * The digest week a run belongs to: the ISO 8601 week (`YYYY-Www`) of the
+ * window END as a calendar date in {@link DIGEST_TIME_ZONE}.
  *
- * @param input - Window start.
- * @returns `{ weekKey }` (`YYYY-MM-DD`).
+ * Used in the idempotency key. Keying on the week — not on a date derived
+ * from the run instant — makes a manual re-run any other day of the same week
+ * send nothing (HOS-2101 review, M3).
+ *
+ * @param input - Window end (the run instant).
+ * @returns `{ weekKey }`, e.g. `2026-W47`.
  */
-export function digestWeekKey(input: { readonly windowStart: Date }): { readonly weekKey: string } {
-    return { weekKey: input.windowStart.toISOString().slice(0, 10) };
+export function digestWeekKey(input: { readonly windowEnd: Date }): { readonly weekKey: string } {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: DIGEST_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(input.windowEnd);
+    const part = (type: string): number =>
+        Number(parts.find((entry) => entry.type === type)?.value ?? Number.NaN);
+    // A UTC-midnight Date stands for the local calendar date from here on.
+    const date = new Date(Date.UTC(part('year'), part('month') - 1, part('day')));
+    const isoWeekday = date.getUTCDay() === 0 ? 7 : date.getUTCDay();
+    // The Thursday of this ISO week decides the ISO year.
+    const thursday = new Date(date.getTime() + (4 - isoWeekday) * 86_400_000);
+    const isoYear = thursday.getUTCFullYear();
+    const yearStart = Date.UTC(isoYear, 0, 1);
+    const week = Math.floor((thursday.getTime() - yearStart) / (7 * 86_400_000)) + 1;
+    return { weekKey: `${isoYear}-W${String(week).padStart(2, '0')}` };
 }

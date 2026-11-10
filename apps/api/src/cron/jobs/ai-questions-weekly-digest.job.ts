@@ -103,7 +103,7 @@ export async function runAiQuestionsWeeklyDigest(input: {
 
     const windowEnd = input.now;
     const windowStart = new Date(windowEnd.getTime() - selection.DIGEST_WINDOW_DAYS * 86_400_000);
-    const { weekKey } = selection.digestWeekKey({ windowStart });
+    const { weekKey } = selection.digestWeekKey({ windowEnd });
 
     const { rows } = await deps.readRows({ windowStart, windowEnd });
     const { digests } = selection.groupDigestRows({ rows });

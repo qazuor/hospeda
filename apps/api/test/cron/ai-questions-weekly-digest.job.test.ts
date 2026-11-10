@@ -18,6 +18,7 @@ import {
     acceptsDigest,
     buildPanelUrl,
     type DigestRow,
+    digestWeekKey,
     groupDigestRows
 } from '../../src/services/ai-questions-digest.helpers';
 
@@ -124,7 +125,7 @@ describe('runAiQuestionsWeeklyDigest', () => {
         expect(deps.send).not.toHaveBeenCalled();
         expect(output.skippedAlreadySent).toBe(1);
         expect(deps.alreadySent).toHaveBeenCalledWith({
-            idempotencyKey: `ai-questions-digest:${OWNER}:2026-11-09`
+            idempotencyKey: `ai-questions-digest:${OWNER}:2026-W47`
         });
     });
 
@@ -168,6 +169,33 @@ describe('runAiQuestionsWeeklyDigest', () => {
                 panelUrl: `https://hospeda.test/en/mi-cuenta/comercio/venue/${VENUE}/editar/preguntas-ia/`
             }
         ]);
+    });
+
+    it('sends nothing on a manual re-run later in the same week (Tuesday)', async () => {
+        // Arrange: a log that remembers what was sent, keyed like production.
+        const sentKeys = new Set<string>();
+        const deps = buildDeps({ rows: [row()] });
+        const alreadySent = vi.fn(async ({ idempotencyKey }: { idempotencyKey: string }) =>
+            sentKeys.has(idempotencyKey)
+        );
+        const send = vi.fn(async (payload: { idempotencyKey?: string }) => {
+            sentKeys.add(payload.idempotencyKey ?? '');
+            return { delivered: true };
+        });
+        const tracked = { ...deps, alreadySent, send };
+
+        // Act: the scheduled Monday run, then a manual Tuesday run.
+        const monday = await runAiQuestionsWeeklyDigest({ now: NOW, deps: tracked });
+        const tuesday = await runAiQuestionsWeeklyDigest({
+            now: new Date('2026-11-17T15:00:00.000Z'),
+            deps: tracked
+        });
+
+        // Assert
+        expect(monday.sent).toBe(1);
+        expect(tuesday.sent).toBe(0);
+        expect(tuesday.skippedAlreadySent).toBe(1);
+        expect(send).toHaveBeenCalledTimes(1);
     });
 
     it('counts an undelivered send as a failure', async () => {
@@ -220,5 +248,20 @@ describe('selection helpers', () => {
         ).toBe(
             `https://hospeda.test/pt/mi-cuenta/comercio/experience/${VENUE}/editar/preguntas-ia/`
         );
+    });
+});
+
+describe('digestWeekKey', () => {
+    it.each([
+        ['2026-11-16T12:00:00.000Z', '2026-W47'],
+        ['2026-11-17T15:00:00.000Z', '2026-W47'],
+        ['2026-11-22T23:00:00.000Z', '2026-W47'],
+        // Sunday 23:30 in Buenos Aires is already Monday in UTC: still week 47.
+        ['2026-11-23T02:30:00.000Z', '2026-W47'],
+        ['2026-11-23T03:00:00.000Z', '2026-W48'],
+        // ISO year boundary: 2027-01-01 is a Friday, inside 2026-W53.
+        ['2027-01-01T12:00:00.000Z', '2026-W53']
+    ])('keys %s as %s (Buenos Aires ISO week)', (instant, expected) => {
+        expect(digestWeekKey({ windowEnd: new Date(instant) }).weekKey).toBe(expected);
     });
 });
