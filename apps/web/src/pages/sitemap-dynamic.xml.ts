@@ -37,6 +37,7 @@ import {
     destinationListItemCounts,
     isThinDestination
 } from '../lib/seo/thin-destination';
+import { fetchPopulatedVenueCollectionPaths } from '../lib/seo/venue-collection-sitemap';
 
 export const prerender = false;
 
@@ -297,7 +298,8 @@ export const GET: APIRoute = async () => {
         attractions,
         pointsOfInterest,
         authors,
-        partners
+        partners,
+        venueCollections
     ] = await Promise.allSettled([
         fetchAllEntities(apiUrl, `${base}/accommodations`),
         fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
@@ -313,7 +315,9 @@ export const GET: APIRoute = async () => {
         // every later entity onto the wrong stub.
         fetchAllEntities(apiUrl, `${base}/authors`),
         // Partners (HOS-294) — appended for exactly the same reason.
-        fetchAllEntities(apiUrl, `${base}/partners`)
+        fetchAllEntities(apiUrl, `${base}/partners`),
+        // Venue collections (HOS-1869) — APPENDED, never inserted (positional stubs).
+        fetchPopulatedVenueCollectionPaths({ apiUrl })
     ]);
 
     const resolvedAccommodations =
@@ -328,6 +332,8 @@ export const GET: APIRoute = async () => {
         pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
     const resolvedAuthors = authors.status === 'fulfilled' ? authors.value : [];
     const resolvedPartners = partners.status === 'fulfilled' ? partners.value : [];
+    const resolvedVenueCollections =
+        venueCollections.status === 'fulfilled' ? venueCollections.value : [];
 
     const entries: string[] = [];
 
@@ -526,6 +532,13 @@ export const GET: APIRoute = async () => {
             priority: 0.6
         })
     );
+
+    // Venue collections: only non-empty ones (HOS-1869, AC:6:2); no `lastmod`.
+    for (const p of resolvedVenueCollections) {
+        entries.push(
+            ...buildLocalizedUrlEntries({ path: p, siteUrl, changefreq: 'weekly', priority: 0.7 })
+        );
+    }
 
     return new Response(buildUrlsetDocument(entries), {
         status: 200,

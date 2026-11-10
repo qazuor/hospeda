@@ -19,6 +19,7 @@ import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enum
 import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
 import { AccommodationAmenityAttributesListSchema } from '../amenity/amenity.schema.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
+import { AccommodationPoliciesSchema } from './subtypes/accommodation.policies.schema.js';
 
 /**
  * HOS-1938: query strings are case-insensitive for the singular accommodation
@@ -534,23 +535,6 @@ export const AccommodationUpdateHttpSchema = z
          */
         amenityAttributes: AccommodationAmenityAttributesListSchema.optional(),
         /**
-         * Minimum nights required per stay (H-112, G7 smoke).
-         *
-         * Maps to `extraInfo.minNights`. UPDATE-only: neither the full-create nor
-         * the draft-create HTTP schema exposes it (both force a server-side
-         * `minNights: 1` default so a self-service draft is always publishable —
-         * see `httpToDomainAccommodationCreateDraft`). Before this field existed,
-         * the value was writable nowhere post-creation, so every production
-         * accommodation published "Mínimo de noches: 1" regardless of the host's
-         * actual policy.
-         */
-        minNights: z.coerce
-            .number()
-            .int()
-            .min(1, { message: 'zodError.accommodation.extraInfo.minNights.min' })
-            .max(365, { message: 'zodError.accommodation.extraInfo.minNights.max' })
-            .optional(),
-        /**
          * Street name (H-117, G7 smoke). Maps to `location.street`.
          *
          * UPDATE-only, like `number`/`floor`/`apartment` below: the full-create
@@ -633,7 +617,17 @@ export const AccommodationUpdateHttpSchema = z
          * the slug; this boolean only authorizes regenerating it from `name`
          * when the listing is already published.
          */
-        refreshSlugFromName: z.boolean().optional()
+        refreshSlugFromName: z.boolean().optional(),
+        /**
+         * Structured house rules (HOS-2060). UPDATE-only, and the one nested
+         * object this flat contract carries: the policies have no flat
+         * equivalent, and flattening a dozen nested fields into the HTTP shape
+         * would only be undone by the converter. It is a PATCH of the stored
+         * object: the service shallow-merges it (a key set to `null` is removed,
+         * `policies: null` clears the column) and re-validates the merged result
+         * (`listing-policies-write.ts` in `@repo/service-core`).
+         */
+        policies: AccommodationPoliciesSchema.nullable().optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -946,12 +940,13 @@ export const httpToDomainAccommodationCreate = (
     // Extra info mapping from flat HTTP fields to nested domain structure
     extraInfo: {
         capacity: httpData.maxGuests,
-        minNights: 1, // Default minimum stay
         bedrooms: httpData.bedrooms,
         bathrooms: httpData.bathrooms,
-        smokingAllowed: false, // Default no smoking
         extraInfo: [] // Default empty array
     },
+    // HOS-2060: the minimum stay is a policy. `minNights: 1` keeps a new
+    // listing publishable; the service adds the default payment methods.
+    policies: { minNights: 1 },
 
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
@@ -1074,18 +1069,17 @@ export const httpToDomainAccommodationCreateDraft = (
           }
         : {}),
 
+    // --- minimum stay (→ policies JSONB, HOS-2060) ---
+    // ALWAYS emitted with `minNights: 1`: the publish guard requires a minimum
+    // stay, so without this default a self-service draft could never be
+    // published (HOS-152). The host changes it from the editor's policies.
+    policies: { minNights: 1 },
     // --- capacity (→ extraInfo JSONB) ---
-    // ALWAYS emitted, with a server-side `minNights: 1` default. `minNights` is not
-    // exposed on the host-facing write path (neither the HTTP schema nor the web
-    // editor lets a host set it), yet the publish-time capacity guard requires it —
-    // so without this default a self-service draft could never be published (HOS-152).
-    // This mirrors the full-create HTTP mapping, which also force-defaults minNights.
-    // The remaining capacity fields (capacity/bedrooms/bathrooms/beds) stay partial:
-    // the host completes them from the web self-service editor, and the publish guard
-    // enforces their presence at DRAFT → ACTIVE. The cast is safe because the DB column
-    // is JSONB and the read schema now accepts a partial extraInfo (HOS-152).
+    // Partial: the host completes capacity/bedrooms/bathrooms/beds from the web
+    // self-service editor, and the publish guard enforces their presence at
+    // DRAFT → ACTIVE. The cast is safe because the DB column is JSONB and the
+    // read schema accepts a partial extraInfo (HOS-152).
     extraInfo: {
-        minNights: 1,
         ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
         ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
         ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
@@ -1212,24 +1206,16 @@ export const httpToDomainAccommodationUpdate = (
         : {}),
 
     // Extra info mapping (SPEC-229): emit a partial group from whatever is present.
-    // Previously this required maxGuests AND bedrooms AND bathrooms together and
-    // injected `minNights: 1` / `smokingAllowed: false` defaults — both of which
-    // overwrote stored values on every edit. Now a lone field (e.g. `bedrooms`)
-    // is merged and unsent siblings (capacity/minNights/bathrooms/...) are kept.
-    //
-    // `minNights` (H-112 / G7 smoke) joins the group the same way: before this,
-    // no HTTP field mapped to it at all, so the create-time `minNights: 1` default
-    // was permanent for every accommodation's whole lifetime.
+    // A lone field (e.g. `bedrooms`) is merged and unsent siblings are kept. The
+    // minimum stay is not here: it is `policies.minNights` since HOS-2060.
     ...(httpData.maxGuests !== undefined ||
     httpData.bedrooms !== undefined ||
-    httpData.bathrooms !== undefined ||
-    httpData.minNights !== undefined
+    httpData.bathrooms !== undefined
         ? {
               extraInfo: {
                   ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
                   ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
-                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
-                  ...(httpData.minNights === undefined ? {} : { minNights: httpData.minNights })
+                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms })
               }
           }
         : {}),
@@ -1244,6 +1230,9 @@ export const httpToDomainAccommodationUpdate = (
     ...(httpData.refreshSlugFromName === undefined
         ? {}
         : { refreshSlugFromName: httpData.refreshSlugFromName }),
+    // HOS-2060: policies are already domain-shaped; pass through when present.
+    // The service merges them per top-level key; an explicit `null` clears all.
+    ...(httpData.policies === undefined ? {} : { policies: httpData.policies }),
 
     // Media (HOS-372): the domain update surface has no `media` field — the HTTP
     // `media` object carries videos only, and they land on the top-level column.

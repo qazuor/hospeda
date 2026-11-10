@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "176-amenity-general-appliances-boat-included",
+    "slug": "boat_included",
+    "description": {
+        "es": "La embarcación para la actividad está incluida",
+        "en": "The boat used for the activity is included",
+        "pt": "A embarcação usada na atividade está incluída"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "GENERAL_APPLIANCES",
+    "icon": "RecreationalBoatingIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70
+}

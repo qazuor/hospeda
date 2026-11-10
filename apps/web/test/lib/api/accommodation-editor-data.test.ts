@@ -262,3 +262,60 @@ describe('loadAccommodationEditorData — failure handling', () => {
         expect(result.status).toBe('error');
     });
 });
+
+/** A paginated catalog over `total` rows, 100 per page (HOS-2061). */
+function pagedCatalog({ total, failPage }: { readonly total: number; readonly failPage?: number }) {
+    const totalPages = Math.max(1, Math.ceil(total / 100));
+    return async ({ page = 1 }: { readonly page?: number } = {}) => {
+        if (page === failPage) return { ok: false, error: { status: 500 } };
+        const offset = (page - 1) * 100;
+        const count = Math.max(0, Math.min(100, total - offset));
+        return {
+            ok: true,
+            data: {
+                items: Array.from({ length: count }, (_, index) => ({
+                    id: `row-${offset + index}`
+                })),
+                pagination: { page, pageSize: 100, total, totalPages }
+            }
+        };
+    };
+}
+
+describe('loadAccommodationEditorData — catalogs past one page (HOS-2061)', () => {
+    it('reads every page: a seed with 143 accommodation amenities loses none', async () => {
+        // Arrange
+        amenitiesList.mockImplementation(pagedCatalog({ total: 143 }));
+        featuresList.mockImplementation(pagedCatalog({ total: 70 }));
+
+        // Act
+        const result = await loadAccommodationEditorData({
+            accommodationId: 'acc',
+            cookieHeader: COOKIE,
+            need: ['catalog']
+        });
+
+        // Assert
+        expect(result.status).toBe('ok');
+        if (result.status !== 'ok') return;
+        expect(result.data.amenities).toHaveLength(143);
+        expect(result.data.amenities.at(-1)).toEqual({ id: 'row-142' });
+        expect(result.data.features).toHaveLength(70);
+    });
+
+    it('returns no catalog rather than a partial one when a later page fails', async () => {
+        amenitiesList.mockImplementation(pagedCatalog({ total: 143, failPage: 2 }));
+        featuresList.mockImplementation(pagedCatalog({ total: 70 }));
+
+        const result = await loadAccommodationEditorData({
+            accommodationId: 'acc',
+            cookieHeader: COOKIE,
+            need: ['catalog']
+        });
+
+        expect(result.status).toBe('ok');
+        if (result.status !== 'ok') return;
+        expect(result.data.amenities).toEqual([]);
+        expect(result.data.features).toHaveLength(70);
+    });
+});

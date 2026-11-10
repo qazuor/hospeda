@@ -11,6 +11,10 @@
  * for an unchecked one, even though the form keeps those declarations in state
  * so re-checking restores them.
  *
+ * HOS-2084: `extraCharge` is merged per key by the API (omitted keeps the stored
+ * value), so an entry whose box was explicitly UNCHECKED is still sent, with
+ * `extraCharge: false`, otherwise the stored flag could never be cleared.
+ *
  * The field is only sent when the effective list differs from the baseline's,
  * compared by value. Diffing the map by identity would mark the form dirty when
  * a host changes a value and then puts it back.
@@ -23,6 +27,8 @@ export interface AmenityAttributesEntry {
     readonly amenityId: string;
     readonly scope: AmenityAttributeValue['scope'];
     readonly availability: AmenityAttributeValue['availability'];
+    /** HOS-2084: omitted = keep the stored value; `false` clears it. */
+    readonly extraCharge?: boolean;
 }
 
 /** The two inputs the effective list is derived from. */
@@ -49,18 +55,36 @@ export function buildAmenityAttributesList({
         if (seen.has(amenityId)) continue;
         seen.add(amenityId);
         const value = map[amenityId];
-        if (!value || (value.scope === null && value.availability === null)) continue;
-        entries.push({ amenityId, scope: value.scope, availability: value.availability });
+        if (
+            !value ||
+            (value.scope === null && value.availability === null && value.extraCharge === undefined)
+        ) {
+            continue;
+        }
+        entries.push({
+            amenityId,
+            scope: value.scope,
+            availability: value.availability,
+            extraCharge: value.extraCharge
+        });
     }
     return entries;
 }
 
 /** Order-insensitive key for comparing two lists by value. */
 function listKey(entries: readonly AmenityAttributesEntry[]): string {
-    return entries
-        .map((e) => `${e.amenityId}:${e.scope ?? ''}:${e.availability ?? ''}`)
-        .sort()
-        .join('|');
+    return (
+        entries
+            // An entry declaring nothing (HOS-2084: extraCharge false/unset) is
+            // equivalent to no entry, so toggling a box on and off is not a change.
+            .filter((e) => e.scope !== null || e.availability !== null || e.extraCharge === true)
+            .map(
+                (e) =>
+                    `${e.amenityId}:${e.scope ?? ''}:${e.availability ?? ''}:${e.extraCharge ? 1 : 0}`
+            )
+            .sort()
+            .join('|')
+    );
 }
 
 /**

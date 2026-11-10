@@ -31,6 +31,8 @@ export {
     getAvailableModerationActions
 } from './config/listing-moderation-actions';
 // Shared section builders
+export type { PoliciesVertical } from './config/listingPoliciesSection';
+export { createListingPoliciesSection } from './config/listingPoliciesSection';
 export {
     createListingIdentitySection,
     createListingOperationalSection

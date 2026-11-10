@@ -4,11 +4,11 @@
     "slug": "ideal_for_groups",
     "category": "AUDIENCE",
     "description": {
-        "es": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
-        "en": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
-        "pt": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones"
+        "es": "Espacios y propuesta pensados para grupos grandes",
+        "en": "Spaces and offer designed for large groups",
+        "pt": "Espaços e proposta pensados para grupos grandes"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "GroupFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

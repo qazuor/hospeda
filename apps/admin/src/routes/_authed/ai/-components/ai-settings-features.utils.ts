@@ -84,7 +84,8 @@ export const DEFAULT_SETTINGS: AiSettingsValue = {
  *
  * @param settings - The blob from `GET /api/v1/admin/ai/settings`, or `undefined`
  *   before it loads.
- * @returns A complete blob safe to seed the form with.
+ * @returns A complete blob safe to seed the form with. Top-level fields the form
+ *   does not edit are carried through untouched.
  */
 export function toFormValues(settings: AiSettingsValue | undefined): AiSettingsValue {
     if (!settings) {
@@ -98,8 +99,46 @@ export function toFormValues(settings: AiSettingsValue | undefined): AiSettingsV
         ])
     ) as AiSettingsValue['features'];
 
+    // Spread first: the PUT replaces the whole blob, so every top-level field the
+    // form does not edit (costCeilings, modelRates, moderation, any future one)
+    // must round-trip unchanged or the next save silently erases it (HOS-2096).
     return {
+        ...settings,
         providers: settings.providers ?? DEFAULT_SETTINGS.providers,
         features
+    };
+}
+
+/** Features whose route reads `params.maxTokens` (the accommodation, venue and experience chats). */
+const CHAT_FEATURES: readonly AiFeatureId[] = ['chat', 'chat_venue', 'chat_experience'];
+
+/**
+ * Output-token cap the chat route applies when `params.maxTokens` is unset.
+ * Mirrors `DEFAULT_CHAT_MAX_OUTPUT_TOKENS` in `apps/api/src/routes/ai/protected/chat.ts`.
+ */
+export const CHAT_DEFAULT_MAX_TOKENS = 1024;
+
+/**
+ * Placeholder and help text for the per-feature "Max tokens" input (HOS-2095).
+ *
+ * The placeholder must name only a default the server really uses. Today only
+ * the chat features read `params.maxTokens`; no other feature applies `params`.
+ *
+ * @param input - The feature the input belongs to.
+ * @returns `placeholder` (empty when the feature has no default) and `helpText`.
+ */
+export function getMaxTokensHint(input: { readonly featureId: AiFeatureId }): {
+    readonly placeholder: string;
+    readonly helpText: string;
+} {
+    if (CHAT_FEATURES.includes(input.featureId)) {
+        return {
+            placeholder: String(CHAT_DEFAULT_MAX_TOKENS),
+            helpText: `Output cap for each answer. Leave empty to use ${CHAT_DEFAULT_MAX_TOKENS}. Models that reason can spend the whole cap before writing; raise it if answers come back empty.`
+        };
+    }
+    return {
+        placeholder: '',
+        helpText: 'Not applied yet for this feature: it ignores the model parameters.'
     };
 }

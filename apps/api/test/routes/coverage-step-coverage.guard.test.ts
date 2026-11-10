@@ -151,6 +151,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'venue/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
+    'venue/admin/changeBusinessLines.ts': { operation: 'EDIT' },
     'venue/admin/patch.ts': { operation: 'EDIT' },
     'venue/admin/purge.ts': { operation: 'DELETE' },
     'venue/admin/removeFaq.ts': { operation: 'EDIT' },
@@ -213,14 +214,27 @@ const accessOperation =
     /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE|REACTIVATE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
+    it('keeps section step 4b before coverage step 5', () => {
+        const resolver = readFileSync(
+            join(
+                import.meta.dirname,
+                '../../../../packages/verticals/src/authorization/resolve-listing-access.ts'
+            ),
+            'utf8'
+        );
+        const sectionGate = resolver.indexOf("evaluatedSteps.push('4b')");
+        const coverageGate = resolver.indexOf('OPERATION_PASSES_STEP5[args.operation]');
+        expect(sectionGate).toBeGreaterThan(-1);
+        expect(coverageGate).toBeGreaterThan(sectionGate);
+    });
     const actual = ['accommodation', 'venue', 'experience']
         .flatMap((vertical) => routeFiles(join(ROUTES_DIR, vertical), vertical))
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 137 route files', () => {
+    it('discovers exactly the frozen 138 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(137);
+        expect(Object.keys(EXPECTED)).toHaveLength(138);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

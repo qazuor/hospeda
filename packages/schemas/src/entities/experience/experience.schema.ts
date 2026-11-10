@@ -14,6 +14,7 @@ import { TagsFields } from '../../common/tags.schema.js';
 import { ExperiencePriceUnitEnumSchema, ExperienceTypeEnumSchema } from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { ExperienceFaqSchema } from './subtypes/experience.faq.schema.js';
+import { ExperiencePoliciesSchema } from './subtypes/experience.policies.schema.js';
 
 /**
  * Unique identifier schema for an experience listing.
@@ -136,10 +137,10 @@ function experienceChecklistSchema(input: {
  *   back from the database, and the instructions are withheld, never deleted.
  * - `durationMinutes` — how long it lasts, in minutes (HOS-898)
  * - `whatToBring` / `requirements` — two free-text checklists (HOS-1046)
- * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
- * - `acceptsPrivateGroups` — group-enquiry toggle (HOS-1056)
+ * - `policies` — house rules, including the cancellation text (HOS-1047) and
+ *   the private-groups toggle (HOS-1056), both moved there by HOS-2060
  *
- * Those four are ficha data too, and like the meeting point they are NEVER
+ * Those are ficha data too, and like the meeting point they are NEVER
  * entitlement-gated: owner decision (2026-09-01), they ship from the basic
  * tier. Do not add an `EntitlementKey` for any of them.
  *
@@ -340,36 +341,13 @@ export const ExperienceSchema = z.object({
     }),
 
     /**
-     * What happens when the experience does not run — rain, wind, a low river,
-     * not reaching the minimum group size (HOS-1047).
-     *
-     * FREE TEXT, which is the decision HOS-1047 delegated. A structured
-     * (deadline + outcome) policy only earns its complexity once money has
-     * changed hands and something must be computed from it — that is HOS-1050
-     * (deposits), and it is deferred. Until then the only consumer is a person
-     * reading the ficha, and prose says "si baja el río reprogramamos sin
-     * cargo" in a way no enum pair does.
-     *
-     * Nullish; NOT entitlement-gated.
+     * Structured house rules (HOS-2060): payment methods, pets, smoking,
+     * events, private groups (HOS-1056) and the free-text cancellation policy
+     * (HOS-1047). Nullish: the column is nullable. Absent keys mean "not
+     * informed". An update merges per top-level key (see the experience
+     * service).
      */
-    cancellationPolicy: z
-        .string()
-        .max(1500, { message: 'zodError.experience.cancellationPolicy.max' })
-        .nullish(),
-
-    /**
-     * Whether the provider offers a special arrangement for private groups
-     * (HOS-1056).
-     *
-     * A single flag on purpose: it turns on a CTA to contact the provider and
-     * nothing else — no rate card, no quote calculator, no group booking. The
-     * toggle captures the intent; the conversation closes the deal.
-     *
-     * Defaults to `false` and is never nullish, mirroring
-     * {@link isPriceOnRequest}: for a CTA that only appears when the flag is
-     * on, "did not say" and "does not offer it" are the same answer.
-     */
-    acceptsPrivateGroups: z.boolean().default(false),
+    policies: ExperiencePoliciesSchema.nullish(),
 
     // Linked destination and owner
     destinationId: DestinationIdSchema,

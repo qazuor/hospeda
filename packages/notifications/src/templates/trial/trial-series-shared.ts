@@ -26,17 +26,21 @@
  * (still ahead, today, already past).
  */
 export interface TrialSeriesEmailProps {
-    /** Host's display name. */
-    readonly recipientName: string;
-    /** Display name of the plan the trial was running on. */
-    readonly planName: string;
+    /** Host's display name. `null`/`undefined`/blank renders a bare "Hola,". */
+    readonly recipientName?: string | null;
+    /**
+     * Display name of the plan the trial was running on. Optional: the outbox
+     * path never knows the plan, and when it is absent the templates drop the
+     * "del plan X" fragment instead of inventing a name (HOS-2078).
+     */
+    readonly planName?: string | null;
     /** ISO date at which the trial ends (or ended). */
     readonly trialEndDate: string;
     /** Vertical-specific pricing page, carrying the interval the customer originally chose. */
     readonly upgradeUrl: string;
     /**
      * The trial's billing vertical (HOS-1283) — the raw
-     * `billing_subscriptions.product_domain` string, e.g. `'accommodation'` /
+     * product-domain string supplied by the caller, e.g. `'accommodation'` /
      * `'venue'` / `'experience'`, or `null`/`undefined` on a pre-domain
      * row. Every template that names a listing, its photos, or what shows up
      * in a search resolves this via `resolveTrialSeriesCopy`
@@ -47,6 +51,39 @@ export interface TrialSeriesEmailProps {
     readonly productDomain?: string | null;
     /** Verticales nombradas por la pieza consolidada; con varias, se nombran todas. */
     readonly verticals?: readonly string[];
+}
+
+/**
+ * Builds the greeting line of a trial series email.
+ *
+ * @param input - Greeting input
+ * @param input.recipientName - Display name; blank, null or undefined yields "Hola,"
+ * @returns "Hola {name}," or "Hola,"
+ */
+export function formatTrialGreeting({
+    recipientName
+}: {
+    readonly recipientName?: string | null;
+}): string {
+    const name = recipientName?.trim();
+    return name ? `Hola ${name},` : 'Hola,';
+}
+
+/**
+ * Normalizes an optional plan name: blank, null or undefined becomes `undefined`
+ * so templates can render the "del plan X" fragment only when it is real.
+ *
+ * @param input - Plan name input
+ * @param input.planName - Raw plan name
+ * @returns The trimmed plan name, or `undefined` when there is none
+ */
+export function resolveTrialPlanName({
+    planName
+}: {
+    readonly planName?: string | null;
+}): string | undefined {
+    const name = planName?.trim();
+    return name ? name : undefined;
 }
 
 /**

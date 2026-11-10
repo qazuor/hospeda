@@ -161,7 +161,10 @@ async function createArchivedPair(): Promise<{ ownerId: string; pb4: string; pb5
                 type: 'CABIN',
                 publicationStatus: status,
                 ...(status === PublicationStatusEnum.PUBLISHED
-                    ? { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } }
+                    ? {
+                          extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                          policies: { paymentMethods: ['cash'], minNights: 1 }
+                      }
                     : {})
             } as Partial<Accommodation>,
             db

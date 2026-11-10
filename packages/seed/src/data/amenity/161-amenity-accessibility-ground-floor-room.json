@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "161-amenity-accessibility-ground-floor-room",
+    "slug": "ground_floor_room",
+    "description": {
+        "es": "Al menos una habitación en planta baja",
+        "en": "At least one bedroom on the ground floor",
+        "pt": "Pelo menos um quarto no térreo"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ACCESSIBILITY",
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

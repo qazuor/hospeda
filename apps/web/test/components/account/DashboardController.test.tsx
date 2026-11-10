@@ -36,7 +36,9 @@ vi.mock('@/components/account/WhatsNewModal.client', () => ({
 describe('DashboardController D12 gate', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetWelcomeToursForRoles.mockReturnValue([{ id: 'web.host.welcome', version: 1 }]);
+        mockGetWelcomeToursForRoles.mockReturnValue([
+            { id: 'web.host.welcome', version: 1, page: 'dashboard' }
+        ]);
     });
 
     it('does not auto-open whats-new when welcome tour is pending', () => {
@@ -115,6 +117,30 @@ describe('DashboardController D12 gate', () => {
 
         const modal = screen.getByTestId('whats-new-modal');
         expect(modal).toHaveAttribute('data-open', 'false');
+    });
+
+    it('does not gate whats-new on a tour that belongs to another page', () => {
+        mockGetWelcomeToursForRoles.mockReturnValue([
+            { id: 'web.venue.welcome', version: 1, page: 'comercio' }
+        ]);
+        mockUseTourState.mockReturnValue({ isLoading: false, hasSeen: () => false });
+        mockUseWhatsNew.mockReturnValue({
+            items: [
+                { id: '1', title: 'Test', body: 'x', publishedAt: '', highlight: true, seen: false }
+            ],
+            isLoading: false
+        });
+
+        render(
+            <DashboardController
+                locale="es"
+                userRoles={['VENUE_OWNER']}
+            />
+        );
+
+        // A pending `comercio` tour must not suppress What's New on the
+        // dashboard. (HOS-1856)
+        expect(screen.getByTestId('whats-new-modal')).toHaveAttribute('data-open', 'true');
     });
 
     it('skips tour gate when no tour exists for role', () => {

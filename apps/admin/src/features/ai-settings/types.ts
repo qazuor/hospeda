@@ -15,6 +15,8 @@
  */
 export type { AiProviderModel, AiSyncModelsResult } from '@repo/schemas';
 
+import type { AiModelRate } from '@repo/schemas';
+
 /** AI provider identifier — any non-empty string (e.g. 'openai', 'ollama', 'groq'). */
 export type AiProviderId = string;
 
@@ -81,6 +83,13 @@ export interface AiSettingsValue {
     readonly providers: AiProvidersMap;
     readonly features: AiFeaturesMap;
     readonly costCeilings?: AiCostCeilings;
+    /**
+     * Per-model cost rate overrides. Not editable in this UI, but it must exist on
+     * the type so a save round-trips it (the PUT replaces the whole blob, HOS-2096).
+     */
+    readonly modelRates?: Readonly<Record<string, AiModelRate>>;
+    /** Opt-in moderation provider. Not editable in this UI; round-tripped on save (HOS-2096). */
+    readonly moderation?: { readonly providerId: AiProviderId };
 }
 
 /** API response shape for GET /api/v1/admin/ai/settings. */

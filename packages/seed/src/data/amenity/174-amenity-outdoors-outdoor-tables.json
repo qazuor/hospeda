@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "174-amenity-outdoors-outdoor-tables",
+    "slug": "outdoor_tables",
+    "description": {
+        "es": "Mesas al aire libre para comer o tomar algo afuera",
+        "en": "Outdoor tables to eat or have a drink outside",
+        "pt": "Mesas ao ar livre para comer ou beber algo do lado de fora"
+    },
+    "applicableVerticals": ["venue"],
+    "type": "OUTDOORS",
+    "icon": "OutdoorFurnitureIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70
+}

@@ -12,9 +12,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createVenueConsolidatedConfig } from '../config/venue-consolidated.config';
+import { useChangeVenueBusinessLinesMutation } from './useChangeVenueBusinessLinesMutation';
 import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
 
 /**
@@ -40,6 +42,8 @@ export const useVenuePage = (entityId: string) => {
 
     const query = useVenueQuery(entityId);
     const updateMutationResult = useUpdateVenueMutation();
+    const changeBusinessLinesMutation = useChangeVenueBusinessLinesMutation();
+    const { user } = useAuthContext();
 
     const entityConfig = useMemo(() => {
         const consolidatedConfig = createVenueConsolidatedConfig(t);
@@ -110,12 +114,35 @@ export const useVenuePage = (entityId: string) => {
             // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
             // (Calling it directly silently no-ops: id/data come through
             // undefined, the PATCH never fires, and the save looks dead.)
-            mutateAsync: (values: Record<string, unknown>) =>
-                updateMutationResult.mutateAsync({
+            //
+            // HOS-1875: on a foreign venue the general update is action 15 and
+            // rejects `businessLines`. The classification travels FIRST through
+            // the dedicated ACC:27 route — before the rest of the payload,
+            // because a content field of a section the new line brings (e.g.
+            // `nightInfo` on adding `nightlife`) would otherwise answer 409
+            // `SECTION_ABSENT` against the old selection. An own venue keeps the
+            // single general update: the dedicated route refuses the owner.
+            mutateAsync: async (values: Record<string, unknown>) => {
+                const ownerId = query.data?.ownerId ?? null;
+                const isForeign = Boolean(user?.id && ownerId && ownerId !== user.id);
+                const { businessLines, ...rest } = values;
+                if (isForeign && businessLines !== undefined) {
+                    await changeBusinessLinesMutation.mutateAsync({
+                        id: entityId,
+                        businessLines: businessLines as readonly string[]
+                    });
+                    if (!Object.values(rest).some((value) => value !== undefined)) return;
+                    return updateMutationResult.mutateAsync({
+                        id: entityId,
+                        data: rest as Parameters<typeof updateMutationResult.mutateAsync>[0]['data']
+                    });
+                }
+                return updateMutationResult.mutateAsync({
                     id: entityId,
                     data: values as Parameters<typeof updateMutationResult.mutateAsync>[0]['data']
-                }),
-            isLoading: updateMutationResult.isPending
+                });
+            },
+            isLoading: updateMutationResult.isPending || changeBusinessLinesMutation.isPending
         },
 
         entityType: 'venue',

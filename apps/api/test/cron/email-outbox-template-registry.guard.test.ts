@@ -170,6 +170,9 @@ const ENQUEUE_SITES: Readonly<
     ],
     'packages/service-core/src/services/listing/listing-support-edit.ts': [
         'verticals.listing-content-edited-by-support'
+    ],
+    'packages/service-core/src/services/listing/listing-business-lines-change.ts': [
+        'verticals.listing-business-lines-changed'
     ]
 };
 

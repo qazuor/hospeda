@@ -19,7 +19,11 @@
  */
 
 import type { AccommodationSearchInput } from '@repo/schemas';
-import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
+import {
+    AccommodationTypeEnum,
+    LISTING_PETS_ALLOWED_ADMISSIONS,
+    PriceCurrencyEnum
+} from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -105,6 +109,22 @@ function buildAnyAmenityClause(amenityIds: readonly string[]): SQL<unknown> {
         FROM ${rAccommodationAmenity}
         WHERE "r_accommodation_amenity"."amenity_id" IN (${idList})
     )`;
+}
+
+/**
+ * Build the `allowsPets` clause (HOS-2060): the listing's
+ * `policies.pets.admission` is one of `LISTING_PETS_ALLOWED_ADMISSIONS`
+ * (`yes`, `on_request`). The policy is the only source: the `pet_friendly`
+ * amenity was folded into it by migration 0194 and retired.
+ *
+ * No index: the spec allows one only once a measured query needs it.
+ */
+export function buildAllowsPetsClause(): SQL<unknown> {
+    const admissions = sql.join(
+        LISTING_PETS_ALLOWED_ADMISSIONS.map((admission) => sql`${admission}`),
+        sql`, `
+    );
+    return sql<unknown>`(${accommodations.policies}->'pets'->>'admission') IN (${admissions})`;
 }
 
 /**
@@ -292,6 +312,9 @@ export function buildAccommodationSearchConditions({
             clauses.push(group.length === 0 ? sql<unknown>`FALSE` : buildAnyAmenityClause(group));
         }
     }
+    if (params.allowsPets === true) {
+        clauses.push(buildAllowsPetsClause());
+    }
     if (params.features && params.features.length > 0) {
         // Intersection semantics: accommodation must have ALL provided feature IDs.
         clauses.push(buildFeatureIntersectionClause(params.features));
@@ -446,6 +469,7 @@ export const ACCOMMODATION_SEARCH_FILTER_HANDLING: Readonly<
         kind: 'builder',
         sample: { anyAmenityGroups: [['11111111-1111-4111-8111-111111111111']] }
     },
+    allowsPets: { kind: 'builder', sample: { allowsPets: true } },
     includeAmenities: { kind: 'elsewhere', reason: 'relation projection, not a row filter' },
     includeFeatures: { kind: 'elsewhere', reason: 'relation projection, not a row filter' },
     ownerId: { kind: 'builder', sample: { ownerId: '11111111-1111-4111-8111-111111111111' } },

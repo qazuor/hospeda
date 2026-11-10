@@ -982,12 +982,20 @@ export class RevalidationService {
      * UUIDs and slugs in the same column).
      *
      * All four content types (accommodation, destination, event, post) forward
-     * `id` since HOS-424. Before that only `accommodation` did, and this
+     * `id` since HOS-424. The listing types (venue, experience, attraction,
+     * partner, pointOfInterest) have declared `id` since HOS-369 W2-4 but were
+     * missing from this switch, so their purges logged a NULL `entity_id` until
+     * HOS-1871 — an audit row that existed but could not be found by the id the
+     * caller already had. Before HOS-424 only `accommodation` did, and this
      * function's own comment claimed otherwise — which is how it went unnoticed
      * that a post write purged `post-<slug>` but never `post-<id>`, while the
      * detail page tags itself with both. Do not weaken a call site back to
      * slug-only: the missing tag fails silently, since the purge still reports
      * success for the tags it did carry.
+     *
+     * The `default` arm is exhaustive on purpose: a new `EntityChangeData`
+     * variant must break the typecheck here instead of falling through to
+     * `undefined` and writing yet another unqueryable log row.
      *
      * Returns undefined when no specific entity instance is identifiable.
      */
@@ -997,6 +1005,11 @@ export class RevalidationService {
             case 'destination':
             case 'event':
             case 'post':
+            case 'venue':
+            case 'experience':
+            case 'attraction':
+            case 'partner':
+            case 'pointOfInterest':
                 // The canonical UUID when the call site had one; undefined
                 // otherwise. The slug is deliberately NOT used as a fallback —
                 // mixing UUIDs and slugs in one column makes `entity_id`
@@ -1011,6 +1024,10 @@ export class RevalidationService {
             case 'tag':
             case 'amenity':
                 return undefined;
+            default: {
+                const _exhaustive: never = event;
+                return _exhaustive;
+            }
         }
     }
 

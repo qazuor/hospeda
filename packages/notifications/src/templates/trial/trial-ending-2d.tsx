@@ -4,7 +4,12 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /** Aviso de dos días antes del fin de la prueba. */
 export function TrialEnding2Days({
@@ -14,6 +19,8 @@ export function TrialEnding2Days({
     upgradeUrl,
     verticals
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
+    const planFragment = plan ? ` del plan ${plan}` : '';
     const endDate = formatDate({ dateString: trialEndDate });
     return (
         <EmailLayout
@@ -21,14 +28,14 @@ export function TrialEnding2Days({
             showUnsubscribe={true}
         >
             <Heading>Te quedan 2 días de prueba</Heading>
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.
                 </Text>
             ) : null}
             <Text style={styles.paragraph}>
-                En dos días termina tu prueba del plan {planName}. Después, tu publicación deja de
+                En dos días termina tu prueba{planFragment}. Después, tu publicación deja de
                 aparecer en Hospeda hasta que elijas un plan.
             </Text>
             <Section style={styles.warningBox}>

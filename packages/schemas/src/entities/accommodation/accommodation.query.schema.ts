@@ -146,6 +146,14 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
      */
     anyAmenityGroups: z.array(z.array(z.string().uuid())).optional(),
     /**
+     * "Pets allowed" (HOS-2060). Matches a listing whose `policies.pets.admission`
+     * is one of `LISTING_PETS_ALLOWED_ADMISSIONS` (`yes`, `on_request`). The
+     * policy is the only source: pets are a house rule, not an amenity. Only
+     * `true` filters; absent or `false` is a no-op, like the other boolean
+     * shortcuts.
+     */
+    allowsPets: z.boolean().optional(),
+    /**
      * Opt-in projection flag: include the accommodation's amenities as a
      * relation array on each row of the search result. Off by default to
      * keep the public listing query cheap; turn on only for views that

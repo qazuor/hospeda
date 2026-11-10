@@ -49,6 +49,22 @@ describe('AmenityService.search', () => {
         expect(result.data?.items).toHaveLength(1);
     });
 
+    it('should exclude soft-deleted (retired) amenities (regression)', async () => {
+        // Arrange — AmenityModel.findAll applies no soft-delete default, so before the
+        // fix GET /public/amenities also returned the amenities retired by data
+        // migration 0147, and the public filters rendered them as raw-slug chips.
+        asMock(amenityModelMock.findAll).mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, searchParams);
+
+        // Assert
+        expect(asMock(amenityModelMock.findAll).mock.calls[0]?.[0]).toEqual({
+            slug: 'test-amenity',
+            deletedAt: null
+        });
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(amenityModelMock.findAll).mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, searchParams);

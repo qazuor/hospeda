@@ -31,7 +31,15 @@ const VALID: Readonly<Record<ListingNotice['kind'], ListingNotice>> = {
         at: AT,
         fixRequestOpen: false
     },
-    SURPLUS: { kind: 'SURPLUS' }
+    SURPLUS: { kind: 'SURPLUS' },
+    BUSINESS_LINES_CHANGED: {
+        kind: 'BUSINESS_LINES_CHANGED',
+        at: AT,
+        addedLines: ['nightlife'],
+        removedLines: [],
+        shownSections: ['nightInfo'],
+        hiddenSections: []
+    }
 };
 
 describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
@@ -46,6 +54,23 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
     it('rejects a kind outside the closed list', () => {
         // Arrange
         const notice = { kind: 'DELETED_BY_ADMIN' };
+
+        // Act
+        const result = ListingNoticeSchema.safeParse(notice);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a BUSINESS_LINES_CHANGED notice without its lists', () => {
+        // Arrange
+        const notice = {
+            kind: 'BUSINESS_LINES_CHANGED',
+            at: AT,
+            addedLines: ['nightlife'],
+            removedLines: [],
+            shownSections: ['nightInfo']
+        };
 
         // Act
         const result = ListingNoticeSchema.safeParse(notice);

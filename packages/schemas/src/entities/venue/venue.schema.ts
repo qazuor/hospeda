@@ -1,7 +1,10 @@
 import { z } from 'zod';
+import type { ReviewDimensionId } from '../../catalog/review-dimensions.js';
+import { REVIEW_RULES } from '../../catalog/review-dimensions.js';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
+import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
@@ -10,11 +13,46 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { VenueRatingSchema } from '../../common/venue-rating.schema.js';
-import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
+import {
+    PriceRangeEnumSchema,
+    VenueEntryKindEnumSchema,
+    VenueTypeEnumSchema
+} from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
 import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
+import { VenuePoliciesSchema } from './subtypes/venue.policies.schema.js';
+
+const VenueRatingDimensionSchema = z.object({
+    average: z.number(),
+    count: z.number().int().nonnegative()
+});
+const VenueRatingSchema = z
+    .object(
+        Object.fromEntries(
+            REVIEW_RULES.venue.dimensions.map(({ id }: { readonly id: string }) => [
+                id,
+                VenueRatingDimensionSchema
+            ])
+        )
+    )
+    .partial() as z.ZodType<
+    Partial<Record<ReviewDimensionId<'venue'>, { average: number; count: number }>>
+>;
+
+/**
+ * Short localized note for one `nightInfo` sub-field (DEC-FAC-036).
+ *
+ * Deliberately capped per locale: this text sits next to a badge on the public
+ * page, not in the description. The 200-character ceiling is a product call
+ * (HOS-1846 orchestration note), not a database constraint — the column is
+ * plain JSONB.
+ */
+const VenueNightNoteSchema = I18nTextSchema.extend({
+    es: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
+    en: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
+    pt: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' })
+});
 
 /**
  * venue Entity Schema — listing for food and beverage venues.
@@ -55,6 +93,45 @@ export const VenueSchema = z.object({
      * Nullish: a new listing may not have a price range assigned yet.
      */
     priceRange: PriceRangeEnumSchema.nullish(),
+
+    /**
+     * Nightlife entry kind (`nightInfo`, HOS-1846 / DEC-FAC-036).
+     * Nullish: the section belongs to the `nightlife` business line and may be
+     * empty even there.
+     */
+    entryKind: VenueEntryKindEnumSchema.nullish(),
+
+    /** Short localized note about the entry (e.g. "free until 1am"). */
+    entryNoteI18n: VenueNightNoteSchema.nullish(),
+
+    /**
+     * Cover-charge floor in cents. Only valid while {@link entryKind} is
+     * `paid`; the shape rule lives in the service (`venue.night-info.ts`) and
+     * the database CHECK (DEC-FAC-058). Non-negative and integral.
+     */
+    entryPriceFrom: z
+        .number()
+        .int({ message: 'zodError.venue.entryPriceFrom.int' })
+        .nonnegative({ message: 'zodError.venue.entryPriceFrom.nonnegative' })
+        .nullish(),
+
+    /**
+     * When {@link entryPriceFrom} last changed. SERVER-MANAGED: absent from
+     * every create/update input (`.omit` names it), written only by
+     * `venue.night-info.ts` when the price actually changes (DEC-FAC-058).
+     */
+    entryPriceUpdatedAt: z.coerce
+        .date({ message: 'zodError.venue.entryPriceUpdatedAt.invalid' })
+        .nullish(),
+
+    /**
+     * Structured house rules (HOS-2060): payment methods, pets, smoking,
+     * events, reservations, minimum age and dress code. Nullish: the column is
+     * nullable. Absent keys mean "not informed". An update merges per
+     * top-level key (see the venue service); `minAge`, `dressCode` and
+     * `dressCodeNote` belong to the nightInfo section (DEC-FAC-040).
+     */
+    policies: VenuePoliciesSchema.nullish(),
 
     /**
      * URL linking to the venue's online menu.

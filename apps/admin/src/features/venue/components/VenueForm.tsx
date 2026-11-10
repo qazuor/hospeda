@@ -18,6 +18,7 @@ import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,17 +47,10 @@ export interface VenueFormProps {
 // Option lists
 // ---------------------------------------------------------------------------
 
-const VENUE_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }> = [
-    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: VenueTypeEnum.BAR, label: 'Bar' },
-    { value: VenueTypeEnum.CAFE, label: 'Café' },
-    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
-];
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 const PRICE_RANGE_OPTIONS: ReadonlyArray<{ value: PriceRangeEnum; label: string }> = [
     { value: PriceRangeEnum.BUDGET, label: 'Económico ($)' },
@@ -112,6 +106,7 @@ export function VenueForm({
     isPending = false,
     submitLabel = 'Guardar'
 }: VenueFormProps) {
+    const { t } = useTranslations();
     const [globalError, setGlobalError] = React.useState<string | null>(null);
 
     const form = useForm<VenueFormValues>({
@@ -297,10 +292,19 @@ export function VenueForm({
                                                 key={opt.value}
                                                 value={opt.value}
                                             >
-                                                {opt.label}
+                                                {t(
+                                                    opt.labelKey as `admin-entities.venue.types.${VenueTypeEnum}`
+                                                )}
                                             </option>
                                         ))}
                                     </select>
+                                    {field.state.value ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            {t(
+                                                `admin-entities.venue.typeDescriptions.${field.state.value}`
+                                            )}
+                                        </p>
+                                    ) : null}
                                 </FieldWrapper>
                             )}
                         </form.Field>
@@ -343,37 +347,6 @@ export function VenueForm({
                                 </FieldWrapper>
                             )}
                         </form.Field>
-
-                        {/* Menu URL */}
-                        <div className="sm:col-span-2">
-                            <form.Field name="menuUrl">
-                                {(field) => (
-                                    <FieldWrapper
-                                        label="URL del menú online"
-                                        htmlFor={field.name}
-                                        error={
-                                            field.state.meta.isTouched
-                                                ? field.state.meta.errors.join(', ')
-                                                : undefined
-                                        }
-                                    >
-                                        <input
-                                            id={field.name}
-                                            name={field.name}
-                                            type="url"
-                                            value={(field.state.value as string) ?? ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(e.target.value || undefined)
-                                            }
-                                            placeholder="https://tu-restaurante.com/menu"
-                                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                            disabled={isPending}
-                                        />
-                                    </FieldWrapper>
-                                )}
-                            </form.Field>
-                        </div>
 
                         {/* Destination ID */}
                         <form.Field

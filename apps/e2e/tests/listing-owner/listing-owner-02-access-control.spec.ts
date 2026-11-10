@@ -14,7 +14,7 @@
  *      keeps access.)
  *
  *   2. CROSS-OWNER BLOCKED — a logged-in VENUE_OWNER (Julieta) navigating
- *      to another owner's (Rodrigo's) venue editor is redirected back to
+ *      to another owner's (Rodrigo's) venue CARTA is redirected back to
  *      /es/mi-cuenta/comercio/ (her own listing index). The gate lives in:
  *        apps/web/src/lib/editor/resolve-listing-editor-page.ts (the shared front door)
  *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
@@ -167,13 +167,18 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Attempt to open Rodrigo's venue editor ───────────────────
+        // ── Attempt to open Rodrigo's CARTA ──────────────────────────
         // Julieta's role IS VENUE_OWNER so the role gate passes.
         // The ownership gate in `resolveListingEditorPage` checks
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
         // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
-        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_VENUE_ID}/editar`;
+        //
+        // The CARTA section is the page that now renders `#ce-menuUrl`
+        // (DEC-FAC-062), so landing there would put the field on screen. Asking
+        // for it — not the hub — is what makes the absence check below prove the
+        // gate instead of an empty section page.
+        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_VENUE_ID}/editar/carta/`;
         await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
 
         // The ownership gate redirects to /[lang]/mi-cuenta/comercio/ (her index).
@@ -181,11 +186,13 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/`);
 
         // Additionally confirm the venue editor input is NOT present on this page.
-        // #ce-menuUrl is the stable, unique id for the venue editor's menuUrl field
-        // inside ListingEditor. Its absence confirms we landed on the listing index
-        // (which has no editor island) rather than the editor page. Using toHaveCount(0)
-        // avoids strict-mode multi-match violations — it passes even if the selector would
-        // theoretically match zero OR many elements, since we only care about absence.
+        // #ce-menuUrl is the stable, unique id for the venue editor's menu-link
+        // field, mounted by the CARTA section (DEC-FAC-062 moved it out of
+        // price; HOS-1787 leaf 5.3). Its absence confirms we landed on the
+        // listing index (which has no editor island) rather than any editor
+        // page. Using toHaveCount(0) avoids strict-mode multi-match violations —
+        // it passes even if the selector would theoretically match zero OR many
+        // elements, since we only care about absence.
         await expect(page.locator('#ce-menuUrl')).toHaveCount(0);
     });
 });

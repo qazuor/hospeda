@@ -33,93 +33,96 @@
         "running": "Tour en curso...",
         "greetingTourist": {
             "title": "Bienvenido a Hospeda",
-            "body": "Este es tu panel de cuenta. Te mostramos rapido donde encontrar tus favoritos, tus alertas de precio y tus consultas con anfitriones."
+            "body": "Este es tu panel de cuenta. Te mostramos rápido dónde encontrar tus favoritos, tus alertas de precio y tus consultas con anfitriones."
         },
         "favorites": {
             "title": "Tus favoritos",
-            "body": "Guarda los alojamientos que te interesan para encontrarlos facil mas adelante."
+            "body": "Guardá los alojamientos que te interesan para encontrarlos fácil más adelante."
         },
         "alerts": {
             "title": "Alertas de precio",
-            "body": "Activa alertas para enterarte cuando baje el precio de un alojamiento que te interesa."
+            "body": "Activá alertas para enterarte cuando baje el precio de un alojamiento que te interesa."
         },
         "reviews": {
             "title": "Tus reseñas",
-            "body": "Revisa las reseñas que dejaste sobre tus estadias."
+            "body": "Revisá las reseñas que dejaste sobre tus estadías."
         },
         "inbox": {
             "title": "Tus consultas",
-            "body": "Segui las conversaciones que tenes con los anfitriones."
+            "body": "Seguí las conversaciones que tenés con los anfitriones."
         },
         "greetingHost": {
             "title": "Bienvenido a tu panel de hospedaje",
-            "body": "Desde aca podes gestionar tu cuenta, tus propiedades y la actividad de tu alojamiento."
+            "body": "Desde acá podés gestionar tu cuenta, tus propiedades y la actividad de tu alojamiento."
         },
         "properties": {
             "title": "Tus propiedades",
-            "body": "En esta seccion podes crear, editar y revisar todas tus propiedades."
+            "body": "En esta sección podés crear, editar y revisar todas tus propiedades."
         },
         "hostDashboard": {
-            "title": "Panel del anfitrion",
-            "body": "Aca tenes un resumen rapido de la actividad de tus alojamientos y consultas."
+            "title": "Panel del anfitrión",
+            "body": "Acá tenés un resumen rápido de la actividad de tus alojamientos y consultas."
         },
         "messages": {
             "title": "Tus consultas",
-            "body": "Revisa y responde los mensajes vinculados a tu actividad en Hospeda."
+            "body": "Revisá y respondé los mensajes vinculados a tu actividad en Hospeda."
         },
         "promotions": {
             "title": "Promociones",
-            "body": "Publica y administra promociones para destacar tu propuesta."
+            "body": "Publicá y administrá promociones para destacar tu propuesta."
         },
         "profile": {
             "title": "Tu perfil",
-            "body": "Actualiza tu informacion personal, preferencias y configuracion de cuenta."
+            "body": "Actualizá tu información personal, preferencias y configuración de cuenta."
         },
         "listing": {
             "title": "Tu comercio",
-            "body": "Edita el contenido, horarios y datos visibles de tu comercio."
+            "body": "Editá el contenido, los horarios y los datos visibles de tu comercio."
         },
         "greetingVenue": {
             "title": "Bienvenido a tu panel de Comer y salir",
-            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local."
+            "body": "Desde acá podés gestionar tu cuenta y el contenido público de tu local."
         },
         "listingVenue": {
-            "body": "Edita el menu, los horarios y los datos visibles de tu local."
+            "body": "Editá la carta o barra, los horarios y los datos visibles de tu local."
+        },
+        "listingVenueNoMenu": {
+            "body": "Editá los horarios y los datos visibles de tu local."
         },
         "myListings": {
             "title": "Tus comercios",
-            "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
+            "body": "Revisá el estado de cada uno de tus comercios y entrá a editarlos."
         },
         "venueQr": {
-            "title": "QR de tu menu",
-            "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
+            "title": "QR de tu carta o barra",
+            "body": "Generá el código QR de tu carta o barra y consultá cuántas veces lo escanearon tus clientes."
         },
         "listingViews": {
             "title": "Visitas a tu ficha",
-            "body": "Segui cuantas personas vieron la ficha publica de tu comercio."
+            "body": "Seguí cuántas personas vieron la ficha pública de tu comercio."
         },
         "greetingExperience": {
             "title": "Bienvenido a tu panel de experiencias",
-            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu experiencia."
+            "body": "Desde acá podés gestionar tu cuenta y el contenido público de tu experiencia."
         },
         "listingExperience": {
-            "body": "Edita la descripcion, los horarios y los datos visibles de tu experiencia."
+            "body": "Editá la descripción, los horarios y los datos visibles de tu experiencia."
         },
         "greetingEditor": {
             "title": "Bienvenido a tu panel de editor",
-            "body": "Desde aca podes publicar y gestionar tus publicaciones y eventos en Hospeda."
+            "body": "Desde acá podés publicar y gestionar tus publicaciones y eventos en Hospeda."
         },
         "myPosts": {
             "title": "Tus publicaciones",
-            "body": "Crea, edita y revisa el estado de tus publicaciones."
+            "body": "Creá, editá y revisá el estado de tus publicaciones."
         },
         "myEvents": {
             "title": "Tus eventos",
-            "body": "Crea, edita y revisa el estado de tus eventos."
+            "body": "Creá, editá y revisá el estado de tus eventos."
         },
         "greetingSponsor": {
             "title": "Bienvenido a Hospeda",
-            "body": "Sos aliado sponsor de Hospeda. Tu equipo de contacto en Hospeda gestiona tus patrocinios; escribinos si necesitas modificar algo."
+            "body": "Sos aliado sponsor de Hospeda. Tu equipo de contacto en Hospeda gestiona tus patrocinios; escribinos si necesitás modificar algo."
         }
     },
     "navigation": "Navegación de cuenta",
@@ -166,12 +169,12 @@
                 },
                 "experience": {
                     "title": "Experiencias",
-                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Creá tu cuenta, cargá los datos de tu experiencia y publicala desde tu panel.",
                     "cta": "Publicá tu experiencia"
                 },
                 "venue": {
                     "title": "Comer y salir",
-                    "description": "Sumá tu local a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "description": "Sumá tu local a Hospeda: para comer o salir. Creá tu cuenta, cargá los datos de tu local y publicalo desde tu panel.",
                     "cta": "Publicá tu local"
                 }
             }

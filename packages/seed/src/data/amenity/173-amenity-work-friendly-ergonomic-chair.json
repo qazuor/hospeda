@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "173-amenity-work-friendly-ergonomic-chair",
+    "slug": "ergonomic_chair",
+    "description": {
+        "es": "Silla cómoda para trabajar",
+        "en": "Comfortable chair for working",
+        "pt": "Cadeira confortável para trabalhar"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "WORK_FRIENDLY",
+    "icon": "CoworkingSpaceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

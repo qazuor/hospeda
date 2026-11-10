@@ -16,11 +16,34 @@
  *  - Submit is disabled while isPending
  */
 
+import { VenueTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { VenueForm } from '../components/VenueForm';
+
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        t: (key: string) => {
+            if (!key.startsWith('admin-entities.venue.types.')) return key;
+            const labels: Record<string, string> = {
+                RESTAURANT: 'Restaurante',
+                BAR: 'Bar',
+                CAFE: 'Café',
+                PARRILLA: 'Parrilla',
+                CERVECERIA: 'Cervecería',
+                HELADERIA: 'Heladería',
+                PANADERIA: 'Panadería',
+                ROTISERIA: 'Rotisería',
+                FOOD_TRUCK: 'Food Truck',
+                PUB: 'Pub',
+                BOLICHE: 'Boliche'
+            };
+            return labels[key.split('.').at(-1) ?? ''] ?? key;
+        }
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -61,11 +84,25 @@ describe('VenueForm — rendering', () => {
         renderForm();
         const select = screen.getByRole('combobox', { name: /tipo de establecimiento/i });
         expect(select).toBeInTheDocument();
-        expect(screen.getByText('Restaurante')).toBeInTheDocument();
+        expect(screen.getAllByText('Restaurante').length).toBeGreaterThan(0);
         expect(screen.getByText('Bar')).toBeInTheDocument();
         expect(screen.getByText('Café')).toBeInTheDocument();
         expect(screen.getByText('Parrilla')).toBeInTheDocument();
         expect(screen.getByText('Cervecería')).toBeInTheDocument();
+        expect(screen.getByText('Pub')).toBeInTheDocument();
+        expect(screen.getByText('Boliche')).toBeInTheDocument();
+        const values = Array.from(select.querySelectorAll('option'))
+            .map((option) => option.value)
+            .filter(Boolean);
+        expect(values).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect(values.sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
+    });
+
+    it('shows the selected venue type description below the type selector', () => {
+        renderForm({ defaultValues: { type: VenueTypeEnum.BOLICHE } });
+        expect(
+            screen.getByText('admin-entities.venue.typeDescriptions.BOLICHE')
+        ).toBeInTheDocument();
     });
 
     it('should render the price range select with all options', () => {
@@ -76,9 +113,12 @@ describe('VenueForm — rendering', () => {
         expect(screen.getByText('Premium ($$$$)')).toBeInTheDocument();
     });
 
-    it('should render the menu URL field', () => {
+    it('should not render a menu URL field (HOS-1874)', () => {
         renderForm();
-        expect(screen.getByPlaceholderText(/https:\/\/tu-restaurante\.com/i)).toBeInTheDocument();
+        expect(
+            screen.queryByPlaceholderText(/https:\/\/tu-restaurante\.com/i)
+        ).not.toBeInTheDocument();
+        expect(document.querySelector('input[name="menuUrl"]')).toBeNull();
     });
 
     it('should render the destination ID field', () => {
@@ -157,6 +197,27 @@ describe('VenueForm — interaction', () => {
         fireEvent.submit(form);
 
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    });
+
+    it('should submit without a menuUrl key (HOS-1874)', async () => {
+        const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+        renderForm({
+            onSubmit,
+            defaultValues: {
+                name: 'La Parrilla de Juan',
+                type: 'RESTAURANT' as never,
+                destinationId: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
+                ownerId: 'b2c3d4e5-f6a7-4890-9bcd-ef0123456789'
+            }
+        });
+
+        const form = screen.getByRole('form', { name: /formulario de gastronomía/i });
+        fireEvent.submit(form);
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
+        const payload = onSubmit.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(payload).not.toHaveProperty('menuUrl');
     });
 
     // ── H-88 regression ─────────────────────────────────────────────────────

@@ -54,9 +54,10 @@ describe('transformAccommodationEdit', () => {
                 capacity: 4,
                 bedrooms: 2,
                 bathrooms: 1,
-                beds: 3,
-                minNights: 2
+                beds: 3
             },
+            // HOS-2060: the minimum stay is a house rule now.
+            policies: { minNights: 2, smokingAllowed: 'no' },
             price: { price: 15000, currency: 'ARS' },
             isAvailable: true,
             isFeatured: false,
@@ -97,7 +98,7 @@ describe('transformAccommodationEdit', () => {
         expect(result.bedrooms).toBe(2);
         expect(result.bathrooms).toBe(1);
         expect(result.beds).toBe(3);
-        expect(result.minNights).toBe(2);
+        expect(result.policies).toEqual({ minNights: 2, smokingAllowed: 'no' });
         expect(result.basePrice).toBe(15000);
         expect(result.currency).toBe('ARS');
         expect(result.isAvailable).toBe(true);
@@ -138,7 +139,7 @@ describe('transformAccommodationEdit', () => {
         expect(result.bedrooms).toBeNull();
         expect(result.bathrooms).toBeNull();
         expect(result.beds).toBeNull();
-        expect(result.minNights).toBeNull();
+        expect(result.policies).toEqual({});
         expect(result.basePrice).toBeNull();
         expect(result.currency).toBeNull();
         expect(result.isAvailable).toBe(true);
@@ -232,6 +233,30 @@ describe('transformAccommodationEdit', () => {
         expect(result.amenityAttributes).toEqual({
             'am-1': { scope: 'shared', availability: 'seasonal' },
             'am-3': { scope: 'private', availability: null }
+        });
+    });
+
+    it('reads the extra-charge flag (`isOptional`) as extraCharge, only when true (HOS-2084)', () => {
+        const raw = {
+            id: 'a6b',
+            amenities: [
+                { id: 'am-1', slug: 'pool', scope: null, availability: null, isOptional: true },
+                { id: 'am-2', slug: 'wifi', scope: null, availability: null, isOptional: false },
+                {
+                    id: 'am-3',
+                    slug: 'grill',
+                    scope: 'private',
+                    availability: null,
+                    isOptional: true
+                }
+            ]
+        };
+
+        const result = transformAccommodationEdit({ item: raw });
+
+        expect(result.amenityAttributes).toEqual({
+            'am-1': { scope: null, availability: null, extraCharge: true },
+            'am-3': { scope: 'private', availability: null, extraCharge: true }
         });
     });
 
@@ -359,8 +384,34 @@ describe('transformAmenityList', () => {
         const result = transformAmenityList({ items: raw });
 
         expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({ id: 'am-1', slug: 'wifi', category: 'connectivity' });
-        expect(result[1]).toEqual({ id: 'am-2', slug: 'pool', category: 'leisure' });
+        expect(result[0]).toEqual({
+            id: 'am-1',
+            slug: 'wifi',
+            category: 'connectivity',
+            isFeatured: false
+        });
+        expect(result[1]).toEqual({
+            id: 'am-2',
+            slug: 'pool',
+            category: 'leisure',
+            isFeatured: false
+        });
+    });
+
+    it('should carry isFeatured and displayWeight for the featured-first picker (HOS-2061)', () => {
+        const raw = [
+            { id: 'am-4', slug: 'pool', type: 'OUTDOORS', isFeatured: true, displayWeight: 90 }
+        ];
+
+        const result = transformAmenityList({ items: raw });
+
+        expect(result[0]).toEqual({
+            id: 'am-4',
+            slug: 'pool',
+            category: 'OUTDOORS',
+            isFeatured: true,
+            displayWeight: 90
+        });
     });
 
     it('should handle empty input', () => {

@@ -771,7 +771,7 @@ export class QrCodeService extends BaseCrudService<
      * @param input - Input parameters.
      * @param input.actor - Actor performing the action.
      * @param input.qrCodeId - The code whose scans are being read.
-     * @param input.window - Rolling window, `'7d'` or `'30d'` (default `'30d'`).
+     * @param input.window - Rolling window, `'7d'`, `'30d'` or `'90d'` (default `'30d'`).
      * @returns Service output carrying the aggregate.
      */
     public async getScanStatsForCode(input: {

@@ -20,15 +20,20 @@
 import type { AstroGlobal } from 'astro';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { destinationsApi } from '@/lib/api/endpoints';
-import { transformAmenityList } from '@/lib/api/transforms';
+import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { AmenityData } from '@/lib/api/types';
 import {
     buildEditorHubUrl,
     type EditorRegistry,
     findEditorSectionBySlug
 } from '@/lib/editor/editor-registry';
-import { buildListingEditorRegistry } from '@/lib/editor/listing-editor-registry';
-import { getApiUrl } from '@/lib/env';
+import { loadListingCatalogs } from '@/lib/editor/listing-catalogs';
+import { buildListingEditorErrorResponse } from '@/lib/editor/listing-editor-error-page';
+import {
+    buildListingEditorRegistry,
+    type ListingSectionStates
+} from '@/lib/editor/listing-editor-registry';
+import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
     fetchOwnerListingDetail,
@@ -43,9 +48,11 @@ export type ListingEditorDataNeed = 'catalog' | 'destinations';
 
 /** What a venue/experience editor page gets back. Exactly one of `redirect` / `detail`. */
 export type ListingEditorPageResolution =
-    | { readonly redirect: Response; readonly detail?: undefined }
+    | { readonly redirect: Response; readonly error?: undefined; readonly detail?: undefined }
+    | { readonly error: Response; readonly redirect?: undefined; readonly detail?: undefined }
     | {
           readonly redirect?: undefined;
+          readonly error?: undefined;
           readonly detail: ListingDetail;
           readonly locale: SupportedLocale;
           readonly vertical: VenueOrExperience;
@@ -53,6 +60,11 @@ export type ListingEditorPageResolution =
           /** `null` on the hub, where no section is active. */
           readonly sectionId: string | null;
           readonly registry: EditorRegistry;
+          /**
+           * The section-state map the registry was derived from. Exposed for
+           * leaf 5.2, which renders `locked`/`absent` and must not re-fetch it.
+           */
+          readonly sectionStates: ListingSectionStates;
           readonly amenities: readonly AmenityData[];
           readonly features: readonly AmenityData[];
           readonly destinations: readonly DestinationOption[];
@@ -97,24 +109,10 @@ export async function resolveListingEditorPage({
 
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
-    const isVertical = verticalParam === 'venue' || verticalParam === 'experience';
-    if (!isVertical || !listingId) {
+    if (!isListingEditorVertical(verticalParam) || !listingId) {
         return { redirect: new Response(null, { status: 404 }) };
     }
     const vertical = verticalParam;
-
-    const registry = buildListingEditorRegistry({ vertical });
-    const hubUrl = buildEditorHubUrl({ locale, registry, entityId: listingId });
-
-    // An unknown slug must not render a page claiming to be a section that does
-    // not exist — send it to the hub, which always exists. This is also what
-    // answers a venue point-of-meeting request: the experience-only
-    // sections are absent from a venue registry, so the lookup misses.
-    const section =
-        sectionSlug === null ? null : findEditorSectionBySlug({ registry, slug: sectionSlug });
-    if (sectionSlug !== null && !section) {
-        return { redirect: astro.redirect(hubUrl) };
-    }
 
     const cookieHeader = astro.request.headers.get('cookie') ?? undefined;
     const detail = await fetchOwnerListingDetail({ vertical, id: listingId, cookieHeader });
@@ -127,11 +125,43 @@ export async function resolveListingEditorPage({
     const isStaff = user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN');
     const ownsListing = detail !== null && detail.ownerId === user.id;
     if (!detail || (!ownsListing && !isStaff)) {
-        return { redirect: astro.redirect(buildUrl({ locale, path: registry.indexPath })) };
+        return { redirect: astro.redirect(buildUrl({ locale, path: 'mi-cuenta/comercio' })) };
+    }
+
+    // Leaf 5.1 (DEC-FAC-033): the registry is derived from the catalog filtered
+    // by the resolved state map. A failure here is CLOSED — the API refused to
+    // answer a degraded map (3.12), and the editor must not invent one.
+    const statesResult = await listingAnalyticsApi.getListingSectionStates({
+        vertical,
+        listingId,
+        cookieHeader
+    });
+    if (!statesResult.ok) {
+        return {
+            error: buildListingEditorErrorResponse({
+                locale,
+                retryHref: astro.url.pathname,
+                backHref: buildUrl({ locale, path: 'mi-cuenta/comercio' })
+            })
+        };
+    }
+    const sectionStates: ListingSectionStates = statesResult.data.sections;
+
+    const registry = buildListingEditorRegistry({ vertical, sectionStates });
+    const hubUrl = buildEditorHubUrl({ locale, registry, entityId: listingId });
+
+    // An unknown slug must not render a page claiming to be a section that does
+    // not exist — send it to the hub, which always exists. This is also what
+    // answers a venue point-of-meeting request: the experience-only
+    // sections are absent from a venue registry, so the lookup misses.
+    const section =
+        sectionSlug === null ? null : findEditorSectionBySlug({ registry, slug: sectionSlug });
+    if (sectionSlug !== null && !section) {
+        return { redirect: astro.redirect(hubUrl) };
     }
 
     const { amenities, features } = need.includes('catalog')
-        ? await loadCatalogs({ vertical })
+        ? await loadListingCatalogs({ vertical })
         : { amenities: [], features: [] };
 
     const destinationsResult = need.includes('destinations')
@@ -145,6 +175,7 @@ export async function resolveListingEditorPage({
         listingId,
         sectionId: section?.id ?? null,
         registry,
+        sectionStates,
         amenities,
         features,
         destinations: destinationsResult?.ok
@@ -152,52 +183,4 @@ export async function resolveListingEditorPage({
             : [],
         destinationsLoadFailed: destinationsResult !== null && !destinationsResult.ok
     };
-}
-
-/**
- * Loads the amenity and feature catalogs for one vertical.
- *
- * SPEC-266: filtered to the listing's actual vertical, so a brewery
- * (venue) only sees venue-scoped amenities and an experience listing
- * sees experience-scoped ones.
- *
- * Degrades cleanly: a failed fetch yields empty lists rather than a 500, which
- * the registry then reads as "no amenities section" instead of offering a link
- * to an empty page.
- *
- * @param params - The vertical to scope the catalogs to.
- * @returns The two catalogs, empty on any failure.
- */
-async function loadCatalogs({ vertical }: { readonly vertical: VenueOrExperience }): Promise<{
-    readonly amenities: readonly AmenityData[];
-    readonly features: readonly AmenityData[];
-}> {
-    const apiUrl = getApiUrl();
-
-    try {
-        const [amenitiesRes, featuresRes] = await Promise.all([
-            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=${vertical}`),
-            fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=${vertical}`)
-        ]);
-
-        return {
-            amenities: await readCatalog(amenitiesRes),
-            features: await readCatalog(featuresRes)
-        };
-    } catch {
-        // Catalog unavailable — the editor drops the amenities section entirely.
-        return { amenities: [], features: [] };
-    }
-}
-
-/**
- * Reads one catalog response into the shape the multi-select takes.
- *
- * @param response - The fetch response for a catalog endpoint.
- * @returns The catalog entries, empty when the response was not OK.
- */
-async function readCatalog(response: Response): Promise<readonly AmenityData[]> {
-    if (!response.ok) return [];
-    const body = (await response.json()) as { data?: { items?: Record<string, unknown>[] } };
-    return transformAmenityList({ items: body.data?.items ?? [] });
 }

@@ -1,0 +1,250 @@
+---
+/**
+ * @file VenueNightInfo.astro
+ * @description Renders the venue `nightInfo` section on the public detail page
+ * (HOS-1849 / 4.5, AC:4:4 and AC:4:5).
+ *
+ * ## Why this component never looks at business lines
+ *
+ * The API already answers every visibility question. `resolveListingSections`
+ * removes the section's fields when it is not `available`, and the same
+ * resolver returns `multiLine` as a plain fact. Comparing `businessLines` here
+ * would re-derive both, contradict DEC-FAC-050 and trip G-FAC-03 — so this
+ * component only asks "did any field arrive?" and "is `multiLine` true?".
+ *
+ * ## The heading (DEC-FAC-050)
+ *
+ * `multiLine` means more than one business line owns a non-absent section
+ * (a bar with a carta and a nightlife profile). Only then does the section use
+ * the catalog's `headingWhenMultiLineKey` ("De noche"). A pure nightclub keeps
+ * its own heading, read from the catalog too — never a literal in this file.
+ *
+ * ## The age badge (AC:4:5, DEC-FAC-036/068)
+ *
+ * `policies.minAge` empty means "not informed", so it renders neither the badge nor
+ * the legal text. When present, the badge (`+18`, `+21`…) is visible AND the
+ * fixed legal text is visible next to it — never in a `title` or a tooltip.
+ * The legal text is a constant: it always says 18 because it is the
+ * alcohol-sale law (Ley 24.788), not the venue's entry age.
+ */
+
+import { formatMonthYearLabel, formatPrice } from '@/lib/format-utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import {
+    ageNotice,
+    hasNightInfoContent,
+    nightInfoHeadingKey,
+    type VenueNightInfoData
+} from '@/lib/venue/night-info';
+
+interface Props {
+    readonly nightInfo?: VenueNightInfoData;
+    readonly locale: SupportedLocale;
+}
+
+const { nightInfo, locale } = Astro.props;
+
+// No fields = the section is not published (the projector removed them) or the
+// owner never filled it. Render nothing at all, not even the heading.
+if (!nightInfo || !hasNightInfoContent(nightInfo)) return;
+
+const { t } = createTranslations(locale);
+
+const heading = t(nightInfoHeadingKey({ multiLine: nightInfo.multiLine }));
+
+const entryKindLabel =
+    nightInfo.entryKind === 'free'
+        ? t('venue.detail.nightInfo.entryKind.free')
+        : nightInfo.entryKind === 'paid'
+          ? t('venue.detail.nightInfo.entryKind.paid')
+          : nightInfo.entryKind === 'varies'
+            ? t('venue.detail.nightInfo.entryKind.varies')
+            : null;
+
+const priceLabel =
+    nightInfo.entryPriceFromCents === null
+        ? null
+        : formatPrice({ amount: nightInfo.entryPriceFromCents / 100, locale });
+
+const priceUpdatedLabel =
+    nightInfo.entryPriceUpdatedAt === null
+        ? null
+        : t('venue.detail.nightInfo.approxUpdated').replace(
+              '{{month}}',
+              formatMonthYearLabel({ date: new Date(nightInfo.entryPriceUpdatedAt), locale })
+          );
+
+const dressCodeLabel =
+    nightInfo.dressCode === 'casual'
+        ? t('venue.detail.nightInfo.dressCode.casual')
+        : nightInfo.dressCode === 'smart_casual'
+          ? t('venue.detail.nightInfo.dressCode.smart_casual')
+          : nightInfo.dressCode === 'elegant'
+            ? t('venue.detail.nightInfo.dressCode.elegant')
+            : nightInfo.dressCode === 'no_restrictions'
+              ? t('venue.detail.nightInfo.dressCode.no_restrictions')
+              : null;
+
+const notice = ageNotice({ minAge: nightInfo.minAge });
+
+const hasEntry =
+    nightInfo.entryKind !== null ||
+    nightInfo.entryNote !== null ||
+    nightInfo.entryPriceFromCents !== null;
+const hasDressCode = nightInfo.dressCode !== null || nightInfo.dressCodeNote !== null;
+---
+
+<section class="venue-night-info" id="venue-night-info">
+    <h2 class="venue-night-info__title">{heading}</h2>
+
+    <dl class="venue-night-info__list">
+        {hasEntry && (
+            <div class="venue-night-info__row">
+                <dt class="venue-night-info__label">
+                    {t('venue.detail.nightInfo.entryLabel')}
+                </dt>
+                <dd class="venue-night-info__value">
+                    {entryKindLabel && (
+                        <span class="venue-night-info__entry-kind">{entryKindLabel}</span>
+                    )}
+                    {priceLabel && (
+                        <span class="venue-night-info__price">
+                            {t('venue.detail.nightInfo.priceFrom').replace(
+                                '{{price}}',
+                                priceLabel
+                            )}
+                        </span>
+                    )}
+                    {priceUpdatedLabel && (
+                        <span class="venue-night-info__price-updated">
+                            {priceUpdatedLabel}
+                        </span>
+                    )}
+                    {nightInfo.entryNote && (
+                        <span class="venue-night-info__note">{nightInfo.entryNote}</span>
+                    )}
+                </dd>
+            </div>
+        )}
+
+        {hasDressCode && (
+            <div class="venue-night-info__row">
+                <dt class="venue-night-info__label">
+                    {t('venue.detail.nightInfo.dressCodeLabel')}
+                </dt>
+                <dd class="venue-night-info__value">
+                    {dressCodeLabel && (
+                        <span class="venue-night-info__dress-code">{dressCodeLabel}</span>
+                    )}
+                    {nightInfo.dressCodeNote && (
+                        <span class="venue-night-info__note">{nightInfo.dressCodeNote}</span>
+                    )}
+                </dd>
+            </div>
+        )}
+
+        {notice && (
+            <div class="venue-night-info__row venue-night-info__row--age">
+                <dt class="venue-night-info__label">
+                    {t('venue.detail.nightInfo.minAgeLabel')}
+                </dt>
+                <dd class="venue-night-info__value">
+                    <span class="venue-night-info__age-badge">{notice.badge}</span>
+                    <span class="venue-night-info__legal">{t(notice.legalTextKey)}</span>
+                </dd>
+            </div>
+        )}
+    </dl>
+</section>
+
+<style>
+    .venue-night-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .venue-night-info__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .venue-night-info__list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+        margin: 0;
+    }
+
+    .venue-night-info__row {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .venue-night-info__label {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--core-muted-foreground);
+    }
+
+    .venue-night-info__value {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--space-2, 8px);
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        color: var(--core-foreground);
+    }
+
+    .venue-night-info__entry-kind,
+    .venue-night-info__dress-code {
+        font-weight: 600;
+    }
+
+    .venue-night-info__price {
+        font-weight: 600;
+        color: var(--brand-primary);
+    }
+
+    .venue-night-info__price-updated,
+    .venue-night-info__note {
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .venue-night-info__row--age .venue-night-info__value {
+        align-items: center;
+    }
+
+    .venue-night-info__age-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        padding: 2px 10px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .venue-night-info__legal {
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+    }
+</style>

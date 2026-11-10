@@ -18,6 +18,7 @@
  */
 
 import {
+    sectionsTouchedByBody,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VenueProtectedSchema,
@@ -45,7 +46,16 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedPatchVenueRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'EDIT',
+        idParam: 'id',
+        listingSection: ({ body }) =>
+            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
+                id,
+                intent: 'write' as const
+            }))
+    },
     summary: 'Update venue listing (owner)',
     description: 'Partially updates operational fields of a venue listing. Requires ownership.',
     tags: ['Venue'],
@@ -67,7 +77,12 @@ export const protectedPatchVenueRoute = createProtectedRoute({
         );
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                result.error.details,
+                result.error.reason
+            );
         }
 
         return result.data;

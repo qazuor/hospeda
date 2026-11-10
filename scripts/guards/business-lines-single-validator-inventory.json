@@ -1,0 +1,51 @@
+{
+    "validateBusinessLines": [
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "count": 2,
+            "spec": ".hoja/contexto.md:1"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "count": 2,
+            "spec": ".hoja/contexto.md:1"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "count": 1,
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/components/entity-form/fields/BusinessLinesField.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        }
+    ],
+    "resolveBusinessLineOptions": [
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/components/entity-form/fields/BusinessLinesField.tsx",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue-business-lines.ts",
+            "count": 1,
+            "spec": ".hoja/notas.md:5"
+        }
+    ]
+}

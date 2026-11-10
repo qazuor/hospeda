@@ -12,18 +12,20 @@
 
 import { describe, expect, it } from 'vitest';
 import { buildEditorHubUrl, findEditorSectionBySlug } from '@/lib/editor/editor-registry';
-import { buildExperienceEditorSections } from '@/lib/editor/experience-editor-sections';
+import {
+    buildListingEditorRegistry,
+    buildListingEditorSections
+} from '@/lib/editor/listing-editor-registry';
 import {
     LISTING_EDITOR_GROUP_LABEL_KEYS,
     LISTING_EDITOR_SECTION_GROUPS
 } from '@/lib/editor/listing-editor-sections';
-import {
-    buildVenueEditorRegistry,
-    buildVenueEditorSections
-} from '@/lib/editor/venue-editor-sections';
 
-const venue = buildVenueEditorSections();
-const experience = buildExperienceEditorSections();
+/** Empty state map: every catalog section is present (the API always sends all ids). */
+const sectionStates = {};
+
+const venue = buildListingEditorSections({ vertical: 'venue', sectionStates });
+const experience = buildListingEditorSections({ vertical: 'experience', sectionStates });
 
 describe('buildVenueEditorSections: the vertical split', () => {
     it('should give a restaurant NEITHER of the experience-only sections', () => {
@@ -35,7 +37,7 @@ describe('buildVenueEditorSections: the vertical split', () => {
     });
 
     it('should make the experience-only slugs unresolvable on a venue registry', () => {
-        const registry = buildVenueEditorRegistry();
+        const registry = buildListingEditorRegistry({ vertical: 'venue', sectionStates });
 
         expect(findEditorSectionBySlug({ registry, slug: 'punto-de-encuentro' })).toBeUndefined();
         expect(findEditorSectionBySlug({ registry, slug: 'datos-practicos' })).toBeUndefined();
@@ -47,7 +49,7 @@ describe('buildVenueEditorSections: the vertical split', () => {
         expect(venue.map((section) => section.id)).toContain('venueEvents');
     });
 
-    it('should differ from the experience list by exactly the three venue-only sections', () => {
+    it('should differ from the experience list by exactly the venue-only sections', () => {
         const extra = venue
             .map((section) => section.id)
             .filter((id) => !experience.some((section) => section.id === id));
@@ -55,7 +57,7 @@ describe('buildVenueEditorSections: the vertical split', () => {
         // Asserted as an exact list rather than N `toContain`s so a FOURTH cannot
         // be added without this failing and someone deciding whether an
         // experience should have it.
-        expect(extra).toEqual(['menu', 'dailySpecials', 'venueEvents']);
+        expect(extra).toEqual(['menu', 'dailySpecials', 'venueEvents', 'nightInfo']);
     });
 
     it('should place the venue-only run in order, ending at the FAQ page', () => {
@@ -66,8 +68,16 @@ describe('buildVenueEditorSections: the vertical split', () => {
         expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
     });
 
+    it('should place nightInfo after the FAQ page and in the property group', () => {
+        const ids = venue.map((section) => section.id);
+        const nightInfo = venue.find((section) => section.id === 'nightInfo');
+
+        expect(ids.indexOf('nightInfo')).toBe(ids.indexOf('faqs') + 1);
+        expect(nightInfo?.group).toBe('property');
+    });
+
     it('should resolve the menú-del-día slug on a venue registry', () => {
-        const registry = buildVenueEditorRegistry();
+        const registry = buildListingEditorRegistry({ vertical: 'venue', sectionStates });
 
         expect(findEditorSectionBySlug({ registry, slug: 'menu-del-dia' })?.id).toBe(
             'dailySpecials'
@@ -119,13 +129,15 @@ describe('buildVenueEditorRegistry: paths', () => {
         expect(
             buildEditorHubUrl({
                 locale: 'es',
-                registry: buildVenueEditorRegistry(),
+                registry: buildListingEditorRegistry({ vertical: 'venue', sectionStates }),
                 entityId: 'abc'
             })
         ).toBe('/es/mi-cuenta/comercio/venue/abc/editar/');
     });
 
     it('should point the breadcrumb index at the owner listing page', () => {
-        expect(buildVenueEditorRegistry().indexPath).toBe('mi-cuenta/comercio');
+        expect(buildListingEditorRegistry({ vertical: 'venue', sectionStates }).indexPath).toBe(
+            'mi-cuenta/comercio'
+        );
     });
 });

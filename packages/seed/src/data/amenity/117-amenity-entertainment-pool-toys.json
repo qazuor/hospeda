@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "117-amenity-entertainment-pool-toys",
+    "slug": "pool_toys",
+    "description": {
+        "es": "Inflables y juegos para la pileta",
+        "en": "Inflatables and toys for the pool",
+        "pt": "Infláveis e brinquedos para a piscina"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "PoolIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

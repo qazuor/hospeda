@@ -128,18 +128,21 @@
     },
     "extraInfo": {
         "capacity": 32,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 16,
         "beds": 26,
         "bathrooms": 16,
-        "smokingAllowed": false,
         "extraInfo": [
             "Muchas habitaciones con vistas al río o Delta",
             "Piscina exterior con solárium",
             "Desayuno incluido",
             "Estacionamiento descubierto gratuito"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Mirador Maravilloso Hotel - Vistas al río en Paranacito ",
@@ -158,10 +161,8 @@
     "featureIds": [
         "031-feature-room_rental",
         "073-feature-permanent_professional_staff",
-        "047-feature-laundry_service",
         "001-feature-river_front",
         "004-feature-natural_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -183,7 +184,8 @@
         "049-amenity-services-24h-reception",
         "050-amenity-services-room-service",
         "083-amenity-services-bar",
-        "084-amenity-services-restaurant"
+        "084-amenity-services-restaurant",
+        "048-amenity-services-laundry-service"
     ],
     "faqs": [
         {

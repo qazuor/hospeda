@@ -144,18 +144,21 @@
     },
     "extraInfo": {
         "capacity": 8,
-        "minNights": 2,
-        "maxNights": 30,
         "bedrooms": 3,
         "beds": 4,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Se admiten mascotas pequeñas con cargo adicional",
             "Ideal para familias o grupos de amigos",
             "Estacionamiento gratuito para 4 vehículos",
             "La casa se encuentra a 15 minutos en auto del centro de Chajarí"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 30
     },
     "seo": {
         "title": "Sendero Natural: Casa de Campo en Chajarí, Entre Ríos ",
@@ -177,7 +180,6 @@
         "009-feature-isolated_no_neighbors",
         "003-feature-panoramic_view_extended",
         "005-feature-rural_area",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

@@ -215,10 +215,7 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 15,
         "bathrooms": 2,
-        "smokingAllowed": true,
         "extraInfo": [
             "Parcelas con sombra y parrilla",
             "Acceso directo al río",
@@ -226,6 +223,12 @@
             "Entorno Delta"
         ],
         "bedrooms": 1
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Rio Encantado Camping - Delta entrerriano en Ibicuy | Pesca",
@@ -246,8 +249,6 @@
         "033-feature-fire_pit_area",
         "004-feature-natural_environment",
         "001-feature-river_front",
-        "004-feature-natural_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

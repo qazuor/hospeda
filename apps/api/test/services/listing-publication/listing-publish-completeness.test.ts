@@ -16,6 +16,7 @@ function makeOnRequestExperience(overrides: Record<string, unknown> = {}): Exper
         description:
             'Explore the Uruguay river coastline by kayak with a certified local guide, including all safety equipment and a light snack.',
         type: 'TOUR_GUIDE',
+        businessLines: ['standard'],
         contactInfo: { workEmail: 'guide@example.com' },
         priceFrom: 0,
         priceUnit: null,

@@ -4,7 +4,12 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 3 of 9 — the day before the trial ends (HOS-1012 §4).
@@ -24,6 +29,13 @@ export function TrialEnding1Day({
     upgradeUrl,
     productDomain
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
+    const planFragment = plan ? (
+        <>
+            {' '}
+            del plan <strong>{plan}</strong>
+        </>
+    ) : null;
     const formattedEndDate = formatDate({ dateString: trialEndDate });
     const copy = resolveTrialSeriesCopy(productDomain);
 
@@ -34,13 +46,13 @@ export function TrialEnding1Day({
         >
             <Heading>Mañana tu publicación sale del sitio</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
 
             <Section style={styles.alertBox}>
                 <Text style={styles.paragraph}>
-                    Mañana <strong>{formattedEndDate}</strong> termina tu prueba gratis del plan{' '}
-                    <strong>{planName}</strong>. Si no elegís un plan antes, {copy.possessive} deja
-                    de aparecer en las búsquedas de Hospeda.
+                    Mañana <strong>{formattedEndDate}</strong> termina tu prueba gratis
+                    {planFragment}. Si no elegís un plan antes, {copy.possessive} deja de aparecer
+                    en las búsquedas de Hospeda.
                 </Text>
             </Section>
 

@@ -291,10 +291,11 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
     });
 
     it('debounces distinct destinations on independent timers (no shared bucket)', async () => {
-        // Regression for SPEC-246: destination/event/post no longer supply a UUID
-        // to entity_id (extractEntityId returns undefined for them), but the debounce
-        // bucket key must still be per-entity (slug) so distinct entities of the same
-        // type don't collapse into one shared bucket and reset each other's timer.
+        // Regression for SPEC-246: the UUID written to entity_id (extractEntityId)
+        // and the debounce bucket key are deliberately decoupled — this event
+        // carries no id at all, and the bucket key must still be per-entity (slug)
+        // so distinct entities of the same type don't collapse into one shared
+        // bucket and reset each other's timer.
         // This asserts timer ISOLATION, which the tag-accumulation test above cannot:
         // a collapsed bucket would still purge both tags, just on a reset timer.
         (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {

@@ -713,6 +713,7 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                         ownerId,
                         destinationId,
                         publicationStatus: PublicationStatusEnum.PUBLISHED,
+                        businessLines: ['food'],
                         inactiveSince: new Date(),
                         deadlinesVersion: 1,
                         isFeatured: false,

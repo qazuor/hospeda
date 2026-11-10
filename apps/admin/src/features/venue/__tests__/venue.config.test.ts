@@ -79,3 +79,15 @@ describe('VENUE_VIEW_PERMISSION', () => {
         expect(VENUE_VIEW_PERMISSION).toBe(PermissionEnum.VENUE_VIEW_ALL);
     });
 });
+
+describe('venueListConfig — business line filter (HOS-1873)', () => {
+    it('has a businessLine select filter with two catalog options', () => {
+        const filters = venueListConfig.filterBarConfig?.filters ?? [];
+        const filter = filters.find((f) => f.paramKey === 'businessLine');
+        expect(filter).toBeDefined();
+        expect(filter?.labelKey).toBe('admin-filters.businessLine.label');
+        expect(filter?.order).toBe(12);
+        const options = filter?.type === 'select' ? filter.options : [];
+        expect(options).toHaveLength(2);
+    });
+});

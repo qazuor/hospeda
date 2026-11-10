@@ -32,15 +32,17 @@
  *     `done` frame) hostage. The insert itself is not cancelled: it keeps
  *     running and still lands, we simply stop blocking the caller on it.
  *
- * `chat.ts` predates this helper and keeps its own inline metering blocks with
- * feature-specific log context (owner-keyed vs consumer-keyed rows); it is
- * deliberately left untouched.
+ * `chat.ts` predates this helper and keeps its own inline metering block: one
+ * owner-keyed row that also carries the tourist as `consumerUserId`
+ * (HOS-2095); it is deliberately left untouched.
  *
  * @module utils/ai-usage-metering
  */
 
 import { recordAiUsage } from '@repo/ai-core';
 import type { AiFeature } from '@repo/schemas';
+import { warnMissingModelRate } from './ai-missing-model-rate';
+import { loadModelRateOverrides } from './ai-rate-overrides';
 import { apiLogger } from './logger';
 
 // ---------------------------------------------------------------------------
@@ -156,16 +158,23 @@ export async function meterAiUsage(input: MeterAiUsageInput): Promise<void> {
 
         // The write promise always carries its own catch, so it stays handled
         // even once the timeout below stops us awaiting it.
-        const writePromise = recordAiUsage({
-            userId,
-            feature,
-            provider,
-            model,
-            promptTokens: toTokenCount({ value: promptTokens }),
-            completionTokens: toTokenCount({ value: completionTokens }),
-            latencyMs,
-            status
-        })
+        // The settings read (cached; a DB read only on a cache miss) lives inside
+        // the same promise so it is bounded by METERING_TIMEOUT_MS too.
+        const writePromise = (async () => {
+            const rateOverrides = await loadModelRateOverrides();
+            return recordAiUsage({
+                userId,
+                feature,
+                provider,
+                model,
+                promptTokens: toTokenCount({ value: promptTokens }),
+                completionTokens: toTokenCount({ value: completionTokens }),
+                latencyMs,
+                status,
+                rateOverrides,
+                onMissingRate: warnMissingModelRate
+            });
+        })()
             .then(() => undefined)
             .catch((meteringError: unknown) => {
                 const payload = {

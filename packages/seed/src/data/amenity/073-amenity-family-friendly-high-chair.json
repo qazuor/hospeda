@@ -7,7 +7,7 @@
         "en": "Silla alta para bebés",
         "pt": "Silla alta para bebés"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue"],
     "type": "FAMILY_FRIENDLY",
     "icon": "HighChairIcon",
     "isBuiltin": false,

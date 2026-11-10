@@ -191,12 +191,9 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 30,
         "bedrooms": 20,
         "beds": 30,
         "bathrooms": 20,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior en la terraza",
             "Restaurante y bar en el hotel",
@@ -204,6 +201,12 @@
             "Recepción 24 horas",
             "Servicio de lavandería con cargo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 30
     },
     "seo": {
         "title": "Mirador Soleado Hotel - Vistas panorámicas en Colón, Entre",
@@ -222,9 +225,7 @@
     "featureIds": [
         "031-feature-room_rental",
         "073-feature-permanent_professional_staff",
-        "047-feature-laundry_service",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -246,7 +247,8 @@
         "049-amenity-services-24h-reception",
         "050-amenity-services-room-service",
         "083-amenity-services-bar",
-        "084-amenity-services-restaurant"
+        "084-amenity-services-restaurant",
+        "048-amenity-services-laundry-service"
     ],
     "tagIds": [
         "033-tag-rio-parana",

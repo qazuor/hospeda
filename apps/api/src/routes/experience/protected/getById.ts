@@ -84,9 +84,16 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
         // typed, or the form re-opens blank and the next save erases it. The
         // PUBLIC tier is where the value is withheld; this tier is the owner
         // reading their own row.
-        const { amenityIds, featureIds } = await experienceService.loadJunctionIds(entity.id);
+        const { amenityIds, featureIds, amenityAttributes } =
+            await experienceService.loadJunctionIds(entity.id);
         // meetingPointDirectionsEnabled was a per-plan gate removed with the
         // legacy billing system (HOS-1416); always enabled now.
-        return { ...entity, amenityIds, featureIds, meetingPointDirectionsEnabled: true };
+        return {
+            ...entity,
+            amenityIds,
+            featureIds,
+            amenityAttributes,
+            meetingPointDirectionsEnabled: true
+        };
     }
 });

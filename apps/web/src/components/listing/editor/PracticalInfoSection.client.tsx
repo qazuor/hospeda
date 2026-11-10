@@ -1,10 +1,14 @@
 /**
  * @file PracticalInfoSection.client.tsx
- * @description The four practical ficha fields of an experience listing —
- * duration (HOS-898), what to bring and requirements (HOS-1046), cancellation
- * policy (HOS-1047) and the private-groups toggle (HOS-1056).
+ * @description The practical ficha fields of an experience listing —
+ * duration (HOS-898), what to bring and requirements (HOS-1046).
  *
- * ## One section, four issues
+ * HOS-2060 moved the cancellation policy (HOS-1047) and the private-groups
+ * toggle (HOS-1056) into `policies` (`policies.cancellation`,
+ * `policies.privateGroups`); the catalog puts `policies` in the amenities
+ * section, so they are edited by that page's Policies panel now.
+ *
+ * ## One section, several issues
  *
  * They share a table, a PATCH and a heading in the owner's mental model ("lo
  * práctico de la salida"), so splitting them into four sections would give the
@@ -21,7 +25,7 @@
  *
  * ## Nothing here is paid
  *
- * Owner decision (2026-09-01): all four ship from the BASIC tier. There is no
+ * Owner decision (2026-09-01): all of them ship from the BASIC tier. There is no
  * entitlement check in this file and there must not be one — the HOS-974 audit
  * found three entitlements that are granted and demanded by no route, and a key
  * per ficha field manufactures exactly that.
@@ -39,7 +43,6 @@
 
 import type { JSX } from 'react';
 import { TextField } from '@/components/ui/TextField';
-import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './editor-fields.module.css';
@@ -155,7 +158,6 @@ export interface PracticalInfoSectionProps {
         durationMinutes?: string;
         whatToBring?: string;
         requirements?: string;
-        cancellationPolicy?: string;
     }>;
     readonly onFieldChange: ListingFieldChange;
 }
@@ -296,72 +298,6 @@ export function PracticalInfoSection({
                 {t(
                     'listing.owner.editor.sections.requirementsHint',
                     'Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.'
-                )}
-            </p>
-
-            {/* Cancellation policy (HOS-1047) — free text, see the schema JSDoc. */}
-            <TextField
-                as="textarea"
-                prefix={LISTING_FIELD_PREFIX}
-                name="cancellationPolicy"
-                label={t(
-                    'listing.owner.editor.sections.cancellationPolicy',
-                    'Política de cancelación'
-                )}
-                labelClassName={styles.label}
-                className={styles.textarea}
-                error={errors.cancellationPolicy}
-                rows={4}
-                maxLength={1500}
-                value={data.cancellationPolicy}
-                placeholder={t(
-                    'listing.owner.editor.sections.cancellationPolicyPlaceholder',
-                    'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.'
-                )}
-                onChange={(event) => {
-                    onFieldChange('cancellationPolicy', event.target.value);
-                }}
-            />
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.cancellationPolicyHint',
-                    'Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.'
-                )}
-            </p>
-
-            {/*
-             * Private groups (HOS-1056) — a toggle and nothing else.
-             *
-             * It carries a DERIVED id even though a checkbox bound to
-             * `z.boolean()` has no invalid state to report. `PriceSection`'s
-             * `isPriceOnRequest` toggle is exempted from the field-id guard for
-             * exactly that reason, and the exemption is what makes the guard
-             * unable to notice if the field ever grows a validation message.
-             * An id costs one attribute and closes that hole here.
-             */}
-            <label className={styles.checkbox}>
-                <input
-                    type="checkbox"
-                    id={buildFieldId({
-                        prefix: LISTING_FIELD_PREFIX,
-                        name: 'acceptsPrivateGroups'
-                    })}
-                    checked={data.acceptsPrivateGroups}
-                    onChange={(event) => {
-                        onFieldChange('acceptsPrivateGroups', event.target.checked);
-                    }}
-                />
-                {t(
-                    'listing.owner.editor.sections.acceptsPrivateGroups',
-                    'Hago precio especial para grupos privados'
-                )}
-            </label>
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.acceptsPrivateGroupsHint',
-                    'Si lo activás, la ficha invita a escribirte para consultar por grupos. No publicamos ningún tarifario.'
                 )}
             </p>
         </section>

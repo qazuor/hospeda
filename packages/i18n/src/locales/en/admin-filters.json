@@ -203,7 +203,7 @@
         "safety": "Safety",
         "familyFriendly": "Family-friendly",
         "workFriendly": "Work-friendly",
-        "generalAppliances": "General appliances",
+        "generalAppliances": "Equipment",
         "parking": "Parking",
         "laundry": "Laundry",
         "waterActivities": "Water activities",
@@ -257,6 +257,9 @@
         "panaderia": "Bakery",
         "rotiseria": "Rotisserie",
         "foodTruck": "Food Truck"
+    },
+    "businessLine": {
+        "label": "Business line"
     },
     "priceRange": {
         "label": "Price range",

@@ -56,7 +56,19 @@ const DESTINATION_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const AMENITY_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const FEATURE_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
-const AMENITY_ROW = { amenityId: AMENITY_ID, slug: 'accepts_cards', icon: 'credit-card' };
+/**
+ * HOS-2061: the relation attributes travel with the row and must survive the
+ * public response schema, the same way the accommodation detail publishes them.
+ */
+const AMENITY_ROW = {
+    amenityId: AMENITY_ID,
+    slug: 'wifi',
+    icon: 'wifi',
+    isOptional: true,
+    additionalCost: 1500,
+    scope: 'shared',
+    availability: 'seasonal'
+};
 const FEATURE_ROW = {
     featureId: FEATURE_ID,
     slug: 'transport_included',
@@ -197,7 +209,15 @@ describe('GET /public/experiences/slug/:slug — catalog exposure (HOS-1072)', (
         // Arrange
         experienceSvc.getBySlug.mockResolvedValue({ data: minimalExperience });
         catalog.fetchExperienceAmenities.mockResolvedValue([
-            { amenityId: AMENITY_ID, slug: 'transport_included', icon: 'bus' }
+            {
+                amenityId: AMENITY_ID,
+                slug: 'transport_included',
+                icon: 'bus',
+                isOptional: false,
+                additionalCost: null,
+                scope: null,
+                availability: 'year_round'
+            }
         ]);
 
         // Act
@@ -208,7 +228,15 @@ describe('GET /public/experiences/slug/:slug — catalog exposure (HOS-1072)', (
         // Assert
         expect(res.status).toBe(200);
         expect((await readData(res)).amenities).toEqual([
-            { amenityId: AMENITY_ID, slug: 'transport_included', icon: 'bus' }
+            {
+                amenityId: AMENITY_ID,
+                slug: 'transport_included',
+                icon: 'bus',
+                isOptional: false,
+                additionalCost: null,
+                scope: null,
+                availability: 'year_round'
+            }
         ]);
     });
 

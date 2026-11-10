@@ -51,7 +51,10 @@ async function createListing(args: {
                   tx
               )
             : vertical === 'venue'
-              ? await new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx)
+              ? await new VenueModel().create(
+                    { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+                    tx
+                )
               : await new ExperienceModel().create(
                     { ...base, type: 'EXCURSION' } as Partial<Experience>,
                     tx

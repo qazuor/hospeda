@@ -97,8 +97,7 @@ const purgedExperience = {
     durationMinutes: null,
     whatToBring: [],
     requirements: [],
-    cancellationPolicy: null,
-    acceptsPrivateGroups: false,
+    policies: null,
     openingHours: null
 };
 

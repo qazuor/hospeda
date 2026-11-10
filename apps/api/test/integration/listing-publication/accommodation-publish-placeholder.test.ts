@@ -57,7 +57,10 @@ async function createOnboardingDraft() {
     expect(id).toBeTruthy();
     await getDb()
         .update(accommodations)
-        .set({ extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } })
+        .set({
+            extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+            policies: { paymentMethods: ['cash'], minNights: 1 }
+        })
         .where(eq(accommodations.id, id as string));
     await getDb()
         .insert(accommodationMedia)

@@ -45,6 +45,11 @@
         "venue": {
             "pendingNotice": "Sua avaliação está pendente de aprovação e ficará visível após a revisão.",
             "alreadyReviewed": "Você já enviou uma avaliação para este lugar."
+        },
+        "dimensions": {
+            "title": "Avalie por aspecto",
+            "optional": "Opcional",
+            "removeHint": "Toque novamente a estrela escolhida para remover seu voto"
         }
     },
     "locked": {
@@ -91,5 +96,16 @@
         "noReviews": "Ainda não há avaliações",
         "noReviewsDescription": "Seja o primeiro a deixar uma avaliação",
         "verified": "Verificado"
+    },
+    "dimensionAverages": {
+        "title": "Por aspecto",
+        "votes_one": "{{count}} voto",
+        "votes_other": "{{count}} votos"
+    },
+    "dimensions": {
+        "food": "Comida",
+        "service": "Atendimento",
+        "ambiance": "Ambiente",
+        "value": "Relação custo-benefício"
     }
 }

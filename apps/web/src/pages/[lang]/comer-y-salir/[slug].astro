@@ -1,6 +1,6 @@
 ---
 /**
- * @file gastronomia/[slug].astro
+ * @file comer-y-salir/[slug].astro
  * @description Venue detail page (SPEC-239 T-054).
  * Fetches a single venue listing by slug, fetches reviews + FAQs in
  * parallel, and composes the detail block components.
@@ -17,13 +17,15 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
-import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
+import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
+import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
+import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -33,6 +35,7 @@ import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import VenueEventsCta from '@/components/venue/VenueEventsCta.astro';
+import VenueReviewsPreview from '@/components/venue/VenueReviewsPreview.astro';
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
@@ -42,19 +45,28 @@ import { getApiUrl } from '@/lib/env';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
+import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
+import { setListingPolicy } from '@/lib/listing/listing-policies';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { buildRestaurantHasMenu } from '@/lib/venue/menu-jsonld';
+import { resolveDimensionAverages } from '@/lib/venue/review-dimensions-view';
+import {
+    orderVenueDetailSections,
+    type VenueDetailBodySectionId
+} from '@/lib/venue/venue-detail-sections';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq, VenueOpeningHoursEntry } from '@/data/types';
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -77,6 +89,7 @@ const raw = result.data as unknown as Record<string, unknown>;
 // public payload carries no publication field to re-check.
 
 const venue = toVenueDetailPageProps({ item: raw, locale });
+const dimensionRatings = resolveDimensionAverages({ vertical: 'venue', rating: venue.rating });
 
 // --- Edge cacheability (HOS-369 W2-4) ---
 // After the guard above — the 404/410 for missing, soft-deleted or
@@ -183,10 +196,9 @@ try {
 const descriptionText = renderPlain({ raw: venue.description });
 
 // --- "Accepts events" CTA (HOS-1055) ---
-// Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
-// `venue.amenities`) rather than a new DB column or public-schema field —
-// see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
-// the write side.
+// Driven by the house rule `policies.eventsAllowed` (HOS-2060). It used to
+// reuse a catalog amenity, retired when the house rules moved into
+// `policies`; only an explicit `true` turns the CTA on.
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
 // `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
@@ -205,7 +217,7 @@ const descriptionText = renderPlain({ raw: venue.description });
 // could point at an anchor with nothing behind it, which is worse than no CTA
 // (same principle as HOS-363/HOS-924: never promise a channel that isn't
 // there).
-const acceptsEventsAmenity = venue.amenities.find((amenity) => amenity.name === 'private_events');
+const acceptsEvents = venue.policies?.eventsAllowed === true;
 const hasVenueContact =
     Boolean(resolveSafeExternalUrl(venue.menuUrl)) ||
     (venue.socialNetworks
@@ -213,14 +225,20 @@ const hasVenueContact =
               Boolean(resolveSafeExternalUrl(value))
           )
         : false);
-const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;
-// Excluded from the generic grid ONLY when the dedicated CTA renders in its
-// place — otherwise both would say "accepts events" two centimeters apart.
-const amenitiesForGrid = showEventsCta
-    ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
-    : venue.amenities;
+const showEventsCta = acceptsEvents && hasVenueContact;
+// The events rule is left out of the house-rules list ONLY when the dedicated
+// CTA renders in its place — otherwise both would say "accepts events" two
+// centimeters apart.
+const houseRulePolicies = showEventsCta
+    ? setListingPolicy({ policies: venue.policies ?? {}, key: 'eventsAllowed', value: undefined })
+    : venue.policies;
 
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
+const jsonLdHasMenu = buildRestaurantHasMenu({
+    venue,
+    locale,
+    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+});
 
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
@@ -234,21 +252,114 @@ const priceRangeMap: Record<string, string> = {
 };
 const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? undefined : undefined;
 
+// --- Body sections (HOS-1787 leaf 6.1) ---
+// The body renders the catalog's own order and only the sections it paints:
+// the block registry below is a lookup, never a comparison against a section
+// id. `price` lives in the header, `media` is the fixed gallery above, and
+// `translations` never renders publicly — see `venue-detail-sections.ts`.
+// Conditions are applied while building each list, so the template just paints.
+interface VenueDetailBlock {
+    readonly Component: AstroComponentFactory;
+    readonly props: Record<string, unknown>;
+}
+
+const hasOpeningHours =
+    venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
+const hasContactBlock = Boolean(venue.menuUrl || venue.socialNetworks);
+
+const venueDetailSectionBlocks: Readonly<
+    Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
+> = {
+    basicInfo: [
+        {
+            Component: VenueDescription,
+            props: {
+                summary: venue.summary,
+                descriptionText,
+                richDescription: venue.richDescription
+            }
+        }
+    ],
+    openingHours: hasOpeningHours
+        ? [
+              {
+                  Component: OpeningHoursSection,
+                  props: {
+                      openingHours: venue.openingHours as Record<
+                          string,
+                          VenueOpeningHoursEntry
+                      >,
+                      locale
+                  }
+              }
+          ]
+        : [],
+    amenities: [
+        {
+            Component: FeaturesGrid,
+            props: { features: venue.features, lang: locale }
+        },
+        { Component: AmenitiesGrid, props: { amenities: venue.amenities, lang: locale } },
+        // HOS-2060: `policies` belongs to the amenities section in the catalog.
+        { Component: ListingHouseRules, props: { policies: houseRulePolicies, locale } },
+        ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
+    ],
+    contact: hasContactBlock
+        ? [
+              {
+                  Component: VenueContactBlock,
+                  props: {
+                      menuUrl: venue.menuUrl,
+                      socialNetworks: venue.socialNetworks,
+                      locale
+                  }
+              }
+          ]
+        : [],
+    menu: [
+        {
+            Component: VenueMenu,
+            props: {
+                menuSections: venue.menuSections,
+                fileUrl: venue.menuFileUrl,
+                fileKind: venue.menuFileKind,
+                locale
+            }
+        }
+    ],
+    dailySpecials: [
+        {
+            Component: VenueDailySpecials,
+            props: { dailySpecials: venue.dailySpecials, locale }
+        }
+    ],
+    venueEvents: [
+        { Component: VenueEvents, props: { venueEvents: venue.venueEvents, locale } }
+    ],
+    faqs: faqs.length > 0 ? [{ Component: FaqAccordion, props: { faqs, lang: locale } }] : [],
+    nightInfo: [
+        { Component: VenueNightInfo, props: { nightInfo: venue.nightInfo, locale } }
+    ]
+};
+
+// HOS-2060: `paymentAccepted` is a `LocalBusiness` property, so a venue may
+// carry it; `petsAllowed` is not (schema.org scopes it to lodging), so it is
+// deliberately left out of the venue object.
+const jsonLdPolicyData = buildListingPolicyStructuredData({ policies: venue.policies ?? {}, t });
+
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
 const seoTitle = venue.seo?.title?.trim() || venue.name;
 const seoDescription =
-    venue.seo?.description?.trim() ||
-    venue.summary ||
-    t('venue.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+    venue.seo?.description?.trim() || venue.summary || t('venue.listing.subtitle');
 
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
     { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
     {
-        name: t('venue.listing.title', 'Gastronomía'),
+        name: t('venue.listing.title'),
         url: `${siteOrigin}/${locale}/comer-y-salir/`
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
@@ -267,13 +378,16 @@ const breadcrumbItems = [
     ogSubtitle={venue.destinationName}
     ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
 >
-    <RestaurantJsonLd
+    <VenueJsonLd
         slot="head-extra"
         name={venue.name}
         description={seoDescription}
         url={canonicalPath}
+        type={venue.type}
+        hasMenu={jsonLdHasMenu}
         image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
+        paymentAccepted={jsonLdPolicyData.paymentAccepted}
         aggregateRating={venue.averageRating > 0 ? {
             ratingValue: venue.averageRating,
             reviewCount: venue.reviewsCount,
@@ -285,7 +399,7 @@ const breadcrumbItems = [
         locale={locale}
         items={[
             {
-                label: t('venue.listing.title', 'Gastronomía'),
+                label: t('venue.listing.title'),
                 path: 'comer-y-salir/'
             },
             { label: venue.name }
@@ -302,7 +416,7 @@ const breadcrumbItems = [
     </Fragment>
 
     <div class="venue-detail">
-        <!-- Gallery -->
+        <!-- Gallery: the listing's cover, fixed above the catalog-ordered body. -->
         {galleryImages.length > 0 && (
             <div class="venue-detail__gallery">
                 <ImageGallery
@@ -314,112 +428,25 @@ const breadcrumbItems = [
             </div>
         )}
 
-        <!-- Description -->
-        <VenueDescription
-            summary={venue.summary}
-            descriptionText={descriptionText}
-            richDescription={venue.richDescription}
-        />
-
-        <!-- Menú del día (HOS-1041): what is on offer TODAY, above the carta
-             on purpose — it answers the question a diner choosing lunch in
-             twenty minutes is actually asking. Arrives already filtered to the
-             current day (in the AR market timezone) AND already
-             entitlement-gated by the API; renders nothing when empty. -->
-        <VenueDailySpecials
-            dailySpecials={venue.dailySpecials}
-            locale={locale}
-        />
-
-        <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.
-             Both arrive pre-filtered by the API's live entitlement check —
-             see VenueMenu.astro's frontmatter for the hierarchy. -->
-        <VenueMenu
-            menuSections={venue.menuSections}
-            fileUrl={venue.menuFileUrl}
-            fileKind={venue.menuFileKind}
-            locale={locale}
-        />
-
-        <!-- Opening Hours (only when configured) -->
-        {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
-            <OpeningHoursSection
-                openingHours={venue.openingHours as Record<string, VenueOpeningHoursEntry>}
-                locale={locale}
-            />
+        <!-- Body: every catalog section in catalog order (sub-spec 6 § «Ficha»).
+             Each id resolves its blocks by lookup in the frontmatter registry;
+             a section the public projector emptied simply contributes no
+             visible output because its components self-hide. -->
+        {orderVenueDetailSections().map((sectionId) =>
+            venueDetailSectionBlocks[sectionId].map(({ Component, props }) => (
+                <Component {...props} />
+            ))
         )}
 
-        <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
-             deal. NOT the same as the "accepts events" CTA below — see
-             VenueEvents.astro's frontmatter. Pre-filtered by the API
-             the same way menuSections is, so no gate is needed here. -->
-        <VenueEvents
-            venueEvents={venue.venueEvents}
+        <!-- Reviews preview + form are not catalog sections: they follow the
+             last section. -->
+        <VenueReviewsPreview
+            reviewsCount={venue.reviewsCount}
+            reviews={reviews}
+            totalReviews={totalReviews}
             locale={locale}
+            dimensionRatings={dimensionRatings}
         />
-
-        <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
-             delivery, takeaway, reservas, estacionamiento… Both grids self-hide
-             on an empty list, so no guard is needed here. `smokingAllowed` is an
-             accommodation-only column and is passed as null. `private_events` is
-             excluded from `amenitiesForGrid` when the dedicated events CTA below
-             renders instead (HOS-1055) — see the frontmatter comment. -->
-        <FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />
-        <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
-
-        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
-             Anchors into VenueContactBlock below; no external href of
-             its own (see VenueEventsCta.astro's header). -->
-        {showEventsCta && <VenueEventsCta locale={locale} />}
-
-        <!-- Contact block (menu URL + social networks) -->
-        {(venue.menuUrl || venue.socialNetworks) && (
-            <VenueContactBlock
-                menuUrl={venue.menuUrl}
-                socialNetworks={venue.socialNetworks}
-                locale={locale}
-            />
-        )}
-
-        <!-- Reviews preview -->
-        {venue.reviewsCount > 0 && (
-            <section class="venue-detail__reviews">
-                <h2 class="venue-detail__section-title">
-                    {t('venue.detail.reviews.title', 'Reseñas')}
-                </h2>
-                {reviews.length === 0 ? (
-                    <p class="venue-detail__reviews-empty">
-                        {t(
-                            'venue.detail.reviews.empty',
-                            'Todavía no hay reseñas. ¡Sé el primero en opinar!'
-                        )}
-                    </p>
-                ) : (
-                    <ul class="venue-detail__reviews-list">
-                        {reviews.slice(0, 3).map((review) => (
-                            <li class="venue-detail__review-item">
-                                <p class="venue-detail__review-author">
-                                    {review.user?.name ?? t('common.anonymous')}
-                                </p>
-                                {review.averageRating != null && (
-                                    <span class="venue-detail__review-rating">
-                                        ★ {review.averageRating.toFixed(1)}
-                                    </span>
-                                )}
-                                {review.content && (
-                                    <p class="venue-detail__review-content">{review.content}</p>
-                                )}
-                            </li>
-                        ))}
-                        {totalReviews > 3 && (
-                            <p class="venue-detail__reviews-more">
-                                {tPlural('venue.detail.reviews.more', totalReviews - 3)}
-                            </p>
-                        )}
-                    </ul>
-                )}
-            </section>
-        )}
 
         <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
         <section class="venue-detail__review-form">
@@ -427,16 +454,12 @@ const breadcrumbItems = [
                 client:visible
                 venueId={venue.id}
                 venueName={venue.name}
+                sectionStates={venue.reviewSectionStates}
                 locale={locale}
                 apiUrl={getApiUrl()}
                 signInHref={reviewSignInHref}
             />
         </section>
-
-        <!-- FAQs -->
-        {faqs.length > 0 && (
-            <FaqAccordion faqs={faqs} lang={locale} />
-        )}
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->
@@ -478,70 +501,5 @@ const breadcrumbItems = [
     .venue-detail__gallery {
         border-radius: var(--radius-card, 24px);
         overflow: hidden;
-    }
-
-    .venue-detail__section-title {
-        font-family: var(--font-heading);
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--core-foreground);
-        margin-bottom: var(--space-4, 16px);
-    }
-
-    /* Reviews */
-    .venue-detail__reviews-empty {
-        font-family: var(--font-sans);
-        font-size: 0.95rem;
-        color: var(--core-muted-foreground);
-        font-style: italic;
-        margin: 0;
-    }
-
-    .venue-detail__reviews-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-    }
-
-    .venue-detail__review-item {
-        padding: var(--space-4, 16px);
-        background-color: var(--core-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md, 12px);
-    }
-
-    .venue-detail__review-author {
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--core-foreground);
-        margin: 0 0 4px;
-    }
-
-    .venue-detail__review-rating {
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        color: var(--rating-star);
-        font-weight: 500;
-    }
-
-    .venue-detail__review-content {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        line-height: 1.5;
-        color: var(--core-muted-foreground);
-        margin: 6px 0 0;
-    }
-
-    .venue-detail__reviews-more {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
-        font-weight: 500;
-        margin: 0;
-        padding: var(--space-2, 8px) 0;
     }
 </style>

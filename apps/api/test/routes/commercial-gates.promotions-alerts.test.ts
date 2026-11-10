@@ -175,6 +175,7 @@ const VENUE = {
     slug: 'la-parrilla',
     name: 'La Parrilla',
     type: 'PARRILLA',
+    businessLines: ['food'],
     summary: 'A test venue',
     description: 'A test venue description',
     destinationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -490,7 +491,8 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
         );
         expect(basicResponse.status).toBe(200);
         const basicData = (await basicResponse.json()).data;
-        expect(basicData.menuFileUrl).toBeNull();
+        // The public projector withholds gated fields (omits them), same as menuSections.
+        expect(basicData).not.toHaveProperty('menuFileUrl');
         expect(basicData.menuSections).toBeUndefined();
         expect(basicData.venueEvents).toBeUndefined();
         expect(basicData.dailySpecials).toBeUndefined();

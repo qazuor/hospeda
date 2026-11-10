@@ -8,7 +8,7 @@
         "pt": "Iluminación nocturna exterior"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "OUTDOORS",
     "icon": "OutdoorLightingIcon",
     "isBuiltin": false,
     "isFeatured": false,

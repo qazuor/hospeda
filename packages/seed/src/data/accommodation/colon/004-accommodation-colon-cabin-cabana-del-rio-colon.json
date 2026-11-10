@@ -161,18 +161,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 15,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Se admiten mascotas pequeñas con previo aviso",
             "Ropa de cama y toallas incluidas",
             "No apto para eventos o fiestas",
             "Estacionamiento para un vehículo dentro de la propiedad"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 15
     },
     "seo": {
         "title": "Cabaña del Río - A 300m del río Uruguay en Colón",
@@ -194,7 +197,6 @@
         "004-feature-natural_environment",
         "008-feature-silent_environment",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

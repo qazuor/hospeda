@@ -16,6 +16,7 @@
  *  - Cache headers: Cache-Control is public, max-age=86400, stale-while-revalidate=86400.
  */
 
+import { businessLineToUrlSlug } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getApiUrl } from '../../src/lib/env';
 import {
@@ -864,6 +865,96 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
             expect(body).not.toContain('/autores//');
             expect(body).toContain('/es/autores/carmen-silva/');
+        });
+    });
+
+    // HOS-1869 (AC:6:2): a venue business-line collection enters the sitemap
+    // only when its public listing reports at least one result, with the same
+    // three locales and hreflang block every other landing carries.
+    describe('venue business-line collections (HOS-1869, AC:6:2)', () => {
+        function stubCollectionTotals(totals: Readonly<Record<string, number>>) {
+            const fetchMock = vi.fn().mockImplementation((url: string) => {
+                const parsed = new URL(String(url));
+                const businessLine = parsed.searchParams.get('businessLine');
+                if (businessLine !== null) {
+                    return Promise.resolve(
+                        makeApiResponse(
+                            Array.from({ length: totals[businessLine] ?? 0 }, (_, index) => ({
+                                slug: `venue-${index}`
+                            }))
+                        )
+                    );
+                }
+                return Promise.resolve(makeEmptyApiResponse());
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            return fetchMock;
+        }
+
+        it('emits a populated collection for every locale with its hreflang alternates', async () => {
+            const slug = businessLineToUrlSlug({ value: 'nightlife' }).urlSlug;
+            stubCollectionTotals({ nightlife: 1, food: 0 });
+
+            const body = await (await GET({})).text();
+            const path = `/comer-y-salir/rubro/${slug}/`;
+
+            expect(body).toContain(`https://hospeda.test/es${path}`);
+            expect(body).toContain(`https://hospeda.test/en${path}`);
+            expect(body).toContain(`https://hospeda.test/pt${path}`);
+
+            for (const [code, prefix] of [
+                ['es', '/es'],
+                ['en', '/en'],
+                ['pt', '/pt']
+            ] as const) {
+                expect(body).toContain(
+                    `<xhtml:link rel="alternate" hreflang="${code}" href="https://hospeda.test${prefix}${path}"`
+                );
+            }
+            expect(body).toContain(
+                `<xhtml:link rel="alternate" hreflang="x-default" href="https://hospeda.test/es${path}"`
+            );
+        });
+
+        it('omits an empty collection (no empty page is ever advertised)', async () => {
+            stubCollectionTotals({ nightlife: 0, food: 0 });
+
+            const body = await (await GET({})).text();
+
+            expect(body).not.toContain('/comer-y-salir/rubro/');
+        });
+
+        it('emits only the populated line when the other one is empty', async () => {
+            const nightSlug = businessLineToUrlSlug({ value: 'nightlife' }).urlSlug;
+            const foodSlug = businessLineToUrlSlug({ value: 'food' }).urlSlug;
+            stubCollectionTotals({ nightlife: 2, food: 0 });
+
+            const body = await (await GET({})).text();
+
+            expect(body).toContain(`/es/comer-y-salir/rubro/${nightSlug}/`);
+            expect(body).not.toContain(`/es/comer-y-salir/rubro/${foodSlug}/`);
+        });
+
+        it('keeps the rest of the sitemap valid when every collection fetch fails', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn((url: string) =>
+                    String(url).includes('businessLine')
+                        ? Promise.reject(new Error('collections down'))
+                        : Promise.resolve(makeEmptyApiResponse())
+                )
+            );
+
+            const response = await GET({});
+            const body = await response.text();
+
+            expect(response.status).toBe(200);
+            expect(body).toContain('<?xml version="1.0"');
+            expect(body).toContain('</urlset>');
+            expect(body).not.toContain('/comer-y-salir/rubro/');
+            // The general listing and the static facet landings are untouched.
+            expect(body).toContain('<loc>https://hospeda.test/es/comer-y-salir/</loc>');
+            expect(body).toContain('/eventos/categoria/musica/');
         });
     });
 });

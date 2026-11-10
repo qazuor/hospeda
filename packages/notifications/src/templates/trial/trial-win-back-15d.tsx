@@ -4,7 +4,11 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /** Aviso de recuperación quince días después del fin de la prueba. */
 export function TrialWinBack15Days({
@@ -20,7 +24,7 @@ export function TrialWinBack15Days({
             showUnsubscribe={true}
         >
             <Heading>Tu publicación puede volver cuando quieras</Heading>
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluía {formatTrialVerticals({ verticals })}.

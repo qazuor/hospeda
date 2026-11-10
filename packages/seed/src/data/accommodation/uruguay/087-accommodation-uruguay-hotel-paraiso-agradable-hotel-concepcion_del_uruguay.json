@@ -116,18 +116,21 @@
     },
     "extraInfo": {
         "capacity": 55,
-        "minNights": 1,
-        "maxNights": 25,
         "bedrooms": 28,
         "beds": 40,
         "bathrooms": 28,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior",
             "Desayuno buffet incluido",
             "Estacionamiento descubierto",
             "Recepción con horario amplio"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 25
     },
     "seo": {
         "title": "Paraíso Agradable Hotel - Confort y piscina en Concepción",
@@ -145,8 +148,6 @@
     "featureIds": [
         "031-feature-room_rental",
         "073-feature-permanent_professional_staff",
-        "047-feature-laundry_service",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -168,7 +169,8 @@
         "049-amenity-services-24h-reception",
         "050-amenity-services-room-service",
         "083-amenity-services-bar",
-        "084-amenity-services-restaurant"
+        "084-amenity-services-restaurant",
+        "048-amenity-services-laundry-service"
     ],
     "faqs": [],
     "iaData": [],

@@ -23,9 +23,11 @@ import {
 } from '../../../src/services/qr-code/qr-code.scan-stats';
 
 describe('QR_SCAN_WINDOW_DAYS', () => {
-    it('maps the two supported windows to their day counts', () => {
+    it('maps each supported window to its day count', () => {
         expect(QR_SCAN_WINDOW_DAYS['7d']).toBe(7);
         expect(QR_SCAN_WINDOW_DAYS['30d']).toBe(30);
+        // HOS-1787 leaf 5.7: the removal notice counts the last 90 days.
+        expect(QR_SCAN_WINDOW_DAYS['90d']).toBe(90);
     });
 });
 

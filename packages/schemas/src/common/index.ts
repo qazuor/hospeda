@@ -56,6 +56,8 @@ export * from './listing-media.schema.js';
 export * from './listing-moderation.schema.js';
 export * from './listing-notices.schema.js';
 export * from './listing-owner-listing.schema.js';
+// Shared base of the per-vertical `policies` JSONB (HOS-2060)
+export * from './listing-policies.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';
@@ -76,13 +78,12 @@ export * from './password.schema.js';
 export * from './price.schema.js';
 export { queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';
+// Migration completed ✅
+export * from './reserved-listing-slugs.js';
 export * from './review.schema.js';
 export * from './safe-external-url.schema.js';
 export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';
 // Per-vertical rating breakdowns (the dimensions only make sense per vertical)
-export * from './venue-rating.schema.js';
 export * from './visibility.schema.js';
-
-// Migration completed ✅

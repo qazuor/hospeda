@@ -14,10 +14,12 @@ import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons'
 interface Props {
   readonly price: AccommodationDetailData['price'];
   readonly extraInfo?: AccommodationDetailData['extraInfo'];
+  /** House rules (HOS-2060): the stay length facts read `policies`. */
+  readonly policies?: AccommodationDetailData['policies'];
   readonly lang: string;
 }
 
-const { price, extraInfo, lang } = Astro.props;
+const { price, extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasPrice = price?.price != null && price.price > 0;
@@ -35,13 +37,14 @@ function formatPrice(amount: number): string {
 const fees = price?.additionalFees as Record<string, unknown> | null | undefined;
 const discounts = price?.discounts as Record<string, unknown> | null | undefined;
 
-// Stay policy facts derived from extraInfo. Always-rendered when present so
+// Stay policy facts: capacity from extraInfo, stay length from the house
+// rules (`policies`, HOS-2060). Always-rendered when present so
 // the card is never empty under the price; the seed currently has these set
 // for every accommodation while `additionalFees` and `discounts` are mostly
 // empty.
 const capacity = typeof extraInfo?.capacity === 'number' ? extraInfo.capacity : null;
-const minNights = typeof extraInfo?.minNights === 'number' ? extraInfo.minNights : null;
-const maxNights = typeof extraInfo?.maxNights === 'number' ? extraInfo.maxNights : null;
+const stayMin = policies?.minNights ?? null;
+const stayMax = policies?.maxNights ?? null;
 
 // Pre-process fees and discounts in frontmatter. Both follow AccommodationPriceSchema:
 // each entry has { price, currency, isPercent?, isPerStay?, isPerNight?, ... } and the
@@ -127,7 +130,7 @@ const hasDiscounts = discountEntries.length > 0;
     </div>
   )}
 
-  {(capacity != null || minNights != null || maxNights != null) && (
+  {(capacity != null || stayMin != null || stayMax != null) && (
     <ul class="pricing-sidebar__facts">
       {capacity != null && (
         <li class="pricing-sidebar__fact">
@@ -137,20 +140,20 @@ const hasDiscounts = discountEntries.length > 0;
           <span>{tPlural('accommodations.detail.pricing.capacityFact', capacity)}</span>
         </li>
       )}
-      {minNights != null && minNights > 1 && (
+      {stayMin != null && stayMin > 1 && (
         <li class="pricing-sidebar__fact">
           <span class="pricing-sidebar__fact-icon">
             <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
           </span>
-          <span>{tPlural('accommodations.detail.pricing.minNightsFact', minNights)}</span>
+          <span>{tPlural('accommodations.detail.pricing.minNightsFact', stayMin)}</span>
         </li>
       )}
-      {maxNights != null && maxNights > 0 && maxNights < 30 && (
+      {stayMax != null && stayMax > 0 && stayMax < 30 && (
         <li class="pricing-sidebar__fact">
           <span class="pricing-sidebar__fact-icon">
             <CalendarIcon size="sm" weight="duotone" aria-hidden="true" />
           </span>
-          <span>{tPlural('accommodations.detail.pricing.maxNightsFact', maxNights)}</span>
+          <span>{tPlural('accommodations.detail.pricing.maxNightsFact', stayMax)}</span>
         </li>
       )}
     </ul>

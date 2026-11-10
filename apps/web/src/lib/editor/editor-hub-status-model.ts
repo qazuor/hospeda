@@ -58,11 +58,14 @@ import {
  * - `neutral`  — a plain fact ("6 fotos").
  * - `warning`  — worth fixing, does not block publishing.
  * - `blocking` — publishing is refused until this is resolved.
+ * - `locked`   — the section is stored but withheld by the owner's plan
+ *   (HOS-1854). It is neither an error nor a to-do the editor can clear, so it
+ *   gets its own tone rather than borrowing the warning's.
  *
  * Each carries its own words, so the distinction survives greyscale and a
  * screen reader instead of living in the colour.
  */
-export type EditorStatusTone = 'neutral' | 'warning' | 'blocking';
+export type EditorStatusTone = 'neutral' | 'warning' | 'blocking' | 'locked';
 
 /** One resolved status line. */
 export interface EditorSectionStatus {

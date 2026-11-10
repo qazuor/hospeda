@@ -141,6 +141,34 @@ describe('GET /api/v1/public/venues', () => {
     });
 
     // -------------------------------------------------------------------------
+    // businessLine filter (HOS-1787 leaf 6.8)
+    //
+    // The value is the internal catalog value in English. A Spanish slug, a
+    // value from another vertical, or anything else must be a 400 at request
+    // shape time — before any query runs — never a silently unfiltered 200.
+    // -------------------------------------------------------------------------
+
+    describe('businessLine filter (HOS-1787 6.8)', () => {
+        const headers = { 'user-agent': 'vitest', accept: 'application/json' };
+
+        it.each(['standard', 'noche'])('answers 400 for %s', async (businessLine) => {
+            const res = await app.request(`${BASE}?businessLine=${businessLine}`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('accepts the internal nightlife value (not a 400)', async () => {
+            const res = await app.request(`${BASE}?businessLine=nightlife`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).not.toBe(400);
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // HTTP method restrictions
     // -------------------------------------------------------------------------
 

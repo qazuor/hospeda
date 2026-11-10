@@ -1,0 +1,23 @@
+/**
+ * ServicesForm.module.css — the titled wrapper around the shared catalog
+ * picker on the accommodation services page (HOS-2061). The picker itself is
+ * styled by `shared/catalog-picker/CatalogPicker.module.css`; these two rules
+ * are what the accommodation editor's former `AmenitiesSection` drew around it
+ * (SPEC-208).
+ */
+
+.section {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-5, 2rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-4, 1.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}

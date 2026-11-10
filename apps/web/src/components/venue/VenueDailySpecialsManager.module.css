@@ -170,3 +170,13 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* ── Locked (read-only) menú del día — HOS-1854 ───────────────────────── */
+
+.readOnlyName {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}

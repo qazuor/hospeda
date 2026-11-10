@@ -9,8 +9,9 @@
  * They exist because `buildPayload` is not a uniform diff — it carries per-field
  * semantics that a naive rewrite silently flattens:
  *
- *  - venue `priceRange`/`menuUrl` are `.nullish()` on the domain schema and
- *    send an explicit `null` when cleared;
+ *  - venue `priceRange` is `.nullish()` on the domain schema and sends an
+ *    explicit `null` when cleared; `menuUrl` is NOT part of this diff any more
+ *    (DEC-FAC-062) — it belongs to the carta section;
  *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
  *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
  *    nullable, so it clears to an explicit `null` like the venue fields;
@@ -248,6 +249,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
         slug: 'la-parrilla',
         publicationStatus: 'DRAFT',
         destinationId: DESTINATION_1,
+        businessLines: ['food'],
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides
     } as unknown as ListingDetail;
@@ -345,31 +347,6 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             // `.nullish()` on the domain schema: null is how the owner clears it.
             expect(body).toHaveProperty('priceRange', null);
-        });
-
-        it('sends menuUrl as an explicit null when the link is cleared', async () => {
-            renderEditor('venue', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
-
-            const input = screen.getByLabelText('Enlace al menú');
-            expect(input).toHaveValue('https://old.test/menu');
-
-            fireEvent.change(input, { target: { value: '' } });
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toHaveProperty('menuUrl', null);
-        });
-
-        it('sends menuUrl as the new value when set', async () => {
-            renderEditor('venue', buildListing(), 'price');
-
-            fireEvent.change(screen.getByLabelText('Enlace al menú'), {
-                target: { value: 'https://menu.test/carta' }
-            });
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toHaveProperty('menuUrl', 'https://menu.test/carta');
         });
     });
 
@@ -900,5 +877,142 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             expect(body).toEqual({ priceRange: null });
         });
+    });
+
+    describe('nightInfo (HOS-1787 leaf 5.1)', () => {
+        it('sends only policies.dressCode when only dressCode changed (HOS-2060)', async () => {
+            renderEditor(
+                'venue',
+                buildListing({ policies: { dressCode: 'casual', minAge: 18 } }),
+                'nightInfo'
+            );
+
+            fireEvent.change(screen.getByLabelText('Código de vestimenta'), {
+                target: { value: 'elegant' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ policies: { dressCode: 'elegant' } });
+        });
+
+        it('sends null for a night rule the owner cleared', async () => {
+            renderEditor(
+                'venue',
+                buildListing({ policies: { dressCode: 'casual', minAge: 18 } }),
+                'nightInfo'
+            );
+
+            fireEvent.change(screen.getByLabelText('Edad mínima'), { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ policies: { minAge: null } });
+        });
+    });
+});
+
+describe('ListingEditor — amenity relation attributes (HOS-2061)', () => {
+    const POOL = '33333333-3333-4333-8333-333333333333';
+    const GRILL = '44444444-4444-4444-8444-444444444444';
+    const catalog = [
+        { id: POOL, slug: 'pool', category: 'OUTDOORS' },
+        { id: GRILL, slug: 'grill', category: 'OUTDOORS' }
+    ];
+
+    beforeEach(() => {
+        mockPatch.mockReset();
+        mockPatch.mockResolvedValue({ ok: true, data: {} });
+        vi.mocked(addToast).mockClear();
+    });
+
+    function renderAmenities(vertical: 'venue' | 'experience', overrides = {}) {
+        return render(
+            <ListingEditor
+                vertical={vertical}
+                sectionId="amenities"
+                listingId="abc"
+                locale="es"
+                initialData={buildListing({
+                    amenityIds: [POOL],
+                    amenityAttributes: [{ amenityId: POOL, scope: 'shared', availability: null }],
+                    ...overrides
+                })}
+                destinations={destinationOptions}
+                amenities={catalog}
+                features={[]}
+            />
+        );
+    }
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('%s: seeds the declared attribute and sends only the changed list', async (vertical) => {
+        // Arrange
+        renderAmenities(vertical);
+        expect(screen.getByRole('radio', { name: 'Compartido' })).toBeChecked();
+
+        // Act
+        fireEvent.click(screen.getByRole('radio', { name: 'De temporada' }));
+        fireEvent.click(saveButton());
+
+        // Assert
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [{ amenityId: POOL, scope: 'shared', availability: 'seasonal' }]
+        });
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('%s: checking "Con cargo extra" sends extraCharge true (HOS-2084)', async (vertical) => {
+        // Arrange
+        renderAmenities(vertical);
+        const box = screen.getByRole('checkbox', { name: 'Con cargo extra' });
+        expect(box).not.toBeChecked();
+
+        // Act
+        fireEvent.click(box);
+        fireEvent.click(saveButton());
+
+        // Assert
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: true }
+            ]
+        });
+    });
+
+    it('seeds the stored flag and sends extraCharge false when it is unchecked (HOS-2084)', async () => {
+        renderAmenities('venue', {
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: true }
+            ]
+        });
+        const box = screen.getByRole('checkbox', { name: 'Con cargo extra' });
+        expect(box).toBeChecked();
+
+        fireEvent.click(box);
+        fireEvent.click(saveButton());
+
+        const body = await wireBody();
+        expect(body).toEqual({
+            amenityAttributes: [
+                { amenityId: POOL, scope: 'shared', availability: null, extraCharge: false }
+            ]
+        });
+    });
+
+    it('sends amenityIds and no attributes for a newly checked amenity with nothing declared', async () => {
+        renderAmenities('venue', { amenityAttributes: [] });
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /grill/i }));
+        fireEvent.click(saveButton());
+
+        const body = await wireBody();
+        expect(body).toEqual({ amenityIds: [POOL, GRILL] });
     });
 });

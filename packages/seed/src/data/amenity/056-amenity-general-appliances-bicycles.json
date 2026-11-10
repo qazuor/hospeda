@@ -8,7 +8,7 @@
         "pt": "Bicicletas disponibles"
     },
     "applicableVerticals": ["accommodation", "experience"],
-    "type": "GENERAL_APPLIANCES",
+    "type": "ENTERTAINMENT",
     "icon": "BicyclesIcon",
     "isBuiltin": false,
     "isFeatured": true,

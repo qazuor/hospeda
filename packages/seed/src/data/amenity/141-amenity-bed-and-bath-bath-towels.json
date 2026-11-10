@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "141-amenity-bed-and-bath-bath-towels",
+    "slug": "bath_towels",
+    "description": {
+        "es": "Toallones de baño para cada huésped",
+        "en": "Bath towels for every guest",
+        "pt": "Toalhas de banho para cada hóspede"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "BED_AND_BATH",
+    "icon": "TowelsIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

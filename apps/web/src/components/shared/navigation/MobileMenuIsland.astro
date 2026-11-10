@@ -26,7 +26,7 @@ interface Props {
     /** Current locale for i18n. */
     readonly locale: SupportedLocale;
     /** Navigation items for the menu. */
-    readonly navItems: readonly { label: string; href: string }[];
+    readonly navItems: readonly { label: string; href: string; children?: readonly { label: string; href: string }[] }[];
     /** Current page path for locale switcher URLs. */
     readonly currentPath: string;
     /** Resolved logo image URL. */

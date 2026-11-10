@@ -8,7 +8,7 @@ afterAll(closeTestPool);
 describe('AC:B12:2 action 17 has its own permission after migration from empty', () => {
     it('adds billing.migratePlan with one generated enum statement', async () => {
         const sql = readFileSync(
-            path.join(process.cwd(), 'src/migrations/0206_hos1612_migrate_plan_permission.sql'),
+            path.join(process.cwd(), 'src/migrations/0214_hos1612_migrate_plan_permission.sql'),
             'utf8'
         );
         expect(sql.trim()).toBe(

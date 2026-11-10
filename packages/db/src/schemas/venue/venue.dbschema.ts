@@ -4,11 +4,14 @@ import type {
     I18nText,
     Seo,
     SocialNetwork,
+    VenuePolicies,
     Video
 } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
+import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '@repo/schemas';
+import { relations, sql } from 'drizzle-orm';
 import {
     boolean,
+    check,
     index,
     integer,
     jsonb,
@@ -20,9 +23,10 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { PriceRangePgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
+import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
+import { quotedList } from '../vertical/quoted-list.ts';
 import { rVenueAmenity } from './r_venue_amenity.dbschema.ts';
 import { rVenueFeature } from './r_venue_feature.dbschema.ts';
 import { venueEvents } from './venue_event.dbschema.ts';
@@ -70,8 +74,31 @@ export const venues = pgTable(
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
         /** Venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
         type: VenueTypePgEnum('type').notNull(),
+        businessLines: text('business_lines').array().notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
+        // Nightlife section (`nightInfo`, HOS-1846 / DEC-FAC-036, DEC-FAC-058).
+        // Every column is nullable: the section belongs to the `nightlife`
+        // business line only and a venue may carry none of these values.
+        /** Whether entry is free, paid, or varies; null when the owner has not said. */
+        entryKind: VenueEntryKindPgEnum('entry_kind'),
+        /** Short localized note about the entry (e.g. "free until 1am"). */
+        entryNoteI18n: jsonb('entry_note_i18n').$type<I18nText>(),
+        /** Cover-charge floor in cents; only meaningful while {@link entryKind} is `paid`. */
+        entryPriceFrom: integer('entry_price_from'),
+        /**
+         * When {@link entryPriceFrom} last changed. Server-managed: written only
+         * by the venue service when the value actually changes, so re-sending the
+         * same price does not claim a fresher date.
+         */
+        entryPriceUpdatedAt: timestamp('entry_price_updated_at', { withTimezone: true }),
+        /**
+         * Structured house rules (HOS-2060), validated by `VenuePoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those columns are dropped in release N+1.
+         */
+        policies: jsonb('policies').$type<VenuePolicies>(),
         /**
          * Optional URL to the venue's online menu — the link the owner already
          * publishes somewhere else.
@@ -190,6 +217,32 @@ export const venues = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
+        venues_business_lines_valid: check(
+            'venues_business_lines_valid',
+            sql`cardinality(${table.businessLines}) >= 1 AND ${table.businessLines} <@ ARRAY[${quotedList(BUSINESS_LINES.venue.map(({ value }) => value))}]::text[] AND CASE ${table.type}::text ${sql.join(
+                Object.entries(BUSINESS_LINE_RULES.venue.typeRules).map(
+                    ([type, rule]) =>
+                        sql`WHEN '${sql.raw(type)}' THEN ${table.businessLines} <@ ARRAY[${quotedList(rule.allowed)}]::text[]`
+                ),
+                sql` `
+            )} ELSE false END`
+        ),
+        // DEC-FAC-058: money is a non-negative integer of cents, and a price
+        // only exists while the entry is `paid`. Declared here (not in `extras/`)
+        // so drizzle-kit emits it with the columns and `check-schema-drift.sh`
+        // sees it, following the `venues_business_lines_valid` precedent.
+        venues_entry_price_nonnegative: check(
+            'venues_entry_price_nonnegative',
+            sql`${table.entryPriceFrom} >= 0`
+        ),
+        venues_entry_price_requires_paid: check(
+            'venues_entry_price_requires_paid',
+            sql`${table.entryPriceFrom} IS NULL OR ${table.entryKind} = 'paid'`
+        ),
+        venues_business_lines_gin_idx: index('venues_business_lines_gin_idx').using(
+            'gin',
+            table.businessLines
+        ),
         venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "157-amenity-outdoors-boat-ramp",
+    "slug": "boat_ramp",
+    "description": {
+        "es": "Bajada para botar lanchas al agua",
+        "en": "Ramp for launching boats",
+        "pt": "Rampa para colocar barcos na água"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "RecreationalBoatingIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

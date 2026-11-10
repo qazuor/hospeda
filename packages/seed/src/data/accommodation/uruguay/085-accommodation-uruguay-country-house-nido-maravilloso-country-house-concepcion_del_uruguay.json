@@ -141,12 +141,9 @@
     },
     "extraInfo": {
         "capacity": 7,
-        "minNights": 2,
-        "maxNights": 25,
         "bedrooms": 3,
         "beds": 5,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina privada",
             "Quincho con parrilla y horno de barro",
@@ -154,6 +151,12 @@
             "Entorno rural tranquilo",
             "Chimenea a leña"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 25
     },
     "seo": {
         "title": "Nido Maravilloso - Casa de Campo en Concepción del Uruguay",
@@ -173,7 +176,6 @@
         "030-feature-full_rental",
         "009-feature-isolated_no_neighbors",
         "003-feature-panoramic_view_extended",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

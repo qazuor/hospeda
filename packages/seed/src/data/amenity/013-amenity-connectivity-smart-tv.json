@@ -8,7 +8,7 @@
         "pt": "Smart TV / Streaming"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "CONNECTIVITY",
+    "type": "ENTERTAINMENT",
     "icon": "SmartTvIcon",
     "isBuiltin": false,
     "isFeatured": true,

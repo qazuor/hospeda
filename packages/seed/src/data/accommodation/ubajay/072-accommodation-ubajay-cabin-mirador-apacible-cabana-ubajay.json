@@ -84,12 +84,9 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cabaña apacible",
             "Parrilla exterior",
@@ -97,6 +94,12 @@
             "Cerca del Parque Nacional El Palmar",
             "Vistas al campo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Mirador Apacible - Cabaña tranquila en Ubajay | Cerca El",
@@ -117,7 +120,6 @@
         "004-feature-natural_environment",
         "008-feature-silent_environment",
         "005-feature-rural_area",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

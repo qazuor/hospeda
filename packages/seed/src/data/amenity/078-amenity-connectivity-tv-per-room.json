@@ -8,7 +8,7 @@
         "pt": "TV en cada habitación"
     },
     "applicableVerticals": ["accommodation"],
-    "type": "CONNECTIVITY",
+    "type": "ENTERTAINMENT",
     "icon": "RoomTvIcon",
     "isBuiltin": false,
     "isFeatured": true,

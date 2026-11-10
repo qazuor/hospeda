@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "160-amenity-accessibility-access-ramp",
+    "slug": "access_ramp",
+    "description": {
+        "es": "Rampa en el acceso principal",
+        "en": "Ramp at the main entrance",
+        "pt": "Rampa no acesso principal"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ACCESSIBILITY",
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -41,6 +41,10 @@ export type ListingUnpublishedBecause = z.infer<typeof ListingUnpublishedBecause
  *   lifted, shown for 30 days (H13).
  * - `SURPLUS` (rows 8 and 9): `UNPUBLISHED_BY_BILLING` while the owner is
  *   covered, i.e. lowered by the quota (H6).
+ * - `BUSINESS_LINES_CHANGED` (HOS-1875, DEC-FAC-056): a third party changed the
+ *   listing's business lines. It lasts 30 days from the last change, collapses
+ *   consecutive ones into the last, and disappears when the owner edits the
+ *   lines. Line and section values are ids as the catalog declared them.
  */
 export const ListingNoticeSchema = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('PURGED_BY_INACTIVITY') }),
@@ -81,7 +85,20 @@ export const ListingNoticeSchema = z.discriminatedUnion('kind', [
          */
         unpublishedBecause: ListingUnpublishedBecauseSchema.optional()
     }),
-    z.object({ kind: z.literal('SURPLUS') })
+    z.object({ kind: z.literal('SURPLUS') }),
+    z.object({
+        kind: z.literal('BUSINESS_LINES_CHANGED'),
+        /** When the last business-lines change happened. */
+        at: InstantSchema,
+        /** Business-line values the third party added, in catalog order. */
+        addedLines: z.array(z.string()),
+        /** Business-line values the third party removed, in catalog order. */
+        removedLines: z.array(z.string()),
+        /** Section ids that appear because of the new lines. */
+        shownSections: z.array(z.string()),
+        /** Section ids that stop being visible because of the removed lines. */
+        hiddenSections: z.array(z.string())
+    })
 ]);
 
 /** One notice about a listing (rows 8/9, 18, 20, 24, 30, 31). */

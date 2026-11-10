@@ -41,9 +41,9 @@ describe('createExperienceConsolidatedConfig — sections', () => {
     // practical-details one (HOS-898 / HOS-1047 / HOS-1056). The count stays
     // frozen on purpose: it is what makes a section silently dropped — or a
     // second one silently added — fail here rather than on an operator's screen.
-    it('should return exactly 5 sections', () => {
+    it('should return exactly 6 sections', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections).toHaveLength(5);
+        expect(config.sections).toHaveLength(6);
     });
 
     it('should have listing-identity as the first section', () => {
@@ -68,7 +68,8 @@ describe('createExperienceConsolidatedConfig — sections', () => {
 
     it('should have listing-operational as the last section', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections[4]?.id).toBe('listing-operational');
+        expect(config.sections[4]?.id).toBe('listing-policies');
+        expect(config.sections[5]?.id).toBe('listing-operational');
     });
 });
 
@@ -249,11 +250,23 @@ describe('createExperienceConsolidatedConfig — practical-details section', () 
         return config.sections.find((section) => section.id === 'experience-practical-details');
     }
 
-    it('should expose durationMinutes, cancellationPolicy and acceptsPrivateGroups', () => {
+    it('should expose only durationMinutes (cancellation and private groups are policies, HOS-2060)', () => {
         const section = getPracticalDetailsSection();
         const ids = section?.fields.map((field) => field.id);
 
-        expect(ids).toEqual(['durationMinutes', 'cancellationPolicy', 'acceptsPrivateGroups']);
+        expect(ids).toEqual(['durationMinutes']);
+    });
+
+    it('should edit cancellation and private groups from the house-rules section', () => {
+        const config = createExperienceConsolidatedConfig(t as never);
+        const policies = config.sections.find((section) => section.id === 'listing-policies');
+        const ids = policies?.fields.map((field) => field.id) ?? [];
+
+        expect(ids).toContain('policies.cancellation');
+        expect(ids).toContain('policies.privateGroups');
+        expect(policies?.fields.find((f) => f.id === 'policies.privateGroups')?.type).toBe(
+            FieldTypeEnum.SWITCH
+        );
     });
 
     it('should NOT expose the two text[] checklists', () => {
@@ -290,14 +303,6 @@ describe('createExperienceConsolidatedConfig — practical-details section', () 
             max: MAX_EXPERIENCE_DURATION_MINUTES,
             step: 1
         });
-    });
-
-    it('should render the private-groups flag as a switch, not a text input', () => {
-        const flag = getPracticalDetailsSection()?.fields.find(
-            (field) => field.id === 'acceptsPrivateGroups'
-        );
-
-        expect(flag?.type).toBe(FieldTypeEnum.SWITCH);
     });
 
     it('should carry ordinary listing permissions and NO entitlement gate', () => {

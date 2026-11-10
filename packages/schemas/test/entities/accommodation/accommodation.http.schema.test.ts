@@ -944,20 +944,20 @@ describe('httpToDomainAccommodationCreateDraft — extraInfo minNights default (
     };
     const ownerId = 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f';
 
-    it('always emits extraInfo with minNights: 1 even when no capacity field is sent', () => {
-        // `minNights` is not settable by a host, so the draft defaults it to 1
-        // server-side; without this the publish capacity guard is unsatisfiable.
+    it('always emits policies with minNights: 1 even when no capacity field is sent', () => {
+        // The draft defaults the minimum stay to 1 server-side; without this the
+        // publish guard is unsatisfiable. HOS-2060 moved it into policies.
         const result = httpToDomainAccommodationCreateDraft(baseDraft, ownerId);
-        expect(result.extraInfo).toEqual({ minNights: 1 });
+        expect(result.policies).toEqual({ minNights: 1 });
+        expect(result.extraInfo).toEqual({});
     });
 
-    it('keeps minNights: 1 and adds the present capacity fields', () => {
+    it('adds only the present capacity fields to extraInfo', () => {
         const result = httpToDomainAccommodationCreateDraft(
             { ...baseDraft, maxGuests: 4, bedrooms: 2, bathrooms: 1 },
             ownerId
         );
         expect(result.extraInfo).toEqual({
-            minNights: 1,
             capacity: 4,
             bedrooms: 2,
             bathrooms: 1
@@ -1093,37 +1093,25 @@ describe('accommodation search creation date filters (HOS-1987)', () => {
 // output is what the route hands to AccommodationService.update.
 // ---------------------------------------------------------------------------
 
-describe('AccommodationUpdateHttpSchema — minNights (H-112)', () => {
-    it('accepts a valid minNights value', () => {
-        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 3 });
-        expect(result.success).toBe(true);
+describe('AccommodationUpdateHttpSchema — minimum stay is a policy (H-112, HOS-2060)', () => {
+    it('accepts policies.minNights and rejects values outside 1..365', () => {
+        const parse = (minNights: number) =>
+            AccommodationUpdateHttpSchema.partial().strict().safeParse({ policies: { minNights } })
+                .success;
+        expect(parse(3)).toBe(true);
+        expect(parse(0)).toBe(false);
+        expect(parse(400)).toBe(false);
     });
 
-    it('rejects minNights below 1', () => {
-        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 0 });
+    it('no longer accepts the flat minNights field', () => {
+        const result = AccommodationUpdateHttpSchema.partial().strict().safeParse({ minNights: 2 });
         expect(result.success).toBe(false);
     });
 
-    it('rejects minNights above 365', () => {
-        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 400 });
-        expect(result.success).toBe(false);
-    });
-});
-
-describe('httpToDomainAccommodationUpdate — minNights reaches extraInfo (H-112)', () => {
-    it('maps minNights alone into extraInfo, with no sibling defaults', () => {
-        const result = httpToDomainAccommodationUpdate({ minNights: 2 });
-        expect(result.extraInfo).toEqual({ minNights: 2 });
-    });
-
-    it('merges minNights alongside bedrooms when both are sent', () => {
-        const result = httpToDomainAccommodationUpdate({ minNights: 2, bedrooms: 3 });
-        expect(result.extraInfo).toEqual({ minNights: 2, bedrooms: 3 });
-    });
-
-    it('omits extraInfo entirely when minNights is not sent', () => {
-        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
-        expect(result.extraInfo).toBeUndefined();
+    it('passes policies.minNights through to the domain, never into extraInfo', () => {
+        const result = httpToDomainAccommodationUpdate({ policies: { minNights: 2 }, bedrooms: 3 });
+        expect(result.policies).toEqual({ minNights: 2 });
+        expect(result.extraInfo).toEqual({ bedrooms: 3 });
     });
 });
 

@@ -92,6 +92,12 @@ export const FACET_QUERY_PARAM_KEYS: readonly string[] = Object.freeze([
     'destinationId',
     'destinationIds',
 
+    // --- Business-line collection filter (HOS-1869) --------------------------
+    // The collection lives in the path (`/rubro/<slug>/`), so no page links
+    // this param; the public API still accepts it, and a crafted URL carrying
+    // it is a filtered view of the general listing, never indexable surface.
+    'businessLine',
+
     // --- Sort permutations + internal search results -------------------------
     // `sortBy` multiplies every other combination by the number of sort keys.
     // `q` is an internal search-results param: unbounded, and blocking it is

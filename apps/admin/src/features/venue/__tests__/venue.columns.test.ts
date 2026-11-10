@@ -138,20 +138,9 @@ describe('createVenueColumns — column details', () => {
         const columns = createVenueColumns(t);
         const type = columns.find((c) => c.id === 'type');
         const values = (type?.badgeOptions ?? []).map((o) => o.value);
-        const EXPECTED = [
-            'RESTAURANT',
-            'BAR',
-            'CAFE',
-            'PARRILLA',
-            'CERVECERIA',
-            'HELADERIA',
-            'PANADERIA',
-            'ROTISERIA',
-            'FOOD_TRUCK'
-        ];
-        for (const v of EXPECTED) {
-            expect(values).toContain(v);
-        }
+        const expected = Object.values(VenueTypeEnum);
+        expect(values).toHaveLength(expected.length);
+        expect(new Set(values)).toEqual(new Set(expected));
     });
 
     it('priceRange column badge options should include all PriceRangeEnum values', () => {
@@ -162,5 +151,29 @@ describe('createVenueColumns — column details', () => {
         expect(values).toContain('MID');
         expect(values).toContain('HIGH');
         expect(values).toContain('PREMIUM');
+    });
+});
+
+describe('createVenueColumns — business lines (HOS-1873)', () => {
+    it('includes a businessLines WIDGET column after type', () => {
+        const columns = createVenueColumns(t);
+        const ids = columns.map((c) => c.id);
+        expect(ids).toContain('businessLines');
+        expect(ids.indexOf('businessLines')).toBe(ids.indexOf('type') + 1);
+
+        const column = columns.find((c) => c.id === 'businessLines');
+        expect(column?.columnType).toBe(ColumnType.WIDGET);
+    });
+
+    it('renders the line labels separated by a comma', () => {
+        const columns = createVenueColumns(t);
+        const column = columns.find((c) => c.id === 'businessLines');
+        const rendered = column?.widgetRenderer?.({
+            businessLines: ['food', 'nightlife']
+        } as never);
+
+        expect(rendered).toBe(
+            'venue.owner.businessLines.food.label, venue.owner.businessLines.nightlife.label'
+        );
     });
 });

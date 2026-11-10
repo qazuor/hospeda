@@ -243,15 +243,21 @@ describe('useModerateVenueReviewMutation', () => {
 });
 
 describe('useVenuePendingReviewsQuery', () => {
-    it('should fetch pending reviews list', async () => {
+    it('should fetch pending reviews scoped to the venue listing (AC:G:9)', async () => {
         const mockReviews = [{ id: 'r1', comment: 'Excelente', rating: 5 }];
         mockListSuccess(mockReviews);
 
         const { result } = renderHook(
-            () => useVenuePendingReviewsQuery({ page: 1, pageSize: 20 }),
+            () => useVenuePendingReviewsQuery({ venueId: VENUE_ID, page: 1, pageSize: 20 }),
             { wrapper: createWrapper() }
         );
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // Assert on the REAL request path (no objectContaining: a missing
+        // venueId param would silently list every venue's pending reviews).
+        const { path } = mockedFetchApi.mock.calls[0][0] as { path: string };
+        expect(path).toContain('status=PENDING');
+        expect(path).toContain(`venueId=${VENUE_ID}`);
     });
 });

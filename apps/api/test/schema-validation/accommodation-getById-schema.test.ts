@@ -60,10 +60,10 @@ const ACCOMMODATION_WITH_RELATIONS = {
     tags: [],
     extraInfo: {
         capacity: 4,
-        minNights: 1,
         bedrooms: 2,
         bathrooms: 1
     },
+    policies: { paymentMethods: ['cash'], minNights: 1 },
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     createdById: '33333333-3333-4333-8333-333333333333',

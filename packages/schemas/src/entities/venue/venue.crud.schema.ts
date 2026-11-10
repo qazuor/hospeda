@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { AmenityRelationAttributesListSchema } from '../amenity/amenity.schema.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
@@ -60,8 +62,17 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     // would then destroy. Same rule, same reason as `media` below.
     menuFileUrl: true,
     menuFilePublicId: true,
-    menuFileKind: true
+    menuFileKind: true,
+    // HOS-1846: server-managed price freshness. Written only by
+    // `venue.night-info.ts` when the price changes — never from a body.
+    entryPriceUpdatedAt: true
 }).extend({
+    /** Optional create-time business line selection; the service preselects by type when omitted. */
+    businessLines: z
+        .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
@@ -196,10 +207,29 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     nameI18n: true,
     summaryI18n: true,
     descriptionI18n: true,
-    richDescriptionI18n: true
+    richDescriptionI18n: true,
+    // HOS-1846 nightInfo (DEC-FAC-040): the owner PATCH owns the section's six
+    // writable fields. `entryPriceUpdatedAt` is intentionally absent: it is
+    // server-managed (see the `.omit` schemas). A field missing from this
+    // `.pick` is silently dropped by Zod, so the section would never persist.
+    entryKind: true,
+    entryNoteI18n: true,
+    entryPriceFrom: true,
+    // HOS-2060: structured house rules. Owner-declared, no entitlement,
+    // validated whole by `VenuePoliciesSchema`.
+    policies: true
 })
     .partial()
     .extend({
+        /** Optional business-line replacement; section checks use this resulting state. */
+        businessLines: z
+            .array(
+                z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }),
+                {
+                    error: 'zodError.venue.businessLines.invalidType'
+                }
+            )
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -214,6 +244,12 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });
@@ -270,6 +306,8 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     menuFileUrl: true,
     menuFilePublicId: true,
     menuFileKind: true,
+    // HOS-1846: server-managed price freshness, never accepted from a body.
+    entryPriceUpdatedAt: true,
     // HOS-1113: three more that the owner PATCH already refuses and this
     // create silently accepted, because a `.omit()` schema takes every base
     // field it does not name. The owner-create body is spread verbatim into
@@ -306,6 +344,11 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     averageRating: true,
     rating: true
 }).extend({
+    businessLines: z
+        .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
     /**
@@ -370,6 +413,8 @@ export const VenueUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // HOS-1846: server-managed price freshness (see the venue schema).
+                entryPriceUpdatedAt: true,
                 // Server-managed (HOS-1286): written ONLY by the
                 // featured-by-entitlement sync primitives, the addon checkout
                 // confirmation and the reconcile cron — never through the generic
@@ -412,6 +457,14 @@ export const VenueUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(
+                z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }),
+                {
+                    error: 'zodError.venue.businessLines.invalidType'
+                }
+            )
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -426,6 +479,12 @@ export const VenueUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });
@@ -440,6 +499,29 @@ export const VenuePatchInputSchema = VenueUpdateInputSchema;
 
 /** TypeScript type for {@link VenuePatchInputSchema}. */
 export type VenuePatchInput = z.infer<typeof VenuePatchInputSchema>;
+
+/**
+ * Body of the dedicated business-line change route (ACC:27, HOS-1875).
+ *
+ * The classification of a venue and nothing else: the object is `.strict()`, so
+ * a body that also tries to write content is a 400 before the service sees it.
+ * The service's own action-27 scope is the second layer
+ * (`assertBusinessLinesChangeOnly`). No `vertical` field (F-V1-047): the route's
+ * listing access declares it.
+ */
+export const VenueBusinessLinesChangeInputSchema = z
+    .object({
+        businessLines: z.array(
+            z.enum(VENUE_BUSINESS_LINE_VALUES, {
+                error: 'zodError.venue.businessLines.invalid'
+            }),
+            { error: 'zodError.venue.businessLines.invalidType' }
+        )
+    })
+    .strict();
+
+/** TypeScript type for {@link VenueBusinessLinesChangeInputSchema}. */
+export type VenueBusinessLinesChangeInput = z.infer<typeof VenueBusinessLinesChangeInputSchema>;
 
 /**
  * Schema for venue update response.

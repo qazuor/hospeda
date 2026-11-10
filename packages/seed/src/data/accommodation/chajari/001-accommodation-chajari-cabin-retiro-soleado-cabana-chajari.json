@@ -208,18 +208,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 14,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Se admiten mascotas con previo aviso",
             "La cabaña es atendida por sus dueños, que viven en la misma propiedad en una casa separada",
             "Desayuno con productos caseros y de estación incluido en la tarifa",
             "Posibilidad de participar en actividades agrícolas según temporada"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 14
     },
     "seo": {
         "title": "Retiro Soleado - Cabaña entre naranjos en Chajarí, Entre",
@@ -231,7 +234,6 @@
         "004-feature-natural_environment",
         "008-feature-silent_environment",
         "005-feature-rural_area",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

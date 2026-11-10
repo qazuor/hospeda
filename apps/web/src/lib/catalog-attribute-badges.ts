@@ -44,16 +44,20 @@ const AVAILABILITY_LABELS = {
  *
  * @param params.scope - Declared scope, or null/undefined when not declared
  * @param params.availability - Declared availability, or null/undefined
+ * @param params.extraCharge - `true` when the amenity is paid separately (HOS-2084)
  * @param params.t - Active locale translator
- * @returns Zero, one or two labels
+ * @returns Zero to three labels
  */
 export function resolveAmenityAttributeBadges({
     scope,
     availability,
+    extraCharge,
     t
 }: {
     readonly scope?: string | null;
     readonly availability?: string | null;
+    /** HOS-2084: the relation's `is_optional` flag (paid separately). */
+    readonly extraCharge?: boolean | null;
     readonly t: Translate;
 }): readonly string[] {
     const badges: string[] = [];
@@ -64,6 +68,9 @@ export function resolveAmenityAttributeBadges({
             ? AVAILABILITY_LABELS[availability]
             : undefined;
     if (availabilityLabel) badges.push(t(availabilityLabel.key, availabilityLabel.fallback));
+    if (extraCharge === true) {
+        badges.push(t('accommodations.amenityAttributes.extraCharge.badge', 'Con cargo'));
+    }
     return badges;
 }
 

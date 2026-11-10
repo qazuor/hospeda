@@ -77,11 +77,23 @@ export const useAssignVenueOwnerMutation = () => venueHooks.useAssignOwnerMutati
 export const useModerateVenueReviewMutation = () => venueHooks.useModerateReviewMutation();
 
 /**
- * Query hook to fetch reviews pending moderation for venue listings.
+ * Query hook to fetch reviews pending moderation for one venue listing.
  *
- * @param params - Optional pagination and filter params
+ * `venueId` is required (HOS-2051): the per-listing moderation panel passes
+ * its own listing's id, so the list is scoped to that listing server-side
+ * (`GET /api/v1/admin/venues/reviews?status=PENDING&venueId=…`). Making it a
+ * compile-time requirement stops a panel from silently listing every venue's
+ * pending reviews again.
+ *
+ * @param params - `venueId` (required) plus optional pagination
  * @returns TanStack Query `UseQueryResult`
  */
-export const useVenuePendingReviewsQuery = (
-    params?: Parameters<typeof venueHooks.usePendingReviewsQuery>[0]
-) => venueHooks.usePendingReviewsQuery(params);
+export const useVenuePendingReviewsQuery = ({
+    venueId,
+    page,
+    pageSize
+}: {
+    readonly venueId: string;
+    readonly page?: number;
+    readonly pageSize?: number;
+}) => venueHooks.usePendingReviewsQuery({ page, pageSize, filters: { venueId } });

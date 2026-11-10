@@ -479,6 +479,15 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
                 ]
             }
         ]
+    },
+    ACC_27: {
+        bindings: [
+            {
+                kind: 'tableGate',
+                file: 'apps/api/src/routes/venue/admin/changeBusinessLines.ts',
+                markers: ["administrativeAction: 'ACC_27'"]
+            }
+        ]
     }
 };
 

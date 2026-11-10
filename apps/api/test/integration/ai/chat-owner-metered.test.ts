@@ -105,7 +105,13 @@ const {
  * Mock @repo/ai-core — stub getMonthlyCallCount and recordAiUsage so we can
  * control their return values and spy on their call arguments.
  */
-vi.mock('@repo/ai-core', () => {
+vi.mock('@repo/ai-core', async () => {
+    // HOS-2095: the route appends the reply-language line through the REAL
+    // detector; a whole-module mock would leave it `undefined`.
+    const language = await vi.importActual<
+        typeof import('../../../../../packages/ai-core/src/language/reply-language.js')
+    >('../../../../../packages/ai-core/src/language/reply-language.js');
+
     class AiEngineError extends Error {
         readonly engineCode: string;
         constructor(engineCode: string, message?: string) {
@@ -128,6 +134,7 @@ vi.mock('@repo/ai-core', () => {
     }
 
     return {
+        appendReplyLanguageInstruction: language.appendReplyLanguageInstruction,
         AiEngineError,
         AiFeatureNotConfiguredError,
         getMonthlyCallCount: mockGetMonthlyCallCount,
@@ -251,13 +258,20 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
     createConfiguredAiService: vi.fn(async () => ({
         streamText: vi.fn(async () => {
             const deltas = nextStreamDeltas.current;
+            // Like the real engine, `meta` settles only AFTER the stream drains
+            // (it awaits usage + finishReason), so the route reads the full text.
+            let markDrained: () => void = () => undefined;
+            const drained = new Promise<void>((resolve) => {
+                markDrained = resolve;
+            });
             return {
                 stream: (async function* () {
                     for (const delta of deltas) {
                         yield { delta };
                     }
+                    markDrained();
                 })(),
-                meta: nextMeta.current
+                meta: drained.then(() => nextMeta.current)
             };
         })
     }))
@@ -301,6 +315,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
+import { persistChatTurn } from '../../../src/services/ai-chat-persistence';
 import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
@@ -468,36 +483,65 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 
             // Drain the stream so augmentedMeta settles and recordAiUsage is called.
             await readSseFrames(res);
 
-            // AC-1.2 + SPEC-283: recordAiUsage is called TWICE — owner-keyed (cost)
-            // then consumer-keyed (advances consumer quota).
-            expect(mockRecordAiUsage).toHaveBeenCalledTimes(2);
-            expect(mockRecordAiUsage).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: OWNER_ID,
-                    feature: 'chat',
-                    status: 'success'
+            // HOS-2095: ONE chat request writes exactly ONE ai_usage row. The
+            // listing owner bears the cost (`userId`); the tourist who asked is
+            // carried on the same row (`consumerUserId`) so the consumer quota
+            // can count it without a second, cost-bearing row.
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const [onlyCall] = mockRecordAiUsage.mock.calls as unknown[][];
+            const onlyArg = onlyCall?.[0] as
+                | { userId: string | null; consumerUserId?: string | null; status: string }
+                | undefined;
+            expect(onlyArg?.userId).toBe(OWNER_ID);
+            expect(onlyArg?.consumerUserId).toBe(TOURIST_ID);
+            expect(onlyArg?.status).toBe('success');
+        });
+
+        it('counts the owner quota by userId and the tourist quota by consumerUserId', async () => {
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: TOURIST_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: [{ role: 'user', content: '¿Tiene cochera?' }],
+                    locale: 'es'
                 })
-            );
+            });
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
 
-            // SPEC-283: consumer-keyed call with actor.id (tourist), distinct from ownerId.
-            expect(mockRecordAiUsage).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: TOURIST_ID,
-                    feature: 'chat',
-                    status: 'success'
+            const countArgs = mockGetMonthlyCallCount.mock.calls.map(
+                (call) =>
+                    (call as unknown[])[0] as { userId: string; keyedBy?: 'user' | 'consumer' }
+            );
+            expect(countArgs).toHaveLength(2);
+            expect(countArgs[0]?.userId).toBe(OWNER_ID);
+            expect(countArgs[0]?.keyedBy ?? 'user').toBe('user');
+            expect(countArgs[1]?.userId).toBe(TOURIST_ID);
+            expect(countArgs[1]?.keyedBy).toBe('consumer');
+        });
+
+        it('writes ONE row for a self-chat (owner asking about their own listing)', async () => {
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: OWNER_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: [{ role: 'user', content: '¿Tiene wifi?' }],
+                    locale: 'es'
                 })
-            );
+            });
 
-            // calls[0] = owner-keyed call; calls[1] = consumer-keyed call.
-            const ownerCallArgs = mockRecordAiUsage.mock.calls[0] as unknown[] | undefined;
-            const ownerCallArg = ownerCallArgs?.[0] as { userId: string | null } | undefined;
-            expect(ownerCallArg?.userId).not.toBe(TOURIST_ID);
-            expect(ownerCallArg?.userId).toBe(OWNER_ID);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
 
-            const consumerCallArgs = mockRecordAiUsage.mock.calls[1] as unknown[] | undefined;
-            const consumerCallArg = consumerCallArgs?.[0] as { userId: string | null } | undefined;
-            expect(consumerCallArg?.userId).toBe(TOURIST_ID);
-            expect(consumerCallArg?.userId).not.toBe(OWNER_ID);
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const [onlyCall] = mockRecordAiUsage.mock.calls as unknown[][];
+            const onlyArg = onlyCall?.[0] as
+                | { userId: string | null; consumerUserId?: string | null }
+                | undefined;
+            expect(onlyArg?.userId).toBe(OWNER_ID);
+            expect(onlyArg?.consumerUserId).toBe(OWNER_ID);
         });
 
         it('passes correct provider/model/tokens from resolvedMeta to recordAiUsage', async () => {
@@ -607,5 +651,77 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 
         });
 
         expect(res.status).toBe(401);
+    });
+
+    // =========================================================================
+    // HOS-2095: an empty drained stream must not burn quota or persist a turn
+    // =========================================================================
+
+    describe('HOS-2095 — empty answer (reasoning model spent every token reasoning)', () => {
+        const postChat = () =>
+            app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: TOURIST_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: [{ role: 'user', content: '¿Tiene piscina?' }],
+                    locale: 'es'
+                })
+            });
+
+        it('records exactly one usage row as error, persists nothing and warns', async () => {
+            nextStreamDeltas.current = [];
+            nextMeta.current = Promise.resolve({
+                usage: { promptTokens: 11, completionTokens: 1024, totalTokens: 1035 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'length'
+            });
+
+            const res = await postChat();
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const rows = mockRecordAiUsage.mock.calls.map(
+                (call) =>
+                    (call as unknown[])[0] as {
+                        userId: string | null;
+                        consumerUserId?: string | null;
+                        status: string;
+                    }
+            );
+            expect(rows.map((c) => c.status)).toEqual(['error']);
+            expect(rows.map((c) => c.userId)).toEqual([OWNER_ID]);
+            expect(rows.map((c) => c.consumerUserId)).toEqual([TOURIST_ID]);
+            expect(persistChatTurn).not.toHaveBeenCalled();
+            expect(mockApiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    feature: 'chat',
+                    model: 'stub-model',
+                    finishReason: 'length',
+                    completionTokens: 1024
+                }),
+                expect.stringContaining('empty')
+            );
+        });
+
+        it('keeps success and persists a non-empty answer truncated by length', async () => {
+            nextMeta.current = Promise.resolve({
+                usage: { promptTokens: 11, completionTokens: 1024, totalTokens: 1035 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'length'
+            });
+
+            const res = await postChat();
+            await readSseFrames(res);
+
+            const statuses = mockRecordAiUsage.mock.calls.map(
+                (call) => ((call as unknown[])[0] as { status: string }).status
+            );
+            expect(statuses).toEqual(['success']);
+            expect(persistChatTurn).toHaveBeenCalledTimes(1);
+        });
     });
 });

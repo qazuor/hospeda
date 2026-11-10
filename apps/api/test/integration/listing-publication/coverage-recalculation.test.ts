@@ -295,7 +295,8 @@ describe('TEST:V6 API coverage recalculation', () => {
                         destinationId: destination.id,
                         type: 'CABIN',
                         publicationStatus: status,
-                        extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+                        extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                        policies: { paymentMethods: ['cash'], minNights: 1 }
                     } as Partial<Accommodation>,
                     db
                 );

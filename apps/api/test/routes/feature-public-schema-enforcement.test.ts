@@ -43,6 +43,8 @@ const REQUIRED_PUBLIC_FIELDS = [
     'id',
     'slug',
     'applicableVerticals',
+    // HOS-2058 N+1: `features.category` is NOT NULL and public.
+    'category',
     'isFeatured',
     'isBuiltin'
 ] as const;
@@ -58,6 +60,7 @@ const RAW_FEATURE_WITH_FORBIDDEN_FIELDS = {
     // SPEC-266: `name` was dropped from the catalog; `slug` is the i18n key.
     // applicableVerticals is now required (min 1).
     applicableVerticals: ['accommodation'],
+    category: 'OFFER_PROFILE',
     // description is i18nText({ min: 10, max: 500 }).nullish()
     description: {
         es: 'Una piscina privada al aire libre disponible todo el año',
@@ -112,12 +115,18 @@ describe('FeaturePublicSchema — unit tests (no DB, always run) (SPEC-210)', ()
             slug: 'wifi',
             // SPEC-266: `name` dropped; `applicableVerticals` now required (min 1).
             applicableVerticals: ['accommodation'],
+            category: 'LOCATION',
             isBuiltin: true,
             isFeatured: false,
             displayWeight: 10
         };
         const result = FeaturePublicSchema.safeParse(minimal);
         expect(result.success).toBe(true);
+    });
+
+    it('rejects a public feature without a category (HOS-2058 N+1)', () => {
+        const { category: _omit, ...withoutCategory } = RAW_FEATURE_WITH_FORBIDDEN_FIELDS;
+        expect(FeaturePublicSchema.safeParse(withoutCategory).success).toBe(false);
     });
 });
 

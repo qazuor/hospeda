@@ -1,5 +1,6 @@
 import type {
     AccommodationLocationType,
+    AccommodationPolicies,
     AdminInfoType,
     ContactInfo,
     I18nText,
@@ -8,9 +9,11 @@ import type {
     TranslationMeta,
     Video
 } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
+import { BUSINESS_LINES } from '@repo/schemas';
+import { relations, sql } from 'drizzle-orm';
 import {
     boolean,
+    check,
     index,
     integer,
     jsonb,
@@ -26,6 +29,7 @@ import { AccommodationTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { quotedList } from '../vertical/quoted-list.ts';
 import { accommodationFaqs } from './accommodation_faq.dbschema.ts';
 import { accommodationIaData } from './accommodation_iaData.dbschema.ts';
 import { accommodationMedia } from './accommodation_media.dbschema.ts';
@@ -41,6 +45,14 @@ export const accommodations = pgTable(
         name: text('name').notNull(),
         summary: text('summary').notNull(),
         type: AccommodationTypePgEnum('type').notNull(),
+        businessLines: text('business_lines')
+            .array()
+            .notNull()
+            .default(
+                sql.raw(
+                    `ARRAY[${BUSINESS_LINES.accommodation.map(({ value }) => `'${value}'`).join(', ')}]::text[]`
+                )
+            ),
         description: text('description').notNull(),
         /**
          * SPEC-187 P2-T2: rich-text (markdown) variant of the description.
@@ -121,9 +133,24 @@ export const accommodations = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         lastWarnedAt: timestamp('last_warned_at', { withTimezone: true }),
         extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
+        /**
+         * Structured house rules (HOS-2060), validated by `AccommodationPoliciesSchema` on every
+         * write. Nullable with no default: an undeclared policy is absent, not
+         * `false`. Migration 0194 added it and backfilled it from the fields and
+         * catalog rows it replaced; those are removed in release N+1.
+         */
+        policies: jsonb('policies').$type<AccommodationPolicies>(),
         rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({
+        accommodations_business_lines_valid: check(
+            'accommodations_business_lines_valid',
+            sql`cardinality(${table.businessLines}) >= 1 AND ${table.businessLines} <@ ARRAY[${quotedList(BUSINESS_LINES.accommodation.map(({ value }) => value))}]::text[]`
+        ),
+        accommodations_business_lines_gin_idx: index('accommodations_business_lines_gin_idx').using(
+            'gin',
+            table.businessLines
+        ),
         // SPEC-291: index for admin verified-badge queries/filters.
         accommodations_isVerified_idx: index('accommodations_isVerified_idx').on(table.isVerified),
         // SPEC-292: indexes for featuredByEntitlement (renamed SPEC-309), the only

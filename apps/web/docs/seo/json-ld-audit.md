@@ -31,14 +31,14 @@ component and reused on lower-detail surfaces.
 | `EventJsonLd` | `src/components/seo/EventJsonLd.astro` | `Event` | `eventos/[slug].astro` |
 | `PlaceJsonLd` | `src/components/seo/PlaceJsonLd.astro` | `TouristDestination` | `destinos/[...path].astro` |
 | `ArticleJsonLd` | `src/components/seo/ArticleJsonLd.astro` | `Article` (`BlogPosting`) | `publicaciones/[slug].astro` |
-| `RestaurantJsonLd` | `src/components/seo/RestaurantJsonLd.astro` | `Restaurant` | `gastronomia/[slug].astro` |
+| `VenueJsonLd` | `src/components/seo/VenueJsonLd.astro` | `Restaurant`, `BarOrPub`, `NightClub`, `CafeOrCoffeeShop`, `IceCreamShop`, `Bakery` (by venue type) | `comer-y-salir/[slug].astro` |
 | `TouristAttractionJsonLd` | `src/components/seo/TouristAttractionJsonLd.astro` | `TouristAttraction` | `experiencias/[slug].astro` |
 | `BreadcrumbJsonLd` | `src/components/seo/BreadcrumbJsonLd.astro` | `BreadcrumbList` | All 6 detail pages above |
 | `FAQPageJsonLd` | `src/components/seo/FAQPageJsonLd.astro` | `FAQPage` | Legal pages (privacidad, terminos, cookies), accommodation detail (when FAQs exist), destination detail (when FAQs exist, SPEC-158) |
 | `AboutPageJsonLd` | `src/components/seo/AboutPageJsonLd.astro` | `AboutPage` | `nosotros`, `beneficios` |
 | `PriceSpecificationJsonLd` | `src/components/seo/PriceSpecificationJsonLd.astro` | `Offer` + `UnitPriceSpecification` | `suscriptores/turistas`, `suscriptores/planes` |
 
-`RestaurantJsonLd` and `TouristAttractionJsonLd` were the two entities
+`VenueJsonLd` and `TouristAttractionJsonLd` were the two entities
 missing from this table before HOS-117 T-007/T-013 — venue and
 experience detail pages existed and already mounted their typed components,
 but neither the audit doc nor the coverage guard test tracked them.
@@ -51,7 +51,7 @@ but neither the audit doc nor the coverage guard test tracked them.
 | Event | `src/pages/[lang]/eventos/[slug].astro` | `EventJsonLd` | `BreadcrumbJsonLd` |
 | Destination | `src/pages/[lang]/destinos/[...path].astro` | `PlaceJsonLd` | `BreadcrumbJsonLd`, `FAQPageJsonLd` (conditional) |
 | Post | `src/pages/[lang]/publicaciones/[slug].astro` | `ArticleJsonLd` | `BreadcrumbJsonLd` |
-| Venue | `src/pages/[lang]/comer-y-salir/[slug].astro` | `RestaurantJsonLd` | `BreadcrumbJsonLd` |
+| Venue | `src/pages/[lang]/comer-y-salir/[slug].astro` | `VenueJsonLd` | `BreadcrumbJsonLd` |
 | Experience | `src/pages/[lang]/experiencias/[slug].astro` | `TouristAttractionJsonLd` | `BreadcrumbJsonLd` |
 
 ## Required-field audit per @type
@@ -142,16 +142,16 @@ extends `LocalBusiness`) recommends `name`, `image`, `address`,
 `servesCuisine`, `priceRange`, `aggregateRating` (conditional).
 
 Page: `src/pages/[lang]/comer-y-salir/[slug].astro`.
-Component: `src/components/seo/RestaurantJsonLd.astro`.
+Component: `src/components/seo/VenueJsonLd.astro`.
 
 | Field | Source | Status |
 |-------|--------|--------|
-| `@type` | hard-coded `Restaurant` | OK |
+| `@type` | `VENUE_SCHEMA_ORG_TYPE` lookup in `src/lib/seo/venue-jsonld.ts` (`Restaurant`, `BarOrPub`, `NightClub`, `CafeOrCoffeeShop`, `IceCreamShop`, `Bakery`) | OK |
 | `aggregateRating` | conditional `AggregateRating`, only when a usable rating exists | OK |
 
 > This entity's typed component was added alongside the venue
 > vertical and had never been folded into this audit doc until HOS-117
-> T-013 — verify its full field list against `RestaurantJsonLd.astro`
+> T-013 — verify its full field list against `VenueJsonLd.astro`
 > directly if extending it; this table intentionally only calls out the
 > two fields checked by the schema-shape guard in
 > `json-ld-coverage.test.ts` today.
@@ -183,10 +183,10 @@ Reference: schema.org/BreadcrumbList. Required: `itemListElement[]`
 | `eventos/[slug]` | Yes (T-068 fix) |
 | `publicaciones/[slug]` | Yes (T-068 fix) |
 | `destinos/[...path]` | Yes (T-068 fix) |
-| `gastronomia/[slug]` | Yes |
+| `comer-y-salir/[slug]` | Yes |
 | `experiencias/[slug]` | Yes |
 | Legal pages (`legal/*`) | Not required: legal layout renders breadcrumbs but they are a 2-level Home → Title trail; accepted gap (could be added in v1.1) |
-| Listing pages (`alojamientos/`, `eventos/`, `publicaciones/`, `destinos/`, `gastronomia/`, `experiencias/`) | Not implemented (1-level trail, low value) |
+| Listing pages (`alojamientos/`, `eventos/`, `publicaciones/`, `destinos/`, `comer-y-salir/`, `experiencias/`) | Not implemented (1-level trail, low value) |
 
 The visible `<Breadcrumbs />` component does NOT emit JSON-LD by
 itself — it is intentionally separated from `BreadcrumbJsonLd` so
@@ -255,7 +255,7 @@ retired inline pattern as current.
 
 `json-ld-coverage.test.ts` originally enumerated only 4 detail entities
 (accommodation, event, destination, post). T-007 extended `DETAIL_PAGES`
-to all 6 (adding venue → `RestaurantJsonLd` and experience →
+to all 6 (adding venue → `VenueJsonLd` and experience →
 `TouristAttractionJsonLd`), closing a real regression gap: the two newer
 verticals could have dropped their typed component or `BreadcrumbJsonLd`
 with no CI signal.

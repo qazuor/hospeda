@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "171-amenity-family-friendly-baby-bathtub",
+    "slug": "baby_bathtub",
+    "description": {
+        "es": "Bañera para bañar a un bebé",
+        "en": "Bathtub for bathing a baby",
+        "pt": "Banheira para dar banho em um bebê"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "FAMILY_FRIENDLY",
+    "icon": "HighChairIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

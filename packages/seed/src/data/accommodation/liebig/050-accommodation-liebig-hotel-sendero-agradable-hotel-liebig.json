@@ -76,18 +76,21 @@
     },
     "extraInfo": {
         "capacity": 30,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 15,
         "beds": 22,
         "bathrooms": 15,
-        "smokingAllowed": false,
         "extraInfo": [
             "Desayuno incluido",
             "Estacionamiento descubierto gratuito",
             "Cerca del Frigorífico Histórico",
             "Cerca del río"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Sendero Agradable Hotel - Confort y historia en Liebig ",
@@ -105,10 +108,8 @@
     "featureIds": [
         "031-feature-room_rental",
         "073-feature-permanent_professional_staff",
-        "047-feature-laundry_service",
         "005-feature-rural_area",
         "019-feature-rustic_style",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -130,7 +131,8 @@
         "049-amenity-services-24h-reception",
         "050-amenity-services-room-service",
         "083-amenity-services-bar",
-        "084-amenity-services-restaurant"
+        "084-amenity-services-restaurant",
+        "048-amenity-services-laundry-service"
     ],
     "faqs": [],
     "iaData": [],

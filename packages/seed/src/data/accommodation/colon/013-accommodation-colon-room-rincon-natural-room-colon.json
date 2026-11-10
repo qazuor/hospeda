@@ -213,18 +213,21 @@
     },
     "extraInfo": {
         "capacity": 2,
-        "minNights": 1,
-        "maxNights": 7,
         "bedrooms": 1,
         "beds": 1,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Habitación privada en casa de familia",
             "Acceso a jardín y cocina básica",
             "Baño puede ser compartido",
             "Ideal para viajeros solos o parejas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 7
     },
     "seo": {
         "title": "Rincón Natural - Habitación privada en Colón, Entre Ríos",
@@ -243,7 +246,6 @@
         "031-feature-room_rental",
         "036-feature-shared_space",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

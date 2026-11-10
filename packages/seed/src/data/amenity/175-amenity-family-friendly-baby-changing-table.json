@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "175-amenity-family-friendly-baby-changing-table",
+    "slug": "baby_changing_table",
+    "description": {
+        "es": "Cambiador para bebés disponible en el baño",
+        "en": "Baby changing table available in the restroom",
+        "pt": "Trocador para bebês disponível no banheiro"
+    },
+    "applicableVerticals": ["venue"],
+    "type": "FAMILY_FRIENDLY",
+    "icon": "BabyMonitorIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 45
+}

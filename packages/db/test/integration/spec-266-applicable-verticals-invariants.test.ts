@@ -136,6 +136,7 @@ function makeFeature(
         id: crypto.randomUUID(),
         slug: `spec266-feature-${uid}`,
         applicableVerticals: ['accommodation'],
+        category: 'LOCATION',
         isBuiltin: false,
         isFeatured: false,
         displayWeight: 50,

@@ -16,5 +16,8 @@ export * from './venue.media.schema.js';
 // Menu schemas (HOS-895 — structured carta, uploaded photo/PDF, external link)
 export * from './venue.menu.schema.js';
 
+// Policies (HOS-2060 — the venue extension of the shared listing policies)
+export * from './venue.policies.schema.js';
+
 // Review schemas (uses venueRatingSchema for the rating breakdown)
 export * from './venue.review.schema.js';

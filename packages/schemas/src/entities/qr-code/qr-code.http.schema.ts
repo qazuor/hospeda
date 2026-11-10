@@ -233,15 +233,17 @@ export type QrCodeDownloadResponse = z.infer<typeof QrCodeDownloadResponseSchema
 /**
  * Rolling window accepted by the scan-aggregate read.
  *
- * Deliberately the same two values `hostAnalyticsApi`/`listingAnalyticsApi`
- * already expose for view stats (`apps/web/.../endpoints-protected.ts`,
- * `AnalyticsWindow`), per HOS-1044 §11 OQ-1 — a third window here would be a
- * UI convention this panel invented alone. Declared as its own schema rather
- * than importing `EntityViewWindowSchema` because that one's Zod error message
- * (`zodError.entityView.window.invalid`) belongs to a different domain; the
- * VALUE SET is what is mirrored, not the schema object.
+ * `7d`/`30d` are the values `hostAnalyticsApi`/`listingAnalyticsApi` already
+ * expose for view stats (`apps/web/.../endpoints-protected.ts`,
+ * `AnalyticsWindow`), per HOS-1044 §11 OQ-1. `90d` was added by HOS-1787 leaf
+ * 5.7 for the business-line removal notice, whose owner-approved wording is
+ * "scans in the last 90 days"; the view-stat endpoints keep the two-value set.
+ * Declared as its own schema rather than importing `EntityViewWindowSchema`
+ * because that one's Zod error message (`zodError.entityView.window.invalid`)
+ * belongs to a different domain; the VALUE SET is what is mirrored, not the
+ * schema object.
  */
-export const QrCodeScanWindowSchema = z.enum(['7d', '30d'], {
+export const QrCodeScanWindowSchema = z.enum(['7d', '30d', '90d'], {
     message: 'zodError.qrCode.scan.window.invalid'
 });
 

@@ -73,7 +73,7 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
 
         // Use direct translations from config
         const label = config.label;
-        const description = config.description;
+        const description = config.descriptionForValue?.(value) ?? config.description;
         const placeholder = config.placeholder;
         const helper = config.help;
 

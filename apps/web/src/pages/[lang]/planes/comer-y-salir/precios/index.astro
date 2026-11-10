@@ -46,7 +46,7 @@
  */
 
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { BarChartIcon, ForkKnifeIcon, StarIcon } from '@repo/icons';
+import { BarChartIcon, StarIcon, VenueIcon } from '@repo/icons';
 import AudiencePricingSections from '@/components/billing/AudiencePricingSections.astro';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
@@ -152,7 +152,7 @@ const headingMain = headingWords.join(' ');
         titleAccent={headingAccent}
         subtitle={t(`${copyRoot}.subtitle`)}
     >
-        <Fragment slot="icon-1"><ForkKnifeIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-1"><VenueIcon size="md" weight="duotone" /></Fragment>
         <Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
         <Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
     </MarketingHero>

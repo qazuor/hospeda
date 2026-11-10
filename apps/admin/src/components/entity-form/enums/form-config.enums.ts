@@ -26,6 +26,8 @@ export enum FieldTypeEnum {
     RADIO = 'RADIO',
     SELECT = 'SELECT',
     SELECT_MULTIPLE = 'SELECT_MULTIPLE',
+    /** Catalog-driven business-line checkbox group; options depend on another field (the listing type). */
+    BUSINESS_LINES = 'BUSINESS_LINES',
     SWITCH = 'SWITCH',
     SLIDER = 'SLIDER',
     RANGE = 'RANGE',

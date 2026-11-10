@@ -71,6 +71,7 @@ function featureFixture(): typeof features.$inferInsert {
     return {
         id: crypto.randomUUID(),
         slug: `hos598-feature-${uid}`,
+        category: 'LOCATION',
         lifecycleState: 'ACTIVE' as const
     };
 }

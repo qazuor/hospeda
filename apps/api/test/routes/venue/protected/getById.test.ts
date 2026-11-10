@@ -12,7 +12,7 @@
  * - Staff actor holding VENUE_VIEW_ALL receives the listing (200 bypass)
  * - Unauthenticated requests receive 401
  */
-import { PermissionEnum } from '@repo/schemas';
+import { AmenityScopeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -21,6 +21,7 @@ const BASE = '/api/v1/protected/venues';
 const LISTING_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-a111-111111111111';
 const NON_OWNER_ID = '22222222-2222-4222-a222-222222222222';
+const ATTRIBUTE_AMENITY_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 // ---------------------------------------------------------------------------
 // Minimal venue fixture that satisfies VenueProtectedSchema.
@@ -90,7 +91,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             override async loadJunctionIds(
                 ..._args: Parameters<typeof orig.VenueService.prototype.loadJunctionIds>
             ): ReturnType<typeof orig.VenueService.prototype.loadJunctionIds> {
-                return { amenityIds: [], featureIds: [] };
+                // HOS-2061: one declared attribute, to prove it reaches the owner.
+                return {
+                    amenityIds: [ATTRIBUTE_AMENITY_ID],
+                    featureIds: [],
+                    amenityAttributes: [
+                        {
+                            amenityId: ATTRIBUTE_AMENITY_ID,
+                            scope: AmenityScopeEnum.SHARED,
+                            availability: null
+                        }
+                    ]
+                };
             }
         }
     };
@@ -177,9 +189,15 @@ describe('GET /api/v1/protected/venues/:id — ownership IDOR regression', () =>
         if (res.status === 401 || res.status === 403) return;
 
         expect(res.status).toBe(200);
-        const body = (await res.json()) as { data: { id: string; ownerId: string } };
+        const body = (await res.json()) as {
+            data: { id: string; ownerId: string; amenityAttributes?: unknown };
+        };
         expect(body.data.id).toBe(LISTING_ID);
         expect(body.data.ownerId).toBe(OWNER_ID);
+        // HOS-2061: the editor seeds its scope/availability controls from this.
+        expect(body.data.amenityAttributes).toEqual([
+            { amenityId: ATTRIBUTE_AMENITY_ID, scope: 'shared', availability: null }
+        ]);
     });
 
     it('returns 200 for a staff actor holding VENUE_VIEW_ALL (bypass gate)', async () => {

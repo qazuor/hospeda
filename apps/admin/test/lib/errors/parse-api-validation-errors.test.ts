@@ -303,3 +303,54 @@ describe('parseApiValidationErrors', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Business-line 400 (HOS-1873, TEST:7.1:7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal translator for the one key the business-line error resolves to.
+ * The real dictionary path is covered by `parse-api-validation-errors.messages.test.ts`;
+ * here the important assertion is that the raw `zodError.*` key never leaks.
+ */
+const businessLinesT = (key: string): string =>
+    key === 'validation.venue.businessLines.NOT_ALLOWED_FOR_TYPE'
+        ? 'Este tipo de comercio no admite ese rubro'
+        : key;
+
+describe('parseApiValidationErrors — business-line 400', () => {
+    it('maps the object `details` to the businessLines field', () => {
+        const body = {
+            success: false,
+            error: {
+                code: 'VALIDATION_ERROR',
+                reason: 'BUSINESS_LINES_INVALID',
+                details: {
+                    field: 'businessLines',
+                    reason: 'NOT_ALLOWED_FOR_TYPE'
+                }
+            }
+        };
+
+        const result = parseApiValidationErrors({ error: body, t: businessLinesT });
+
+        expect(result).toEqual({
+            businessLines: 'Este tipo de comercio no admite ese rubro'
+        });
+        expect(result.businessLines).not.toContain('[MISSING:');
+        expect(result.businessLines).not.toContain('zodError.');
+    });
+
+    it('returns an empty map for an object `details` without the business-line reason', () => {
+        const body = {
+            success: false,
+            error: {
+                code: 'VALIDATION_ERROR',
+                reason: 'SOMETHING_ELSE',
+                details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+            }
+        };
+
+        expect(parseApiValidationErrors({ error: body, t: businessLinesT })).toEqual({});
+    });
+});

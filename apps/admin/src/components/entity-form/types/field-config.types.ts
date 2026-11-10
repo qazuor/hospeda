@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/schemas';
+import type { ListingVertical, PermissionEnum } from '@repo/schemas';
 import type { ZodSchema } from 'zod';
 import type {
     EntityTypeEnum,
@@ -76,6 +76,7 @@ export type FieldTypeConfig =
     | TextFieldConfig
     | TextareaFieldConfig
     | SelectFieldConfig
+    | BusinessLinesFieldConfig
     | EntitySelectFieldConfig
     | CurrencyFieldConfig
     | RichTextFieldConfig
@@ -132,6 +133,17 @@ export type SelectFieldConfig = {
     searchable?: boolean;
     clearable?: boolean;
     multiple?: boolean;
+};
+
+/**
+ * Business-line checkbox group configuration.
+ *
+ * The options are resolved from the catalog at render time, driven by the
+ * listing type held in the sibling `typeFieldId` field.
+ */
+export type BusinessLinesFieldConfig = {
+    vertical: ListingVertical;
+    typeFieldId: string;
 };
 
 /**
@@ -408,6 +420,11 @@ export type PostSelectFieldConfig = BaseEntitySelectFieldConfig & {
  */
 export type FeatureSelectFieldConfig = BaseEntitySelectFieldConfig & {
     categoryFilter?: string[]; // Filter by feature category
+    /**
+     * Vertical whose catalog the picker offers (`accommodation`, `venue`,
+     * `experience`). Omitted = the whole catalog (HOS-2061 AC-4).
+     */
+    applicableVertical?: string;
 };
 
 /**
@@ -415,6 +432,11 @@ export type FeatureSelectFieldConfig = BaseEntitySelectFieldConfig & {
  */
 export type AmenitySelectFieldConfig = BaseEntitySelectFieldConfig & {
     categoryFilter?: string[]; // Filter by amenity category
+    /**
+     * Vertical whose catalog the picker offers (`accommodation`, `venue`,
+     * `experience`). Omitted = the whole catalog (HOS-2061 AC-4).
+     */
+    applicableVertical?: string;
 };
 
 /**
@@ -459,6 +481,11 @@ export type FieldConfig = {
     // Direct translations (explicit control)
     label?: string;
     description?: string;
+    /**
+     * Builds a description from the field's current value. Use this for
+     * guidance that changes when a select option is chosen.
+     */
+    descriptionForValue?: (value: unknown) => string | undefined;
     placeholder?: string;
     help?: string;
     title?: string;

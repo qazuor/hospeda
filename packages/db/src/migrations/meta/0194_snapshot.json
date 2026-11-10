@@ -1,6 +1,6 @@
 {
-  "id": "cfb140e1-3be8-4b70-bb91-296267753e44",
-  "prevId": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
+  "id": "90bf90e1-e867-4c33-926a-ebdd8f8ea097",
+  "prevId": "33d114d7-7da1-4adc-9330-abc03644f4e7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -39,6 +39,13 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
+        },
+        "business_lines": {
+          "name": "business_lines",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY['standard']::text[]"
         },
         "description": {
           "name": "description",
@@ -259,6 +266,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "policies": {
+          "name": "policies",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "rating": {
           "name": "rating",
           "type": "jsonb",
@@ -267,6 +280,21 @@
         }
       },
       "indexes": {
+        "accommodations_business_lines_gin_idx": {
+          "name": "accommodations_business_lines_gin_idx",
+          "columns": [
+            {
+              "expression": "business_lines",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
         "accommodations_isVerified_idx": {
           "name": "accommodations_isVerified_idx",
           "columns": [
@@ -506,7 +534,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "accommodations_business_lines_valid": {
+          "name": "accommodations_business_lines_valid",
+          "value": "cardinality(\"accommodations\".\"business_lines\") >= 1 AND \"accommodations\".\"business_lines\" <@ ARRAY['standard']::text[]"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.accommodation_faqs": {
@@ -2043,7 +2076,7 @@
           "type": "feature_category_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "lifecycle_state": {
           "name": "lifecycle_state",
@@ -8065,7 +8098,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -10982,6 +11015,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "business_lines": {
+          "name": "business_lines",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY['standard']::text[]"
+        },
         "price_from": {
           "name": "price_from",
           "type": "integer",
@@ -11059,6 +11099,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "policies": {
+          "name": "policies",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "contact_info": {
           "name": "contact_info",
@@ -11200,6 +11246,21 @@
         }
       },
       "indexes": {
+        "experiences_business_lines_gin_idx": {
+          "name": "experiences_business_lines_gin_idx",
+          "columns": [
+            {
+              "expression": "business_lines",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
         "experiences_destinationId_idx": {
           "name": "experiences_destinationId_idx",
           "columns": [
@@ -11411,7 +11472,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "experiences_business_lines_valid": {
+          "name": "experiences_business_lines_valid",
+          "value": "cardinality(\"experiences\".\"business_lines\") >= 1 AND \"experiences\".\"business_lines\" <@ ARRAY['standard']::text[]"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.r_experience_amenity": {
@@ -23316,12 +23382,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -24998,10 +25058,66 @@
           "primaryKey": false,
           "notNull": true
         },
+        "business_lines": {
+          "name": "business_lines",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
         "price_range": {
           "name": "price_range",
           "type": "price_range_enum",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_kind": {
+          "name": "entry_kind",
+          "type": "venue_entry_kind_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_note_i18n": {
+          "name": "entry_note_i18n",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_price_from": {
+          "name": "entry_price_from",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_price_updated_at": {
+          "name": "entry_price_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "min_age": {
+          "name": "min_age",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dress_code": {
+          "name": "dress_code",
+          "type": "venue_dress_code_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dress_code_note_i18n": {
+          "name": "dress_code_note_i18n",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "policies": {
+          "name": "policies",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -25170,6 +25286,21 @@
         }
       },
       "indexes": {
+        "venues_business_lines_gin_idx": {
+          "name": "venues_business_lines_gin_idx",
+          "columns": [
+            {
+              "expression": "business_lines",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
         "venues_destinationId_idx": {
           "name": "venues_destinationId_idx",
           "columns": [
@@ -25381,7 +25512,20 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "venues_business_lines_valid": {
+          "name": "venues_business_lines_valid",
+          "value": "cardinality(\"venues\".\"business_lines\") >= 1 AND \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] AND CASE \"venues\".\"type\"::text WHEN 'RESTAURANT' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'CAFE' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'PARRILLA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'HELADERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'PANADERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'ROTISERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'FOOD_TRUCK' THEN \"venues\".\"business_lines\" <@ ARRAY['food']::text[] WHEN 'BAR' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'CERVECERIA' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'PUB' THEN \"venues\".\"business_lines\" <@ ARRAY['food', 'nightlife']::text[] WHEN 'BOLICHE' THEN \"venues\".\"business_lines\" <@ ARRAY['nightlife']::text[] ELSE false END"
+        },
+        "venues_entry_price_nonnegative": {
+          "name": "venues_entry_price_nonnegative",
+          "value": "\"venues\".\"entry_price_from\" >= 0"
+        },
+        "venues_entry_price_requires_paid": {
+          "name": "venues_entry_price_requires_paid",
+          "value": "\"venues\".\"entry_price_from\" IS NULL OR \"venues\".\"entry_kind\" = 'paid'"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.venue_daily_specials": {
@@ -29880,6 +30024,121 @@
       },
       "isRLSEnabled": false
     },
+    "public.provider_charge_snapshot": {
+      "name": "provider_charge_snapshot",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charge_id": {
+          "name": "charge_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authorization_id": {
+          "name": "authorization_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_created_at": {
+          "name": "provider_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decline_reason": {
+          "name": "decline_reason",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refunded_amount_minor": {
+          "name": "refunded_amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charged_back": {
+          "name": "charged_back",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_provider_charge_snapshot_provider_charge": {
+          "name": "uq_provider_charge_snapshot_provider_charge",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider",
+            "charge_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.provider_link": {
       "name": "provider_link",
       "schema": "",
@@ -32197,121 +32456,6 @@
         }
       },
       "isRLSEnabled": false
-    },
-    "public.provider_charge_snapshot": {
-      "name": "provider_charge_snapshot",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "provider": {
-          "name": "provider",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "charge_id": {
-          "name": "charge_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "authorization_id": {
-          "name": "authorization_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider_created_at": {
-          "name": "provider_created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "purpose": {
-          "name": "purpose",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reference": {
-          "name": "reference",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "decline_reason": {
-          "name": "decline_reason",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "amount_minor": {
-          "name": "amount_minor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "refunded_amount_minor": {
-          "name": "refunded_amount_minor",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "currency": {
-          "name": "currency",
-          "type": "varchar(3)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "charged_back": {
-          "name": "charged_back",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "observed_at": {
-          "name": "observed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "uq_provider_charge_snapshot_provider_charge": {
-          "name": "uq_provider_charge_snapshot_provider_charge",
-          "nullsNotDistinct": false,
-          "columns": [
-            "provider",
-            "charge_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -32366,6 +32510,22 @@
         "WATER_ACTIVITIES",
         "WELLNESS",
         "DINING"
+      ]
+    },
+    "public.amenity_availability_enum": {
+      "name": "amenity_availability_enum",
+      "schema": "public",
+      "values": [
+        "year_round",
+        "seasonal"
+      ]
+    },
+    "public.amenity_scope_enum": {
+      "name": "amenity_scope_enum",
+      "schema": "public",
+      "values": [
+        "private",
+        "shared"
       ]
     },
     "public.auth_provider_enum": {
@@ -32557,6 +32717,23 @@
         "idle",
         "pending",
         "running"
+      ]
+    },
+    "public.feature_category_enum": {
+      "name": "feature_category_enum",
+      "schema": "public",
+      "values": [
+        "LOCATION",
+        "VIEW",
+        "ACCESS",
+        "STYLE",
+        "AUDIENCE",
+        "OFFER_PROFILE",
+        "SUSTAINABILITY",
+        "ACTIVITIES",
+        "CUISINE",
+        "DIETARY",
+        "LANGUAGE"
       ]
     },
     "public.host_trade_benefit_type_enum": {
@@ -33470,9 +33647,6 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
-        "billing.refund",
-        "billing.registerManualPayment",
-        "billing.declareManualUnpaid",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
@@ -33513,7 +33687,6 @@
         "partner.delete",
         "partner.viewAll",
         "partner.manage",
-        "partner.resolveApplication",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",
@@ -33882,6 +34055,25 @@
         "vip"
       ]
     },
+    "public.venue_dress_code_enum": {
+      "name": "venue_dress_code_enum",
+      "schema": "public",
+      "values": [
+        "casual",
+        "smart_casual",
+        "elegant",
+        "no_restrictions"
+      ]
+    },
+    "public.venue_entry_kind_enum": {
+      "name": "venue_entry_kind_enum",
+      "schema": "public",
+      "values": [
+        "free",
+        "paid",
+        "varies"
+      ]
+    },
     "public.venue_type_enum": {
       "name": "venue_type_enum",
       "schema": "public",
@@ -33894,7 +34086,9 @@
         "HELADERIA",
         "PANADERIA",
         "ROTISERIA",
-        "FOOD_TRUCK"
+        "FOOD_TRUCK",
+        "PUB",
+        "BOLICHE"
       ]
     },
     "public.visibility_enum": {
@@ -33981,39 +34175,6 @@
       "values": [
         "visible",
         "archived"
-      ]
-    },
-    "public.amenity_availability_enum": {
-      "name": "amenity_availability_enum",
-      "schema": "public",
-      "values": [
-        "year_round",
-        "seasonal"
-      ]
-    },
-    "public.amenity_scope_enum": {
-      "name": "amenity_scope_enum",
-      "schema": "public",
-      "values": [
-        "private",
-        "shared"
-      ]
-    },
-    "public.feature_category_enum": {
-      "name": "feature_category_enum",
-      "schema": "public",
-      "values": [
-        "LOCATION",
-        "VIEW",
-        "ACCESS",
-        "STYLE",
-        "AUDIENCE",
-        "OFFER_PROFILE",
-        "SUSTAINABILITY",
-        "ACTIVITIES",
-        "CUISINE",
-        "DIETARY",
-        "LANGUAGE"
       ]
     }
   },

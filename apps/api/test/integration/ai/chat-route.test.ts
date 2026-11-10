@@ -78,8 +78,11 @@ const {
     mockOwnerLimits: { current: new Map<string, number>([['max_ai_chat_per_month', 20]]) },
     // Rows returned by the DB ownerId lookup (empty = 404).
     mockOwnerQueryResult: {
-        current: [{ ownerId: '11111111-1111-1111-1111-111111111111' }] as Array<{
+        current: [
+            { ownerId: '11111111-1111-1111-1111-111111111111', businessLines: ['food'] }
+        ] as Array<{
             ownerId: string;
+            businessLines: string[];
         }>
     },
     resolvedPromptForTest: { current: 'Resolved prompt from admin/default.' },
@@ -109,7 +112,13 @@ const {
     effectiveSetSpy: vi.fn()
 }));
 
-vi.mock('@repo/ai-core', () => {
+vi.mock('@repo/ai-core', async () => {
+    // HOS-2095: the route appends the reply-language line through the REAL
+    // detector; a whole-module mock would leave it `undefined`.
+    const language = await vi.importActual<
+        typeof import('../../../../../packages/ai-core/src/language/reply-language.js')
+    >('../../../../../packages/ai-core/src/language/reply-language.js');
+
     class AiEngineError extends Error {
         readonly engineCode: string;
 
@@ -135,10 +144,12 @@ vi.mock('@repo/ai-core', () => {
     }
 
     return {
+        appendReplyLanguageInstruction: language.appendReplyLanguageInstruction,
         AiEngineError,
         AiFeatureNotConfiguredError,
         getMonthlyCallCount: vi.fn(async () => getMonthlyCallCountReturn.current),
         recordAiUsage: vi.fn(async () => undefined),
+        resolveConfig: vi.fn(async () => ({ providers: {}, features: {} })),
         resolveSystemPrompt: vi.fn(async () => ({
             content: resolvedPromptForTest.current,
             rules: '',
@@ -172,7 +183,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         select: (cols: unknown) => {
             from: (table: unknown) => {
                 where: (cond: unknown) => {
-                    limit: (n: number) => Promise<Array<{ ownerId: string }>>;
+                    limit: (
+                        n: number
+                    ) => Promise<Array<{ ownerId: string; businessLines: string[] }>>;
                 };
             };
         };
@@ -301,7 +314,6 @@ vi.mock('../../../src/utils/logger', () => ({
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { recordAiUsage } from '@repo/ai-core';
-
 import {
     EntitlementKeyEnum,
     LimitKeyEnum,
@@ -311,6 +323,7 @@ import {
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { REPLY_LANGUAGE_INSTRUCTIONS } from '../../../../../packages/ai-core/src/language/reply-language.js';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
@@ -428,7 +441,12 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         // Owner billing state defaults (SPEC-211 Phase 1 §7.3 — pass-through for most tests).
         mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT];
         mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
-        mockOwnerQueryResult.current = [{ ownerId: '11111111-1111-1111-1111-111111111111' }];
+        mockOwnerQueryResult.current = [
+            {
+                ownerId: '11111111-1111-1111-1111-111111111111',
+                businessLines: ['food']
+            }
+        ];
         resolvedPromptForTest.current = 'Resolved prompt from admin/default.';
         nextContextResult.current = {
             contextBlock: '## Accommodation: Test Cabin',
@@ -490,12 +508,18 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             key: 'manage_experience_directions',
             enabled: false
         }
-    ])('passes effective $entityType capabilities to its context assembler', async (testCase) => {
+    ])('passes resolved $entityType listing states to its context assembler', async (testCase) => {
         const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, testCase.entityType).mockResolvedValue({
             contextBlock: 'context',
             systemMessage: 'system',
             entityName: 'test listing'
         });
+        mockOwnerQueryResult.current = [
+            {
+                ownerId: OWNER_ID,
+                businessLines: testCase.entityType === 'venue' ? ['food'] : ['standard']
+            }
+        ];
         mockOwnerEntitlements.current = [
             EntitlementKeyEnum.AI_CHAT,
             ...(testCase.enabled ? [testCase.key] : [])
@@ -522,16 +546,48 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(res.status).toBe(200);
         expect(assembler).toHaveBeenCalledWith(
             expect.objectContaining({
-                ownerCapabilities: {
-                    manageVenueMenu: testCase.entityType === 'venue' && testCase.enabled,
-                    manageExperienceDirections:
-                        testCase.entityType === 'experience' && testCase.enabled
-                }
+                listingSections: expect.any(Map)
             })
         );
+        const resolvedStates = assembler.mock.calls[0]?.[0].listingSections;
+        if (testCase.entityType === 'venue') {
+            expect(resolvedStates?.get('menu')?.state).toBe(
+                testCase.enabled ? 'available' : 'locked'
+            );
+        } else {
+            expect(resolvedStates?.get('meetingPoint')?.traits.get('directions')).toBe(
+                testCase.enabled ? 'available' : 'locked'
+            );
+        }
         expect(
             effectiveSetSpy.mock.calls.filter(([args]) => args.userId === OWNER_ID)
         ).toHaveLength(1);
+        assembler.mockRestore();
+    });
+
+    it('keeps the menu absent in chat for nightlife even when the owner has manage_venue_menu', async () => {
+        const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, 'venue').mockResolvedValue({
+            contextBlock: 'context',
+            systemMessage: 'system',
+            entityName: 'test venue'
+        });
+        mockOwnerQueryResult.current = [{ ownerId: OWNER_ID, businessLines: ['nightlife'] }];
+        mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT, 'manage_venue_menu'];
+        mockOwnerLimits.current = new Map([['max_ai_chat_venue_per_month', 20]]);
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType: 'venue',
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        const listingSections = assembler.mock.calls[0]?.[0].listingSections;
+        expect(listingSections?.get('menu')?.state).toBe('absent');
         assembler.mockRestore();
     });
 
@@ -578,6 +634,37 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             }
         });
         expect(streamTextCalls).toHaveLength(0);
+    });
+
+    it.each([
+        { entityType: 'accommodation' as const, limitKey: 'max_ai_chat_per_month' },
+        { entityType: 'venue' as const, limitKey: 'max_ai_chat_venue_per_month' },
+        { entityType: 'experience' as const, limitKey: 'max_ai_chat_experience_per_month' }
+    ])('HOS-2076: the owner LIMIT_REACHED message for $entityType does not name the listing type', async ({
+        entityType,
+        limitKey
+    }) => {
+        mockOwnerQueryResult.current = [{ ownerId: OWNER_ID, businessLines: ['standard'] }];
+        mockOwnerLimits.current = new Map([[limitKey, 20]]);
+        getMonthlyCallCountReturn.current = 20;
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType,
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(403);
+        const body = (await res.json()) as { error: { code: string; message: string } };
+        expect(body.error.code).toBe('LIMIT_REACHED');
+        expect(body.error.message).not.toMatch(/alojamiento/i);
+        expect(body.error.message).toBe(
+            'El propietario ha alcanzado el límite mensual de chats de IA.'
+        );
     });
 
     it('returns 400 VALIDATION_ERROR when messages exceed the 20-message cap', async () => {
@@ -766,7 +853,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         const call = streamTextCalls[0];
         expect(call?.feature).toBe('chat');
         expect(call?.locale).toBe('es');
-        expect(call?.system).toBe('SYSTEM MESSAGE');
+        // HOS-2095: a confidently Spanish message gets the explicit line appended.
+        expect(call?.system).toBe(`SYSTEM MESSAGE\n${REPLY_LANGUAGE_INSTRUCTIONS.es}`);
         expect(call?.messages).toEqual([{ role: 'user', content: '¿Tiene wifi?' }]);
         expect(call?.messages.some((m) => m.role === 'system')).toBe(false);
     });
@@ -796,7 +884,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
 
         expect(streamTextCalls).toHaveLength(1);
         const call = streamTextCalls[0];
-        expect(call?.system).toBe('SYSTEM MESSAGE');
+        // HOS-2095: the LATEST user message decides (Spanish), not the page locale (pt).
+        expect(call?.system).toBe(`SYSTEM MESSAGE\n${REPLY_LANGUAGE_INSTRUCTIONS.es}`);
         expect(call?.messages).toEqual(messages);
         expect(call?.messages.some((m) => m.role === 'system')).toBe(false);
         expect(call?.locale).toBe('pt');
@@ -815,6 +904,58 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
                 userId: UNIQUE_USER_ID
             })
         );
+    });
+
+    describe('HOS-2095 — explicit reply language from the latest message', () => {
+        const send = async (
+            messages: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>,
+            locale = 'es'
+        ) => {
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({ accommodationId: ACCOMMODATION_ID, messages, locale })
+            });
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
+            return streamTextCalls[0]?.system ?? '';
+        };
+
+        it('appends "Reply in English." as the LAST line for an English question on a Spanish page', async () => {
+            const system = await send([{ role: 'user', content: 'Hi! Is breakfast included?' }]);
+            expect(system).toBe(`SYSTEM MESSAGE\n${REPLY_LANGUAGE_INSTRUCTIONS.en}`);
+            expect(system.split('\n').at(-1)).toContain('Reply in English.');
+        });
+
+        it('appends the Portuguese line for a Portuguese question', async () => {
+            const system = await send([{ role: 'user', content: 'oi, aceita cachorro?' }]);
+            expect(system.split('\n').at(-1)).toBe(REPLY_LANGUAGE_INSTRUCTIONS.pt);
+        });
+
+        it('decides on the latest user turn, not on earlier Spanish turns', async () => {
+            const system = await send([
+                { role: 'user', content: 'Hola, tienen pileta?' },
+                { role: 'assistant', content: 'Sí, el lugar tiene pileta.' },
+                { role: 'user', content: 'Great, do you allow dogs?' }
+            ]);
+            expect(system.split('\n').at(-1)).toBe(REPLY_LANGUAGE_INSTRUCTIONS.en);
+        });
+
+        it('never takes the language from an assistant turn when there is no user turn (review M3)', async () => {
+            const system = await send([
+                {
+                    role: 'assistant',
+                    content: 'Hi! Breakfast is included in every stay, ask me anything.'
+                }
+            ]);
+            expect(system).toBe('SYSTEM MESSAGE');
+        });
+
+        it('leaves the system message untouched when the message is too short to decide', async () => {
+            const system = await send([{ role: 'user', content: 'ok' }], 'en');
+            expect(system).toBe('SYSTEM MESSAGE');
+        });
     });
 
     it('emits SSE error and no done when the stream ends with MODERATION_BLOCKED', async () => {
@@ -1066,8 +1207,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             });
         });
 
-        it('successful chat records usage for BOTH owner (ownerId) AND consumer (actor.id) — SPEC-283', async () => {
-            // Both owner and consumer have explicit headroom; usage remains double-metered.
+        it('successful chat records ONE usage row: owner pays, consumer rides on it — HOS-2095', async () => {
+            // Both owner and consumer have explicit headroom.
             currentLimitsForTest.current = new Map([
                 [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
@@ -1082,30 +1223,19 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             });
 
             expect(res.status).toBe(200);
-            // Drain so augmentedMeta settles and both recordAiUsage calls complete.
+            // Drain so augmentedMeta settles and the recordAiUsage call completes.
             await readSseFrames(res);
 
             const mockedRecord = vi.mocked(recordAiUsage);
-            // SPEC-283: two calls — owner-keyed (cost) then consumer-keyed (quota advance).
-            expect(mockedRecord).toHaveBeenCalledTimes(2);
-
-            // Owner call (SPEC-211).
-            expect(mockedRecord).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: OWNER_ID,
-                    feature: 'chat',
-                    status: 'success'
-                })
-            );
-
-            // Consumer call (SPEC-283) — keyed by actor.id, which is DISTINCT from ownerId.
-            expect(mockedRecord).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userId: UNIQUE_USER_ID,
-                    feature: 'chat',
-                    status: 'success'
-                })
-            );
+            // HOS-2095: exactly one row per request. The owner bears the cost
+            // (`userId`, owner quota) and the tourist is `consumerUserId`
+            // (consumer quota) — no second, full-cost consumer row.
+            expect(mockedRecord).toHaveBeenCalledTimes(1);
+            const [onlyCall] = mockedRecord.mock.calls;
+            expect(onlyCall?.[0].userId).toBe(OWNER_ID);
+            expect(onlyCall?.[0].consumerUserId).toBe(UNIQUE_USER_ID);
+            expect(onlyCall?.[0].feature).toBe('chat');
+            expect(onlyCall?.[0].status).toBe('success');
 
             // Sanity: the two IDs are different so the assertions above are not aliased.
             expect(UNIQUE_USER_ID).not.toBe(OWNER_ID);

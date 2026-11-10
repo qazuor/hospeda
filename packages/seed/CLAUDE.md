@@ -803,7 +803,7 @@ Static seed data files are in `src/data/<entity>/` as individual JSON files per 
 - **`displayWeight`**: Integer controlling display order (higher = shown first). E.g., WiFi = 95, Pool = 80, Sauna = 30
 - **`isBuiltin`**: Boolean for system-provided vs user-created items
 - **`isFeatured`**: Boolean for highlighting on public pages
-- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `venue`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking, pet_friendly…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
+- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `venue`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
 
 Example amenity seed:
 

@@ -121,4 +121,24 @@ describe('accommodation search filter ledger (HOS-1922)', () => {
             ])
         );
     });
+
+    it('HOS-2060: allowsPets reads the pets policy and nothing else', () => {
+        // Act
+        const query = dialect.sqlToQuery(
+            buildAccommodationSearchWhere({ params: { allowsPets: true } }) as NonNullable<
+                ReturnType<typeof buildAccommodationSearchWhere>
+            >
+        );
+
+        // Assert
+        expect(query.sql).toContain("\"policies\"->'pets'->>'admission'");
+        expect(query.sql).not.toContain('r_accommodation_amenity');
+        expect(query.params).toEqual(expect.arrayContaining(['yes', 'on_request']));
+        expect(query.params).not.toContain('no');
+        expect(query.params).not.toContain('pet_friendly');
+    });
+
+    it('HOS-2060: allowsPets false is a no-op', () => {
+        expect(render({ allowsPets: false })).toBe(baseline);
+    });
 });

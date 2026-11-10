@@ -34,6 +34,7 @@ function makeCompleteVenueListing(): ListingCompletenessListing {
         destinationId: DESTINATION_ID,
         ownerId: OWNER_ID,
         type: 'RESTAURANT',
+        businessLines: ['food'],
         media: {
             featuredImage: {
                 url: 'https://example.com/img.jpg',
@@ -67,6 +68,7 @@ function makeCompleteExperienceListing(): ListingCompletenessListing {
         destinationId: DESTINATION_ID,
         ownerId: OWNER_ID,
         type: 'TOUR_GUIDE',
+        businessLines: ['standard'],
         media: {
             featuredImage: {
                 url: 'https://example.com/kayak.jpg',
@@ -166,6 +168,27 @@ describe('resolveListingCompleteness — venue', () => {
         });
 
         expect(result.missing).toContain('type');
+    });
+
+    it('should report "businessLines" missing when the selection is empty', () => {
+        const listing = { ...makeCompleteVenueListing(), businessLines: [] };
+        const result = resolveListingCompleteness({
+            entityType: ProductDomainEnum.VENUE,
+            listing
+        });
+
+        expect(result.complete).toBe(false);
+        expect(result.missing).toContain('businessLines');
+    });
+
+    it('should report "businessLines" missing when the field is absent', () => {
+        const listing = { ...makeCompleteVenueListing(), businessLines: undefined };
+        const result = resolveListingCompleteness({
+            entityType: ProductDomainEnum.VENUE,
+            listing
+        });
+
+        expect(result.missing).toContain('businessLines');
     });
 
     it('should report "media.featuredImage" missing when media is absent', () => {
@@ -284,6 +307,7 @@ describe('resolveListingCompleteness — venue', () => {
             'destinationId',
             'ownerId',
             'type',
+            'businessLines',
             'media.featuredImage',
             'contactInfo',
             'openingHours',

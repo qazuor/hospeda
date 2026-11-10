@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "177-amenity-services-changing-rooms",
+    "slug": "changing_rooms",
+    "description": {
+        "es": "Vestuarios para cambiarse antes y después de la actividad",
+        "en": "Changing rooms to change before and after the activity",
+        "pt": "Vestiários para trocar de roupa antes e depois da atividade"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "SolarShowersIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

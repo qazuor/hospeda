@@ -111,47 +111,51 @@ describe('comer-y-salir/index.astro', () => {
         });
     });
 
-    describe('filter groups', () => {
-        it('includes a search (q) filter group', () => {
-            expect(src).toContain("id: 'q'");
+    describe('published-listing filters (HOS-1787 leaf 6.10, AC:6:11)', () => {
+        it('fetches the whole-vertical filter options without a business line', () => {
+            expect(src).toContain('venueApi.getFilterOptions()');
         });
 
-        it('includes a destinationId select-search filter', () => {
-            expect(src).toContain("id: 'destinationId'");
-            expect(src).toContain("type: 'select-search'");
+        it('renders VenueFilterOptionsDegradation instead of calling the marker', () => {
+            expect(src).toContain(
+                "import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';"
+            );
+            expect(src).toMatch(/<VenueFilterOptionsDegradation\s+failed=\{/);
+            expect(src).not.toContain('markResponseDegraded');
+            const helperImport = src.match(
+                /import\s*\{([\s\S]*?)\}\s*from\s*'@\/lib\/venue\/venue-listing-filters'/
+            );
+            expect(helperImport, 'venue-listing-filters import not found').not.toBeNull();
+            expect((helperImport?.[1] ?? '').includes('Degraded')).toBe(false);
         });
 
-        it('includes a type checkbox filter', () => {
-            expect(src).toContain("id: 'type'");
-            expect(src).toContain("type: 'checkbox'");
+        it('passes the options, amenities and features failures to the component', () => {
+            const start = src.indexOf('<VenueFilterOptionsDegradation');
+            expect(start, '<VenueFilterOptionsDegradation not found').toBeGreaterThan(-1);
+            const tag = src.slice(start, src.indexOf('/>', start) + 2);
+
+            expect(tag).toContain('!filterOptionsResult.ok');
+            expect(tag).toContain('!amenitiesResult.ok');
+            expect(tag).toContain('!featuresResult.ok');
         });
 
-        it('includes a priceRange checkbox filter', () => {
-            expect(src).toContain("id: 'priceRange'");
+        it('narrows the sidebar and type chips to published values', () => {
+            expect(src).toContain('narrowVenueFilterCatalog(');
+            expect(src).toContain('buildVenueFilterGroups(');
+            expect(src).toContain('buildVenueTypeChips(');
+            expect(src).not.toContain('VENUE_TYPE_OPTIONS');
         });
 
-        it('includes a toggle for isFeatured', () => {
-            expect(src).toContain("id: 'isFeatured'");
-            expect(src).toContain("type: 'toggle'");
-        });
-
-        it('includes a stars filter for minRating', () => {
-            expect(src).toContain("id: 'minRating'");
-            expect(src).toContain("type: 'stars'");
+        it('reads and forwards the amenities filter', () => {
+            expect(src).toContain("url.searchParams.get('amenities')");
+            expect(src).toContain('amenities: amenitiesParam');
+            expect(src).toContain('if (amenitiesParam) initialParams.amenities = amenitiesParam;');
         });
     });
 
     describe('i18n', () => {
         it('uses venue i18n namespace for page title', () => {
             expect(src).toContain('venue.listing.title');
-        });
-
-        it('uses venue.types for type filter labels', () => {
-            expect(src).toContain('venue.types.');
-        });
-
-        it('uses venue.card.priceRange for price range labels', () => {
-            expect(src).toContain('venue.card.priceRange.');
         });
     });
 
@@ -173,6 +177,18 @@ describe('comer-y-salir/index.astro', () => {
     describe('SSR', () => {
         it('does NOT set prerender=true (must be SSR)', () => {
             expect(src).not.toContain('prerender = true');
+        });
+    });
+
+    describe('business-line collections (HOS-1868)', () => {
+        it('keeps the general listing unscoped by business line', () => {
+            // The collection pages filter by line; the general listing must keep
+            // showing every venue, so `businessLine` never reaches this call.
+            expect(src).not.toMatch(/venueApi\.list\(\{[\s\S]*?\bbusinessLine\b/);
+        });
+
+        it('does not import the business-line collection helpers', () => {
+            expect(src).not.toContain('business-line-collection');
         });
     });
 });

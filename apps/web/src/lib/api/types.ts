@@ -3,6 +3,7 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
+import type { ListingPolicyValues } from '../listing/listing-policies';
 import type { MediaAttribution } from '../media';
 
 /** Pagination metadata returned by list endpoints */
@@ -242,12 +243,12 @@ export interface AccommodationEditData {
     readonly bathrooms: number | null;
     readonly beds: number | null;
     /**
-     * Minimum stay. Writable since G7 smoke (H-112) via the capacity/pricing
-     * section — both HTTP create mappings still force `minNights: 1` at
-     * creation time (so a self-service draft is always publishable), but the
-     * PATCH schema now accepts `minNights` so the host can change it afterward.
+     * House rules (HOS-2060), as stored. The minimum stay is
+     * `policies.minNights` (a publish requirement, edited on the
+     * capacity/pricing page); the rest are edited by the Policies panel of the
+     * services page. Each page PATCHes only the policy keys it owns.
      */
-    readonly minNights: number | null;
+    readonly policies: ListingPolicyValues;
     readonly basePrice: number | null;
     readonly currency: string | null;
     readonly isAvailable: boolean;
@@ -400,6 +401,12 @@ export type AmenityAvailabilityValue = 'year_round' | 'seasonal';
 export interface AmenityAttributeValue {
     readonly scope: AmenityScopeValue | null;
     readonly availability: AmenityAvailabilityValue | null;
+    /**
+     * HOS-2084: "Con cargo extra" (`is_optional` on the relation row, sent as
+     * `extraCharge`). `undefined` = never touched, which the API reads as "keep
+     * the stored value"; an explicit `false` clears it.
+     */
+    readonly extraCharge?: boolean;
 }
 
 export interface AmenityData {
@@ -407,6 +414,14 @@ export interface AmenityData {
     /** Catalog slug — used as the i18n key for label resolution (SPEC-266). */
     readonly slug: string;
     readonly category: string | null;
+    /**
+     * Catalog `is_featured` flag (HOS-2061): the picker lists featured items
+     * first. Optional so fixtures that predate it keep compiling; absent reads
+     * as not featured.
+     */
+    readonly isFeatured?: boolean;
+    /** Catalog `display_weight` (1-100, default 50): featured ordering (HOS-2061). */
+    readonly displayWeight?: number;
 }
 
 /**

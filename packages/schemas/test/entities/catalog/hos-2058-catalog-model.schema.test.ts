@@ -2,8 +2,11 @@
  * HOS-2058 -- catalog model: feature category and accommodation-amenity
  * relation attributes (`scope`, `availability`).
  *
- * Release N of an expand/contract: every new field is nullable/optional, and
- * NULL means "not declared". These tests pin that contract at the schema layer.
+ * Expand/contract: release N added every field nullable/optional (NULL means
+ * "not declared"). Release N+1 makes `features.category` NOT NULL, so the
+ * feature category is required on the stored entity and on create, and an
+ * update may omit it but never clear it. The relation attributes stay nullable.
+ * These tests pin that contract at the schema layer.
  */
 import { describe, expect, it } from 'vitest';
 import { AccommodationPublicSchema } from '../../../src/entities/accommodation/accommodation.access.schema.js';
@@ -15,7 +18,8 @@ import {
 import { AmenityCreateHttpSchema } from '../../../src/entities/amenity/amenity.http.schema.js';
 import {
     AccommodationAmenityAttributesListSchema,
-    AccommodationAmenityRelationSchema
+    AccommodationAmenityRelationSchema,
+    AmenityRelationAttributesListSchema
 } from '../../../src/entities/amenity/amenity.schema.js';
 import {
     FeatureProtectedSchema,
@@ -27,6 +31,7 @@ import {
 } from '../../../src/entities/feature/feature.crud.schema.js';
 import {
     FeatureCreateHttpSchema,
+    FeatureUpdateHttpSchema,
     httpToDomainFeatureCreate,
     httpToDomainFeatureUpdate
 } from '../../../src/entities/feature/feature.http.schema.js';
@@ -47,14 +52,11 @@ describe('FeatureSchema.category (HOS-2058)', () => {
         expect(result.success).toBe(true);
     });
 
-    it('stays optional and nullable in release N', () => {
-        const { category: _omit, ...withoutCategory } = {
-            ...createValidFeature(),
-            category: undefined
-        };
-        expect(FeatureSchema.safeParse(withoutCategory).success).toBe(true);
+    it('is required and non-nullable since release N+1', () => {
+        const { category: _omit, ...withoutCategory } = createValidFeature();
+        expect(FeatureSchema.safeParse(withoutCategory).success).toBe(false);
         expect(FeatureSchema.safeParse({ ...createValidFeature(), category: null }).success).toBe(
-            true
+            false
         );
     });
 
@@ -80,9 +82,16 @@ describe('feature create/update domain input category (HOS-2058, admin routes)',
         );
     });
 
-    it('the update input accepts a category change and a clear to null', () => {
+    it('the strict create input rejects a missing or null category (N+1)', () => {
+        const base = { applicableVerticals: ['accommodation'] };
+        expect(FeatureCreateInputSchema.safeParse(base).success).toBe(false);
+        expect(FeatureCreateInputSchema.safeParse({ ...base, category: null }).success).toBe(false);
+    });
+
+    it('the update input accepts a category change or omission, never a clear to null', () => {
         expect(FeatureUpdateInputSchema.safeParse({ category: 'ACCESS' }).success).toBe(true);
-        expect(FeatureUpdateInputSchema.safeParse({ category: null }).success).toBe(true);
+        expect(FeatureUpdateInputSchema.safeParse({}).success).toBe(true);
+        expect(FeatureUpdateInputSchema.safeParse({ category: null }).success).toBe(false);
     });
 });
 
@@ -90,6 +99,16 @@ describe('feature create/update HTTP category (HOS-2058, reused dead field)', ()
     it('validates category against FeatureCategoryEnum', () => {
         expect(FeatureCreateHttpSchema.safeParse({ category: 'LOCATION' }).success).toBe(true);
         expect(FeatureCreateHttpSchema.safeParse({ category: 'beach' }).success).toBe(false);
+    });
+
+    it('requires category on the HTTP create body (N+1)', () => {
+        expect(FeatureCreateHttpSchema.safeParse({}).success).toBe(false);
+        expect(FeatureCreateHttpSchema.safeParse({ category: null }).success).toBe(false);
+    });
+
+    it('lets the HTTP update body omit category but not null it', () => {
+        expect(FeatureUpdateHttpSchema.safeParse({}).success).toBe(true);
+        expect(FeatureUpdateHttpSchema.safeParse({ category: null }).success).toBe(false);
     });
 
     it('passes category through to the domain create and update inputs', () => {
@@ -164,6 +183,34 @@ describe('AccommodationAmenityAttributesListSchema (HOS-2058)', () => {
                 'zodError.accommodationAmenity.attributes.duplicate'
             );
         }
+    });
+});
+
+describe('AmenityRelationAttributesListSchema extraCharge (HOS-2084)', () => {
+    it('accepts an optional boolean extraCharge, and omitting it stays valid', () => {
+        const result = AmenityRelationAttributesListSchema.safeParse([
+            { amenityId: AMENITY_A, extraCharge: true },
+            { amenityId: AMENITY_B, scope: 'shared' }
+        ]);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data[0]?.extraCharge).toBe(true);
+            expect(result.data[1]?.extraCharge).toBeUndefined();
+        }
+    });
+
+    it('rejects a non-boolean extraCharge', () => {
+        const result = AmenityRelationAttributesListSchema.safeParse([
+            { amenityId: AMENITY_A, extraCharge: 'yes' }
+        ]);
+        expect(result.success).toBe(false);
+    });
+
+    it('does not accept an amount: extraCharge is a flag, not a price', () => {
+        const parsed = AmenityRelationAttributesListSchema.parse([
+            { amenityId: AMENITY_A, extraCharge: true, additionalCost: 10 }
+        ]);
+        expect(parsed[0]).not.toHaveProperty('additionalCost');
     });
 });
 

@@ -190,7 +190,7 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // submits before "Publicar". `bedrooms`/`bathrooms` are added here
         // (HOS-152) so the draft clears AccommodationService.publish()'s
         // capacity-completeness guard, which now rejects DRAFT -> PUBLISHED
-        // unless extraInfo has capacity/minNights/bedrooms/bathrooms all set.
+        // unless extraInfo has capacity/bedrooms/bathrooms and policies.minNights set.
         const fillResponse = await page.request.patch(
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}`,
             {
@@ -213,9 +213,9 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
             true
         );
 
-        // `minNights` is not settable by a host (no flat field on the protected
-        // update schema, not in the web editor), so it is defaulted to 1 server-side
-        // at draft creation (`httpToDomainAccommodationCreateDraft`, HOS-152).
+        // `policies.minNights` is defaulted to 1 server-side at draft creation
+        // (`httpToDomainAccommodationCreateDraft`, HOS-152 / HOS-2060), so the
+        // PATCH above does not need to send it.
         // Together with capacity/bedrooms/bathrooms from the PATCH above, the draft
         // now satisfies the publish capacity-completeness guard — no test-only SQL
         // workaround needed.

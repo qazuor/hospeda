@@ -182,18 +182,21 @@
     },
     "extraInfo": {
         "capacity": 35,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 15,
         "beds": 25,
         "bathrooms": 15,
-        "smokingAllowed": false,
         "extraInfo": [
             "Desayuno buffet incluido",
             "Piscina exterior disponible en temporada",
             "Estacionamiento descubierto gratuito",
             "Recepción con horario limitado (8:00 a 23:00)"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Refugio Silvestre Hotel - Tranquilidad y confort en Colón",
@@ -211,9 +214,7 @@
     "featureIds": [
         "031-feature-room_rental",
         "073-feature-permanent_professional_staff",
-        "047-feature-laundry_service",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -235,7 +236,8 @@
         "049-amenity-services-24h-reception",
         "050-amenity-services-room-service",
         "083-amenity-services-bar",
-        "084-amenity-services-restaurant"
+        "084-amenity-services-restaurant",
+        "048-amenity-services-laundry-service"
     ],
     "faqs": [
         {

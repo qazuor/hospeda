@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { AmenityRelationAttributesListSchema } from '../amenity/amenity.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
 
 /**
@@ -153,6 +154,12 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     // publication state — never a request body, not even an admin's.
     publicationStatus: true
 }).extend({
+    /** Optional create-time business line selection; omitted values use the catalog preselection. */
+    businessLines: z
+        .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
@@ -275,8 +282,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *   `manage_experience_directions`. The one field here that is not free.
  * - `durationMinutes` — how long it lasts (HOS-898; ficha data, no entitlement)
  * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
- * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
- * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
+ * - `policies` — house rules, incl. cancellation text and private groups (HOS-2060)
  * - `amenityIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  * - `featureIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  *
@@ -331,8 +337,9 @@ export const ExperienceOwnerUpdateInputSchema = z
                 durationMinutes: true,
                 whatToBring: true,
                 requirements: true,
-                cancellationPolicy: true,
-                acceptsPrivateGroups: true,
+                // HOS-2060: structured house rules. Owner-declared, no
+                // entitlement, validated whole by `ExperiencePoliciesSchema`.
+                policies: true,
                 richDescription: true,
                 nameI18n: true,
                 summaryI18n: true,
@@ -343,6 +350,11 @@ export const ExperienceOwnerUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+                error: 'zodError.venue.businessLines.invalidType'
+            })
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -357,6 +369,12 @@ export const ExperienceOwnerUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });
@@ -435,6 +453,11 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     media: true,
     meetingPointDirections: true
 }).extend({
+    businessLines: z
+        .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+            error: 'zodError.venue.businessLines.invalidType'
+        })
+        .optional(),
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
     /**
@@ -536,6 +559,11 @@ export const ExperienceUpdateInputSchema = z
     )
     .partial()
     .extend({
+        businessLines: z
+            .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
+                error: 'zodError.venue.businessLines.invalidType'
+            })
+            .optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
@@ -550,6 +578,12 @@ export const ExperienceUpdateInputSchema = z
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
             .optional(),
+        /**
+         * HOS-2061: per-amenity relation attributes (`scope`, `availability`),
+         * write-only. The same contract as the accommodation update — see
+         * `AmenityRelationAttributesListSchema`.
+         */
+        amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
     });

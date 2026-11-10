@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "118-feature-island_setting",
+    "slug": "island_setting",
+    "category": "LOCATION",
+    "description": {
+        "es": "Ubicado en las islas del Delta o del Paraná",
+        "en": "Set on the islands of the Delta or the Paraná",
+        "pt": "Localizado nas ilhas do Delta ou do Paraná"
+    },
+    "applicableVerticals": ["accommodation", "experience"],
+    "icon": "DeltaExplorerIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 60,
+    "lifecycleState": "ACTIVE"
+}

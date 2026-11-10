@@ -26,10 +26,18 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    type AmenityRelationAttributes,
+    BUSINESS_LINE_RULES,
+    BUSINESS_LINES_INVALID_REASON,
     DestinationTypeEnum,
+    isReservedListingSlug,
+    normalizeBusinessLines,
     type PermissionEnum,
+    REVIEW_RULES,
     RoleGrantReason,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VerticalValue,
+    validateBusinessLines
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
@@ -44,6 +52,8 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { readAllJunctionRows } from '../../utils/junction-sync';
+import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
@@ -55,13 +65,35 @@ import {
     verticalPermission
 } from './listing.permissions';
 import type { ListingHookState } from './listing.types';
+import { assertBusinessLinesChangeOnly } from './listing-business-lines-change';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
+import { readStoredPoliciesForMerge } from './listing-policies-lock';
+import {
+    isPoliciesVertical,
+    resolveCreatePolicies,
+    resolveUpdatePolicies
+} from './listing-policies-write';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
 import {
     assertOutsideAction15Scope,
     assertSupportCreateIsDraft,
     assertSupportEditContentOnly
 } from './listing-support-edit';
+
+/** Resolves the catalog preselection for a create request without validating its options. */
+export function resolveBusinessLinesOnCreate(args: {
+    readonly vertical: keyof typeof BUSINESS_LINE_RULES;
+    readonly type: string;
+    readonly businessLines?: string[];
+}): string[] | undefined {
+    if (args.businessLines !== undefined) return args.businessLines;
+    const rules = BUSINESS_LINE_RULES as Record<
+        string,
+        { readonly typeRules: Record<string, { readonly preselect: readonly string[] }> }
+    >;
+    const preselect = rules[args.vertical]?.typeRules[args.type]?.preselect;
+    return preselect ? [...preselect] : undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -96,6 +128,12 @@ export interface ListingJunctionModel<TRow extends Record<string, unknown>> {
     ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+    /** HOS-2061: writes amenity relation attributes on kept rows. */
+    update?: (
+        where: Record<string, unknown>,
+        data: Record<string, unknown>,
+        tx?: DrizzleClient
+    ) => Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -382,31 +420,64 @@ export abstract class BaseListingService<
     // -----------------------------------------------------------------------
 
     /**
-     * Reads the currently-associated amenity and feature IDs for a listing.
+     * Reads the currently-associated amenity and feature IDs for a listing,
+     * plus the declared relation attributes of the linked amenities (HOS-2061).
      *
      * The listing read schemas (public/protected) do NOT carry the
      * junction relations, so the owner editor needs this to seed its
      * multi-select with the current selection. Returns plain ID arrays
-     * (symmetric with the `amenityIds` / `featureIds` write inputs).
+     * (symmetric with the `amenityIds` / `featureIds` write inputs) and an
+     * `amenityAttributes` list symmetric with the `amenityAttributes` write
+     * input; only amenities with at least one declared value are listed.
+     *
+     * The read covers EVERY row (`readAllJunctionRows`). A truncated read here
+     * is not cosmetic: the editor would seed a partial selection and its next
+     * save — an exact-set sync — would delete the rows it never saw (HOS-321).
      *
      * This is a standalone read (no transaction): it is meant to be called
      * by single-entity read paths (e.g. the protected getById route) rather
      * than on every getById, to avoid two extra queries on hot paths.
      *
      * @param entityId - The listing ID.
-     * @returns `{ amenityIds, featureIds }` — sorted arrays of catalog UUIDs.
+     * @returns `{ amenityIds, featureIds, amenityAttributes }`.
      */
-    public async loadJunctionIds(
-        entityId: string
-    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+    public async loadJunctionIds(entityId: string): Promise<{
+        amenityIds: string[];
+        featureIds: string[];
+        amenityAttributes: AmenityRelationAttributes[];
+    }> {
         const fk = this._entityFkColumn;
         const [amenityRows, featureRows] = await Promise.all([
-            this._amenityJunctionModel.findAll({ [fk]: entityId }),
-            this._featureJunctionModel.findAll({ [fk]: entityId })
+            readAllJunctionRows<Record<string, unknown>>({
+                where: { [fk]: entityId },
+                junctionModel: this._amenityJunctionModel,
+                sortBy: 'amenityId'
+            }),
+            readAllJunctionRows<Record<string, unknown>>({
+                where: { [fk]: entityId },
+                junctionModel: this._featureJunctionModel,
+                sortBy: 'featureId'
+            })
         ]);
+        const amenityAttributes: AmenityRelationAttributes[] = [];
+        for (const row of amenityRows) {
+            const scope = (row.scope ?? null) as AmenityRelationAttributes['scope'];
+            const availability = (row.availability ??
+                null) as AmenityRelationAttributes['availability'];
+            // HOS-2084: `is_optional` surfaces as `extraCharge`.
+            const extraCharge = row.isOptional === true;
+            if (scope === null && availability === null && !extraCharge) continue;
+            amenityAttributes.push({
+                amenityId: row.amenityId as string,
+                scope,
+                availability,
+                extraCharge
+            });
+        }
         return {
-            amenityIds: amenityRows.items.map((row) => row.amenityId as string),
-            featureIds: featureRows.items.map((row) => row.featureId as string)
+            amenityIds: amenityRows.map((row) => row.amenityId as string),
+            featureIds: featureRows.map((row) => row.featureId as string),
+            amenityAttributes
         };
     }
 
@@ -577,6 +648,39 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        const listingVertical = this.entityName as VerticalValue;
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
+        let businessLines = resolveBusinessLinesOnCreate({
+            vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+            type: String(payload.type),
+            businessLines: payload.businessLines as string[] | undefined
+        });
+        if (businessLines) {
+            const validation = validateBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                type: String(payload.type),
+                businessLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    },
+                    BUSINESS_LINES_INVALID_REASON
+                );
+            }
+            businessLines = normalizeBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                businessLines: businessLines as never
+            });
+        }
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -585,6 +689,11 @@ export abstract class BaseListingService<
         if (payload.destinationId) {
             await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
         }
+
+        // HOS-2060: every new listing stores at least `paymentMethods: ['cash']`.
+        const createPolicies = isPoliciesVertical(listingVertical)
+            ? resolveCreatePolicies({ vertical: listingVertical, payload })
+            : {};
 
         // (c) Capture junction IDs into hookState BEFORE the DB write
         if (typedCtx.hookState !== undefined) {
@@ -603,13 +712,25 @@ export abstract class BaseListingService<
             const name = payload.name as string;
             const model = this.model;
             const slug = await createUniqueSlug(name, async (candidate) => {
+                if (isReservedListingSlug({ vertical: listingVertical, slug: candidate })) {
+                    return true;
+                }
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
-            return { slug } as Partial<TEntity>;
+            return {
+                slug,
+                ...(businessLines ? { businessLines } : {}),
+                ...createPolicies
+                // TYPE-WORKAROUND: TEntity is generic, so a concrete `policies` key cannot be proven to fit it.
+            } as unknown as Partial<TEntity>;
         }
 
-        return {} as Partial<TEntity>;
+        return {
+            ...(businessLines ? { businessLines } : {}),
+            ...createPolicies
+            // TYPE-WORKAROUND: TEntity is generic, so a concrete `policies` key cannot be proven to fit it.
+        } as unknown as Partial<TEntity>;
     }
 
     // -----------------------------------------------------------------------
@@ -715,8 +836,18 @@ export abstract class BaseListingService<
         const payload = data as Record<string, unknown>;
         // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
         assertSupportEditContentOnly({ data: payload });
+        // ACC:27 (HOS-1875): an action-27 update writes business lines and nothing else.
+        assertBusinessLinesChangeOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
+        const listingVertical = this.entityName as VerticalValue;
+        let current: TEntity | null = null;
+
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (slugWasProvided && typeof payload.slug === 'string' && payload.slug.length > 0) {
+            assertListingSlugNotReserved({ vertical: listingVertical, slug: payload.slug });
+        }
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
@@ -725,7 +856,7 @@ export abstract class BaseListingService<
 
         const updateId = typedCtx.hookState?.updateId;
         if (updateId) {
-            const current = await this.model.findById(updateId, ctx.tx);
+            current = await this.model.findById(updateId, ctx.tx);
             if (typedCtx.hookState !== undefined) {
                 // HOS-1499: the row before the edit, for the event's old values.
                 typedCtx.hookState.ownerActBefore = current ?? null;
@@ -747,11 +878,47 @@ export abstract class BaseListingService<
                 typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
                     payload.name as string,
                     async (candidate) => {
+                        if (
+                            isReservedListingSlug({
+                                vertical: listingVertical,
+                                slug: candidate
+                            })
+                        ) {
+                            return true;
+                        }
                         const existing = await this.model.findOne({ slug: candidate });
-                        return !!existing && existing.id !== current.id;
+                        return !!existing && existing.id !== current?.id;
                     }
                 );
             }
+        }
+
+        if (Object.hasOwn(payload, 'businessLines') || Object.hasOwn(payload, 'type')) {
+            const vertical = this.entityName as keyof typeof BUSINESS_LINE_RULES;
+            const resultingType = String(payload.type ?? current?.type ?? '');
+            const resultingLines = (payload.businessLines ??
+                current?.businessLines ??
+                []) as string[];
+            const validation = validateBusinessLines({
+                vertical,
+                type: resultingType,
+                businessLines: resultingLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    },
+                    BUSINESS_LINES_INVALID_REASON
+                );
+            }
+            payload.businessLines = normalizeBusinessLines({
+                vertical,
+                businessLines: resultingLines as never
+            });
         }
 
         // (c) Capture junction IDs into hookState
@@ -762,6 +929,10 @@ export abstract class BaseListingService<
             typedCtx.hookState.pendingFeatureIds = payload.featureIds as
                 | readonly string[]
                 | undefined;
+            // HOS-2061: per-amenity relation attributes (write-only).
+            typedCtx.hookState.pendingAmenityAttributes = payload.amenityAttributes as
+                | readonly AmenityRelationAttributes[]
+                | undefined;
             // HOS-1499: what the owner wrote, for the owner-act event.
             typedCtx.hookState.ownerActPayload = payload;
         }
@@ -770,11 +941,28 @@ export abstract class BaseListingService<
         const {
             amenityIds: _a,
             featureIds: _f,
+            amenityAttributes: _attributes,
             refreshSlugFromName: _refreshSlugFromName,
             ...rest
         } = payload;
         if (typedCtx.hookState?.regeneratedSlug) {
             rest.slug = typedCtx.hookState.regeneratedSlug;
+        }
+        // HOS-2060: `policies` is a patch over the stored object, re-validated
+        // whole, and read under a row lock so two concurrent saves keep both keys.
+        if (isPoliciesVertical(listingVertical)) {
+            const { stored } = await readStoredPoliciesForMerge({
+                vertical: listingVertical,
+                listingId: typedCtx.hookState?.updateId,
+                payload,
+                ctx: typedCtx,
+                fallback: (current as { policies?: Record<string, unknown> | null } | null)
+                    ?.policies
+            });
+            Object.assign(
+                rest,
+                resolveUpdatePolicies({ vertical: listingVertical, payload, current: stored })
+            );
         }
         return rest as Partial<TEntity>;
     }
@@ -801,7 +989,10 @@ export abstract class BaseListingService<
     ): Promise<TEntity> {
         const typedCtx = ctx as ServiceContext<ListingHookState>;
 
-        if (typedCtx.hookState?.pendingAmenityIds !== undefined) {
+        if (
+            typedCtx.hookState?.pendingAmenityIds !== undefined ||
+            typedCtx.hookState?.pendingAmenityAttributes !== undefined
+        ) {
             if (!ctx.tx) {
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
@@ -812,6 +1003,7 @@ export abstract class BaseListingService<
                 entityId: entity.id,
                 entityFkColumn: this._entityFkColumn,
                 amenityIds: typedCtx.hookState.pendingAmenityIds,
+                amenityAttributes: typedCtx.hookState.pendingAmenityAttributes,
                 junctionModel: this._amenityJunctionModel,
                 amenityModel: this._amenityModel,
                 tx: ctx.tx
@@ -998,12 +1190,9 @@ export abstract class BaseListingService<
      */
     public async recomputeRating(
         listingId: string,
-        ratingRows: readonly {
-            readonly food?: number | null;
-            readonly service?: number | null;
-            readonly ambiance?: number | null;
-            readonly value?: number | null;
-        }[],
+        ratingRows: readonly (Partial<Record<string, number | null>> & {
+            readonly overallRating?: number | null;
+        })[],
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity | null>> {
         try {
@@ -1018,26 +1207,50 @@ export abstract class BaseListingService<
                 return { data: updated as TEntity };
             }
 
-            const sum = { food: 0, service: 0, ambiance: 0, value: 0 };
-            for (const row of ratingRows) {
-                sum.food += row.food ?? 0;
-                sum.service += row.service ?? 0;
-                sum.ambiance += row.ambiance ?? 0;
-                sum.value += row.value ?? 0;
-            }
-
-            const granular = {
-                food: Math.round((sum.food / count) * 100) / 100,
-                service: Math.round((sum.service / count) * 100) / 100,
-                ambiance: Math.round((sum.ambiance / count) * 100) / 100,
-                value: Math.round((sum.value / count) * 100) / 100
+            const rules = REVIEW_RULES[this._revalidationEntityType] as {
+                readonly dimensionAveraging: 'votedOnly' | 'legacyNullAsZero';
+                readonly dimensions: readonly { readonly id: string }[];
             };
-
-            const averageRating =
-                Math.round(
-                    ((granular.food + granular.service + granular.ambiance + granular.value) / 4) *
-                        100
-                ) / 100;
+            const dimensions = rules.dimensions;
+            const granular: Record<string, { average: number; count: number } | number> = {};
+            let averageRating: number;
+            if (rules.dimensionAveraging === 'legacyNullAsZero') {
+                const sums = new Map<string, number>(dimensions.map(({ id }) => [id, 0]));
+                for (const row of ratingRows)
+                    for (const { id } of dimensions)
+                        sums.set(id, (sums.get(id) ?? 0) + (row[id] ?? 0));
+                for (const { id } of dimensions)
+                    granular[id] = Math.round(((sums.get(id) ?? 0) / count) * 100) / 100;
+                averageRating =
+                    Math.round(
+                        (dimensions.reduce<number>(
+                            (total, { id }) => total + (granular[id] as number),
+                            0
+                        ) /
+                            dimensions.length) *
+                            100
+                    ) / 100;
+            } else {
+                for (const { id } of dimensions) {
+                    const votes = ratingRows.flatMap((row) =>
+                        row[id] == null ? [] : [row[id] as number]
+                    );
+                    if (votes.length > 0)
+                        granular[id] = {
+                            average:
+                                Math.round(
+                                    (votes.reduce((a, b) => a + b, 0) / votes.length) * 100
+                                ) / 100,
+                            count: votes.length
+                        };
+                }
+                averageRating =
+                    Math.round(
+                        (ratingRows.reduce((sum, row) => sum + (row.overallRating ?? 0), 0) /
+                            count) *
+                            100
+                    ) / 100;
+            }
 
             const updated = await this.model.update(
                 { id: listingId },

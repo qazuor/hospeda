@@ -21,10 +21,17 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
+import { useReviewDimensionVotes } from '@/hooks/useReviewDimensionVotes';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import {
+    buildReviewRatingPayload,
+    type PublicReviewSectionStates,
+    resolveOfferedReviewDimensions
+} from '@/lib/venue/review-dimensions-view';
+import { VenueReviewDimensionFields } from './VenueReviewDimensionFields.client';
 import styles from './VenueReviewForm.module.css';
 
 const TITLE_MAX = 120;
@@ -44,6 +51,8 @@ interface VenueReviewFormProps {
     readonly apiUrl: string;
     /** Sign-in URL (with return path) shown to anonymous visitors. */
     readonly signInHref: string;
+    /** Public bound-section states; absent on an older cached payload. */
+    readonly sectionStates?: PublicReviewSectionStates;
 }
 
 function joinApi(apiUrl: string, path: string): string {
@@ -61,9 +70,11 @@ export function VenueReviewForm({
     venueName,
     locale,
     apiUrl,
-    signInHref
+    signInHref,
+    sectionStates
 }: VenueReviewFormProps) {
     const { t } = createTranslations(locale);
+    const { votes, setVote, reset: resetDimensionVotes } = useReviewDimensionVotes();
 
     // Session resolved client-side (HOS-369 WB0-4). Until it resolves the card
     // shows the sign-in variant — the same thing the server renders, so there
@@ -131,10 +142,11 @@ export function VenueReviewForm({
             setOverall(0);
             setTitle('');
             setContent('');
+            resetDimensionVotes();
             setError(null);
             setSuccess(false);
         }, 200);
-    }, []);
+    }, [resetDimensionVotes]);
 
     // Back button closes the dialog instead of leaving the page (HOS-334).
     // This form uses a native <dialog>, not the shared `Dialog`, so it wires
@@ -161,7 +173,8 @@ export function VenueReviewForm({
                         body: JSON.stringify({
                             overallRating: overall,
                             title: titleTrimmed || undefined,
-                            content: contentTrimmed || undefined
+                            content: contentTrimmed || undefined,
+                            rating: buildReviewRatingPayload({ votes })
                         })
                     }
                 );
@@ -216,7 +229,8 @@ export function VenueReviewForm({
             submitting,
             t,
             titleTrimmed,
-            titleValid
+            titleValid,
+            votes
         ]
     );
 
@@ -463,6 +477,16 @@ export function VenueReviewForm({
                                             ))}
                                         </div>
                                     </div>
+                                    <VenueReviewDimensionFields
+                                        dimensions={resolveOfferedReviewDimensions({
+                                            vertical: 'venue',
+                                            sectionStates
+                                        })}
+                                        votes={votes}
+                                        onVote={setVote}
+                                        disabled={submitting}
+                                        locale={locale}
+                                    />
                                 </div>
 
                                 <label className={styles.field}>

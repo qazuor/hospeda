@@ -33,9 +33,9 @@ import {
     TOURIST_EXPERIENCE_ROWS,
     TOURIST_GROUPS,
     VENUE_GROUPS,
-    VENUE_LISTING_ROWS,
-    VENUE_MENU_ROWS
+    VENUE_LISTING_ROWS
 } from '@/components/billing/plan-comparison-rows';
+import { getComparisonGroups } from '@/components/billing/plan-comparison-table.helpers';
 
 // ---------------------------------------------------------------------------
 // Fixtures — the real entitlement sets, as returned by /api/v1/public/plan-catalog.
@@ -107,7 +107,6 @@ const ALL_ROWS = [
     ...OWNER_AI_ROWS,
     ...OWNER_AS_TOURIST_ROWS,
     ...VENUE_LISTING_ROWS,
-    ...VENUE_MENU_ROWS,
     ...EXPERIENCE_LISTING_ROWS,
     ...EXPERIENCE_SERVICE_ROWS,
     ...TOURIST_GROUPS.flatMap((group) => group.rows),
@@ -445,9 +444,9 @@ describe('row i18n coverage', () => {
     }
 
     it('has an icon for every rendered row', () => {
-        const missing = ALL_RENDERED_ROWS.filter((r) => !COMPARISON_ROW_ICONS[r.id]).map(
-            (r) => r.id
-        );
+        const missing = ALL_RENDERED_ROWS.filter(
+            (r) => !(r.icon ?? COMPARISON_ROW_ICONS[r.id])
+        ).map((r) => r.id);
         expect(missing).toEqual([]);
     });
 
@@ -501,5 +500,25 @@ describe('resolveRowCells — limit cells', () => {
             { slug: 'owner-basico', limits: {}, entitlements: [] }
         ];
         expect(resolveRowCells({ cell: row('publish').cell, plans })).toEqual(['no']);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1865 (6.5): the venue/experience catalog-generated group.
+// ---------------------------------------------------------------------------
+
+describe('catalog-generated comparison groups', () => {
+    it('includes the generated group in the venue comparison', () => {
+        const groups = getComparisonGroups('venue');
+        expect(groups.map((group) => group.id)).toContain('catalogSections');
+        expect(groups.flatMap((group) => group.rows).map((r) => r.id)).toContain('venueMenu');
+    });
+
+    it('includes the generated group in the experience comparison', () => {
+        const groups = getComparisonGroups('experience');
+        expect(groups.map((group) => group.id)).toContain('catalogSections');
+        expect(groups.flatMap((group) => group.rows).map((r) => r.id)).toContain(
+            'experienceDirections'
+        );
     });
 });

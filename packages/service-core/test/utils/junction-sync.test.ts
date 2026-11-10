@@ -171,6 +171,116 @@ describe('validateCatalogIds', () => {
         });
     });
 
+    describe('retired (soft-deleted) catalog rows (HOS-2067)', () => {
+        const retiredAt = new Date('2026-11-01T00:00:00Z');
+
+        /** Catalog stub: `retired` ids come back with `deletedAt`, `unknown` ids are absent. */
+        const catalogStub = ({
+            retired = [],
+            unknown = []
+        }: {
+            readonly retired?: readonly string[];
+            readonly unknown?: readonly string[];
+        }) =>
+            vi.fn(async (requested: readonly string[]) =>
+                requested
+                    .filter((id) => !unknown.includes(id))
+                    .map((id) => ({ id, deletedAt: retired.includes(id) ? retiredAt : null }))
+            );
+
+        it('rejects a retired id with the retired message', async () => {
+            // Arrange
+            const findByIds = catalogStub({ retired: ['b'] });
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({ ids: ['a', 'b'], findByIds, entityLabel: 'amenity', tx })
+            ).rejects.toMatchObject({
+                code: ServiceErrorCode.VALIDATION_ERROR,
+                message: 'amenity retired: b'
+            });
+        });
+
+        it('accepts a retired id the listing already has linked', async () => {
+            // Arrange
+            const findByIds = catalogStub({ retired: ['b'] });
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({
+                    ids: ['a', 'b'],
+                    findByIds,
+                    entityLabel: 'amenity',
+                    alreadyLinkedIds: new Set(['b']),
+                    tx
+                })
+            ).resolves.toBeUndefined();
+        });
+
+        it('still rejects a retired id that is NOT in alreadyLinkedIds', async () => {
+            // Arrange
+            const findByIds = catalogStub({ retired: ['b'] });
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({
+                    ids: ['b'],
+                    findByIds,
+                    entityLabel: 'feature',
+                    alreadyLinkedIds: new Set(['z']),
+                    tx
+                })
+            ).rejects.toMatchObject({ message: 'feature retired: b' });
+        });
+
+        it('reports the first offender in caller order across unknown and retired ids', async () => {
+            // Arrange: c is retired, d is unknown; c comes first in caller order.
+            const findByIds = catalogStub({ retired: ['c'], unknown: ['d'] });
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({
+                    ids: ['a', 'c', 'd'],
+                    findByIds,
+                    entityLabel: 'amenity',
+                    tx
+                })
+            ).rejects.toMatchObject({ message: 'amenity retired: c' });
+            await expect(
+                validateCatalogIds({
+                    ids: ['d', 'c'],
+                    findByIds,
+                    entityLabel: 'amenity',
+                    tx
+                })
+            ).rejects.toMatchObject({ message: 'amenity not found: d' });
+        });
+
+        it('treats a string deletedAt as retired and a null/absent one as live', async () => {
+            // Arrange
+            const findByIds = vi.fn(async () => [
+                { id: 'a' },
+                { id: 'b', deletedAt: null },
+                { id: 'c', deletedAt: '2026-11-01T00:00:00.000Z' }
+            ]);
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({ ids: ['a', 'b', 'c'], findByIds, entityLabel: 'amenity', tx })
+            ).rejects.toMatchObject({ message: 'amenity retired: c' });
+        });
+
+        it('keeps non-retired ids passing as before', async () => {
+            // Arrange
+            const findByIds = catalogStub({});
+
+            // Act + Assert
+            await expect(
+                validateCatalogIds({ ids: ['a', 'b'], findByIds, entityLabel: 'amenity', tx })
+            ).resolves.toBeUndefined();
+        });
+    });
+
     it('does not query at all for an empty id list', async () => {
         const findByIds = vi.fn();
 

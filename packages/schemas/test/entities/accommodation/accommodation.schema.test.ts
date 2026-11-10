@@ -507,7 +507,6 @@ describe('AccommodationSchema', () => {
                 expect(result.data.extraInfo?.capacity).toBe(4);
                 expect(result.data.extraInfo?.bedrooms).toBeUndefined();
                 expect(result.data.extraInfo?.bathrooms).toBeUndefined();
-                expect(result.data.extraInfo?.minNights).toBeUndefined();
             }
         });
 
@@ -519,16 +518,15 @@ describe('AccommodationSchema', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 const missingPaths = result.error.issues.map((issue) => issue.path[0]);
-                expect(missingPaths).toEqual(
-                    expect.arrayContaining(['minNights', 'bedrooms', 'bathrooms'])
-                );
+                expect(missingPaths).toEqual(expect.arrayContaining(['bedrooms', 'bathrooms']));
+                // HOS-2060: the minimum stay is checked in policies, not here.
+                expect(missingPaths).not.toContain('minNights');
             }
         });
 
         it('AccommodationExtraInfoRequiredForPublishSchema accepts a complete object', () => {
             const result = AccommodationExtraInfoRequiredForPublishSchema.safeParse({
                 capacity: 4,
-                minNights: 1,
                 bedrooms: 2,
                 bathrooms: 1
             });

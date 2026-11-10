@@ -1,6 +1,7 @@
 export * from './rVenueAmenity.model.ts';
 export * from './rVenueFeature.model.ts';
 export * from './venue.model.ts';
+export * from './venue-business-line-filter.ts';
 export * from './venue-catalog-filters.ts';
 export * from './venueDailySpecial.model.ts';
 export * from './venueEvent.model.ts';

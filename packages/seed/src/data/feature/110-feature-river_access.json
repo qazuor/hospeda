@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "110-feature-river_access",
+    "slug": "river_access",
+    "category": "ACCESS",
+    "description": {
+        "es": "Acceso directo al río desde el lugar",
+        "en": "Direct access to the river from the place",
+        "pt": "Acesso direto ao rio a partir do local"
+    },
+    "applicableVerticals": ["accommodation", "venue", "experience"],
+    "icon": "RiverBeachIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

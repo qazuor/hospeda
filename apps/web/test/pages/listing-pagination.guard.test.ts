@@ -87,6 +87,7 @@ describe('listing pagination guard (HOS-1797)', () => {
         const names = listings.map(rel);
         expect(names).toContain('alojamientos/index.astro');
         expect(names).toContain('comer-y-salir/index.astro');
+        expect(names).toContain('comer-y-salir/rubro/[rubro]/index.astro');
         expect(names).toContain('experiencias/index.astro');
         expect(names.length).toBeGreaterThanOrEqual(6);
     });

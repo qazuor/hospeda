@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "113-feature-countryside_view",
+    "slug": "countryside_view",
+    "category": "VIEW",
+    "description": {
+        "es": "Vista al campo desde el alojamiento",
+        "en": "Countryside view from the property",
+        "pt": "Vista para o campo a partir da hospedagem"
+    },
+    "applicableVerticals": ["accommodation"],
+    "icon": "RuralAreaIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}
