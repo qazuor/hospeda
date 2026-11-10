@@ -65,7 +65,8 @@ export const adminPreviewPlanMigrationRoute = createAdminRoute({
             return await previewPlanMigration({
                 actor: getActorFromContext(ctx),
                 input: body,
-                verticals: planMigrationVerticals()
+                verticals: planMigrationVerticals(),
+                clock: getClock().clock
             });
         } catch (error) {
             return answerPlanMigrationRejection({ error, ctx });
