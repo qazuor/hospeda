@@ -31,6 +31,7 @@ const noticePayloadSchema = z.strictObject({
     newAmountMinor: z.number().int().nonnegative().nullable(),
     currency: z.string().min(1),
     applicationDate: dateSchema.nullable(),
+    daysBefore: z.number().int().positive().optional(),
     losesPromo: z.boolean(),
     variant: z.enum(['SCHEDULED', 'WAITING', 'TO_RESOLVE', 'NOTHING_CHANGES', 'ALREADY_STARTED']),
     deadlinesVersion: z.number().int().positive()
