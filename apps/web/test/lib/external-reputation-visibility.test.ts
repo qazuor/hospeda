@@ -37,6 +37,7 @@ function emptyGoogleItem(
 ): ExternalReputationPlatformItem {
     return {
         platform: 'GOOGLE',
+        url: null,
         rating: null,
         reviewsCount: null,
         deepLink: null,
@@ -93,6 +94,29 @@ describe('H-133 — the reputation block must not publish itself with nothing to
             });
 
             expect(visible).toHaveLength(1);
+        });
+
+        it('keeps a platform that has only a url — a link alone is real content (F)', () => {
+            // The real production case: an Airbnb listing with showLink=true and
+            // no reputation row yet. The chip must still render "Ver en Airbnb →".
+            const visible = selectVisibleReputationItems({
+                items: [
+                    emptyGoogleItem({
+                        platform: 'AIRBNB' as ExternalReputationPlatformItem['platform'],
+                        url: 'https://www.airbnb.com.ar/rooms/817515602448448452'
+                    })
+                ]
+            });
+
+            expect(visible).toHaveLength(1);
+        });
+
+        it('drops a platform whose url is an empty string and has nothing else', () => {
+            const visible = selectVisibleReputationItems({
+                items: [emptyGoogleItem({ url: '' })]
+            });
+
+            expect(visible).toHaveLength(0);
         });
 
         it('keeps a platform that has only snippets', () => {
@@ -172,6 +196,18 @@ describe('H-133 — the reputation block must not publish itself with nothing to
     describe('hasAnythingToShow', () => {
         it('is false for the exact production row that produced H-133', () => {
             expect(hasAnythingToShow({ item: emptyGoogleItem() })).toBe(false);
+        });
+
+        it('is true when the item has only a url', () => {
+            expect(
+                hasAnythingToShow({
+                    item: emptyGoogleItem({ url: 'https://share.google/IUko8vyFORxaIjDM1' })
+                })
+            ).toBe(true);
+        });
+
+        it('is false when the url is an empty string and there is nothing else', () => {
+            expect(hasAnythingToShow({ item: emptyGoogleItem({ url: '' }) })).toBe(false);
         });
     });
 });
