@@ -1566,6 +1566,307 @@
                 "notes": "HOS-2100 (owner decision 10/11): the group (14) is larger than the total capacity (11 guests). The answer says only that 14 do not fit and that the capacity is 11. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
             },
             "rules": []
+        },
+        {
+            "id": "venue-scope-00-saturday-22",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "00[:.]?00|medianoche"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure (staging 10/11/2026). Minimum age 18 scoped from 00:00; the bar opens Saturday 21:00-03:00. 22:00 is BEFORE midnight, so it is outside the restricted part: the answer starts with 'sí' for that time, says that from midnight (00:00) the minimum age is 18, repeats the legal notice and tells the visitor to confirm with the venue."
+            }
+        },
+        {
+            "id": "venue-scope-00-saturday-2130-leave-23",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Puedo ir con mi hijo de 16 el sábado a las 21:30 y nos vamos a las 23?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "00[:.]?00|medianoche"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure. Scope from 00:00; the whole visit (21:30-23:00) is before midnight, so it is outside: starts with 'sí', never claims 21:30 falls inside the restricted hours, mentions 00:00/18 and the legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-2330-saturday-22-leave-23",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16? Nos vamos a las 23.",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "23[:.]?30"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure. Scope from 23:30; the visit (22:00-23:00) ends before 23:30, so it is outside: starts with 'sí' (the smoke answer opened with 'No' and then reasoned it was outside), mentions 23:30/18 and the legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-00-one-am",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Puedo ir con mi hijo de 16 a la 1 de la mañana?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 00:00; 01:00 is after midnight and before the 03:00 close, so it is INSIDE: no permission, gives the age and legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-2330-one-am",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "¿Puedo ir con mi hijo de 16 a la 1 de la mañana?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 23:30; 01:00 is inside (from-time scopes run through closing, after midnight included): no permission."
+            }
+        },
+        {
+            "id": "venue-scope-00-ambiguous-minors",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Pueden entrar menores?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 00:00 but the question names no time: conservative answer, no 'sí' or permission wording; the age, the legal notice and the venue referral."
+            }
+        },
+        {
+            "id": "venue-scope-2330-ambiguous-minors",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "¿Pueden entrar menores?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 23:30 but the question names no time: conservative answer, no permission."
+            }
+        },
+        {
+            "id": "venue-scope-all-day-saturday-22",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-todo-el-dia",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-todo-el-dia",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope for the whole day: 22:00 is covered like every other hour. No permission; age, legal notice, refer to the venue."
+            }
+        },
+        {
+            "id": "venue-area-scope-other-area",
+            "feature": "chat_venue",
+            "entity": "bar-pista-area",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-pista-area",
+            "question": "¿Puedo ir a cenar al salón con mi hijo de 15? No vamos a ir a la pista.",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona la pista",
+                        "pattern": "pista"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Minimum age 18 scoped to 'la pista de baile' only. Dinner in the salon, explicitly away from the dance floor, is another area: starts with 'sí' for the salon, says the 18 applies to the dance floor, repeats the legal notice and refers to the venue."
+            }
         }
     ]
 }

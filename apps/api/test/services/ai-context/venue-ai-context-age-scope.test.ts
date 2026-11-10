@@ -226,7 +226,10 @@ describe('regression: "all day" or unset never yields permission (HOS-2098)', ()
             'a scope for the whole day, or no such line at all, means the minimum age covers the whole venue at every hour'
         );
         expect(rules).toContain(
-            'a scope for the whole day, no scope line, or a question that does not say clearly which time, area or activity it is about — do NOT answer "yes" or use permission wording'
+            'a scope for the whole day, no scope line, a sector or activity text that is not only a name, a time at or after the start of the scope, or a question that does not say clearly which time, area or activity it is about (for example "¿pueden entrar menores?" or "el sábado") — never start with "sí" and do NOT answer "yes" or use permission wording'
+        );
+        expect(rules).toContain(
+            'if it reads "Rige todo el día", or there is no such line, or the sector text is not only a name, the first word is never "sí"'
         );
     });
 });

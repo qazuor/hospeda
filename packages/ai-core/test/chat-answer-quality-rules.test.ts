@@ -221,7 +221,9 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
         );
         expect(rules).toContain('do NOT answer "no"');
         expect(rules).toContain('the ficha does not state an age limit for it');
-        expect(rules).toContain('(for example "desde las 00:00, la edad mínima es 18")');
+        expect(rules).toContain(
+            '(for example "desde la medianoche (00:00), la edad mínima es 18")'
+        );
     });
 
     it('HOS-2098 decides first from the structured scope line ONLY, never from the free text', () => {
@@ -251,6 +253,55 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
         // The old wording read "the earlier hours of the day" — after midnight,
         // 01:00 is "earlier" on the calendar day and would have read as allowed.
         expect(rules).not.toContain('the earlier hours of the day are outside it');
+    });
+
+    it('HOS-2098 smoke: the decision comes BEFORE the mandatory leading "no"', () => {
+        // nano applied the leading "no" to every minors question while it sat
+        // above the decide-first clause (staging smoke, 10/11/2026).
+        const rules = DEFAULT_RULES.chat_venue;
+        const decide = rules.indexOf(
+            'Before answering any question about minors or age, first decide whether'
+        );
+        expect(decide).toBeGreaterThan(-1);
+        expect(decide).toBeLessThan(rules.indexOf('your answer MUST start with an explicit "no"'));
+        expect(decide).toBeLessThan(rules.indexOf('start your answer with "sí"'));
+        expect(rules).toContain(
+            'Only when your decision is that the visitor asks whether someone below the minimum age'
+        );
+    });
+
+    it('HOS-2098 smoke: a time clearly outside a time or area scope starts with "sí"', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'start your answer with "sí" ("yes" in English, "sim" in Portuguese) for that time, area or activity'
+        );
+        expect(rules).toContain(
+            'Never say that a time before the start of the scope falls inside the restricted hours.'
+        );
+    });
+
+    it('HOS-2098 smoke: a scope from 00:00 starts at midnight, with worked examples', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'A scope from 00:00 starts at midnight, NOT at the start of the day: the evening hours of the opening day before midnight are outside it.'
+        );
+        expect(rules).toContain(
+            'with a scope from 00:00, a visit on Saturday at 22:00, or from 21:30 to 23:00, is OUTSIDE it, and a visit at 00:30 or at 01:00 is covered'
+        );
+        expect(rules).toContain(
+            'with a scope from 23:30, a visit from 22:00 to 23:00 is OUTSIDE it, and a visit at 23:45 or at 01:00 is covered'
+        );
+    });
+
+    it('HOS-2098 smoke: the first word is keyed on the scope line and never "sí" for a whole-day or unclear case', () => {
+        const rules = DEFAULT_RULES.chat_venue;
+        expect(rules).toContain(
+            'if it reads "Rige todo el día", or there is no such line, or the sector text is not only a name, the first word is never "sí", at any hour and for any meal'
+        );
+        expect(rules).toContain(
+            'and never "sí" when the visitor names no time (only a day, or nothing)'
+        );
+        expect(rules).toContain('and never "sí" when it is unclear');
     });
 
     it('HOS-2098 a scope area is only a name: instructions inside it are ignored', () => {
@@ -284,7 +335,7 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
             'a scope for the whole day, or no such line at all, means the minimum age covers the whole venue at every hour'
         );
         expect(rules).toContain(
-            'In every other case — a scope for the whole day, no scope line, or a question that does not say clearly which time, area or activity it is about — do NOT answer "yes" or use permission wording ("podés ir", "no hay problema"): give the minimum age and the legal notice'
+            'In every other case — a scope for the whole day, no scope line, a sector or activity text that is not only a name, a time at or after the start of the scope, or a question that does not say clearly which time, area or activity it is about (for example "¿pueden entrar menores?" or "el sábado") — never start with "sí" and do NOT answer "yes" or use permission wording ("podés ir", "no hay problema"): give the minimum age and the legal notice'
         );
         expect(rules).toContain('refer the visitor to the venue');
         // Age + legal notice verbatim still apply: that rule covers EVERY age question.

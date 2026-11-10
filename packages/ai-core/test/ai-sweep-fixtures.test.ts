@@ -51,10 +51,10 @@ const rubricOf = (id: string): Rubric => {
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
 describe('fixtures joined with the generated contexts', () => {
-    it('has 46 unique cases across the three features, each with a rubric', () => {
+    it('has 55 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(46);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(46);
+        expect(cases).toHaveLength(55);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(55);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -135,7 +135,7 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(46 * 8 * 2);
+        expect(calls).toHaveLength(55 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 
@@ -151,6 +151,50 @@ describe('configs', () => {
             const c = config(name);
             expect(expandMatrix({ config: c, cases }).length).toBeLessThanOrEqual(c.maxCalls);
         }
+    });
+});
+
+describe('HOS-2098 age-scope config', () => {
+    it('runs only existing chat_venue cases, on gpt-5.4-nano without reasoning, within its cap', () => {
+        const c = config('sweep.config.age-scope.json');
+        const calls = expandMatrix({ config: c, cases });
+        expect(calls.length).toBe(c.caseIds.length * c.repetitions);
+        expect(calls.length).toBeLessThanOrEqual(c.maxCalls);
+        expect(new Set(calls.map((call) => call.variantKey))).toEqual(
+            new Set(['gpt-5.4-nano | none | 2048'])
+        );
+        for (const id of c.caseIds) {
+            expect(cases.find((x) => x.id === id)?.feature, id).toBe('chat_venue');
+        }
+    });
+
+    it('the smoke bars print the scope line the staging smoke saw', () => {
+        const ctx = (id: string): string => cases.find((c) => c.id === id)?.context ?? '';
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '**Alcance de la edad mínima**: Rige desde las 00:00 hasta el cierre'
+        );
+        expect(ctx('venue-scope-00-saturday-22')).toContain('- Sábado: 21:00–03:00');
+        expect(ctx('venue-scope-2330-saturday-22-leave-23')).toContain(
+            '**Alcance de la edad mínima**: Rige desde las 23:30 hasta el cierre'
+        );
+        expect(ctx('venue-scope-all-day-saturday-22')).toContain(
+            '**Alcance de la edad mínima**: Rige todo el día'
+        );
+    });
+
+    it('an outside-scope case fails an answer that opens with "No" and passes one that opens with "Sí"', () => {
+        const r = rubricOf('venue-scope-00-saturday-22');
+        const no = checkAnswer({
+            rubric: r,
+            text: 'No. La edad mínima es 18 y rige desde las 00:00. Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788).'
+        });
+        const yes = checkAnswer({
+            rubric: r,
+            text: 'Sí, a las 22 la ficha no indica un límite de edad: desde la medianoche (00:00) la edad mínima es 18. Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788). Confirmalo con el lugar.'
+        });
+        expect(no.violations).toContain('arranca con un no');
+        expect(yes.violations).toEqual([]);
+        expect(yes.includeCoverage).toBe(1);
     });
 });
 

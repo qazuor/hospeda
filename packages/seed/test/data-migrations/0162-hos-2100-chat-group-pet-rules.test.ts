@@ -13,7 +13,9 @@
  *    `before` side does not (guards against swapped halves).
  * 5. **Chain.** `before` is byte-identical to the previous frozen `after`:
  *    0161-hos-2098 for `chat_venue`, 0160 for `chat` and `chat_experience`.
- * 6. **No drift.** `after` equals `DEFAULT_RULES` read from source.
+ * 6. **No drift.** `after` equals `DEFAULT_RULES` read from source for `chat` and
+ *    `chat_experience`; for `chat_venue` it is exactly what 0163-hos-2098 starts
+ *    from, since that migration changed the venue rules again.
  *
  * @module test/data-migrations/0162-hos-2100-chat-group-pet-rules
  */
@@ -69,6 +71,17 @@ const venueAgeScope = JSON.parse(
         'utf-8'
     )
 ) as { readonly after: { readonly rules: { readonly chat_venue: string } } };
+
+/** 0163-hos-2098's frozen snapshot: its `chat_venue` `before` is this `after`. */
+const venueDecideFirst = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0163-hos-2098-chat-venue-age-scope-decide-first.data.json'
+        ),
+        'utf-8'
+    )
+) as { readonly before: { readonly rules: { readonly chat_venue: string } } };
 
 /** One anchor per HOS-2100 shared clause. */
 const HOS_2100_CLAUSES = [
@@ -197,9 +210,12 @@ describe('0162-hos-2100-chat-group-pet-rules', () => {
     });
 
     it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
-        for (const feature of migration.CHAT_FEATURES) {
-            expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
-        }
+        expect(after.rules.chat).toBe(DEFAULT_RULES.chat);
+        expect(after.rules.chat_experience).toBe(DEFAULT_RULES.chat_experience);
+    });
+
+    it('AC-5b: the frozen chat_venue "after" is exactly what 0163 starts from (chain without a gap)', () => {
+        expect(after.rules.chat_venue).toBe(venueDecideFirst.before.rules.chat_venue);
     });
 
     it('is declared non-destructive and belongs to the required group', () => {
