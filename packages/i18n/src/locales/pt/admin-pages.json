@@ -1495,7 +1495,8 @@
         "detail": {
             "back": "Voltar à lista",
             "loading": "Carregando detalhes…",
-            "notice": "Aviso de {days} dias",
+            "notice_one": "Aviso de {{count}} dia",
+            "notice_other": "Aviso de {{count}} dias",
             "announced": "Anunciada em {date}",
             "subscription": "Assinatura",
             "ageHeading": "Tempo desde o anúncio",

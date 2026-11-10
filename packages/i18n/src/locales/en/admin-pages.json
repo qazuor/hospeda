@@ -1495,7 +1495,8 @@
         "detail": {
             "back": "Back to list",
             "loading": "Loading details…",
-            "notice": "{days} days of notice",
+            "notice_one": "{{count}} day of notice",
+            "notice_other": "{{count}} days of notice",
             "announced": "Announced on {date}",
             "subscription": "Subscription",
             "ageHeading": "Age since announcement",

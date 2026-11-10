@@ -69,7 +69,12 @@ export function PlanMigrationDetail({
                         <h2 className="font-semibold text-lg">
                             {detail.data.sourcePlanName} → {detail.data.targetPlanName}
                         </h2>
-                        <p>{tr('detail.notice', { days: detail.data.noticeDays })}</p>
+                        <p>
+                            {tPlural(
+                                'admin-pages.planMigration.detail.notice',
+                                detail.data.noticeDays
+                            )}
+                        </p>
                         <p>
                             {tr('detail.announced', {
                                 date: detail.data.announcedAt.toISOString().slice(0, 10)
