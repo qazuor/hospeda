@@ -150,6 +150,11 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/promo/promo-ending-notice.ts': [
         'billing.promo-ending'
     ],
+    'packages/service-core/src/services/billing/plan-migration/plan-migration-notice.ts': [
+        'billing.plan-migration-announced',
+        'billing.plan-migration-upcoming',
+        'billing.plan-migration-cancelled'
+    ],
     'packages/service-core/src/services/billing/subscription/courtesy-revoked-notice.ts': [
         'billing.courtesy-revoked'
     ],

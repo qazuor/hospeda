@@ -9,15 +9,13 @@ import {
 } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service.js';
-import { readLivePromos } from '../promo/live-promos.js';
-import { composePromoAmount } from '../promo/promo-composition.js';
-import { readAnchoredBillingOption } from '../read-anchored-billing-option.js';
 import { computeApplicationDate } from './plan-migration-application-date.js';
 import {
     assertPlanMigrationActionPermitted,
     planMigrationRejection
 } from './plan-migration-authorization.js';
 import { type PlanMigrationCohortRow, readPlanMigrationCohort } from './plan-migration-cohort.js';
+import { planMigrationRowPricing } from './plan-migration-pricing.js';
 import { validatePlanMigrationVersions } from './plan-migration-validation.js';
 
 /** Fingerprint the exact subscription and outcome pairs shown to the actor. */
@@ -32,7 +30,7 @@ export function planMigrationCohortFingerprint(args: {
 
 async function previewRow(args: {
     readonly row: PlanMigrationCohortRow;
-    readonly sourcePlanVersionId: string;
+    readonly targetPlanVersionId: string;
     readonly actorId: string;
     readonly targetOption: { readonly amount: number } | undefined;
     readonly direction: 'UP' | 'DOWN';
@@ -40,25 +38,11 @@ async function previewRow(args: {
     readonly noticeDays: number;
 }): Promise<PlanMigrationPreviewRow> {
     const { row } = args;
-    const option = await readAnchoredBillingOption({
-        subscription: {
-            planVersionId: args.sourcePlanVersionId,
-            billingOptionId: row.billingOptionId
-        }
-    });
-    if (!option)
-        throw planMigrationRejection({
-            reason: 'INVALID_PLAN_MIGRATION_INPUT',
-            message: 'Anchored billing option is missing.'
-        });
-    const promos = await readLivePromos({
-        subscriptionId: row.subscriptionId,
+    const pricing = await planMigrationRowPricing({
+        row,
+        targetPlanVersionId: args.targetPlanVersionId,
         at: args.announcedAt
     });
-    const currentAmount = composePromoAmount({
-        listAmountMinor: option.amount,
-        promos: promos.map(({ discountKind, value }) => ({ discountKind, value }))
-    }).amountMinor;
     const excludedReason =
         row.userId === args.actorId
             ? 'ACTOR_IS_SUBJECT'
@@ -74,10 +58,10 @@ async function previewRow(args: {
         status: row.status,
         cycle: row.cycle,
         direction: excludedReason ? null : args.direction,
-        currentAmount,
-        newAmount: outcome === 'PENDIENTE' ? (args.targetOption?.amount ?? null) : null,
-        currency: option.currency,
-        losesPromo: promos.length > 0,
+        currentAmount: pricing.currentAmount,
+        newAmount: outcome === 'PENDIENTE' ? pricing.newAmount : null,
+        currency: pricing.currency,
+        losesPromo: pricing.losesPromo,
         applicationDate:
             outcome === 'PENDIENTE'
                 ? computeApplicationDate({
@@ -136,7 +120,7 @@ export async function previewPlanMigration(args: {
         rows.push(
             await previewRow({
                 row: cohortRow,
-                sourcePlanVersionId,
+                targetPlanVersionId,
                 actorId: actor.id,
                 targetOption: targetOptions.find((option) => option.cycle === cohortRow.cycle),
                 direction,

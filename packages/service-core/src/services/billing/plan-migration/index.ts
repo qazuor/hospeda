@@ -10,5 +10,6 @@ export {
 export * from './plan-migration-cohort.js';
 export * from './plan-migration-exit.js';
 export * from './plan-migration-launch.service.js';
+export * from './plan-migration-notice.js';
 export * from './plan-migration-options.service.js';
 export * from './plan-migration-preview.service.js';

@@ -9,6 +9,7 @@ import {
     inArray,
     planMigrationSubscriptions,
     planMigrations,
+    plans,
     subscriptions
 } from '@repo/db';
 import {
@@ -16,9 +17,11 @@ import {
     type PlanMigrationLaunchResponse,
     PlanMigrationLaunchResponseSchema
 } from '@repo/schemas';
+import { getLocalDateString } from '@repo/utils';
 import type { Actor } from '../../../types/index.js';
 import { ServiceError } from '../../../types/index.js';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause.js';
+import { resolvePlanDisplayName } from '../plan-display-name.js';
 import { computeApplicationDate } from './plan-migration-application-date.js';
 import {
     assertPlanMigrationActionPermitted,
@@ -28,7 +31,12 @@ import {
     PLAN_MIGRATION_COHORT_STATUSES,
     readPlanMigrationCohort
 } from './plan-migration-cohort.js';
+import {
+    enqueuePlanMigrationNotice,
+    PLAN_MIGRATION_ANNOUNCED_TEMPLATE
+} from './plan-migration-notice.js';
 import { planMigrationCohortFingerprint } from './plan-migration-preview.service.js';
+import { planMigrationRowPricing } from './plan-migration-pricing.js';
 import { validatePlanMigrationVersions } from './plan-migration-validation.js';
 
 /** Map only the database constraints owned by action 17. */
@@ -73,13 +81,38 @@ export async function launchPlanMigration(args: {
             message: 'Forbidden'
         });
     const { sourcePlanVersionId, targetPlanVersionId, cohortFingerprint } = parsed.data;
-    const { source } = await validatePlanMigrationVersions({
+    const { source, target } = await validatePlanMigrationVersions({
         sourcePlanVersionId,
         targetPlanVersionId,
         verticals: args.verticals
     });
+    const { direction } = await args.verticals.changeDirection({
+        fromPlanVersionId: source.id,
+        toPlanVersionId: target.id
+    });
     try {
         return await getDb().transaction(async (tx) => {
+            const [sourcePlan, targetPlan] = await Promise.all([
+                tx
+                    .select({ slug: plans.slug, name: plans.name })
+                    .from(plans)
+                    .where(eq(plans.id, source.planId))
+                    .limit(1),
+                tx
+                    .select({ slug: plans.slug, name: plans.name })
+                    .from(plans)
+                    .where(eq(plans.id, target.planId))
+                    .limit(1)
+            ]);
+            if (!sourcePlan[0] || !targetPlan[0]) throw new Error('Migration plan missing');
+            const planName = await resolvePlanDisplayName({
+                vertical: source.vertical,
+                plan: sourcePlan[0]
+            });
+            const targetPlanName = await resolvePlanDisplayName({
+                vertical: target.vertical,
+                plan: targetPlan[0]
+            });
             await tx
                 .select({ id: subscriptions.id })
                 .from(subscriptions)
@@ -161,14 +194,65 @@ export async function launchPlanMigration(args: {
                     noticeDays
                 })
             }));
-            await tx.insert(planMigrationSubscriptions).values(
-                rows.map((row) => ({
-                    planMigrationId: migration.id,
-                    subscriptionId: row.subscriptionId,
-                    status: row.outcome,
-                    applicationDate: new Date(`${row.applicationDate}T12:00:00.000Z`)
-                }))
-            );
+            const written = await tx
+                .insert(planMigrationSubscriptions)
+                .values(
+                    rows.map((row) => ({
+                        planMigrationId: migration.id,
+                        subscriptionId: row.subscriptionId,
+                        status: row.outcome,
+                        applicationDate: new Date(`${row.applicationDate}T12:00:00.000Z`)
+                    }))
+                )
+                .returning();
+            const writtenBySubscription = new Map(written.map((row) => [row.subscriptionId, row]));
+            const targetDate = getLocalDateString({ instant: announcedAt });
+            for (const entry of included) {
+                const scope = writtenBySubscription.get(entry.row.subscriptionId);
+                const scheduled = rows.find(
+                    (row) => row.subscriptionId === entry.row.subscriptionId
+                );
+                if (!scope || !scheduled) throw new Error('Migration scope row missing');
+                const pricing = await planMigrationRowPricing({
+                    tx,
+                    row: entry.row,
+                    targetPlanVersionId,
+                    at: announcedAt
+                });
+                const variant =
+                    entry.outcome === 'PARA_RESOLVER'
+                        ? 'TO_RESOLVE'
+                        : entry.row.status === 'ACTIVE'
+                          ? 'SCHEDULED'
+                          : 'WAITING';
+                await enqueuePlanMigrationNotice({
+                    tx,
+                    template: PLAN_MIGRATION_ANNOUNCED_TEMPLATE,
+                    row: {
+                        id: scope.id,
+                        recipientUserId: entry.row.userId,
+                        recipientEmail: entry.row.customerEmail
+                    },
+                    milestone: 'mig:announce',
+                    targetDate,
+                    payload: {
+                        planMigrationId: migration.id,
+                        planMigrationSubscriptionId: scope.id,
+                        subscriptionId: entry.row.subscriptionId,
+                        vertical: source.vertical,
+                        planName,
+                        targetPlanName,
+                        direction,
+                        currentAmountMinor: pricing.currentAmount,
+                        newAmountMinor: variant === 'TO_RESOLVE' ? null : pricing.newAmount,
+                        currency: pricing.currency,
+                        applicationDate: variant === 'SCHEDULED' ? scheduled.applicationDate : null,
+                        losesPromo: pricing.losesPromo,
+                        variant,
+                        deadlinesVersion: deadlines.version
+                    }
+                });
+            }
             return PlanMigrationLaunchResponseSchema.parse({
                 planMigrationId: migration.id,
                 announcedAt,
