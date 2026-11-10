@@ -171,7 +171,7 @@ function SubscriptionsBody() {
     }
 
     const data = query.data;
-    if (!data || data.items.length === 0) {
+    if (!data) {
         return (
             <div data-testid="subscriptions-list">
                 <p>{t('admin-billing.subscriptionAdmin.empty')}</p>
@@ -250,23 +250,27 @@ function SubscriptionsBody() {
                     </select>
                 </label>
             </div>
-            <DataTable<Item>
-                columns={columns}
-                data={data.items}
-                total={data.pagination.total}
-                rowId={(row) => row.id}
-                page={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                    setPage(1);
-                    setPageSize(size);
-                }}
-                sort={sort}
-                onSortChange={setSort}
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={setColumnVisibility}
-            />
+            {data.items.length === 0 ? (
+                <p>{t('admin-billing.subscriptionAdmin.empty')}</p>
+            ) : (
+                <DataTable<Item>
+                    columns={columns}
+                    data={data.items}
+                    total={data.pagination.total}
+                    rowId={(row) => row.id}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                        setPage(1);
+                        setPageSize(size);
+                    }}
+                    sort={sort}
+                    onSortChange={setSort}
+                    columnVisibility={columnVisibility}
+                    onColumnVisibilityChange={setColumnVisibility}
+                />
+            )}
         </div>
     );
 }
