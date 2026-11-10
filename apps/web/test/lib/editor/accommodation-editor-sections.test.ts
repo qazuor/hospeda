@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+    ACCOMMODATION_AI_QUESTIONS_SECTION,
+    ACCOMMODATION_EDITOR_REGISTRY,
     ACCOMMODATION_EDITOR_SECTIONS,
     buildEditorHubUrl,
     buildEditorSectionUrl,
@@ -52,8 +54,8 @@ function resolveHostKey(key: string): string | undefined {
 }
 
 describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
-    it('should declare exactly the twelve sections (ten from the spec, G7 smoke SEO, HOS-2101 AI questions)', () => {
-        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(12);
+    it('should declare exactly the eleven sections (ten from the spec plus G7 smoke SEO)', () => {
+        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(11);
     });
 
     it('should have a unique slug per section', () => {
@@ -255,22 +257,31 @@ describe('getVisibleEditorSections', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
         expect(visible.map((section) => section.id)).toEqual(
-            ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)
+            ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => section.id)
         );
     });
 });
 
 describe('HOS-2101 — the AI questions section', () => {
-    it('should sit right after the FAQs, in the content group, always visible', () => {
-        const ids = ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id);
-        const section = ACCOMMODATION_EDITOR_SECTIONS.find((entry) => entry.id === 'aiQuestions');
+    it('should join the registry right after the FAQs, but not the frozen catalog list', () => {
+        const ids = ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => section.id);
 
         expect(ids.indexOf('aiQuestions')).toBe(ids.indexOf('faqs') + 1);
-        expect(section).toEqual({
+        expect(ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)).not.toContain(
+            'aiQuestions'
+        );
+        expect(ACCOMMODATION_EDITOR_REGISTRY.sections).toHaveLength(
+            ACCOMMODATION_EDITOR_SECTIONS.length + 1
+        );
+    });
+
+    it('should be a content page at preguntas-ia, always visible', () => {
+        expect(ACCOMMODATION_AI_QUESTIONS_SECTION).toEqual({
             id: 'aiQuestions',
             slug: 'preguntas-ia',
             group: 'content',
             labelKey: 'host.properties.editor.section.aiQuestions'
         });
+        expect(findEditorSectionBySlug({ slug: 'preguntas-ia' })?.id).toBe('aiQuestions');
     });
 });
