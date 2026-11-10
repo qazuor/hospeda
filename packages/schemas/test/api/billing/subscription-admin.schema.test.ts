@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AdminSubscriptionDetailHttpSchema,
     AdminSubscriptionDetailParamsSchema,
     AdminSubscriptionDetailSchema,
+    AdminSubscriptionListItemHttpSchema,
     AdminSubscriptionListQuerySchema
 } from '../../../src/api/billing/subscription-admin.schema';
 
@@ -84,5 +86,91 @@ describe('HOS-2081 the admin subscription detail schemas validate ids and strip 
             'succeedsId',
             'vertical'
         ]);
+    });
+});
+
+describe('HOS-2081 the admin subscription HTTP schemas require ISO strings for dates', () => {
+    const iso = '2026-01-01T00:00:00.000Z';
+
+    it('rejects Date objects in the list item and accepts ISO strings', () => {
+        const base = {
+            id: crypto.randomUUID(),
+            status: 'ACTIVE',
+            class: 'PRINCIPAL',
+            vertical: 'accommodation',
+            owner: null,
+            plan: null,
+            cycle: null,
+            paymentMethod: null,
+            nextChargeAt: null
+        };
+        expect(
+            AdminSubscriptionListItemHttpSchema.safeParse({ ...base, createdAt: new Date(iso) })
+                .success
+        ).toBe(false);
+        expect(
+            AdminSubscriptionListItemHttpSchema.safeParse({ ...base, createdAt: iso }).success
+        ).toBe(true);
+        expect(
+            AdminSubscriptionListItemHttpSchema.safeParse({
+                ...base,
+                nextChargeAt: iso,
+                createdAt: iso
+            }).success
+        ).toBe(true);
+    });
+
+    it('rejects Date objects in the detail and accepts ISO strings', () => {
+        const base = {
+            id: crypto.randomUUID(),
+            status: 'ACTIVE',
+            class: 'PRINCIPAL',
+            vertical: 'accommodation',
+            owner: null,
+            plan: null,
+            cycle: null,
+            paymentMethod: null,
+            nextChargeAt: null,
+            serviceEndsAt: null,
+            planVersion: null,
+            price: null,
+            succeedsId: null,
+            succeededById: null,
+            pause: null,
+            courtesy: null
+        };
+        expect(
+            AdminSubscriptionDetailHttpSchema.safeParse({ ...base, createdAt: new Date(iso) })
+                .success
+        ).toBe(false);
+        expect(
+            AdminSubscriptionDetailHttpSchema.safeParse({ ...base, createdAt: iso }).success
+        ).toBe(true);
+        expect(
+            AdminSubscriptionDetailHttpSchema.safeParse({
+                ...base,
+                createdAt: iso,
+                serviceEndsAt: iso,
+                planVersion: {
+                    id: crypto.randomUUID(),
+                    current: true,
+                    sellable: false,
+                    createdAt: iso
+                },
+                pause: {
+                    reason: 'CUSTOMER_REQUEST',
+                    startsAt: iso,
+                    expectedEndAt: null,
+                    requestedMonths: 2
+                },
+                courtesy: {
+                    courtesyGrantId: crypto.randomUUID(),
+                    months: 2,
+                    startsAt: iso,
+                    endsAt: iso,
+                    remainingMonths: 1
+                }
+            }).success
+        ).toBe(true);
     });
 });

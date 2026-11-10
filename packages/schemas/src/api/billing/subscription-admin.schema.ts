@@ -108,6 +108,44 @@ export const AdminSubscriptionDetailSchema = AdminSubscriptionListItemSchema.ext
 /** Route and service parameters for one administrative subscription detail. */
 export const AdminSubscriptionDetailParamsSchema = z.object({ subscriptionId: z.uuid() }).strict();
 
+/** One administrative list item serialized for HTTP (dates as ISO strings). */
+export const AdminSubscriptionListItemHttpSchema = AdminSubscriptionListItemSchema.extend({
+    nextChargeAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime()
+});
+
+/** One administrative subscription detail serialized for HTTP (dates as ISO strings). */
+export const AdminSubscriptionDetailHttpSchema = AdminSubscriptionDetailSchema.extend({
+    nextChargeAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+    serviceEndsAt: z.string().datetime().nullable(),
+    planVersion: z
+        .object({
+            id: z.string().uuid(),
+            current: z.boolean(),
+            sellable: z.boolean(),
+            createdAt: z.string().datetime()
+        })
+        .nullable(),
+    pause: z
+        .object({
+            reason: z.enum(['CUSTOMER_REQUEST', 'COURTESY']),
+            startsAt: z.string().datetime(),
+            expectedEndAt: z.string().datetime().nullable(),
+            requestedMonths: z.number().int().nullable()
+        })
+        .nullable(),
+    courtesy: z
+        .object({
+            courtesyGrantId: z.string().uuid(),
+            months: z.number().int().positive(),
+            startsAt: z.string().datetime(),
+            endsAt: z.string().datetime(),
+            remainingMonths: z.number().int().nonnegative()
+        })
+        .nullable()
+});
+
 /** One administrative subscription detail. */
 export type AdminSubscriptionDetail = z.infer<typeof AdminSubscriptionDetailSchema>;
 
@@ -116,3 +154,9 @@ export type AdminSubscriptionListQuery = z.infer<typeof AdminSubscriptionListQue
 
 /** One administrative subscription list item. */
 export type AdminSubscriptionListItem = z.infer<typeof AdminSubscriptionListItemSchema>;
+
+/** One administrative list item serialized for HTTP. */
+export type AdminSubscriptionListItemHttp = z.infer<typeof AdminSubscriptionListItemHttpSchema>;
+
+/** One administrative subscription detail serialized for HTTP. */
+export type AdminSubscriptionDetailHttp = z.infer<typeof AdminSubscriptionDetailHttpSchema>;
