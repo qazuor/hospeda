@@ -237,10 +237,6 @@ export const experiences = pgTable(
          * catalog rows it replaced; those columns are dropped in release N+1.
          */
         policies: jsonb('policies').$type<ExperiencePolicies>(),
-        /** LEGACY (HOS-2060): copied into `policies.cancellation`; dropped in release N+1. No code may read or write it. */
-        legacyCancellationPolicy: text('cancellation_policy'),
-        /** LEGACY (HOS-2060): copied into `policies.privateGroups`; dropped in release N+1. No code may read or write it. */
-        legacyAcceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
         // Jsonb grouped columns (matching venue / accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
