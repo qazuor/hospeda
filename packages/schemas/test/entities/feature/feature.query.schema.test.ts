@@ -136,6 +136,7 @@ describe('Feature Query Schemas', () => {
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
+                category: FeatureCategoryEnum.LOCATION,
                 icon: faker.lorem.word(),
                 description: { es: descEs, en: descEs, pt: descEs },
                 createdAt: faker.date.past(),
@@ -159,6 +160,7 @@ describe('Feature Query Schemas', () => {
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
+                category: FeatureCategoryEnum.LOCATION,
                 icon: undefined,
                 description: undefined,
                 createdAt: faker.date.past(),
@@ -189,6 +191,7 @@ describe('Feature Query Schemas', () => {
                             | 'experience'
                         )[],
                         slug: faker.lorem.slug(3),
+                        category: FeatureCategoryEnum.LOCATION,
                         createdAt: faker.date.past(),
                         updatedAt: faker.date.recent()
                     }
@@ -290,6 +293,7 @@ describe('Feature Query Schemas', () => {
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
+                category: FeatureCategoryEnum.LOCATION,
                 createdAt: faker.date.past(),
                 updatedAt: faker.date.recent(),
                 score: 0.85,
@@ -312,6 +316,7 @@ describe('Feature Query Schemas', () => {
                             | 'experience'
                         )[],
                         slug: faker.lorem.slug(3),
+                        category: FeatureCategoryEnum.LOCATION,
                         createdAt: faker.date.past(),
                         updatedAt: faker.date.recent()
                     }

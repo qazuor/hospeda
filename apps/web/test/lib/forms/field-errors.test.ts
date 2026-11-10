@@ -129,6 +129,16 @@ describe('apiErrorToFieldErrors', () => {
         expect(apiErrorToFieldErrors({ details: { fieldErrors: {}, formErrors: [] } })).toEqual({});
     });
 
+    it('maps the business-line rejection object to its catalog reason key (TEST:5.6:4)', () => {
+        expect(
+            apiErrorToFieldErrors({
+                details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+            })
+        ).toEqual({
+            businessLines: 'zodError.venue.businessLines.NOT_ALLOWED_FOR_TYPE'
+        });
+    });
+
     it('maps the route-factory defaultHook shape ({ field, messageKey })', () => {
         const errors = apiErrorToFieldErrors({
             details: [

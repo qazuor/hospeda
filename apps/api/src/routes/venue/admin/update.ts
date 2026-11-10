@@ -1,8 +1,19 @@
 /**
  * Admin update venue listing endpoint (full PUT).
  * Allows admins to update any venue listing.
+ *
+ * ## Section gate (HOS-1874)
+ *
+ * Declares `listingSection` from the listing catalog, so the access chain runs
+ * step 4b and step 6 on the listing OWNER for an administrative edit (action
+ * 15), exactly like the owner route. Writing fields of a section that the
+ * listing's business lines do not offer answers 409 `SECTION_ABSENT`; a section
+ * whose entitlement key the owner lacks answers 403 `ENTITLEMENT_REQUIRED`. A
+ * body that only clears fields (`null`) declares no section and writes through,
+ * because `null` never counts as a touch.
  */
 import {
+    sectionsTouchedByBody,
     VenueAdminSchema,
     type VenueUpdateInput,
     VenueUpdateInputSchema,
@@ -27,7 +38,16 @@ const venueService = new VenueService({ logger: apiLogger });
  */
 export const adminUpdateVenueRoute = createAdminRoute({
     method: 'put',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'EDIT',
+        idParam: 'id',
+        listingSection: ({ body }) =>
+            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
+                id,
+                intent: 'write' as const
+            }))
+    },
     path: '/{id}',
     summary: 'Update venue listing (admin)',
     description: 'Updates a venue listing. Requires VENUE_EDIT_ALL permission.',
@@ -52,7 +72,7 @@ export const adminUpdateVenueRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return result.data;

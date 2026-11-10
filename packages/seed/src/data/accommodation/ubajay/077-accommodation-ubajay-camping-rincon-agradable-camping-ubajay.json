@@ -132,10 +132,7 @@
     },
     "extraInfo": {
         "capacity": 35,
-        "minNights": 1,
-        "maxNights": 15,
         "bathrooms": 2,
-        "smokingAllowed": true,
         "extraInfo": [
             "Parcelas con sombra y parrilla",
             "Acceso directo al arroyo",
@@ -143,6 +140,12 @@
             "Cerca del Parque Nacional El Palmar"
         ],
         "bedrooms": 1
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Rincón Agradable Camping - Naturaleza y arroyo en Ubajay ",
@@ -164,7 +167,6 @@
         "004-feature-natural_environment",
         "005-feature-rural_area",
         "008-feature-silent_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

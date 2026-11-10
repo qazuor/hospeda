@@ -167,12 +167,9 @@
     },
     "extraInfo": {
         "capacity": 8,
-        "minNights": 3,
-        "maxNights": 30,
         "bedrooms": 3,
         "beds": 5,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina privada",
             "Quincho con parrilla y horno de barro",
@@ -180,6 +177,12 @@
             "Ideal para familias o grupos grandes",
             "Se admiten mascotas con previo aviso (aplican condiciones)"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 3,
+        "maxNights": 30
     },
     "seo": {
         "title": "Paraíso Cálido - Casa de Campo con Piscina en Colón, Entre",
@@ -201,7 +204,6 @@
         "009-feature-isolated_no_neighbors",
         "003-feature-panoramic_view_extended",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

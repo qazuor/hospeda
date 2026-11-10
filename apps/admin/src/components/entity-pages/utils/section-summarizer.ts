@@ -1,5 +1,8 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import type {
+    FieldConfig,
+    SelectFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 
 // ---------------------------------------------------------------------------
@@ -14,20 +17,47 @@ export type SectionSummaryFn = (values: Record<string, unknown>, section: Sectio
 // ---------------------------------------------------------------------------
 
 /**
- * Reads a (possibly dot-notated) key from a flat Record.
- * "location.country" → values["location.country"] (flat map from prepareFormValues)
+ * Reads a (possibly dot-notated) field value from the form values.
+ *
+ * Nested first, flat literal key as fallback — the same rule the inputs render
+ * by (`EntityFormSection.readValue`). On the edit form TanStack Form writes
+ * only the nested copy, so the flat key `prepareFormValues` seeds is a stale
+ * copy of the stored value; reading it first left the summary frozen on the
+ * stored values after an edit (HOS-2060).
  */
 function readValue(values: Record<string, unknown>, fieldId: string): unknown {
-    if (fieldId in values) return values[fieldId];
+    if (!fieldId.includes('.')) return values[fieldId];
 
-    // Fallback: walk nested object for non-flat data
-    const parts = fieldId.split('.');
     let cursor: unknown = values;
-    for (const part of parts) {
-        if (cursor === null || typeof cursor !== 'object') return undefined;
+    for (const part of fieldId.split('.')) {
+        if (cursor === null || typeof cursor !== 'object') {
+            cursor = undefined;
+            break;
+        }
         cursor = (cursor as Record<string, unknown>)[part];
     }
-    return cursor;
+    return cursor === undefined ? values[fieldId] : cursor;
+}
+
+/** Field types whose stored values are option keys with a display label. */
+const OPTION_FIELD_TYPES: ReadonlySet<string> = new Set([
+    FieldTypeEnum.SELECT,
+    FieldTypeEnum.SELECT_MULTIPLE,
+    FieldTypeEnum.RADIO
+]);
+
+/**
+ * Replaces option keys with the labels the field's own control shows, so a
+ * closed select reads `Efectivo` and not `cash` in the collapsed summary
+ * (HOS-2060). Values without a matching option are kept as they are.
+ */
+function toOptionLabels(field: FieldConfig, value: unknown): unknown {
+    if (!OPTION_FIELD_TYPES.has(field.type)) return value;
+    const options = (field.typeConfig as SelectFieldConfig | undefined)?.options;
+    if (!options || options.length === 0) return value;
+    const labelOf = (item: unknown): unknown =>
+        options.find((option) => option.value === item)?.label ?? item;
+    return Array.isArray(value) ? value.map(labelOf) : labelOf(value);
 }
 
 /** UUID v4 pattern — 8-4-4-4-12 hex groups separated by hyphens. */
@@ -194,7 +224,7 @@ function genericSummarize(values: Record<string, unknown>, section: SectionConfi
         if (parts.length >= MAX_SUMMARY_FIELDS) break;
         if (field.type === 'HIDDEN' || field.type === 'COMPUTED') continue;
 
-        const raw = readValue(values, field.id);
+        const raw = toOptionLabels(field, readValue(values, field.id));
         const display = valueToDisplayString(raw);
         if (display !== null) {
             // Truncate long values for header display

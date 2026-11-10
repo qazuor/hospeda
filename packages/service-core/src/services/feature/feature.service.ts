@@ -202,9 +202,15 @@ export class FeatureService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: z.infer<typeof SearchFeatureSchema>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
         const { slug, isFeatured, isBuiltin, applicableVertical, category } = params;
+        // BaseCrudRead.search strips page/pageSize before this hook and re-publishes
+        // them on ctx.pagination (SPEC-088). Without forwarding them the model applied
+        // its own default and every list was capped at 20 rows, whatever pageSize the
+        // caller asked for.
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -214,6 +220,9 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
         // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
         if (category) where.category = category;
+        // FeatureModel applies no soft-delete default, so a retired catalog row
+        // (data migration 0147) would otherwise reach the public filters.
+        where.deletedAt = null;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         // buildWhereClause cannot handle text[] containment, so we build the
@@ -222,7 +231,11 @@ export class FeatureService extends BaseCrudRelatedService<
             ? [sql`${applicableVertical} = ANY(${features.applicableVerticals})`]
             : undefined;
 
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+        const { items, total } = await this.model.findAll(
+            where,
+            { page, pageSize },
+            additionalConditions
+        );
         return { items, total };
     }
 
@@ -241,6 +254,9 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
         // HOS-2058: `?category=VIEW` filters by FeatureCategoryEnum (NULL rows never match).
         if (category) where.category = category;
+        // FeatureModel applies no soft-delete default, so a retired catalog row
+        // (data migration 0147) would otherwise reach the public filters.
+        where.deletedAt = null;
 
         // SPEC-266 T-005: array containment filter for applicable_verticals.
         const additionalConditions = applicableVertical
@@ -329,9 +345,11 @@ export class FeatureService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 await this._canAddFeatureToAccommodation(actor);
                 const { accommodationId, featureId, comments } = validatedParams;
-                // Verify feature exists
+                // Verify feature exists AND is live: `findOne` does not filter
+                // `deletedAt`, and this adds a NEW link, so a retired catalog row
+                // is refused like a missing one (HOS-2067).
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
-                if (!feature) {
+                if (!feature || feature.deletedAt) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
                 const accommodation = await this.accommodationModel.findOne({

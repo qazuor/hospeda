@@ -23,8 +23,8 @@
  * 3. Fetch `ownerId` from the target listing row (pre-stream 404 guard).
  * 4. Assemble the listing-scoped context and system message.
  * 5. Stream tokens from `aiService.streamText({ feature, system, messages, locale })`.
- * 6. After drain, `recordAiUsage` TWICE: owner-keyed + consumer-keyed
- *     (telemetry, fire-and-try, non-fatal).
+ * 6. After drain, `recordAiUsage` ONCE (HOS-2095): owner-keyed (`userId`)
+ *     with the tourist on `consumerUserId` (fire-and-try, non-fatal).
  * 7. Race `persistChatTurn(...)` vs 1500 ms and add `conversationId` to the
  *     `done` frame only on win.
  *
@@ -41,6 +41,7 @@
  */
 
 import {
+    appendReplyLanguageInstruction,
     composeSystemPrompt,
     recordAiUsage,
     resolveFeatureConfig,
@@ -61,6 +62,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { resolveListingSections } from '@repo/verticals';
 import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
@@ -72,14 +74,16 @@ import {
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
+import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
+import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
-import { readEffectiveKeys } from '../../../utils/listing-access/user-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
+import { resolveChatUsageStatus } from './chat.usage-status.js';
 
 const DEFAULT_LOCALE: LanguageEnum = 'es';
 
@@ -105,12 +109,6 @@ const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
     venue: VerticalEnum.VENUE,
     experience: VerticalEnum.EXPERIENCE
-} as const;
-
-const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
-    accommodation: [],
-    venue: ['manage_venue_menu'],
-    experience: ['manage_experience_directions']
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
@@ -192,19 +190,37 @@ interface EngineMessages {
     readonly messages: AiMessage[];
 }
 
+/**
+ * Maps the request into the engine's `system` + `messages` pair.
+ *
+ * HOS-2095 (round 2): the reply language is decided HERE, from the visitor's
+ * latest message, and appended as the last line of `system` (see
+ * `appendReplyLanguageInstruction` in `@repo/ai-core`). When the message is too
+ * short or mixed to decide, `system` is the assembler's message unchanged.
+ */
 function toEngineMessages(
     systemMessage: string,
     messages: ReadonlyArray<AiChatMessage>
 ): EngineMessages {
-    return {
+    const { system } = appendReplyLanguageInstruction({
         system: systemMessage,
+        latestUserMessage: getLastUserTurn(messages)
+    });
+    return {
+        system,
         messages: messages.map((message) => ({ role: message.role, content: message.content }))
     };
 }
 
+/**
+ * Content of the visitor's latest user turn, or `''` when the request carries
+ * none. It never falls back to an assistant turn (review of #4253): that text
+ * is the model's own, so it must neither decide the reply language nor be
+ * persisted as what the visitor said.
+ */
 function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
     const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user');
-    return lastUserMessage?.content ?? messages[messages.length - 1]?.content ?? '';
+    return lastUserMessage?.content ?? '';
 }
 
 export const protectedAiChatRoute = createProtectedStreamingRoute({
@@ -260,12 +276,14 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         } as const;
         const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];
         const rows = await db
-            .select({ ownerId: listingTable.ownerId })
+            .select({ ownerId: listingTable.ownerId, businessLines: listingTable.businessLines })
             .from(listingTable)
             .where(eq(listingTable.id, entityId))
             .limit(1);
 
-        const ownerRow = rows[0] as { ownerId: string } | undefined;
+        const ownerRow = rows[0] as
+            | { ownerId: string; businessLines?: readonly string[] | null }
+            | undefined;
         if (!ownerRow) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, `${entityType} not found.`, {
                 entityId
@@ -287,23 +305,39 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
             entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
             effectiveSetSnapshot: ownerEffectiveSet,
-            limitMessage:
-                'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.'
+            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.'
         });
         await enforceAiQuota({
             userId: actor.id,
             vertical: VerticalEnum.TOURIST,
             feature: ownerFeature,
             limitKey: 'max_ai_chat_consumer_per_month',
-            limitMessage: 'accommodations.aiChat.consumerLimitReached'
+            limitMessage: 'accommodations.aiChat.consumerLimitReached',
+            // HOS-2095: the tourist's chats live on the owner-keyed row's
+            // `consumer_user_id`. Counting by `user_id` would read the rows
+            // billed to this user AS AN OWNER (other tourists' questions on
+            // their listings) instead of the questions they asked.
+            countKeyedBy: 'consumer'
         });
 
-        const ownerCapabilities = await readEffectiveKeys({
-            userId: ownerId,
-            vertical: ownerVertical,
-            keys: OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE[entityType],
-            effectiveSetSnapshot: ownerEffectiveSet
-        });
+        const listingSections = (() => {
+            switch (entityType) {
+                case 'venue':
+                case 'experience':
+                    return resolveListingSections({
+                        vertical: entityType,
+                        businessLines: ownerRow.businessLines ?? [],
+                        effective: ownerEffectiveSet,
+                        userId: ownerId
+                    }).sections;
+                case 'accommodation':
+                    return new Map();
+                default: {
+                    const exhaustive: never = entityType;
+                    throw new Error(`Unsupported chat entity type: ${exhaustive}`);
+                }
+            }
+        })();
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
@@ -329,10 +363,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             entityId,
             resolvedPrompt,
             locale,
-            ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities.manage_venue_menu === true,
-                manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
-            }
+            listingSections
         });
 
         const aiService = await createConfiguredAiService();
@@ -380,56 +411,59 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const augmentedMeta = meta.then(async (resolvedMeta) => {
             let resolvedConversationId: string | null = null;
 
+            // HOS-2095: an empty answer (e.g. a reasoning model that spent the whole
+            // output cap reasoning) must not count against any quota nor be persisted.
+            const { status: usageStatus, isEmpty: isEmptyAnswer } = resolveChatUsageStatus({
+                text: accumulatedAssistantText
+            });
+            if (isEmptyAnswer) {
+                apiLogger.warn(
+                    {
+                        feature: FEATURE,
+                        entityId,
+                        model: resolvedMeta.model,
+                        finishReason: resolvedMeta.finishReason,
+                        completionTokens: resolvedMeta.usage.completionTokens
+                    },
+                    'ai-chat: model produced an empty answer (usage recorded as error, turn not persisted)'
+                );
+            }
+
+            // DB rate overrides (ai_settings.modelRates).
+            const rateOverrides = await loadModelRateOverrides();
+
             // -------------------------------------------------------------------
-            // Owner-keyed usage metering (telemetry).
+            // Usage metering: exactly ONE ai_usage row per chat request (HOS-2095).
             //
-            // recordAiUsage is keyed by ownerId — the listing owner bears the
-            // metered cost. Fire-and-try: a metering failure is logged but must
-            // NOT affect the tourist's already-completed stream.
+            // The listing owner bears the cost (`userId: ownerId`, which the
+            // owner quota counts); the tourist who asked rides on the same row
+            // (`consumerUserId: actor.id`, which the consumer quota counts). A
+            // second, consumer-keyed row used to be written here with the full
+            // tokens and cost, doubling every chat's spend for the cost ceiling
+            // and the admin dashboards, and burning a self-chatting owner's
+            // quota twice per question.
+            //
+            // Fire-and-try: a metering failure is logged but must NOT affect the
+            // tourist's already-completed stream.
             // -------------------------------------------------------------------
             try {
                 await recordAiUsage({
                     userId: ownerId,
+                    consumerUserId: actor.id,
                     feature: FEATURE,
                     provider: resolvedMeta.provider,
                     model: resolvedMeta.model,
                     promptTokens: resolvedMeta.usage.promptTokens,
                     completionTokens: resolvedMeta.usage.completionTokens,
                     latencyMs: Date.now() - handlerStartMs,
-                    status: 'success'
+                    status: usageStatus,
+                    rateOverrides,
+                    onMissingRate: warnMissingModelRate
                 });
             } catch (meteringError) {
                 apiLogger.warn(
                     {
                         ownerId,
-                        entityId,
-                        error:
-                            meteringError instanceof Error
-                                ? meteringError.message
-                                : String(meteringError)
-                    },
-                    'ai-chat: failed to record owner usage (non-fatal — stream already complete)'
-                );
-            }
-
-            // -------------------------------------------------------------------
-            // Consumer-keyed usage metering (telemetry, keyed by actor.id).
-            // Same fire-and-try contract as the owner row above.
-            // -------------------------------------------------------------------
-            try {
-                await recordAiUsage({
-                    userId: actor.id,
-                    feature: FEATURE,
-                    provider: resolvedMeta.provider,
-                    model: resolvedMeta.model,
-                    promptTokens: resolvedMeta.usage.promptTokens,
-                    completionTokens: resolvedMeta.usage.completionTokens,
-                    latencyMs: Date.now() - handlerStartMs,
-                    status: 'success'
-                });
-            } catch (meteringError) {
-                apiLogger.warn(
-                    {
                         userId: actor.id,
                         entityId,
                         error:
@@ -437,44 +471,46 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                                 ? meteringError.message
                                 : String(meteringError)
                     },
-                    'ai-chat: failed to record consumer usage (non-fatal — stream already complete)'
+                    'ai-chat: failed to record usage (non-fatal — stream already complete)'
                 );
             }
 
-            try {
-                const persistPromise = persistChatTurn({
-                    userId: actor.id,
-                    entityType,
-                    entityId,
-                    conversationId: body.conversationId ?? null,
-                    userMessage: getLastUserTurn(body.messages),
-                    assistantMessage: accumulatedAssistantText,
-                    meta: resolvedMeta
-                }).then((result) => result.conversationId);
+            if (!isEmptyAnswer) {
+                try {
+                    const persistPromise = persistChatTurn({
+                        userId: actor.id,
+                        entityType,
+                        entityId,
+                        conversationId: body.conversationId ?? null,
+                        userMessage: getLastUserTurn(body.messages),
+                        assistantMessage: accumulatedAssistantText,
+                        meta: resolvedMeta
+                    }).then((result) => result.conversationId);
 
-                const timeoutPromise = new Promise<null>((resolve) => {
-                    setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
-                });
+                    const timeoutPromise = new Promise<null>((resolve) => {
+                        setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
+                    });
 
-                resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
+                    resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
 
-                if (resolvedConversationId === null) {
-                    apiLogger.warn(
+                    if (resolvedConversationId === null) {
+                        apiLogger.warn(
+                            {
+                                entityId,
+                                timeoutMs: PERSISTENCE_TIMEOUT_MS
+                            },
+                            'ai-chat: persistence timed out after 1500 ms (non-fatal)'
+                        );
+                    }
+                } catch (error) {
+                    apiLogger.error(
                         {
                             entityId,
-                            timeoutMs: PERSISTENCE_TIMEOUT_MS
+                            error: error instanceof Error ? error.message : String(error)
                         },
-                        'ai-chat: persistence timed out after 1500 ms (non-fatal)'
+                        'ai-chat: persistence failed (non-fatal)'
                     );
                 }
-            } catch (error) {
-                apiLogger.error(
-                    {
-                        entityId,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'ai-chat: persistence failed (non-fatal)'
-                );
             }
 
             captureChatEvent(actor.id, 'ai_chat_response_completed', {
@@ -506,7 +542,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                       debug: {
                           contextBlock,
                           resolvedPrompt,
-                          systemMessage,
+                          // What the model actually received, language line included.
+                          systemMessage: engineSystem,
                           feature: FEATURE,
                           entityId
                       }

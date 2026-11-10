@@ -166,7 +166,8 @@
         "columns": {
             "priceRange": "Faixa de Preço",
             "type": "Tipo",
-            "menuUrl": "Cardápio Online"
+            "menuUrl": "Cardápio Online",
+            "businessLines": "Segmentos"
         },
         "types": {
             "RESTAURANT": "Restaurante",
@@ -177,7 +178,9 @@
             "HELADERIA": "Sorveteria",
             "PANADERIA": "Padaria",
             "ROTISERIA": "Rotisseria",
-            "FOOD_TRUCK": "Food Truck"
+            "FOOD_TRUCK": "Food Truck",
+            "PUB": "Pub",
+            "BOLICHE": "Balada"
         },
         "priceRanges": {
             "BUDGET": "Econômico ($)",
@@ -189,7 +192,8 @@
             "noPending": "Nenhuma avaliação pendente de moderação",
             "anonymous": "Anônimo",
             "approve": "Aprovar",
-            "reject": "Rejeitar"
+            "reject": "Rejeitar",
+            "dimensionsLabel": "Dimensões avaliadas"
         },
         "assignOwner": {
             "title": "Atribuir proprietário",
@@ -201,6 +205,19 @@
             "successMessage": "A ficha de Comer e sair foi criada com sucesso",
             "errorTitle": "Erro ao criar",
             "errorMessage": "Não foi possível criar a ficha de Comer e sair. Tente novamente."
+        },
+        "typeDescriptions": {
+            "RESTAURANT": "Restaurante com serviço à mesa e cardápio variado.",
+            "BAR": "Bar com balcão e drinques, incluindo coquetéis.",
+            "CAFE": "Cafeteria para café, bebidas e refeições leves.",
+            "PARRILLA": "Parrilla de carnes e pratos preparados na brasa.",
+            "CERVECERIA": "Cervejaria que produz a própria cerveja artesanal.",
+            "HELADERIA": "Sorveteria com sorvetes e sobremesas geladas.",
+            "PANADERIA": "Padaria com pães e produtos de confeitaria.",
+            "ROTISERIA": "Rotisseria de comidas prontas para levar.",
+            "FOOD_TRUCK": "Comida preparada e servida em um veículo.",
+            "PUB": "Formato de bar com chope e clima de pub.",
+            "BOLICHE": "Casa noturna ou clube que funciona exclusivamente à noite."
         }
     },
     "columns": {
@@ -542,7 +559,7 @@
             "safety": "Segurança",
             "familyFriendly": "Família",
             "workFriendly": "Trabalho",
-            "generalAppliances": "Eletrodomésticos",
+            "generalAppliances": "Equipamento",
             "parking": "Estacionamento",
             "laundry": "Lavanderia",
             "waterActivities": "Atividades aquáticas",

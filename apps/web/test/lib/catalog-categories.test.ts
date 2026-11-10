@@ -18,6 +18,8 @@
  * defect, and a structural check would pass on it.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { AmenitiesTypeEnum, FeatureCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
@@ -59,6 +61,39 @@ describe('the catch-all amenity heading (HOS-823)', () => {
 
         expect(label).not.toBe(KEY);
         expect(label.trim().length).toBeGreaterThan(0);
+    });
+
+    it.each(
+        LOCALES
+    )('the admin badge and filter read the same heading as the web in %s (HOS-2059)', (locale) => {
+        // Arrange: the admin panel resolves the same enum value through two
+        // other keys, in namespaces the web translator does not load, so they
+        // are read from the locale files. Before HOS-2059 they said
+        // "Electrodomésticos".
+        const { t } = createTranslations(locale);
+        const web = t(KEY);
+        const readLocale = <T>(namespace: string): T =>
+            JSON.parse(
+                readFileSync(
+                    resolve(
+                        __dirname,
+                        `../../../../packages/i18n/src/locales/${locale}/${namespace}.json`
+                    ),
+                    'utf8'
+                )
+            ) as T;
+
+        // Act
+        const adminBadge = readLocale<{
+            types: { amenity: { generalAppliances: string } };
+        }>('admin-entities').types.amenity.generalAppliances;
+        const adminFilter = readLocale<{ amenityType: { generalAppliances: string } }>(
+            'admin-filters'
+        ).amenityType.generalAppliances;
+
+        // Assert
+        expect(adminBadge).toBe(web);
+        expect(adminFilter).toBe(web);
     });
 
     it('keeps the inline fallback in step with the translation', () => {

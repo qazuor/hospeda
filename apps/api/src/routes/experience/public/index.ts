@@ -11,6 +11,7 @@ import { publicGetExperiencesByDestinationRoute } from './getByDestination';
 import { publicGetExperienceByIdRoute } from './getById';
 import { publicGetExperienceBySlugRoute } from './getBySlug';
 import { publicGetExperienceFaqsRoute } from './getFaqs';
+import { publicGetExperienceFilterOptionsRoute } from './getFilterOptions';
 import { publicListExperienceReviewsRoute } from './getReviews';
 import { publicListExperiencesRoute } from './list';
 
@@ -24,6 +25,9 @@ app.route('/', publicGetExperiencesByDestinationRoute);
 
 // GET / — List experience listings.
 app.route('/', publicListExperiencesRoute);
+
+// GET /filter-options — Must be before /:id.
+app.route('/', publicGetExperienceFilterOptionsRoute);
 
 // GET /:id — Get by ID (catch-all param route).
 app.route('/', publicGetExperienceByIdRoute);

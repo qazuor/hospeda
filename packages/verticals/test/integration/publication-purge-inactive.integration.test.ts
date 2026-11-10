@@ -99,9 +99,12 @@ describe.each([
             sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherSqlVertical}_id`)} = ${other.id}`
         );
         const listingTable = vertical === VerticalEnum.VENUE ? 'venues' : `${vertical}s`;
+        // TEST:4.3:2 (AC:4:9, PB9): PB9 shares `purgeListingContent` with PB12
+        // (`packages/verticals/src/publication/purge-inactive-listing.ts:165`), so the
+        // nightInfo columns must come out NULL by this path too.
         await db.execute(
             vertical === VerticalEnum.VENUE
-                ? sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary', opening_hours = '{"monday":{"open":"09:00","close":"17:00"}}'::jsonb WHERE id = ${archived.id}`
+                ? sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary', opening_hours = '{"monday":{"open":"09:00","close":"17:00"}}'::jsonb, entry_kind = 'paid', entry_note_i18n = '{"es":"Gratis hasta la 1","en":"Free until 1am","pt":"Grátis até 1h"}'::jsonb, entry_price_from = 1500, entry_price_updated_at = ${new Date(t0.getTime() - day)}, policies = '{"paymentMethods":["cash"],"minAge":18,"dressCode":"smart_casual","dressCodeNote":{"es":"Elegante","en":"Smart casual","pt":"Elegante"}}'::jsonb WHERE id = ${archived.id}`
                 : sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary' WHERE id = ${archived.id}`
         );
         const faqTable =
@@ -243,7 +246,7 @@ describe.each([
         });
         expect(result).toMatchObject({ purged: true });
         const after = await db.execute(
-            sql`SELECT id, publication_status, deleted_at, name, description, summary${vertical === VerticalEnum.VENUE || vertical === VerticalEnum.EXPERIENCE ? sql`, opening_hours` : sql``} FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
+            sql`SELECT id, publication_status, deleted_at, name, description, summary${vertical === VerticalEnum.VENUE || vertical === VerticalEnum.EXPERIENCE ? sql`, opening_hours` : sql``}${vertical === VerticalEnum.VENUE ? sql`, entry_kind, entry_note_i18n, entry_price_from, entry_price_updated_at, policies` : sql``} FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
         );
         expect(after.rows).toHaveLength(1);
         expect(after.rows[0]).toMatchObject({
@@ -255,6 +258,16 @@ describe.each([
         });
         if (vertical === VerticalEnum.VENUE || vertical === VerticalEnum.EXPERIENCE) {
             expect(after.rows[0]).toMatchObject({ opening_hours: null });
+        }
+        if (vertical === VerticalEnum.VENUE) {
+            expect(after.rows[0]).toMatchObject({
+                entry_kind: null,
+                entry_note_i18n: null,
+                entry_price_from: null,
+                entry_price_updated_at: null,
+                // HOS-2060: the night policy keys go with the whole house rules.
+                policies: null
+            });
         }
         expect(
             (

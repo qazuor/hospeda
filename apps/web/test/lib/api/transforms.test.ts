@@ -668,11 +668,9 @@ describe('toAccommodationDetailPageProps', () => {
                 capacity: 4,
                 bedrooms: 2,
                 beds: 3,
-                bathrooms: 1,
-                minNights: 2,
-                maxNights: 14,
-                smokingAllowed: false
+                bathrooms: 1
             },
+            policies: { minNights: 2, maxNights: 14, smokingAllowed: 'no' },
             seo: { title: 'SEO Title', description: 'SEO description' },
             owner: {
                 id: 'owner-1',
@@ -914,7 +912,11 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.extraInfo?.capacity).toBe(4);
             expect(result.extraInfo?.bedrooms).toBe(2);
             expect(result.extraInfo?.bathrooms).toBe(1);
-            expect(result.extraInfo?.smokingAllowed).toBe(false);
+        });
+
+        it('should map house rules from policies (HOS-2060)', () => {
+            const result = toAccommodationDetailPageProps({ item: makeFullItem() });
+            expect(result.policies).toEqual({ minNights: 2, maxNights: 14, smokingAllowed: 'no' });
         });
 
         it('should map seo fields', () => {

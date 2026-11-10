@@ -171,6 +171,55 @@ describe('middleware onRequest — 410 Gone rewrite keeps the 410 status (soft-d
     });
 });
 
+describe('middleware onRequest — HOS-1868 a 508 cannot come from a double error rewrite', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    // The CI failure: `/es/comer-y-salir/rubro/<line>/page/9999/` answered 508.
+    // The pagination shim rewrites to the collection, the collection answers
+    // `Response(null, { 404 })`, Astro's inner rewrite pass turns that into the
+    // rendered `/404` page (status 404, non-null body), and the OUTER middleware
+    // pass used to see status 404 and rewrite a second time. That is the fourth
+    // `handleMiddleware` pass, and Astro answers 508 "Loop Detected".
+    it('does not rewrite an already-rendered 404 body a second time', async () => {
+        const context = createContext({
+            pathname: '/es/comer-y-salir/rubro/inexistente/page/2/'
+        });
+        // Exactly what the inner rewrite pass returns: the rendered /404 page.
+        const rendered404 = '<html><body>404 chrome</body></html>';
+        const next = vi.fn().mockResolvedValue(
+            new Response(rendered404, {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(context.rewrite).not.toHaveBeenCalled();
+        expect(result.status).toBe(404);
+        expect(await result.text()).toBe(rendered404);
+    });
+
+    it('still rewrites the body-less 404 a page returns (the condition Astro itself uses)', async () => {
+        const context = createContext({
+            pathname: '/es/comer-y-salir/rubro/inexistente/page/2/'
+        });
+        context.rewrite.mockResolvedValue(
+            new Response('<html>404 chrome</html>', {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+
+        await onRequest(context as any, next);
+
+        expect(context.rewrite).toHaveBeenCalledWith('/404');
+    });
+});
+
 describe('middleware onRequest — HOS-263 error pages carry the CSP header', () => {
     beforeEach(() => {
         parseSessionUserMock.mockClear();
@@ -588,6 +637,26 @@ describe('middleware onRequest — H-110 legacy English facet-landing slugs redi
                 '/es/publicaciones/categoria/gastronomia/',
                 301
             );
+        });
+    });
+
+    describe('retired venue URLs answer a permanent single hop and keep the query (HOS-1956)', () => {
+        it.each([
+            `/es${RETIRED_VENUE_URL_PREFIXES[0]}/sample/carta/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[1]}/precios/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[3]}/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[4]}/abc/editar/`
+        ])('301s %s once, with the query string', async (pathname) => {
+            const context = createContext({ pathname: `${pathname}?utm_source=qr` });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            const [target, status] = context.redirect.mock.calls[0] as [string, number];
+            expect(status).toBe(301);
+            expect(target.endsWith('?utm_source=qr')).toBe(true);
+            expect(target).toMatch(/comer-y-salir|comercio\/venue/);
         });
     });
 
@@ -1068,7 +1137,7 @@ describe('middleware — retired venue URLs preserve query in one redirect', () 
         expect(context.redirect).toHaveBeenCalledTimes(1);
         expect(context.redirect).toHaveBeenCalledWith(
             '/es/mi-cuenta/comercio/venue/abc/editar/fotos/?x=1',
-            302
+            301
         );
     });
 });

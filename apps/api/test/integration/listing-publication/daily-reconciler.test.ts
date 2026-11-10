@@ -147,7 +147,10 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                     type: 'CABIN',
                     publicationStatus: status,
                     ...(status === PublicationStatusEnum.PUBLISHED
-                        ? { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } }
+                        ? {
+                              extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                              policies: { paymentMethods: ['cash'], minNights: 1 }
+                          }
                         : {})
                 } as Partial<Accommodation>,
                 db
@@ -325,7 +328,8 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                 destinationId: destination.id,
                 type: 'CABIN',
                 publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
-                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+                extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+                policies: { paymentMethods: ['cash'], minNights: 1 }
             } as Partial<Accommodation>,
             db
         );

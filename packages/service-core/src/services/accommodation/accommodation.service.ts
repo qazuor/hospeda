@@ -101,6 +101,7 @@ import {
     IdOrSlugParamsSchema,
     ModerationStatusEnum,
     type NearbyPoi,
+    normalizeBusinessLines,
     PermissionEnum,
     PublicationStatusEnum,
     RoleEnum,
@@ -108,6 +109,8 @@ import {
     resolveMissingPublishRequirements,
     ServiceErrorCode,
     type Success,
+    VerticalEnum,
+    validateBusinessLines,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
@@ -128,6 +131,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeContactInfo, parseIdOrSlug } from '../../utils';
+import { assertListingSlugNotReserved } from '../../utils/listing-reserved-slug';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { liveParentOrNull } from '../../utils/live-parent';
 import { hasPermission } from '../../utils/permission';
@@ -135,11 +139,14 @@ import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
+import { resolveBusinessLinesOnCreate } from '../listing/base-listing.service';
 import {
     buildListingOwnerActChanges,
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
+import { readStoredPoliciesForMerge } from '../listing/listing-policies-lock';
+import { resolveCreatePolicies, resolveUpdatePolicies } from '../listing/listing-policies-write';
 import {
     assertOutsideAction15Scope,
     assertSupportCreateIsDraft,
@@ -817,7 +824,42 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<Partial<Accommodation>> {
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (typeof data.slug === 'string' && data.slug.length > 0) {
+            assertListingSlugNotReserved({
+                vertical: VerticalEnum.ACCOMMODATION,
+                slug: data.slug
+            });
+        }
         await this._assertDestinationIsCity(data.destinationId);
+        let businessLines = resolveBusinessLinesOnCreate({
+            vertical: 'accommodation',
+            type: String(data.type),
+            businessLines: (data as AccommodationCreateInput & { businessLines?: string[] })
+                .businessLines
+        });
+        if (businessLines) {
+            const validation = validateBusinessLines({
+                vertical: 'accommodation',
+                type: String(data.type),
+                businessLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            businessLines = normalizeBusinessLines({
+                vertical: 'accommodation',
+                businessLines: businessLines as never
+            });
+        }
 
         // SPEC-172: capture junction sync inputs in hookState.
         // amenityIds / featureIds are write-only — they do not map to any column in
@@ -837,13 +879,21 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.ownerActPayload = data as Record<string, unknown>;
         }
 
+        // HOS-2060: every new listing stores at least `paymentMethods: ['cash']`.
+        const createPolicies = resolveCreatePolicies({
+            vertical: 'accommodation',
+            payload: data as Record<string, unknown>
+        }) as Partial<Accommodation>;
+
         // Only generate a slug if one is not already provided
         if (!data.slug) {
             const slug = await generateSlug(data.type as string, data.name as string);
-            return { slug };
+            return { slug, businessLines, ...createPolicies } as Partial<Accommodation>;
         }
-        // If slug is provided, return empty object to avoid overwriting
-        return {};
+        // If slug is provided, return only the catalog default when needed.
+        return businessLines
+            ? ({ businessLines, ...createPolicies } as Partial<Accommodation>)
+            : createPolicies;
     }
 
     /**
@@ -1077,9 +1127,20 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        const payload = data as Record<string, unknown>;
         // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
         assertSupportEditContentOnly({ data: data as Record<string, unknown> });
         const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
+        let current: Accommodation | null = null;
+
+        // An explicit slug never passes through the generator; reject a
+        // reserved one before the destination lookup (400 before 404).
+        if (slugWasProvided && typeof data.slug === 'string' && data.slug.length > 0) {
+            assertListingSlugNotReserved({
+                vertical: VerticalEnum.ACCOMMODATION,
+                slug: data.slug
+            });
+        }
 
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
         if (data.destinationId) {
@@ -1092,7 +1153,7 @@ export class AccommodationService extends BaseCrudService<
         if (ctx.hookState) {
             const entityId = ctx.hookState.updateId;
             if (entityId) {
-                const current = await this.model.findById(entityId, ctx.tx);
+                current = await this.model.findById(entityId, ctx.tx);
                 // HOS-1499: the row before the edit, for the owner-act event's old values.
                 ctx.hookState.ownerActBefore = (current ?? null) as Record<string, unknown> | null;
 
@@ -1137,6 +1198,33 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
+        if (Object.hasOwn(payload, 'businessLines') || Object.hasOwn(payload, 'type')) {
+            const resultingType = String(payload.type ?? current?.type ?? '');
+            // TYPE-WORKAROUND: the model hook exposes a generic entity without the catalog-owned businessLines field.
+            const storedLines = (current as unknown as Record<string, unknown> | null)
+                ?.businessLines;
+            const resultingLines = (payload.businessLines ?? storedLines ?? []) as string[];
+            const validation = validateBusinessLines({
+                vertical: 'accommodation',
+                type: resultingType,
+                businessLines: resultingLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            payload.businessLines = normalizeBusinessLines({
+                vertical: 'accommodation',
+                businessLines: resultingLines as never
+            });
+        }
+
         // SPEC-172: capture junction sync inputs in hookState.
         // amenityIds / featureIds are write-only — they do not map to any column in
         // the `accommodations` table. Drizzle ignores unknown fields on update,
@@ -1175,6 +1263,20 @@ export class AccommodationService extends BaseCrudService<
         if (ctx.hookState?.regeneratedSlug) {
             cleanData.slug = ctx.hookState.regeneratedSlug;
         }
+
+        // HOS-2060: `policies` is a patch over the stored object, re-validated
+        // whole, and read under a row lock so two concurrent saves keep both keys.
+        const { stored: storedPolicies } = await readStoredPoliciesForMerge({
+            vertical: 'accommodation',
+            listingId: ctx.hookState?.updateId,
+            payload,
+            ctx,
+            fallback: current?.policies as Record<string, unknown> | null | undefined
+        });
+        Object.assign(
+            cleanData,
+            resolveUpdatePolicies({ vertical: 'accommodation', payload, current: storedPolicies })
+        );
 
         return cleanData as Partial<Accommodation>;
     }
@@ -1676,7 +1778,8 @@ export class AccommodationService extends BaseCrudService<
             input: {
                 description: accommodation.description,
                 capacity: extraInfo.capacity,
-                minNights: extraInfo.minNights,
+                // HOS-2060: the minimum stay is a house rule now.
+                minNights: accommodation.policies?.minNights ?? undefined,
                 bedrooms: extraInfo.bedrooms,
                 bathrooms: extraInfo.bathrooms,
                 hasMainImage: Boolean(composedMedia.featuredImage?.url)

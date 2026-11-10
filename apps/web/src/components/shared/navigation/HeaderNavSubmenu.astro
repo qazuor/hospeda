@@ -1,0 +1,25 @@
+---
+import styles from './HeaderNavSubmenu.module.css';
+
+interface Props {
+    readonly label: string;
+    readonly href: string;
+    readonly isActive: boolean;
+    readonly children: readonly { readonly label: string; readonly href: string }[];
+}
+
+const { label, href, isActive, children } = Astro.props;
+---
+
+<div class={styles.submenu}>
+    <a
+        href={href}
+        class:list={['header__nav-link', { 'header__nav-link--active': isActive }]}
+        aria-current={isActive ? 'page' : undefined}
+    >
+        {label}
+    </a>
+    <ul class={styles.submenuList}>
+        {children.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+    </ul>
+</div>

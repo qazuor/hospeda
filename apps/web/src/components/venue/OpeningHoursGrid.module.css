@@ -1,0 +1,65 @@
+.grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    overflow: hidden;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--core-card);
+    transition: background-color 150ms ease-out;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.today {
+    background-color: var(--brand-accent-a08);
+    border-left: 3px solid var(--brand-accent);
+}
+
+.closed .time {
+    color: var(--core-muted-foreground);
+    font-style: italic;
+}
+
+.day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.todayBadge {
+    display: inline-flex;
+    padding: 1px 8px;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.6;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.time {
+    margin: 0;
+    text-align: right;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--core-foreground);
+}

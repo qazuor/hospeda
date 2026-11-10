@@ -6,6 +6,7 @@
  * function so headers are localised at render time.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { EditIcon } from '@repo/icons';
 import { PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
@@ -14,23 +15,11 @@ import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/typ
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import type { VenueListItem } from './venue.config';
+import { getVenueBusinessLineOptions, hasBusinessLineChoice } from './venue-business-lines';
 
 // ---------------------------------------------------------------------------
 // Badge label maps
 // ---------------------------------------------------------------------------
-
-/** Spanish labels for each VenueTypeEnum value. */
-const TYPE_LABELS: Record<VenueTypeEnum, string> = {
-    [VenueTypeEnum.RESTAURANT]: 'Restaurante',
-    [VenueTypeEnum.BAR]: 'Bar',
-    [VenueTypeEnum.CAFE]: 'Café',
-    [VenueTypeEnum.PARRILLA]: 'Parrilla',
-    [VenueTypeEnum.CERVECERIA]: 'Cervecería',
-    [VenueTypeEnum.HELADERIA]: 'Heladería',
-    [VenueTypeEnum.PANADERIA]: 'Panadería',
-    [VenueTypeEnum.ROTISERIA]: 'Rotisería',
-    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck'
-};
 
 /** Spanish labels for each PriceRangeEnum value. */
 const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
@@ -43,7 +32,7 @@ const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
 /** Badge colour mapping per venue type. */
 const TYPE_BADGE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
     value,
-    label: TYPE_LABELS[value] ?? value,
+    label: `admin-entities.venue.types.${value}`,
     color: BadgeColor.ORANGE
 }));
 
@@ -53,6 +42,29 @@ const PRICE_RANGE_BADGE_OPTIONS = Object.values(PriceRangeEnum).map((value) => (
     label: PRICE_RANGE_LABELS[value] ?? value,
     color: BadgeColor.TEAL
 }));
+
+/** Builds the business-line column, or nothing when the vertical offers one line. */
+const buildBusinessLineColumns = (t: ColumnTFunction): ColumnConfig<VenueListItem>[] => {
+    const options = getVenueBusinessLineOptions({ t });
+    if (!hasBusinessLineChoice({ options })) return [];
+
+    return [
+        {
+            id: 'businessLines',
+            header: t('admin-entities.venue.columns.businessLines'),
+            accessorKey: 'businessLines',
+            enableSorting: false,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row: VenueListItem) => {
+                const lines = row.businessLines ?? [];
+                if (lines.length === 0) return '—';
+                return lines
+                    .map((value) => t(`venue.owner.businessLines.${value}.label` as TranslationKey))
+                    .join(', ');
+            }
+        }
+    ];
+};
 
 // ---------------------------------------------------------------------------
 // Column factory
@@ -89,8 +101,12 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
         accessorKey: 'type',
         enableSorting: true,
         columnType: ColumnType.BADGE,
-        badgeOptions: TYPE_BADGE_OPTIONS
+        badgeOptions: TYPE_BADGE_OPTIONS.map((option) => ({
+            ...option,
+            label: t(`admin-entities.venue.types.${option.value}` as const)
+        }))
     },
+    ...buildBusinessLineColumns(t),
     {
         id: 'priceRange',
         header: t('admin-entities.venue.columns.priceRange'),

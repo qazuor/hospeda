@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "130-amenity-kitchen-griddle",
+    "slug": "griddle",
+    "description": {
+        "es": "Plancheta para cocinar",
+        "en": "Griddle for cooking",
+        "pt": "Chapa para cozinhar"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "KITCHEN",
+    "icon": "StoveIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "107-feature-dj_sets",
+    "slug": "dj_sets",
+    "category": "ACTIVITIES",
+    "description": {
+        "es": "Sesiones de DJ con música en vivo durante la noche",
+        "en": "DJ sets with live music throughout the night",
+        "pt": "Apresentações de DJ com música ao vivo durante a noite"
+    },
+    "applicableVerticals": ["venue"],
+    "icon": "SparkleIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 56,
+    "lifecycleState": "ACTIVE"
+}

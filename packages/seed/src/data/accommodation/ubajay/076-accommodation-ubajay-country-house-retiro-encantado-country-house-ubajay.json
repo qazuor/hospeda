@@ -103,12 +103,9 @@
     },
     "extraInfo": {
         "capacity": 7,
-        "minNights": 2,
-        "maxNights": 20,
         "bedrooms": 3,
         "beds": 5,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Entorno rural tranquilo",
             "Piscina privada",
@@ -117,6 +114,12 @@
             "Ideal para familias o grupos",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 20
     },
     "seo": {
         "title": "Retiro Encantado - Casa de Campo con Piscina cerca de",
@@ -138,7 +141,6 @@
         "003-feature-panoramic_view_extended",
         "005-feature-rural_area",
         "008-feature-silent_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

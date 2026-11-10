@@ -33,6 +33,7 @@ describe('ICON_MAP', () => {
         expect(ICON_MAP.AccommodationIcon).toBeDefined();
         expect(ICON_MAP.EventIcon).toBeDefined();
         expect(ICON_MAP.PostIcon).toBeDefined();
+        expect(ICON_MAP.VenueIcon).toBeDefined();
     });
 
     it('contains booking state icon entries', () => {

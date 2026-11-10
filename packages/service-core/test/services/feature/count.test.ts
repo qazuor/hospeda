@@ -48,7 +48,21 @@ describe('FeatureService.count', () => {
         });
 
         expect(result.data?.count).toBe(3);
-        expect(featureModelMock.count.mock.calls[0]?.[0]).toEqual({ category: 'VIEW' });
+        expect(featureModelMock.count.mock.calls[0]?.[0]).toEqual({
+            category: 'VIEW',
+            deletedAt: null
+        });
+    });
+
+    it('should not count soft-deleted (retired) features (regression)', async () => {
+        // Arrange — the count must agree with search, or `total` overstates the page.
+        featureModelMock.count.mockResolvedValue(86);
+
+        // Act
+        await service.count(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(featureModelMock.count.mock.calls[0]?.[0]).toEqual({ deletedAt: null });
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {

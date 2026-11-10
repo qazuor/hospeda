@@ -88,17 +88,20 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Edificio con ascensor",
             "Check-in autónomo disponible",
             "Ropa de cama incluida"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Sueño Agradable Apartamento - Centro de Colón, Entre Ríos",
@@ -115,9 +118,7 @@
     },
     "featureIds": [
         "030-feature-full_rental",
-        "043-feature-internal_parking",
         "001-feature-river_front",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -137,7 +138,8 @@
         "038-amenity-accessibility-elevator",
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
-        "043-amenity-safety-fire-extinguisher"
+        "043-amenity-safety-fire-extinguisher",
+        "017-amenity-general-appliances-parking"
     ],
     "faqs": [
         {

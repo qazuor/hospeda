@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "151-amenity-outdoors-sun-umbrella",
+    "slug": "sun_umbrella",
+    "description": {
+        "es": "Sombrilla para el exterior",
+        "en": "Outdoor sun umbrella",
+        "pt": "Guarda-sol para a área externa"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "BeachUmbrellaIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

@@ -148,12 +148,9 @@
     },
     "extraInfo": {
         "capacity": 8,
-        "minNights": 2,
-        "maxNights": 20,
         "bedrooms": 3,
         "beds": 5,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Entorno rural tranquilo",
             "Piscina privada",
@@ -162,6 +159,12 @@
             "Ideal para familias o grupos",
             "Cerca del Delta y Paranacito"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 20
     },
     "seo": {
         "title": "Paraíso Relajante - Casa de Campo con Piscina cerca de",
@@ -183,7 +186,6 @@
         "003-feature-panoramic_view_extended",
         "001-feature-river_front",
         "004-feature-natural_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

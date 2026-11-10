@@ -17,7 +17,7 @@
  * no way to learn why. A 403 naming the entitlement is what the editor turns
  * into the upsell sentence.
  *
- * Extracted into its own module, like `menu-projection.ts` next door, so the
+ * Extracted into its own module, like the public listing projector, so the
  * rule has a direct unit-test surface that does not require building a Hono
  * context and a subscription fixture.
  *

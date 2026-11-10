@@ -429,9 +429,11 @@ export class AmenityService extends BaseCrudRelatedService<
                     scope,
                     availability
                 } = validatedParams;
-                // Verify amenity exists
+                // Verify amenity exists AND is live: `findOne` does not filter
+                // `deletedAt`, and this adds a NEW link, so a retired catalog row
+                // is refused like a missing one (HOS-2067).
                 const amenity = await this.model.findOne({ id: amenityId as AmenityId });
-                if (!amenity) {
+                if (!amenity || amenity.deletedAt) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
                 }
                 const accommodation = await this.accommodationModel.findOne({
@@ -562,7 +564,13 @@ export class AmenityService extends BaseCrudRelatedService<
             ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
             : undefined;
 
-        return this.model.findAll(filterParams, { page, pageSize }, additionalConditions);
+        // AmenityModel applies no soft-delete default, so a retired catalog row
+        // (data migration 0147) would otherwise reach the public filters.
+        return this.model.findAll(
+            { ...filterParams, deletedAt: null },
+            { page, pageSize },
+            additionalConditions
+        );
     }
 
     /**
@@ -669,7 +677,11 @@ export class AmenityService extends BaseCrudRelatedService<
             ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
             : undefined;
 
-        const count = await this.model.count(filterParams, { additionalConditions });
+        // Mirrors _executeSearch: retired catalog rows are not counted either.
+        const count = await this.model.count(
+            { ...filterParams, deletedAt: null },
+            { additionalConditions }
+        );
         return { count };
     }
 

@@ -1,0 +1,246 @@
+import type * as Fs from 'node:fs';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+type Locale = Record<string, unknown>;
+const files = [
+    'venue.json',
+    'publish.json',
+    'pricing.json',
+    'account.json',
+    'footer.json'
+] as const;
+const paths: Record<string, readonly string[]> = {
+    es: [
+        'venue.listing.subtitle',
+        'venue.landing.benefits.item1.desc',
+        'venue.landing.benefits.title',
+        'venue.landing.benefits.item2.desc',
+        'venue.landing.howItWorks.step2.desc',
+        'venue.landing.howItWorks.step3.desc',
+        'venue.landing.lead.subtitle',
+        'venue.landing.faq.q1',
+        'publish.venue.meta.description',
+        'publish.venue.hero.body',
+        'publish.venue.steps.step2.desc',
+        'publish.venue.steps.step3.desc',
+        'publish.venue.benefits.item1.desc',
+        'publish.venue.benefits.item2.desc',
+        'pricing.venue.pageDescription',
+        'pricing.venue.pageTitle',
+        'pricing.recommendedFor.default.venue',
+        'pricing.recommendedFor.plan.venue-pro',
+        'pricing.recommendedFor.plan.venue-premium',
+        'pricing.index.cards.venue.audience',
+        'pricing.index.cards.venue.highlights.item1',
+        'pricing.index.cards.venue.highlights.item2',
+        'account.doors.publish.options.venue.title',
+        'account.doors.publish.options.venue.description',
+        'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
+        'footer.venue'
+    ],
+    en: [
+        'venue.listing.subtitle',
+        'venue.landing.benefits.item1.desc',
+        'venue.landing.benefits.title',
+        'venue.landing.benefits.item2.desc',
+        'venue.landing.howItWorks.step2.desc',
+        'venue.landing.howItWorks.step3.desc',
+        'venue.landing.lead.subtitle',
+        'venue.landing.faq.q1',
+        'publish.venue.meta.description',
+        'publish.venue.hero.tagline',
+        'publish.venue.hero.body',
+        'publish.venue.steps.step2.desc',
+        'publish.venue.steps.step3.desc',
+        'publish.venue.benefits.item1.desc',
+        'publish.venue.benefits.item2.desc',
+        'pricing.venue.pageDescription',
+        'pricing.venue.pageTitle',
+        'pricing.recommendedFor.default.venue',
+        'pricing.recommendedFor.plan.venue-pro',
+        'pricing.recommendedFor.plan.venue-premium',
+        'pricing.index.cards.venue.audience',
+        'pricing.index.cards.venue.highlights.item1',
+        'pricing.index.cards.venue.highlights.item2',
+        'account.doors.publish.options.venue.title',
+        'account.doors.publish.options.venue.description',
+        'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
+        'footer.listVenue',
+        'footer.venue'
+    ],
+    pt: [
+        'venue.listing.subtitle',
+        'venue.landing.benefits.item1.desc',
+        'venue.landing.benefits.title',
+        'venue.landing.benefits.item2.desc',
+        'venue.landing.howItWorks.step2.desc',
+        'venue.landing.howItWorks.step3.desc',
+        'venue.landing.lead.subtitle',
+        'venue.landing.faq.q1',
+        'publish.venue.meta.description',
+        'publish.venue.hero.body',
+        'publish.venue.steps.step2.desc',
+        'publish.venue.steps.step3.desc',
+        'publish.venue.benefits.item1.desc',
+        'publish.venue.benefits.item2.desc',
+        'pricing.venue.pageDescription',
+        'pricing.venue.pageTitle',
+        'pricing.recommendedFor.default.venue',
+        'pricing.recommendedFor.plan.venue-pro',
+        'pricing.recommendedFor.plan.venue-premium',
+        'pricing.index.cards.venue.audience',
+        'pricing.index.cards.venue.highlights.item1',
+        'pricing.index.cards.venue.highlights.item2',
+        'account.doors.publish.options.venue.title',
+        'account.doors.publish.options.venue.description',
+        'account.doors.publish.options.venue.cta',
+        'account.welcomeTour.greetingVenue.title',
+        'account.welcomeTour.greetingVenue.body',
+        'account.welcomeTour.listingVenue.body',
+        'account.welcomeTour.venueQr.title',
+        'account.welcomeTour.venueQr.body',
+        'footer.venue'
+    ]
+};
+const banned: Record<string, string[]> = {
+    es: ['restaurante', 'platos', 'menú', 'comensales', 'dónde comer'],
+    en: ['restaurant', 'dishes', 'menu', 'diners', 'food business', 'where to eat'],
+    pt: ['restaurante', 'pratos', 'cardápio', 'onde comer']
+};
+let readFileSync: typeof Fs.readFileSync;
+beforeAll(async () => {
+    const realFs = await vi.importActual<typeof Fs>('node:fs');
+    readFileSync = realFs.readFileSync;
+});
+function get(obj: Locale, key: string): unknown {
+    let value: unknown = obj;
+    for (const part of key.split('.')) {
+        if (typeof value !== 'object' || value === null || !(part in value)) {
+            throw new Error(`Missing locale key: ${key}`);
+        }
+        value = (value as Record<string, unknown>)[part];
+    }
+    return value;
+}
+
+function getString(obj: Locale, key: string): string {
+    const value = get(obj, key);
+    if (typeof value !== 'string') throw new Error(`Expected string locale key: ${key}`);
+    return value;
+}
+describe('neutral venue funnel copy', () => {
+    it('keeps every inventoried promise neutral in all locales', () => {
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const docs = Object.fromEntries(
+                files.map((file) => [
+                    file.slice(0, -5),
+                    JSON.parse(readFileSync(`src/locales/${lang}/${file}`, 'utf8'))
+                ])
+            ) as Record<string, Locale>;
+            for (const fullKey of paths[lang]) {
+                const [file, ...key] = fullKey.split('.');
+                const value = getString(docs[file], key.join('.')).toLocaleLowerCase(lang);
+                for (const word of banned[lang])
+                    expect(value, `${lang} ${fullKey}`).not.toContain(word);
+            }
+        }
+    });
+
+    it('keeps venue marketing copy free of a named city, the audience word and an approval step (HOS-2092)', () => {
+        const checked: Record<string, string[]> = {
+            es: [
+                'viajeros',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprobamos',
+                'ficha por cuenta'
+            ],
+            en: ['travelers', 'travellers', 'concepción del uruguay', 'entre ríos', 'we approve'],
+            pt: [
+                'viajantes',
+                'concepción del uruguay',
+                'entrerrian',
+                'aprovamos',
+                'ficha por conta'
+            ]
+        };
+        const keys = [
+            'venue.landing.benefits.item1.desc',
+            'venue.landing.faq.a3',
+            'publish.venue.meta.description',
+            'publish.venue.benefits.item1.desc',
+            'pricing.index.cards.venue.highlights.item2',
+            'account.doors.publish.options.venue.description',
+            'account.doors.publish.options.experience.description'
+        ];
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const read = (file: string): Locale =>
+                JSON.parse(readFileSync(`src/locales/${lang}/${file}.json`, 'utf8')) as Locale;
+            const docs: Record<string, Locale> = {
+                venue: read('venue'),
+                publish: read('publish'),
+                pricing: read('pricing'),
+                account: read('account')
+            };
+            for (const fullKey of keys) {
+                const [file, ...key] = fullKey.split('.');
+                const value = getString(docs[file], key.join('.')).toLocaleLowerCase(lang);
+                for (const word of checked[lang]) {
+                    if (fullKey.includes('experience') && word === 'viajeros') continue;
+                    if (fullKey.includes('experience') && word === 'travelers') continue;
+                    if (fullKey.includes('experience') && word === 'viajantes') continue;
+                    expect(value, `${lang} ${fullKey}`).not.toContain(word);
+                }
+            }
+        }
+    });
+
+    it('keeps the plan-card item for product photos free of kitchen-only words (HOS-2092)', () => {
+        // The pricing card lists this entitlement without the rubro tag the
+        // comparison table adds, so it must read for a bar or a boliche too.
+        const dishWords = {
+            es: ['plato'],
+            en: ['dish'],
+            pt: ['prato']
+        } as const;
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const billing = JSON.parse(
+                readFileSync(`src/locales/${lang}/billing.json`, 'utf8')
+            ) as Locale;
+            const value = getString(billing, 'entitlement.menu_item_photos').toLocaleLowerCase(
+                lang
+            );
+            for (const word of dishWords[lang]) {
+                expect(value, `${lang} entitlement.menu_item_photos`).not.toContain(word);
+            }
+        }
+    });
+
+    it('keeps the approved vertical name in account and footer titles', () => {
+        const approved = {
+            es: 'Comer y salir',
+            en: 'Food & nightlife',
+            pt: 'Comer e sair'
+        } as const;
+        for (const lang of ['es', 'en', 'pt'] as const) {
+            const account = JSON.parse(
+                readFileSync(`src/locales/${lang}/account.json`, 'utf8')
+            ) as Locale;
+            const footer = JSON.parse(
+                readFileSync(`src/locales/${lang}/footer.json`, 'utf8')
+            ) as Locale;
+            expect(getString(account, 'doors.publish.options.venue.title')).toBe(approved[lang]);
+            expect(getString(footer, 'venue')).toBe(approved[lang]);
+        }
+    });
+});

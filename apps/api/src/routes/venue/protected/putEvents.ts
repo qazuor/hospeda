@@ -82,7 +82,12 @@ export const protectedPutVenueEventsRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_venue_events']
+        listingSection: ({ body }) => [
+            {
+                id: 'venueEvents',
+                intent: Array.isArray(body?.events) && body.events.length === 0 ? 'delete' : 'write'
+            }
+        ]
     },
     tags: ['Venue', 'Venue Events'],
     protectedTag: false,

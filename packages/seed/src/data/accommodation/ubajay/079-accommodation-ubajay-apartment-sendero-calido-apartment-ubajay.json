@@ -200,17 +200,20 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Barrio residencial tranquilo",
             "Ideal para parejas o viajeros solos",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Sendero Cálido - Apartamento cómodo en Ubajay | El Palmar",
@@ -227,10 +230,8 @@
     },
     "featureIds": [
         "030-feature-full_rental",
-        "043-feature-internal_parking",
         "005-feature-rural_area",
         "008-feature-silent_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [
@@ -250,7 +251,8 @@
         "038-amenity-accessibility-elevator",
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
-        "043-amenity-safety-fire-extinguisher"
+        "043-amenity-safety-fire-extinguisher",
+        "017-amenity-general-appliances-parking"
     ],
     "faqs": [],
     "iaData": [],

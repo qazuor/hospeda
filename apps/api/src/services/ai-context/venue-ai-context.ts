@@ -1,16 +1,19 @@
 /**
- * AI-chat context assembler for VENUE listings (HOS-400).
+ * AI-chat context assembler for VENUE listings (HOS-400, neutralized by HOS-1864).
  *
- * The restaurant counterpart of `accommodation-ai-context.ts`. It answers a
- * different set of questions and therefore carries different fields: what the
- * venue cooks, when it opens, what is on the carta and roughly what it costs.
+ * The venue counterpart of `accommodation-ai-context.ts`. A venue is a place to
+ * eat or to go out — a restaurant, a café, a bar, a pub or a nightclub — so this
+ * assembler carries the fields a visitor asks about: what kind of place it is,
+ * when it opens, what is on the carta, what entry costs, the dress code, the
+ * minimum age and roughly what it costs.
  *
  * ## What is in here that the accommodation assembler does not have
  *
- * The carta, the menú del día and the venue agenda are ENTITLEMENT-GATED
- * content: the public routes withhold them from an owner whose plan does not
- * grant the key, and the service-core readers do not. So this assembler gates
- * them too, from the capability flag the ROUTE resolved for the owner.
+ * The carta, the menú del día, the venue agenda and the `nightInfo` section are
+ * ENTITLEMENT- AND BUSINESS-LINE-GATED content: the public routes withhold them
+ * from an owner whose plan does not grant the key, and the service-core readers
+ * do not. So this assembler gates them too, from the section availability the
+ * route resolved for the listing — never from the venue type or the vertical.
  *
  * Today that gate never fires — every venue or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
@@ -23,30 +26,43 @@
  */
 
 import { getDb, venueFaqs, venueMenuItems, venueMenuSections, venues } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import type { Locale } from '@repo/i18n';
+import { ServiceErrorCode, type VenuePolicies } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
+import { formatContextMoney, priceRangeLabel, venueTypeLabel } from './listing-labels.js';
+import { buildListingPoliciesLines } from './listing-policies-context.js';
+import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
     buildChatSystemMessage,
+    buildFencedFaqLines,
     fenceOwnerValue,
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START,
     OWNER_DATA_DIRECTIVE,
     sanitizeOwnerDelimiters,
-    truncate
+    truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
+import { toVenueNightContext, type VenueNightContext } from './venue-night-context.js';
 
 // ---------------------------------------------------------------------------
 // Context size caps
 // ---------------------------------------------------------------------------
 
-/** Hard cap on the description length in the context block. */
-export const VENUE_DESCRIPTION_MAX_CHARS = 800;
+/**
+ * Hard cap on the description length in the context block.
+ * Raised from 800 by HOS-2095 — same reasoning as the accommodation cap.
+ */
+export const VENUE_DESCRIPTION_MAX_CHARS = 3000;
 
-/** Maximum FAQs included in the context block. */
-export const VENUE_CONTEXT_FAQ_MAX = 10;
+/**
+ * Maximum FAQs included in the context block.
+ * Raised from 10 by HOS-2095: FAQs are where the owner answers reservation and
+ * policy questions the structured fields cannot, so they are the last thing cut.
+ */
+export const VENUE_CONTEXT_FAQ_MAX = 30;
 
 /**
  * Maximum menu items included, ACROSS all sections.
@@ -59,8 +75,14 @@ export const VENUE_CONTEXT_FAQ_MAX = 10;
  */
 export const VENUE_CONTEXT_MENU_ITEM_MAX = 40;
 
-/** Hard cap on each menu item's description in the context block. */
-export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 160;
+/** Hard cap on each menu item's description in the context block (160 → 120, HOS-2095 review). */
+export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 120;
+
+/** Hard cap on a menu item's name and a section's name (HOS-2095 review: were unbounded). */
+const VENUE_MENU_NAME_MAX_CHARS = 100;
+
+/** Hard cap on the venue name and summary (HOS-2095 review). */
+const VENUE_SHORT_TEXT_MAX_CHARS = 300;
 
 // ---------------------------------------------------------------------------
 // Row shapes
@@ -78,6 +100,8 @@ export interface VenueContextRow {
     readonly openingHours: Record<string, unknown> | null;
     readonly averageRating: number | null;
     readonly reviewsCount: number | null;
+    /** House rules (HOS-2060); optional so older callers and tests need not pass it. */
+    readonly policies?: VenuePolicies | null;
 }
 
 /** One FAQ as the context block consumes it. */
@@ -107,42 +131,56 @@ export interface VenueContextMenuItem {
  * @param venue - The venue row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
- * @param includeMenu - Whether the owner has `manage_venue_menu`.
+ * @param includeMenu - Whether the menu section is available.
+ * @param night - The resolved `nightInfo` section, or `null`/omitted when absent.
+ * @param locale - Page locale for the closed-value labels and money (HOS-2095).
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
     venue: VenueContextRow,
     faqs: ReadonlyArray<VenueContextFaq>,
     menuItems: ReadonlyArray<VenueContextMenuItem>,
-    includeMenu: boolean
+    includeMenu: boolean,
+    night?: VenueNightContext | null,
+    locale: Locale = 'es'
 ): string {
     const cappedFaqs = faqs.slice(0, VENUE_CONTEXT_FAQ_MAX);
     const cappedItems = includeMenu ? menuItems.slice(0, VENUE_CONTEXT_MENU_ITEM_MAX) : [];
-    const truncatedDescription = truncate(
+    const truncatedDescription = truncateAtWord(
         sanitizeOwnerDelimiters(venue.description),
         VENUE_DESCRIPTION_MAX_CHARS
     );
 
     // The directive is line 1 so it precedes every fence below it. `type` and
     // `priceRange` stay unfenced: both are closed enums, not owner free text.
+    // HOS-2095: both render as their localized label, never the raw enum.
     const lines: string[] = [
         OWNER_DATA_DIRECTIVE,
         '',
-        `## Restaurante: ${fenceOwnerValue(venue.name)}`,
-        `**Tipo de cocina**: ${venue.type}`,
-        `**Resumen**: ${fenceOwnerValue(venue.summary)}`
+        `## Local: ${fenceOwnerValue(truncateAtWord(venue.name, VENUE_SHORT_TEXT_MAX_CHARS))}`,
+        `**Tipo de local**: ${venueTypeLabel({ type: venue.type, locale }).label}`,
+        `**Resumen**: ${fenceOwnerValue(truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS))}`
     ];
 
     if (venue.priceRange) {
-        lines.push(`**Rango de precios**: ${venue.priceRange}`);
+        lines.push(
+            `**Rango de precios**: ${priceRangeLabel({ priceRange: venue.priceRange, locale }).label}`
+        );
     }
 
-    // --- Opening hours ---
-    const hours = formatOpeningHours(venue.openingHours);
-    if (hours.length > 0) {
+    // --- Opening hours (HOS-2095: real `OpeningHoursSchema` shape) ---
+    const hours = buildOpeningHoursLines({ openingHours: venue.openingHours, locale });
+    if (hours.lines.length > 0 || hours.notes) {
         lines.push('', '### Horarios');
-        for (const line of hours) {
+        for (const line of hours.lines) {
             lines.push(`- ${line}`);
+        }
+        if (hours.notes) {
+            lines.push(
+                OWNER_DATA_DELIMITER_START,
+                sanitizeOwnerDelimiters(hours.notes),
+                OWNER_DATA_DELIMITER_END
+            );
         }
         lines.push(
             'Estos horarios son los que cargó el local, no información en vivo: pueden haber cambiado.'
@@ -174,17 +212,24 @@ export function buildVenueMarkdownContext(
         for (const item of cappedItems) {
             if (item.sectionName !== currentSection) {
                 currentSection = item.sectionName;
-                lines.push(`#### ${sanitizeOwnerDelimiters(currentSection ?? 'Otros')}`);
+                lines.push(
+                    `#### ${truncateAtWord(sanitizeOwnerDelimiters(currentSection ?? 'Otros'), VENUE_MENU_NAME_MAX_CHARS)}`
+                );
             }
-            const price = item.priceCents == null ? '' : ` — $${Math.round(item.priceCents / 100)}`;
+            const price =
+                item.priceCents == null
+                    ? ''
+                    : ` — ${formatContextMoney({ amount: Math.round(item.priceCents / 100), locale }).text}`;
             // An unavailable dish is stated as unavailable rather than dropped:
             // "is X on the menu?" and "can I order X tonight?" are different
             // questions, and silently omitting the dish answers the first wrong.
             const availability = item.isAvailable === false ? ' (no disponible)' : '';
-            lines.push(`**${sanitizeOwnerDelimiters(item.name)}**${price}${availability}`);
+            lines.push(
+                `**${truncateAtWord(sanitizeOwnerDelimiters(item.name), VENUE_MENU_NAME_MAX_CHARS)}**${price}${availability}`
+            );
             if (item.description) {
                 lines.push(
-                    truncate(
+                    truncateAtWord(
                         sanitizeOwnerDelimiters(item.description),
                         VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS
                     )
@@ -194,50 +239,69 @@ export function buildVenueMarkdownContext(
         }
         lines.push(OWNER_DATA_DELIMITER_END);
         lines.push(
-            'La carta y los precios son los que el local guardó por última vez, no datos en vivo.'
+            'La carta y los precios son los que el local guardó por última vez, no datos en vivo. Los precios están en pesos argentinos (ARS).'
         );
     } else if (includeMenu && venue.menuUrl) {
-        // No structured carta reached us — either the venue has none, or its
-        // plan does not grant it. Either way the link is public information.
-        lines.push('', '### Carta', 'El local publica su carta en un enlace externo.');
+        // An available menu may consist only of the external link.
+        lines.push(
+            '',
+            '### Carta',
+            `El local publica su carta en: ${fenceOwnerValue(venue.menuUrl)}`
+        );
     }
 
-    // --- FAQs (owner free text — fenced) ---
-    if (cappedFaqs.length > 0) {
-        lines.push('', '### Preguntas frecuentes', OWNER_DATA_DELIMITER_START);
-        for (const faq of cappedFaqs) {
-            lines.push(`**P: ${sanitizeOwnerDelimiters(faq.question)}**`);
-            lines.push(`R: ${sanitizeOwnerDelimiters(faq.answer)}`);
-            lines.push('');
+    // --- Night out info (HOS-1864) ---
+    // Closed enums, the age and the legal text stay unfenced; only the two
+    // owner-authored notes are fenced, like the description above.
+    if (night) {
+        lines.push('', '### Info para salir');
+        if (night.minAge !== null) {
+            lines.push(`**Edad mínima**: ${night.minAge}`);
         }
-        lines.push(OWNER_DATA_DELIMITER_END);
+        if (night.legalNotice) {
+            lines.push(`**Aviso legal**: ${night.legalNotice}`);
+        }
+        if (night.entryLabel) {
+            lines.push(`**Entrada**: ${night.entryLabel}`);
+        }
+        if (night.entryPriceFrom !== null) {
+            lines.push(
+                `**Precio de entrada desde**: ${formatContextMoney({ amount: night.entryPriceFrom, locale }).text}`
+            );
+        }
+        if (night.dressCodeLabel) {
+            lines.push(`**Código de vestimenta**: ${night.dressCodeLabel}`);
+        }
+        if (night.entryNote) {
+            lines.push(
+                OWNER_DATA_DELIMITER_START,
+                sanitizeOwnerDelimiters(night.entryNote),
+                OWNER_DATA_DELIMITER_END
+            );
+        }
+        if (night.dressCodeNote) {
+            lines.push(
+                OWNER_DATA_DELIMITER_START,
+                sanitizeOwnerDelimiters(night.dressCodeNote),
+                OWNER_DATA_DELIMITER_END
+            );
+        }
     }
+
+    // --- House rules (closed values only; night keys render with nightInfo) ---
+    lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
+
+    // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
+    lines.push(
+        ...buildFencedFaqLines({
+            heading: 'Preguntas frecuentes',
+            faqs: cappedFaqs,
+            questionPrefix: 'P',
+            answerPrefix: 'R'
+        }).lines
+    );
 
     return lines.join('\n').trimEnd();
-}
-
-/**
- * Renders the `opening_hours` JSONB into plain lines.
- *
- * The column is `Record<string, unknown>` — its shape is not guaranteed by a
- * schema at this layer — so anything that is not a string value is skipped
- * rather than stringified into `[object Object]`. Keys are sanitized too: they
- * are owner-influenced in principle.
- *
- * @param openingHours - The raw JSONB value.
- * @returns One `día: horario` line per readable entry; empty when unreadable.
- */
-function formatOpeningHours(openingHours: Record<string, unknown> | null): string[] {
-    if (!openingHours || typeof openingHours !== 'object') {
-        return [];
-    }
-    const lines: string[] = [];
-    for (const [day, value] of Object.entries(openingHours)) {
-        if (typeof value === 'string' && value.trim().length > 0) {
-            lines.push(`${sanitizeOwnerDelimiters(day)}: ${sanitizeOwnerDelimiters(value)}`);
-        }
-    }
-    return lines;
 }
 
 // ---------------------------------------------------------------------------
@@ -252,7 +316,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
  * Secondary reads (FAQs, carta) degrade to empty lists with a logged warning —
  * a chat request must not fail because one relation is unavailable.
  *
- * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
+ * @param input - Actor, entity id, resolved prompt, locale and listing states.
  * @returns The context block, system message and venue name.
  */
 export async function assembleVenueContext(
@@ -272,7 +336,11 @@ export async function assembleVenueContext(
             menuUrl: venues.menuUrl,
             openingHours: venues.openingHours,
             averageRating: venues.averageRating,
-            reviewsCount: venues.reviewsCount
+            reviewsCount: venues.reviewsCount,
+            entryKind: venues.entryKind,
+            entryNoteI18n: venues.entryNoteI18n,
+            entryPriceFrom: venues.entryPriceFrom,
+            policies: venues.policies
         })
         .from(venues)
         .where(and(eq(venues.id, entityId), isNull(venues.deletedAt)))
@@ -288,11 +356,22 @@ export async function assembleVenueContext(
         safeLoadMenuItems(entityId)
     ]);
 
+    // Availability comes from the section map, never from the venue type or the
+    // business lines (G-FAC-03, G-FAC-05). `nightInfo` may be `absent` for a
+    // food-only line or `locked` by an entitlement; both resolve to `null`.
+    const night = toVenueNightContext({
+        row: venue,
+        available: input.listingSections.get('nightInfo')?.state === 'available',
+        locale
+    });
+
     const contextBlock = buildVenueMarkdownContext(
         venue,
         faqs,
         menuItems,
-        input.ownerCapabilities.manageVenueMenu === true
+        input.listingSections.get('menu')?.state === 'available',
+        night,
+        locale
     );
 
     return {

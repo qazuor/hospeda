@@ -14,6 +14,7 @@ import {
     httpToDomainFeatureSearch,
     httpToDomainFeatureUpdate
 } from '../../../src/entities/feature/feature.http.schema.js';
+import { FeatureCategoryEnum } from '../../../src/enums/feature-category.enum.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -152,6 +153,7 @@ describe('httpToDomainFeatureCreate', () => {
         // Arrange
         const httpData = {
             applicableVerticals: baseApplicableVerticals,
+            category: FeatureCategoryEnum.LOCATION,
             priority: 60,
             isAvailable: true,
             isPremium: false,
@@ -171,6 +173,7 @@ describe('httpToDomainFeatureCreate', () => {
         // Arrange
         const httpData = {
             applicableVerticals: baseApplicableVerticals,
+            category: FeatureCategoryEnum.LOCATION,
             priority: 50,
             isAvailable: true,
             isPremium: false,
@@ -190,6 +193,7 @@ describe('httpToDomainFeatureCreate', () => {
         // Arrange
         const httpData = {
             applicableVerticals: baseApplicableVerticals,
+            category: FeatureCategoryEnum.LOCATION,
             slug: 'internet-access',
             priority: 50,
             isAvailable: true,
@@ -215,6 +219,7 @@ describe('httpToDomainFeatureCreate', () => {
         };
         const httpData = {
             applicableVerticals: baseApplicableVerticals,
+            category: FeatureCategoryEnum.LOCATION,
             description: validDescription,
             priority: 50,
             isAvailable: true,
@@ -234,6 +239,7 @@ describe('httpToDomainFeatureCreate', () => {
         // Arrange
         const httpData = {
             applicableVerticals: baseApplicableVerticals,
+            category: FeatureCategoryEnum.LOCATION,
             icon: 'wifi',
             priority: 50,
             isAvailable: true,

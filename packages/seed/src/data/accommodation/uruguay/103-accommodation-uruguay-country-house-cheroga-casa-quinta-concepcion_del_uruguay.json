@@ -212,12 +212,9 @@
     },
     "extraInfo": {
         "capacity": 12,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 3,
         "beds": 6,
         "bathrooms": 2,
-        "smokingAllowed": false,
         "extraInfo": [
             "Ideal para eventos y reuniones familiares",
             "Cancha de fútbol y tejo playero",
@@ -225,6 +222,12 @@
             "Atención personalizada para cada evento",
             "Gran parque con múltiples espacios al aire libre"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Cheroga Casa Quinta - Alojamiento en Concepción del Uruguay",
@@ -248,12 +251,10 @@
         "012-feature-family_suitable",
         "015-feature-ideal_for_groups",
         "018-feature-modern_style",
-        "025-feature-wifi_full_property",
         "039-feature-perimeter_fence",
         "044-feature-tourist_info_available",
         "059-feature-event_suitable",
         "060-feature-wedding_suitable",
-        "035-feature-private_grill",
         "010-feature-paved_access"
     ],
     "amenityIds": [

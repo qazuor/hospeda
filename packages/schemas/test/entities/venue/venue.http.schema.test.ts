@@ -78,6 +78,27 @@ describe('VenueSearchHttpSchema', () => {
             expect(result.amenities).toEqual([GLUTEN_FREE, LACTOSE_FREE]);
         });
     });
+
+    // HOS-1787 leaf 6.8. The public listing filter is singular — one line per
+    // request, like `type` — and its value is the internal catalog value in
+    // English. The Spanish URL slug never reaches the API.
+    describe('businessLine filter (HOS-1787 6.8)', () => {
+        it('accepts the public catalog values', () => {
+            expect(VenueSearchHttpSchema.parse({ businessLine: 'food' }).businessLine).toBe('food');
+            expect(VenueSearchHttpSchema.parse({ businessLine: 'nightlife' }).businessLine).toBe(
+                'nightlife'
+            );
+        });
+
+        it.each([
+            'standard',
+            'noche',
+            'gastronomia',
+            'x'
+        ])('rejects %s at request-shape time', (businessLine) => {
+            expect(() => VenueSearchHttpSchema.parse({ businessLine })).toThrow(ZodError);
+        });
+    });
 });
 
 describe('VenueCreateHttpSchema', () => {
@@ -158,6 +179,19 @@ describe('httpToDomainVenueSearch', () => {
         const result = httpToDomainVenueSearch(VenueSearchHttpSchema.parse({}));
         expect(result.features).toBeUndefined();
         expect(result.amenities).toBeUndefined();
+    });
+
+    // HOS-1787 leaf 6.8: the mapping is what made `_searchFieldsCheck` fail when
+    // the field was added to the domain schema — the HTTP filter must survive it.
+    it('forwards the businessLine filter to the domain search input', () => {
+        const httpInput = VenueSearchHttpSchema.parse({ businessLine: 'nightlife' });
+        const result = httpToDomainVenueSearch(httpInput);
+        expect(result.businessLine).toBe('nightlife');
+    });
+
+    it('leaves businessLine undefined when it is not requested', () => {
+        const result = httpToDomainVenueSearch(VenueSearchHttpSchema.parse({}));
+        expect(result.businessLine).toBeUndefined();
     });
 });
 

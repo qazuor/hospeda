@@ -1,4 +1,5 @@
 import { UserModel } from '@repo/db';
+import type { BusinessLine } from '@repo/schemas';
 import { NO_PLANS_AVAILABLE_MESSAGE, ServiceErrorCode } from '@repo/schemas';
 import {
     isSystemActor,
@@ -8,7 +9,8 @@ import {
 import {
     isAdministrativeActionPermitted,
     OPERATION_STEP6_KEY,
-    resolveListingAccess
+    resolveListingAccess,
+    resolveListingSectionPresence
 } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -18,6 +20,7 @@ import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
 import { apiLogger } from '../utils/logger';
+import { incrementDomainCounter } from './metrics';
 
 /** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
 function isPublishCapabilityKey({
@@ -43,6 +46,23 @@ function isPublishCapabilityKey({
 
 /** Header carrying the "why" of an administrative action (ACC:15, H6). */
 export const ACTION_REASON_HEADER = 'x-action-reason';
+type ListingSectionDeclaration = {
+    readonly id: string;
+    readonly intent: 'read' | 'write' | 'delete';
+};
+type ListingAccessWithSections = ListingAccessConfig & {
+    readonly listingSection?:
+        | ListingSectionDeclaration
+        | ((args: {
+              readonly body: Record<string, unknown> | undefined;
+          }) => readonly ListingSectionDeclaration[]);
+    readonly sectionTraits?:
+        | readonly string[]
+        | ((args: { readonly body: Record<string, unknown> | undefined }) => readonly string[]);
+    readonly businessLinesFromBody?: (args: {
+        readonly body: Record<string, unknown> | undefined;
+    }) => readonly BusinessLine[];
+};
 
 /** Upper bound of a decoded action reason, the same as action 23's body reason. */
 const ACTION_REASON_MAX_LENGTH = 2000;
@@ -85,10 +105,15 @@ function readForeignCreateSubject(args: {
 }
 
 /**
- * Runs ONE content call of a route under the action-15 authorization its
- * listing-access chain granted (ACC:15, HOS-1493). The scope opens only when
- * step 3 ran and resolved a subject other than the actor; otherwise `run` runs
- * as is. Wrap only the route's own content service call — never a whole
+ * Runs ONE content call of a route under the administrative authorization its
+ * listing-access chain granted (ACC:15, HOS-1493; ACC:27, HOS-1875). The scope
+ * opens only when step 3 ran and resolved a subject other than the actor;
+ * otherwise `run` runs as is. Step 4b checks section presence and does not
+ * change this subject scope. The action is the one the route declared and step 3
+ * permitted: ACC_15 stays the default of a foreign edit, and only ACC_27's own
+ * route declares the other value.
+ *
+ * Wrap only the route's own content service call — never a whole
  * handler nor several calls (coordinator decision, corrida 4).
  *
  * @param input.ctx - The request context after `enforceListingAccess`.
@@ -105,7 +130,10 @@ export function runListingContentCall<T>(input: {
     if (!access?.evaluatedSteps.includes(3) || !access.subjectId || access.subjectId === actor.id)
         return run();
     return runWithAdministrativeAuthorization({
-        authorization: { action: 'ACC_15', subjectId: access.subjectId },
+        authorization: {
+            action: access.administrativeAction ?? 'ACC_15',
+            subjectId: access.subjectId
+        },
         run
     });
 }
@@ -114,7 +142,7 @@ export function runListingContentCall<T>(input: {
 export async function enforceListingAccess(args: {
     ctx: Context;
     params: Record<string, unknown>;
-    config: ListingAccessConfig;
+    config: ListingAccessWithSections;
     tier: 'protected' | 'admin';
     body?: Record<string, unknown>;
 }): Promise<void> {
@@ -130,13 +158,19 @@ export async function enforceListingAccess(args: {
     // A CREATE on behalf of another owner (H12) is action 15 too: there is no
     // listing yet, so the subject comes from the validated body.
     const createSubjectId = readForeignCreateSubject({ config, body, actorId });
+    const requestedSections =
+        typeof config.listingSection === 'function'
+            ? config.listingSection({ body })
+            : config.listingSection
+              ? [config.listingSection]
+              : [];
     // An own create on a route that admits action 15 runs as before the route
     // declared listing access, still demanding the route's own create permission
     // (the route gate is an OR with action 15's permission, so it is re-checked here).
     if (config.createSubjectFromBody && createSubjectId === null) {
         if (config.ownCreatePermission && !actor.permissions.includes(config.ownCreatePermission))
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
-        return;
+        if (requestedSections.length === 0) return;
     }
     // Resolved only past the own-create exit: an own create never reads the
     // ports, so building them (and the real coverage reader) is not its cost.
@@ -176,6 +210,60 @@ export async function enforceListingAccess(args: {
         typeof config.capabilities === 'function'
             ? config.capabilities({ body })
             : config.capabilities;
+    const traits =
+        typeof config.sectionTraits === 'function'
+            ? config.sectionTraits({ body })
+            : (config.sectionTraits ?? []);
+    const bodyLines =
+        config.businessLinesFromBody?.({ body }) ??
+        (Array.isArray(body?.businessLines)
+            ? body.businessLines.filter((value): value is string => typeof value === 'string')
+            : undefined);
+    const resultingBusinessLines =
+        config.operation === 'CREATE'
+            ? (bodyLines ?? [])
+            : (bodyLines ?? facts?.businessLines ?? []);
+    // The integrity failure is about a listing that EXISTS with an impossible
+    // empty set (the DB CHECK should prevent it). A missing row has `facts ===
+    // null` and belongs to the resolver's NOT_FOUND step, not here; firing this
+    // branch on a missing row turned the 404 of `menuQr`/`menuQrScans` into a
+    // 500 before the handler could throw.
+    // Only the actor who may actually write this listing sees the integrity
+    // failure. A foreign or unauthenticated caller must still get the resolver's
+    // 404/401 priority, not a 500 leaked from a row it may not touch.
+    if (
+        config.operation !== 'CREATE' &&
+        bodyLines === undefined &&
+        facts !== null &&
+        // An explicit empty array is the impossible persisted state. `undefined`
+        // means the row object did not report the column (test doubles), not
+        // that the listing has zero lines.
+        facts.businessLines !== undefined &&
+        facts.businessLines.length === 0 &&
+        (!isForeign || adminAction?.permitted === true)
+    ) {
+        apiLogger.error(
+            { vertical: config.vertical, id: listingId, type: body?.type ?? facts.type ?? null },
+            'Listing has no business lines during section write authorization'
+        );
+        incrementDomainCounter('listing_empty_business_lines_total', 'failure');
+        const absent = resolveListingSectionPresence({
+            vertical: config.vertical,
+            businessLines: [],
+            requested: requestedSections.map(({ id }) => id)
+        });
+        if (requestedSections.some(({ id }) => absent.get(id)))
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Listing has no business lines for requested section'
+            );
+    }
+    const sections = requestedSections.length
+        ? {
+              requested: requestedSections.map((section) => ({ ...section, traits })),
+              resultingBusinessLines
+          }
+        : undefined;
     const result = await resolveListingAccess({
         actorId,
         vertical: config.vertical,
@@ -186,8 +274,14 @@ export async function enforceListingAccess(args: {
         createSubjectId,
         step6Key: config.step6Key,
         requiredKeys,
+        sections,
         limit,
         billing: ports.billing,
+        // Leave `effectiveSet` failures untouched here. This middleware is shared
+        // by every listing route, so mapping its failures to 503 would widen the
+        // degraded-editor contract (HOS-1844 §3.12) to the whole authorization
+        // chain. The 503 is scoped to the `sectionStates` maps; widening it is a
+        // separate follow-up.
         effectiveSet: ports.effectiveSet,
         preTrialDraftLimits: ports.preTrialDraftLimits
     });
@@ -197,9 +291,15 @@ export async function enforceListingAccess(args: {
             const actionReason = readActionReasonHeader({ ctx });
             if (actionReason !== null) setRequestContextActionReason({ actionReason });
         }
+        // Only the two actions whose scope `runListingContentCall` opens are
+        // carried; ACC_23 is a purge that never wraps a content call.
+        const authorizedAction =
+            adminAction?.permitted && (action === 'ACC_15' || action === 'ACC_27') ? action : null;
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
-            evaluatedSteps: result.evaluatedSteps
+            evaluatedSteps: result.evaluatedSteps,
+            businessLines: facts?.businessLines ?? [],
+            administrativeAction: authorizedAction
         });
         return;
     }
@@ -216,6 +316,16 @@ export async function enforceListingAccess(args: {
                 entitlementKey: null,
                 reason: 'NO_COVERAGE'
             });
+        case 'SECTION_ABSENT':
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Section is absent for listing business lines',
+                {
+                    reason: 'SECTION_ABSENT',
+                    section: result.section
+                },
+                'SECTION_ABSENT'
+            );
         case 'NO_CAPABILITY':
             if (
                 config.operation === 'PUBLISH' &&

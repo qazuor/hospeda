@@ -130,18 +130,21 @@
     },
     "extraInfo": {
         "capacity": 2,
-        "minNights": 1,
-        "maxNights": 5,
         "bedrooms": 1,
         "beds": 1,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Habitación en casa de familia",
             "Baño compartido",
             "Acceso a cocina básica compartida",
             "Barrio tranquilo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 5
     },
     "seo": {
         "title": "Rincón Calmado - Habitación en Villa Paranacito",
@@ -162,7 +165,6 @@
         "036-feature-shared_space",
         "001-feature-river_front",
         "004-feature-natural_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

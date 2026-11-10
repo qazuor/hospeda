@@ -235,23 +235,39 @@ describe('useModerateExperienceReviewMutation', () => {
 });
 
 describe('useExperiencePendingReviewsQuery', () => {
-    it('should fetch pending reviews list', async () => {
+    it('should fetch pending reviews scoped to the experience listing (AC:G:9)', async () => {
         const mockReviews = [{ id: 'r1', comment: 'Excelente paseo', rating: 5 }];
         mockListSuccess(mockReviews);
 
         const { result } = renderHook(
-            () => useExperiencePendingReviewsQuery({ page: 1, pageSize: 20 }),
+            () =>
+                useExperiencePendingReviewsQuery({
+                    experienceId: EXPERIENCE_ID,
+                    page: 1,
+                    pageSize: 20
+                }),
             { wrapper: createWrapper() }
         );
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // Assert on the REAL request path (no objectContaining: a missing
+        // experienceId param would silently list every experience's pending reviews).
+        const { path } = mockedFetchApi.mock.calls[0][0] as { path: string };
+        expect(path).toContain('status=PENDING');
+        expect(path).toContain(`experienceId=${EXPERIENCE_ID}`);
     });
 
     it('should return empty items when no reviews pending', async () => {
         mockListSuccess([]);
 
         const { result } = renderHook(
-            () => useExperiencePendingReviewsQuery({ page: 1, pageSize: 20 }),
+            () =>
+                useExperiencePendingReviewsQuery({
+                    experienceId: EXPERIENCE_ID,
+                    page: 1,
+                    pageSize: 20
+                }),
             { wrapper: createWrapper() }
         );
 

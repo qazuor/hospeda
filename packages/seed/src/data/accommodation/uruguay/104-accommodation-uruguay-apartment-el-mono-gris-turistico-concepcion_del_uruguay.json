@@ -121,18 +121,21 @@
     },
     "extraInfo": {
         "capacity": 2,
-        "minNights": 1,
-        "maxNights": 30,
         "bedrooms": 1,
         "beds": 1,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Check-in autónomo con caja de seguridad",
             "Ubicación céntrica a pasos de todo",
             "Ideal para estadías cortas y largas",
             "Ropa de cama y toallas incluidas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 30
     },
     "seo": {
         "title": "El Mono Gris - Monoambiente en Concepción del Uruguay",
@@ -153,8 +156,6 @@
         "013-feature-couple_suitable",
         "018-feature-modern_style",
         "020-feature-minimalist_style",
-        "025-feature-wifi_full_property",
-        "028-feature-autonomous_checkin",
         "031-feature-room_rental",
         "010-feature-paved_access"
     ],

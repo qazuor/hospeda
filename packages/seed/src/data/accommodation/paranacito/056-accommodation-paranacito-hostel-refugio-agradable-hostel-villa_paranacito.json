@@ -104,18 +104,21 @@
     },
     "extraInfo": {
         "capacity": 18,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 4,
         "beds": 16,
         "bathrooms": 3,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina comunitaria equipada",
             "Ubicación céntrica en Paranacito",
             "Cerca del Delta"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Refugio Agradable Hostel - Económico en Paranacito | Delta",
@@ -136,7 +139,6 @@
         "015-feature-ideal_for_groups",
         "001-feature-river_front",
         "004-feature-natural_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

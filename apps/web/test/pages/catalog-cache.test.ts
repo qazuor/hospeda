@@ -144,6 +144,17 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
         tag: 'CACHE_TAG_COLLECTIONS.post',
         kind: 'collection',
         gate: 'pagination-only'
+    },
+    // --- venues (HOS-1787 leaf 6.8, business-line collections) ---
+    // Added HERE rather than to `W2_4_PAGES`: both lists assert the tag, but
+    // only this one also asserts the `pagination-only` gate, which is exactly
+    // how the collection decides cacheability (same predicate as the general
+    // listing). The W2-4 list would silently accept an `always` gate.
+    {
+        path: 'comer-y-salir/rubro/[rubro]/index.astro',
+        tag: 'CACHE_TAG_COLLECTIONS.venue',
+        kind: 'collection',
+        gate: 'pagination-only'
     }
 ] as const;
 

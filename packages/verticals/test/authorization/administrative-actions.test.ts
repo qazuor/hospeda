@@ -7,6 +7,7 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 import { resolveAdministrativeActionStep } from '../../src/authorization/administrative-action-step';
 import {
+    ADMINISTRATIVE_ACTION_LISTING_OPERATIONS,
     ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
     ADMINISTRATIVE_ACTIONS,
@@ -17,15 +18,39 @@ import {
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
 
 describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
-    it('contains exactly the 25 live NUCLEO/08 §3 actions', () => {
+    it('contains exactly the 26 live NUCLEO/08 §3 actions', () => {
         const expected = [
             ...Array.from({ length: 15 }, (_, index) => `ACC_${index + 1}`),
-            ...Array.from({ length: 10 }, (_, index) => `ACC_${index + 17}`)
+            ...Array.from({ length: 10 }, (_, index) => `ACC_${index + 17}`),
+            'ACC_27'
         ];
         expect(ADMINISTRATIVE_ACTIONS).toEqual(expected);
-        expect(ADMINISTRATIVE_ACTIONS).toHaveLength(25);
+        expect(ADMINISTRATIVE_ACTIONS).toHaveLength(26);
         expect(ADMINISTRATIVE_ACTIONS).not.toContain('ACC_16');
         expect(Object.keys(ADMINISTRATIVE_ACTION_PERMISSIONS)).toEqual(expected);
+    });
+
+    it('TEST:7.3:1 makes action 27 a venue.editAll action that edits only business lines', () => {
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_27',
+                actorPermissions: [PermissionEnum.VENUE_EDIT_ALL]
+            })
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_27',
+                actorPermissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_15',
+                actorPermissions: [PermissionEnum.VENUE_EDIT_ALL]
+            })
+        ).toBe(false);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.VENUE_EDIT_ALL)).toBe(true);
+        expect(ADMINISTRATIVE_ACTION_LISTING_OPERATIONS.ACC_27).toEqual(['EDIT']);
     });
 
     it.each(ADMINISTRATIVE_ACTIONS)('refuses a system actor for %s', (action) => {

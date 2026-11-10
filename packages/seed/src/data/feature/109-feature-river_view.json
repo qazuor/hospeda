@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "109-feature-river_view",
+    "slug": "river_view",
+    "category": "VIEW",
+    "description": {
+        "es": "Vista al río desde el lugar",
+        "en": "River view from the place",
+        "pt": "Vista para o rio a partir do local"
+    },
+    "applicableVerticals": ["accommodation", "venue", "experience"],
+    "icon": "RiverViewIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 78,
+    "lifecycleState": "ACTIVE"
+}

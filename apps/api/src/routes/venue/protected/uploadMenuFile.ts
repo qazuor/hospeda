@@ -119,7 +119,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_venue_menu']
+        listingSection: { id: 'menu', intent: 'write' }
     },
     summary: 'Upload a photo or PDF of the menu',
     description:

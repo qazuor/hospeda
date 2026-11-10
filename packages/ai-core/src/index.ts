@@ -9,6 +9,7 @@
  * - `capabilities`— High-level domain helpers (text generation, moderation…)
  * - `config`      — Env-validated configuration and model defaults
  * - `usage`       — Token/cost tracking and observability
+ * - `language`    — Deterministic reply-language detection for the listing chat
  * - `safety`      — Input sanitisation and output guardrails
  * - `storage`     — Conversation history and embedding persistence
  * - `types`       — Shared provider-agnostic type definitions
@@ -21,6 +22,7 @@
 export * from './capabilities/index.js';
 export * from './config/index.js';
 export * from './engine/index.js';
+export * from './language/index.js';
 export * from './providers/index.js';
 export * from './safety/index.js';
 export * from './storage/index.js';

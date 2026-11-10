@@ -205,8 +205,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
                     // explicitly) — so `tsc` requires them here.
                     meetingPointDirections: [],
                     whatToBring: [],
-                    requirements: [],
-                    acceptsPrivateGroups: false
+                    requirements: []
                 },
                 ctx
             );
@@ -264,11 +263,11 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
     );
 
     // -----------------------------------------------------------------------
-    // T-6: Owner operational update (durationMinutes / cancellationPolicy) — accepted
+    // T-6: Owner operational update (durationMinutes / policies.cancellation) — accepted
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(
-        'T-6: owner can update operational fields (durationMinutes / cancellationPolicy)',
+        'T-6: owner can update operational fields (durationMinutes / policies.cancellation)',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, experienceId } = await seedExperience(tx, {
@@ -281,7 +280,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
                     experienceId,
                     {
                         durationMinutes: 90,
-                        cancellationPolicy: 'Free cancellation up to 24h before.'
+                        policies: { cancellation: 'Free cancellation up to 24h before.' }
                     },
                     ownerActor,
                     ctx
@@ -291,7 +290,9 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
                 expect(result.data).toBeDefined();
                 if (!result.data) throw new Error('expected result.data');
                 expect(result.data.durationMinutes).toBe(90);
-                expect(result.data.cancellationPolicy).toBe('Free cancellation up to 24h before.');
+                expect(result.data.policies).toMatchObject({
+                    cancellation: 'Free cancellation up to 24h before.'
+                });
                 expect(result.data.ownerId).toBe(ownerId);
             });
         }

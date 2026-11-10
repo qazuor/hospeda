@@ -30,6 +30,8 @@
 
 import {
     AmenityModel,
+    buildExperienceCatalogConditions,
+    buildSearchCondition,
     type ExperienceMediaModel,
     type ExperienceModel,
     experienceMediaModel,
@@ -54,6 +56,7 @@ import {
     PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
     Actor,
@@ -471,11 +474,12 @@ export class ExperienceService extends BaseListingService<
      * Scalar filters forwarded to the model: `type`, `destinationId`,
      * `ownerId`, `isFeatured`.
      *
-     * NOTE: `amenities` / `features` (array filters requiring junction-table
-     * JOINs) and `minRating` / `maxRating` are stripped here and NOT applied —
-     * they require a custom SQL query that the current `ExperienceModel.findAll`
-     * does not support.  Junction-level and rating range filtering is tracked as
-     * a follow-up task for the search route layer.
+     * `amenities` / `features` are junction-table filters applied as
+     * `additionalConditions` built by `@repo/db`'s `buildExperienceCatalogConditions`
+     * (HOS-2085), with intersection semantics (the listing must carry ALL of them).
+     *
+     * NOTE: `minRating` / `maxRating` are stripped here and NOT applied — they
+     * read a derived aggregate the current model query does not expose.
      *
      * @param params - Validated search parameters from `ExperienceSearchSchema`.
      * @param _actor - The actor performing the action (public path; unused).
@@ -492,8 +496,9 @@ export class ExperienceService extends BaseListingService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            q,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
@@ -513,6 +518,7 @@ export class ExperienceService extends BaseListingService<
         // (mirroring EventService/AccommodationService), otherwise findAllWithRelations
         // builds no ORDER BY and the public listing's sort dropdown is a silent no-op
         // (BETA-119).
+        const additionalConditions = this.buildPublicSearchConditions({ amenities, features, q });
         const result = await this.model.findAllWithRelations(
             { destination: true, owner: true },
             {
@@ -526,7 +532,7 @@ export class ExperienceService extends BaseListingService<
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },
-            undefined,
+            additionalConditions.length > 0 ? additionalConditions : undefined,
             ctx?.tx
         );
         return result as unknown as PaginatedListOutput<Experience>; // TYPE-WORKAROUND: base list result narrowed to the experience entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
@@ -550,14 +556,19 @@ export class ExperienceService extends BaseListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            q,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
             includeFeatures: _includeFeatures,
             ...scalarFilters
         } = params;
+
+        // Keep catalog and text filters identical to the page query: the total
+        // must describe the same intersection as its items.
+        const additionalConditions = this.buildPublicSearchConditions({ amenities, features, q });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
@@ -567,9 +578,29 @@ export class ExperienceService extends BaseListingService<
                 deletedAt: null,
                 publicationStatus: PublicationStatusEnum.PUBLISHED
             },
-            { tx: ctx?.tx }
+            additionalConditions.length > 0
+                ? { additionalConditions, tx: ctx?.tx }
+                : { tx: ctx?.tx }
         );
         return { count };
+    }
+
+    /** Builds the shared public experience search conditions for page and count. */
+    private buildPublicSearchConditions({
+        amenities,
+        features,
+        q
+    }: Pick<ExperienceSearch, 'amenities' | 'features' | 'q'>): SQL[] {
+        const conditions = buildExperienceCatalogConditions({ amenities, features });
+        if (q && q.trim().length > 0) {
+            const searchCondition = buildSearchCondition(
+                q,
+                this.getSearchableColumns(),
+                this.model.getTable()
+            );
+            if (searchCondition) conditions.push(searchCondition);
+        }
+        return conditions;
     }
 
     /**
@@ -602,8 +633,8 @@ export class ExperienceService extends BaseListingService<
      *    sections (`openingHours`, `contactInfo`, `socialNetworks`, `media`,
      *    `isPriceOnRequest`, `richDescription`, `amenityIds`, `featureIds`,
      *    the `meetingPoint*` trio, and the practical ficha fields
-     *    `durationMinutes` / `whatToBring` / `requirements` /
-     *    `cancellationPolicy` / `acceptsPrivateGroups`).
+     *    `durationMinutes` / `whatToBring` / `requirements`, and `policies`,
+     *    which holds the cancellation rules and private groups since HOS-2060).
      *    Identity fields (`name`, `slug`, `type`, `priceFrom`, `priceUnit`,
      *    `destinationId`) are absent from the schema — any forged keys in the
      *    HTTP body are silently stripped.

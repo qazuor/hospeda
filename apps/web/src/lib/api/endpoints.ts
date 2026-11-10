@@ -13,6 +13,7 @@ import type {
     EventOrganizerPublic,
     EventPublic,
     EventSummary,
+    ExperiencePublicFilterOptions,
     ExternalReputationBlock,
     FeaturePublic,
     NearbyPoi,
@@ -23,8 +24,10 @@ import type {
     PostListItem,
     PostPublic,
     PostSummary,
+    PublicBusinessLine,
     QrCodeResolution,
-    VenuePublic
+    VenuePublic,
+    VenuePublicFilterOptions
 } from '@repo/schemas';
 import { apiClient } from './client';
 import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
@@ -1565,6 +1568,8 @@ export interface VenueReviewPublicItem {
     readonly title?: string | null;
     readonly content?: string | null;
     readonly averageRating?: number | null;
+    /** The general star rating the reviewer chose; what review cards display (HOS-2082). */
+    readonly overallRating?: number | null;
     readonly rating?: Record<string, number> | null;
     /** Reviewer's public profile from the user relation (Bug B7b fix). */
     readonly user?: {
@@ -1590,6 +1595,12 @@ export const venueApi = {
         readonly q?: string;
         readonly destinationId?: string;
         readonly type?: string;
+        /**
+         * Filter by one business line. The value is the internal catalog value
+         * in English (`food`, `nightlife`); the Spanish slug lives only in the
+         * web collection URL and is never sent to the API.
+         */
+        readonly businessLine?: PublicBusinessLine;
         readonly priceRange?: string;
         readonly isFeatured?: boolean;
         readonly minRating?: number;
@@ -1609,6 +1620,26 @@ export const venueApi = {
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
         return apiClient.getList({ path: `${BASE}/venues`, params });
+    },
+
+    /**
+     * Get the filter values that have at least one published venue listing.
+     *
+     * The server scopes the answer to one business line when `businessLine` is
+     * given and to the whole vertical otherwise, so the sidebar never offers a
+     * filter that would return an empty collection (AC:6:11). The returned IDs
+     * are crossed with the catalogs the page already displays.
+     *
+     * Deliberately NOT opted into the SSR cache: a render right after a venue
+     * write could otherwise read the pre-purge options and freeze them into the
+     * edge-cached page for the whole `catalog` TTL.
+     *
+     * GET /api/v1/public/venues/filter-options
+     */
+    getFilterOptions(params?: {
+        readonly businessLine?: PublicBusinessLine;
+    }): Promise<ApiResult<VenuePublicFilterOptions>> {
+        return apiClient.get({ path: `${BASE}/venues/filter-options`, params });
     },
 
     /**
@@ -1661,6 +1692,8 @@ export interface ExperienceReviewPublicItem {
     readonly title?: string | null;
     readonly content?: string | null;
     readonly averageRating?: number | null;
+    /** The general star rating the reviewer chose; what review cards display (HOS-2082). */
+    readonly overallRating?: number | null;
     readonly rating?: Record<string, number> | null;
     readonly user?: { readonly name: string | null; readonly image: string | null } | null;
     readonly createdAt?: string | null;
@@ -1682,12 +1715,30 @@ export const experiencesApi = {
         readonly isFeatured?: boolean;
         readonly minRating?: number;
         readonly maxRating?: number;
+        /** Comma-separated amenity UUIDs the listing must ALL carry (HOS-2085). */
+        readonly amenities?: string;
+        /** Comma-separated feature UUIDs the listing must ALL carry (HOS-2085). */
+        readonly features?: string;
         readonly sortBy?: string;
         readonly sortOrder?: 'asc' | 'desc';
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
         return apiClient.getList({ path: `${BASE}/experiences`, params });
+    },
+
+    /**
+     * Get the amenity and feature ids held by at least one published
+     * experience, so the sidebar never offers a filter with no results (HOS-2085).
+     *
+     * Deliberately NOT opted into the SSR cache, like the venue equivalent: a
+     * render right after an experience write could otherwise read the pre-purge
+     * options and freeze them into the edge-cached page.
+     *
+     * GET /api/v1/public/experiences/filter-options
+     */
+    getFilterOptions(): Promise<ApiResult<ExperiencePublicFilterOptions>> {
+        return apiClient.get({ path: `${BASE}/experiences/filter-options` });
     },
 
     /**

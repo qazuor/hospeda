@@ -9,10 +9,12 @@
  * `punto-de-encuentro` to a restaurant, pointing the other way.
  *
  * `VenueMenuManager` owns its own endpoints — `GET`/`PUT .../menu` for the
- * carta and `POST`/`DELETE .../menu-file` for the uploaded photo/PDF — so this
- * page mounts it directly, with no form and no save button, exactly as
- * `preguntas.astro` mounts the FAQ manager. Nothing here reaches the listing
- * PATCH or its dirty tracking.
+ * structured carta and `POST`/`DELETE .../menu-file` for the uploaded file — so
+ * this page mounts it directly, with no form and no save button, exactly as
+ * `preguntas.astro` mounts the FAQ manager. The external link is the third part
+ * of the section (DEC-FAC-062): `VenueMenuLinkField` saves it with its own
+ * one-key `PATCH` of the listing, so nothing here reaches the listing form or
+ * its dirty tracking.
  *
  * ## Why the carta is NOT preloaded server-side, unlike the FAQs
  *
@@ -27,19 +29,44 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
+import SectionUnpublishedNotice from '@/components/listing/SectionUnpublishedNotice.astro';
 import { VenueMenuManager } from '@/components/venue/VenueMenuManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
+import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
+import { readListingMenuUrl } from '@/lib/listing/listing-editor-detail';
 
 export const prerender = false;
 
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'carta' });
 
 if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
 
-const { detail, locale, listingId, sectionId, registry } = resolution;
+const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
+const plans = await fetchAudiencePlans({ audience: 'venue' });
+const upsellPlans = resolveVenueUpsellPlans({ plans, t });
+
+// HOS-1854. The section state is read from the map the resolver already
+// fetched; the page never asks the API for it again.
+const activeSection = sectionId ? sectionStates[sectionId] : undefined;
+const sectionState = activeSection?.state ?? 'available';
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const lockedCounts =
+	sectionState === 'locked' && sectionId
+		? await readLockedSectionCounts({
+				vertical,
+				listingId,
+				sectionStates: { [sectionId]: activeSection! },
+				cookieHeader,
+			})
+		: {};
+const lockedCount = sectionId ? lockedCounts[sectionId] : null;
+const menuUrl = readListingMenuUrl({ detail });
 ---
 
 <ListingEditorSectionLayout
@@ -51,9 +78,20 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="carta"
 	title={t('listing.owner.editor.sectionNav.menu', 'Carta')}
 >
+	{typeof lockedCount === 'number' && lockedCount > 0 && (
+		<SectionUnpublishedNotice
+			locale={locale}
+			count={lockedCount}
+			sectionLabel={t('listing.owner.editor.sectionNav.menu', 'Carta')}
+		/>
+	)}
+
 	<VenueMenuManager
 		client:load
 		listingId={listingId}
 		locale={locale}
+		sectionState={sectionState === 'locked' ? 'locked' : 'available'}
+		menuUrl={menuUrl}
+		upsellPlans={upsellPlans}
 	/>
 </ListingEditorSectionLayout>

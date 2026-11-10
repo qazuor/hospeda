@@ -85,18 +85,19 @@
             "type": "object",
             "properties": {
                 "capacity": { "type": "number", "minimum": 1 },
-                "minNights": { "type": "number", "minimum": 1 },
-                "maxNights": { "type": "number", "minimum": 1 },
                 "bedrooms": { "type": "number", "minimum": 0 },
                 "beds": { "type": "number", "minimum": 0 },
                 "bathrooms": { "type": "number", "minimum": 0 },
-                "smokingAllowed": { "type": "boolean", "default": false },
                 "extraInfo": {
                     "type": "array",
                     "items": { "type": "string" }
                 }
             },
             "additionalProperties": false
+        },
+        "policies": {
+            "description": "House rules (HOS-2060); validated by AccommodationPoliciesSchema.",
+            "type": "object"
         },
         "seo": {
             "$ref": "common.schema.json#/definitions/seo"

@@ -197,10 +197,12 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // `/venue/<id>/editar/punto-de-encuentro` redirect instead of
             // rendering an empty page.
             const experienceIds = buildListingEditorSections({
-                vertical: 'experience'
+                vertical: 'experience',
+                sectionStates: {}
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'venue'
+                vertical: 'venue',
+                sectionStates: {}
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('meetingPoint');

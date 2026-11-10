@@ -15,10 +15,23 @@
  * catalog ID throws `ServiceError(VALIDATION_ERROR)` which rolls back the
  * entire transaction — no partial writes occur.
  *
+ * HOS-2067: a RETIRED (soft-deleted) catalog id is treated like an unknown one
+ * unless the entity already has it linked. It is rejected, never dropped: the
+ * sync is exact-set, so a stale form carrying a retired id also lacks the
+ * replacement relation a data migration created, and the diff would delete it.
+ * An already-linked retired id is kept as is.
+ *
  * @module listing.junction-sync
  */
 
 import type { DrizzleClient } from '@repo/db';
+import { type AmenityRelationAttributes, ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '../../types';
+import {
+    amenityAttributesMatch,
+    buildAmenityAttributeUpdate,
+    resolveDesiredAmenityAttributes
+} from '../../utils/amenity-relation-attributes';
 import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
@@ -30,7 +43,10 @@ import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sy
  * validator. HOS-321: batch lookup, not one `findById` per id.
  */
 interface CatalogModel {
-    findByIds: (ids: readonly string[], tx?: DrizzleClient) => Promise<readonly { id: string }[]>;
+    findByIds: (
+        ids: readonly string[],
+        tx?: DrizzleClient
+    ) => Promise<readonly { id: string; deletedAt?: Date | string | null }[]>;
 }
 
 /**
@@ -46,6 +62,15 @@ interface JunctionModel<TRow extends Record<string, unknown>> {
     ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+    /**
+     * Updates rows matching `where` (HOS-2061: relation attributes). Optional
+     * because the feature junction never needs it.
+     */
+    update?: (
+        where: Record<string, unknown>,
+        data: Record<string, unknown>,
+        tx?: DrizzleClient
+    ) => Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +95,15 @@ export interface SyncListingAmenityJunctionInput<TRow extends Record<string, unk
      * `undefined` → no-op | `[]` → clear all | `[ids]` → sync to set.
      */
     readonly amenityIds: readonly string[] | undefined;
+    /**
+     * Per-amenity relation attributes (HOS-2061), same contract as the
+     * accommodation sync:
+     * `undefined` → attributes of existing rows untouched;
+     * `[…]` → every linked amenity gets exactly the listed `scope` /
+     * `availability`, an unlisted linked amenity is reset to NULL, and an entry
+     * for an amenity that is not linked throws `VALIDATION_ERROR`.
+     */
+    readonly amenityAttributes?: readonly AmenityRelationAttributes[] | undefined;
     /** Junction table model (injectable for testing). */
     readonly junctionModel: JunctionModel<TRow>;
     /** Amenity catalog model (injectable for testing). */
@@ -121,7 +155,7 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
  *   Operation is idempotent.
  *
  * @param input - {@link SyncListingAmenityJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any amenity ID is unknown or newly retired.
  *
  * @example
  * ```ts
@@ -139,20 +173,18 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
 export async function syncListingAmenityJunction<TRow extends Record<string, unknown>>(
     input: SyncListingAmenityJunctionInput<TRow>
 ): Promise<void> {
-    const { entityId, entityFkColumn, amenityIds, junctionModel, amenityModel, tx } = input;
+    const {
+        entityId,
+        entityFkColumn,
+        amenityIds,
+        amenityAttributes,
+        junctionModel,
+        amenityModel,
+        tx
+    } = input;
 
     // undefined → no-op (three-way contract)
-    if (amenityIds === undefined) return;
-
-    // Validate all supplied IDs before touching any rows.
-    if (amenityIds.length > 0) {
-        await validateCatalogIds({
-            ids: amenityIds,
-            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
-            entityLabel: 'amenity',
-            tx
-        });
-    }
+    if (amenityIds === undefined && amenityAttributes === undefined) return;
 
     // Fetch ALL current junction rows for this entity (HOS-321: an unpaginated
     // `findAll` silently truncates at the model's 20-row default page, which
@@ -164,8 +196,28 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
         sortBy: 'amenityId' as keyof TRow & string,
         tx
     });
-    const existingIds = new Set(existing.map((row) => row.amenityId as string));
-    const targetIds = new Set(amenityIds);
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so a retired catalog id the entity already has linked is tolerated
+    // (HOS-2067); a retired id it does not have is rejected.
+    if (amenityIds !== undefined && amenityIds.length > 0) {
+        await validateCatalogIds({
+            ids: amenityIds,
+            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
+            entityLabel: 'amenity',
+            alreadyLinkedIds: new Set(existing.map((row) => row.amenityId as string)),
+            tx
+        });
+    }
+    const existingById = new Map(existing.map((row) => [row.amenityId as string, row]));
+    const existingIds = new Set(existingById.keys());
+    const targetIds = amenityIds === undefined ? existingIds : new Set(amenityIds);
+
+    // HOS-2061: resolve attributes BEFORE any write, so a bad entry rolls back nothing.
+    const desired =
+        amenityAttributes === undefined
+            ? undefined
+            : resolveDesiredAmenityAttributes({ amenityAttributes, finalIds: targetIds });
 
     // Delete rows NOT in the target set, in ONE batched statement.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
@@ -176,7 +228,45 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
     // Insert rows that are in the target set but missing from the junction table.
     const toInsert = [...targetIds].filter((id) => !existingIds.has(id));
     for (const amenityId of toInsert) {
-        await junctionModel.create({ [entityFkColumn]: entityId, amenityId }, tx);
+        const attributes = desired?.get(amenityId);
+        await junctionModel.create(
+            {
+                [entityFkColumn]: entityId,
+                amenityId,
+                // HOS-2061: scope/availability stay NULL ("not declared") unless sent.
+                ...(attributes
+                    ? {
+                          scope: attributes.scope,
+                          availability: attributes.availability,
+                          // HOS-2084: `extraCharge` -> is_optional (column default false).
+                          ...(attributes.isOptional === undefined
+                              ? {}
+                              : { isOptional: attributes.isOptional })
+                      }
+                    : {})
+            },
+            tx
+        );
+    }
+
+    // HOS-2061: update kept rows whose attributes differ from the desired values.
+    if (desired === undefined) return;
+    for (const amenityId of targetIds) {
+        const row = existingById.get(amenityId);
+        if (!row) continue; // just inserted with the desired values
+        const want = desired.get(amenityId);
+        if (!want || amenityAttributesMatch({ row, want })) continue;
+        if (!junctionModel.update) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Amenity junction model must implement update() to write relation attributes'
+            );
+        }
+        await junctionModel.update(
+            { [entityFkColumn]: entityId, amenityId },
+            buildAmenityAttributeUpdate({ want }),
+            tx
+        );
     }
 }
 
@@ -188,7 +278,7 @@ export async function syncListingAmenityJunction<TRow extends Record<string, unk
  * {@link syncListingAmenityJunction}, adapted for feature IDs.
  *
  * @param input - {@link SyncListingFeatureJunctionInput}
- * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown.
+ * @throws {ServiceError} code `VALIDATION_ERROR` when any feature ID is unknown or newly retired.
  */
 export async function syncListingFeatureJunction<TRow extends Record<string, unknown>>(
     input: SyncListingFeatureJunctionInput<TRow>
@@ -198,16 +288,6 @@ export async function syncListingFeatureJunction<TRow extends Record<string, unk
     // undefined → no-op (three-way contract)
     if (featureIds === undefined) return;
 
-    // Validate all supplied IDs before touching any rows.
-    if (featureIds.length > 0) {
-        await validateCatalogIds({
-            ids: featureIds,
-            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
-            entityLabel: 'feature',
-            tx
-        });
-    }
-
     // Fetch ALL current junction rows for this entity — see the amenity
     // counterpart for why an unpaginated read corrupts the diff.
     const existing = await readAllJunctionRows<TRow>({
@@ -216,6 +296,19 @@ export async function syncListingFeatureJunction<TRow extends Record<string, unk
         sortBy: 'featureId' as keyof TRow & string,
         tx
     });
+
+    // Validate all supplied IDs before touching any rows. Runs AFTER the read
+    // so a retired catalog id the entity already has linked is tolerated
+    // (HOS-2067); a retired id it does not have is rejected.
+    if (featureIds.length > 0) {
+        await validateCatalogIds({
+            ids: featureIds,
+            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
+            entityLabel: 'feature',
+            alreadyLinkedIds: new Set(existing.map((row) => row.featureId as string)),
+            tx
+        });
+    }
     const existingIds = new Set(existing.map((row) => row.featureId as string));
     const targetIds = new Set(featureIds);
 

@@ -10,14 +10,14 @@ import {
     UNBOUND_ROWS
 } from './administrative-action-route-permissions.guard.fixtures';
 
-it('a. covers exactly the 25 catalog actions, in order', () => {
+it('a. covers exactly the 26 catalog actions, in order', () => {
     expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
-    expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(26);
 });
-it('b. checks exactly 77 bindings across 25 bound rows', () => {
-    expect(BOUND_ACTIONS).toHaveLength(25);
+it('b. checks exactly 78 bindings across 26 bound rows', () => {
+    expect(BOUND_ACTIONS).toHaveLength(26);
     const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf({ action }).length, 0);
-    expect(total).toBe(77);
+    expect(total).toBe(78);
 });
 it('e. every unbound row names a reason and is not silently known-misaligned', () => {
     // B12 (HOS-1612) bound ACC_17, the last unbound row: the catalog is now fully bound.

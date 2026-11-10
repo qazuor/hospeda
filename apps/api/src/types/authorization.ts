@@ -31,10 +31,12 @@ export type ListingAccessConfig = {
     /**
      * The NUCLEO/08 §3 action a foreign actor executes on this route; defaults
      * to ACC_15 (edit foreign content). ACC_23 purges at the owner's request and
-     * is evaluated on the owner (V5.md §3.2 rule 3). Step 3 reads this single
-     * value both for the permission check and for the resolver's action.
+     * is evaluated on the owner (V5.md §3.2 rule 3). ACC_27 changes the business
+     * lines of somebody else's listing, on its own dedicated route. Step 3 reads
+     * this single value both for the permission check and for the resolver's
+     * action.
      */
-    administrativeAction?: 'ACC_15' | 'ACC_23';
+    administrativeAction?: 'ACC_15' | 'ACC_23' | 'ACC_27';
     /**
      * CREATE only (ACC:15, H12): the name of the validated body field that names
      * the owner the listing is created for (e.g. `'ownerId'`). When the body

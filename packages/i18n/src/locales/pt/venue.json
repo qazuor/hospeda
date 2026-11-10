@@ -8,9 +8,14 @@
     },
     "listing": {
         "title": "Comer e sair",
-        "subtitle": "Descubra os melhores restaurantes, bares e sabores da região",
+        "subtitle": "Descubra lugares para comer e sair na região",
         "emptyState": "Nenhum estabelecimento encontrado com os filtros selecionados.",
         "emptyCatalog": "Ainda não há estabelecimentos publicados.",
+        "collectionEmpty": {
+            "message": "Ainda não há locais publicados em {{line}}.",
+            "viewAll": "Ver tudo em {{vertical}}",
+            "publish": "Publique seu local"
+        },
         "errorBanner": "Não foi possível carregar a lista de Comer e sair. Tente novamente mais tarde.",
         "results_one": "{{count}} estabelecimento encontrado",
         "results_other": "{{count}} estabelecimentos encontrados",
@@ -20,6 +25,7 @@
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
         "featured": "Somente destaques",
+        "amenities": "Comodidades",
         "features": "Opções alimentares e características",
         "minRating": "Avaliação mínima",
         "sort": {
@@ -94,18 +100,41 @@
             "weekly": "Toda {{weekday}}",
             "range": "{{when}}, das {{start}} às {{end}}",
             "fromOnly": "{{when}}, a partir das {{start}}"
+        },
+        "nightInfo": {
+            "headingMultiLine": "À noite",
+            "heading": "Info para sair",
+            "entryLabel": "Entrada",
+            "entryKind": {
+                "free": "Entrada gratuita",
+                "paid": "Entrada paga",
+                "varies": "Entrada variável"
+            },
+            "priceFrom": "A partir de {{price}}",
+            "approxUpdated": "aprox., atualizado em {{month}}",
+            "dressCodeLabel": "Código de vestimenta",
+            "dressCode": {
+                "casual": "Casual",
+                "smart_casual": "Esporte fino",
+                "elegant": "Social",
+                "no_restrictions": "Sem restrições"
+            },
+            "minAgeLabel": "Idade mínima",
+            "legalAge": "Proibida a venda de bebidas alcoólicas a menores de 18 anos (Lei argentina 24.788)."
         }
     },
     "types": {
         "RESTAURANT": "Restaurante",
         "BAR": "Bar",
         "CAFE": "Café",
-        "PARRILLA": "Churrascaria",
+        "PARRILLA": "Parrilla",
         "CERVECERIA": "Cervejaria",
         "HELADERIA": "Sorveteria",
         "PANADERIA": "Padaria",
-        "ROTISERIA": "Rotisserie",
-        "FOOD_TRUCK": "Food Truck"
+        "ROTISERIA": "Rotisseria",
+        "FOOD_TRUCK": "Food truck",
+        "PUB": "Pub",
+        "BOLICHE": "Balada"
     },
     "typeChips": {
         "ariaLabel": "Filtrar por tipo de estabelecimento"
@@ -116,11 +145,11 @@
             "title": "Benefícios para seu estabelecimento",
             "item1": {
                 "title": "Visibilidade regional",
-                "desc": "Apareça onde milhares de viajantes procuram onde comer em Concepción del Uruguay e no litoral entrerriano."
+                "desc": "Apareça onde milhares de turistas procuram lugares para comer ou sair no litoral."
             },
             "item2": {
                 "title": "Publique em minutos",
-                "desc": "Carregue fotos, cardápio e horários em um painel simples. Edite quando quiser."
+                "desc": "Adicione fotos, opções de comida ou bebida e horários em um painel simples. Edite quando quiser."
             },
             "item3": {
                 "title": "Preço fixo, sem comissões",
@@ -136,11 +165,11 @@
             },
             "step2": {
                 "title": "Publique seu local",
-                "desc": "Adicione fotos, cardápio, horários e localização."
+                "desc": "Adicione fotos, opções de comida ou bebida, horários e localização."
             },
             "step3": {
                 "title": "Seja encontrado",
-                "desc": "Os clientes te encontram procurando onde comer e sair na região."
+                "desc": "Quem visita a região encontra seu estabelecimento ao procurar um lugar para comer ou sair."
             }
         },
         "price": {
@@ -168,18 +197,42 @@
             "q2": "Existe algum compromisso de permanência?",
             "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
             "q3": "Quantas fichas posso publicar?",
-            "a3": "O plano inclui uma ficha de Comer e sair por conta."
+            "a3": "Depende do plano: veja quantos estabelecimentos cada um inclui na comparação."
         },
         "lead": {
             "title": "Adicione seu negócio",
-            "subtitle": "Crie sua conta, publique seu local e comece a alcançar clientes que procuram onde comer na região."
+            "subtitle": "Crie sua conta, publique seu estabelecimento e alcance quem procura um lugar para comer ou sair na região."
         }
     },
     "owner": {
+        "businessLines": {
+            "legend": "Segmentos",
+            "keepOne": "Deixe pelo menos um segmento selecionado.",
+            "food": {
+                "label": "Gastronomia"
+            },
+            "nightlife": {
+                "label": "Vida noturna"
+            },
+            "reason": {
+                "MAX_EXCEEDED": "Você já escolheu o máximo de segmentos.",
+                "EXCLUDED_PAIR": "Não pode ser combinado com o segmento que você já escolheu."
+            },
+            "useSuggested": "Usar os segmentos sugeridos para este tipo",
+            "notice": {
+                "title": "Ao remover {{lines}}, ficam ocultos: {{sections}}.",
+                "sectionWithCount_one": "{{section}} ({{count}} salvo)",
+                "sectionWithCount_other": "{{section}} ({{count}} salvos)",
+                "keep": "Nada é excluído: se você adicionar novamente, tudo volta.",
+                "qr": "Seu QR de mesa teve {{count}} leituras nos últimos 90 dias.",
+                "dismiss": "Entendi"
+            }
+        },
         "editor": {
             "menuManager": {
                 "title": "Cardápio",
                 "intro": "Carregue o cardápio prato a prato ou envie uma foto ou um PDF dele. Você pode usar as duas formas, e nenhuma é obrigatória.",
+                "lockedIntro": "Mostre o cardápio na sua ficha.",
                 "fileTitle": "Foto ou PDF do cardápio",
                 "filePdf": "Ver o PDF",
                 "fileImage": "Ver a foto",
@@ -213,8 +266,12 @@
                 "saving": "Salvando…",
                 "saved": "Cardápio salvo.",
                 "saveError": "Não foi possível salvar o cardápio.",
-                "locked": "Montar o cardápio e enviar uma foto ou um PDF dele está disponível a partir do plano Profissional.",
-                "lockedPreTrial": "O cardápio é liberado quando você publicar sua ficha: a partir daí você poderá cadastrar os pratos ou enviar uma foto ou um PDF do cardápio.",
+                "linkSave": "Salvar link",
+                "linkSaved": "Link salvo.",
+                "linkSaveError": "Não foi possível salvar o link.",
+                "locked": "Seu cardápio completo está disponível a partir do plano {{plan}}.",
+                "lockedNoPlan": "Seu cardápio completo está disponível em um plano pago.",
+                "lockedPreTrial": "O cardápio é liberado quando você publicar sua ficha.",
                 "seePlans": "Ver planos",
                 "addPhoto": "Adicionar foto",
                 "replacePhoto": "Trocar a foto",
@@ -224,7 +281,8 @@
                 "photoAltPlaceholder": "Descreva a foto (opcional)",
                 "photoAttached": "Foto adicionada. Lembre de salvar o cardápio.",
                 "photoUploadError": "Não foi possível enviar a foto do prato.",
-                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim.",
+                "photoLocked": "As fotos por prato estão disponíveis a partir do plano {{plan}}. Você pode remover as fotos e salvar o cardápio mesmo assim.",
+                "photoLockedNoPlan": "As fotos por prato estão disponíveis em um plano pago. Você pode remover as fotos e salvar o cardápio mesmo assim.",
                 "translations": "Traduções (EN/PT)",
                 "nameEn": "Nome em inglês",
                 "nameEnPlaceholder": "Nome em inglês",
@@ -234,8 +292,10 @@
                 "descriptionEnPlaceholder": "Descrição em inglês",
                 "descriptionPt": "Descrição em português",
                 "descriptionPtPlaceholder": "Descrição em português",
-                "translationLocked": "Traduzir o cardápio está disponível no plano Premium. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
-                "translationLockedHint": "Disponível no plano Premium. Apague o inglês e o português para salvar o cardápio apenas em espanhol."
+                "translationLocked": "Traduzir o cardápio está disponível a partir do plano {{plan}}. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
+                "translationLockedNoPlan": "Traduzir o cardápio está disponível em um plano pago. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
+                "translationLockedHint": "Disponível a partir do plano {{plan}}. Apague o inglês e o português para salvar o cardápio apenas em espanhol.",
+                "translationLockedHintNoPlan": "Disponível em um plano pago. Apague o inglês e o português para salvar o cardápio apenas em espanhol."
             },
             "dailySpecials": {
                 "title": "Menu do dia",
@@ -257,7 +317,9 @@
                 "saving": "Salvando…",
                 "saved": "Menu do dia salvo.",
                 "saveError": "Não foi possível salvar o menu do dia.",
-                "locked": "O menu do dia está disponível a partir do plano Profissional.",
+                "locked": "O menu do dia está disponível a partir do plano {{plan}}.",
+                "lockedNoPlan": "O menu do dia está disponível em um plano pago.",
+                "lockedPreTrial": "O menu do dia é liberado quando você publicar sua ficha.",
                 "expired": "Já venceu — não está sendo exibido.",
                 "scheduled": "Programado — ainda não é exibido."
             },
@@ -287,12 +349,53 @@
                 "saving": "Salvando…",
                 "saved": "Agenda salva.",
                 "saveError": "Não foi possível salvar a agenda.",
-                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional."
+                "locked": "Manter uma agenda de eventos está disponível a partir do plano {{plan}}.",
+                "lockedNoPlan": "Manter uma agenda de eventos está disponível em um plano pago.",
+                "lockedPreTrial": "A agenda de eventos é liberada quando você publicar sua ficha."
             },
-            "acceptsEvents": {
-                "label": "Aceito eventos (aniversários, empresas, casamentos)",
-                "hint": "Mostramos um botão de contato na sua ficha para que entrem em contato para esse tipo de consulta."
+            "lockedSection": {
+                "vaciar": "Esvaziar",
+                "vaciarTitle": "Esvaziar a seção",
+                "vaciarMessage": "Os dados salvos desta seção serão apagados. Esta ação não pode ser desfeita.",
+                "vaciarConfirm": "Esvaziar a seção",
+                "vaciarBusy": "Esvaziando…",
+                "cancel": "Cancelar",
+                "empty": "Não há dados salvos nesta seção.",
+                "vaciarError": "Não foi possível esvaziar a seção.",
+                "vaciarSuccess": "A seção foi esvaziada.",
+                "inactive": "Não é exibido",
+                "unavailable": "Indisponível",
+                "fileUnavailable": "Não é possível abrir este arquivo."
             }
+        }
+    },
+    "typeDescriptions": {
+        "RESTAURANT": "Restaurante com serviço à mesa e cardápio variado.",
+        "BAR": "Bar com balcão e drinques, incluindo coquetéis.",
+        "CAFE": "Cafeteria para café, bebidas e refeições leves.",
+        "PARRILLA": "Parrilla de carnes e pratos preparados na brasa.",
+        "CERVECERIA": "Cervejaria que produz a própria cerveja artesanal.",
+        "HELADERIA": "Sorveteria com sorvetes e sobremesas geladas.",
+        "PANADERIA": "Padaria com pães e produtos de confeitaria.",
+        "ROTISERIA": "Rotisseria de comidas prontas para levar.",
+        "FOOD_TRUCK": "Comida preparada e servida em um veículo.",
+        "PUB": "Formato de bar com chope e clima de pub.",
+        "BOLICHE": "Casa noturna ou clube que funciona exclusivamente à noite."
+    },
+    "collections": {
+        "nightlife": {
+            "pageTitle": "Baladas, bares e pubs em {{destino}}",
+            "description": "Descubra baladas, bares e pubs para sair à noite em {{destino}}.",
+            "heading": "Baladas, bares e pubs",
+            "intro": "Lugares para sair à noite em {{destino}}.",
+            "ogTagline": "Para sair à noite"
+        },
+        "food": {
+            "pageTitle": "Onde comer em {{destino}}",
+            "description": "Descubra restaurantes, cafés e lugares para comer em {{destino}}.",
+            "heading": "Onde comer",
+            "intro": "Lugares para comer em {{destino}}.",
+            "ogTagline": "Onde comer"
         }
     }
 }

@@ -4,7 +4,7 @@
  *
  * Modeled on `ListingFaqManager.client.tsx` (SPEC-253) but styled as a card
  * of `src/components/host/editor/` (fieldset + legend, matching
- * `AmenitiesSection.client.tsx`), and wired against the accommodation-scoped
+ * the services page's catalog section), and wired against the accommodation-scoped
  * FAQ endpoints:
  *   GET    /accommodations/{id}/faqs           — list (SSR-preloaded via `initialFaqs`)
  *   POST   /accommodations/{id}/faqs           — add

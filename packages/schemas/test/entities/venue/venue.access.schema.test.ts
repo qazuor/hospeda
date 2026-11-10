@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    VenueAdminListItemSchema,
     VenueAdminSchema,
     VenueProtectedSchema,
     VenuePublicSchema
@@ -17,6 +18,7 @@ describe('VenuePublicSchema', () => {
     it('should exclude ownerId from public response', () => {
         const data = {
             ...createValidVenue(),
+            rating: { food: { average: 4, count: 2 } },
             ownerId: '123e4567-e89b-12d3-a456-426614174000'
         };
         const result = VenuePublicSchema.safeParse(data);
@@ -60,6 +62,18 @@ describe('VenueProtectedSchema', () => {
         const keys = Object.keys(VenueProtectedSchema.shape ?? {});
         expect(keys).toContain('publicationStatus');
     });
+
+    it('should include businessLines in the owner detail (HOS-1787 5.6)', () => {
+        expect(Object.keys(VenueProtectedSchema.shape ?? {})).toContain('businessLines');
+
+        const data = { ...createMinimalVenue(), businessLines: ['food', 'nightlife'] };
+        const result = VenueProtectedSchema.safeParse(data);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.businessLines).toEqual(['food', 'nightlife']);
+        }
+    });
 });
 
 describe('VenueAdminSchema', () => {
@@ -72,6 +86,52 @@ describe('VenueAdminSchema', () => {
         const keys = Object.keys(VenueAdminSchema.shape ?? {});
         expect(keys).toContain('ownerId');
         expect(keys).toContain('publicationStatus');
+    });
+
+    // HOS-1787 leaf 7.1 — the admin read paths must not strip the column.
+    it('should include businessLines in the admin response shape', () => {
+        expect(Object.keys(VenueAdminSchema.shape ?? {})).toContain('businessLines');
+    });
+
+    it('should preserve businessLines when parsing an admin venue', () => {
+        const data = { ...createMinimalVenue(), businessLines: ['food', 'nightlife'] };
+        const result = VenueAdminSchema.safeParse(data);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.businessLines).toEqual(['food', 'nightlife']);
+        }
+    });
+
+    it('should parse an admin venue without businessLines (optional column)', () => {
+        const result = VenueAdminSchema.safeParse(createMinimalVenue());
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.businessLines).toBeUndefined();
+        }
+    });
+
+    it('should reject an unknown business line on the admin response', () => {
+        const data = { ...createMinimalVenue(), businessLines: ['standard'] };
+        expect(() => VenueAdminSchema.parse(data)).toThrow();
+    });
+});
+
+describe('VenueAdminListItemSchema', () => {
+    it('should preserve businessLines on a list row', () => {
+        const data = { ...createMinimalVenue(), businessLines: ['food', 'nightlife'] };
+        const result = VenueAdminListItemSchema.safeParse(data);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.businessLines).toEqual(['food', 'nightlife']);
+        }
+    });
+
+    it('should parse a list row without businessLines (optional column)', () => {
+        const result = VenueAdminListItemSchema.safeParse(createMinimalVenue());
+        expect(result.success).toBe(true);
     });
 });
 

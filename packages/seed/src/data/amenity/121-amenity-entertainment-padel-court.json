@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "121-amenity-entertainment-padel-court",
+    "slug": "padel_court",
+    "description": {
+        "es": "Cancha de pádel para los huéspedes",
+        "en": "Padel court for guests",
+        "pt": "Quadra de padel para os hóspedes"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "SportsCenterIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

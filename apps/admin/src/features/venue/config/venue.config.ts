@@ -19,6 +19,7 @@ import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
 import { createListingListConfig } from '@/features/listing';
 import { createVenueColumns } from './venue.columns';
+import { getVenueBusinessLineFilterOptions, hasBusinessLineChoice } from './venue-business-lines';
 
 // ---------------------------------------------------------------------------
 // List-item shape
@@ -41,38 +42,17 @@ export type VenueListItem = Pick<
     | 'destination'
     | 'owner'
     | 'publicationStatus'
+    | 'businessLines'
 >;
 
 // ---------------------------------------------------------------------------
 // Filter options
 // ---------------------------------------------------------------------------
 
-const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.venueType.restaurant' },
-    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.venueType.bar' },
-    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.venueType.cafe' },
-    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.venueType.parrilla' },
-    {
-        value: VenueTypeEnum.CERVECERIA,
-        labelKey: 'admin-filters.venueType.cerveceria'
-    },
-    {
-        value: VenueTypeEnum.HELADERIA,
-        labelKey: 'admin-filters.venueType.heladeria'
-    },
-    {
-        value: VenueTypeEnum.PANADERIA,
-        labelKey: 'admin-filters.venueType.panaderia'
-    },
-    {
-        value: VenueTypeEnum.ROTISERIA,
-        labelKey: 'admin-filters.venueType.rotiseria'
-    },
-    {
-        value: VenueTypeEnum.FOOD_TRUCK,
-        labelKey: 'admin-filters.venueType.foodTruck'
-    }
-] as const;
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
+    value,
+    labelKey: `admin-entities.venue.types.${value}`
+}));
 
 const PRICE_RANGE_OPTIONS = [
     { value: PriceRangeEnum.BUDGET, labelKey: 'admin-filters.priceRange.budget' },
@@ -80,6 +60,8 @@ const PRICE_RANGE_OPTIONS = [
     { value: PriceRangeEnum.HIGH, labelKey: 'admin-filters.priceRange.high' },
     { value: PriceRangeEnum.PREMIUM, labelKey: 'admin-filters.priceRange.premium' }
 ] as const;
+
+const BUSINESS_LINE_FILTER_OPTIONS = getVenueBusinessLineFilterOptions();
 
 // ---------------------------------------------------------------------------
 // Entity config
@@ -122,7 +104,19 @@ export const venueListConfig = createListingListConfig<VenueListItem>({
             order: 11,
             // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
             options: PRICE_RANGE_OPTIONS as unknown as { value: string; labelKey: string }[]
-        }
+        },
+        // The catalog decides whether the venue vertical offers a choice at all.
+        ...(hasBusinessLineChoice({ options: BUSINESS_LINE_FILTER_OPTIONS })
+            ? [
+                  {
+                      paramKey: 'businessLine',
+                      labelKey: 'admin-filters.businessLine.label' as const,
+                      type: 'select' as const,
+                      order: 12,
+                      options: BUSINESS_LINE_FILTER_OPTIONS
+                  }
+              ]
+            : [])
     ]
 });
 

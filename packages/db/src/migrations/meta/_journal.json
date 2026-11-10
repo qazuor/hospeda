@@ -1335,120 +1335,57 @@
     {
       "idx": 190,
       "version": "7",
-      "when": 1793940991459,
-      "tag": "0190_hos1484_partner_resolve_application",
+      "when": 1793940932459,
+      "tag": "0190_loving_wolverine",
       "breakpoints": true
     },
     {
       "idx": 191,
       "version": "7",
-      "when": 1793941051459,
-      "tag": "0191_hos1551_billing_refund_permission",
+      "when": 1793940933459,
+      "tag": "0191_confused_violations",
       "breakpoints": true
     },
     {
       "idx": 192,
       "version": "7",
-      "when": 1793941111459,
-      "tag": "0192_hos1485_partner_application_resolution",
+      "when": 1793940934459,
+      "tag": "0192_chemical_thunderbolts",
       "breakpoints": true
     },
     {
       "idx": 193,
       "version": "7",
-      "when": 1793941171459,
-      "tag": "0193_hos1486_session_auth_method",
+      "when": 1794083748553,
+      "tag": "0193_fancy_arclight",
       "breakpoints": true
     },
     {
       "idx": 194,
       "version": "7",
-      "when": 1793941231459,
-      "tag": "0194_hos1541_manual_payment_permissions",
+      "when": 1794089397054,
+      "tag": "0194_hos_2060_listing_policies",
       "breakpoints": true
     },
     {
       "idx": 195,
       "version": "7",
-      "when": 1793941291459,
-      "tag": "0195_hos1487_partner_edit_own",
+      "when": 1794109298691,
+      "tag": "0195_hos_2061_venue_experience_amenity_attributes",
       "breakpoints": true
     },
     {
       "idx": 196,
       "version": "7",
-      "when": 1793941351459,
-      "tag": "0196_hos1488_partner_presence_moderation",
+      "when": 1794264300530,
+      "tag": "0196_hos_2095_ai_usage_consumer_user",
       "breakpoints": true
     },
     {
       "idx": 197,
       "version": "7",
-      "when": 1793941411459,
-      "tag": "0197_hos1542_manual_payment_reimputed_and_entry",
-      "breakpoints": true
-    },
-    {
-      "idx": 198,
-      "version": "7",
-      "when": 1793941471459,
-      "tag": "0198_hos1489_partner_configure_billing",
-      "breakpoints": true
-    },
-    {
-      "idx": 199,
-      "version": "7",
-      "when": 1793941531459,
-      "tag": "0199_hos1498_partner_empty_presence",
-      "breakpoints": true
-    },
-    {
-      "idx": 200,
-      "version": "7",
-      "when": 1793941591459,
-      "tag": "0200_large_bug",
-      "breakpoints": true
-    },
-    {
-      "idx": 201,
-      "version": "7",
-      "when": 1793999853188,
-      "tag": "0201_hos1515_cycle_price",
-      "breakpoints": true
-    },
-    {
-      "idx": 202,
-      "version": "7",
-      "when": 1794047311654,
-      "tag": "0202_vengeful_frog_thor",
-      "breakpoints": true
-    },
-    {
-      "idx": 203,
-      "version": "7",
-      "when": 1794118527366,
-      "tag": "0203_hos1593_addon_domain_event",
-      "breakpoints": true
-    },
-    {
-      "idx": 204,
-      "version": "7",
-      "when": 1794151149160,
-      "tag": "0204_hos1595_addon_version_publication",
-      "breakpoints": true
-    },
-    {
-      "idx": 205,
-      "version": "7",
-      "when": 1794236570899,
-      "tag": "0205_lucky_hiroim",
-      "breakpoints": true
-    },
-    {
-      "idx": 206,
-      "version": "7",
-      "when": 1794247095283,
-      "tag": "0206_hos1612_migrate_plan_permission",
+      "when": 1794274812894,
+      "tag": "0197_hos_2060_drop_legacy_policy_columns",
       "breakpoints": true
     }
   ]

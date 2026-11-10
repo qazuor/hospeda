@@ -8,7 +8,7 @@
         "en": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
         "pt": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "FamilySuitableIcon",
     "isBuiltin": true,
     "isFeatured": false,

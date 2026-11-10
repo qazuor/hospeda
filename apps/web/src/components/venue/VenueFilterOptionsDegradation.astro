@@ -1,0 +1,38 @@
+---
+/**
+ * @file VenueFilterOptionsDegradation.astro
+ * @description Marks a venue listing render as degraded when one of its filter
+ * catalogs could not be read.
+ *
+ * A venue listing whose filter-options, amenities or features catalog failed
+ * still renders: the page falls back to the active values and the sidebar loses
+ * the rest. That poorer sidebar is a degraded response, and it must not stay in
+ * the edge cache for the whole catalog TTL, because the transient failure would
+ * outlive itself (HOS-1870, AC:6:11).
+ *
+ * It is a component rather than a helper function because the static guard
+ * `cacheable-pages-demote-error-responses` follows RENDERED components, not
+ * functions a page calls; the call used to sit in a page-side wrapper, which
+ * both the guard and the test suite could not see (making it a no-op left every
+ * test green). Rendering this inside the layout puts the marker back on the
+ * path the guard measures, the same way `NextEventsSection` does for the
+ * homepage events fetch.
+ *
+ * It renders no markup on purpose: it exists only for the side effect. `failed`
+ * carries the combined footer of every catalog the sidebar depends on, so the
+ * healthy render (all reads succeeded) marks nothing.
+ */
+
+import { markResponseDegraded } from '@/lib/cache/response-cache';
+
+interface Props {
+    /** Whether at least one filter catalog the sidebar reads failed. */
+    readonly failed: boolean;
+}
+
+const { failed } = Astro.props;
+
+if (failed) {
+    markResponseDegraded({ locals: Astro.locals });
+}
+---

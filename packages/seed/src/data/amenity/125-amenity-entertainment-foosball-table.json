@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "125-amenity-entertainment-foosball-table",
+    "slug": "foosball_table",
+    "description": {
+        "es": "Mesa de metegol",
+        "en": "Foosball table",
+        "pt": "Mesa de pebolim"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "ENTERTAINMENT",
+    "icon": "BoardGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

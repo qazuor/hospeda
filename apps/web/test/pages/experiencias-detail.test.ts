@@ -128,9 +128,9 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('requirements={experience.requirements}');
         });
 
-        it('wires the cancellation policy (HOS-1047)', () => {
+        it('wires the cancellation policy from policies (HOS-1047 → HOS-2060)', () => {
             expect(src).toContain('ExperienceCancellationPolicy');
-            expect(src).toContain('cancellationPolicy={experience.cancellationPolicy}');
+            expect(src).toContain('cancellation={experience.policies.cancellation}');
         });
 
         it('wires the private-groups block with the contact-block guard (HOS-1056)', () => {
@@ -140,7 +140,7 @@ describe('experiencias/[slug].astro', () => {
             // degrade to plain text instead of linking to an element that is not
             // on the page — the HOS-363 failure mode, silent by construction.
             expect(src).toContain('ExperiencePrivateGroups');
-            expect(src).toContain('acceptsPrivateGroups={experience.acceptsPrivateGroups}');
+            expect(src).toContain('privateGroups={experience.policies.privateGroups}');
             expect(src).toContain('hasContactBlock={hasContactBlock}');
             expect(src).toContain('hasPublicContactChannel');
         });

@@ -1,7 +1,11 @@
 import { PermissionEnum } from '@repo/schemas';
 import type { ListingOperation } from './listing-operation';
 
-/** The closed 25 administrative actions from NUCLEO/08 §3 and V5.md §3.3. */
+/**
+ * The closed catalog of administrative actions: the 25 of NUCLEO/08 §3 and
+ * V5.md §3.3, plus `ACC_27`, a third party's business-line change on somebody
+ * else's listing (HOS-1875, DEC-FAC-034, owner decision of 2026-11-05).
+ */
 export const ADMINISTRATIVE_ACTIONS = [
     'ACC_1',
     'ACC_2',
@@ -27,7 +31,8 @@ export const ADMINISTRATIVE_ACTIONS = [
     'ACC_23',
     'ACC_24',
     'ACC_25',
-    'ACC_26'
+    'ACC_26',
+    'ACC_27'
 ] as const;
 
 /** An action in the closed NUCLEO/08 §3 catalog, as required by V5.md §3.3. */
@@ -37,6 +42,10 @@ export type AdministrativeAction = (typeof ADMINISTRATIVE_ACTIONS)[number];
  * Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3.
  * Each row is compared with the gate of the route that implements it in
  * `apps/api/test/routes/administrative-action-route-permissions.*.guard.test.ts` (HOS-1689).
+ *
+ * Consequence of `ACC_27` (HOS-1875): `VENUE_EDIT_ALL` is now an
+ * administrative permission, so a system actor can never hold it
+ * (`SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET` below). No seeded job declares it.
  */
 export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     Record<
@@ -125,6 +134,13 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     ACC_26: {
         permissions: [PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE],
         pendingOwnPermission: null
+    },
+    // A third party changes the business lines of somebody else's listing
+    // (HOS-1875, DEC-FAC-034): the same `venue.editAll` staff already holds.
+    // Action 15 still rejects `businessLines`; this action writes nothing else.
+    ACC_27: {
+        permissions: [PermissionEnum.VENUE_EDIT_ALL],
+        pendingOwnPermission: null
     }
 };
 
@@ -171,19 +187,27 @@ export const SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET: ReadonlySet<PermissionEnum> 
 ]);
 
 /** The administrative actions that act on another owner's listing through the V5 chain (step 3). */
-export type ListingAdministrativeAction = Extract<AdministrativeAction, 'ACC_15' | 'ACC_23'>;
+export type ListingAdministrativeAction = Extract<
+    AdministrativeAction,
+    'ACC_15' | 'ACC_23' | 'ACC_27'
+>;
 
 /**
  * The listing operations each listing administrative action admits in step 3:
  * action 15 edits content and nothing else — including creating a draft on
  * behalf of its owner (H12); action 23 purges at the owner's request and edits
- * nothing (AC:V8a:8, AC:V8a:9). Any other operation is FORBIDDEN.
+ * nothing (AC:V8a:8, AC:V8a:9); action 27 changes the listing's business-line
+ * classification and nothing else (HOS-1875, DEC-FAC-074). Any other operation
+ * is FORBIDDEN.
  */
 export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     Record<ListingAdministrativeAction, readonly ListingOperation[]>
 > = {
-    ACC_15: ['EDIT', 'CREATE'],
-    ACC_23: ['DELETE']
+    // Action 15 edits content, so it may read the content it edits (DEC-FAC-055, AC:3:7).
+    ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
+    ACC_23: ['DELETE'],
+    // Action 27 rewrites the classification and nothing else (HOS-1875).
+    ACC_27: ['EDIT']
 };
 
 /**

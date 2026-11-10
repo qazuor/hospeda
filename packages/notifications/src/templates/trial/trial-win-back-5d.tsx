@@ -3,7 +3,11 @@ import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/produc
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 6 of 9 — five days after expiry (HOS-1012 §4).
@@ -32,7 +36,7 @@ export function TrialWinBack5Days({
         >
             <Heading>Volvé a aparecer en Hospeda</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.

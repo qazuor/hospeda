@@ -33,12 +33,20 @@ import {
     type ExperienceSearch,
     ExperienceSearchSchema,
     LifecycleStatusEnum,
+    type ListingSectionId,
+    type ListingSectionState,
     ModerationStatusEnum,
     PermissionEnum,
     type PublicationStatusEnum,
-    ServiceErrorCode
+    REVIEW_RULES,
+    ServiceErrorCode,
+    validateReviewDimensions
 } from '@repo/schemas';
-import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import {
+    readListingAccessFacts,
+    resolveListingSectionPresence,
+    resolveResourceStep
+} from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -51,6 +59,7 @@ import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
+import { computeEffectiveReviewRating } from '../listing/review-effective-rating.js';
 import { ExperienceService } from './experience.service';
 
 // ---------------------------------------------------------------------------
@@ -67,6 +76,16 @@ export interface ExperienceReviewModerateInput {
     decision: ModerationStatusEnum.APPROVED | ModerationStatusEnum.REJECTED;
     /** Optional free-text reason for the decision. */
     reason?: string;
+}
+
+/**
+ * Per-request hook state for ExperienceReviewService lifecycle hooks.
+ * Carries the parent experience id across the before/after hook pair, because the
+ * after-hooks of soft delete, hard delete and restore receive only a count.
+ */
+interface ExperienceReviewHookState extends Record<string, unknown> {
+    /** Experience id of the review being deleted or restored, for rating recompute. */
+    affectedExperienceId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -281,6 +300,40 @@ export class ExperienceReviewService extends BaseCrudService<
         ) {
             throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
         }
+        if (data.rating) {
+            const facts = readListingAccessFacts({ entity: experience });
+            const requested = REVIEW_RULES.experience.dimensions.flatMap((dimension) => {
+                const bound = (dimension as { readonly boundSection?: string }).boundSection;
+                return bound ? [bound] : [];
+            });
+            const presence = resolveListingSectionPresence({
+                vertical: 'experience',
+                businessLines: facts?.businessLines ?? [],
+                requested
+            });
+            const sectionStates = new Map<
+                ListingSectionId<'experience'>,
+                { state: ListingSectionState }
+            >(
+                [...presence].map(([id, absent]) => [
+                    id as ListingSectionId<'experience'>,
+                    { state: absent ? 'absent' : 'available' }
+                ])
+            );
+            const validation = validateReviewDimensions({
+                vertical: 'experience',
+                sectionStates,
+                rating: data.rating
+            });
+            if (!validation.ok && validation.reason === 'DIMENSION_NOT_APPLICABLE') {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Review dimension is not applicable to this listing.',
+                    { field: validation.field, reason: validation.reason },
+                    validation.reason
+                );
+            }
+        }
         const existing = await this.model.findOne({
             userId: actor.id,
             experienceId: data.experienceId,
@@ -293,10 +346,19 @@ export class ExperienceReviewService extends BaseCrudService<
             );
         }
 
+        // Persist the per-review scalar rating (mean of the voted dimensions, else
+        // `overallRating`); the DB `average_rating` default of 0 is otherwise never
+        // overwritten on create (HOS-2083). Same computation as venue.
+        const averageRating = computeEffectiveReviewRating({
+            vertical: 'experience',
+            input: data
+        });
+
         // Force PENDING regardless of any caller-supplied value.
         return {
             userId: actor.id,
-            moderationState: ModerationStatusEnum.PENDING
+            moderationState: ModerationStatusEnum.PENDING,
+            averageRating
         } as Partial<ExperienceReview>;
     }
 
@@ -313,6 +375,89 @@ export class ExperienceReviewService extends BaseCrudService<
     ): Promise<ExperienceReview> {
         await this._recomputeListingRating(entity.experienceId, ctx);
         return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // Delete / restore: keep the denormalized rating in sync (HOS-2089)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Captures the parent experience id before the review is removed, since the
+     * matching after-hook only receives a row count.
+     */
+    private async _captureExperienceId(
+        id: string,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<void> {
+        const review = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState.affectedExperienceId = (review as Record<string, unknown> | null)
+                ?.experienceId as string | undefined;
+        }
+    }
+
+    protected override async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    protected override async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<string> {
+        await this._captureExperienceId(id, ctx);
+        return id;
+    }
+
+    protected override async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<{ count: number }> {
+        await this._recomputeAffectedListing(ctx);
+        return result;
+    }
+
+    /** Recomputes the rating of the experience captured by the matching before-hook, if any. */
+    private async _recomputeAffectedListing(
+        ctx: ServiceContext<ExperienceReviewHookState>
+    ): Promise<void> {
+        const experienceId = ctx.hookState?.affectedExperienceId;
+        if (experienceId) {
+            await this._recomputeListingRating(experienceId, ctx);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -563,7 +708,7 @@ export class ExperienceReviewService extends BaseCrudService<
      * Recomputes the experience listing's denormalized rating fields from all
      * APPROVED, non-deleted reviews using `ExperienceService.recomputeRating`.
      *
-     * Called after create, moderation decision, and soft-delete.
+     * Called after create, moderation decision, soft delete, hard delete and restore.
      *
      * Experience reviews use the ExperienceRatingSchema breakdown (food / service /
      * ambiance / value) — identical to venue. The identity mapping below
@@ -597,7 +742,8 @@ export class ExperienceReviewService extends BaseCrudService<
                     food: rating?.food ?? null,
                     service: rating?.service ?? null,
                     ambiance: rating?.ambiance ?? null,
-                    value: rating?.value ?? null
+                    value: rating?.value ?? null,
+                    overallRating: raw.overallRating as number | null | undefined
                 };
             });
 

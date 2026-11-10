@@ -46,6 +46,24 @@ export const aiUsage = pgTable(
         userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
 
         /**
+         * FK → users.id. The user who CONSUMED the call when that user is not
+         * the one who bears its cost (HOS-2095).
+         *
+         * Only the listing chat sets it today: the listing owner bears the cost
+         * (`userId`) and the tourist who asked is recorded here, so a single row
+         * advances BOTH the owner's quota (counted by `userId`) and the
+         * tourist's consumer quota (counted by `consumerUserId`). Before
+         * HOS-2095 the chat wrote a second, full-cost row keyed by the tourist,
+         * which doubled every chat's spend, tokens and call count.
+         *
+         * `null` for every other feature (the actor and the cost bearer are the
+         * same user). ON DELETE SET NULL like `userId` (append-only table).
+         */
+        consumerUserId: uuid('consumer_user_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+
+        /**
          * AI feature that was invoked.
          * Values: `text_improve` | `chat` | `search` | `support`
          */
@@ -101,6 +119,14 @@ export const aiUsage = pgTable(
             table.feature,
             table.createdAt.desc()
         ),
+
+        /**
+         * Consumer-quota index (HOS-2095): per-consumer, per-feature monthly
+         * count for the listing chat's tourist-side quota.
+         */
+        aiUsage_consumerUserId_feature_created_idx: index(
+            'aiUsage_consumerUserId_feature_created_idx'
+        ).on(table.consumerUserId, table.feature, table.createdAt.desc()),
 
         /**
          * Cost ceiling tracking: global / per-feature accumulated spend.

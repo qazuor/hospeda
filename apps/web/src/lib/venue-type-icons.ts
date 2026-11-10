@@ -60,6 +60,8 @@ export const VENUE_TYPE_ICONS: Readonly<Record<VenueTypeEnum, ComponentType<Icon
     [VenueTypeEnum.CAFE]: CoffeeIcon,
     [VenueTypeEnum.PARRILLA]: TraditionalGrillIcon,
     [VenueTypeEnum.CERVECERIA]: TraditionalPubIcon,
+    [VenueTypeEnum.PUB]: TraditionalPubIcon,
+    [VenueTypeEnum.BOLICHE]: BarServiceIcon,
     [VenueTypeEnum.HELADERIA]: SnowflakeIcon,
     [VenueTypeEnum.PANADERIA]: TraditionalBakeryIcon,
     [VenueTypeEnum.ROTISERIA]: PackageIcon,

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "172-amenity-work-friendly-desk",
+    "slug": "desk",
+    "description": {
+        "es": "Escritorio para trabajar",
+        "en": "Desk for working",
+        "pt": "Escrivaninha para trabalhar"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "WORK_FRIENDLY",
+    "icon": "CoworkingSpaceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

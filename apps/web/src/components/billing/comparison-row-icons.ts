@@ -25,7 +25,6 @@ import {
     EditIcon,
     FavoriteIcon,
     FileTextIcon,
-    ForkKnifeIcon,
     GlobeIcon,
     HomeIcon,
     type IconProps,
@@ -42,6 +41,7 @@ import {
     SparkleIcon,
     StarIcon,
     TrendingUpIcon,
+    VenueIcon,
     VideoIcon,
     WhatsappIcon
 } from '@repo/icons';
@@ -92,7 +92,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     // so an unmapped row degrades silently — which is why the two venue/experience
     // tables would otherwise have rendered ONE iconed row among fifteen, beside
     // owner and tourist tables where every row has one.
-    maxVenues: ForkKnifeIcon,
+    maxVenues: VenueIcon,
     publishVenue: HomeIcon,
     editVenueInfo: EditIcon,
     venueMenu: FileTextIcon,

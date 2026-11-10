@@ -100,4 +100,43 @@ describe('trial campaign outbox renderers', () => {
             })
         ).toThrow();
     });
+    describe('HOS-2078 copy without a known plan or name', () => {
+        const dated = [
+            [NotificationType.TRIAL_ENDING_10D, 'PRE_EXPIRY', 10],
+            [NotificationType.TRIAL_ENDING_5D, 'PRE_EXPIRY', 5],
+            [NotificationType.TRIAL_ENDING_2D, 'PRE_EXPIRY', 2],
+            [NotificationType.TRIAL_ENDING_TODAY, 'PRE_EXPIRY', 0],
+            [NotificationType.TRIAL_WIN_BACK_1D, 'RECOVERY', 1]
+        ] as const;
+
+        it.each(dated)('%s never invents a plan name', async (template, campaign, offset) => {
+            const result = await renderers[template]!({
+                row: campaignRow(template, campaign, offset, '2026-12-07')
+            });
+            const html = renderToStaticMarkup(result.react);
+            expect(html).not.toContain('tu plan de prueba');
+            expect(html).not.toContain('del plan');
+        });
+
+        it('renders the end date sentence without "del plan" in the T-10 email', async () => {
+            const result = await renderers[NotificationType.TRIAL_ENDING_10D]!({
+                row: campaignRow(NotificationType.TRIAL_ENDING_10D, 'PRE_EXPIRY', 10, '2026-11-27')
+            });
+            const html = renderToStaticMarkup(result.react);
+            expect(html).toContain('Tu prueba gratis termina el 7 de diciembre de 2026');
+        });
+
+        it.each(
+            types
+        )('%s greets a nameless account as "Hola," not "Hola Hola,"', async (template) => {
+            const campaign = template.includes('WIN_BACK') ? 'RECOVERY' : 'PRE_EXPIRY';
+            const base = campaignRow(template, campaign, 5, '2026-12-07');
+            const result = await renderers[template]!({
+                row: { ...base, payload: { ...(base.payload as object), recipientName: null } }
+            });
+            const html = renderToStaticMarkup(result.react);
+            expect(html).not.toContain('Hola Hola');
+            expect(html).toContain('Hola,');
+        });
+    });
 });

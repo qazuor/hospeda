@@ -326,6 +326,24 @@ jobs:
       # GUARD:G-R3-C (HOS-1463, AC:V5:21). Its own step, like every guard here.
       - name: Check every domain operation declares whether it passes step 5 (GUARD:G-R3-C)
         run: pnpm check:step5-declared
+      # GUARD:G-FAC-06 (HOS-1836, AC:3:2). Every inventoried content route declares its section and intent through the chain.
+      - name: Check content routes declare listing sections (GUARD:G-FAC-06)
+        run: pnpm check:content-routes-declare-section
+      # GUARD:G-FAC-04 (HOS-1838). Section and trait gates use catalog keys.
+      - name: Check no section key literals (GUARD:G-FAC-04)
+        run: pnpm check:no-section-key-literals
+      # GUARD:G-FAC-03 (HOS-1844). Business lines are decided only by the resolver and read only by inventoried modules.
+      - name: Check business line decisions and readers (GUARD:G-FAC-03)
+        run: pnpm check:business-line-decisions
+      # GUARD:G-FAC-08 (HOS-1853, leaf 5.1). The accommodation editor's manual
+      # section list is frozen and equal to the catalog until child 8 migrates it.
+      - name: Check the accommodation editor section list is frozen (GUARD:G-FAC-08)
+        run: pnpm check:accommodation-editor-frozen
+      # GUARD:G-FAC-05 (HOS-1860, leaf 5.8). The closed list of files the
+      # catalog-derived editor replaces carries no dispatch by vertical, section
+      # id, listing type or review dimension.
+      - name: Check no dispatch by vertical or section in the listing editor (GUARD:G-FAC-05)
+        run: pnpm check:no-listing-dispatch
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.
@@ -358,9 +376,14 @@ jobs:
       # GUARD:G-R9 (HOS-1476, AC:V6:14). Its own step, like every guard here.
       - name: Check every table hanging from a listing has a PURGED row (GUARD:G-R9)
         run: pnpm check:purged-closed-list
+      # GUARD:G-FAC-10 (HOS-1847, AC:4:9). Its own step, like every guard here.
+      - name: Check the purge covers every content column of a listing (GUARD:G-FAC-10)
+        run: pnpm check:purge-content-columns
       # GUARD:G-R6-B (HOS-1476, AC:V6:15). Its own step, like every guard here.
       - name: Check the closed lists of listing.inactive_since (GUARD:G-R6-B)
         run: pnpm check:listing-clock
+      - name: Check business lines use the single validator (GUARD:G-FAC-09)
+        run: pnpm check:business-lines-single-validator
       # AC:V6:25 (HOS-1477). Its own step, like every guard here.
       - name: Check no listing delete or restore door outside PB12 and action 23 (AC:V6:25)
         run: pnpm check:listing-delete-doors
@@ -406,6 +429,11 @@ jobs:
       # (catalog enum members and catalog accessor arguments) is in the key catalog.
       - name: Check every key used in code is in the key catalog (GUARD:G3)
         run: pnpm check:catalog-key-usage
+      # HOS-2059 G-5. Its own step, like every guard here. No slug exists as both
+      # an amenity and a feature in the seed catalog (amenity = what the guest
+      # USES, feature = what the place IS).
+      - name: Check no catalog slug is both an amenity and a feature (HOS-2059)
+        run: pnpm check:catalog-slug-single-table
       # GUARD:G1 (HOS-1431, AC:V1:5). Its own step. Retires the HOS-1079 shell
       # guard on binary vertical ternaries, whose rule it widens.
       - name: Check every vertical carries its Axis-2 item and no binary vertical ternary (GUARD:G1)

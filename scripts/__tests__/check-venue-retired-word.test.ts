@@ -43,6 +43,28 @@ function fixture(
 }
 
 describe('G-FAC-R1 retired venue word', () => {
+    it('keeps the home source and its title key out of exemption a', () => {
+        const config = JSON.parse(
+            readFileSync(join(ROOT, 'scripts/guards/venue-retired-word.json'), 'utf8')
+        );
+        expect(config.exemptions.a.files).not.toHaveProperty(
+            'apps/web/src/pages/[lang]/index.astro'
+        );
+        expect(
+            Object.keys(config.exemptions.a.keys).some((key) =>
+                key.includes('/home.json#categoryTiles')
+            )
+        ).toBe(false);
+    });
+
+    it('rejects the retired identifier in the home source without an exemption', () => {
+        const oldWord = ['gastro', 'nomy'].join('');
+        const { result } = fixture({
+            'apps/web/src/pages/[lang]/index.astro': `const x = EventCategoryEnum.${oldWord.toUpperCase()};`
+        });
+        expect(result.violations.some(({ rule }) => rule === 1)).toBe(true);
+    });
+
     it('excludes the guard, its test, and its exemption inventory from the scan', () => {
         const { result } = fixture({
             'scripts/check-venue-retired-word.ts': oldWord,
@@ -285,13 +307,20 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(104);
+        expect(history.length).toBe(107);
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(
             'packages/seed/test/data-migrations/whats-new-seen-ids-rename.integration.test.ts'
         );
+        expect(history).toContain(
+            'packages/seed/test/data-migrations/0134-hos1864-chat-venue-neutral-prompt.test.ts'
+        );
         expect(history).toContain('packages/seed/test/venue-cuisine-features.test.ts');
+        expect(history).toContain('packages/seed/test/venue-night-catalog-items.test.ts');
+        expect(history).toContain(
+            'packages/seed/test/data-migrations/hos1867-night-catalog-items.integration.test.ts'
+        );
         expect(history).toContain(
             'packages/seed/test/data-migrations/hos1943-price-on-request-null.integration.test.ts'
         );

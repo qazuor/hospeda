@@ -137,18 +137,21 @@
     },
     "extraInfo": {
         "capacity": 18,
-        "minNights": 1,
-        "maxNights": 10,
         "bedrooms": 4,
         "beds": 16,
         "bathrooms": 3,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina comunitaria equipada",
             "Barrio tranquilo",
             "Cerca del Carnaval de Gualeguaychú"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 10
     },
     "seo": {
         "title": "Sueño Calmado Hostel - Económico en Gualeguaychú",
@@ -168,7 +171,6 @@
         "036-feature-shared_space",
         "015-feature-ideal_for_groups",
         "006-feature-central_area",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

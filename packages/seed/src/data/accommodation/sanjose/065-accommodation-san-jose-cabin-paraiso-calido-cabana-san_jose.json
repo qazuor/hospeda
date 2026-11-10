@@ -139,18 +139,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cabaña acogedora",
             "Parrilla exterior",
             "Ideal para familias pequeñas",
             "Cerca del Parque Nacional El Palmar"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Paraíso Cálido - Cabaña acogedora en San José | Cerca El",
@@ -170,7 +173,6 @@
         "030-feature-full_rental",
         "004-feature-natural_environment",
         "008-feature-silent_environment",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

@@ -105,18 +105,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 3,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cabaña acogedora",
             "Parrilla exterior",
             "Ideal para parejas o familias pequeñas",
             "Cerca del río y del Frigorífico Liebig"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Retiro Relajante - Cabaña en Liebig | Río Uruguay y",
@@ -138,7 +141,6 @@
         "008-feature-silent_environment",
         "005-feature-rural_area",
         "019-feature-rustic_style",
-        "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
     "amenityIds": [

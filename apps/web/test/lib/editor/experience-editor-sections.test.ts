@@ -10,14 +10,15 @@
 import { describe, expect, it } from 'vitest';
 import { buildEditorHubUrl, findEditorSectionBySlug } from '@/lib/editor/editor-registry';
 import {
-    buildExperienceEditorRegistry,
-    buildExperienceEditorSections
-} from '@/lib/editor/experience-editor-sections';
-import { buildListingEditorRegistry } from '@/lib/editor/listing-editor-registry';
-import { buildVenueEditorSections } from '@/lib/editor/venue-editor-sections';
+    buildListingEditorRegistry,
+    buildListingEditorSections
+} from '@/lib/editor/listing-editor-registry';
 
-const venue = buildVenueEditorSections();
-const experience = buildExperienceEditorSections();
+/** Empty state map: every catalog section is present. */
+const sectionStates = {};
+
+const venue = buildListingEditorSections({ vertical: 'venue', sectionStates });
+const experience = buildListingEditorSections({ vertical: 'experience', sectionStates });
 
 describe('buildExperienceEditorSections: the vertical split', () => {
     it('should give an experience the two sections only it has', () => {
@@ -41,7 +42,7 @@ describe('buildExperienceEditorSections: the vertical split', () => {
     });
 
     it('should give an experience NONE of the venue-only sections', () => {
-        for (const id of ['menu', 'dailySpecials', 'venueEvents']) {
+        for (const id of ['menu', 'dailySpecials', 'venueEvents', 'nightInfo']) {
             expect(experience.map((section) => section.id)).not.toContain(id);
         }
     });
@@ -49,11 +50,12 @@ describe('buildExperienceEditorSections: the vertical split', () => {
     it('should make the venue-only slugs unresolvable on an experience registry', () => {
         // Absent, not hidden: otherwise the URL stays reachable by typing it and
         // renders a panel whose every write the API refuses.
-        const registry = buildExperienceEditorRegistry();
+        const registry = buildListingEditorRegistry({ vertical: 'experience', sectionStates });
 
         expect(findEditorSectionBySlug({ registry, slug: 'carta' })).toBeUndefined();
         expect(findEditorSectionBySlug({ registry, slug: 'eventos' })).toBeUndefined();
         expect(findEditorSectionBySlug({ registry, slug: 'menu-del-dia' })).toBeUndefined();
+        expect(findEditorSectionBySlug({ registry, slug: 'de-noche' })).toBeUndefined();
     });
 });
 
@@ -62,7 +64,7 @@ describe('buildExperienceEditorRegistry: paths', () => {
         expect(
             buildEditorHubUrl({
                 locale: 'es',
-                registry: buildExperienceEditorRegistry(),
+                registry: buildListingEditorRegistry({ vertical: 'experience', sectionStates }),
                 entityId: 'abc'
             })
         ).toBe('/es/mi-cuenta/comercio/experience/abc/editar/');
@@ -71,7 +73,11 @@ describe('buildExperienceEditorRegistry: paths', () => {
 
 describe('buildListingEditorRegistry: dispatch by vertical', () => {
     it('should return the registry that matches the vertical', () => {
-        expect(buildListingEditorRegistry({ vertical: 'experience' }).sections).toEqual(experience);
-        expect(buildListingEditorRegistry({ vertical: 'venue' }).sections).toEqual(venue);
+        expect(
+            buildListingEditorRegistry({ vertical: 'experience', sectionStates }).sections
+        ).toEqual(experience);
+        expect(buildListingEditorRegistry({ vertical: 'venue', sectionStates }).sections).toEqual(
+            venue
+        );
     });
 });

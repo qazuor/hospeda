@@ -5,8 +5,8 @@ import { VenueTypeEnumSchema } from '../../src/enums/venue-type.schema.js';
 
 // ============================================================================
 // venueTypeEnum — SPEC-239 T-003
-// 9 values: RESTAURANT, BAR, CAFE, PARRILLA, CERVECERIA, HELADERIA, PANADERIA,
-//           ROTISERIA, FOOD_TRUCK
+// 11 values: RESTAURANT, BAR, CAFE, PARRILLA, CERVECERIA, HELADERIA, PANADERIA,
+//            ROTISERIA, FOOD_TRUCK, PUB, BOLICHE
 // ============================================================================
 
 describe('VenueTypeEnum', () => {
@@ -47,13 +47,17 @@ describe('VenueTypeEnum', () => {
             expect(VenueTypeEnum.FOOD_TRUCK).toBe('FOOD_TRUCK');
         });
 
-        it('should have exactly 9 values', () => {
-            expect(Object.values(VenueTypeEnum)).toHaveLength(9);
+        it('should have exactly 11 values', () => {
+            expect(Object.values(VenueTypeEnum)).toHaveLength(11);
+        });
+
+        it('adds PUB and BOLICHE as the final values in database order', () => {
+            expect(Object.values(VenueTypeEnum).slice(-2)).toEqual(['PUB', 'BOLICHE']);
         });
     });
 
     describe('VenueTypeEnumSchema', () => {
-        it('should accept all 9 defined values', () => {
+        it('should accept all 11 defined values', () => {
             // Arrange
             const values = Object.values(VenueTypeEnum);
             // Act / Assert

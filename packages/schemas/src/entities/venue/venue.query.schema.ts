@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { VenueSchema } from './venue.schema.js';
@@ -73,6 +74,8 @@ export const VenueSearchSchema = BaseSearchSchema.extend({
     destinationId: z.string().uuid().optional(),
     /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
+    /** Filter by one business line (internal catalog value, English). */
+    businessLine: z.enum(VENUE_BUSINESS_LINE_VALUES).optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter listings that have all these amenity UUIDs. */
@@ -101,6 +104,32 @@ export const VenueSearchSchema = BaseSearchSchema.extend({
 export type VenueSearch = z.infer<typeof VenueSearchSchema>;
 /** Alias for {@link VenueSearch}. */
 export type VenueSearchInput = VenueSearch;
+
+/**
+ * Query for public venue filter options. An absent business line requests
+ * options across all published venue listings.
+ */
+export const VenuePublicFilterOptionsQuerySchema = z
+    .object({ businessLine: z.enum(VENUE_BUSINESS_LINE_VALUES).optional() })
+    .strict();
+
+/** TypeScript type for {@link VenuePublicFilterOptionsQuerySchema}. */
+export type VenuePublicFilterOptionsQuery = z.infer<typeof VenuePublicFilterOptionsQuerySchema>;
+
+/**
+ * Available public venue filters. Each list contains values with at least one
+ * non-deleted PUBLISHED listing in the requested collection. The response has
+ * no counts. Amenity and feature IDs identify relation rows' catalog entries;
+ * consumers cross them with the catalog they display.
+ */
+export const VenuePublicFilterOptionsSchema = z.object({
+    types: z.array(VenueTypeEnumSchema),
+    amenityIds: z.array(z.string().uuid()),
+    featureIds: z.array(z.string().uuid())
+});
+
+/** TypeScript type for {@link VenuePublicFilterOptionsSchema}. */
+export type VenuePublicFilterOptions = z.infer<typeof VenuePublicFilterOptionsSchema>;
 
 /**
  * Standard venue search result schema.

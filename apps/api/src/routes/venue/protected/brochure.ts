@@ -53,6 +53,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -88,7 +89,11 @@ export async function handleGetVenueBrochure(
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
-    const parsed = VenueBrochureSourceSchema.safeParse(entity);
+    const [projectedEntity] = await projectPublicListings({
+        vertical: 'venue',
+        listings: [entity]
+    });
+    const parsed = VenueBrochureSourceSchema.safeParse(projectedEntity);
     if (!parsed.success) {
         // Unreachable for a row that passed its own write validation: every
         // field below the three identity ones is optional here. Loud rather

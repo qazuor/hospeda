@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "152-amenity-outdoors-trestle-tables",
+    "slug": "trestle_tables",
+    "description": {
+        "es": "Tablones para comer al aire libre",
+        "en": "Trestle tables for eating outdoors",
+        "pt": "Mesas de cavalete para comer ao ar livre"
+    },
+    "applicableVerticals": ["accommodation"],
+    "type": "OUTDOORS",
+    "icon": "OutdoorFurnitureIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

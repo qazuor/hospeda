@@ -2444,6 +2444,12 @@
         "venueType": {
             "invalid": "The venue type is not valid"
         },
+        "venueEntryKind": {
+            "invalid": "The entry kind is not valid"
+        },
+        "venueDressCode": {
+            "invalid": "The dress code is not valid"
+        },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"
         },
@@ -3279,6 +3285,16 @@
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
     "venue": {
+        "businessLines": {
+            "EMPTY": "Select at least one business line",
+            "DUPLICATE": "Business lines cannot be repeated",
+            "NOT_IN_VERTICAL": "This business line does not belong to this vertical",
+            "NOT_ALLOWED_FOR_TYPE": "This venue type does not allow that business line",
+            "MAX_EXCEEDED": "Select fewer business lines",
+            "EXCLUDED_PAIR": "These business lines cannot be combined",
+            "invalid": "The business line is invalid",
+            "invalidType": "Business lines must be a list"
+        },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
@@ -3417,6 +3433,24 @@
         "menuUrl": {
             "httpsRequired": "La URL del menú debe usar HTTPS",
             "invalid": "La URL del menú no es válida"
+        },
+        "minAge": {
+            "int": "The minimum age must be an integer",
+            "min": "The minimum age must be at least 13",
+            "max": "The minimum age cannot exceed 30"
+        },
+        "entryPriceFrom": {
+            "int": "The entry price must be an integer number of cents",
+            "nonnegative": "The entry price cannot be negative"
+        },
+        "entryPriceUpdatedAt": {
+            "invalid": "The price update date is not valid"
+        },
+        "entryNote": {
+            "tooLong": "The entry note cannot exceed 200 characters"
+        },
+        "dressCodeNote": {
+            "tooLong": "The dress code note cannot exceed 200 characters"
         },
         "review": {
             "content": {
@@ -4217,6 +4251,13 @@
             "decision": {
                 "invalid": "Decision must be APPROVED or REJECTED"
             }
+        },
+        "dimension": {
+            "type": "The rating must be a number",
+            "integer": "The rating must be a whole number",
+            "min": "The rating must be at least 1",
+            "max": "The rating cannot exceed 5",
+            "unknown": "The review contains unknown dimensions"
         }
     },
     "search": {
@@ -5158,6 +5199,30 @@
     "partnerStats": {
         "windowDays": {
             "unsupported": "The requested day window is not available"
+        }
+    },
+    "listingPolicies": {
+        "paymentMethods": {
+            "invalid": "The payment method is not valid",
+            "invalidType": "Payment methods must be a list",
+            "duplicate": "Each payment method can be listed only once"
+        },
+        "pets": {
+            "admission": {
+                "invalid": "The pets policy is not valid"
+            }
+        },
+        "note": {
+            "tooLong": "The note cannot exceed 200 characters"
+        },
+        "smokingAllowed": {
+            "invalid": "The smoking policy is not valid"
+        },
+        "reservations": {
+            "invalid": "The reservations policy is not valid"
+        },
+        "maxNights": {
+            "belowMinNights": "The maximum nights cannot be lower than the minimum"
         }
     },
     "partnerApplication": {

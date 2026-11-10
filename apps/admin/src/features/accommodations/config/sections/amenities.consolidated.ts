@@ -57,7 +57,8 @@ export const createAmenitiesConsolidatedSection = (
                 typeConfig: {
                     multiple: true,
                     searchMode: 'client',
-                    clearable: true
+                    clearable: true,
+                    applicableVertical: 'accommodation'
                 }
             },
             // ----------------------------------------------------------------
@@ -79,7 +80,8 @@ export const createAmenitiesConsolidatedSection = (
                 typeConfig: {
                     multiple: true,
                     searchMode: 'client',
-                    clearable: true
+                    clearable: true,
+                    applicableVertical: 'accommodation'
                 }
             },
             // ----------------------------------------------------------------

@@ -54,7 +54,9 @@ async function fetchAdminAmenities(accommodationId: string) {
             deletedById: amenities.deletedById,
             // HOS-2058: relation attributes; NULL = not declared.
             scope: rAccommodationAmenity.scope,
-            availability: rAccommodationAmenity.availability
+            availability: rAccommodationAmenity.availability,
+            // HOS-2084: "Con cargo extra" flag.
+            isOptional: rAccommodationAmenity.isOptional
         })
         .from(rAccommodationAmenity)
         .innerJoin(amenities, eq(rAccommodationAmenity.amenityId, amenities.id))

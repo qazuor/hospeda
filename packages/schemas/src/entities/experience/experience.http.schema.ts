@@ -28,6 +28,40 @@ export const ExperienceSearchHttpSchema = BaseHttpSearchSchema.extend({
     maxRating: z.coerce.number().min(0).max(5).optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
+    /**
+     * Filter by required amenity UUIDs (the listing must carry ALL of them).
+     * Accepts repeated query params or comma-separated values, the same shape
+     * the venue and accommodation listings use (HOS-2085).
+     */
+    amenities: z
+        .union([
+            z.array(z.string().uuid()),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
+    /** Filter by required feature UUIDs (the listing must carry ALL of them). */
+    features: z
+        .union([
+            z.array(z.string().uuid()),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
     /** Opt-in projection: include amenities per result. */
     includeAmenities: createBooleanQueryParam('Include experience amenities in response'),
     /** Opt-in projection: include features per result. */
@@ -168,9 +202,13 @@ export const httpToDomainExperienceSearch = (
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
     includeAmenities: httpParams.includeAmenities,
-    includeFeatures: httpParams.includeFeatures
-    // Note: amenities, features, createdAfter, createdBefore exist in domain
-    // but not in HTTP schema, so they are not mapped here.
+    includeFeatures: httpParams.includeFeatures,
+    // Catalog-membership filters (HOS-2085): intersection semantics, applied
+    // end to end by `ExperienceService._executeSearch` / `_executeCount`.
+    amenities: httpParams.amenities,
+    features: httpParams.features
+    // Note: createdAfter, createdBefore exist in domain but not in HTTP schema,
+    // so they are not mapped here.
 });
 
 /**
@@ -210,8 +248,8 @@ export const httpToDomainExperienceCreate = (
     // `z.infer` makes them non-optional on the output side), and because "no
     // items" must keep exactly one representation all the way down.
     //
-    // `durationMinutes` and `cancellationPolicy` are absent on purpose: both
-    // are `.nullish()`, so an omitted key already means "not declared".
+    // `durationMinutes` is absent on purpose: it is `.nullish()`, so an omitted
+    // key already means "not declared".
     //
     // HOS-1049: `meetingPointDirections` joins them for the same reason plus
     // one of its own — it is the one entitlement-gated field on this entity,
@@ -220,7 +258,6 @@ export const httpToDomainExperienceCreate = (
     whatToBring: [],
     requirements: [],
     meetingPointDirections: [],
-    acceptsPrivateGroups: false,
 
     // Contact info mapping from flat HTTP fields
     ...(httpData.phone !== undefined ||

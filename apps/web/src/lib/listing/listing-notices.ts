@@ -15,6 +15,7 @@ import type { PublishVerticalSlug } from '../api/endpoints-protected';
 import type { ApiResult } from '../api/types';
 import { formatDate } from '../format-utils';
 import type { PluralTranslationFn, SupportedLocale, TranslationFn } from '../i18n';
+import { buildBusinessLinesChangedView } from './business-lines-notice-view';
 
 /** The market's time zone: instants are dated as the owner lives them. */
 const SITE_TIME_ZONE = 'America/Argentina/Buenos_Aires';
@@ -44,7 +45,7 @@ export interface ListingNoticeView {
 }
 
 /** Translation context shared by every view builder. */
-interface CopyContext {
+export interface CopyContext {
     readonly locale: SupportedLocale;
     readonly t: TranslationFn;
     readonly tPlural: PluralTranslationFn;
@@ -293,6 +294,8 @@ const NOTICE_VIEW: NoticeViewBuilders = {
             reportFixed: null
         };
     },
+    // HOS-1875: a third party changed the listing's business lines.
+    BUSINESS_LINES_CHANGED: (notice, ctx) => buildBusinessLinesChangedView({ notice, ctx }),
     // Rows 8 and 9: the criterion, what was done (no window) and the recurring boosts.
     SURPLUS: (_notice, ctx) => {
         const { t } = ctx;

@@ -106,18 +106,21 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 1,
-        "maxNights": 15,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Apartamento muy luminoso",
             "Ubicación conveniente",
             "Ideal para parejas o viajeros solos",
             "Edificio con ascensor"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 15
     },
     "seo": {
         "title": "Refugio Soleado - Apartamento luminoso en Concepción del",
@@ -132,12 +135,7 @@
             "equipado"
         ]
     },
-    "featureIds": [
-        "030-feature-full_rental",
-        "043-feature-internal_parking",
-        "025-feature-wifi_full_property",
-        "044-feature-tourist_info_available"
-    ],
+    "featureIds": ["030-feature-full_rental", "044-feature-tourist_info_available"],
     "amenityIds": [
         "001-amenity-connectivity-wifi",
         "002-amenity-climate-control-air-conditioning",
@@ -155,7 +153,8 @@
         "038-amenity-accessibility-elevator",
         "040-amenity-safety-smoke-detector",
         "042-amenity-safety-first-aid-kit",
-        "043-amenity-safety-fire-extinguisher"
+        "043-amenity-safety-fire-extinguisher",
+        "017-amenity-general-appliances-parking"
     ],
     "faqs": [],
     "iaData": [],

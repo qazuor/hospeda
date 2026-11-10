@@ -35,6 +35,25 @@ describe('VenueAdminSearchSchema', () => {
         expect(() => VenueAdminSearchSchema.parse({ type: 'TAQUERIA' })).toThrow(ZodError);
     });
 
+    // HOS-1787 leaf 7.1 — the business-line filter is one catalog line.
+    it('should accept a business line from the catalog', () => {
+        const result = VenueAdminSearchSchema.parse({ businessLine: 'nightlife' });
+        expect(result.businessLine).toBe('nightlife');
+    });
+
+    it('should reject a business line from another vertical', () => {
+        expect(() => VenueAdminSearchSchema.parse({ businessLine: 'standard' })).toThrow(ZodError);
+    });
+
+    it('should reject an unknown business line value', () => {
+        expect(() => VenueAdminSearchSchema.parse({ businessLine: 'x' })).toThrow(ZodError);
+    });
+
+    it('should leave businessLine absent when it is not provided', () => {
+        const result = VenueAdminSearchSchema.parse({});
+        expect(result.businessLine).toBeUndefined();
+    });
+
     it('should reject invalid destinationId', () => {
         expect(() => VenueAdminSearchSchema.parse({ destinationId: 'not-a-uuid' })).toThrow(
             ZodError

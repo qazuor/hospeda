@@ -26,6 +26,7 @@ export const prerender = false;
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'preguntas' });
 
 if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
 
 const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);

@@ -5,7 +5,12 @@ import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 2 of 9 — five days before the trial ends (HOS-1012 §4).
@@ -25,17 +30,22 @@ export function TrialEnding5Days({
     productDomain,
     verticals
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
     const formattedEndDate = formatDate({ dateString: trialEndDate });
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
-            previewText={`Tu prueba del plan ${planName} termina en 5 días`}
+            previewText={
+                plan
+                    ? `Tu prueba del plan ${plan} termina en 5 días`
+                    : 'Tu prueba termina en 5 días'
+            }
             showUnsubscribe={true}
         >
             <Heading>Te quedan 5 días de prueba</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.
@@ -48,10 +58,12 @@ export function TrialEnding5Days({
             </Text>
 
             <Section style={styles.warningBox}>
-                <InfoRow
-                    label="Plan de prueba"
-                    value={planName}
-                />
+                {plan ? (
+                    <InfoRow
+                        label="Plan de prueba"
+                        value={plan}
+                    />
+                ) : null}
                 <InfoRow
                     label="Último día"
                     value={formattedEndDate}

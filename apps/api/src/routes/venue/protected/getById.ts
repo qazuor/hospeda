@@ -74,7 +74,9 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
         // Seed the owner editor's amenity/feature multi-select: the protected
         // schema carries these read-back IDs, which the entity projection does
         // not include (junction relations live in separate tables).
-        const { amenityIds, featureIds } = await venueService.loadJunctionIds(entity.id);
-        return { ...entity, amenityIds, featureIds };
+        const { amenityIds, featureIds, amenityAttributes } = await venueService.loadJunctionIds(
+            entity.id
+        );
+        return { ...entity, amenityIds, featureIds, amenityAttributes };
     }
 });

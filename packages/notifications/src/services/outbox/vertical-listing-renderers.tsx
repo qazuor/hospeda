@@ -2,9 +2,11 @@ import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import { formatDate } from '../../templates/utils/index.js';
 import {
+    LISTING_BUSINESS_LINES_CHANGED_SUBJECT,
     LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT,
     LISTING_FIX_REPORTED_SUBJECT,
     LISTING_RETURNED_TO_COPY,
+    ListingBusinessLinesChanged,
     ListingContentEditedBySupport,
     ListingFixReported,
     ListingFixRequested,
@@ -112,6 +114,19 @@ function readRecurringListingAddons(
     return value as readonly { readonly name: string }[];
 }
 
+/**
+ * Reads one of the four already-translated label lists of the business-lines
+ * change notice. Absent is an empty list; any other shape is refused.
+ */
+function readLabels(data: Record<string, unknown>, key: string): readonly string[] {
+    const value = data[key];
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || !value.every((label) => typeof label === 'string')) {
+        throw new TypeError(`La lista «${key}» del aviso de rubros no es válida`);
+    }
+    return value as string[];
+}
+
 function readReturnedTo(value: unknown): ListingReturnedTo {
     if (typeof value !== 'string' || !Object.hasOwn(LISTING_RETURNED_TO_COPY, value)) {
         throw new TypeError('El aviso de ficha no dice a dónde volvió la ficha');
@@ -193,6 +208,39 @@ export function createVerticalListingRenderers(input: {
     }
 
     return {
+        'verticals.listing-business-lines-changed': async ({ row }) => {
+            const data = objectPayload(row);
+            const vertical = readVertical(data);
+            const listingId = readText(data, 'listingId');
+            const changedAt = readIsoInstant(data, 'changedAt', 'cambio de rubros');
+            const addedLines = readLabels(data, 'addedLines');
+            const removedLines = readLabels(data, 'removedLines');
+            const shownSections = readLabels(data, 'shownSections');
+            const hiddenSections = readLabels(data, 'hiddenSections');
+            const carriedName =
+                typeof data.listingName === 'string' && data.listingName.trim() !== ''
+                    ? data.listingName
+                    : null;
+            const name = carriedName ?? (await listingName({ ...data, vertical, listingId }));
+            const changedDate = formatDate({
+                dateString: getLocalDateString({ instant: new Date(changedAt) })
+            });
+            return {
+                subject: LISTING_BUSINESS_LINES_CHANGED_SUBJECT,
+                react: (
+                    <ListingBusinessLinesChanged
+                        listingName={name}
+                        changedDate={changedDate}
+                        addedLines={addedLines}
+                        removedLines={removedLines}
+                        shownSections={shownSections}
+                        hiddenSections={hiddenSections}
+                        accountUrl={accountUrl(vertical)}
+                        contactUrl={`${site}/es/contacto/`}
+                    />
+                )
+            };
+        },
         'verticals.listing-content-edited-by-support': async ({ row }) => {
             const data = objectPayload(row);
             const vertical = readVertical(data);

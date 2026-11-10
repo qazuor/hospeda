@@ -22,6 +22,7 @@ describe('hasActiveVenueListingFilters', () => {
                 priceRange: undefined,
                 isFeatured: undefined,
                 minRating: undefined,
+                amenities: undefined,
                 features: undefined
             })
         ).toBe(false);
@@ -34,6 +35,9 @@ describe('hasActiveVenueListingFilters', () => {
         { priceRange: 'MID' },
         { isFeatured: true },
         { minRating: 4 },
+        // HOS-1787 leaf 6.10: the amenities group narrows results like any other.
+        { amenities: '11111111-1111-4111-8111-111111111111' },
+        { amenities: 'id-a,id-b' },
         // HOS-1054: the apto filter narrows results like any other, so an empty
         // grid reached with only an apto selected must say "nothing matched your
         // filters", not "there are no restaurants published yet".
@@ -48,6 +52,7 @@ describe('hasActiveVenueListingFilters', () => {
                 priceRange: undefined,
                 isFeatured: undefined,
                 minRating: undefined,
+                amenities: undefined,
                 features: undefined,
                 ...filters
             })
@@ -70,7 +75,27 @@ describe('hasActiveVenueListingFilters', () => {
                 priceRange: undefined,
                 isFeatured: undefined,
                 minRating: undefined,
+                amenities: undefined,
                 features
+            })
+        ).toBe(false);
+    });
+
+    it.each([
+        '',
+        ',',
+        ' , '
+    ])('treats an empty amenities param (%p) as no filter at all', (amenities) => {
+        expect(
+            hasActiveVenueListingFilters({
+                q: undefined,
+                destinationId: undefined,
+                type: undefined,
+                priceRange: undefined,
+                isFeatured: undefined,
+                minRating: undefined,
+                amenities,
+                features: undefined
             })
         ).toBe(false);
     });

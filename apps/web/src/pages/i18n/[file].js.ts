@@ -53,11 +53,20 @@ export const GET: APIRoute = ({ params }) => {
     // second half is what makes `immutable` safe: answering a stale URL with
     // this deployment's content would pin the wrong dictionary for a year in
     // every cache that asked, with no way to invalidate it.
+    //
+    // The 404 itself must be `no-store` (HOS-2080). Without a Cache-Control
+    // header Cloudflare caches it anyway and gives the browser its zone default
+    // (`max-age=14400`). During a rollout the old container answers the new
+    // hash with this 404, and a cached copy would keep every island of that
+    // locale on its Spanish fallbacks after the new container serves the file.
     const locale = resolveI18nAssetLocale(`${params.file ?? ''}${I18N_ASSET_EXTENSION}`);
     if (locale === null) {
         return new Response('Not Found', {
             status: 404,
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-store'
+            }
         });
     }
 

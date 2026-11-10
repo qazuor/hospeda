@@ -1,0 +1,328 @@
+{
+    "systemColumns": {
+        "counts": {
+            "accommodations": 27,
+            "venues": 22,
+            "experiences": 22
+        },
+        "rows": [
+            {
+                "key": "accommodations.id",
+                "reason": "Primary key; identity, never owner content."
+            },
+            {
+                "key": "accommodations.slug",
+                "reason": "Public URL derived from the name; listing-support-edit.ts:136-139 declares it not content."
+            },
+            {
+                "key": "accommodations.name",
+                "reason": "Listing title the purge keeps on purpose (V6.5); named by action 15 but not blanked (listing-support-edit.ts:142-144)."
+            },
+            {
+                "key": "accommodations.type",
+                "reason": "Vertical classification the purge keeps (sub-spec 4)."
+            },
+            {
+                "key": "accommodations.business_lines",
+                "reason": "Classification (DEC-FAC-074); non-content, listed in LISTING_NON_CONTENT_FIELDS."
+            },
+            {
+                "key": "accommodations.featured_by_entitlement",
+                "reason": "Denormalized billing-state flag written by the entitlement sync; derived, not owner content."
+            },
+            {
+                "key": "accommodations.show_external_reputation",
+                "reason": "Owner display preference for external reputation blocks; a setting that survives the purge, not one of the content categories (NUCLEO/08 §1.2)."
+            },
+            {
+                "key": "accommodations.is_verified",
+                "reason": "Admin verification badge; moderation state, not content."
+            },
+            {
+                "key": "accommodations.verified_at",
+                "reason": "Audit timestamp of the verification badge."
+            },
+            {
+                "key": "accommodations.verified_by_id",
+                "reason": "Audit actor of the verification badge."
+            },
+            {
+                "key": "accommodations.owner_id",
+                "reason": "Owner reference; identity."
+            },
+            {
+                "key": "accommodations.publication_status",
+                "reason": "Publication state (V/03 §9); system."
+            },
+            {
+                "key": "accommodations.inactive_since",
+                "reason": "Retention clock start (V/03 §9); system."
+            },
+            {
+                "key": "accommodations.deadlines_version",
+                "reason": "Retention clock version (V/03 §9); system."
+            },
+            {
+                "key": "accommodations.deletion_announced_at",
+                "reason": "Announced deletion date of the retention clock (V/03 §9); system."
+            },
+            {
+                "key": "accommodations.destination_id",
+                "reason": "Destination classification; the purge keeps it so the ficha stays locatable."
+            },
+            {
+                "key": "accommodations.reviews_count",
+                "reason": "Denormalized review aggregate written by trigger/service; derived."
+            },
+            {
+                "key": "accommodations.average_rating",
+                "reason": "Denormalized review aggregate; derived."
+            },
+            {
+                "key": "accommodations.admin_info",
+                "reason": "Staff-only moderation metadata (AdminInfoType); not owner content."
+            },
+            {
+                "key": "accommodations.created_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "accommodations.updated_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "accommodations.created_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "accommodations.updated_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "accommodations.deleted_at",
+                "reason": "Soft-delete audit."
+            },
+            {
+                "key": "accommodations.deleted_by_id",
+                "reason": "Soft-delete audit."
+            },
+            {
+                "key": "accommodations.last_warned_at",
+                "reason": "Retention warning clock; system."
+            },
+            {
+                "key": "accommodations.rating",
+                "reason": "Granular review aggregate JSONB; derived."
+            },
+            {
+                "key": "venues.id",
+                "reason": "Primary key; identity, never owner content."
+            },
+            {
+                "key": "venues.slug",
+                "reason": "Public URL derived from the name; listing-support-edit.ts:136-139 declares it not content."
+            },
+            {
+                "key": "venues.name",
+                "reason": "Listing title the purge keeps on purpose (V6.5); named by action 15 but not blanked (listing-support-edit.ts:142-144)."
+            },
+            {
+                "key": "venues.type",
+                "reason": "Vertical classification the purge keeps (sub-spec 4)."
+            },
+            {
+                "key": "venues.business_lines",
+                "reason": "Classification (DEC-FAC-074); non-content, listed in LISTING_NON_CONTENT_FIELDS."
+            },
+            {
+                "key": "venues.admin_info",
+                "reason": "Staff-only moderation metadata (AdminInfoType); not owner content."
+            },
+            {
+                "key": "venues.owner_id",
+                "reason": "Owner reference; identity."
+            },
+            {
+                "key": "venues.publication_status",
+                "reason": "Publication state (V/03 §9); system."
+            },
+            {
+                "key": "venues.inactive_since",
+                "reason": "Retention clock start (V/03 §9); system."
+            },
+            {
+                "key": "venues.deadlines_version",
+                "reason": "Retention clock version (V/03 §9); system."
+            },
+            {
+                "key": "venues.deletion_announced_at",
+                "reason": "Announced deletion date of the retention clock (V/03 §9); system."
+            },
+            {
+                "key": "venues.destination_id",
+                "reason": "Destination classification; the purge keeps it so the ficha stays locatable."
+            },
+            {
+                "key": "venues.featured_by_entitlement",
+                "reason": "Denormalized billing-state flag written by the entitlement sync; derived, not owner content."
+            },
+            {
+                "key": "venues.reviews_count",
+                "reason": "Denormalized review aggregate written by trigger/service; derived."
+            },
+            {
+                "key": "venues.average_rating",
+                "reason": "Denormalized review aggregate; derived."
+            },
+            {
+                "key": "venues.rating",
+                "reason": "Granular review aggregate JSONB; derived."
+            },
+            {
+                "key": "venues.created_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "venues.updated_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "venues.created_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "venues.updated_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "venues.deleted_at",
+                "reason": "Soft-delete audit."
+            },
+            {
+                "key": "venues.deleted_by_id",
+                "reason": "Soft-delete audit."
+            },
+            {
+                "key": "experiences.id",
+                "reason": "Primary key; identity, never owner content."
+            },
+            {
+                "key": "experiences.slug",
+                "reason": "Public URL derived from the name; listing-support-edit.ts:136-139 declares it not content."
+            },
+            {
+                "key": "experiences.name",
+                "reason": "Listing title the purge keeps on purpose (V6.5); named by action 15 but not blanked (listing-support-edit.ts:142-144)."
+            },
+            {
+                "key": "experiences.type",
+                "reason": "Vertical classification the purge keeps (sub-spec 4)."
+            },
+            {
+                "key": "experiences.business_lines",
+                "reason": "Classification (DEC-FAC-074); non-content, listed in LISTING_NON_CONTENT_FIELDS."
+            },
+            {
+                "key": "experiences.admin_info",
+                "reason": "Staff-only moderation metadata (AdminInfoType); not owner content."
+            },
+            {
+                "key": "experiences.owner_id",
+                "reason": "Owner reference; identity."
+            },
+            {
+                "key": "experiences.publication_status",
+                "reason": "Publication state (V/03 §9); system."
+            },
+            {
+                "key": "experiences.inactive_since",
+                "reason": "Retention clock start (V/03 §9); system."
+            },
+            {
+                "key": "experiences.deadlines_version",
+                "reason": "Retention clock version (V/03 §9); system."
+            },
+            {
+                "key": "experiences.deletion_announced_at",
+                "reason": "Announced deletion date of the retention clock (V/03 §9); system."
+            },
+            {
+                "key": "experiences.destination_id",
+                "reason": "Destination classification; the purge keeps it so the ficha stays locatable."
+            },
+            {
+                "key": "experiences.featured_by_entitlement",
+                "reason": "Denormalized billing-state flag written by the entitlement sync; derived, not owner content."
+            },
+            {
+                "key": "experiences.reviews_count",
+                "reason": "Denormalized review aggregate written by trigger/service; derived."
+            },
+            {
+                "key": "experiences.average_rating",
+                "reason": "Denormalized review aggregate; derived."
+            },
+            {
+                "key": "experiences.rating",
+                "reason": "Granular review aggregate JSONB; derived."
+            },
+            {
+                "key": "experiences.created_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "experiences.updated_at",
+                "reason": "Audit timestamp."
+            },
+            {
+                "key": "experiences.created_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "experiences.updated_by_id",
+                "reason": "Audit actor reference."
+            },
+            {
+                "key": "experiences.deleted_at",
+                "reason": "Soft-delete audit."
+            },
+            {
+                "key": "experiences.deleted_by_id",
+                "reason": "Soft-delete audit."
+            }
+        ]
+    },
+    "supportEditExceptions": {
+        "count": 6,
+        "fields": [
+            {
+                "field": "name",
+                "reason": "Named by action 15 as the listing title, but the purge keeps it (V6.5); it is not blanked (listing-support-edit.ts:142-144)."
+            },
+            {
+                "field": "media",
+                "reason": "Photo rows live in <vertical>_media, deleted by the purge's CONTENT_TABLES/MEDIA_FKS; not a column of the listing table."
+            },
+            {
+                "field": "amenityIds",
+                "reason": "Relation rows live in r_<vertical>_amenity, deleted by the purge; not a column of the listing table."
+            },
+            {
+                "field": "amenityAttributes",
+                "reason": "Per-amenity scope/availability (HOS-2058) lives on r_accommodation_amenity rows, deleted by the purge; not a column of the listing table."
+            },
+            {
+                "field": "featureIds",
+                "reason": "Relation rows live in r_<vertical>_feature, deleted by the purge; not a column of the listing table."
+            },
+            {
+                "field": "faqs",
+                "reason": "FAQ rows live in <vertical>_faqs, deleted by the purge; not a column of the listing table."
+            }
+        ]
+    },
+    "purgeOnlyLegacyColumns": {
+        "count": 0,
+        "rows": []
+    }
+}

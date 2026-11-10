@@ -156,7 +156,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'media', // [TABLE] media rows + [§1.2] "fotos"; nested moderation is refused below
     'videos', // [BLANK] accommodation, experience; nested moderation is refused below
     'amenityIds', // [TABLE] r_<vertical>_amenity
-    'amenityAttributes', // [TABLE] r_accommodation_amenity scope/availability (HOS-2058)
+    'amenityAttributes', // [TABLE] r_<vertical>_amenity scope/availability (HOS-2058 accommodation, HOS-2061 venue/experience)
     'featureIds', // [TABLE] r_<vertical>_feature
     'faqs', // [TABLE] <vertical>_faqs + [§1.2] "FAQ"
     'price', // [BLANK] accommodation
@@ -168,6 +168,10 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'menuFileKind', // [BLANK] venue
     'openingHours', // [BLANK] venue, experience + [§1.2] "horarios"
     'priceRange', // [BLANK] venue
+    'entryKind', // [BLANK] venue
+    'entryNoteI18n', // [BLANK] venue
+    'entryPriceFrom', // [BLANK] venue
+    'entryPriceUpdatedAt', // [BLANK] venue (server-managed, still content)
     'priceFrom', // [BLANK] experience
     'priceUnit', // [BLANK] experience
     'isPriceOnRequest', // [BLANK] experience
@@ -178,8 +182,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'durationMinutes', // [BLANK] experience
     'whatToBring', // [BLANK] experience
     'requirements', // [BLANK] experience
-    'cancellationPolicy', // [BLANK] experience
-    'acceptsPrivateGroups' // [BLANK] experience
+    'policies' // [BLANK] all three verticals (HOS-2060)
 ] as const;
 
 const CONTENT_FIELDS = new Set<string>(LISTING_SUPPORT_EDIT_CONTENT_FIELDS);

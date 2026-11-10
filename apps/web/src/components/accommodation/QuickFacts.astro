@@ -2,7 +2,9 @@
 /**
  * @file QuickFacts.astro
  * @description Horizontal row of icon+value pills showing accommodation quick facts.
- * Only renders pills for non-null fields. Hidden if extraInfo is null.
+ * Only renders pills for non-null fields. Hidden when there is nothing to show.
+ * The stay length comes from the house rules (`policies.minNights` /
+ * `policies.maxNights`, HOS-2060), the rest from `extraInfo`.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
@@ -11,17 +13,20 @@ import { GuestsIcon, BedroomsIcon, BedLinensIcon, BathroomsIcon, MoonIcon } from
 
 interface Props {
   readonly extraInfo: AccommodationDetailData['extraInfo'];
+  readonly policies: AccommodationDetailData['policies'];
   readonly lang: string;
 }
 
-const { extraInfo, lang } = Astro.props;
+const { extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
-if (!extraInfo) return;
+const stayMin = policies.minNights ?? null;
+const stayMax = policies.maxNights ?? null;
+if (!extraInfo && stayMin === null && stayMax === null) return;
 ---
 
 <div class="quick-facts">
-  {extraInfo.capacity != null && (
+  {extraInfo?.capacity != null && (
     <div class="quick-facts__pill">
       <GuestsIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
@@ -30,7 +35,7 @@ if (!extraInfo) return;
       </div>
     </div>
   )}
-  {extraInfo.bedrooms != null && (
+  {extraInfo?.bedrooms != null && (
     <div class="quick-facts__pill">
       <BedroomsIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
@@ -39,7 +44,7 @@ if (!extraInfo) return;
       </div>
     </div>
   )}
-  {extraInfo.beds != null && (
+  {extraInfo?.beds != null && (
     <div class="quick-facts__pill">
       <BedLinensIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
@@ -48,7 +53,7 @@ if (!extraInfo) return;
       </div>
     </div>
   )}
-  {extraInfo.bathrooms != null && (
+  {extraInfo?.bathrooms != null && (
     <div class="quick-facts__pill">
       <BathroomsIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
@@ -57,20 +62,20 @@ if (!extraInfo) return;
       </div>
     </div>
   )}
-  {extraInfo.minNights != null && (
+  {stayMin !== null && (
     <div class="quick-facts__pill">
       <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
-        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', extraInfo.minNights)}</span>
+        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', stayMin)}</span>
         <span class="quick-facts__label">{t('accommodations.detail.quickFacts.minNights')}</span>
       </div>
     </div>
   )}
-  {extraInfo.maxNights != null && (
+  {stayMax !== null && (
     <div class="quick-facts__pill">
       <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
-        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', extraInfo.maxNights)}</span>
+        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', stayMax)}</span>
         <span class="quick-facts__label">{t('accommodations.detail.quickFacts.maxNights')}</span>
       </div>
     </div>

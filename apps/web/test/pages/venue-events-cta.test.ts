@@ -52,7 +52,7 @@ const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
 const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
 
-describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
+describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('imports the dedicated CTA component', () => {
         expect(VENUE_PAGE).toContain(
             "import VenueEventsCta from '@/components/venue/VenueEventsCta.astro'"
@@ -67,37 +67,38 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         expect(VENUE_PAGE).not.toContain('venue.contactInfo');
     });
 
-    it('requires BOTH the private_events amenity and an actual contact channel before showing the CTA', () => {
+    it('requires BOTH policies.eventsAllowed and an actual contact channel before showing the CTA', () => {
+        // HOS-2060: `private_events` was retired; the rule is the house rule.
         expect(VENUE_PAGE).toContain(
-            "venue.amenities.find((amenity) => amenity.name === 'private_events')"
+            'const acceptsEvents = venue.policies?.eventsAllowed === true;'
         );
+        expect(VENUE_PAGE).not.toContain('private_events');
         // Mirrors VenueContactBlock's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
         expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(venue.menuUrl)');
-        expect(VENUE_PAGE).toContain(
-            'const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;'
-        );
+        expect(VENUE_PAGE).toContain('const showEventsCta = acceptsEvents && hasVenueContact;');
     });
 
-    it('excludes the private_events chip from the generic grid ONLY when the CTA renders in its place', () => {
-        expect(VENUE_PAGE).toContain('const amenitiesForGrid = showEventsCta');
-        expect(VENUE_PAGE).toContain(
-            "venue.amenities.filter((amenity) => amenity.name !== 'private_events')"
-        );
-        // The else branch is the un-filtered listing amenities — the chip
-        // survives when there is no contact channel to show a CTA with instead.
-        expect(VENUE_PAGE).toContain(': venue.amenities;');
+    it('drops the events house rule ONLY when the CTA renders in its place', () => {
+        expect(VENUE_PAGE).toContain('const houseRulePolicies = showEventsCta');
+        expect(VENUE_PAGE).toContain("key: 'eventsAllowed', value: undefined");
+        // The else branch keeps every rule — the events line survives when
+        // there is no contact channel to show a CTA with instead.
+        expect(VENUE_PAGE).toContain(': venue.policies;');
     });
 
     it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {
-        expect(VENUE_PAGE).toContain('{showEventsCta && <VenueEventsCta locale={locale} />}');
+        // HOS-1787 6.1: the CTA is a conditional registry block now.
+        expect(VENUE_PAGE).toMatch(/Component:\s*VenueEventsCta,\s*props:\s*\{\s*locale\s*\}/);
+        expect(VENUE_PAGE).toContain('...(showEventsCta ? [{ Component: VenueEventsCta');
+        expect(VENUE_PAGE).not.toContain('href={');
     });
 
     it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
-        const amenitiesIdx = VENUE_PAGE.indexOf('<AmenitiesGrid');
-        const ctaIdx = VENUE_PAGE.indexOf('<VenueEventsCta');
-        const contactIdx = VENUE_PAGE.indexOf('<VenueContactBlock');
+        const amenitiesIdx = VENUE_PAGE.indexOf('Component: AmenitiesGrid');
+        const ctaIdx = VENUE_PAGE.indexOf('Component: VenueEventsCta');
+        const contactIdx = VENUE_PAGE.indexOf('Component: VenueContactBlock');
 
         expect(amenitiesIdx).toBeGreaterThan(-1);
         expect(ctaIdx).toBeGreaterThan(amenitiesIdx);

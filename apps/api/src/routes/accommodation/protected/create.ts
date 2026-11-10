@@ -54,7 +54,7 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         const result = await accommodationService.create(actor, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium
