@@ -46,6 +46,7 @@ export * from './refund-decline.schema.js';
 export * from './replace-payment-method.schema.js';
 export * from './signup-notice.schema.js';
 export * from './subscribe-destination.schema.js';
+export * from './subscription-admin.schema.js';
 export * from './subscription-admin-cancel.schema.js';
 export * from './subscription-admin-courtesy.schema.js';
 export * from './subscription-admin-courtesy-grant.schema.js';

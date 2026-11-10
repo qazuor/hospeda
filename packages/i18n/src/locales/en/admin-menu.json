@@ -77,7 +77,10 @@
         "subscription": "Subscription",
         "subscriptionCancellation": "Cancellation",
         "subscriptionRevocation": "Revocation",
-        "permanentGrants": "Permanent grants"
+        "permanentGrants": "Permanent grants",
+        "subscriptionPause": "Pause",
+        "subscriptionPlanChange": "Plan change",
+        "subscriptionCourtesy": "Courtesy"
     },
     "notifications": "Notifications",
     "access": {

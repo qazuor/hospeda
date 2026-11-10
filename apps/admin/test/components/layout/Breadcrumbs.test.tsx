@@ -159,3 +159,47 @@ describe('Breadcrumbs', () => {
         ]);
     });
 });
+
+const FINDER_ROUTES: Record<string, unknown> = {
+    '/billing/subscriptions/': {},
+    '/billing/subscriptions/$subscriptionId/': {},
+    '/billing/subscriptions/$subscriptionId/pause': {},
+    '/billing/subscriptions/$subscriptionId/plan-change': {},
+    '/billing/subscriptions/$subscriptionId/courtesy': {}
+};
+
+describe('HOS-2081 CA-3 el breadcrumb de las acciones enlaza al detalle', () => {
+    beforeEach(() => {
+        routerState.pathname.current = '/';
+        routerState.routesByPath.current = undefined;
+    });
+
+    it.each<[string, string]>([
+        ['pause', 'admin-menu.billing.subscriptionPause'],
+        ['plan-change', 'admin-menu.billing.subscriptionPlanChange'],
+        ['courtesy', 'admin-menu.billing.subscriptionCourtesy']
+    ])('links the detail and the list from the %s action page', (segment, leafLabel) => {
+        routerState.pathname.current = `/billing/subscriptions/${SUBSCRIPTION_ID}/${segment}`;
+        routerState.routesByPath.current = FINDER_ROUTES;
+
+        render(<Breadcrumbs />);
+
+        expect(linkHrefs()).toEqual([
+            '/dashboard',
+            '/billing/subscriptions',
+            `/billing/subscriptions/${SUBSCRIPTION_ID}`,
+            `/billing/subscriptions/${SUBSCRIPTION_ID}/${segment}`
+        ]);
+        expect(
+            screen.getByRole('link', { name: 'admin-menu.billing.subscriptions' })
+        ).toHaveAttribute('href', '/billing/subscriptions');
+        expect(
+            screen.getByRole('link', { name: 'admin-menu.billing.subscription' })
+        ).toHaveAttribute('href', `/billing/subscriptions/${SUBSCRIPTION_ID}`);
+        expect(screen.getByRole('link', { name: leafLabel })).toHaveAttribute(
+            'href',
+            `/billing/subscriptions/${SUBSCRIPTION_ID}/${segment}`
+        );
+        expectTextWithoutLink('admin-menu.billing.title');
+    });
+});

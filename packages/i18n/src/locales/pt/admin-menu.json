@@ -77,7 +77,10 @@
         "subscription": "Assinatura",
         "subscriptionCancellation": "Cancelamento",
         "subscriptionRevocation": "Revogação",
-        "permanentGrants": "Grants permanentes"
+        "permanentGrants": "Grants permanentes",
+        "subscriptionPause": "Pausa",
+        "subscriptionPlanChange": "Mudança de plano",
+        "subscriptionCourtesy": "Cortesia"
     },
     "notifications": "Notificações",
     "access": {

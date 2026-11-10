@@ -431,6 +431,13 @@
     ],
     "cortesia_diferida": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/admin-subscription-detail.service.ts",
+            "symbol": "getAdminSubscriptionDetail",
+            "row": null,
+            "why": "HOS-2081 detail selects only courtesy grants with an open balance and a future end under the injected clock, matching readBase.",
+            "subject": "courtesy_grant"
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/temporary-courtesy-preview.ts",
             "symbol": "readBase",
             "row": null,

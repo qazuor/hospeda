@@ -618,6 +618,15 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'subscriptions',
+            label: { es: 'Suscripciones', en: 'Subscriptions', pt: 'Assinaturas' },
+            icon: 'ListIcon',
+            route: '/billing/subscriptions',
+            permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'reconciliation-marks',
             label: { es: 'Conciliación', en: 'Reconciliation', pt: 'Conciliação' },
             icon: 'DollarSignIcon',

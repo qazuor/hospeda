@@ -74,5 +74,8 @@ export const breadcrumbSegmentLabels: Readonly<Record<string, string>> = {
     activity: 'admin-menu.access.activity',
     permissions: 'admin-menu.access.permissions',
     cancellation: 'admin-menu.billing.subscriptionCancellation',
-    revocation: 'admin-menu.billing.subscriptionRevocation'
+    revocation: 'admin-menu.billing.subscriptionRevocation',
+    pause: 'admin-menu.billing.subscriptionPause',
+    'plan-change': 'admin-menu.billing.subscriptionPlanChange',
+    courtesy: 'admin-menu.billing.subscriptionCourtesy'
 };
