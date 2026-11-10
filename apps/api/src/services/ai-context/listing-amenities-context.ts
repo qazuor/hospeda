@@ -197,8 +197,11 @@ export async function safeLoadListingAmenities({
                 row.isOptional === true ||
                 row.additionalCost != null ||
                 row.additionalCostPercent != null,
-            scope: row.scope ?? null,
-            availability: row.availability ?? null
+            scope: row.scope === 'private' || row.scope === 'shared' ? row.scope : null,
+            availability:
+                row.availability === 'year_round' || row.availability === 'seasonal'
+                    ? row.availability
+                    : null
         }));
     } catch (error) {
         apiLogger.warn(
