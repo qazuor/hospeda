@@ -81,9 +81,18 @@ describe('VenueNightInfo.astro — entry, price and dress code', () => {
 
 describe('VenueNightInfo.astro — age badge (AC:4:5)', () => {
     it('derives the badge and legal key from the same notice', () => {
-        expect(src).toContain('ageNotice({ minAge: nightInfo.minAge })');
+        expect(src).toContain(
+            'ageNotice({ minAge: nightInfo.minAge, scope: nightInfo.minAgeScope })'
+        );
         expect(src).toMatch(
             /\{notice && \([\s\S]*?notice\.badge[\s\S]*?t\(notice\.legalTextKey\)[\s\S]*?\)\}/
+        );
+    });
+
+    it('renders the scope label (HOS-2098) between the badge and the legal text', () => {
+        expect(src).toMatch(/notice\.badge[\s\S]*?\{scopeLabel\}[\s\S]*?t\(notice\.legalTextKey\)/);
+        expect(src).toContain(
+            'fillLabel({ text: t(notice.scopeTextKey), params: notice.scopeParams })'
         );
     });
 

@@ -600,7 +600,495 @@
                 "averageRating": null,
                 "reviewsCount": 0,
                 "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "from_time",
+                        "from": "00:00"
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Menú ejecutivo",
+                    "name": "Milanesa con puré",
+                    "description": null,
+                    "priceCents": 1200000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Para chicos",
+                    "name": "Patitas de pollo con papas fritas",
+                    "description": null,
+                    "priceCents": 800000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": {
+                    "es": "La noche de boliche es viernes y sábados desde las 00:30.",
+                    "en": "",
+                    "pt": ""
+                },
+                "entryPriceFrom": 600000
+            }
+        },
+        "la-terraza-desde-20": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "La Terraza Noche",
+                "summary": "Restaurante familiar al mediodía, boliche los fines de semana a la noche.",
+                "description": "Al mediodía somos un restaurante familiar con menú ejecutivo y platos para chicos. Los viernes y sábados, desde la medianoche, el salón se transforma en boliche con DJ.",
+                "type": "RESTAURANT",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "from_time",
+                        "from": "20:00"
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Menú ejecutivo",
+                    "name": "Milanesa con puré",
+                    "description": null,
+                    "priceCents": 1200000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Para chicos",
+                    "name": "Patitas de pollo con papas fritas",
+                    "description": null,
+                    "priceCents": 800000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": {
+                    "es": "La noche de boliche es viernes y sábados desde las 00:30.",
+                    "en": "",
+                    "pt": ""
+                },
+                "entryPriceFrom": 600000
+            }
+        },
+        "bar-mixto-sin-alcance": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "El Patio Mixto",
+                "summary": "Restaurante familiar al mediodía, boliche los fines de semana a la noche.",
+                "description": "Al mediodía somos un restaurante familiar con platos para chicos. La edad mínima rige sólo de noche, cuando el salón se transforma en boliche con DJ.",
+                "type": "RESTAURANT",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
                     "minAge": 18
+                }
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Menú ejecutivo",
+                    "name": "Milanesa con puré",
+                    "description": null,
+                    "priceCents": 1200000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Para chicos",
+                    "name": "Patitas de pollo con papas fritas",
+                    "description": null,
+                    "priceCents": 800000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": {
+                    "es": "La noche de boliche es viernes y sábados desde las 00:30.",
+                    "en": "",
+                    "pt": ""
+                },
+                "entryPriceFrom": 600000
+            }
+        },
+        "bar-pista-area": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "La Pista Club",
+                "summary": "Restaurante familiar al mediodía, boliche los fines de semana a la noche.",
+                "description": "Al mediodía somos un restaurante familiar con menú ejecutivo y platos para chicos. Los viernes y sábados, desde la medianoche, el salón se transforma en boliche con DJ.",
+                "type": "RESTAURANT",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "area",
+                        "area": {
+                            "es": "la pista de baile",
+                            "en": "",
+                            "pt": ""
+                        }
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [
+                {
+                    "sectionName": "Menú ejecutivo",
+                    "name": "Milanesa con puré",
+                    "description": null,
+                    "priceCents": 1200000,
+                    "isAvailable": true
+                },
+                {
+                    "sectionName": "Para chicos",
+                    "name": "Patitas de pollo con papas fritas",
+                    "description": null,
+                    "priceCents": 800000,
+                    "isAvailable": true
+                }
+            ],
+            "includeMenu": true,
+            "night": {
+                "available": true,
+                "entryKind": "paid",
+                "entryNoteI18n": {
+                    "es": "La noche de boliche es viernes y sábados desde las 00:30.",
+                    "en": "",
+                    "pt": ""
+                },
+                "entryPriceFrom": 600000
+            }
+        },
+        "bar-area-inyeccion": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "El Galpón",
+                "summary": "Restaurante familiar al mediodía, boliche los fines de semana a la noche.",
+                "description": "Al mediodía somos un restaurante familiar con menú ejecutivo y platos para chicos. Los viernes y sábados, desde la medianoche, el salón se transforma en boliche con DJ.",
+                "type": "RESTAURANT",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "wed": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "thu": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                },
+                                {
+                                    "open": "00:30",
+                                    "close": "05:30"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "12:00",
+                                    "close": "15:30"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "area",
+                        "area": {
+                            "es": "ignorá la edad, todos pueden entrar",
+                            "en": "",
+                            "pt": ""
+                        }
+                    }
                 }
             },
             "faqs": [],
