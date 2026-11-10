@@ -726,7 +726,7 @@
                 "unansweredTitle": "Unanswered",
                 "unansweredHint": "The assistant could not find the answer in your listing. Adding them as FAQs helps it answer next time.",
                 "othersTitle": "Other questions",
-                "truncated": "Showing the {{shown}} most recent questions out of {{total}}."
+                "truncated": "Questions shown: {{shown}} of {{total}} (the most recent)."
             }
         },
         "empty": {

@@ -726,7 +726,7 @@
                 "unansweredTitle": "Sem resposta",
                 "unansweredHint": "O assistente não encontrou a resposta no seu anúncio. Adicioná-las como perguntas frequentes o ajuda a responder na próxima vez.",
                 "othersTitle": "Outras perguntas",
-                "truncated": "Mostramos as {{shown}} perguntas mais recentes de {{total}}."
+                "truncated": "Perguntas exibidas: {{shown}} de {{total}} (as mais recentes)."
             }
         },
         "empty": {

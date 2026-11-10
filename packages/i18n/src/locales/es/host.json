@@ -726,7 +726,7 @@
                 "unansweredTitle": "Sin responder",
                 "unansweredHint": "El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.",
                 "othersTitle": "Otras preguntas",
-                "truncated": "Mostramos las {{shown}} preguntas más recientes de {{total}}."
+                "truncated": "Preguntas mostradas: {{shown}} de {{total}} (las más recientes)."
             }
         },
         "empty": {

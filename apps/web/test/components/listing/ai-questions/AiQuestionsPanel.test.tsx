@@ -139,7 +139,7 @@ describe('AiQuestionsPanel', () => {
 
         renderPanel();
 
-        expect(await screen.findByText(/m.s recientes/i)).toBeTruthy();
+        expect(await screen.findByText(/preguntas mostradas/i)).toBeTruthy();
     });
 });
 

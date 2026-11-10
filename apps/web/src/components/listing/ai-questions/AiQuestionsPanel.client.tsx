@@ -233,7 +233,7 @@ export function AiQuestionsPanel({
                 <p className={styles.status}>
                     {t(
                         'host.properties.editor.aiQuestions.truncated',
-                        'Mostramos las {{shown}} preguntas más recientes de {{total}}.',
+                        'Preguntas mostradas: {{shown}} de {{total}} (las más recientes).',
                         { shown: data.items.length, total: data.total }
                     )}
                 </p>
