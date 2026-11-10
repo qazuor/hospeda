@@ -58,6 +58,17 @@ const previous = JSON.parse(
     )
 ) as FrozenBaseline;
 
+/** 0161's frozen snapshot: its `before` is this migration's `chat_venue` `after`. */
+const next = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0161-hos-2098-chat-venue-age-scope-rules.data.json'
+        ),
+        'utf-8'
+    )
+) as { readonly before: { readonly rules: { readonly chat_venue: string } } };
+
 /** One anchor per round 2 shared clause. */
 const ROUND_2_CLAUSES = [
     'that sentence is the whole reply',
@@ -183,9 +194,17 @@ describe('0160-hos-2095-chat-answer-quality-rules-2', () => {
         }
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
+    it('AC-5: the frozen "after" rules equal DEFAULT_RULES, or what 0161 starts from (no drift, no gap)', () => {
+        // HOS-2098 moved `chat_venue` on, so its anti-drift check against
+        // source lives in 0161. What 0160 must still guarantee for it is that
+        // its output is byte-identical to 0161's `before`; `chat` and
+        // `chat_experience` did not move and still match source.
         for (const feature of migration.CHAT_FEATURES) {
-            expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+            if (feature === 'chat_venue') {
+                expect(after.rules[feature]).toBe(next.before.rules.chat_venue);
+            } else {
+                expect(after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+            }
         }
     });
 
