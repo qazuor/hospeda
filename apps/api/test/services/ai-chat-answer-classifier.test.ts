@@ -23,20 +23,35 @@ import {
 
 const ASSISTANT_ID = '11111111-2222-4333-8444-555555555555';
 
+/** A provider response as the engine returns it. */
+function reply(text: string) {
+    return {
+        text,
+        usage: { promptTokens: 120, completionTokens: 2, totalTokens: 122 },
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        finishReason: 'stop'
+    };
+}
+
 function buildDeps(generate: ReturnType<typeof vi.fn>): {
     readonly deps: ClassifyChatAnswerDeps;
     readonly writeVerdict: ReturnType<typeof vi.fn>;
+    readonly recordUsage: ReturnType<typeof vi.fn>;
 } {
     const writeVerdict = vi.fn().mockResolvedValue(undefined);
+    const recordUsage = vi.fn().mockResolvedValue(undefined);
     return {
         deps: {
             createAiService: async () =>
                 ({ generateText: generate }) as unknown as Awaited<
                     ReturnType<ClassifyChatAnswerDeps['createAiService']>
                 >,
-            writeVerdict
+            writeVerdict,
+            recordUsage
         },
-        writeVerdict
+        writeVerdict,
+        recordUsage
     };
 }
 
@@ -70,7 +85,7 @@ describe('classifyChatAnswer', () => {
 
     it('writes "unanswered" when the model says the fact is missing', async () => {
         // Arrange
-        const generate = vi.fn().mockResolvedValue({ text: 'UNANSWERED' });
+        const generate = vi.fn().mockResolvedValue(reply('UNANSWERED'));
         const { deps, writeVerdict } = buildDeps(generate);
 
         // Act
@@ -85,7 +100,7 @@ describe('classifyChatAnswer', () => {
     });
 
     it('writes "answered" when the model says the reply gave the fact', async () => {
-        const generate = vi.fn().mockResolvedValue({ text: 'ANSWERED' });
+        const generate = vi.fn().mockResolvedValue(reply('ANSWERED'));
         const { deps, writeVerdict } = buildDeps(generate);
 
         const result = await classifyChatAnswer({
@@ -102,7 +117,7 @@ describe('classifyChatAnswer', () => {
     });
 
     it('calls the vertical chat feature with a capped, cheap request', async () => {
-        const generate = vi.fn().mockResolvedValue({ text: 'ANSWERED' });
+        const generate = vi.fn().mockResolvedValue(reply('ANSWERED'));
         const { deps } = buildDeps(generate);
 
         await classifyChatAnswer({
@@ -134,7 +149,7 @@ describe('classifyChatAnswer', () => {
     });
 
     it('leaves the row unclassified on an unparseable output', async () => {
-        const generate = vi.fn().mockResolvedValue({ text: '' });
+        const generate = vi.fn().mockResolvedValue(reply(''));
         const { deps, writeVerdict } = buildDeps(generate);
 
         const result = await classifyChatAnswer({ ...baseInput, deps });
@@ -144,13 +159,79 @@ describe('classifyChatAnswer', () => {
     });
 
     it('reports null when the verdict write itself fails', async () => {
-        const generate = vi.fn().mockResolvedValue({ text: 'UNANSWERED' });
+        const generate = vi.fn().mockResolvedValue(reply('UNANSWERED'));
         const { deps, writeVerdict } = buildDeps(generate);
         writeVerdict.mockRejectedValue(new Error('db down'));
 
         await expect(classifyChatAnswer({ ...baseInput, deps })).resolves.toEqual({
             verdict: null
         });
+    });
+});
+
+describe('classifyChatAnswer — metering (security review)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('meters a classified turn exactly once with the provider usage', async () => {
+        // Arrange
+        const generate = vi.fn().mockResolvedValue(reply('UNANSWERED'));
+        const { deps, recordUsage } = buildDeps(generate);
+
+        // Act
+        await classifyChatAnswer({ ...baseInput, deps });
+
+        // Assert
+        expect(recordUsage).toHaveBeenCalledTimes(1);
+        expect(recordUsage).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: 'openai',
+                model: 'gpt-5.4-nano',
+                promptTokens: 120,
+                completionTokens: 2
+            })
+        );
+        expect(Object.keys(recordUsage.mock.calls[0]?.[0] ?? {}).sort()).toEqual(
+            ['completionTokens', 'latencyMs', 'model', 'promptTokens', 'provider'].sort()
+        );
+    });
+
+    it('meters an unparseable output too: the tokens were spent', async () => {
+        const generate = vi.fn().mockResolvedValue(reply('MAYBE'));
+        const { deps, recordUsage } = buildDeps(generate);
+
+        await classifyChatAnswer({ ...baseInput, deps });
+
+        expect(recordUsage).toHaveBeenCalledTimes(1);
+    });
+
+    it('meters nothing and leaves the row unclassified when the ceiling blocks the call', async () => {
+        // Arrange: the configured service throws before the provider is called.
+        const ceilingHit = Object.assign(new Error('Cost ceiling reached'), {
+            name: 'AiCeilingHitError'
+        });
+        const generate = vi.fn().mockRejectedValue(ceilingHit);
+        const { deps, recordUsage, writeVerdict } = buildDeps(generate);
+
+        // Act
+        const result = await classifyChatAnswer({ ...baseInput, deps });
+
+        // Assert
+        expect(result.verdict).toBeNull();
+        expect(recordUsage).not.toHaveBeenCalled();
+        expect(writeVerdict).not.toHaveBeenCalled();
+    });
+
+    it('still writes the verdict when metering fails', async () => {
+        const generate = vi.fn().mockResolvedValue(reply('ANSWERED'));
+        const { deps, recordUsage, writeVerdict } = buildDeps(generate);
+        recordUsage.mockRejectedValue(new Error('db down'));
+
+        const result = await classifyChatAnswer({ ...baseInput, deps });
+
+        expect(result.verdict).toBe('answered');
+        expect(writeVerdict).toHaveBeenCalledTimes(1);
     });
 });
 

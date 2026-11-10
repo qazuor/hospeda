@@ -14,9 +14,16 @@
  * - **Failure leaves the row unclassified.** A provider error, a cost-ceiling
  *   hit, a moderation block, an empty or unparseable output: all of them log a
  *   warning and write nothing. `NULL` is "not classified", never a verdict.
- * - **No `ai_usage` row.** That table is the quota axis, and HOS-2095 fixed it
- *   to exactly one row per chat request. Recording the classification there
- *   would burn one extra unit of the owner's monthly chat quota per question.
+ * - **Metered, but never against a quota.** Every call that reached the
+ *   provider writes ONE `ai_usage` row with `userId: null` and the feature
+ *   {@link CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE}, so the monthly cost ceiling
+ *   and the admin dashboards see its spend. Quotas count rows keyed by a user
+ *   AND filtered by a chat feature, so this row matches neither (HOS-2095
+ *   keeps the chat at exactly one quota row per request).
+ * - **Respects the cost ceiling.** The configured service checks it before the
+ *   provider call; a reached ceiling throws and the turn stays unclassified.
+ * - **Only for delivered turns.** The chat schedules it after a non-empty turn
+ *   was persisted; a quota-blocked request never streams, so it never gets here.
  * - **Bounded cost.** The model sees a fixed short instruction plus the
  *   question and answer, each truncated to {@link MAX_CLASSIFIER_INPUT_CHARS},
  *   and may emit at most {@link CLASSIFIER_MAX_OUTPUT_TOKENS} tokens — about
@@ -25,15 +32,27 @@
  * @module apps/api/services/ai-chat-answer-classifier
  */
 
-import type { AiService } from '@repo/ai-core';
+import { type AiService, recordAiUsage } from '@repo/ai-core';
 import { aiMessages, getDb } from '@repo/db';
 import type { AiAnswerStatus, AiFeature, LanguageEnum } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
+import { warnMissingModelRate } from '../utils/ai-missing-model-rate.js';
+import { loadModelRateOverrides } from '../utils/ai-rate-overrides.js';
 import { apiLogger } from '../utils/logger.js';
 import { createConfiguredAiService } from './ai-service.factory.js';
 
 /** Characters of the question and of the answer sent to the classifier. */
 export const MAX_CLASSIFIER_INPUT_CHARS = 1200;
+
+/**
+ * `ai_usage.feature` of every classifier call.
+ *
+ * Deliberately NOT an `AiFeature` value: it is never configured in
+ * `ai_settings`, has no prompt and no quota. Being its own key keeps it out of
+ * every quota count (they filter by the chat features) while the global cost
+ * ceiling, which sums all rows, and the admin usage dashboards include it.
+ */
+export const CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE = 'chat_answer_classifier';
 
 /** Output cap: the verdict is a single word. */
 export const CLASSIFIER_MAX_OUTPUT_TOKENS = 5;
@@ -94,6 +113,17 @@ export function parseClassifierVerdict(
 export interface ClassifyChatAnswerDeps {
     /** Builds the configured AI service (credentials, cost ceiling, moderation). */
     readonly createAiService: () => Promise<Pick<AiService, 'generateText'>>;
+    /**
+     * Meters one classifier call in `ai_usage` (system row: no user, so no
+     * owner or tourist quota can count it).
+     */
+    readonly recordUsage: (input: {
+        readonly provider: string;
+        readonly model: string;
+        readonly promptTokens: number;
+        readonly completionTokens: number;
+        readonly latencyMs: number;
+    }) => Promise<void>;
     /** Writes the verdict onto the assistant row. */
     readonly writeVerdict: (input: {
         readonly assistantMessageId: string;
@@ -123,15 +153,45 @@ export interface ClassifyChatAnswerOutput {
     readonly verdict: AiAnswerStatus | null;
 }
 
+/**
+ * Production metering of one classifier call: a system `ai_usage` row
+ * (`userId: null`) under {@link CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE}.
+ *
+ * @param usage - Provider, model, tokens and latency of the call.
+ */
+export async function recordClassifierUsage(
+    usage: Parameters<ClassifyChatAnswerDeps['recordUsage']>[0]
+): Promise<void> {
+    const rateOverrides = await loadModelRateOverrides();
+    await recordAiUsage({
+        userId: null,
+        feature: CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE,
+        ...usage,
+        status: 'success',
+        rateOverrides,
+        onMissingRate: warnMissingModelRate
+    });
+}
+
+/**
+ * Production verdict write onto the assistant `ai_messages` row.
+ *
+ * @param input - The assistant row id and the verdict.
+ */
+export async function writeClassifierVerdict(
+    input: Parameters<ClassifyChatAnswerDeps['writeVerdict']>[0]
+): Promise<void> {
+    await getDb()
+        .update(aiMessages)
+        .set({ answerStatus: input.verdict })
+        .where(eq(aiMessages.id, input.assistantMessageId));
+}
+
 /** Production collaborators. */
 const DEFAULT_DEPS: ClassifyChatAnswerDeps = {
     createAiService: createConfiguredAiService,
-    writeVerdict: async ({ assistantMessageId, verdict }) => {
-        await getDb()
-            .update(aiMessages)
-            .set({ answerStatus: verdict })
-            .where(eq(aiMessages.id, assistantMessageId));
-    }
+    recordUsage: recordClassifierUsage,
+    writeVerdict: writeClassifierVerdict
 };
 
 /**
@@ -158,6 +218,9 @@ export async function classifyChatAnswer(
     const deps = input.deps ?? DEFAULT_DEPS;
     try {
         const aiService = await deps.createAiService();
+        const startedAt = Date.now();
+        // The configured service runs the cost-ceiling check before calling the
+        // provider: a reached ceiling throws here and the row stays unclassified.
         const result = await aiService.generateText({
             feature: input.feature,
             locale: input.locale,
@@ -165,6 +228,28 @@ export async function classifyChatAnswer(
             prompt: `Question: ${clip(input.question)}\nReply: ${clip(input.answer)}`,
             params: { maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 }
         });
+        // Tokens were spent whatever the output says, so the call is metered
+        // before parsing. A metering failure must not discard a good verdict.
+        try {
+            await deps.recordUsage({
+                provider: result.provider,
+                model: result.model,
+                promptTokens: result.usage.promptTokens,
+                completionTokens: result.usage.completionTokens,
+                latencyMs: Date.now() - startedAt
+            });
+        } catch (meteringError) {
+            apiLogger.warn(
+                {
+                    assistantMessageId: input.assistantMessageId,
+                    error:
+                        meteringError instanceof Error
+                            ? meteringError.message
+                            : String(meteringError)
+                },
+                'ai-chat-classifier: failed to record usage (non-fatal)'
+            );
+        }
         const { verdict } = parseClassifierVerdict({ text: result.text });
         if (verdict === null) {
             apiLogger.warn(
