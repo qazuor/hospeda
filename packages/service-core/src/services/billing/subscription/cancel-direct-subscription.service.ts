@@ -16,6 +16,7 @@ import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import {
     type CancelOurAuthorizationOutcome,
     cancelOurAuthorization
@@ -234,6 +235,8 @@ export async function cancelDirectSubscription(
                 'Subscription state is not eligible for direct cancellation'
             );
         const origin = row.status;
+        if (authority.as === 'OWNER')
+            await exitPlanMigration({ tx, subscriptionId: row.id, reason: 'SE_DIO_DE_BAJA' });
         if (
             !(await writeDirectCancellation({
                 tx,
