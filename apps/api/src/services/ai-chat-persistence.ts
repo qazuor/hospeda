@@ -40,6 +40,7 @@
 
 import { aiConversations, aiMessages, getDb } from '@repo/db';
 import type { AiChatEntityType, AiFeature, StreamTextFinalMeta } from '@repo/schemas';
+import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
@@ -99,6 +100,71 @@ export interface PersistConversationTurnOutput {
 }
 
 // ---------------------------------------------------------------------------
+// Conversation reuse check (HOS-2101 review, M1)
+// ---------------------------------------------------------------------------
+
+/** Input of {@link resolveReusableConversationId}. */
+export interface ResolveReusableConversationIdInput {
+    /** The id the client sent, or `null`. */
+    readonly conversationId: string | null;
+    readonly userId: string;
+    readonly feature: AiFeature;
+    readonly listing?: {
+        readonly entityType: AiChatEntityType;
+        readonly entityId: string;
+    };
+}
+
+/**
+ * Decides whether a client-sent `conversationId` may be appended to.
+ *
+ * The id comes from the browser, so it is untrusted: appending to someone
+ * else's conversation, to another feature's, or to the conversation of a
+ * DIFFERENT listing would put a question into the wrong host's «Preguntas a
+ * la IA» tab, counters and weekly digest. A conversation is reused only when
+ * it exists, is not deleted, belongs to the same user, has the same feature
+ * and the same listing reference (both absent for listing-less features).
+ * Anything else yields `null` — the caller starts a new conversation instead
+ * of failing the chat.
+ *
+ * @param input - The client id and the turn's owner, feature and listing.
+ * @returns `{ conversationId }` — the reusable id, or `null` for a new one.
+ */
+export async function resolveReusableConversationId(
+    input: ResolveReusableConversationIdInput
+): Promise<{ readonly conversationId: string | null }> {
+    if (input.conversationId === null) {
+        return { conversationId: null };
+    }
+    const rows = await getDb()
+        .select({
+            userId: aiConversations.userId,
+            feature: aiConversations.feature,
+            listingEntityType: aiConversations.listingEntityType,
+            listingEntityId: aiConversations.listingEntityId,
+            deletedAt: aiConversations.deletedAt
+        })
+        .from(aiConversations)
+        .where(eq(aiConversations.id, input.conversationId))
+        .limit(1);
+    const row = rows[0];
+    const reusable =
+        row !== undefined &&
+        row.deletedAt === null &&
+        row.userId === input.userId &&
+        row.feature === input.feature &&
+        row.listingEntityType === (input.listing?.entityType ?? null) &&
+        row.listingEntityId === (input.listing?.entityId ?? null);
+    if (!reusable) {
+        apiLogger.warn(
+            { userId: input.userId, feature: input.feature, conversationId: input.conversationId },
+            'ai-chat-persistence: client conversationId not reusable for this turn, starting a new conversation'
+        );
+    }
+    return { conversationId: reusable ? input.conversationId : null };
+}
+
+// ---------------------------------------------------------------------------
 // Generic helper
 // ---------------------------------------------------------------------------
 
@@ -131,12 +197,20 @@ export async function persistConversationTurn(
     } = input;
 
     const db = getDb();
-    let resolvedConversationId = conversationId;
+    // HOS-2101 review (M1): never append to a conversation the client cannot
+    // prove is this turn's — an untrusted id falls back to a new row.
+    const { conversationId: reusableId } = await resolveReusableConversationId({
+        conversationId,
+        userId,
+        feature,
+        ...(listing === undefined ? {} : { listing })
+    });
+    let resolvedConversationId = reusableId;
 
     // -----------------------------------------------------------------------
-    // Step 1 — First turn: create the aiConversations row.
+    // Step 1 — First turn (or untrusted id): create the aiConversations row.
     // -----------------------------------------------------------------------
-    if (conversationId === null) {
+    if (reusableId === null) {
         try {
             const rows = await db
                 .insert(aiConversations)
