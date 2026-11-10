@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4266, #4269
+    {
+        id: '2026-11-10-ai-questions-tab',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mirá qué le preguntan los turistas al asistente de tu ficha',
+            en: 'See what travellers ask your listing assistant',
+            pt: 'Veja o que os turistas perguntam ao assistente da sua página'
+        },
+        body: {
+            es: 'En el editor de tu ficha hay una pestaña nueva, **Preguntas a la IA**, con lo que los visitantes le preguntaron al asistente, sin datos de quién preguntó. Arriba aparecen las que **quedaron sin responder** porque el dato no estaba en tu ficha, con un botón para **agregarlas como pregunta frecuente** en un clic. Además, si en la semana quedó alguna sin responder, te llega un **resumen por mail** (lo podés desactivar desde Preferencias).',
+            en: 'Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences).',
+            pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências).'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4221
     {
         id: '2026-11-08-venue-experience-services-editor',
