@@ -3,32 +3,53 @@ import { Client } from 'pg';
 import { afterAll, beforeAll, expect } from 'vitest';
 
 /**
- * Why this exists: parallel workers share one DB and one sweep lease, so a `single` run refused
- * (or a cycle slice skipped) whenever another file held it. Serializing the sweep files removes that.
+ * Why this exists: parallel workers share one database, and some services act on EVERY eligible
+ * row of it rather than on the rows a case seeded. Two files driving the same global service at
+ * once step on each other, so every file that drives one takes that service's session-level
+ * advisory lock for its whole run and those files execute one at a time. One lock per resource:
+ * files of different groups still run in parallel.
  *
- * The reconciliation sweep owns one global lease: a `single` run refuses while any cycle slice
- * holds it, and two cycle slices exclude each other. Test files run in parallel workers over one
- * database, so every file that drives the sweep takes this session-level advisory lock for its
- * whole run and the sweep files execute one at a time.
+ * - The reconciliation sweep owns one global lease: a `single` run refuses while any cycle slice
+ *   holds it, and two cycle slices exclude each other.
+ * - The S38 due-change batch (`applyDueScheduledChanges`, HOS-2103) applies every due queue entry
+ *   in the database. A batch run by one file applied the rows another file had just seeded, so
+ *   that file's own run never saw them: no coverage notice for its user, no FAILED result for its
+ *   spied row.
  */
-const SWEEP_LOCK_KEY = 1_999_001;
-const DRIVES_THE_SWEEP =
-    /billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/;
+const SERIAL_GROUPS = [
+    {
+        key: 1_999_001,
+        drives: /billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/
+    },
+    { key: 1_999_002, drives: /\bapplyDueScheduledChanges\b/ }
+] as const;
 const LOCK_WAIT_MS = 15 * 60_000;
 
 let client: Client | null = null;
+let heldKeys: number[] = [];
 
 beforeAll(async () => {
     const path = expect.getState().testPath;
-    if (!path || !DRIVES_THE_SWEEP.test(readFileSync(path, 'utf8'))) return;
+    if (!path) return;
+    const source = readFileSync(path, 'utf8');
+    // Ascending key order, so two files that match several groups can never deadlock.
+    const keys = SERIAL_GROUPS.filter((group) => group.drives.test(source))
+        .map((group) => group.key)
+        .sort((a, b) => a - b);
+    if (keys.length === 0) return;
     client = new Client({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL });
     await client.connect();
-    await client.query('SELECT pg_advisory_lock($1)', [SWEEP_LOCK_KEY]);
+    for (const key of keys) {
+        await client.query('SELECT pg_advisory_lock($1)', [key]);
+        heldKeys.push(key);
+    }
 }, LOCK_WAIT_MS);
 
 afterAll(async () => {
     if (!client) return;
-    await client.query('SELECT pg_advisory_unlock($1)', [SWEEP_LOCK_KEY]);
+    for (const key of heldKeys.reverse())
+        await client.query('SELECT pg_advisory_unlock($1)', [key]);
+    heldKeys = [];
     await client.end();
     client = null;
 });
