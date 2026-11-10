@@ -337,3 +337,57 @@ describe('PreferenceToggles', () => {
         });
     });
 });
+
+describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('is checked when the setting is absent: the digest is opt-out', async () => {
+        globalThis.fetch = buildGetMock();
+
+        renderToggles();
+        const checkbox = await waitFor(() =>
+            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+        );
+
+        expect((checkbox as HTMLInputElement).checked).toBe(true);
+    });
+
+    it('is unchecked when the owner switched it off', async () => {
+        globalThis.fetch = buildGetMock({
+            ...BASE_SETTINGS,
+            aiQuestionsDigest: false
+        } as typeof BASE_SETTINGS);
+
+        renderToggles();
+        const checkbox = await waitFor(() =>
+            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+        );
+
+        expect((checkbox as HTMLInputElement).checked).toBe(false);
+    });
+
+    it('PATCHes only aiQuestionsDigest=false when switched off', async () => {
+        // Arrange
+        const patchBodies: unknown[] = [];
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            if ((opts?.method ?? 'GET') === 'PATCH') {
+                patchBodies.push(JSON.parse(String(opts?.body)));
+                return Promise.resolve(new Response(makePatchBody(true), { status: 200 }));
+            }
+            return Promise.resolve(new Response(makeUserResponse(), { status: 200 }));
+        });
+        renderToggles();
+        const checkbox = await waitFor(() =>
+            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+        );
+
+        // Act
+        fireEvent.click(checkbox);
+
+        // Assert
+        await waitFor(() => expect(patchBodies).toHaveLength(1));
+        expect(patchBodies[0]).toEqual({ settings: { aiQuestionsDigest: false } });
+    });
+});
