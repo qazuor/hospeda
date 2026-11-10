@@ -2434,5 +2434,106 @@
             "tourist": "Turistas",
             "partner": "Socios"
         }
+    },
+    "subscriptionAdmin": {
+        "title": "Suscripciones",
+        "detailTitle": "Detalle de la suscripción",
+        "searchLabel": "Buscar por email o nombre",
+        "searchPlaceholder": "Email, nombre o ID…",
+        "verticalFilter": "Vertical",
+        "statusFilter": "Estado",
+        "allVerticals": "Todas las verticales",
+        "allStatuses": "Todos los estados",
+        "loading": "Cargando suscripciones…",
+        "error": "No se pudieron cargar las suscripciones.",
+        "retry": "Reintentar",
+        "empty": "No hay suscripciones para estos filtros.",
+        "deletedOwner": "Cuenta borrada",
+        "unknownValue": "—",
+        "columns": {
+            "owner": "Dueño",
+            "name": "Nombre",
+            "vertical": "Vertical",
+            "plan": "Plan",
+            "class": "Clase",
+            "status": "Estado",
+            "cycle": "Ciclo",
+            "nextCharge": "Próximo cobro",
+            "createdAt": "Alta"
+        },
+        "statuses": {
+            "PENDING_AUTHORIZATION": "Pendiente de autorización",
+            "ABANDONED": "Abandonada",
+            "ACTIVE": "Activa",
+            "GRACE_PERIOD": "En período de gracia",
+            "PAUSED": "Pausada",
+            "SUSPENDED": "Suspendida",
+            "CANCEL_SCHEDULED": "Con baja programada",
+            "CANCELLED": "Cancelada",
+            "CHARGE_DECLINED": "Cobro rechazado"
+        },
+        "classes": {
+            "PRINCIPAL": "Principal",
+            "COMPLEMENTO": "Complemento",
+            "LAPIDA": "Lápida"
+        },
+        "verticals": {
+            "accommodation": "Alojamiento",
+            "venue": "Comer y salir",
+            "experience": "Experiencias",
+            "tourist": "Turista",
+            "partner": "Partner"
+        },
+        "cycles": {
+            "monthly": "Mensual",
+            "quarterly": "Trimestral",
+            "semiannual": "Semestral",
+            "annual": "Anual"
+        },
+        "pauseReasons": {
+            "CUSTOMER_REQUEST": "Pedido del cliente",
+            "COURTESY": "Cortesía"
+        },
+        "detail": {
+            "loading": "Cargando la suscripción…",
+            "owner": "Dueño",
+            "name": "Nombre",
+            "status": "Estado",
+            "class": "Clase",
+            "vertical": "Vertical",
+            "plan": "Plan",
+            "planVersion": "Versión del plan",
+            "planVersionRetired": "Retirada",
+            "planVersionCreatedAt": "Creada el {date}",
+            "price": "Precio",
+            "nextCharge": "Próximo cobro",
+            "serviceEndsAt": "Fin del servicio",
+            "pauseTitle": "Pausa vigente",
+            "pauseReason": "Motivo",
+            "pauseFrom": "Desde",
+            "pauseUntil": "Hasta",
+            "pauseNoExpectedEnd": "Sin fecha prevista",
+            "noPause": "Sin pausa",
+            "courtesyTitle": "Cortesía vigente",
+            "courtesyMonths": "Meses otorgados",
+            "courtesyUntil": "Hasta",
+            "courtesyRemaining": "Meses restantes",
+            "noCourtesy": "Sin cortesía",
+            "succession": "Sucesión",
+            "succeeds": "Sucede a",
+            "succeededBy": "Sucedida por",
+            "notFound": "Esta suscripción no existe.",
+            "error": "No se pudo cargar el detalle de la suscripción.",
+            "retry": "Reintentar"
+        },
+        "actions": {
+            "title": "Acciones",
+            "cancellation": "Dar de baja",
+            "revocation": "Revocar",
+            "pause": "Pausar",
+            "planChange": "Cambiar plan",
+            "courtesy": "Cortesía temporal",
+            "noPermissions": "No tenés permisos para operar esta suscripción."
+        }
     }
 }

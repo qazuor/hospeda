@@ -2434,5 +2434,106 @@
             "tourist": "Turistas",
             "partner": "Parceiros"
         }
+    },
+    "subscriptionAdmin": {
+        "title": "Assinaturas",
+        "detailTitle": "Detalhe da assinatura",
+        "searchLabel": "Buscar por email ou nome",
+        "searchPlaceholder": "Email, nome ou ID…",
+        "verticalFilter": "Vertical",
+        "statusFilter": "Status",
+        "allVerticals": "Todas as verticais",
+        "allStatuses": "Todos os status",
+        "loading": "Carregando assinaturas…",
+        "error": "Não foi possível carregar as assinaturas.",
+        "retry": "Tentar novamente",
+        "empty": "Não há assinaturas para estes filtros.",
+        "deletedOwner": "Conta excluída",
+        "unknownValue": "—",
+        "columns": {
+            "owner": "Proprietário",
+            "name": "Nome",
+            "vertical": "Vertical",
+            "plan": "Plano",
+            "class": "Classe",
+            "status": "Status",
+            "cycle": "Ciclo",
+            "nextCharge": "Próxima cobrança",
+            "createdAt": "Criada em"
+        },
+        "statuses": {
+            "PENDING_AUTHORIZATION": "Pendente de autorização",
+            "ABANDONED": "Abandonada",
+            "ACTIVE": "Ativa",
+            "GRACE_PERIOD": "Em período de carência",
+            "PAUSED": "Pausada",
+            "SUSPENDED": "Suspensa",
+            "CANCEL_SCHEDULED": "Cancelamento agendado",
+            "CANCELLED": "Cancelada",
+            "CHARGE_DECLINED": "Cobrança recusada"
+        },
+        "classes": {
+            "PRINCIPAL": "Principal",
+            "COMPLEMENTO": "Complemento",
+            "LAPIDA": "Lápide"
+        },
+        "verticals": {
+            "accommodation": "Hospedagem",
+            "venue": "Comer e sair",
+            "experience": "Experiências",
+            "tourist": "Turista",
+            "partner": "Parceiro"
+        },
+        "cycles": {
+            "monthly": "Mensal",
+            "quarterly": "Trimestral",
+            "semiannual": "Semestral",
+            "annual": "Anual"
+        },
+        "pauseReasons": {
+            "CUSTOMER_REQUEST": "Pedido do cliente",
+            "COURTESY": "Cortesia"
+        },
+        "detail": {
+            "loading": "Carregando a assinatura…",
+            "owner": "Proprietário",
+            "name": "Nome",
+            "status": "Status",
+            "class": "Classe",
+            "vertical": "Vertical",
+            "plan": "Plano",
+            "planVersion": "Versão do plano",
+            "planVersionRetired": "Retirada",
+            "planVersionCreatedAt": "Criada em {date}",
+            "price": "Preço",
+            "nextCharge": "Próxima cobrança",
+            "serviceEndsAt": "Fim do serviço",
+            "pauseTitle": "Pausa vigente",
+            "pauseReason": "Motivo",
+            "pauseFrom": "Desde",
+            "pauseUntil": "Até",
+            "pauseNoExpectedEnd": "Sem data prevista",
+            "noPause": "Sem pausa",
+            "courtesyTitle": "Cortesia vigente",
+            "courtesyMonths": "Meses concedidos",
+            "courtesyUntil": "Até",
+            "courtesyRemaining": "Meses restantes",
+            "noCourtesy": "Sem cortesia",
+            "succession": "Sucessão",
+            "succeeds": "Sucede",
+            "succeededBy": "Sucedida por",
+            "notFound": "Esta assinatura não existe.",
+            "error": "Não foi possível carregar o detalhe da assinatura.",
+            "retry": "Tentar novamente"
+        },
+        "actions": {
+            "title": "Ações",
+            "cancellation": "Cancelar assinatura",
+            "revocation": "Revogar assinatura",
+            "pause": "Pausar",
+            "planChange": "Alterar plano",
+            "courtesy": "Cortesia temporária",
+            "noPermissions": "Você não tem permissão para operar esta assinatura."
+        }
     }
 }

@@ -2434,5 +2434,106 @@
             "tourist": "Tourists",
             "partner": "Partners"
         }
+    },
+    "subscriptionAdmin": {
+        "title": "Subscriptions",
+        "detailTitle": "Subscription detail",
+        "searchLabel": "Search by email or name",
+        "searchPlaceholder": "Email, name or ID…",
+        "verticalFilter": "Vertical",
+        "statusFilter": "Status",
+        "allVerticals": "All verticals",
+        "allStatuses": "All statuses",
+        "loading": "Loading subscriptions…",
+        "error": "The subscriptions could not be loaded.",
+        "retry": "Retry",
+        "empty": "No subscriptions match these filters.",
+        "deletedOwner": "Deleted account",
+        "unknownValue": "—",
+        "columns": {
+            "owner": "Owner",
+            "name": "Name",
+            "vertical": "Vertical",
+            "plan": "Plan",
+            "class": "Class",
+            "status": "Status",
+            "cycle": "Cycle",
+            "nextCharge": "Next charge",
+            "createdAt": "Created"
+        },
+        "statuses": {
+            "PENDING_AUTHORIZATION": "Pending authorization",
+            "ABANDONED": "Abandoned",
+            "ACTIVE": "Active",
+            "GRACE_PERIOD": "In grace period",
+            "PAUSED": "Paused",
+            "SUSPENDED": "Suspended",
+            "CANCEL_SCHEDULED": "Cancellation scheduled",
+            "CANCELLED": "Cancelled",
+            "CHARGE_DECLINED": "Charge declined"
+        },
+        "classes": {
+            "PRINCIPAL": "Principal",
+            "COMPLEMENTO": "Complement",
+            "LAPIDA": "Tombstone"
+        },
+        "verticals": {
+            "accommodation": "Accommodation",
+            "venue": "Food and drinks",
+            "experience": "Experiences",
+            "tourist": "Tourist",
+            "partner": "Partner"
+        },
+        "cycles": {
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "semiannual": "Semiannual",
+            "annual": "Annual"
+        },
+        "pauseReasons": {
+            "CUSTOMER_REQUEST": "Customer request",
+            "COURTESY": "Courtesy"
+        },
+        "detail": {
+            "loading": "Loading the subscription…",
+            "owner": "Owner",
+            "name": "Name",
+            "status": "Status",
+            "class": "Class",
+            "vertical": "Vertical",
+            "plan": "Plan",
+            "planVersion": "Plan version",
+            "planVersionRetired": "Retired",
+            "planVersionCreatedAt": "Created on {date}",
+            "price": "Price",
+            "nextCharge": "Next charge",
+            "serviceEndsAt": "Service end",
+            "pauseTitle": "Open pause",
+            "pauseReason": "Reason",
+            "pauseFrom": "From",
+            "pauseUntil": "Until",
+            "pauseNoExpectedEnd": "No expected end",
+            "noPause": "No pause",
+            "courtesyTitle": "Current courtesy",
+            "courtesyMonths": "Months granted",
+            "courtesyUntil": "Until",
+            "courtesyRemaining": "Months remaining",
+            "noCourtesy": "No courtesy",
+            "succession": "Succession",
+            "succeeds": "Succeeds",
+            "succeededBy": "Succeeded by",
+            "notFound": "This subscription does not exist.",
+            "error": "The subscription detail could not be loaded.",
+            "retry": "Retry"
+        },
+        "actions": {
+            "title": "Actions",
+            "cancellation": "Cancel subscription",
+            "revocation": "Revoke subscription",
+            "pause": "Pause",
+            "planChange": "Change plan",
+            "courtesy": "Temporary courtesy",
+            "noPermissions": "You do not have permission to operate this subscription."
+        }
     }
 }
