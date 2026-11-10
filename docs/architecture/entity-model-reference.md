@@ -263,13 +263,22 @@ Accommodation:
    - location (number) -> 0-5
  - extraInfo (object) -> optional
    - capacity (number) -> integer
-   - minNights (number) -> integer
-   - maxNights (number) -> integer, optional
    - bedrooms (number) -> integer
    - beds (number) -> integer, optional
    - bathrooms (number) -> integer
-   - smokingAllowed (boolean) -> optional
    - extraInfo (string[]) -> optional
+ - policies (object) -> jsonb, optional (HOS-2060). The shared base comes from `ListingPoliciesBaseSchema`, and venues and experiences extend it with their own keys.
+   - paymentMethods (enum[]) -> no duplicates, nullish
+   - pets (object) -> nullish
+     - admission (enum: no, yes, on_request)
+     - extraCost (boolean) -> optional
+     - notes (I18nText) -> max 200 per locale, optional
+   - smokingAllowed (enum: no, yes, outdoor_only) -> nullish
+   - eventsAllowed (boolean) -> nullish
+   - checkIn (object) -> { from?, to? } in HH:mm, nullish
+   - checkOut (object) -> { from?, to? } in HH:mm, nullish
+   - minNights (number) -> integer, nullish
+   - maxNights (number) -> integer, >= minNights, nullish
  - contactInfo (object) -> nullable
    - personalEmail (string) -> optional
    - workEmail (string) -> optional
