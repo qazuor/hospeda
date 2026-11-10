@@ -4,7 +4,9 @@ import {
     asc,
     eq,
     getDb,
+    gte,
     inArray,
+    lt,
     lte,
     sql,
     subscriptionScheduledChanges,
@@ -19,16 +21,21 @@ import {
     type ApplyScheduledChangeResult,
     applyScheduledChangeInTx
 } from './apply-scheduled-change.service.js';
+import {
+    recordScheduledChangeFailure,
+    SCHEDULED_CHANGE_MAX_ATTEMPTS
+} from './scheduled-change-attempts.js';
 import type { SurplusStep } from './scheduled-change-surplus-step.js';
 
 const logger = createLogger('apply-due-scheduled-changes');
 const inputSchema = z.strictObject({ limit: z.number().int().min(1).max(1000) });
 const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'] as const;
 
-/** One keyset page row: the queue id, its subscription, and the exact `effective_at` text. */
+/** One keyset page row: the queue id, its subscription, its date, and the exact `effective_at` text. */
 interface DuePageRow {
     readonly id: string;
     readonly subscriptionId: string;
+    readonly effectiveAt: Date;
     readonly cursorAt: string;
 }
 
@@ -113,11 +120,13 @@ export async function applyDueScheduledChanges(
     readonly waiting: number;
     readonly notApplicable: number;
     readonly failed: number;
+    readonly exhausted: number;
     readonly warnings: readonly string[];
     readonly results: readonly {
         readonly subscriptionId: string;
-        readonly outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED';
+        readonly outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED' | 'EXHAUSTED';
         readonly reason?: string;
+        readonly attemptCount?: number;
     }[];
 }> {
     const { limit } = inputSchema.parse(input);
@@ -136,18 +145,42 @@ export async function applyDueScheduledChanges(
         );
     const results: {
         subscriptionId: string;
-        outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED';
+        outcome: 'APPLIED' | 'NOT_APPLICABLE' | 'FAILED' | 'EXHAUSTED';
         reason?: string;
+        attemptCount?: number;
     }[] = waitingRows.map((row) => ({
         subscriptionId: row.subscriptionId,
         outcome: 'NOT_APPLICABLE',
         reason: row.status === 'PAUSED' ? 'WAITS_PAUSED' : 'WAITS_SUSPENDED'
     }));
+    const exhaustedRows = await db
+        .select({
+            subscriptionId: subscriptionScheduledChanges.subscriptionId,
+            attemptCount: subscriptionScheduledChanges.attemptCount
+        })
+        .from(subscriptionScheduledChanges)
+        .innerJoin(subscriptions, eq(subscriptions.id, subscriptionScheduledChanges.subscriptionId))
+        .where(
+            and(
+                eq(subscriptions.class, 'PRINCIPAL'),
+                inArray(subscriptions.status, [...LIVE_STATUSES]),
+                lte(subscriptionScheduledChanges.effectiveAt, now),
+                gte(subscriptionScheduledChanges.attemptCount, SCHEDULED_CHANGE_MAX_ATTEMPTS)
+            )
+        );
+    for (const row of exhaustedRows) {
+        results.push({
+            subscriptionId: row.subscriptionId,
+            outcome: 'EXHAUSTED',
+            attemptCount: row.attemptCount
+        });
+    }
     const summary = {
         applied: 0,
         waiting: waitingRows.length,
         notApplicable: 0,
         failed: 0,
+        exhausted: exhaustedRows.length,
         warnings: [] as string[],
         results
     };
@@ -158,6 +191,7 @@ export async function applyDueScheduledChanges(
             .select({
                 id: subscriptionScheduledChanges.id,
                 subscriptionId: subscriptions.id,
+                effectiveAt: subscriptionScheduledChanges.effectiveAt,
                 cursorAt: sql<string>`${subscriptionScheduledChanges.effectiveAt}::text`
             })
             .from(subscriptionScheduledChanges)
@@ -170,6 +204,7 @@ export async function applyDueScheduledChanges(
                     eq(subscriptions.class, 'PRINCIPAL'),
                     inArray(subscriptions.status, [...LIVE_STATUSES]),
                     lte(subscriptionScheduledChanges.effectiveAt, now),
+                    lt(subscriptionScheduledChanges.attemptCount, SCHEDULED_CHANGE_MAX_ATTEMPTS),
                     cursor
                         ? sql`(${subscriptionScheduledChanges.effectiveAt}, ${subscriptionScheduledChanges.id}) > (${cursor.at}::timestamptz, ${cursor.id}::uuid)`
                         : undefined
@@ -227,6 +262,13 @@ export async function applyDueScheduledChanges(
                     { subscriptionId: row.subscriptionId, error },
                     'Scheduled change row failed; continuing batch'
                 );
+                await recordScheduledChangeFailure({
+                    scheduledChangeId: row.id,
+                    subscriptionId: row.subscriptionId,
+                    effectiveAt: row.effectiveAt,
+                    now,
+                    error
+                });
             }
         }
         if (page.length < limit) break;

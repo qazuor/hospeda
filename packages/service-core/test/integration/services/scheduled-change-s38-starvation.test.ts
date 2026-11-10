@@ -105,6 +105,22 @@ async function setEffectiveAtMicros(changeId: string, literal: string): Promise<
     );
 }
 
+/** The seeded queue row after exactly one recorded failure at `now` (HOS-2104 c2 counter). */
+function afterOneFailure(
+    row: Awaited<ReturnType<typeof scheduledChangesOf>>[number] | undefined,
+    now: Date
+) {
+    if (!row) throw new Error('seeded queue row is missing');
+    return [
+        {
+            ...row,
+            attemptCount: 1,
+            lastErrorAt: now,
+            lastError: 'injected step: S38 fails persistently for this subscription'
+        }
+    ];
+}
+
 /** Replaces the subscription's queue row from another connection (DELETE + INSERT, new id). */
 async function replaceQueueRow(input: {
     readonly subscriptionId: string;
@@ -179,11 +195,15 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
             const brokenOneRow = await subscriptionOf(brokenOne.predecessor.id);
             expect(brokenOneRow?.planVersionId).toBe(brokenOne.planVersionId);
-            expect(await scheduledChangesOf(brokenOne.predecessor.id)).toEqual(brokenOneQueue);
+            expect(await scheduledChangesOf(brokenOne.predecessor.id)).toEqual(
+                afterOneFailure(brokenOneQueue[0], now)
+            );
 
             const brokenTwoRow = await subscriptionOf(brokenTwo.predecessor.id);
             expect(brokenTwoRow?.planVersionId).toBe(brokenTwo.planVersionId);
-            expect(await scheduledChangesOf(brokenTwo.predecessor.id)).toEqual(brokenTwoQueue);
+            expect(await scheduledChangesOf(brokenTwo.predecessor.id)).toEqual(
+                afterOneFailure(brokenTwoQueue[0], now)
+            );
         });
 
         it('keeps the applied row committed when its page neighbour fails', async () => {
@@ -216,7 +236,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(await scheduledChangesOf(valid.predecessor.id)).toHaveLength(0);
             const brokenRow = await subscriptionOf(broken.predecessor.id);
             expect(brokenRow?.planVersionId).toBe(broken.planVersionId);
-            expect(await scheduledChangesOf(broken.predecessor.id)).toEqual(brokenQueue);
+            expect(await scheduledChangesOf(broken.predecessor.id)).toEqual(
+                afterOneFailure(brokenQueue[0], now)
+            );
         });
 
         it('applies every tied row on a page boundary exactly once', async () => {
