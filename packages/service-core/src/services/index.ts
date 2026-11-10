@@ -238,6 +238,7 @@ export * from './billing/refund/send-held-order-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';
+export * from './billing/subscription/admin-subscription-list.service.js';
 export * from './billing/subscription/admit-succession-predecessor.js';
 export * from './billing/subscription/after-activation-commit.js';
 export * from './billing/subscription/apply-due-scheduled-changes.service.js';
