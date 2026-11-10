@@ -71,16 +71,15 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 due-change batch',
         const activeResult = result.results.find(
             (row) => row.subscriptionId === active.predecessor.id
         );
-        if (activeResult) expect(activeResult.outcome).toBe('APPLIED');
+        expect(activeResult?.outcome).toBe('APPLIED');
         expect(activeQueue).toHaveLength(0);
         const pausedResult = result.results.find(
             (row) => row.subscriptionId === paused.predecessor.id
         );
-        if (pausedResult)
-            expect(pausedResult).toMatchObject({
-                outcome: 'NOT_APPLICABLE',
-                reason: 'WAITS_PAUSED'
-            });
+        expect(pausedResult).toMatchObject({
+            outcome: 'NOT_APPLICABLE',
+            reason: 'WAITS_PAUSED'
+        });
         expect(
             result.results.filter((row) => row.subscriptionId === paused.predecessor.id)
         ).toHaveLength(1);

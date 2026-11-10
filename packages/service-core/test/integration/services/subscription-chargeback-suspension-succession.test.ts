@@ -1,4 +1,4 @@
-import { emailOutbox, eq, idempotencyKeys, providerLinks, subscriptions } from '@repo/db';
+import { emailOutbox, eq, idempotencyKeys, payments, providerLinks, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger.js';
 import {
@@ -19,6 +19,36 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { successionPorts, successionReturnUrl } from './support/succession-fixtures.js';
 import { noTouristVip } from './support/tourist-vip.js';
+
+/**
+ * HOS-2103: what S6 read, taken right after `detect`. The case failed now and then in the
+ * parallel suite with no reason recorded; asserting on `{ suspension, state }` makes the next
+ * failure print the outcome, its reason and the rows it depends on.
+ */
+async function suspensionState(input: {
+    readonly predecessorId: string;
+    readonly userId: string;
+    readonly chargeId: string;
+}) {
+    const db = getServiceTestDb();
+    const [predecessor] = await db
+        .select({
+            status: subscriptions.status,
+            paymentMethod: subscriptions.paymentMethod,
+            succeededById: subscriptions.succeededById
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.predecessorId));
+    const [payment] = await db
+        .select({ status: payments.status })
+        .from(payments)
+        .where(eq(payments.providerFactId, input.chargeId));
+    const outbox = await db
+        .select({ template: emailOutbox.template, status: emailOutbox.status })
+        .from(emailOutbox)
+        .where(eq(emailOutbox.recipientUserId, input.userId));
+    return { predecessor, payment, outbox };
+}
 
 const successors: {
     readonly id: string;
@@ -111,7 +141,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .select({ status: subscriptions.status, succeedsId: subscriptions.succeedsId })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, started.subscriptionId));
-            expect(result.suspension?.outcome).toBe('SUSPENDED');
+            expect({
+                suspension: result.suspension,
+                state: await suspensionState({
+                    predecessorId: fixture.started.subscriptionId,
+                    userId: fixture.user.id,
+                    chargeId
+                })
+            }).toMatchObject({ suspension: { outcome: 'SUSPENDED' } });
             if (result.suspension?.outcome !== 'SUSPENDED')
                 throw new Error('Chargeback did not suspend the predecessor');
             expect(result.suspension.successorCut?.outcome).toBe('CUT');
@@ -195,6 +232,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .select({ status: subscriptions.status })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, started.subscriptionId));
+            expect({
+                suspension: result.suspension,
+                state: await suspensionState({
+                    predecessorId: fixture.started.subscriptionId,
+                    userId: fixture.user.id,
+                    chargeId
+                })
+            }).toMatchObject({ suspension: { outcome: 'SUSPENDED' } });
             if (result.suspension?.outcome !== 'SUSPENDED')
                 throw new Error('Chargeback did not suspend the predecessor');
             expect(result.suspension.successorCut).toMatchObject({
