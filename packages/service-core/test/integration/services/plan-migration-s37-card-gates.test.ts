@@ -154,22 +154,18 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('con no-entregable o failed definitivo, la mutación sale igual y el caso se registra y escala', async () => {
             const caseRow = await createS37MigrationCase();
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
             await run(caseRow);
 
             // Declared seed: the sender exhausts the retries and marks the row `failed`.
             await setNoticeStatus(caseRow, 'failed');
             expect(await run(caseRow)).toEqual({
-                outcome: 'READY_TO_MUTATE',
+                outcome: 'APPLIED_CARD',
                 escalated: true
             });
-            expect(await scopeRow(caseRow.scope.id)).toMatchObject({ status: 'PENDIENTE' });
-            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
-
-            await setNoticeStatus(caseRow, 'sent');
-            expect(await run(caseRow)).toEqual({
-                outcome: 'READY_TO_MUTATE',
-                escalated: false
-            });
+            expect(await scopeRow(caseRow.scope.id)).toMatchObject({ status: 'APLICADA' });
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(1);
+            expect(changeAmount).toHaveBeenCalledTimes(1);
         });
 
         it('con el preapproval no authorized, S37 no corre', async () => {
@@ -258,29 +254,29 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(await queueRows(queuedCase.subscriptionId)).toHaveLength(1);
         });
 
-        it('INV: una corrida de c1 no escribe plan_version_id, billing_option_id ni transaction_amount', async () => {
+        it('INV: la mutación confirmada no escribe plan_version_id ni billing_option_id: eso es S38', async () => {
             const caseRow = await createS37MigrationCase();
             const beforeAnchor = await anchor(caseRow.subscriptionId);
-            const beforeRead = await caseRow.fake.readAuthorization({
-                authorizationId: caseRow.authorizationId
-            });
             const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
 
             expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
             await setNoticeStatus(caseRow, 'sent');
             expect(await run(caseRow)).toEqual({
-                outcome: 'READY_TO_MUTATE',
+                outcome: 'APPLIED_CARD',
                 escalated: false
             });
 
             expect(await anchor(caseRow.subscriptionId)).toEqual(beforeAnchor);
-            expect(changeAmount).toHaveBeenCalledTimes(0);
+            expect(changeAmount).toHaveBeenCalledTimes(1);
+            expect(S37_DAY).toEqual(caseRow.clock.now());
             vi.restoreAllMocks();
             const afterRead = await caseRow.fake.readAuthorization({
                 authorizationId: caseRow.authorizationId
             });
-            expect(afterRead.snapshot.amount).toEqual(beforeRead.snapshot.amount);
-            expect(S37_DAY).toEqual(caseRow.clock.now());
+            expect(afterRead.snapshot.amount).toEqual({
+                amountMinor: caseRow.targetAmountMinor,
+                currency: 'ARS'
+            });
         });
 
         it('APPLICATION_DATE_MISMATCH también corta al pagador con tarjeta sin llamar al proveedor', async () => {
@@ -356,7 +352,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await db.update(users).set({ deletedAt: S37_DAY }).where(eq(users.id, caseRow.userId));
 
             expect(await run(caseRow)).toEqual({
-                outcome: 'READY_TO_MUTATE',
+                outcome: 'APPLIED_CARD',
                 escalated: true
             });
             const [mail] = await upcomingRows(caseRow);

@@ -7,7 +7,6 @@ import {
     getDb,
     planMigrationSubscriptions,
     planMigrations,
-    promoRedemptions,
     providerLinks,
     subscriptionScheduledChanges,
     subscriptions,
@@ -25,6 +24,11 @@ import {
     planMigrationNoticeDedupKey
 } from './plan-migration-notice.js';
 import { planMigrationRowPricing } from './plan-migration-pricing.js';
+import {
+    applyS37ClosureInTx,
+    type PlanMigrationS37CardResult,
+    runS37Card
+} from './plan-migration-s37-card.js';
 import {
     evaluateS37Guards,
     type PlanMigrationS37GuardVerdict
@@ -45,7 +49,7 @@ export type PlanMigrationS37Result =
     | { readonly outcome: 'APPLIED_MANUAL' }
     | { readonly outcome: 'NOTICE_PENDING' }
     | { readonly outcome: 'NOT_AUTHORIZED'; readonly reason: string }
-    | { readonly outcome: 'READY_TO_MUTATE'; readonly escalated: boolean };
+    | PlanMigrationS37CardResult;
 
 type StopOutcome =
     | { readonly outcome: 'SKIPPED' | 'WAITING' | 'NOT_DUE'; readonly reason: string }
@@ -58,6 +62,19 @@ type TransactionOutcome =
           readonly escalated: boolean;
           readonly dedupKey: string;
           readonly authorizationId: string | null;
+          readonly scopeId: string;
+          readonly subscriptionId: string;
+      };
+
+type FinishCardOutcome =
+    | { readonly outcome: 'NOTICE_PENDING' }
+    | { readonly outcome: 'NOT_AUTHORIZED'; readonly reason: string }
+    | {
+          readonly outcome: 'READY_TO_MUTATE';
+          readonly escalated: boolean;
+          readonly authorizationId: string;
+          readonly scopeId: string;
+          readonly subscriptionId: string;
       };
 
 class ApplicationDateMismatch extends Error {
@@ -113,7 +130,22 @@ export async function runPlanMigrationS37ForRow(
         throw error;
     }
     if (outcome.outcome !== 'CARD_PENDING') return outcome;
-    return finishCard({ provider: ports.provider, clock: ports.clock, row: outcome });
+    const gate = await finishCard({
+        provider: ports.provider,
+        clock: ports.clock,
+        row: outcome
+    });
+    if (gate.outcome !== 'READY_TO_MUTATE') return gate;
+    return runS37Card(
+        {
+            scopeId: gate.scopeId,
+            subscriptionId: gate.subscriptionId,
+            authorizationId: gate.authorizationId,
+            escalated: gate.escalated,
+            correlationId: parsed.correlationId
+        },
+        { provider: ports.provider, clock: ports.clock }
+    );
 }
 
 async function runInsideTransaction(input: {
@@ -257,22 +289,13 @@ async function runInsideTransaction(input: {
                 ServiceErrorCode.CONFIGURATION_ERROR,
                 'Migration destination cycle is missing'
             );
-        await tx.insert(subscriptionScheduledChanges).values({
-            subscriptionId: row.subscriptionId,
-            targetPlanVersionId: migration.targetPlanVersionId,
-            targetBillingOptionId: targetOption.id,
-            effectiveAt: row.nextChargeAt,
-            planMigrationSubscriptionId: row.scopeId,
-            keepSelection: null
-        });
-        await tx
-            .update(promoRedemptions)
-            .set({ remainingCharges: 0 })
-            .where(eq(promoRedemptions.subscriptionId, row.subscriptionId));
-        await tx
-            .update(planMigrationSubscriptions)
-            .set({ status: 'APLICADA', appliedAt: now })
-            .where(eq(planMigrationSubscriptions.id, row.scopeId));
+        const closure = await applyS37ClosureInTx({ tx, scopeId: row.scopeId, now });
+        if (closure.kind === 'DATE_MISMATCH') throw new ApplicationDateMismatch(closure.details);
+        if (closure.kind !== 'CLOSED')
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Manual S37 closure found the row out of its pending state'
+            );
         return { outcome: 'APPLIED_MANUAL' };
     }
 
@@ -297,7 +320,9 @@ async function runInsideTransaction(input: {
         outcome: 'CARD_PENDING',
         escalated: false,
         dedupKey,
-        authorizationId: link?.authorizationId ?? null
+        authorizationId: link?.authorizationId ?? null,
+        scopeId: row.scopeId,
+        subscriptionId: row.subscriptionId
     };
 }
 
@@ -314,7 +339,7 @@ async function finishCard(input: {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly row: Extract<TransactionOutcome, { outcome: 'CARD_PENDING' }>;
-}): Promise<PlanMigrationS37Result> {
+}): Promise<FinishCardOutcome> {
     const state = await readS37NoticeState({ dedupKey: input.row.dedupKey });
     if (state === 'PENDING' || state === 'ABSENT') return { outcome: 'NOTICE_PENDING' };
     let escalated = input.row.escalated;
@@ -335,5 +360,11 @@ async function finishCard(input: {
     const fresh = assertFreshForAct({ read, act });
     if (fresh.snapshot.status !== 'active')
         return { outcome: 'NOT_AUTHORIZED', reason: 'NOT_ACTIVE' };
-    return { outcome: 'READY_TO_MUTATE', escalated };
+    return {
+        outcome: 'READY_TO_MUTATE',
+        escalated,
+        authorizationId: input.row.authorizationId,
+        scopeId: input.row.scopeId,
+        subscriptionId: input.row.subscriptionId
+    };
 }
