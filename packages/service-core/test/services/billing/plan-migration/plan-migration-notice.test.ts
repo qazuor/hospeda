@@ -16,7 +16,7 @@ describe('TEST:B12:3 AC:B12:3 el correo del anuncio usa una clave estable por fi
             template: PLAN_MIGRATION_ANNOUNCED_TEMPLATE,
             planMigrationSubscriptionId: '2b222222-2222-4222-8222-222222222222',
             milestone: 'mig:announce'
-        };
+        } as const;
         const first = planMigrationNoticeDedupKey({
             ...input,
             targetDate: getLocalDateString({ instant: new Date('2026-10-11T12:00:00.000Z') })
@@ -65,7 +65,7 @@ describe('TEST:B12:3 AC:B12:3 el correo del anuncio usa una clave estable por fi
                 variant: 'SCHEDULED' as const,
                 deadlinesVersion: 1
             }
-        };
+        } as const;
         expect(await enqueuePlanMigrationNotice(input)).toEqual({ enqueued: true });
         expect(await enqueuePlanMigrationNotice(input)).toEqual({ enqueued: false });
         expect(enqueue).toHaveBeenCalledTimes(2);

@@ -131,7 +131,7 @@ async function expectedAnnouncement(args: {
     if (!scope || !previewRow) throw new Error('Expected preview row missing');
     return {
         recipientUserId: args.recipientUserId,
-        template: 'billing.plan-migration-announced',
+        template: 'billing.plan-migration-announced' as const,
         dedupKey: buildEmailDedupKey({
             recipient: args.recipientUserId,
             template: 'billing.plan-migration-announced',
@@ -211,7 +211,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     milestone: 'mig:announce',
                     targetDate: getLocalDateString({ instant: migrationClock.now() }),
                     payload: scheduled.payload
-                };
+                } as const;
                 expect(await enqueuePlanMigrationNotice(input)).toEqual({ enqueued: false });
                 expect(await enqueuePlanMigrationNotice(input)).toEqual({ enqueued: false });
             });
