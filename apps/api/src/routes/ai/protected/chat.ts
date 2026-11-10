@@ -188,6 +188,9 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             vertical: ownerVertical
         });
 
+        // HOS-2100: a rejected attempt is recorded with the same owner/visitor
+        // pair as a served one, whichever gate rejects it.
+        const usageAttribution = { userId: ownerId, consumerUserId: actor.id } as const;
         await enforceAiQuota({
             userId: ownerId,
             vertical: ownerVertical,
@@ -196,7 +199,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
             entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
             effectiveSetSnapshot: ownerEffectiveSet,
-            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.'
+            limitMessage: 'El propietario ha alcanzado el límite mensual de chats de IA.',
+            usageAttribution
         });
         await enforceAiQuota({
             userId: actor.id,
@@ -208,7 +212,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             // `consumer_user_id`. Counting by `user_id` would read the rows
             // billed to this user AS AN OWNER (other tourists' questions on
             // their listings) instead of the questions they asked.
-            countKeyedBy: 'consumer'
+            countKeyedBy: 'consumer',
+            usageAttribution
         });
 
         const listingSections = (() => {
