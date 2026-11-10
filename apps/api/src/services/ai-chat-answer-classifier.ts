@@ -54,8 +54,16 @@ export const MAX_CLASSIFIER_INPUT_CHARS = 1200;
  */
 export const CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE = 'chat_answer_classifier';
 
-/** Output cap: the verdict is a single word. */
-export const CLASSIFIER_MAX_OUTPUT_TOKENS = 5;
+/**
+ * Output cap. The verdict is a single word, but the OpenAI Responses API
+ * rejects any `max_output_tokens` below 16 ("Expected a value >= 16"), and a
+ * rejected call leaves every turn `unclassified`. 16 is that provider floor;
+ * the model still stops after the one-word verdict (measured: 6 tokens).
+ */
+export const CLASSIFIER_MAX_OUTPUT_TOKENS = 16;
+
+/** Lowest `max_output_tokens` the OpenAI Responses API accepts. */
+export const OPENAI_MIN_OUTPUT_TOKENS = 16;
 
 /**
  * Fixed instruction. English on purpose: it is read by the model only, and

@@ -17,6 +17,7 @@ import {
     type ClassifyChatAnswerDeps,
     classifyChatAnswer,
     MAX_CLASSIFIER_INPUT_CHARS,
+    OPENAI_MIN_OUTPUT_TOKENS,
     parseClassifierVerdict,
     scheduleChatAnswerClassification
 } from '../../src/services/ai-chat-answer-classifier';
@@ -134,6 +135,9 @@ describe('classifyChatAnswer', () => {
         };
         expect(request.feature).toBe('chat_venue');
         expect(request.params).toEqual({ maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 });
+        // Regression (HOS-2101 smoke): OpenAI rejects a cap below 16, which left
+        // every staging turn unclassified.
+        expect(request.params.maxTokens).toBeGreaterThanOrEqual(OPENAI_MIN_OUTPUT_TOKENS);
         // Question + answer are both clipped, so the prompt stays bounded.
         expect(request.prompt.length).toBeLessThan(MAX_CLASSIFIER_INPUT_CHARS * 2 + 100);
     });
