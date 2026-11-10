@@ -67,6 +67,15 @@ export const aiMessages = pgTable(
          */
         provider: varchar('provider', { length: 50 }),
 
+        /**
+         * Whether an assistant chat answer actually answered the question
+         * (HOS-2101): `answered` | `unanswered`. Written asynchronously by the
+         * chat-answer classifier after the turn is persisted. NULL means "not
+         * classified" — the classifier has not run, failed, or the row is not an
+         * assistant chat answer — and is never read as either verdict.
+         */
+        answerStatus: varchar('answer_status', { length: 20 }),
+
         // ---- Timestamps ----
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -92,6 +101,14 @@ export const aiMessages = pgTable(
         aiMessages_conversationId_role_idx: index('aiMessages_conversationId_role_idx').on(
             table.conversationId,
             table.role
+        ),
+
+        /**
+         * Weekly digest query (HOS-2101): unanswered answers inside a window.
+         */
+        aiMessages_answerStatus_created_idx: index('aiMessages_answerStatus_created_idx').on(
+            table.answerStatus,
+            table.createdAt
         )
     })
 );

@@ -282,7 +282,16 @@ export enum NotificationType {
      *
      * TRANSACTIONAL: legally mandated, always sent, never opted out of.
      */
-    PLAN_PRICE_CHANGE_NOTICE = 'plan_price_change_notice'
+    PLAN_PRICE_CHANGE_NOTICE = 'plan_price_change_notice',
+    /**
+     * HOS-2101 — weekly digest to a listing owner of the AI chat questions
+     * their listings could not answer that week.
+     *
+     * REMINDER: a nudge, opt-out-able. The cron additionally honours the
+     * dedicated `settings.aiQuestionsDigest === false` switch, and never sends
+     * when the week had no unanswered question.
+     */
+    AI_QUESTIONS_WEEKLY_DIGEST = 'ai_questions_weekly_digest'
 }
 
 /**
@@ -1123,6 +1132,39 @@ export interface PartnerMentionsLoggedPayload extends BaseNotificationPayload {
     readonly mentions: readonly PartnerMentionEntryPayload[];
 }
 
+/** One listing inside an {@link AiQuestionsWeeklyDigestPayload}. */
+export interface AiQuestionsDigestListingPayload {
+    /** Display name of the listing. */
+    readonly listingName: string;
+    /** Unanswered questions on this listing during the week (exact). */
+    readonly unansweredCount: number;
+    /** Up to five of those questions, newest first. */
+    readonly questions: readonly string[];
+    /** Absolute link to the listing's «Preguntas a la IA» tab. */
+    readonly panelUrl: string;
+}
+
+/**
+ * Payload for the AI_QUESTIONS_WEEKLY_DIGEST notification (HOS-2101).
+ *
+ * One email per owner per week, covering every listing that had at least one
+ * unanswered question. Anonymous like the panel: questions only, never who
+ * asked them. The copy is localised inside the template (this package does not
+ * use `@repo/i18n`), so the payload carries the locale and the already-built
+ * subject.
+ */
+export interface AiQuestionsWeeklyDigestPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.AI_QUESTIONS_WEEKLY_DIGEST;
+    /** Recipient locale for the copy. */
+    readonly locale: 'es' | 'en' | 'pt';
+    /** Localised subject line, built by {@link buildAiQuestionsDigestSubject}. */
+    readonly digestSubject: string;
+    /** The listings, never empty. */
+    readonly listings: readonly AiQuestionsDigestListingPayload[];
+    /** Absolute link to the account preferences page (opt-out). */
+    readonly preferencesUrl: string;
+}
+
 /**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
@@ -1289,4 +1331,5 @@ export type NotificationPayload =
     | PartnerRevokedPayload
     | PartnerMentionsLoggedPayload
     | AccommodationCalendarFeedBrokenPayload
-    | PlanPriceChangeNoticePayload;
+    | PlanPriceChangeNoticePayload
+    | AiQuestionsWeeklyDigestPayload;

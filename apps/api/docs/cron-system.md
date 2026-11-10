@@ -922,6 +922,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `social-publish-dispatch` | content | `*/5 * * * *` | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` |
 | `cloudinary-e2e-cleanup` | media | `0 2 * * 0` | `apps/api/src/cron/jobs/cloudinary-e2e-cleanup.job.ts` |
 | `media-orphan-cleanup` | media | `0 0 * * 0` | `apps/api/src/cron/jobs/media-orphan-cleanup.job.ts` |
+| `ai-questions-weekly-digest` | notifications | `0 9 * * 1` | `apps/api/src/cron/jobs/ai-questions-weekly-digest.job.ts` |
 | `alerts-digest` | notifications | `0 8 * * *` | `apps/api/src/cron/jobs/alerts-digest.job.ts` |
 | `conversation-notification` | notifications | `*/5 * * * *` | `apps/api/src/cron/jobs/conversation-notification.job.ts` |
 | `conversation-token-reminder` | notifications | `0 9 * * *` | `apps/api/src/cron/jobs/conversation-token-reminder.job.ts` |
@@ -933,6 +934,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `notification-schedule` | notifications | `0 8 * * *` | `apps/api/src/cron/jobs/notification-schedule.job.ts` |
 | `page-revalidation` | search-cache | `0 * * * *` | `apps/api/src/cron/jobs/page-revalidation.job.ts` |
 | `search-index-refresh` | search-cache | `0 */6 * * *` | `apps/api/src/cron/jobs/search-index-refresh.job.ts` |
+| `ai-listing-questions-retention` | system | `45 3 * * *` | `apps/api/src/cron/jobs/ai-listing-questions-retention.job.ts` |
 | `app-log-purge` | system | `0 5 * * *` | `apps/api/src/cron/jobs/app-log-purge.job.ts` |
 | `conversation-token-cleanup` | system | `0 3 * * *` | `apps/api/src/cron/jobs/conversation-token-cleanup.job.ts` |
 | `cron-run-purge` | system | `0 4 * * *` | `apps/api/src/cron/jobs/cron-run-purge.job.ts` |

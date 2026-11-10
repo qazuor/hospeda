@@ -8,6 +8,7 @@
 
 import { recordAiUsage } from '@repo/ai-core';
 import type { AiChatEntityType, AiFeature, LanguageEnum, StreamTextFinalMeta } from '@repo/schemas';
+import { scheduleChatAnswerClassification } from '../../../services/ai-chat-answer-classifier.js';
 import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
 import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
 import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides.js';
@@ -129,7 +130,17 @@ export async function finalizeChatTurn(
                 userMessage: input.userMessage,
                 assistantMessage: input.assistantText,
                 meta: resolvedMeta
-            }).then((result) => result.conversationId);
+            }).then((result) => {
+                // HOS-2101: detached, never awaited — see the classifier module.
+                scheduleChatAnswerClassification({
+                    assistantMessageId: result.assistantMessageId,
+                    question: input.userMessage,
+                    answer: input.assistantText,
+                    feature: input.feature,
+                    locale: input.locale
+                });
+                return result.conversationId;
+            });
 
             const timeoutPromise = new Promise<null>((resolve) => {
                 setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);

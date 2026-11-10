@@ -8,6 +8,8 @@ export * from './ai-chat.schema.js';
 export * from './ai-credential.schema.js';
 // Generic intent envelope for extractIntent (§5.11)
 export * from './ai-intent.schema.js';
+// Host-facing AI questions panel: listing-scoped, anonymous (HOS-2101)
+export * from './ai-listing-questions.schema.js';
 // Request body and draft schemas for the AI post-generation feature (SPEC-223)
 export * from './ai-post-generate.schema.js';
 // Versioned system-prompt entity

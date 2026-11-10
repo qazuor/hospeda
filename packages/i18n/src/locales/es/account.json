@@ -355,6 +355,11 @@
         "whatsNew": {
             "title": "Novedades",
             "desc": "Novedades y actualizaciones de la plataforma"
+        },
+        "aiQuestionsDigest": {
+            "title": "Resumen semanal de preguntas a la IA",
+            "label": "Recibir el resumen semanal",
+            "description": "Un mail los lunes con las preguntas que el asistente de tus fichas no pudo responder. Si no hubo ninguna, no te escribimos."
         }
     },
     "subscription": {

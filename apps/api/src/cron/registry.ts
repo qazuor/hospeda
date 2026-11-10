@@ -5,6 +5,8 @@
  */
 
 import {
+    aiListingQuestionsRetentionJob,
+    aiQuestionsWeeklyDigestJob,
     alertsDigestJob,
     appLogPurgeJob,
     archiveExpiredPromotionsJob,
@@ -101,7 +103,10 @@ export const cronJobs: CronJobDefinition[] = [
     listingCoverageReconcilerJob,
     listingInactivityArchiveJob,
     listingRemoteDeletionRetryJob,
-    listingRetentionPassJob
+    listingRetentionPassJob,
+    // HOS-2101: the host AI questions panel's 12-month retention and weekly digest.
+    aiListingQuestionsRetentionJob,
+    aiQuestionsWeeklyDigestJob
 ];
 
 /**

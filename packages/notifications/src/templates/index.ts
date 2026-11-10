@@ -3,6 +3,7 @@
  */
 
 export * from './admin/index.js';
+export * from './ai/index.js';
 export * from './alerts/index.js';
 export * from './alliance/index.js';
 export * from './billing/index.js';

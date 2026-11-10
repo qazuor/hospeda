@@ -93,6 +93,14 @@ const INVENTORY: readonly Site[] = [
         kind: 'passthrough'
     },
     {
+        // HOS-2101: the chat-answer classifier meters its own call with
+        // `userId: null` and its own feature, so no chat quota counts it.
+        file: 'apps/api/src/services/ai-chat-answer-classifier.ts',
+        writer: 'recordAiUsage',
+        count: 1,
+        kind: 'not-chat'
+    },
+    {
         file: 'apps/api/src/routes/accommodation/protected/import-from-url.ts',
         writer: 'recordAiUsage',
         count: 1,

@@ -284,7 +284,8 @@
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes",
                 "seo": "Buscadores (Google)",
-                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Os dois campos são opcionais: se ficarem vazios, publicamos o nome e o resumo da sua propriedade."
+                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Os dois campos são opcionais: se ficarem vazios, publicamos o nome e o resumo da sua propriedade.",
+                "aiQuestions": "Perguntas à IA"
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -714,7 +715,20 @@
                 "description": "a descrição",
                 "mainImage": "a foto principal"
             },
-            "pageDescription": "Editar información de tu propiedad"
+            "pageDescription": "Editar información de tu propiedad",
+            "aiQuestions": {
+                "intro": "O que os visitantes perguntaram ao assistente do seu anúncio. As perguntas são anônimas e ficam guardadas por 12 meses.",
+                "loading": "Carregando perguntas…",
+                "error": "Não conseguimos carregar as perguntas. Tente novamente mais tarde.",
+                "notOwner": "Somente o dono do anúncio pode ver as perguntas feitas ao assistente.",
+                "empty": "Ninguém fez perguntas ao assistente deste anúncio ainda.",
+                "answerLabel": "Resposta do assistente:",
+                "addAsFaq": "Adicionar como pergunta frequente",
+                "unansweredTitle": "Sem resposta",
+                "unansweredHint": "O assistente não encontrou a resposta no seu anúncio. Adicioná-las como perguntas frequentes o ajuda a responder na próxima vez.",
+                "othersTitle": "Outras perguntas",
+                "truncated": "Perguntas exibidas: {{shown}} de {{total}}. As sem resposta vêm primeiro."
+            }
         },
         "empty": {
             "title": "Você ainda não publicou nenhuma propriedade",

@@ -38,6 +38,7 @@
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -236,6 +237,13 @@ export function ListingFaqManager({
     const [busyId, setBusyId] = useState<string | null>(null);
     const [faqPendingDelete, setFaqPendingDelete] = useState<ListingFaq | null>(null);
     const [addErrors, setAddErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
+    // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
+    useFaqPrefill({
+        onPrefill: useCallback((question: string) => {
+            setAddValues((values) => ({ ...values, question }));
+            setIsAdding(true);
+        }, [])
+    });
     const [editErrors, setEditErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
 
     const basePath = faqBasePath({ vertical, listingId });

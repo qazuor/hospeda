@@ -61,7 +61,22 @@ export const aiConversations = pgTable(
          * Child specs may store e.g. `{ accommodationId }` here without a
          * migration, until a dedicated FK column is justified.
          */
-        contextNote: text('context_note')
+        contextNote: text('context_note'),
+
+        /**
+         * Which vertical the chatted-about listing belongs to (HOS-2101):
+         * `accommodation` | `venue` | `experience`. NULL for conversations not
+         * scoped to a listing (search, text improve).
+         *
+         * Together with {@link listingEntityId} this is the structured, indexed
+         * listing reference the host panel lists questions by. `contextNote`
+         * keeps carrying the same data for compatibility; it is not indexed.
+         * No FK: the reference is polymorphic over three tables.
+         */
+        listingEntityType: varchar('listing_entity_type', { length: 20 }),
+
+        /** The chatted-about listing id (HOS-2101). See {@link listingEntityType}. */
+        listingEntityId: uuid('listing_entity_id')
     },
     (table) => ({
         /**
@@ -71,6 +86,14 @@ export const aiConversations = pgTable(
         aiConversations_userId_created_idx: index('aiConversations_userId_created_idx').on(
             table.userId,
             table.createdAt.desc()
+        ),
+
+        /**
+         * Host panel query (HOS-2101): every conversation about one listing.
+         */
+        aiConversations_listing_idx: index('aiConversations_listing_idx').on(
+            table.listingEntityType,
+            table.listingEntityId
         )
     })
 );

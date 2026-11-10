@@ -9,6 +9,7 @@ import {
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
+    AiQuestionsWeeklyDigest,
     AllianceClaimInvite,
     AllianceLeadDecision,
     CompGranted,
@@ -60,6 +61,7 @@ import type {
     AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
+    AiQuestionsWeeklyDigestPayload,
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
     CompGrantedPayload,
@@ -857,6 +859,16 @@ export class NotificationService {
                     partnerName: p.partnerName,
                     mentionedAtLabel: p.mentionedAtLabel,
                     mentions: p.mentions
+                });
+            }
+
+            case 'ai_questions_weekly_digest': {
+                const p = payload as AiQuestionsWeeklyDigestPayload;
+                return AiQuestionsWeeklyDigest({
+                    recipientName,
+                    locale: p.locale,
+                    listings: p.listings,
+                    preferencesUrl: p.preferencesUrl
                 });
             }
 

@@ -100,7 +100,8 @@
                 "menu": "Menu",
                 "dailySpecials": "Today's menu",
                 "venueEvents": "Events",
-                "nightInfo": "Night out info"
+                "nightInfo": "Night out info",
+                "aiQuestions": "AI questions"
             },
             "sections": {
                 "type": "Category",
