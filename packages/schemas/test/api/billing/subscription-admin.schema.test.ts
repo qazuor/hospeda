@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AdminSubscriptionListQuerySchema } from '../../../src/api/billing/subscription-admin.schema';
+import {
+    AdminSubscriptionDetailParamsSchema,
+    AdminSubscriptionDetailSchema,
+    AdminSubscriptionListQuerySchema
+} from '../../../src/api/billing/subscription-admin.schema';
 
 describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el email del dueño, sin conocer su ID', () => {
     it('defaults pagination and trims search text', () => {
@@ -17,5 +21,68 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
             false
         );
         expect(AdminSubscriptionListQuerySchema.safeParse({ limit: 10 }).success).toBe(false);
+    });
+});
+
+describe('HOS-2081 CA-2 desde el detalle llega a cada acción para la que tiene permiso; las que no puede ejecutar no se muestran', () => {
+    it('requires a UUID and rejects unknown parameters', () => {
+        expect(
+            AdminSubscriptionDetailParamsSchema.safeParse({ subscriptionId: 'bad' }).success
+        ).toBe(false);
+        expect(
+            AdminSubscriptionDetailParamsSchema.safeParse({
+                subscriptionId: crypto.randomUUID(),
+                extra: true
+            }).success
+        ).toBe(false);
+    });
+
+    it('keeps nullable detail fields and does not expose a declared payer or payments', () => {
+        const id = crypto.randomUUID();
+        const detail = AdminSubscriptionDetailSchema.parse({
+            id,
+            status: 'ACTIVE',
+            class: 'PRINCIPAL',
+            vertical: 'accommodation',
+            owner: {
+                id: crypto.randomUUID(),
+                email: 'owner@example.test',
+                displayName: null,
+                deleted: false
+            },
+            plan: null,
+            cycle: null,
+            paymentMethod: null,
+            nextChargeAt: null,
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+            serviceEndsAt: null,
+            planVersion: null,
+            price: null,
+            succeedsId: null,
+            succeededById: null,
+            pause: null,
+            courtesy: null,
+            declaredPayerEmail: 'declared@example.test',
+            payments: []
+        });
+        expect(Object.keys(detail).sort()).toEqual([
+            'class',
+            'courtesy',
+            'createdAt',
+            'cycle',
+            'id',
+            'nextChargeAt',
+            'owner',
+            'pause',
+            'paymentMethod',
+            'plan',
+            'planVersion',
+            'price',
+            'serviceEndsAt',
+            'status',
+            'succeededById',
+            'succeedsId',
+            'vertical'
+        ]);
     });
 });

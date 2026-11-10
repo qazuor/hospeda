@@ -66,6 +66,51 @@ export const AdminSubscriptionListResponseSchema = z.object({
     })
 });
 
+/** One administrative subscription detail before HTTP date serialization. */
+export const AdminSubscriptionDetailSchema = AdminSubscriptionListItemSchema.extend({
+    serviceEndsAt: z.date().nullable(),
+    planVersion: z
+        .object({
+            id: z.string().uuid(),
+            current: z.boolean(),
+            sellable: z.boolean(),
+            createdAt: z.date()
+        })
+        .nullable(),
+    price: z
+        .object({
+            amountMinor: z.number().int(),
+            currency: z.string().length(3),
+            cycle: z.enum(['monthly', 'quarterly', 'semiannual', 'annual'])
+        })
+        .nullable(),
+    succeedsId: z.string().uuid().nullable(),
+    succeededById: z.string().uuid().nullable(),
+    pause: z
+        .object({
+            reason: z.enum(['CUSTOMER_REQUEST', 'COURTESY']),
+            startsAt: z.date(),
+            expectedEndAt: z.date().nullable(),
+            requestedMonths: z.number().int().nullable()
+        })
+        .nullable(),
+    courtesy: z
+        .object({
+            courtesyGrantId: z.string().uuid(),
+            months: z.number().int().positive(),
+            startsAt: z.date(),
+            endsAt: z.date(),
+            remainingMonths: z.number().int().nonnegative()
+        })
+        .nullable()
+});
+
+/** Route and service parameters for one administrative subscription detail. */
+export const AdminSubscriptionDetailParamsSchema = z.object({ subscriptionId: z.uuid() }).strict();
+
+/** One administrative subscription detail. */
+export type AdminSubscriptionDetail = z.infer<typeof AdminSubscriptionDetailSchema>;
+
 /** Parsed administrative subscription list query. */
 export type AdminSubscriptionListQuery = z.infer<typeof AdminSubscriptionListQuerySchema>;
 
