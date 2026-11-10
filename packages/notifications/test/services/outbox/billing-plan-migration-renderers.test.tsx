@@ -127,6 +127,53 @@ describe('TEST:B12:7 AC:B12:7 a cada pendiente le sale ya no cambia nada y a qui
 describe('plan migration payload validation', () => {
     it.each([
         [
+            'announced missing field',
+            'billing.plan-migration-announced',
+            { variant: 'TO_RESOLVE' },
+            'Faltan datos requeridos del anuncio de migración'
+        ],
+        [
+            'announced wrong type',
+            'billing.plan-migration-announced',
+            { ...base, variant: 'SCHEDULED', losesPromo: 'yes' },
+            'Faltan datos requeridos del anuncio de migración'
+        ],
+        [
+            'upcoming missing field',
+            'billing.plan-migration-upcoming',
+            { ...base, daysBefore: 7, currency: undefined },
+            'Faltan datos requeridos del recordatorio de migración'
+        ],
+        [
+            'upcoming wrong type',
+            'billing.plan-migration-upcoming',
+            { ...base, daysBefore: '7' },
+            'Faltan datos requeridos del recordatorio de migración'
+        ],
+        [
+            'cancelled missing field',
+            'billing.plan-migration-cancelled',
+            { variant: 'NOTHING_CHANGES' },
+            'Faltan datos requeridos de la cancelación de migración'
+        ],
+        [
+            'cancelled wrong type',
+            'billing.plan-migration-cancelled',
+            {
+                variant: 'ALREADY_STARTED',
+                planName: 'Plan Inicial',
+                newAmountMinor: '100',
+                currency,
+                applicationDate
+            },
+            'Faltan datos requeridos de la cancelación de migración'
+        ]
+    ])('rejects %s with its template TypeError', (_label, template, payload, message) => {
+        expect(() => render(template, payload)).toThrow(new TypeError(message));
+    });
+
+    it.each([
+        [
             'scheduled date',
             'billing.plan-migration-announced',
             { ...base, variant: 'SCHEDULED', applicationDate: undefined }

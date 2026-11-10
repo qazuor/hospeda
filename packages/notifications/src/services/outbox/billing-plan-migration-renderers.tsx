@@ -1,4 +1,5 @@
 import type { EmailOutboxRow } from '@repo/db';
+import { z } from 'zod';
 import {
     PLAN_MIGRATION_ANNOUNCED_SUBJECT,
     PlanMigrationAnnounced
@@ -14,98 +15,75 @@ import {
 import { formatCurrency } from '../../templates/utils/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
-function payloadOf(row: EmailOutboxRow): Record<string, unknown> {
-    const payload: unknown = row.payload;
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-        throw new TypeError('Faltan datos requeridos del aviso de migración');
-    }
-    return payload as Record<string, unknown>;
-}
+const nonEmptyString = z.string().refine((value) => value.trim() !== '');
+const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const amountMinor = z.number().int().nonnegative();
+const migrationDetailsSchema = z.object({
+    planName: nonEmptyString,
+    targetPlanName: nonEmptyString,
+    direction: z.enum(['UP', 'DOWN']),
+    losesPromo: z.boolean(),
+    currentAmountMinor: amountMinor,
+    newAmountMinor: amountMinor,
+    currency: nonEmptyString
+});
 
-function validName(value: unknown): value is string {
-    return typeof value === 'string' && value.trim() !== '';
-}
+const announcedSchema = z.discriminatedUnion('variant', [
+    migrationDetailsSchema.extend({ variant: z.literal('SCHEDULED'), applicationDate: dateString }),
+    migrationDetailsSchema.extend({ variant: z.literal('WAITING') }),
+    z.object({ variant: z.literal('TO_RESOLVE'), planName: nonEmptyString })
+]);
+const upcomingSchema = migrationDetailsSchema.extend({
+    applicationDate: dateString,
+    daysBefore: z.number().int().positive()
+});
+const cancelledSchema = z.discriminatedUnion('variant', [
+    z.object({ variant: z.literal('NOTHING_CHANGES'), planName: nonEmptyString }),
+    z.object({
+        variant: z.literal('ALREADY_STARTED'),
+        planName: nonEmptyString,
+        applicationDate: dateString,
+        newAmountMinor: amountMinor,
+        currency: nonEmptyString
+    })
+]);
 
-function validDate(value: unknown): value is string {
-    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
+type MigrationDetailsPayload = z.infer<typeof migrationDetailsSchema>;
 
-function validAmount(value: unknown): value is number {
-    return typeof value === 'number' && Number.isInteger(value) && value >= 0;
-}
-
-function migrationAmounts(data: Record<string, unknown>) {
-    if (!validName(data.currency)) {
-        throw new TypeError('Falta la moneda del aviso de migración');
-    }
-    const { currency } = data;
+function migrationAmounts(data: MigrationDetailsPayload) {
     return {
-        current: validAmount(data.currentAmountMinor)
-            ? formatCurrency({ amount: data.currentAmountMinor, currency })
-            : null,
-        next: validAmount(data.newAmountMinor)
-            ? formatCurrency({ amount: data.newAmountMinor, currency })
-            : null
+        current: formatCurrency({ amount: data.currentAmountMinor, currency: data.currency }),
+        next: formatCurrency({ amount: data.newAmountMinor, currency: data.currency })
     };
 }
 
 function announced(row: EmailOutboxRow) {
-    const data = payloadOf(row);
-    if (
-        !validName(data.planName) ||
-        (data.variant !== 'SCHEDULED' &&
-            data.variant !== 'WAITING' &&
-            data.variant !== 'TO_RESOLVE')
-    ) {
-        throw new TypeError('Faltan datos requeridos del anuncio de migración');
-    }
-    const variant = data.variant;
-    if (
-        variant !== 'TO_RESOLVE' &&
-        (!validName(data.targetPlanName) ||
-            (data.direction !== 'UP' && data.direction !== 'DOWN') ||
-            typeof data.losesPromo !== 'boolean' ||
-            !validAmount(data.currentAmountMinor) ||
-            !validAmount(data.newAmountMinor) ||
-            !validName(data.currency) ||
-            (variant === 'SCHEDULED' && !validDate(data.applicationDate)))
-    ) {
-        throw new TypeError('Faltan datos requeridos del anuncio de migración');
-    }
-    const amounts = variant === 'TO_RESOLVE' ? null : migrationAmounts(data);
+    const parsed = announcedSchema.safeParse(row.payload);
+    if (!parsed.success) throw new TypeError('Faltan datos requeridos del anuncio de migración');
+    const data = parsed.data;
+    const amounts = data.variant === 'TO_RESOLVE' ? null : migrationAmounts(data);
     return {
         subject: PLAN_MIGRATION_ANNOUNCED_SUBJECT,
         react: (
             <PlanMigrationAnnounced
-                variant={variant}
+                variant={data.variant}
                 planName={data.planName}
-                targetPlanName={validName(data.targetPlanName) ? data.targetPlanName : ''}
-                direction={data.direction === 'DOWN' ? 'DOWN' : 'UP'}
+                targetPlanName={data.variant === 'TO_RESOLVE' ? '' : data.targetPlanName}
+                direction={data.variant === 'TO_RESOLVE' ? 'UP' : data.direction}
                 currentAmount={amounts?.current ?? ''}
                 newAmount={amounts?.next ?? null}
-                applicationDate={variant === 'SCHEDULED' ? (data.applicationDate as string) : null}
-                losesPromo={data.losesPromo === true}
+                applicationDate={data.variant === 'SCHEDULED' ? data.applicationDate : null}
+                losesPromo={data.variant === 'TO_RESOLVE' ? false : data.losesPromo}
             />
         )
     };
 }
 
 function upcoming(row: EmailOutboxRow) {
-    const data = payloadOf(row);
-    if (
-        !validName(data.planName) ||
-        !validName(data.targetPlanName) ||
-        (data.direction !== 'UP' && data.direction !== 'DOWN') ||
-        typeof data.losesPromo !== 'boolean' ||
-        !validDate(data.applicationDate) ||
-        typeof data.daysBefore !== 'number' ||
-        !Number.isInteger(data.daysBefore) ||
-        data.daysBefore <= 0 ||
-        !validAmount(data.currentAmountMinor) ||
-        !validAmount(data.newAmountMinor)
-    ) {
+    const parsed = upcomingSchema.safeParse(row.payload);
+    if (!parsed.success)
         throw new TypeError('Faltan datos requeridos del recordatorio de migración');
-    }
+    const data = parsed.data;
     const amounts = migrationAmounts(data);
     return {
         subject: PLAN_MIGRATION_UPCOMING_SUBJECT,
@@ -115,8 +93,8 @@ function upcoming(row: EmailOutboxRow) {
                 planName={data.planName}
                 targetPlanName={data.targetPlanName}
                 direction={data.direction}
-                currentAmount={amounts.current ?? ''}
-                newAmount={amounts.next ?? ''}
+                currentAmount={amounts.current}
+                newAmount={amounts.next}
                 applicationDate={data.applicationDate}
                 losesPromo={data.losesPromo}
             />
@@ -125,26 +103,22 @@ function upcoming(row: EmailOutboxRow) {
 }
 
 function cancelled(row: EmailOutboxRow) {
-    const data = payloadOf(row);
-    if (
-        !validName(data.planName) ||
-        (data.variant !== 'NOTHING_CHANGES' && data.variant !== 'ALREADY_STARTED') ||
-        (data.variant === 'ALREADY_STARTED' &&
-            (!validDate(data.applicationDate) || !validAmount(data.newAmountMinor)))
-    ) {
+    const parsed = cancelledSchema.safeParse(row.payload);
+    if (!parsed.success)
         throw new TypeError('Faltan datos requeridos de la cancelación de migración');
-    }
-    const newAmount = data.variant === 'ALREADY_STARTED' ? migrationAmounts(data).next : null;
+    const data = parsed.data;
     return {
         subject: PLAN_MIGRATION_CANCELLED_SUBJECT,
         react: (
             <PlanMigrationCancelled
                 variant={data.variant}
                 planName={data.planName}
-                newAmount={newAmount}
-                applicationDate={
-                    data.variant === 'ALREADY_STARTED' ? (data.applicationDate as string) : null
+                newAmount={
+                    data.variant === 'ALREADY_STARTED'
+                        ? formatCurrency({ amount: data.newAmountMinor, currency: data.currency })
+                        : null
                 }
+                applicationDate={data.variant === 'ALREADY_STARTED' ? data.applicationDate : null}
             />
         )
     };
