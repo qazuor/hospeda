@@ -236,6 +236,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     token: crypto.randomUUID(),
                     label: 'closed'
                 });
+                // Fixture seeding: seedClosedPause inserts the closed row S10 would write.
                 await seedClosedPause({
                     subscriptionId: owner.subscriptionId,
                     startsAt: courtesyNow,
@@ -258,6 +259,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             });
 
             it('reads a tombstone by its exact id', async () => {
+                // Fixture seeding: the read fixture sets class and status on a principal row.
                 const subscriptionId = await seedAdminSubscriptionReadTombstone();
                 const [row] = await db()
                     .select({
