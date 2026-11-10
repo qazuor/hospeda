@@ -6,8 +6,9 @@ import {
     PlanMigrationPreviewRequestSchema,
     PlanMigrationPreviewSchema
 } from '@repo/schemas';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import { PLAN_MIGRATION_LIST_KEY } from './usePlanMigrationReads';
 
 const path = '/api/v1/admin/plan-migrations';
 
@@ -45,6 +46,7 @@ export function usePreviewPlanMigration() {
 
 /** Launches exactly the cohort identified by the preview fingerprint. */
 export function useLaunchPlanMigration() {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (input: LaunchPlanMigrationRequest) => {
             const body = LaunchPlanMigrationRequestSchema.parse(input);
@@ -58,6 +60,9 @@ export function useLaunchPlanMigration() {
                 ...data,
                 announcedAt: new Date(String(data.announcedAt))
             });
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: PLAN_MIGRATION_LIST_KEY });
         },
         retry: false
     });
