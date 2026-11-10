@@ -8,7 +8,7 @@ import {
     users
 } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminSubscriptionDetail } from '../../../src/services/billing/subscription/admin-subscription-detail.service.js';
 import { grantTemporaryCourtesy } from '../../../src/services/billing/subscription/grant-temporary-courtesy.service.js';
 import { pauseSubscription } from '../../../src/services/billing/subscription/pause-subscription.service.js';
@@ -93,6 +93,9 @@ async function expectedBase(input: {
     };
 }
 
+beforeAll(() => {
+    getServiceTestDb();
+});
 afterEach(async () => {
     await retireCourtesyFixtures();
     await retireAdminSubscriptionReadFixtures();
