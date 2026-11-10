@@ -54,8 +54,7 @@ export function evaluateS37Guards(input: {
     readonly subscription: {
         readonly class: string;
         readonly status: string;
-        readonly succeedsId: string | null;
-        readonly succeededById: string | null;
+        readonly successionInProgress: boolean;
     };
     readonly hasQueuedChange: boolean;
     readonly targetOffersCycle: boolean;
@@ -71,7 +70,7 @@ export function evaluateS37Guards(input: {
         return { verdict: 'SKIPPED', reason: 'NOT_PRINCIPAL' };
     if (input.subscription.status !== 'ACTIVE')
         return { verdict: 'WAITING', reason: 'SUBSCRIPTION_NOT_ACTIVE' };
-    if (input.subscription.succeedsId !== null || input.subscription.succeededById !== null)
+    if (input.subscription.successionInProgress)
         return { verdict: 'WAITING', reason: 'SUCCESSION_IN_PROGRESS' };
     if (input.hasQueuedChange) return { verdict: 'SKIPPED', reason: 'QUEUED_CHANGE_EXISTS' };
     if (!input.targetOffersCycle)

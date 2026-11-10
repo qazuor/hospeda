@@ -12,8 +12,7 @@ function baseInput(overrides: Record<string, unknown> = {}) {
         subscription: {
             class: 'PRINCIPAL',
             status: 'ACTIVE',
-            succeedsId: null,
-            succeededById: null
+            successionInProgress: false
         },
         hasQueuedChange: false,
         targetOffersCycle: true,
@@ -56,8 +55,7 @@ describe('S37 guards', () => {
                     subscription: {
                         class: 'COMPLEMENTO',
                         status: 'ACTIVE',
-                        succeedsId: null,
-                        succeededById: null
+                        successionInProgress: false
                     }
                 })
             )
@@ -71,8 +69,7 @@ describe('S37 guards', () => {
                     subscription: {
                         class: 'PRINCIPAL',
                         status: 'PAUSED',
-                        succeedsId: null,
-                        succeededById: null
+                        successionInProgress: false
                     }
                 })
             )
@@ -86,8 +83,7 @@ describe('S37 guards', () => {
                     subscription: {
                         class: 'PRINCIPAL',
                         status: 'ACTIVE',
-                        succeedsId: crypto.randomUUID(),
-                        succeededById: null
+                        successionInProgress: true
                     }
                 })
             )

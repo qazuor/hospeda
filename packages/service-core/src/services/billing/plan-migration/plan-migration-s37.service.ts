@@ -216,8 +216,7 @@ async function runInsideTransaction(input: {
         subscription: {
             class: row.class,
             status: row.status,
-            succeedsId: row.succeedsId,
-            succeededById: row.succeededById
+            successionInProgress: row.succeedsId !== null || row.succeededById !== null
         },
         hasQueuedChange: queued !== undefined,
         targetOffersCycle: pricing.newAmount !== null && targetOption !== undefined,
