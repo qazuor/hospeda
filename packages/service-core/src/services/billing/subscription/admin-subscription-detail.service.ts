@@ -113,6 +113,7 @@ export async function getAdminSubscriptionDetail(
     });
     if (!row) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Subscription not found');
     return AdminSubscriptionDetailSchema.parse({
+        ...row,
         id: row.id,
         status: row.status,
         class: row.class,
@@ -162,8 +163,6 @@ export async function getAdminSubscriptionDetail(
                       cycle: row.cycle
                   }
                 : null,
-        succeedsId: row.succeedsId,
-        succeededById: row.succeededById,
         pause: pause
             ? {
                   reason: pause.reason,
