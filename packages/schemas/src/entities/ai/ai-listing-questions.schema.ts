@@ -82,13 +82,16 @@ export type AiListingQuestion = z.infer<typeof AiListingQuestionSchema>;
  */
 export const AiListingQuestionsResponseSchema = z
     .object({
-        /** Newest first, at most {@link AI_LISTING_QUESTIONS_MAX_ITEMS}. */
+        /**
+         * At most {@link AI_LISTING_QUESTIONS_MAX_ITEMS}: up to 100 unanswered
+         * questions first, then the latest of the rest; each block newest first.
+         */
         items: z.array(AiListingQuestionSchema),
         /** Exact number of questions inside the retention horizon. */
         total: z.number().int().nonnegative(),
         /** Exact number of unanswered questions inside the retention horizon. */
         unansweredCount: z.number().int().nonnegative(),
-        /** True when `total` exceeds the items returned. */
+        /** True when some question inside the horizon is not in `items`. */
         truncated: z.boolean()
     })
     .strict();

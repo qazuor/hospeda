@@ -20,6 +20,7 @@ import {
     recordClassifierUsage,
     writeClassifierVerdict
 } from '../../../src/services/ai-chat-answer-classifier';
+import { persistChatTurn } from '../../../src/services/ai-chat-persistence';
 import {
     isListingOwnedBy,
     listListingQuestions
@@ -46,15 +47,17 @@ async function seedConversation(input: {
         readonly status?: string | null;
     }>;
     readonly createdAt?: Date;
+    /** `'search'` seeds a listing-less search conversation. */
+    readonly feature?: 'chat' | 'search';
 }): Promise<{ readonly conversationId: string; readonly assistantIds: readonly string[] }> {
     const db = getDb();
     const [conversation] = await db
         .insert(aiConversations)
         .values({
             userId: input.touristId,
-            feature: 'chat',
-            listingEntityType: 'accommodation',
-            listingEntityId: input.listingId,
+            feature: input.feature ?? 'chat',
+            listingEntityType: input.feature === 'search' ? null : 'accommodation',
+            listingEntityId: input.feature === 'search' ? null : input.listingId,
             createdAt: input.createdAt ?? input.turns[0]?.at ?? NOW
         })
         .returning({ id: aiConversations.id });
@@ -165,11 +168,60 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
         expect(
             response.items.map((item) => [item.question, item.answer, item.answerStatus])
         ).toEqual([
+            // Unanswered block first, then the rest; each newest first.
+            ['¿Aceptan mascotas?', 'No figura en la ficha.', 'unanswered'],
             ['¿Tiene pileta?', 'Sí.', 'unclassified'],
-            ['¿Hay wifi?', 'Sí, hay wifi.', 'answered'],
-            ['¿Aceptan mascotas?', 'No figura en la ficha.', 'unanswered']
+            ['¿Hay wifi?', 'Sí, hay wifi.', 'answered']
         ]);
         expect(JSON.stringify(response)).not.toContain(touristId);
+    });
+
+    it('lists every unanswered question up to its cap, however many answered ones are newer', async () => {
+        // Arrange: 3 old unanswered, then 5 newer answered.
+        const day = (n: number) => new Date(Date.UTC(2026, 9, n, 10));
+        await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            turns: [
+                ...[1, 2, 3].map((n) => ({
+                    question: `u${n}`,
+                    answer: 'No sé.',
+                    at: day(n),
+                    status: 'unanswered'
+                })),
+                ...[4, 5, 6, 7, 8].map((n) => ({
+                    question: `a${n}`,
+                    answer: 'Sí.',
+                    at: day(n),
+                    status: 'answered'
+                }))
+            ]
+        });
+
+        // Act: room for 2 answered only.
+        const fits = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW,
+            othersCap: 2
+        });
+        const capped = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW,
+            unansweredCap: 2,
+            othersCap: 10
+        });
+
+        // Assert: all 3 unanswered survive the answered cap.
+        expect(fits.items.map((item) => item.question)).toEqual(['u3', 'u2', 'u1', 'a8', 'a7']);
+        expect(fits.unansweredCount).toBe(3);
+        expect(fits.total).toBe(8);
+        expect(fits.truncated).toBe(true);
+        // The unanswered cap truncates honestly: the count stays exact.
+        expect(capped.items.filter((item) => item.answerStatus === 'unanswered')).toHaveLength(2);
+        expect(capped.unansweredCount).toBe(3);
+        expect(capped.truncated).toBe(true);
     });
 
     it('reports ownership only for the owner of a live listing', async () => {
@@ -219,6 +271,117 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
         expect(result.deletedConversations).toBe(1);
         const left = await getDb().select({ id: aiConversations.id }).from(aiConversations);
         expect(left.map((row) => row.id)).toEqual([recent.conversationId]);
+    });
+
+    it('purges in batches and never touches an old search conversation', async () => {
+        // Arrange: 3 old chat conversations, 1 old search conversation.
+        const old = new Date('2025-09-01T10:00:00.000Z');
+        for (const n of [1, 2, 3]) {
+            await seedConversation({
+                touristId,
+                listingId: seeded.id,
+                turns: [{ question: `chat${n}`, answer: 'Resp', at: old }]
+            });
+        }
+        const search = await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            feature: 'search',
+            turns: [{ question: 'busco cabaña', answer: 'Mirá estas', at: old }]
+        });
+
+        // Act: batches of 2 force several statements per table.
+        const result = await purgeExpiredChatQuestions({ now: NOW, batchSize: 2 });
+
+        // Assert
+        expect(result.deletedMessages).toBe(6);
+        expect(result.deletedConversations).toBe(3);
+        const conversations = await getDb()
+            .select({ id: aiConversations.id })
+            .from(aiConversations);
+        expect(conversations.map((row) => row.id)).toEqual([search.conversationId]);
+        const messages = await getDb()
+            .select({ id: aiMessages.id })
+            .from(aiMessages)
+            .where(eq(aiMessages.conversationId, search.conversationId));
+        expect(messages).toHaveLength(2);
+    });
+
+    it('never appends a turn to a conversation that is not this user, feature and listing', async () => {
+        // Arrange: listing A (seeded) has the tourist's conversation; listing B is another one.
+        const listingB = await seedOwnedAccommodation({});
+        const stranger = await createMockActorUser({ label: 'stranger' });
+        const onA = await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            turns: [{ question: 'En A', answer: 'Resp', at: new Date('2026-11-01T10:00:00.000Z') }]
+        });
+        const search = await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            feature: 'search',
+            turns: [{ question: 'busco', answer: 'Resp', at: new Date('2026-11-01T10:00:00.000Z') }]
+        });
+        const meta = {
+            usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+            finishReason: 'stop'
+        } as const;
+        const turn = (overrides: { userId: string; entityId: string; conversationId: string }) =>
+            persistChatTurn({
+                entityType: 'accommodation',
+                userMessage: 'intruso',
+                assistantMessage: 'Resp',
+                meta,
+                ...overrides
+            });
+
+        // Act
+        const onB = await turn({
+            userId: touristId,
+            entityId: listingB.id,
+            conversationId: onA.conversationId
+        });
+        const byStranger = await turn({
+            userId: stranger.id,
+            entityId: seeded.id,
+            conversationId: onA.conversationId
+        });
+        const fromSearch = await turn({
+            userId: touristId,
+            entityId: seeded.id,
+            conversationId: search.conversationId
+        });
+        const legit = await turn({
+            userId: touristId,
+            entityId: seeded.id,
+            conversationId: onA.conversationId
+        });
+
+        // Assert: three new conversations, one legit append.
+        const fresh = [onB, byStranger, fromSearch].map((out) => out.conversationId);
+        expect(new Set([...fresh, onA.conversationId, search.conversationId]).size).toBe(5);
+        expect(legit.conversationId).toBe(onA.conversationId);
+        const listedA = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW
+        });
+        const listedB = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: listingB.id,
+            now: NOW
+        });
+        // A: its own question, the legit append, the stranger's and the search-reuse
+        // turn (both now in fresh conversations about A). B: only the B turn.
+        expect(listedA.total).toBe(4);
+        expect(listedB.total).toBe(1);
+        const searchMessages = await getDb()
+            .select({ id: aiMessages.id })
+            .from(aiMessages)
+            .where(eq(aiMessages.conversationId, search.conversationId));
+        expect(searchMessages).toHaveLength(2);
     });
 
     it('meters a classified turn once and leaves every chat quota count unchanged', async () => {

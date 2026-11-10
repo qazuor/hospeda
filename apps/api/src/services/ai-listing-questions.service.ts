@@ -94,15 +94,26 @@ export function retentionCutoff(input: { readonly now: Date }): { readonly cutof
     return { cutoff };
 }
 
-/** One row of the listing query, before mapping. */
+/**
+ * At most this many unanswered questions are returned (HOS-2101 review): they
+ * are fetched on their own so the «Sin responder» block always matches
+ * `unansweredCount` up to this cap, however many answered questions are newer.
+ */
+export const AI_LISTING_QUESTIONS_UNANSWERED_CAP = 100;
+
+/** The rest of the item budget goes to the latest answered / unclassified ones. */
+export const AI_LISTING_QUESTIONS_OTHERS_CAP =
+    AI_LISTING_QUESTIONS_MAX_ITEMS - AI_LISTING_QUESTIONS_UNANSWERED_CAP;
+
+/** One row of a listing query, before mapping. */
 export interface ListingQuestionRow {
     readonly id: string;
     readonly question: string;
     readonly answer: string;
     readonly askedAt: Date | string;
     readonly answerStatus: string | null;
-    readonly total: number | string;
-    readonly unansweredCount: number | string;
+    /** Rows in the same block over the whole horizon (window count). */
+    readonly blockTotal: number | string;
 }
 
 /**
@@ -122,20 +133,29 @@ export function toQuestionStatus(input: { readonly stored: string | null }): {
     return { status: 'unclassified' };
 }
 
+/** Exact size of a block, read off its first row (window count). */
+function blockTotal(rows: readonly ListingQuestionRow[]): number {
+    const first = rows[0];
+    return first === undefined ? 0 : Number(first.blockTotal);
+}
+
 /**
- * Builds the anonymous response from query rows. Each item is built key by
- * key, so a column added to the query cannot leak into the response.
+ * Builds the anonymous response from the two blocks. Each item is built key
+ * by key, so a column added to a query cannot leak into the response.
  *
- * @param input - The rows (each carries the window counts).
- * @returns The response payload.
+ * `truncated` is true exactly when some question in the horizon is not in
+ * `items` — in either block.
+ *
+ * @param input - The unanswered rows and the other rows, each newest first.
+ * @returns The response payload (unanswered first, then the rest).
  */
 export function toListingQuestionsResponse(input: {
-    readonly rows: readonly ListingQuestionRow[];
+    readonly unansweredRows: readonly ListingQuestionRow[];
+    readonly otherRows: readonly ListingQuestionRow[];
 }): AiListingQuestionsResponse {
-    const first = input.rows[0];
-    const total = first === undefined ? 0 : Number(first.total);
-    const unansweredCount = first === undefined ? 0 : Number(first.unansweredCount);
-    const items: AiListingQuestion[] = input.rows.map((row) => ({
+    const unansweredCount = blockTotal(input.unansweredRows);
+    const total = unansweredCount + blockTotal(input.otherRows);
+    const items: AiListingQuestion[] = [...input.unansweredRows, ...input.otherRows].map((row) => ({
         id: row.id,
         question: row.question,
         answer: row.answer,
@@ -151,21 +171,24 @@ export interface ListListingQuestionsInput {
     readonly entityId: string;
     /** Reference instant for the retention horizon (injectable for tests). */
     readonly now?: Date;
+    /** Block caps (injectable for tests); default to the exported constants. */
+    readonly unansweredCap?: number;
+    readonly othersCap?: number;
 }
 
 /**
- * Lists the questions asked about one listing inside the retention horizon.
+ * Reads one block of a listing's questions inside the horizon, newest first.
  *
- * Ownership is NOT checked here — the route checks it first with
- * {@link isListingOwnedBy}.
- *
- * @param input - Vertical, listing id and optional reference instant.
- * @returns The anonymous response payload.
+ * @param input - Listing, cutoff, which block and its cap.
+ * @returns The block's rows, each carrying the block's exact size.
  */
-export async function listListingQuestions(
-    input: ListListingQuestionsInput
-): Promise<AiListingQuestionsResponse> {
-    const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
+async function readQuestionBlock(input: {
+    readonly entityType: AiChatEntityType;
+    readonly entityId: string;
+    readonly cutoff: Date;
+    readonly unanswered: boolean;
+    readonly limit: number;
+}): Promise<ListingQuestionRow[]> {
     const db = getDb();
     const question = alias(aiMessages, 'question');
 
@@ -187,17 +210,19 @@ export async function listListingQuestions(
         .limit(1)
         .as('answer');
 
-    const rows = await db
+    const statusFilter = input.unanswered
+        ? sql`${answer.answerStatus} = 'unanswered'`
+        : sql`${answer.answerStatus} is distinct from 'unanswered'`;
+
+    return db
         .select({
             id: question.id,
             question: question.content,
             answer: answer.content,
             askedAt: question.createdAt,
             answerStatus: answer.answerStatus,
-            // Window aggregates are computed before LIMIT, so every row carries
-            // the exact counts over the whole horizon.
-            total: sql<number>`count(*) over ()`,
-            unansweredCount: sql<number>`count(*) filter (where ${answer.answerStatus} = 'unanswered') over ()`
+            // Window aggregates are computed before LIMIT: the exact block size.
+            blockTotal: sql<number>`count(*) over ()`
         })
         .from(question)
         .innerJoin(aiConversations, eq(aiConversations.id, question.conversationId))
@@ -209,11 +234,41 @@ export async function listListingQuestions(
                 isNull(aiConversations.deletedAt),
                 eq(question.role, 'user'),
                 isNull(question.deletedAt),
-                gte(question.createdAt, cutoff)
+                gte(question.createdAt, input.cutoff),
+                statusFilter
             )
         )
         .orderBy(desc(question.createdAt))
-        .limit(AI_LISTING_QUESTIONS_MAX_ITEMS);
+        .limit(input.limit);
+}
 
-    return toListingQuestionsResponse({ rows });
+/**
+ * Lists the questions asked about one listing inside the retention horizon:
+ * up to {@link AI_LISTING_QUESTIONS_UNANSWERED_CAP} unanswered ones and up to
+ * {@link AI_LISTING_QUESTIONS_OTHERS_CAP} of the rest, each block newest first.
+ *
+ * Ownership is NOT checked here — the route checks it first with
+ * {@link isListingOwnedBy}.
+ *
+ * @param input - Vertical, listing id and optional reference instant.
+ * @returns The anonymous response payload.
+ */
+export async function listListingQuestions(
+    input: ListListingQuestionsInput
+): Promise<AiListingQuestionsResponse> {
+    const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
+    const base = { entityType: input.entityType, entityId: input.entityId, cutoff };
+    const [unansweredRows, otherRows] = await Promise.all([
+        readQuestionBlock({
+            ...base,
+            unanswered: true,
+            limit: input.unansweredCap ?? AI_LISTING_QUESTIONS_UNANSWERED_CAP
+        }),
+        readQuestionBlock({
+            ...base,
+            unanswered: false,
+            limit: input.othersCap ?? AI_LISTING_QUESTIONS_OTHERS_CAP
+        })
+    ]);
+    return toListingQuestionsResponse({ unansweredRows, otherRows });
 }

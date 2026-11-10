@@ -13,13 +13,18 @@
  */
 
 import { aiConversations, aiMessages, getDb } from '@repo/db';
-import { and, eq, exists, isNotNull, lt, or, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { retentionCutoff } from './ai-listing-questions.service.js';
+
+/** Rows deleted per statement: bounded locks and memory on a large backlog. */
+export const RETENTION_BATCH_SIZE = 1000;
 
 /** Input of {@link purgeExpiredChatQuestions}. */
 export interface PurgeExpiredChatQuestionsInput {
     /** Reference instant (injectable for tests). */
     readonly now?: Date;
+    /** Rows per statement (injectable for tests). */
+    readonly batchSize?: number;
 }
 
 /** Output of {@link purgeExpiredChatQuestions}. */
@@ -29,55 +34,74 @@ export interface PurgeExpiredChatQuestionsOutput {
     readonly cutoff: Date;
 }
 
+/** Rows a `DELETE` without `RETURNING` affected (node-postgres `rowCount`). */
+function affected(result: unknown): number {
+    return (result as { rowCount?: number | null }).rowCount ?? 0;
+}
+
 /**
- * Deletes chat messages older than the retention horizon, then the chat
- * conversations that no longer hold any message.
+ * Repeats a batched `DELETE` until a batch comes back short.
  *
- * Messages first, conversations second: deleting a conversation by its own
- * `created_at` would cascade away the RECENT turns of a long-lived thread.
+ * @param input - The statement to run once per batch, and the batch size.
+ * @returns The total number of rows deleted.
+ */
+async function deleteInBatches(input: {
+    readonly runBatch: () => Promise<unknown>;
+    readonly batchSize: number;
+}): Promise<number> {
+    let total = 0;
+    for (;;) {
+        const deleted = affected(await input.runBatch());
+        total += deleted;
+        if (deleted < input.batchSize) return total;
+    }
+}
+
+/**
+ * Deletes chat messages and emptied chat conversations older than the
+ * retention horizon, {@link RETENTION_BATCH_SIZE} rows per statement. No id is
+ * loaded into memory: each statement selects its own batch by key.
  *
- * @param input - Optional reference instant.
- * @returns The deleted counts and the cutoff used.
+ * @param input - Optional reference instant and batch size.
+ * @returns Deleted counts and the cutoff used.
  */
 export async function purgeExpiredChatQuestions(
     input: PurgeExpiredChatQuestionsInput = {}
 ): Promise<PurgeExpiredChatQuestionsOutput> {
     const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
+    const batchSize = input.batchSize ?? RETENTION_BATCH_SIZE;
     const db = getDb();
-    const isChat = or(
-        eq(aiConversations.feature, 'chat'),
-        isNotNull(aiConversations.listingEntityId)
-    );
+    const isChat = sql`(${aiConversations.feature} = 'chat' or ${aiConversations.listingEntityId} is not null)`;
 
-    const deletedMessages = await db
-        .delete(aiMessages)
-        .where(
-            and(
-                lt(aiMessages.createdAt, cutoff),
-                exists(
-                    db
-                        .select({ one: sql`1` })
-                        .from(aiConversations)
-                        .where(and(eq(aiConversations.id, aiMessages.conversationId), isChat))
-                )
-            )
-        )
-        .returning({ id: aiMessages.id });
+    const deletedMessages = await deleteInBatches({
+        batchSize,
+        runBatch: () =>
+            db.execute(sql`
+                delete from ${aiMessages}
+                where ${aiMessages.id} in (
+                    select m.id from ${aiMessages} m
+                    join ${aiConversations} on ${aiConversations.id} = m.conversation_id
+                    where m.created_at < ${cutoff} and ${isChat}
+                    limit ${batchSize}
+                )`)
+    });
 
-    const deletedConversations = await db
-        .delete(aiConversations)
-        .where(
-            and(
-                isChat,
-                lt(aiConversations.createdAt, cutoff),
-                sql`not exists (select 1 from ${aiMessages} where ${aiMessages.conversationId} = ${aiConversations.id})`
-            )
-        )
-        .returning({ id: aiConversations.id });
+    const deletedConversations = await deleteInBatches({
+        batchSize,
+        runBatch: () =>
+            db.execute(sql`
+                delete from ${aiConversations}
+                where ${aiConversations.id} in (
+                    select ${aiConversations.id} from ${aiConversations}
+                    where ${isChat}
+                      and ${aiConversations.createdAt} < ${cutoff}
+                      and not exists (
+                          select 1 from ${aiMessages}
+                          where ${aiMessages.conversationId} = ${aiConversations.id}
+                      )
+                    limit ${batchSize}
+                )`)
+    });
 
-    return {
-        deletedMessages: deletedMessages.length,
-        deletedConversations: deletedConversations.length,
-        cutoff
-    };
+    return { deletedMessages, deletedConversations, cutoff };
 }
