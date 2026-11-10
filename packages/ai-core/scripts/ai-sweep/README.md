@@ -89,6 +89,11 @@ The first three configs run the same 8 variants, cap 2048, 2 repetitions, with a
 | `sweep.config.accommodation.json` | the 22 `acc-real-*` cases | 352 (360) | ~$1.72 |
 | `sweep.config.age-scope.json` | the 16 `chat_venue` minimum-age cases (HOS-2098 smoke), gpt-5.4-nano / none, 3 repetitions | 48 (60) | ~$0.16 |
 
+Since the HOS-2098 root fix the venue contexts carry the age scope already resolved against the opening hours
+("Edad mínima por horario y sector": one line per window, "sin edad mínima informada" or "edad mínima N"), so these
+cases measure whether the model looks a time up, not whether it can do the arithmetic. Their "permission" rubrics
+match "sí" as `s[ií](?![a-záéíóúñ])`: the regexes run without the `u` flag, where `\b` after "í" never matches.
+
 **gpt-5.4 models may not accept `minimal` effort.** A provider error never aborts the sweep: the call is recorded
 with its error, the sweep continues, and the summary ends with a per-variant error list (count and first message).
 Errored calls are excluded from the quality columns and count in `errors`.

@@ -12,7 +12,8 @@
  * 4. **Data coherence.** `after` decides first and clarifies midnight;
  *    `before` put the leading "no" first (guards swapped halves).
  * 5. **Chain.** `before` is byte-identical to 0162's frozen `chat_venue` `after`.
- * 6. **No drift.** `after` equals `DEFAULT_RULES.chat_venue` read from source.
+ * 6. **No drift.** `after` is exactly what 0164-hos-2098 starts from, since
+ *    that migration changed the venue rules again (resolved age windows).
  * 7. **Legal floor.** Every clause that protects the legal notice survives.
  *
  * @module test/data-migrations/0163-hos-2098-chat-venue-age-scope-decide-first
@@ -29,9 +30,6 @@ vi.mock('../../src/utils/logger.js', () => ({
     logger: { warn: warnSpy, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
-// to: a stale build would make this sync check compare old strings.
-import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0163-hos-2098-chat-venue-age-scope-decide-first.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -54,6 +52,8 @@ const readFrozen = (file: string): FrozenBaseline =>
 
 const { before, after } = readFrozen('0163-hos-2098-chat-venue-age-scope-decide-first.data.json');
 const previous = readFrozen('0162-hos-2100-chat-group-pet-rules.data.json');
+/** 0164-hos-2098's frozen snapshot: its `chat_venue` `before` is this `after`. */
+const next = readFrozen('0164-hos-2098-chat-venue-age-resolved-windows.data.json');
 
 const DECIDE_FIRST = 'Before answering any question about minors or age, first decide whether';
 const LEADING_NO = 'your answer MUST start with an explicit "no"';
@@ -218,8 +218,8 @@ describe('0163-hos-2098-chat-venue-age-scope-decide-first', () => {
         expect(before.rules.chat_venue).toBe(previous.after.rules.chat_venue);
     });
 
-    it('AC-6: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
-        expect(after.rules.chat_venue).toBe(DEFAULT_RULES.chat_venue);
+    it('AC-6: the frozen "after" is exactly what 0164 starts from (chain without a gap)', () => {
+        expect(after.rules.chat_venue).toBe(next.before.rules.chat_venue);
     });
 
     it.each(LEGAL_FLOOR)('AC-7: keeps the legal-floor clause on both sides: %s', (clause) => {

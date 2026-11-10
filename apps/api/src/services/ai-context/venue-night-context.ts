@@ -73,6 +73,11 @@ export interface VenueNightAgeScopeContext {
     readonly label: string;
     /** Owner-authored sector or activity, resolved to the locale, or `null`. */
     readonly area: string | null;
+    /**
+     * `HH:mm` start of a `from_time` scope, otherwise `null`. The chat context
+     * resolves it against the opening hours into explicit windows (HOS-2098).
+     */
+    readonly from: string | null;
 }
 
 /** Placeholder left in an `area` label where the fenced owner text goes. */
@@ -135,17 +140,24 @@ export function toVenueNightAgeScope(value: unknown, locale: Locale): VenueNight
             label: translateNightKey(`${prefix}.fromTime`, locale)
                 .split('{{time}}')
                 .join(scope.from),
-            area: null
+            area: null,
+            from: scope.from
         };
     }
     if (scope.kind === 'area') {
         return {
             kind: 'area',
             label: translateNightKey(`${prefix}.area`, locale),
-            area: scope.area
+            area: scope.area,
+            from: null
         };
     }
-    return { kind: 'all_day', label: translateNightKey(`${prefix}.allDay`, locale), area: null };
+    return {
+        kind: 'all_day',
+        label: translateNightKey(`${prefix}.allDay`, locale),
+        area: null,
+        from: null
+    };
 }
 
 /**
