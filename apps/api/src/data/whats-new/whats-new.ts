@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4263, #4270, #4274
+    {
+        id: '2026-11-10-venue-min-age-scope',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Indicá desde cuándo rige la edad mínima de tu local',
+            en: 'Say when your venue minimum age applies',
+            pt: 'Informe quando vale a idade mínima do seu local'
+        },
+        body: {
+            es: 'En **Info para salir** ahora elegís si la edad mínima rige **todo el día**, **desde una hora** (por ejemplo, desde la medianoche) o **solo en un sector o actividad**, como la pista o el show. Tu ficha lo muestra junto a la edad mínima y el aviso legal, para que las familias sepan cuándo pueden ir.',
+            en: 'In **Night out info** you now choose whether the minimum age applies **all day**, **from a given time** (for example, from midnight) or **only in one area or activity**, such as the dance floor or the show. Your listing shows it next to the minimum age and the legal notice, so families know when they can come.',
+            pt: 'Em **Info para sair** agora você escolhe se a idade mínima vale **o dia todo**, **a partir de um horário** (por exemplo, a partir da meia-noite) ou **só em um setor ou atividade**, como a pista ou o show. Sua página mostra isso junto da idade mínima e do aviso legal, para que as famílias saibam quando podem ir.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4266, #4269
     {
         id: '2026-11-10-ai-questions-tab',
