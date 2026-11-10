@@ -50,11 +50,30 @@ const rubricOf = (id: string): Rubric => {
 };
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
+// HOS-2102 part 1: the 12 new acc-real cases appended to fixtures.json. They are
+// measured by sweep.config.hos-2102.json, so sweep.config.accommodation.json keeps
+// its frozen pre-HOS-2102 selection and sweep.config.example.json keeps exactly
+// the non-acc-real cases.
+const HOS_2102_NEW_IDS: readonly string[] = [
+    'acc-real-casa-portuguese-pets-size',
+    'acc-real-ruca-portuguese-pets-absent',
+    'acc-real-casa-english-pets-size',
+    'acc-real-isla-english-pets',
+    'acc-real-ruca-pets-direct',
+    'acc-real-monogris-pets-direct',
+    'acc-real-ruca-pets-english',
+    'acc-real-ruca-pets-portuguese',
+    'acc-real-casa-portuguese-group-over',
+    'acc-real-isla-english-group-over',
+    'acc-real-ruca-group-over-capacity',
+    'acc-real-balcones-portuguese-group-over'
+];
+
 describe('fixtures joined with the generated contexts', () => {
-    it('has 55 unique cases across the three features, each with a rubric', () => {
+    it('has 67 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(55);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(55);
+        expect(cases).toHaveLength(67);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(67);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -135,16 +154,19 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(55 * 8 * 2);
+        expect(calls).toHaveLength(67 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 
-    it('accommodation: exactly the acc-real cases; example: exactly the others', () => {
+    it('accommodation: the pre-HOS-2102 acc-real cases; example: exactly the others', () => {
         const accIds = cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
         const otherIds = cases.filter((c) => !c.id.startsWith('acc-real-')).map((c) => c.id);
-        expect(accIds).toHaveLength(22);
+        expect(accIds).toHaveLength(34);
+        // The pinned HOS-2102 additions are acc-real cases and are all in fixtures.
+        expect(new Set(HOS_2102_NEW_IDS).size).toBe(12);
+        expect(HOS_2102_NEW_IDS.every((id) => accIds.includes(id))).toBe(true);
         expect([...config('sweep.config.accommodation.json').caseIds].sort()).toEqual(
-            accIds.sort()
+            accIds.filter((id) => !HOS_2102_NEW_IDS.includes(id)).sort()
         );
         expect([...config('sweep.config.example.json').caseIds].sort()).toEqual(otherIds.sort());
         for (const name of ['sweep.config.accommodation.json', 'sweep.config.example.json']) {
@@ -217,6 +239,34 @@ describe('HOS-2098 age-scope config', () => {
         expect(no.violations).toContain('arranca con un no');
         expect(yes.violations).toEqual([]);
         expect(yes.includeCoverage).toBe(1);
+    });
+});
+
+describe('HOS-2102 nano residuals config', () => {
+    it('runs the 29 selected cases on gpt-5.4-nano and gpt-5.4-mini without reasoning, within its cap', () => {
+        const c = config('sweep.config.hos-2102.json');
+        const calls = expandMatrix({ config: c, cases });
+        expect(c.caseIds).toHaveLength(29);
+        expect(new Set(c.caseIds).size).toBe(29);
+        // 29 cases x 2 models x 4 repetitions.
+        expect(calls.length).toBe(c.caseIds.length * c.models.length * c.repetitions);
+        expect(calls.length).toBe(232);
+        expect(calls.length).toBeLessThanOrEqual(c.maxCalls);
+        expect(new Set(calls.map((call) => call.variantKey))).toEqual(
+            new Set(['gpt-5.4-nano | none | 2048', 'gpt-5.4-mini | none | 2048'])
+        );
+        for (const id of c.caseIds) {
+            expect(
+                cases.find((x) => x.id === id),
+                id
+            ).toBeDefined();
+        }
+    });
+
+    it('selects the 12 new HOS-2102 cases plus the 17 residual cases they extend', () => {
+        const c = config('sweep.config.hos-2102.json');
+        expect(c.caseIds.filter((id) => HOS_2102_NEW_IDS.includes(id))).toHaveLength(12);
+        expect(c.caseIds.filter((id) => !HOS_2102_NEW_IDS.includes(id))).toHaveLength(17);
     });
 });
 
@@ -309,6 +359,88 @@ describe('rubrics', () => {
                 'agrega esperanza falsa (unidades, disponibilidad, consultar)'
             );
         }
+    });
+
+    it.each([
+        [
+            'acc-real-casa-portuguese-group-over',
+            'Não, 14 pessoas não cabem: a casa recebe até 11 hóspedes.'
+        ],
+        [
+            'acc-real-isla-english-group-over',
+            "No, unfortunately you don't all fit: the total capacity is 12 guests."
+        ],
+        [
+            'acc-real-ruca-group-over-capacity',
+            'No, 30 no entran: la capacidad total es de 26 personas.'
+        ],
+        [
+            'acc-real-balcones-portuguese-group-over',
+            'Não, 7 pessoas não cabem: o departamento acomoda até 4 hóspedes.'
+        ]
+    ])('HOS-2102 over capacity (%s): only "no" and the capacity, nothing else', (id, clean) => {
+        const r = rubricOf(id);
+        expect(checkAnswer({ rubric: r, text: clean })).toMatchObject({
+            includeCoverage: 1,
+            violations: []
+        });
+    });
+
+    it('HOS-2102 pets-absent (es): says the ficha does not inform, never accepts or rejects', () => {
+        for (const id of ['acc-real-ruca-pets-direct', 'acc-real-monogris-pets-direct']) {
+            const r = rubricOf(id);
+            expect(
+                checkAnswer({ rubric: r, text: 'La ficha no indica una política de mascotas.' })
+            ).toMatchObject({ includeCoverage: 1, violations: [], unknownHandled: true });
+            expect(
+                checkAnswer({ rubric: r, text: 'Sí, se aceptan mascotas.' }).violations
+            ).toContain('afirma que acepta mascotas');
+            expect(
+                checkAnswer({ rubric: r, text: 'No, no se admiten mascotas.' }).violations
+            ).toContain('afirma que no acepta mascotas');
+        }
+    });
+
+    it('HOS-2102 pets-absent (en/pt): unknown stated in the answer language, no rules entry', () => {
+        // The unknown heuristic is Spanish-only, so these cases carry no rules entry.
+        const en = rubricOf('acc-real-ruca-pets-english');
+        expect(
+            checkAnswer({ rubric: en, text: "The listing doesn't say anything about pets." })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(checkAnswer({ rubric: en, text: 'Yes, pets are allowed.' }).violations).toContain(
+            'claims pets accepted'
+        );
+        const pt = rubricOf('acc-real-ruca-pets-portuguese');
+        expect(
+            checkAnswer({ rubric: pt, text: 'A ficha não informa nada sobre animais.' })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(checkAnswer({ rubric: pt, text: 'Sim, aceita animais.' }).violations).toContain(
+            'afirma que acepta animales'
+        );
+    });
+
+    it('HOS-2102 casa pets (en/pt): advance notice, no invented limit, no voseo leak', () => {
+        const pt = rubricOf('acc-real-casa-portuguese-pets-size');
+        expect(
+            checkAnswer({ rubric: pt, text: 'Podés llevar tus mascotas con aviso prévio.' })
+                .violations
+        ).toContain('voseo o palabra española en respuesta pt');
+        expect(
+            checkAnswer({
+                rubric: pt,
+                text: 'Você pode levar seus cães: são aceitos animais bem comportados com aviso prévio. A ficha não informa limite de quantidade ou tamanho.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        const en = rubricOf('acc-real-casa-english-pets-size');
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: "Yes, dogs are welcome with advance notice; the listing doesn't specify a size or number limit."
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({ rubric: en, text: 'You can bring up to 2 dogs.' }).violations
+        ).toContain('invents a limit');
     });
 
     it('HOS-2100 en/pt groups: the close is translated, never copied in Spanish', () => {
