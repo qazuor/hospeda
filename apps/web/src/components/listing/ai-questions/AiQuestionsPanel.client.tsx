@@ -21,6 +21,7 @@ import type {
 } from '@repo/schemas';
 import { type JSX, useEffect, useState } from 'react';
 import { buildFaqPrefillHref } from '@/hooks/use-faq-prefill';
+import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import { apiClient } from '@/lib/api/client';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -182,15 +183,22 @@ export function AiQuestionsPanel({
             className={withAction ? `${styles.item} ${styles.itemUnanswered}` : styles.item}
         >
             <p className={styles.question}>{item.question}</p>
-            <p className={styles.answer}>
+            <div className={styles.answer}>
                 <span className={styles.answerLabel}>
                     {t(
                         'host.properties.editor.aiQuestions.answerLabel',
                         'Respuesta del asistente:'
                     )}
-                </span>{' '}
-                {item.answer}
-            </p>
+                </span>
+                <div
+                    className={styles.answerBody}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                    dangerouslySetInnerHTML={{
+                        // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                        __html: renderChatMarkdown({ raw: item.answer })
+                    }}
+                />
+            </div>
             <div className={styles.meta}>
                 <time dateTime={item.askedAt}>
                     {formatDate({

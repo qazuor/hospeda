@@ -91,8 +91,23 @@
     font-size: 0.875rem;
     color: var(--core-foreground);
     margin: 0;
-    white-space: pre-line;
     overflow-wrap: anywhere;
+}
+
+/* The assistant answer is sanitized markdown (renderChatMarkdown). */
+.answerBody p,
+.answerBody ul,
+.answerBody ol {
+    margin: var(--space-1, 0.25rem) 0 0;
+}
+
+.answerBody ul,
+.answerBody ol {
+    padding-inline-start: 1.25rem;
+}
+
+.answerBody strong {
+    font-weight: 600;
 }
 
 .answerLabel {
