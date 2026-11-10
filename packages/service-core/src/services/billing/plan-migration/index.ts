@@ -7,7 +7,13 @@ export {
     planMigrationRejection,
     REJECTION_CODES as PLAN_MIGRATION_REJECTION_CODES
 } from './plan-migration-authorization.js';
+export * from './plan-migration-cancel.service.js';
 export * from './plan-migration-cohort.js';
+export * from './plan-migration-exit.js';
 export * from './plan-migration-launch.service.js';
+export * from './plan-migration-notice.js';
 export * from './plan-migration-options.service.js';
 export * from './plan-migration-preview.service.js';
+export * from './plan-migration-read.service.js';
+export * from './plan-migration-upcoming-notice.js';
+export * from './send-plan-migration-notices.service.js';

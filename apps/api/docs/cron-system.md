@@ -907,6 +907,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
 | `billing-reconciliation-sweep` | billing | `10 2,3,4 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
 | `payment-window-expiry` | billing | `23 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
+| `plan-migration-notice` | billing | `17 9 * * *` | `apps/api/src/cron/jobs/plan-migration-notice.job.ts` |
 | `manual-installment-open` | billing | `13 * * * *` | `apps/api/src/cron/jobs/manual-installment-open.job.ts` (HOS-1541, AC:B5:13, MP5) |
 | `manual-grace-expiry` | billing | `43 * * * *` | `apps/api/src/cron/jobs/manual-grace-expiry.job.ts` (HOS-1542, AC:B5:17, MP3) |
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |

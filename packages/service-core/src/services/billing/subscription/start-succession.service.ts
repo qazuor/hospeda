@@ -13,6 +13,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
 import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
@@ -193,6 +194,11 @@ export async function startSuccession(
                     'SUCCESSION_PREDECESSOR_MOVED'
                 );
             }
+            await exitPlanMigration({
+                tx,
+                subscriptionId: admitted.predecessorId,
+                reason: 'CAMBIO_DE_PLAN'
+            });
             return { subscription, idempotencyKey: key };
         });
     } catch (error) {

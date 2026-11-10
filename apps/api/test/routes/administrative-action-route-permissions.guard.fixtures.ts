@@ -341,6 +341,21 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-plan-migration/admin/index.ts',
                 route: 'adminLaunchPlanMigrationRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/read-routes.ts',
+                route: 'adminListPlanMigrationsRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/read-routes.ts',
+                route: 'adminGetPlanMigrationDetailRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-plan-migration/admin/cancel-route.ts',
+                route: 'adminCancelPlanMigrationRoute'
             }
         ]
     },

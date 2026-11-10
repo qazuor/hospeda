@@ -345,6 +345,7 @@ file there is named after its job. The billing and verticals jobs are:
   `billing-creations-sweep`, `billing-reconciliation-sweep`,
   `billing-reconciliation-summary`.
 - **Promos:** `billing-promo-ending-notice`, `archive-expired-promotions`.
+- **Plan migration:** `plan-migration-notice`.
 - **Retention:** `provider-notification-retention`.
 
 None of the pre-HOS-1352 job names survive. Examples are `dunning`,

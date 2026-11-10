@@ -28,6 +28,7 @@ import {
 } from '@repo/schemas';
 import { addCalendarMonths } from '@repo/utils';
 import { ServiceError } from '../../../types/index.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { computeSuccessorCreditDays } from './successor-credit.js';
 
 /** Reads only the caller's subscription and its provider link. */
@@ -172,6 +173,11 @@ export async function queueDowngrade(input: {
         await tx
             .insert(subscriptionScheduledChanges)
             .values({ ...input, keepSelection: input.keepSelection ?? null });
+        await exitPlanMigration({
+            tx,
+            subscriptionId: input.subscriptionId,
+            reason: 'CAMBIO_DE_PLAN'
+        });
         await tx
             .update(promoRedemptions)
             .set({ remainingCharges: 0 })
@@ -260,6 +266,11 @@ export async function replaceQueuedDowngrade(input: {
             targetBillingOptionId: input.targetBillingOptionId,
             effectiveAt: input.effectiveAt,
             keepSelection: input.keepSelection ?? null
+        });
+        await exitPlanMigration({
+            tx,
+            subscriptionId: input.subscriptionId,
+            reason: 'CAMBIO_DE_PLAN'
         });
         await tx
             .update(promoRedemptions)

@@ -16,9 +16,12 @@ import type { Context } from 'hono';
 import { getRequestCorrelationId } from '../../../lib/request-context.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger.js';
+import { getClock } from '../../../utils/clock.js';
 import { createRouter } from '../../../utils/create-app.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
+import { adminCancelPlanMigrationRoute } from './cancel-route.js';
 import { planMigrationVerticals } from './ports.js';
+import { adminGetPlanMigrationDetailRoute, adminListPlanMigrationsRoute } from './read-routes.js';
 import { answerPlanMigrationRejection } from './rejections.js';
 
 /** List retired origins and current, sellable destinations. */
@@ -62,7 +65,8 @@ export const adminPreviewPlanMigrationRoute = createAdminRoute({
             return await previewPlanMigration({
                 actor: getActorFromContext(ctx),
                 input: body,
-                verticals: planMigrationVerticals()
+                verticals: planMigrationVerticals(),
+                clock: getClock().clock
             });
         } catch (error) {
             return answerPlanMigrationRejection({ error, ctx });
@@ -91,7 +95,8 @@ export const adminLaunchPlanMigrationRoute = createAdminRoute({
             const result = await launchPlanMigration({
                 actor,
                 input: body,
-                verticals: planMigrationVerticals()
+                verticals: planMigrationVerticals(),
+                clock: getClock().clock
             });
             auditLog({
                 auditEvent: AuditEventType.BILLING_MUTATION,
@@ -121,5 +126,8 @@ const router = createRouter();
 router.route('/', adminPlanMigrationOptionsRoute);
 router.route('/', adminPreviewPlanMigrationRoute);
 router.route('/', adminLaunchPlanMigrationRoute);
+router.route('/', adminListPlanMigrationsRoute);
+router.route('/', adminGetPlanMigrationDetailRoute);
+router.route('/', adminCancelPlanMigrationRoute);
 
 export { router as adminPlanMigrationRoutes };

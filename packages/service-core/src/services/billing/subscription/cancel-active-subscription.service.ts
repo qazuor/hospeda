@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { type Actor, ServiceError } from '../../../types/index.js';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import {
     type CancelOurAuthorizationOutcome,
     cancelOurAuthorization
@@ -230,6 +231,12 @@ export async function cancelActiveSubscription(
             );
         const facts = await readS11ServiceEndFacts({ tx, subscription });
         const end = computeS11ServiceEnd({ now, ...facts });
+        if (authority.as === 'OWNER')
+            await exitPlanMigration({
+                tx,
+                subscriptionId: subscription.id,
+                reason: 'SE_DIO_DE_BAJA'
+            });
         if (
             !(await writeS11Cancellation({
                 tx,

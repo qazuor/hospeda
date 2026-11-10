@@ -16,7 +16,9 @@ export const PLAN_MIGRATION_REJECTIONS = [
     'PLAN_MIGRATION_SAME_VERSION',
     'PLAN_MIGRATION_EMPTY_COHORT',
     'PLAN_MIGRATION_COHORT_CHANGED',
-    'INVALID_PLAN_MIGRATION_INPUT'
+    'INVALID_PLAN_MIGRATION_INPUT',
+    'PLAN_MIGRATION_NOT_FOUND',
+    'PLAN_MIGRATION_ALREADY_CANCELLED'
 ] as const;
 /** One typed action 17 rejection. */
 export type PlanMigrationRejection = (typeof PLAN_MIGRATION_REJECTIONS)[number];
@@ -30,7 +32,9 @@ export const REJECTION_CODES: Readonly<Record<PlanMigrationRejection, ServiceErr
     PLAN_MIGRATION_SAME_VERSION: ServiceErrorCode.VALIDATION_ERROR,
     PLAN_MIGRATION_EMPTY_COHORT: ServiceErrorCode.ALREADY_EXISTS,
     PLAN_MIGRATION_COHORT_CHANGED: ServiceErrorCode.ALREADY_EXISTS,
-    INVALID_PLAN_MIGRATION_INPUT: ServiceErrorCode.VALIDATION_ERROR
+    INVALID_PLAN_MIGRATION_INPUT: ServiceErrorCode.VALIDATION_ERROR,
+    PLAN_MIGRATION_NOT_FOUND: ServiceErrorCode.NOT_FOUND,
+    PLAN_MIGRATION_ALREADY_CANCELLED: ServiceErrorCode.ALREADY_EXISTS
 };
 
 /** Build an action 17 rejection without leaking query details. */

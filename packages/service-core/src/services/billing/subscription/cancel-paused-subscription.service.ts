@@ -6,6 +6,7 @@ import type { Actor } from '../../../types/index.js';
 import { cancelAddonComplementsAtProvider, runOrphanhood } from '../addon/addon-instance-a5.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
 import { emitBillingFact } from '../facts/billing-fact-sink.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
 import { cancelActiveRejection } from './cancel-active-subscription.service.js';
@@ -99,6 +100,8 @@ export async function cancelPausedSubscription(
             }) !== null
         )
             throw new Error('S22 credit exception is prohibited');
+        if (authority.as === 'OWNER')
+            await exitPlanMigration({ tx, subscriptionId: row.id, reason: 'SE_DIO_DE_BAJA' });
         const written = credited
             ? await writePausedScheduledCancellation({
                   tx,
