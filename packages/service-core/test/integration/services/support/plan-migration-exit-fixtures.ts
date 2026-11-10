@@ -22,7 +22,11 @@ const pendingCustomers: Array<{ subscriptionId: string; userId: string }> = [];
 
 /** Announce a real migration with pending rows, or unresolved rows when the target lacks the cycle. */
 export async function createAnnouncedExitCase(
-    args: { readonly unresolved?: boolean; readonly addPendingCustomer?: boolean } = {}
+    args: {
+        readonly unresolved?: boolean;
+        readonly addPendingCustomer?: boolean;
+        readonly additionalPendingCustomers?: number;
+    } = {}
 ) {
     const seeded = await createPlanMigrationCase({
         sourceCycle: args.unresolved ? 'annual' : 'monthly'
@@ -40,6 +44,18 @@ export async function createAnnouncedExitCase(
     const pendingCustomer =
         started && pendingOwner?.userId ? { ...started, userId: pendingOwner.userId } : null;
     if (pendingCustomer) pendingCustomers.push(pendingCustomer);
+    const additionalCustomers: Array<{ subscriptionId: string; userId: string }> = [];
+    for (let index = 0; index < (args.additionalPendingCustomers ?? 0); index++) {
+        const additional = await startCyclePriceCustomer(seeded.predecessorBillingOptionId);
+        const [owner] = await getServiceTestDb()
+            .select({ userId: subscriptions.userId })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, additional.subscriptionId));
+        if (!owner?.userId) throw new Error('Additional migration customer missing');
+        const customer = { subscriptionId: additional.subscriptionId, userId: owner.userId };
+        additionalCustomers.push(customer);
+        pendingCustomers.push(customer);
+    }
     if (!args.unresolved)
         await setMigrationTargetCycle({
             actor: seeded.actor,
@@ -64,7 +80,7 @@ export async function createAnnouncedExitCase(
         clock: migrationClock
     });
     migrationIds.push(launched.planMigrationId);
-    return { seeded, pendingCustomer, migrationId: launched.planMigrationId };
+    return { seeded, pendingCustomer, additionalCustomers, migrationId: launched.planMigrationId };
 }
 
 /** Remove only this test's migration rows before the shared customer fixture cleanup. */

@@ -6,6 +6,7 @@ import {
     planMigrationRejection,
     REJECTION_CODES
 } from '../../../../src/services/billing/plan-migration/plan-migration-authorization.js';
+import { cancelPlanMigration } from '../../../../src/services/billing/plan-migration/plan-migration-cancel.service.js';
 import { previewPlanMigration } from '../../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import type { Actor } from '../../../../src/types/index.js';
 
@@ -59,5 +60,32 @@ describe('AC:B12:2 ACC_17 permission rejects before reading the database', () =>
             ServiceErrorCode.ALREADY_EXISTS,
             ServiceErrorCode.VALIDATION_ERROR
         ]);
+    });
+    it('keeps the cancellation rejection order and HTTP-facing service codes', () => {
+        expect(PLAN_MIGRATION_REJECTIONS.slice(-2)).toEqual([
+            'PLAN_MIGRATION_NOT_FOUND',
+            'PLAN_MIGRATION_ALREADY_CANCELLED'
+        ]);
+        expect(REJECTION_CODES.PLAN_MIGRATION_NOT_FOUND).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(REJECTION_CODES.PLAN_MIGRATION_ALREADY_CANCELLED).toBe(
+            ServiceErrorCode.ALREADY_EXISTS
+        );
+    });
+    it('checks permission before parsing cancellation input or opening the database', async () => {
+        getDb.mockClear();
+        await expect(
+            cancelPlanMigration(
+                { actor: actor([PermissionEnum.ACCESS_PANEL_ADMIN]), planMigrationId: 'bad' },
+                { clock: { now: () => new Date('2026-10-11T13:00:00.000Z') } }
+            )
+        ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
+        expect(getDb).toHaveBeenCalledTimes(0);
+        await expect(
+            cancelPlanMigration(
+                { actor: actor([PermissionEnum.BILLING_MIGRATE_PLAN]), planMigrationId: 'bad' },
+                { clock: { now: () => new Date('2026-10-11T13:00:00.000Z') } }
+            )
+        ).rejects.toMatchObject({ reason: 'INVALID_PLAN_MIGRATION_INPUT' });
+        expect(getDb).toHaveBeenCalledTimes(0);
     });
 });

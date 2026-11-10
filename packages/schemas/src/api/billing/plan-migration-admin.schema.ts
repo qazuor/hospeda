@@ -81,6 +81,24 @@ export const PlanMigrationLaunchResponseSchema = z.object({
 /** Validated action 17 launch result. */
 export type PlanMigrationLaunchResponse = z.infer<typeof PlanMigrationLaunchResponseSchema>;
 
+/** Strict action 17 cancellation input. */
+export const PlanMigrationCancelInputSchema = z.strictObject({ planMigrationId: Id });
+/** Validated cancellation input. */
+export type PlanMigrationCancelInput = z.infer<typeof PlanMigrationCancelInputSchema>;
+
+/** Cancellation timestamp and exact scope outcomes. */
+export const PlanMigrationCancelResultSchema = z.strictObject({
+    planMigrationId: Id,
+    cancelledAt: z.date(),
+    rows: z.strictObject({
+        cancelled: z.number().int().nonnegative(),
+        alreadyStarted: z.number().int().nonnegative(),
+        untouched: z.number().int().nonnegative()
+    })
+});
+/** Validated cancellation result. */
+export type PlanMigrationCancelResult = z.infer<typeof PlanMigrationCancelResultSchema>;
+
 /** Retired source versions and sellable current targets grouped by vertical. */
 export const PlanMigrationOptionsSchema = z.object({
     sources: z.array(Version.extend({ customerCount: z.number().int().nonnegative() })),

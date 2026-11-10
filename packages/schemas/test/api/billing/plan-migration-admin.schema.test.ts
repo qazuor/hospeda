@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
     LaunchPlanMigrationRequestSchema,
+    PlanMigrationCancelInputSchema,
+    PlanMigrationCancelResultSchema,
     PlanMigrationLaunchResponseSchema,
     PlanMigrationPreviewRequestSchema,
     PlanMigrationPreviewRowSchema
@@ -41,6 +43,34 @@ describe('AC:B12:2 action 17 preview contracts', () => {
             PlanMigrationPreviewRowSchema.safeParse({
                 ...row,
                 applicationDate: '2026-12-31T00:00:00Z'
+            }).success
+        ).toBe(false);
+    });
+});
+
+describe('AC:B12:7 cancelar una migración anunciada contracts', () => {
+    it('accepts only a migration UUID', () => {
+        const planMigrationId = crypto.randomUUID();
+        expect(PlanMigrationCancelInputSchema.safeParse({ planMigrationId }).success).toBe(true);
+        expect(
+            PlanMigrationCancelInputSchema.safeParse({ planMigrationId, extra: 1 }).success
+        ).toBe(false);
+        expect(PlanMigrationCancelInputSchema.safeParse({ planMigrationId: 'bad' }).success).toBe(
+            false
+        );
+    });
+
+    it('requires an exact timestamp and each nonnegative count', () => {
+        const result = {
+            planMigrationId: crypto.randomUUID(),
+            cancelledAt: new Date(),
+            rows: { cancelled: 2, alreadyStarted: 1, untouched: 3 }
+        };
+        expect(PlanMigrationCancelResultSchema.safeParse(result).success).toBe(true);
+        expect(
+            PlanMigrationCancelResultSchema.safeParse({
+                ...result,
+                rows: { ...result.rows, untouched: -1 }
             }).success
         ).toBe(false);
     });
