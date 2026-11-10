@@ -6,7 +6,12 @@ import type { CoverageNotices } from '../../../src/services/billing/payment/paym
 import { applyDueScheduledChanges } from '../../../src/services/billing/subscription/apply-due-scheduled-changes.service.js';
 import * as scheduledChangeService from '../../../src/services/billing/subscription/apply-scheduled-change.service.js';
 import { SCHEDULED_CHANGE_MAX_ATTEMPTS } from '../../../src/services/billing/subscription/scheduled-change-attempts.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import { retirePlanChanges, seedPlanChange } from './support/plan-change-fixtures.js';
 import {
     deleteScheduledChanges,
@@ -325,6 +330,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect((await subscriptionOf(valid.row.predecessor.id))?.planVersionId).toBe(
                 valid.row.targetPlanVersionId
             );
+        });
+
+        it('declares the non-negative attempt count CHECK constraint', async () => {
+            const result = await getServiceTestPool().query<{ conname: string }>(
+                "SELECT conname FROM pg_constraint WHERE conname = 'ck_subscription_scheduled_change_attempt_count_nonnegative'"
+            );
+            expect(result.rows).toHaveLength(1);
         });
     }
 );
