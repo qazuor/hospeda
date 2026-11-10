@@ -61,11 +61,12 @@ const previous = JSON.parse(
 /** One anchor per HOS-2100 shared clause. */
 const HOS_2100_CLAUSES = [
     "For a group or capacity question, compare the visitor's group with the total capacity your context states, explicitly",
-    'If the group is larger than that total, say plainly that it does not fit, without any closing hedge',
+    'If the group is larger than that total, say plainly that it does not fit and stop there',
+    'do not answer "yes, you fit"',
     'to confirm it with the place, in the reply language',
     'the split into units, rooms or beds',
     'depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar',
-    'Never say the group surely fits ("entran sin problema")',
+    'Never say the group surely fits ("entran sin problema", "sí, entran")',
     'Use a group size the visitor already gave',
     'never answer "yes" to a number or size of pets'
 ] as const;

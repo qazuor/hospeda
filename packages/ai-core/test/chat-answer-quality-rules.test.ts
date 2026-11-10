@@ -118,7 +118,7 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
             "compare the visitor's group with the total capacity your context states, explicitly"
         );
         expect(rules).toContain(
-            'If the group is larger than that total, say plainly that it does not fit, without any closing hedge'
+            'If the group is larger than that total, say plainly that it does not fit and stop there: do not add the distribution or availability close'
         );
     });
 
@@ -128,13 +128,16 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
     });
 
     it('HOS-2100 group answers within capacity: total, the stated split, and confirm with the place', () => {
-        expect(rules).toContain('If it is within the total, give the total');
+        expect(rules).toContain('If it is within the total, do not answer "yes, you fit"');
+        expect(rules).toContain('say the group is within the total capacity');
         expect(rules).toContain('the split into units, rooms or beds');
         expect(rules).toContain('it depends on how they are distributed and on availability');
         expect(rules).toContain(
             'depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar'
         );
-        expect(rules).toContain('Never say the group surely fits ("entran sin problema")');
+        expect(rules).toContain(
+            'Never say the group surely fits ("entran sin problema", "sí, entran")'
+        );
         expect(rules).toContain('never invent a split');
         expect(rules).toContain('if your context states no capacity, say so');
     });
