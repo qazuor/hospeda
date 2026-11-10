@@ -25,6 +25,13 @@ const logger = createLogger('apply-due-scheduled-changes');
 const inputSchema = z.strictObject({ limit: z.number().int().min(1).max(1000) });
 const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'] as const;
 
+/** One keyset page row: the queue id, its subscription, and the exact `effective_at` text. */
+interface DuePageRow {
+    readonly id: string;
+    readonly subscriptionId: string;
+    readonly cursorAt: string;
+}
+
 /** Emits the S38 coverage notice after commit; delivery failure is a warning. */
 export async function finishAppliedScheduledChange(input: {
     readonly applied: Extract<ApplyScheduledChangeResult, { outcome: 'APPLIED' }>;
@@ -147,7 +154,7 @@ export async function applyDueScheduledChanges(
     const visited = new Set<string>();
     let cursor: { readonly at: string; readonly id: string } | null = null;
     while (true) {
-        const page = await db
+        const page: readonly DuePageRow[] = await db
             .select({
                 id: subscriptionScheduledChanges.id,
                 subscriptionId: subscriptions.id,
@@ -174,7 +181,7 @@ export async function applyDueScheduledChanges(
             )
             .limit(limit);
         if (page.length === 0) break;
-        const last = page[page.length - 1];
+        const last: DuePageRow | undefined = page[page.length - 1];
         if (!last) break;
         cursor = { at: last.cursorAt, id: last.id };
         let progressed = false;
