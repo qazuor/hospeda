@@ -183,14 +183,25 @@ export async function applyDueScheduledChanges(
         if (page.length === 0) break;
         const last: DuePageRow | undefined = page[page.length - 1];
         if (!last) break;
-        cursor = { at: last.cursorAt, id: last.id };
-        let progressed = false;
+        const nextCursor = { at: last.cursorAt, id: last.id };
+        // The keyset cursor is taken from the last row of every page, so it normally
+        // advances. It only stands still when the page repeats the previous last row,
+        // which would replay the same page forever; that is the sole case worth stopping
+        // for. A page whose rows are all already visited still advances and must keep
+        // walking, because due rows can still sit behind it.
+        if (cursor && cursor.at === nextCursor.at && cursor.id === nextCursor.id) {
+            logger.warn(
+                { limit, cursorAt: nextCursor.at, cursorId: nextCursor.id },
+                'Scheduled change page did not advance the keyset cursor; stopping to avoid a replay loop'
+            );
+            break;
+        }
+        cursor = nextCursor;
         for (const row of page) {
             // The queue holds one row per subscription, but a client can replace it mid-run
             // (DELETE + INSERT, new id, possibly a later effective_at). Visit each once.
             if (visited.has(row.subscriptionId)) continue;
             visited.add(row.subscriptionId);
-            progressed = true;
             try {
                 const result = await db.transaction((tx) =>
                     applyScheduledChangeInTx({ subscriptionId: row.subscriptionId, now, tx })
@@ -217,13 +228,6 @@ export async function applyDueScheduledChanges(
                     'Scheduled change row failed; continuing batch'
                 );
             }
-        }
-        if (!progressed) {
-            logger.warn(
-                { limit, cursorAt: cursor.at },
-                'Scheduled change page had no unvisited subscriptions; stopping to avoid a replay loop'
-            );
-            break;
         }
         if (page.length < limit) break;
     }

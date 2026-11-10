@@ -9,8 +9,29 @@ import { retirePlanChanges, seedPlanChange } from './support/plan-change-fixture
 import { scheduledChangesOf, seedScheduledChange } from './support/scheduled-change-fixtures.js';
 import { successionClock } from './support/succession-fixtures.js';
 
+/** Captures the warnings emitted by the batch logger (the stall guard is a warning). */
+const batchWarnings = vi.hoisted(() => ({ calls: [] as unknown[][] }));
+
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: (key: string) => {
+            const instance = actual.createLogger(key);
+            if (key !== 'apply-due-scheduled-changes') return instance;
+            return {
+                ...instance,
+                warn: (...args: unknown[]) => {
+                    batchWarnings.calls.push(args);
+                }
+            };
+        }
+    };
+});
+
 afterEach(async () => {
     vi.restoreAllMocks();
+    batchWarnings.calls.length = 0;
     await retirePlanChanges();
 });
 afterAll(closeServiceTestPool);
@@ -288,6 +309,66 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(queue[0]?.id).not.toBe(target.change.id);
             const unchanged = await subscriptionOf(target.row.predecessor.id);
             expect(unchanged?.planVersionId).toBe(target.row.planVersionId);
+        });
+
+        it('keeps walking when a full page holds only a replaced subscription and applies the later valid row', async () => {
+            const now = successionClock.now();
+            const replaced = await seedWithChange('ACTIVE', new Date('1800-07-01T00:00:00Z'));
+            // The replacement sorts after the page that already consumed its subscription,
+            // so with `limit: 1` the next page holds only an already-visited subscription.
+            const replacementAt = new Date('1800-07-02T00:00:00Z');
+            const valid = await seed('ACTIVE', new Date('1800-07-03T00:00:00Z'));
+            spyBroken(new Set([replaced.row.predecessor.id]), async (subscriptionId) => {
+                await replaceQueueRow({
+                    subscriptionId,
+                    targetPlanVersionId: replaced.row.targetPlanVersionId,
+                    targetBillingOptionId: replaced.row.targetBillingOptionId,
+                    effectiveAt: replacementAt
+                });
+            });
+
+            const result = await applyDueScheduledChanges(
+                { limit: 1 },
+                { clock: fixedClock(now), coverageNotices: noopNotices() }
+            );
+
+            expect(
+                result.results.filter(
+                    (entry) =>
+                        entry.subscriptionId === valid.predecessor.id && entry.outcome === 'APPLIED'
+                )
+            ).toHaveLength(1);
+            const applied = await subscriptionOf(valid.predecessor.id);
+            expect(applied?.planVersionId).toBe(valid.targetPlanVersionId);
+            expect(await scheduledChangesOf(valid.predecessor.id)).toHaveLength(0);
+            // The replaced subscription is still visited exactly once in this run.
+            expect(
+                result.results.filter(
+                    (entry) => entry.subscriptionId === replaced.row.predecessor.id
+                )
+            ).toHaveLength(1);
+        });
+
+        it('does not warn about a stalled cursor on a normal multi-page walk', async () => {
+            const now = successionClock.now();
+            const rows = [];
+            for (let index = 0; index < 3; index += 1)
+                rows.push(await seed('ACTIVE', new Date(`1800-08-0${index + 1}T00:00:00Z`)));
+
+            const result = await applyDueScheduledChanges(
+                { limit: 1 },
+                { clock: fixedClock(now), coverageNotices: noopNotices() }
+            );
+
+            for (const row of rows) {
+                const id = row.predecessor.id;
+                expect(
+                    result.results.filter(
+                        (entry) => entry.subscriptionId === id && entry.outcome === 'APPLIED'
+                    )
+                ).toHaveLength(1);
+            }
+            expect(batchWarnings.calls).toHaveLength(0);
         });
 
         it('does not duplicate applications or notices across two consecutive runs', async () => {
