@@ -29,6 +29,7 @@ export async function createAnnouncedExitCase(
         readonly addPendingCustomer?: boolean;
         readonly additionalPendingCustomers?: number;
         readonly addUnresolvedCustomer?: boolean;
+        readonly clock?: { readonly now: () => Date };
     } = {}
 ) {
     const seeded = await createPlanMigrationCase({
@@ -105,13 +106,13 @@ export async function createAnnouncedExitCase(
         actor: seeded.actor,
         input,
         verticals: seeded.verticals,
-        clock: migrationClock
+        clock: args.clock ?? migrationClock
     });
     const launched = await launchPlanMigration({
         actor: seeded.actor,
         input: { ...input, cohortFingerprint: preview.cohortFingerprint },
         verticals: seeded.verticals,
-        clock: migrationClock
+        clock: args.clock ?? migrationClock
     });
     migrationIds.push(launched.planMigrationId);
     return {
