@@ -1100,7 +1100,7 @@
                 ],
                 "expectsUnknown": false,
                 "expectedLanguage": "es",
-                "notes": "The listing is a family restaurant at lunchtime (menú ejecutivo, a kids menu) that becomes a nightclub on Friday and Saturday nights, with minimum age 18 for the night. The scoped minor rule applies: the answer must NOT say no; it says lunch is the restaurant part, the 18+ age applies to the night/boliche, the ficha states no age limit for lunch, and suggests confirming with the venue."
+                "notes": "The listing is a family restaurant at lunchtime (menú ejecutivo, a kids menu) that becomes a nightclub on Friday and Saturday nights, with minimum age 18 scoped from 00:00 in the structured minAgeScope field (HOS-2098); the free text alone no longer narrows the age. The scoped minor rule applies: the answer must NOT say no; it says lunch is the restaurant part, the 18+ age applies to the night/boliche, the ficha states no age limit for lunch, and suggests confirming with the venue."
             },
             "rules": []
         },

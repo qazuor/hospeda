@@ -600,7 +600,8 @@
                 "averageRating": null,
                 "reviewsCount": 0,
                 "policies": {
-                    "minAge": 18
+                    "minAge": 18,
+                    "minAgeScope": { "kind": "from_time", "from": "00:00" }
                 }
             },
             "faqs": [],

@@ -180,49 +180,47 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
         expect(rules).toContain('it does not make the condition final');
     });
 
-    it('#6 mixed venue: a question about the part with no age limit does not get a "no"', () => {
-        // "¿Puedo ir a almorzar con mi hijo?" at a restaurant-by-day, club-by-night venue.
+    it('#6 mixed venue: a question outside the stored scope does not get a "no" (HOS-2098)', () => {
+        // "¿Puedo ir a almorzar con mi hijo?" at a venue whose age applies from 00:00.
         const rules = DEFAULT_RULES.chat_venue;
-        expect(rules).toContain('applies only to part of what the venue offers');
+        expect(rules).toContain(
+            'If that scope line limits the minimum age to a time or to one sector or activity'
+        );
         expect(rules).toContain('do NOT answer "no"');
-        expect(rules).toContain('the ficha does not state an age limit for the rest');
+        expect(rules).toContain('the ficha does not state an age limit for it');
+        expect(rules).toContain('(for example "desde las 00:00, la edad mínima es 18")');
     });
 
-    it('R2-5 decide first whether the asked activity is the restricted one, from the listing TEXT only', () => {
+    it('HOS-2098 decides first from the structured scope line ONLY, never from the free text', () => {
         const rules = DEFAULT_RULES.chat_venue;
         expect(rules).toContain(
-            'first decide whether the activity the visitor asks about is the one the minimum age applies to'
+            'first decide whether the time, area or activity the visitor asks about is covered by the minimum age, using ONLY the "Alcance de la edad mínima" line of your context'
         );
-        // Review A1: the context always prints "Edad mínima: 18" unscoped, so only
-        // an explicit statement in the listing text may narrow it.
         expect(rules).toContain(
-            'treat the minimum age as covering the whole venue unless the listing text explicitly says it applies only to a time, an area or an activity'
+            'Never narrow the minimum age from the description, the FAQs, an owner note, the venue type, the menu or the opening hours'
         );
-        expect(rules).toContain('a venue type, a menu or opening hours alone do not say so');
-        expect(rules.indexOf('first decide whether the activity')).toBeLessThan(
-            rules.indexOf('applies only to part of what the venue offers')
+        // The pre-HOS-2098 path that read the owner's free text is gone.
+        expect(rules).not.toContain('listing text explicitly');
+        expect(rules.indexOf('first decide whether the time, area or activity')).toBeLessThan(
+            rules.indexOf('If that scope line limits the minimum age')
         );
     });
 
-    it('A1 mixed venue WHOSE TEXT says "sólo de noche": "yes" for the unrestricted part', () => {
-        const rules = DEFAULT_RULES.chat_venue;
-        expect(rules).toContain(
-            'If the listing text explicitly says that the minimum age applies only to part of what the venue offers'
+    it('HOS-2098 a "from a time" scope covers until closing that night, not the next day', () => {
+        expect(DEFAULT_RULES.chat_venue).toContain(
+            'a scope from a time means it covers the venue from that time until it closes that night, and the earlier hours of the day are outside it'
         );
-        expect(rules).toContain('answer "yes" for that activity');
-        expect(rules).toContain('"la edad mínima rige sólo de noche"');
-        expect(rules).toContain('(for example "a la noche, la edad mínima es 18")');
     });
 
-    it('A1 pure nightclub, "¿puedo ir con mi hijo de 15 a comer unas picadas temprano?": no permission wording', () => {
+    it('HOS-2098 regression: an all-day scope, no scope or an unclear question never gets permission', () => {
         const rules = DEFAULT_RULES.chat_venue;
         expect(rules).toContain(
-            'In every other case, including eating early or any part of a venue whose listing text does not scope the minimum age'
+            'a scope for the whole day, or no such line at all, means the minimum age covers the whole venue at every hour'
         );
-        expect(rules).toContain('do NOT answer "yes" or use permission wording');
         expect(rules).toContain(
-            'say that the listing does not give a separate limit for that part and refer the visitor to the venue'
+            'In every other case — a scope for the whole day, no scope line, or a question that does not say clearly which time, area or activity it is about — do NOT answer "yes" or use permission wording ("podés ir", "no hay problema"): give the minimum age and the legal notice'
         );
+        expect(rules).toContain('refer the visitor to the venue');
         // Age + legal notice verbatim still apply: that rule covers EVERY age question.
         expect(rules).toContain(
             'For any question about age, minors, or alcohol, give the minimum age and the legal notice'
@@ -232,7 +230,7 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
     it('A1 never "yes" for the restricted part, and the entry rule is scoped instead of contradicted', () => {
         const rules = DEFAULT_RULES.chat_venue;
         expect(rules).toContain(
-            'You MUST NOT state or imply that anyone below the minimum age in your context may enter this venue, except for a time, an area or an activity that the listing text explicitly excludes from that minimum age'
+            'You MUST NOT state or imply that anyone below the minimum age in your context may enter this venue, except for a time, an area or an activity that the "Alcance de la edad mínima" line in your context leaves outside that minimum age'
         );
         expect(rules).toContain('Never answer "yes" for the part the minimum age applies to');
         expect(rules).not.toContain(
