@@ -7,7 +7,12 @@ import { formatCurrency } from '../../../../packages/i18n/src/formatting.ts';
 import esPages from '../../../../packages/i18n/src/locales/es/admin-pages.json' with {
     type: 'json'
 };
-import { type CreatedUser, createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
+import {
+    type CreatedUser,
+    createUser,
+    markAdminToursSeen,
+    markProfileCompleted
+} from '../../fixtures/api-helpers.ts';
 import {
     API_URL,
     cleanupArrearsRows,
@@ -119,6 +124,7 @@ test.describe('TEST:B12:2 AC:B12:2 la previsualización @p0 @admin @billing @clo
         const second = await createUser({}, { apiBaseUrl: API_URL });
         actors = [admin, first, second];
         for (const actor of actors) await markProfileCompleted({ userId: actor.id });
+        await markAdminToursSeen({ userId: admin.id });
 
         const rank = 1_000_000_000 + Number.parseInt(providerNamespace.slice(0, 7), 16);
         const source = await createMigrationPlan({
@@ -202,7 +208,9 @@ test.describe('TEST:B12:2 AC:B12:2 la previsualización @p0 @admin @billing @clo
         });
 
         await useAdminSession({ page, admin, adminUrl: ADMIN_URL });
-        await page.goto(`${ADMIN_URL}/billing/plan-migration`);
+        await page.goto(`${ADMIN_URL}/billing/plan-migration`, {
+            waitUntil: 'domcontentloaded'
+        });
         await expect(page.getByTestId('plan-migration-screen')).toBeVisible();
         const sourceSelect = page.getByTestId('plan-migration-source');
         await expect(sourceSelect).toBeVisible({ timeout: 30_000 });

@@ -18,11 +18,7 @@ import {
     startPriceCustomer
 } from '../../billing-price/cycle-price-fixtures.js';
 import { ensureBillingDeadlineVersion1 } from '../../helpers/billing-deadline-version.js';
-import {
-    publishBody,
-    publishUrl,
-    restoreProductionPlanCatalog
-} from '../../plan-publication/plan-publication.helpers.js';
+import { restoreProductionPlanCatalog } from '../../plan-publication/plan-publication.helpers.js';
 
 export const path = '/api/v1/admin/plan-migrations';
 const migrations: string[] = [];
@@ -67,6 +63,41 @@ async function insertCurrentPlan(args: {
     });
 }
 
+/** Retire a plan without validating unrelated preserved catalog rows. */
+async function insertRetiredVersion(args: {
+    readonly planId: string;
+    readonly previousVersionId: string;
+    readonly rank: number;
+}) {
+    return getDb().transaction(async (tx) => {
+        await tx
+            .update(planVersions)
+            .set({ current: false })
+            .where(eq(planVersions.id, args.previousVersionId));
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: args.planId,
+                vertical: 'accommodation',
+                rank: args.rank,
+                sellable: false,
+                current: true,
+                trialDays: 0,
+                graceDays: 5,
+                allowsPause: true,
+                inheritsTouristVip: false
+            })
+            .returning({ id: planVersions.id });
+        if (!version) throw new Error('Missing retired version');
+        await tx.insert(planVersionLimits).values({
+            planVersionId: version.id,
+            key: 'max_photos_per_accommodation',
+            value: 10
+        });
+        return version.id;
+    });
+}
+
 /** Headers for the real seeded actor under the API mock-auth bridge. */
 export function headers(actorId: string, allowed = true) {
     return {
@@ -83,7 +114,7 @@ export function headers(actorId: string, allowed = true) {
     };
 }
 
-/** Build the starting catalog manually, then use actions 18 and 19 for its transitions. */
+/** Build the catalog directly, then exercise migration routes with real HTTP requests. */
 export async function migrationCase() {
     await ensureBillingDeadlineVersion1();
     const app = initApp();
@@ -112,8 +143,6 @@ export async function migrationCase() {
         if (response.status !== expectedStatus) throw new Error(JSON.stringify(payload));
         return payload.data;
     };
-    const publish = async (planId: string, content: Record<string, unknown>) =>
-        postAdmin(publishUrl({ planId }), JSON.parse(publishBody({ overrides: content })), 201);
     const setPrice = async (planVersionId: string, amount: number) =>
         postAdmin(
             PRICE_PATH,
@@ -142,39 +171,24 @@ export async function migrationCase() {
         activate: true
     });
     customers.push(customer);
-    const retired = await publish(sourcePlanId, {
-        rank: rankBase,
-        sellable: false,
-        trialDays: 0,
-        graceDays: 5,
-        allowsPause: true,
-        inheritsTouristVip: false,
-        entitlements: [],
-        limits: [{ key: 'max_photos_per_accommodation', value: 10 }]
+    const retiredId = await insertRetiredVersion({
+        planId: sourcePlanId,
+        previousVersionId: sourceId,
+        rank: rankBase
     });
     const target = async (limit: number, amount: number, rank: number) => {
-        // The seed is a starting catalog row; action 18 publishes the saleable destination.
-        const { planId } = await insertCurrentPlan({
+        const { versionId } = await insertCurrentPlan({
             slug: `migration-target-${crypto.randomUUID()}`,
             rank,
-            sellable: false
-        });
-        const version = await publish(planId, {
-            rank,
             sellable: true,
-            trialDays: 0,
-            graceDays: 5,
-            allowsPause: true,
-            inheritsTouristVip: false,
-            entitlements: [],
-            limits: [{ key: 'max_photos_per_accommodation', value: limit }]
+            limit
         });
-        await setPrice(version.id, amount);
-        return version.id;
+        await setPrice(versionId, amount);
+        return versionId;
     };
     const upId = await target(20, 300000, rankBase + 1);
     const downId = await target(5, 200000, rankBase + 2);
-    return { actorId: actorUser.id, sourceId, retiredId: retired.id, upId, downId, customer };
+    return { actorId: actorUser.id, sourceId, retiredId, upId, downId, customer };
 }
 
 /** Remember a launch for ID-scoped cleanup. */
