@@ -1461,6 +1461,58 @@
             "ACTOR_IS_SUBJECT": "This is your own account",
             "ALREADY_IN_MIGRATION": "Already in another migration"
         },
+        "list": {
+            "show": "View announced migrations",
+            "hide": "Hide migrations",
+            "title": "Announced migrations",
+            "loading": "Loading migrations…",
+            "empty": "No migrations have been announced yet.",
+            "plans": "Source → target",
+            "reason": "Reason",
+            "announcedAt": "Announced",
+            "status": "Status",
+            "counts": "Rows by status",
+            "detail": "View details",
+            "active": "Active",
+            "cancelled": "Cancelled",
+            "previous": "Previous",
+            "next": "Next",
+            "page": "Page {page} of {total}"
+        },
+        "reasons": { "RETIREMENT": "Catalog retirement", "PRICE_INCREASE": "Price increase" },
+        "states": {
+            "PENDIENTE": "Pending",
+            "PARA_RESOLVER": "To resolve",
+            "APLICADA": "Applied",
+            "FUERA": "Exited",
+            "CANCELADA": "Cancelled"
+        },
+        "outReasons": {
+            "CAMBIO_DE_PLAN": "Changed plan",
+            "SE_DIO_DE_BAJA": "Cancelled subscription",
+            "TERMINO": "Ended"
+        },
+        "detail": {
+            "back": "Back to list",
+            "loading": "Loading details…",
+            "notice_one": "{{count}} day of notice",
+            "notice_other": "{{count}} days of notice",
+            "announced": "Announced on {date}",
+            "subscription": "Subscription",
+            "ageHeading": "Age since announcement",
+            "applicationDate": "Application date",
+            "outReason": "Exit reason",
+            "noRows": "No rows in this status.",
+            "age_one": "{{count}} day ago",
+            "age_other": "{{count}} days ago"
+        },
+        "cancel": {
+            "action": "Cancel migration",
+            "title": "Cancel this migration?",
+            "description": "{restored} pending or unresolved rows return to their previous state. {started} rows whose change has already started continue. No charge is changed.",
+            "dismiss": "Keep migration",
+            "confirm": "Confirm cancellation"
+        },
         "errors": {
             "generic": "Could not complete the operation. Try again.",
             "invalidSelection": "Choose a valid source and destination.",
@@ -1472,7 +1524,9 @@
             "PLAN_MIGRATION_VERTICAL_MISMATCH": "The versions belong to different verticals.",
             "PLAN_MIGRATION_SAME_VERSION": "Choose a different destination version.",
             "PLAN_MIGRATION_COHORT_CHANGED": "The cohort changed. Preview again before confirming.",
-            "PLAN_MIGRATION_EMPTY_COHORT": "There are no customers to migrate."
+            "PLAN_MIGRATION_EMPTY_COHORT": "There are no customers to migrate.",
+            "PLAN_MIGRATION_NOT_FOUND": "This migration does not exist.",
+            "PLAN_MIGRATION_ALREADY_CANCELLED": "This migration was already cancelled."
         }
     },
     "billing": {

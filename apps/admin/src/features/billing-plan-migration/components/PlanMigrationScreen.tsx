@@ -12,6 +12,8 @@ import {
     usePreviewPlanMigration
 } from '../hooks/usePlanMigration';
 import { PlanMigrationConfirm } from './PlanMigrationConfirm';
+import { PlanMigrationDetail } from './PlanMigrationDetail';
+import { PlanMigrationList } from './PlanMigrationList';
 import { PlanMigrationPreviewTable } from './PlanMigrationPreviewTable';
 
 const errorCodes = new Set([
@@ -37,6 +39,8 @@ export function PlanMigrationScreen() {
     const [preview, setPreview] = useState<PlanMigrationPreview | null>(null);
     const [result, setResult] = useState<PlanMigrationLaunchResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showList, setShowList] = useState(false);
+    const [selectedMigrationId, setSelectedMigrationId] = useState<string | null>(null);
     const errorText = (reason: unknown) => {
         const code = isApiError(reason) ? reason.code : '';
         return errorCodes.has(code) ? tr(`errors.${code}`) : tr('errors.generic');
@@ -202,6 +206,28 @@ export function PlanMigrationScreen() {
                         onConfirm={() => void confirm()}
                     />
                 </>
+            ) : null}
+            <div className="border-t pt-5">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                        setShowList((current) => !current);
+                        setSelectedMigrationId(null);
+                    }}
+                >
+                    {tr(showList ? 'list.hide' : 'list.show')}
+                </Button>
+            </div>
+            {showList ? (
+                selectedMigrationId ? (
+                    <PlanMigrationDetail
+                        id={selectedMigrationId}
+                        onClose={() => setSelectedMigrationId(null)}
+                    />
+                ) : (
+                    <PlanMigrationList onSelect={setSelectedMigrationId} />
+                )
             ) : null}
         </section>
     );

@@ -205,6 +205,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Enqueue the renewal notice at 5 and 1 days before the next charge (HOS-1622, AC:B13a:13).'
     },
     {
+        name: 'plan-migration-notice',
+        displayName: 'Avisos de migración de plan',
+        category: 'billing',
+        schedule: '17 9 * * *',
+        description: 'Enqueue due retirement migration reminders for each customer (HOS-1613).'
+    },
+    {
         name: 'billing-reconciliation-summary',
         displayName: 'Resumen de conciliación',
         category: 'billing',

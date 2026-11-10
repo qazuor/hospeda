@@ -1498,8 +1498,20 @@
             "path": "/api/v1/admin/plan-catalog/plans/:planId/versions/preview"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/plan-migrations"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations/:id/cancel"
         },
         {
             "method": "GET",

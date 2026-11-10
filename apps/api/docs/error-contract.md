@@ -146,10 +146,12 @@ records them in the spec after merge.
 
 ### Plan retirement migration (ACC:17, HOS-1612)
 
-`GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`
-and `POST /api/v1/admin/plan-migrations` require `billing.migratePlan`. The order is
-401 (missing session or guest), 403 (missing permission), 400 (invalid body),
-404 (unknown version), then business rules. A version outside the eligible
+`GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`,
+`POST /api/v1/admin/plan-migrations`, `GET /api/v1/admin/plan-migrations`,
+`GET /api/v1/admin/plan-migrations/{id}` and
+`POST /api/v1/admin/plan-migrations/{id}/cancel` require `billing.migratePlan`. The order is
+401 (missing session or guest), 403 (missing permission), 400 (invalid input),
+404 (unknown version or migration), then business rules. A version outside the eligible
 catalog is reported as 404 only when it does not exist. Each owned rejection
 uses its literal reason as `error.code` and `error.reason`.
 
@@ -164,10 +166,13 @@ uses its literal reason as `error.code` and `error.reason`.
 | `PLAN_MIGRATION_SAME_VERSION` | 422 |
 | `PLAN_MIGRATION_COHORT_CHANGED` | 409 |
 | `PLAN_MIGRATION_EMPTY_COHORT` | 409 |
+| `PLAN_MIGRATION_NOT_FOUND` | 404 |
+| `PLAN_MIGRATION_ALREADY_CANCELLED` | 409 |
 
 Route-level authentication and validation retain the standard `UNAUTHORIZED`,
 `FORBIDDEN` and `VALIDATION_ERROR` codes. Successful launch records one
-`BILLING_MUTATION` audit with `administrativeAction: ACC_17`.
+`BILLING_MUTATION` audit with `administrativeAction: ACC_17`. Successful cancellation
+records the same action with the migration id; rejected cancellations do not audit.
 
 ### Addon version publication (ACC:20, HOS-1595)
 

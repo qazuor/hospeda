@@ -1,4 +1,5 @@
 import {
+    emailOutbox,
     eq,
     getDb,
     planMigrationSubscriptions,
@@ -115,7 +116,7 @@ export function headers(actorId: string, allowed = true) {
 }
 
 /** Build the catalog directly, then exercise migration routes with real HTTP requests. */
-export async function migrationCase() {
+export async function migrationCase(args: { readonly withUnresolved?: boolean } = {}) {
     await ensureBillingDeadlineVersion1();
     const app = initApp();
     const [actorUser] = await getDb()
@@ -143,12 +144,12 @@ export async function migrationCase() {
         if (response.status !== expectedStatus) throw new Error(JSON.stringify(payload));
         return payload.data;
     };
-    const setPrice = async (planVersionId: string, amount: number) =>
+    const setPrice = async (planVersionId: string, amount: number, cycle = 'monthly') =>
         postAdmin(
             PRICE_PATH,
             {
                 planVersionId,
-                cycle: 'monthly',
+                cycle,
                 amount,
                 expectedPreviousAmount: null,
                 confirmed: true
@@ -165,12 +166,24 @@ export async function migrationCase() {
     const sourcePlanId = source.planId;
     const sourceId = source.versionId;
     const sourcePrice = await setPrice(sourceId, 250000);
+    const annualPrice = args.withUnresolved
+        ? await setPrice(sourceId, 3000000, 'annual')
+        : undefined;
     const customer = await startPriceCustomer({
         billingOptionId: sourcePrice.billingOption.id,
         name: 'migration-route',
         activate: true
     });
     customers.push(customer);
+    let unresolvedCustomer: typeof customer | undefined;
+    if (annualPrice) {
+        unresolvedCustomer = await startPriceCustomer({
+            billingOptionId: annualPrice.billingOption.id,
+            name: 'migration-unresolved',
+            activate: true
+        });
+        customers.push(unresolvedCustomer);
+    }
     const retiredId = await insertRetiredVersion({
         planId: sourcePlanId,
         previousVersionId: sourceId,
@@ -188,7 +201,48 @@ export async function migrationCase() {
     };
     const upId = await target(20, 300000, rankBase + 1);
     const downId = await target(5, 200000, rankBase + 2);
-    return { actorId: actorUser.id, sourceId, retiredId, upId, downId, customer };
+    return {
+        actorId: actorUser.id,
+        sourceId,
+        retiredId,
+        upId,
+        downId,
+        customer,
+        unresolvedCustomer
+    };
+}
+
+/** Announce a migration through the real preview and launch routes. */
+export async function launchMigrationCase(args: {
+    readonly actorId: string;
+    readonly sourceId: string;
+    readonly targetId: string;
+}) {
+    const app = initApp();
+    const preview = await app.request(`${path}/preview`, {
+        method: 'POST',
+        headers: headers(args.actorId),
+        body: JSON.stringify({
+            sourcePlanVersionId: args.sourceId,
+            targetPlanVersionId: args.targetId
+        })
+    });
+    const previewPayload = await preview.json();
+    if (preview.status !== 200) throw new Error(JSON.stringify(previewPayload));
+    const launch = await app.request(path, {
+        method: 'POST',
+        headers: headers(args.actorId),
+        body: JSON.stringify({
+            sourcePlanVersionId: args.sourceId,
+            targetPlanVersionId: args.targetId,
+            cohortFingerprint: previewPayload.data.cohortFingerprint
+        })
+    });
+    const launchPayload = await launch.json();
+    if (launch.status !== 200) throw new Error(JSON.stringify(launchPayload));
+    const id: string = launchPayload.data.planMigrationId;
+    trackMigration(id);
+    return id;
 }
 
 /** Remember a launch for ID-scoped cleanup. */
@@ -205,6 +259,7 @@ export async function cleanup() {
         await getDb().delete(planMigrations).where(eq(planMigrations.id, id));
     }
     for (const customer of customers.splice(0)) {
+        await getDb().delete(emailOutbox).where(eq(emailOutbox.recipientUserId, customer.userId));
         await getDb()
             .delete(providerLinks)
             .where(eq(providerLinks.subscriptionId, customer.subscriptionId));
