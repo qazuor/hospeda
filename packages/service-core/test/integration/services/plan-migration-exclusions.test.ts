@@ -1,9 +1,11 @@
 import {
     billingDeadlineVersions,
+    type DrizzleClient,
     desc,
     eq,
     planMigrationSubscriptions,
-    planMigrations
+    planMigrations,
+    setDb
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { changeBillingDeadline } from '../../../src/services/billing/deadlines/billing-deadlines.service.js';
@@ -120,23 +122,39 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .where(eq(planMigrationSubscriptions.subscriptionId, seeded.predecessor.id));
             expect(beforeMigrations).toHaveLength(0);
             expect(beforeRows).toHaveLength(0);
-            await changeBillingDeadline({
-                actor: seeded.actor,
-                key: 12,
-                value: { noticeDays: 90, contactDays: [30, 7] },
-                expectedVersion: base.version,
-                confirmed: true
-            });
-            const preview = await previewPlanMigration({
-                actor: seeded.actor,
-                input: {
-                    sourcePlanVersionId: seeded.planVersionId,
-                    targetPlanVersionId: seeded.targetPlanVersionId
-                },
-                verticals: seeded.verticals,
-                clock: migrationClock
-            });
-            expect(preview).toMatchObject({ noticeDays: 90, deadlineVersion: base.version + 1 });
+            const rollback = new Error('rollback preview deadline fixture');
+            try {
+                await getServiceTestDb().transaction(async (tx) => {
+                    setDb(tx as unknown as DrizzleClient);
+                    try {
+                        await changeBillingDeadline({
+                            actor: seeded.actor,
+                            key: 12,
+                            value: { noticeDays: 90, contactDays: [30, 7] },
+                            expectedVersion: base.version,
+                            confirmed: true
+                        });
+                        const preview = await previewPlanMigration({
+                            actor: seeded.actor,
+                            input: {
+                                sourcePlanVersionId: seeded.planVersionId,
+                                targetPlanVersionId: seeded.targetPlanVersionId
+                            },
+                            verticals: seeded.verticals,
+                            clock: migrationClock
+                        });
+                        expect(preview).toMatchObject({
+                            noticeDays: 90,
+                            deadlineVersion: base.version + 1
+                        });
+                    } finally {
+                        setDb(getServiceTestDb());
+                    }
+                    throw rollback;
+                });
+            } catch (error) {
+                if (error !== rollback) throw error;
+            }
             const migrations = await getServiceTestDb()
                 .select()
                 .from(planMigrations)

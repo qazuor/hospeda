@@ -2,13 +2,13 @@ import { eq, planVersions, subscriptions, users } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { listPlanMigrationOptions } from '../../../src/services/billing/plan-migration/plan-migration-options.service.js';
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
-import { publishPlanVersion } from '../../../src/services/plan-catalog/plan-publication.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { seedCoveragePlanVersion } from './support/coverage-fixtures.js';
 import { seedPlanChangePromo } from './support/plan-change-fixtures.js';
 import {
     cleanupPlanMigrationCases,
     createPlanMigrationCase,
+    insertMigrationVersion,
     migrationClock,
     setMigrationTargetCycle
 } from './support/plan-migration-fixtures.js';
@@ -126,19 +126,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .where(eq(planVersions.id, second.targetPlanVersionId))
                 .limit(1);
             if (!sourceVersion || !oldTarget) throw new Error('Direction fixture version missing');
-            const higherTarget = await publishPlanVersion({
-                actor: seeded.actor,
+            const higherTarget = await insertMigrationVersion({
                 planId: oldTarget.planId,
-                content: {
-                    rank: sourceVersion.rank + 1,
-                    sellable: true,
-                    trialDays: 0,
-                    graceDays: 10,
-                    allowsPause: false,
-                    inheritsTouristVip: false,
-                    entitlements: [],
-                    limits: []
-                }
+                previousVersionId: oldTarget.id,
+                rank: sourceVersion.rank + 1,
+                sellable: true,
+                graceDays: 10,
+                allowsPause: false
             });
             expect(higherTarget.rank).toBeGreaterThan(sourceVersion.rank);
             await setMigrationTargetCycle({

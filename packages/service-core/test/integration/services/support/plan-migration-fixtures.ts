@@ -2,7 +2,6 @@ import { VerticalsForBillingSimulator } from '@repo/billing-verticals-contract/t
 import { billingOptions, eq, planVersions, providerLinks, subscriptions, users } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { setCyclePrice } from '../../../../src/services/billing/pricing/cycle-price.service.js';
-import { publishPlanVersion } from '../../../../src/services/plan-catalog/plan-publication.service.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
 import { startCyclePriceCustomer } from './cycle-price-fixtures.js';
 import { retirePlanChanges, seedPlanChange } from './plan-change-fixtures.js';
@@ -73,19 +72,13 @@ async function createUnlockedPlanMigrationCase(args: {
         .from(planVersions)
         .where(eq(planVersions.id, seeded.planVersionId));
     if (!version) throw new Error('Migration source version missing');
-    const retired = await publishPlanVersion({
-        actor,
+    const retired = await insertMigrationVersion({
         planId: seeded.planId,
-        content: {
-            rank: version.rank,
-            sellable: false,
-            trialDays: version.trialDays,
-            graceDays: version.graceDays,
-            allowsPause: version.allowsPause,
-            inheritsTouristVip: version.inheritsTouristVip,
-            entitlements: [],
-            limits: []
-        }
+        previousVersionId: version.id,
+        rank: version.rank,
+        sellable: false,
+        graceDays: version.graceDays,
+        allowsPause: version.allowsPause
     });
     const verticals = new VerticalsForBillingSimulator({ clock: migrationClock });
     verticals.setPlanPolicy({
@@ -117,6 +110,39 @@ async function createUnlockedPlanMigrationCase(args: {
         .where(eq(billingOptions.planVersionId, seeded.targetPlanVersionId))
         .limit(1);
     return { ...seeded, actor, verticals, retired, targetOption, pendingCustomer };
+}
+
+/** Seed a current version without running publication validation against other tests' catalogs. */
+export async function insertMigrationVersion(args: {
+    readonly planId: string;
+    readonly previousVersionId: string;
+    readonly rank: number;
+    readonly sellable: boolean;
+    readonly graceDays: number;
+    readonly allowsPause: boolean;
+}) {
+    return getServiceTestDb().transaction(async (tx) => {
+        await tx
+            .update(planVersions)
+            .set({ current: false })
+            .where(eq(planVersions.id, args.previousVersionId));
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: args.planId,
+                vertical: 'accommodation',
+                rank: args.rank,
+                sellable: args.sellable,
+                current: true,
+                trialDays: 0,
+                graceDays: args.graceDays,
+                allowsPause: args.allowsPause,
+                inheritsTouristVip: false
+            })
+            .returning();
+        if (!version) throw new Error('Migration version fixture missing');
+        return version;
+    });
 }
 
 /** Set a cycle's destination list price through action 19 before it has customers. */
