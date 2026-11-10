@@ -13,7 +13,11 @@
  *    and `policies: null` clears the whole object
  *    ({@link mergeListingPolicies}). Without this, editing one rule from one
  *    form would silently erase the rules another form owns.
- * 3. **Re-validation after the merge.** The merged object is parsed again with
+ * 3. **Cross-key rules after the merge** ({@link POST_MERGE_RULES}). A venue
+ *    never keeps a minimum-age scope without a minimum age (HOS-2098):
+ *    clearing the age clears the scope, and a body that SETS a scope while the
+ *    merged result has no age is a 400.
+ * 4. **Re-validation after the merge.** The merged object is parsed again with
  *    the vertical's schema, because two individually valid halves can combine
  *    into an invalid whole (a new `minNights` above a stored `maxNights`). An
  *    invalid result is a 400 `VALIDATION_ERROR`, never a persisted row.
@@ -51,6 +55,67 @@ const POLICIES_SCHEMA: Readonly<Record<PoliciesVertical, z.ZodType>> = {
  */
 export function isPoliciesVertical(value: string): value is PoliciesVertical {
     return Object.hasOwn(POLICIES_SCHEMA, value);
+}
+
+/** A cross-key rule over the merged policies; may drop keys or throw a 400. */
+type PostMergeRule = (args: {
+    readonly merged: Record<string, unknown>;
+    readonly patch: Readonly<Record<string, unknown>> | null;
+}) => Record<string, unknown>;
+
+/**
+ * HOS-2098: a minimum-age scope means nothing without a minimum age.
+ *
+ * With no age in the merged result, a scope the body SENT is rejected (400 on
+ * `policies.minAgeScope`) and a stored scope is dropped — so clearing the age
+ * clears its scope in the same write.
+ *
+ * @param args.merged - The merged policies.
+ * @param args.patch - The `policies` the body sent (null when it cleared them).
+ * @returns The merged policies, without an orphan scope.
+ * @throws {ServiceError} `VALIDATION_ERROR` when the body sets a scope with no age.
+ */
+export function enforceVenueAgeScope({
+    merged,
+    patch
+}: {
+    readonly merged: Record<string, unknown>;
+    readonly patch: Readonly<Record<string, unknown>> | null;
+}): Record<string, unknown> {
+    if (merged.minAge !== undefined && merged.minAge !== null) return merged;
+    const sentScope = patch?.minAgeScope;
+    if (sentScope !== undefined && sentScope !== null) {
+        throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid policies', {
+            field: 'policies',
+            issues: [
+                {
+                    path: 'policies.minAgeScope',
+                    message: 'zodError.venue.minAgeScope.requiresMinAge'
+                }
+            ]
+        });
+    }
+    const { minAgeScope: _orphan, ...rest } = merged;
+    return rest;
+}
+
+/** Cross-key rules per vertical, applied to the merged policies before validation. */
+const POST_MERGE_RULES: Readonly<Partial<Record<PoliciesVertical, PostMergeRule>>> = {
+    venue: enforceVenueAgeScope
+};
+
+/** Applies the vertical's {@link POST_MERGE_RULES}, when it has any. */
+function applyPostMergeRules({
+    vertical,
+    merged,
+    patch
+}: {
+    readonly vertical: PoliciesVertical;
+    readonly merged: Record<string, unknown>;
+    readonly patch: Readonly<Record<string, unknown>> | null;
+}): Record<string, unknown> {
+    const rule = POST_MERGE_RULES[vertical];
+    return rule ? rule({ merged, patch }) : merged;
 }
 
 /** Parses `value` with the vertical schema, or throws a 400. */
@@ -94,7 +159,8 @@ export function resolveCreatePolicies({
         stored: { ...DEFAULT_LISTING_POLICIES },
         patch: sent ?? {}
     });
-    return { policies: validatePolicies({ vertical, value: policies ?? {} }) };
+    const merged = applyPostMergeRules({ vertical, merged: policies ?? {}, patch: sent ?? null });
+    return { policies: validatePolicies({ vertical, value: merged }) };
 }
 
 /**
@@ -123,5 +189,11 @@ export function resolveUpdatePolicies({
         patch: payload.policies as Record<string, unknown> | null
     });
     if (!policies || Object.keys(policies).length === 0) return { policies: null };
-    return { policies: validatePolicies({ vertical, value: policies }) };
+    const merged = applyPostMergeRules({
+        vertical,
+        merged: policies,
+        patch: payload.policies as Record<string, unknown> | null
+    });
+    if (Object.keys(merged).length === 0) return { policies: null };
+    return { policies: validatePolicies({ vertical, value: merged }) };
 }

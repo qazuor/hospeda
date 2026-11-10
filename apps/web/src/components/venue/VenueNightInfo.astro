@@ -26,6 +26,13 @@
  * fixed legal text is visible next to it — never in a `title` or a tooltip.
  * The legal text is a constant: it always says 18 because it is the
  * alcohol-sale law (Ley 24.788), not the venue's entry age.
+ *
+ * ## The age scope (HOS-2098)
+ *
+ * Next to the badge goes where or when the age applies («Rige desde las
+ * 00:00»); an unset scope reads «Rige todo el día». The chat context resolves
+ * the same keys, so the ficha and the chat say the same thing. The scope never
+ * replaces or edits the legal text.
  */
 
 import { formatMonthYearLabel, formatPrice } from '@/lib/format-utils';
@@ -33,6 +40,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
     ageNotice,
+    fillLabel,
     hasNightInfoContent,
     nightInfoHeadingKey,
     type VenueNightInfoData
@@ -86,7 +94,10 @@ const dressCodeLabel =
               ? t('venue.detail.nightInfo.dressCode.no_restrictions')
               : null;
 
-const notice = ageNotice({ minAge: nightInfo.minAge });
+const notice = ageNotice({ minAge: nightInfo.minAge, scope: nightInfo.minAgeScope });
+const scopeLabel = notice
+    ? fillLabel({ text: t(notice.scopeTextKey), params: notice.scopeParams })
+    : null;
 
 const hasEntry =
     nightInfo.entryKind !== null ||
@@ -151,6 +162,11 @@ const hasDressCode = nightInfo.dressCode !== null || nightInfo.dressCodeNote !==
                 </dt>
                 <dd class="venue-night-info__value">
                     <span class="venue-night-info__age-badge">{notice.badge}</span>
+                    {scopeLabel && (
+                        <span class="venue-night-info__age-scope">
+                            <span aria-hidden="true">· </span>{scopeLabel}
+                        </span>
+                    )}
                     <span class="venue-night-info__legal">{t(notice.legalTextKey)}</span>
                 </dd>
             </div>
@@ -241,6 +257,10 @@ const hasDressCode = nightInfo.dressCode !== null || nightInfo.dressCodeNote !==
         color: var(--accent-foreground);
         font-weight: 700;
         font-size: 0.95rem;
+    }
+
+    .venue-night-info__age-scope {
+        font-weight: 600;
     }
 
     .venue-night-info__legal {

@@ -22,7 +22,7 @@ OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config scri
 ### Quality: automatic checks, blind export, grades
 
 Each case in `fixtures.json` carries a `rubric`: `mustInclude` and `mustNotClaim` (label + regex), `expectsUnknown`,
-`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 35 cases cover chat (accommodation; 17 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
+`expectsDecline`, `expectedLanguage` and `notes` (what an ideal answer looks like). 40 cases cover chat (accommodation; 17 `acc-real-*` cases are built from the PUBLIC listings of hospeda.com.ar),
 chat_venue (restaurant, parrilla, bar, cafe, heladería, boliche, a restaurant that turns into a boliche at night) and
 chat_experience, including absent-fact traps (price, hours, pets, duration, a schedule day that is not informed), a scoped
 minor rule (lunch with a child at a venue whose 18+ applies only to the night), a price stored in centavos, an amenity

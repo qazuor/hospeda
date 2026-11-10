@@ -119,8 +119,9 @@ export const LISTING_SECTIONS = {
             // detection (`sectionsTouchedByBody`) and the public projector's
             // removal of the section both read from here.
             fields: ['entryKind', 'entryNoteI18n', 'entryPriceFrom'],
-            // HOS-2060: age and dress code are policies now, still nightInfo's.
-            policyKeys: ['minAge', 'dressCode', 'dressCodeNote'],
+            // HOS-2060: age and dress code are policies now, still nightInfo's;
+            // HOS-2098 adds the age's scope, gated with the age.
+            policyKeys: ['minAge', 'minAgeScope', 'dressCode', 'dressCodeNote'],
             // Server-managed: never writable and never counted by sections-touched.
             readOnlyFields: ['entryPriceUpdatedAt'],
             // DEC-FAC-050 / DEC-FAC-068: an i18n key, never the Spanish text.

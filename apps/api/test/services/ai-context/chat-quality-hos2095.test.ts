@@ -618,6 +618,7 @@ describe('review #1 — owner text is bounded, so the worst case is bounded', ()
             true,
             {
                 minAge: 18,
+                minAgeScope: null,
                 legalNotice: longText(300),
                 entryLabel: 'Entrada paga',
                 entryNote: longText(200),
