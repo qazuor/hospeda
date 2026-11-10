@@ -15,12 +15,13 @@
  *
  * ## What it checks
  *
- * 1. The set of call sites of `recordAiUsage(`, `meterAiUsage(` and
- *    `enforceAiQuota(` in production code is EXACTLY {@link INVENTORY}: a new
- *    site fails until someone declares whether it writes chat rows.
+ * 1. The set of call sites of `recordAiUsage(`, `meterAiUsage(`,
+ *    `enforceAiQuota(` and the raw `insertAiUsage(` in production code is
+ *    EXACTLY {@link INVENTORY}: a new site fails until someone declares whether
+ *    it writes chat rows. Namespace calls (`ai.recordAiUsage(`) count too.
  * 2. A site declared `chat` passes the visitor: `consumerUserId` for a usage
  *    write, `usageAttribution` for a quota gate (whose `quota_exceeded` row is
- *    a chat row too).
+ *    a chat row too), and never as a literal `undefined`/`null`.
  * 3. A site declared `not-chat` names no chat feature and does not read
  *    `CHAT_FEATURE_BY_ENTITY_TYPE`.
  * 4. The two pass-through writers forward what they receive: the quota gate
@@ -29,9 +30,13 @@
  *
  * ## What it does NOT see
  *
- * A call through an alias (`const write = recordAiUsage; write({...})`) or a
- * feature computed at runtime from an unrelated variable. It reads source text,
- * like the other guards in this folder.
+ * - A call through an alias (`const write = recordAiUsage; write({...})`), a
+ *   destructured rename, or a dynamic property (`ai['recordAiUsage'](...)`).
+ * - A value that is `undefined` at runtime although the source names a variable
+ *   (`consumerUserId: maybeId`); only the literal `undefined`/`null` is caught.
+ * - A direct Drizzle `db.insert(aiUsage)` that bypasses `insertAiUsage`.
+ * - A feature computed at runtime from an unrelated variable.
+ * It reads source text, like the other guards in this folder.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -42,7 +47,7 @@ import { describe, expect, it } from 'vitest';
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '../../../..');
 
 /** Functions whose call writes (or gates and writes) an `ai_usage` row. */
-const WRITERS = ['recordAiUsage', 'meterAiUsage', 'enforceAiQuota'] as const;
+const WRITERS = ['recordAiUsage', 'meterAiUsage', 'enforceAiQuota', 'insertAiUsage'] as const;
 type Writer = (typeof WRITERS)[number];
 
 /** How a site relates to the listing chat. */
@@ -72,6 +77,12 @@ const INVENTORY: readonly Site[] = [
     {
         file: 'apps/api/src/utils/listing-access/ai-quota-gate.ts',
         writer: 'recordAiUsage',
+        count: 1,
+        kind: 'passthrough'
+    },
+    {
+        file: 'packages/ai-core/src/usage/usage-recorder.ts',
+        writer: 'insertAiUsage',
         count: 1,
         kind: 'passthrough'
     },
@@ -170,7 +181,8 @@ function stripComments(source: string): string {
 /** The argument text of every `writer(` call (not the declaration). */
 function callBlocks(source: string, writer: Writer): string[] {
     const blocks: string[] = [];
-    const pattern = new RegExp(`(?<!function )(?<![\\w.])${writer}\\(`, 'g');
+    // `(?<!\w)` (not `[\w.]`): a namespace call `ai.recordAiUsage(` is a site.
+    const pattern = new RegExp(`(?<!function )(?<!\\w)${writer}\\(`, 'g');
     for (const match of source.matchAll(pattern)) {
         let depth = 0;
         const start = (match.index ?? 0) + match[0].length - 1;
@@ -225,7 +237,10 @@ describe('guard: chat ai_usage writers pass consumerUserId (HOS-2100)', () => {
         const blocks = FOUND.get(`${site.file}|${site.writer}`)?.blocks ?? [];
         const field = site.writer === 'enforceAiQuota' ? 'usageAttribution' : 'consumerUserId';
         expect(blocks.length).toBe(site.count);
-        for (const block of blocks) expect(block).toMatch(new RegExp(`\\b${field}\\b`));
+        for (const block of blocks) {
+            expect(block).toMatch(new RegExp(`\\b${field}\\b`));
+            expect(block).not.toMatch(new RegExp(`\\b${field}\\s*:\\s*(undefined|null)\\b`));
+        }
     });
 
     it.each(
@@ -234,6 +249,13 @@ describe('guard: chat ai_usage writers pass consumerUserId (HOS-2100)', () => {
         const entry = FOUND.get(`${site.file}|${site.writer}`);
         for (const block of entry?.blocks ?? []) expect(block).not.toMatch(CHAT_FEATURE_REFERENCE);
         expect(entry?.source ?? '').not.toContain('CHAT_FEATURE_BY_ENTITY_TYPE');
+    });
+
+    it('the usage recorder forwards consumerUserId into the raw insert', () => {
+        const blocks =
+            FOUND.get('packages/ai-core/src/usage/usage-recorder.ts|insertAiUsage')?.blocks ?? [];
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0]).toMatch(/consumerUserId:\s*consumerUserId\b/);
     });
 
     it('the quota gate forwards consumerUserId into its quota_exceeded row', () => {
