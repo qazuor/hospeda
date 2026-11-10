@@ -40,7 +40,7 @@ const base = {
     targetPlanVersionId: '44444444-4444-4444-8444-444444444444',
     sourcePlanName: 'Plan anterior',
     targetPlanName: 'Plan siguiente',
-    announcedAt: '2026-10-29T00:00:00.000Z',
+    announcedAt: '2025-01-01T00:00:00.000Z',
     cancelledAt: null,
     counts: { PENDIENTE: 2, PARA_RESOLVER: 1, APLICADA: 1, FUERA: 0, CANCELADA: 0 }
 };
