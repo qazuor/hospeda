@@ -6,6 +6,7 @@ import {
     getDb,
     inArray,
     lte,
+    sql,
     subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
@@ -89,7 +90,10 @@ export async function finishAppliedScheduledChange(input: {
     }
 }
 
-/** Applies due S38 queue entries, committing each subscription independently. */
+/**
+ * Applies due S38 queue entries, committing each subscription independently.
+ * `limit` is the keyset page size, not a cap: the run walks every due row.
+ */
 export async function applyDueScheduledChanges(
     input: { readonly limit: number },
     ports: {
@@ -112,22 +116,6 @@ export async function applyDueScheduledChanges(
     const { limit } = inputSchema.parse(input);
     const now = ports.clock.now();
     const db = getDb();
-    const due = await db
-        .select({
-            subscriptionId: subscriptions.id,
-            effectiveAt: subscriptionScheduledChanges.effectiveAt
-        })
-        .from(subscriptionScheduledChanges)
-        .innerJoin(subscriptions, eq(subscriptions.id, subscriptionScheduledChanges.subscriptionId))
-        .where(
-            and(
-                eq(subscriptions.class, 'PRINCIPAL'),
-                inArray(subscriptions.status, [...LIVE_STATUSES]),
-                lte(subscriptionScheduledChanges.effectiveAt, now)
-            )
-        )
-        .orderBy(asc(subscriptionScheduledChanges.effectiveAt))
-        .limit(limit);
     const waitingRows = await db
         .select({ subscriptionId: subscriptions.id, status: subscriptions.status })
         .from(subscriptionScheduledChanges)
@@ -156,33 +144,81 @@ export async function applyDueScheduledChanges(
         warnings: [] as string[],
         results
     };
-    for (const row of due) {
-        try {
-            const result = await db.transaction((tx) =>
-                applyScheduledChangeInTx({ subscriptionId: row.subscriptionId, now, tx })
-            );
-            summary.results.push({
-                subscriptionId: row.subscriptionId,
-                outcome: result.outcome,
-                ...(result.outcome === 'NOT_APPLICABLE' ? { reason: result.reason } : {})
-            });
-            if (result.outcome === 'NOT_APPLICABLE') {
-                if (result.reason === 'WAITS_PAUSED' || result.reason === 'WAITS_SUSPENDED')
-                    summary.waiting++;
-                else summary.notApplicable++;
-                continue;
+    const visited = new Set<string>();
+    let cursor: { readonly at: string; readonly id: string } | null = null;
+    while (true) {
+        const page = await db
+            .select({
+                id: subscriptionScheduledChanges.id,
+                subscriptionId: subscriptions.id,
+                cursorAt: sql<string>`${subscriptionScheduledChanges.effectiveAt}::text`
+            })
+            .from(subscriptionScheduledChanges)
+            .innerJoin(
+                subscriptions,
+                eq(subscriptions.id, subscriptionScheduledChanges.subscriptionId)
+            )
+            .where(
+                and(
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    inArray(subscriptions.status, [...LIVE_STATUSES]),
+                    lte(subscriptionScheduledChanges.effectiveAt, now),
+                    cursor
+                        ? sql`(${subscriptionScheduledChanges.effectiveAt}, ${subscriptionScheduledChanges.id}) > (${cursor.at}::timestamptz, ${cursor.id}::uuid)`
+                        : undefined
+                )
+            )
+            .orderBy(
+                asc(subscriptionScheduledChanges.effectiveAt),
+                asc(subscriptionScheduledChanges.id)
+            )
+            .limit(limit);
+        if (page.length === 0) break;
+        const last = page[page.length - 1];
+        if (!last) break;
+        cursor = { at: last.cursorAt, id: last.id };
+        let progressed = false;
+        for (const row of page) {
+            // The queue holds one row per subscription, but a client can replace it mid-run
+            // (DELETE + INSERT, new id, possibly a later effective_at). Visit each once.
+            if (visited.has(row.subscriptionId)) continue;
+            visited.add(row.subscriptionId);
+            progressed = true;
+            try {
+                const result = await db.transaction((tx) =>
+                    applyScheduledChangeInTx({ subscriptionId: row.subscriptionId, now, tx })
+                );
+                summary.results.push({
+                    subscriptionId: row.subscriptionId,
+                    outcome: result.outcome,
+                    ...(result.outcome === 'NOT_APPLICABLE' ? { reason: result.reason } : {})
+                });
+                if (result.outcome === 'NOT_APPLICABLE') {
+                    if (result.reason === 'WAITS_PAUSED' || result.reason === 'WAITS_SUSPENDED')
+                        summary.waiting++;
+                    else summary.notApplicable++;
+                    continue;
+                }
+                summary.applied++;
+                const finished = await finishAppliedScheduledChange({ applied: result, ports });
+                summary.warnings.push(...finished.warnings);
+            } catch (error) {
+                summary.failed++;
+                summary.results.push({ subscriptionId: row.subscriptionId, outcome: 'FAILED' });
+                logger.error(
+                    { subscriptionId: row.subscriptionId, error },
+                    'Scheduled change row failed; continuing batch'
+                );
             }
-            summary.applied++;
-            const finished = await finishAppliedScheduledChange({ applied: result, ports });
-            summary.warnings.push(...finished.warnings);
-        } catch (error) {
-            summary.failed++;
-            summary.results.push({ subscriptionId: row.subscriptionId, outcome: 'FAILED' });
-            logger.error(
-                { subscriptionId: row.subscriptionId, error },
-                'Scheduled change row failed; continuing batch'
-            );
         }
+        if (!progressed) {
+            logger.warn(
+                { limit, cursorAt: cursor.at },
+                'Scheduled change page had no unvisited subscriptions; stopping to avoid a replay loop'
+            );
+            break;
+        }
+        if (page.length < limit) break;
     }
     return summary;
 }
