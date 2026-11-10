@@ -23,6 +23,9 @@ import {
     cleanupAnnouncedExitCases,
     createAnnouncedExitCase
 } from './support/plan-migration-exit-fixtures.js';
+import { registerPlanMigrationNoticeSerial } from './support/plan-migration-notice-serial.js';
+
+registerPlanMigrationNoticeSerial();
 
 const db = getServiceTestDb();
 const clock = { now: () => new Date('2026-10-11T13:00:00.000Z') };

@@ -37,7 +37,10 @@ import {
     migrationClock,
     setMigrationTargetCycle
 } from './support/plan-migration-fixtures.js';
+import { registerPlanMigrationNoticeSerial } from './support/plan-migration-notice-serial.js';
 import { noTouristVip } from './support/tourist-vip.js';
+
+registerPlanMigrationNoticeSerial();
 
 const db = getServiceTestDb();
 const migrationIds: string[] = [];

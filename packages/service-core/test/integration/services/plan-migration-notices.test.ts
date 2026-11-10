@@ -31,6 +31,9 @@ import {
     migrationClock,
     setMigrationTargetCycle
 } from './support/plan-migration-fixtures.js';
+import { registerPlanMigrationNoticeSerial } from './support/plan-migration-notice-serial.js';
+
+registerPlanMigrationNoticeSerial();
 
 type Case = Awaited<ReturnType<typeof createPlanMigrationCase>>;
 const migrationIds: string[] = [];
