@@ -8,9 +8,14 @@
     },
     "listing": {
         "title": "Food & nightlife",
-        "subtitle": "Discover the best restaurants, bars, and flavors of the region",
+        "subtitle": "Discover places to eat and go out across the region",
         "emptyState": "No venues found with the selected filters.",
         "emptyCatalog": "There are no published venues yet.",
+        "collectionEmpty": {
+            "message": "There are no venues published under {{line}} yet.",
+            "viewAll": "See all {{vertical}}",
+            "publish": "List your venue"
+        },
         "errorBanner": "Could not load the Food & nightlife listings. Please try again later.",
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",
@@ -20,6 +25,7 @@
         "type": "Establishment type",
         "priceRange": "Price range",
         "featured": "Featured only",
+        "amenities": "Amenities",
         "features": "Dietary options and features",
         "minRating": "Minimum rating",
         "sort": {
@@ -94,18 +100,41 @@
             "weekly": "Every {{weekday}}",
             "range": "{{when}}, {{start}} to {{end}}",
             "fromOnly": "{{when}}, from {{start}}"
+        },
+        "nightInfo": {
+            "headingMultiLine": "At night",
+            "heading": "Night out info",
+            "entryLabel": "Entry",
+            "entryKind": {
+                "free": "Free entry",
+                "paid": "Paid entry",
+                "varies": "Entry varies"
+            },
+            "priceFrom": "From {{price}}",
+            "approxUpdated": "approx., updated {{month}}",
+            "dressCodeLabel": "Dress code",
+            "dressCode": {
+                "casual": "Casual",
+                "smart_casual": "Smart casual",
+                "elegant": "Formal",
+                "no_restrictions": "No dress code"
+            },
+            "minAgeLabel": "Minimum age",
+            "legalAge": "Sale of alcoholic beverages to persons under 18 is prohibited (Argentine Law 24.788)."
         }
     },
     "types": {
         "RESTAURANT": "Restaurant",
         "BAR": "Bar",
-        "CAFE": "Café",
+        "CAFE": "Cafe",
         "PARRILLA": "Grill",
         "CERVECERIA": "Brewery",
-        "HELADERIA": "Ice Cream Shop",
+        "HELADERIA": "Ice cream shop",
         "PANADERIA": "Bakery",
-        "ROTISERIA": "Delicatessen",
-        "FOOD_TRUCK": "Food Truck"
+        "ROTISERIA": "Rotisserie",
+        "FOOD_TRUCK": "Food truck",
+        "PUB": "Pub",
+        "BOLICHE": "Nightclub"
     },
     "typeChips": {
         "ariaLabel": "Filter by establishment type"
@@ -113,14 +142,14 @@
     "landing": {
         "benefits": {
             "tagline": "Why Hospeda?",
-            "title": "Benefits for your food business",
+            "title": "Benefits for your venue",
             "item1": {
                 "title": "Regional visibility",
-                "desc": "Show up where thousands of travelers search for places to eat in Concepción del Uruguay and the Litoral region."
+                "desc": "Show up where thousands of tourists look for places to eat or go out in the Litoral region."
             },
             "item2": {
                 "title": "Publish in minutes",
-                "desc": "Upload photos, menu and hours from a simple dashboard. Edit anytime."
+                "desc": "Add photos, food or drinks, and opening hours from a simple dashboard. Edit anytime."
             },
             "item3": {
                 "title": "Flat price, no commissions",
@@ -136,11 +165,11 @@
             },
             "step2": {
                 "title": "Publish your venue",
-                "desc": "Add photos, menu, hours and location."
+                "desc": "Add photos, food or drinks, opening hours and location."
             },
             "step3": {
                 "title": "Get discovered",
-                "desc": "Diners find you while looking for places to eat and go out in the area."
+                "desc": "Visitors discover your venue when looking for places to eat or go out nearby."
             }
         },
         "price": {
@@ -161,25 +190,49 @@
         "faq": {
             "tagline": "Have questions?",
             "title": "Frequently asked questions",
-            "q1": "How much does it cost to list my food business on Hospeda?",
+            "q1": "How much does it cost to list my venue on Hospeda?",
             "a1_one": "One fixed monthly payment, with a {{count}}-day free trial on your first subscription. No commission on bookings or inquiries.",
             "a1_other": "One fixed monthly payment, with a {{count}}-day free trial on your first subscription. No commission on bookings or inquiries.",
             "a1NoTrial": "One fixed monthly payment. No commission on bookings or inquiries.",
             "q2": "Is there a minimum commitment?",
             "a2": "No. You can cancel your subscription anytime from your account.",
             "q3": "How many listings can I publish?",
-            "a3": "The plan includes one Food & nightlife listing per account."
+            "a3": "It depends on the plan: check how many venues each one includes in the comparison."
         },
         "lead": {
             "title": "Add your business",
-            "subtitle": "Create your account, publish your venue and start reaching diners looking for somewhere to eat in the area."
+            "subtitle": "Create your account, list your venue and reach visitors looking for places to eat or go out nearby."
         }
     },
     "owner": {
+        "businessLines": {
+            "legend": "Business lines",
+            "keepOne": "Keep at least one business line selected.",
+            "food": {
+                "label": "Food & drink"
+            },
+            "nightlife": {
+                "label": "Nightlife"
+            },
+            "reason": {
+                "MAX_EXCEEDED": "You already picked the maximum number of business lines.",
+                "EXCLUDED_PAIR": "It cannot be combined with the business line you already picked."
+            },
+            "useSuggested": "Use the suggested business lines for this type",
+            "notice": {
+                "title": "Removing {{lines}} hides: {{sections}}.",
+                "sectionWithCount_one": "{{section}} ({{count}} saved item)",
+                "sectionWithCount_other": "{{section}} ({{count}} saved items)",
+                "keep": "Nothing is deleted: if you add it back, everything returns.",
+                "qr": "Your table QR had {{count}} scans in the last 90 days.",
+                "dismiss": "Got it"
+            }
+        },
         "editor": {
             "menuManager": {
                 "title": "Menu",
                 "intro": "Enter your menu dish by dish, or upload a photo or a PDF of it. You can use both, and neither is required.",
+                "lockedIntro": "Show your menu on your listing.",
                 "fileTitle": "Menu photo or PDF",
                 "filePdf": "View the PDF",
                 "fileImage": "View the photo",
@@ -213,8 +266,12 @@
                 "saving": "Saving…",
                 "saved": "Menu saved.",
                 "saveError": "The menu could not be saved.",
-                "locked": "Building the menu and uploading a photo or a PDF of it are available from the Professional plan onwards.",
-                "lockedPreTrial": "The menu unlocks when you publish your listing: from then on you can add your dishes or upload a photo or a PDF of the menu.",
+                "linkSave": "Save link",
+                "linkSaved": "Link saved.",
+                "linkSaveError": "The link could not be saved.",
+                "locked": "Your full menu is available starting with the {{plan}} plan.",
+                "lockedNoPlan": "Your full menu is available on a paid plan.",
+                "lockedPreTrial": "The menu unlocks when you publish your listing.",
                 "seePlans": "See plans",
                 "addPhoto": "Add photo",
                 "replacePhoto": "Change the photo",
@@ -224,7 +281,8 @@
                 "photoAltPlaceholder": "Describe the photo (optional)",
                 "photoAttached": "Photo added. Remember to save the menu.",
                 "photoUploadError": "The dish photo could not be uploaded.",
-                "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway.",
+                "photoLocked": "Photos per dish are available starting with the {{plan}} plan. You can remove the photos and save the menu anyway.",
+                "photoLockedNoPlan": "Photos per dish are available on a paid plan. You can remove the photos and save the menu anyway.",
                 "translations": "Translations (EN/PT)",
                 "nameEn": "English name",
                 "nameEnPlaceholder": "English name",
@@ -234,8 +292,10 @@
                 "descriptionEnPlaceholder": "English description",
                 "descriptionPt": "Portuguese description",
                 "descriptionPtPlaceholder": "Portuguese description",
-                "translationLocked": "Translating the menu is available on the Premium plan. You can clear the translations and save the menu in Spanish only.",
-                "translationLockedHint": "Available on the Premium plan. Clear the English and Portuguese fields to save the menu in Spanish only."
+                "translationLocked": "Translating the menu is available starting with the {{plan}} plan. You can clear the translations and save the menu in Spanish only.",
+                "translationLockedNoPlan": "Translating the menu is available on a paid plan. You can clear the translations and save the menu in Spanish only.",
+                "translationLockedHint": "Available starting with the {{plan}} plan. Clear the English and Portuguese fields to save the menu in Spanish only.",
+                "translationLockedHintNoPlan": "Available on a paid plan. Clear the English and Portuguese fields to save the menu in Spanish only."
             },
             "dailySpecials": {
                 "title": "Today's menu",
@@ -257,7 +317,9 @@
                 "saving": "Saving…",
                 "saved": "Today's menu saved.",
                 "saveError": "Today's menu could not be saved.",
-                "locked": "Today's menu is available from the Professional plan.",
+                "locked": "Today's menu is available starting with the {{plan}} plan.",
+                "lockedNoPlan": "Today's menu is available on a paid plan.",
+                "lockedPreTrial": "Today's menu unlocks when you publish your listing.",
                 "expired": "Expired — not being shown.",
                 "scheduled": "Scheduled — not shown yet."
             },
@@ -287,12 +349,53 @@
                 "saving": "Saving…",
                 "saved": "Schedule saved.",
                 "saveError": "The schedule could not be saved.",
-                "locked": "Keeping a venue schedule is available from the Professional plan onwards."
+                "locked": "Keeping a venue schedule is available starting with the {{plan}} plan.",
+                "lockedNoPlan": "Keeping a venue schedule is available on a paid plan.",
+                "lockedPreTrial": "The venue schedule unlocks when you publish your listing."
             },
-            "acceptsEvents": {
-                "label": "We accept events (birthdays, corporate, weddings)",
-                "hint": "We show a contact button on your listing so people can reach out for this kind of request."
+            "lockedSection": {
+                "vaciar": "Empty",
+                "vaciarTitle": "Empty this section",
+                "vaciarMessage": "The saved data in this section will be deleted. This cannot be undone.",
+                "vaciarConfirm": "Empty this section",
+                "vaciarBusy": "Emptying…",
+                "cancel": "Cancel",
+                "empty": "No data saved in this section.",
+                "vaciarError": "The section could not be emptied.",
+                "vaciarSuccess": "The section was emptied.",
+                "inactive": "Not shown",
+                "unavailable": "Unavailable",
+                "fileUnavailable": "This file cannot be opened."
             }
+        }
+    },
+    "typeDescriptions": {
+        "RESTAURANT": "Full-service restaurant with table service and a varied menu.",
+        "BAR": "Bar focused on drinks served from the bar, including cocktails.",
+        "CAFE": "Cafe for coffee, drinks, and light meals.",
+        "PARRILLA": "Grill serving meats and dishes cooked over coals.",
+        "CERVECERIA": "Brewery that produces its own craft beer.",
+        "HELADERIA": "Ice cream shop serving frozen desserts.",
+        "PANADERIA": "Bakery offering bread and baked goods.",
+        "ROTISERIA": "Rotisserie serving prepared food to take away.",
+        "FOOD_TRUCK": "Food prepared and served from a vehicle.",
+        "PUB": "Bar format centered on draft beer and a pub atmosphere.",
+        "BOLICHE": "Nightclub focused exclusively on nighttime entertainment."
+    },
+    "collections": {
+        "nightlife": {
+            "pageTitle": "Nightclubs, bars and pubs in {{destino}}",
+            "description": "Discover nightclubs, bars and pubs for a night out in {{destino}}.",
+            "heading": "Nightclubs, bars and pubs",
+            "intro": "Places to go out at night in {{destino}}.",
+            "ogTagline": "For a night out"
+        },
+        "food": {
+            "pageTitle": "Where to eat in {{destino}}",
+            "description": "Discover restaurants, cafés and places to eat in {{destino}}.",
+            "heading": "Where to eat",
+            "intro": "Places to eat in {{destino}}.",
+            "ogTagline": "Where to eat"
         }
     }
 }

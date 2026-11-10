@@ -45,6 +45,7 @@ import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedExperienceReportFixedRoute } from './reportFixed';
+import { protectedGetExperienceSectionStatesRoute } from './sectionStates';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { protectedExperienceSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishExperienceRoute } from './unpublish';
@@ -78,6 +79,7 @@ app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 // static segment ahead of a param at the same position regardless of insertion
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetExperienceBrochureRoute);
+app.route('/', protectedGetExperienceSectionStatesRoute);
 
 // GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A third,
 // distinct code for the same experience: `purpose: LISTING`, alongside the

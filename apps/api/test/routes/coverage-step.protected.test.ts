@@ -675,10 +675,16 @@ const cases = [
 
 beforeEach(() => {
     vi.clearAllMocks();
-    mocks.loadFacts.mockResolvedValue({
-        facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.PUBLISHED },
+    // Each vertical's catalog only admits its own business lines; a venue line on
+    // an experience makes the section resolver reject the listing before step 5.
+    mocks.loadFacts.mockImplementation(async ({ vertical }: { vertical: VerticalEnum }) => ({
+        facts: {
+            ownerId: OWNER,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            businessLines: vertical === VerticalEnum.VENUE ? ['food'] : ['standard']
+        },
         ownerId: OWNER
-    });
+    }));
     mocks.coverage.mockResolvedValue({ covered: false, sources: [baseSource] });
     mocks.subscribeDestination.mockResolvedValue({ destination: 'SUBSCRIBE' });
     mocks.effectiveSet.mockImplementation(

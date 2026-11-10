@@ -41,7 +41,7 @@ const INITIAL = {
     type: 'CABIN',
     destinationId: 'dest-1',
     maxGuests: 4,
-    minNights: 1,
+    policies: { minNights: 1 },
     bedrooms: 2,
     bathrooms: 1,
     publicationStatus: 'DRAFT',

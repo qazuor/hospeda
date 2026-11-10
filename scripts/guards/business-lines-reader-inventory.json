@@ -1,0 +1,355 @@
+{
+    "readers": [
+        {
+            "file": "apps/api/src/middlewares/listing-access.ts",
+            "symbol": "bodyLines",
+            "count": 2,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "apps/api/src/middlewares/listing-access.ts",
+            "symbol": "resultingBusinessLines",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "apps/api/src/middlewares/listing-access.ts",
+            "symbol": "enforceListingAccess",
+            "count": 3,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "apps/api/src/routes/ai/protected/chat.ts",
+            "symbol": "rows",
+            "count": 1,
+            "category": "ai-context",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "apps/api/src/routes/ai/protected/chat.ts",
+            "symbol": "listingSections",
+            "count": 1,
+            "category": "ai-context",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "apps/api/src/routes/experience/protected/sectionStates.ts",
+            "symbol": "protectedGetExperienceSectionStatesRoute",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "apps/api/src/utils/public-listing-projector.ts",
+            "symbol": "businessLines",
+            "count": 1,
+            "category": "public-reader",
+            "spec": ".hoja/contexto.md:28-34"
+        },
+        {
+            "file": "apps/api/src/utils/public-listing-projector.ts",
+            "symbol": "projectPublicListings",
+            "count": 1,
+            "category": "public-reader",
+            "spec": ".hoja/contexto.md:28-34"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/create.ts",
+            "symbol": "protectedCreateVenueListingRoute",
+            "count": 2,
+            "category": "create-writer",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/verticals/src/authorization/listing-facts.ts",
+            "symbol": "rawBusinessLines",
+            "count": 1,
+            "category": "facts",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "packages/schemas/src/catalog/business-lines.validator.ts",
+            "symbol": "normalizeBusinessLines",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "packages/schemas/src/catalog/business-lines.validator.ts",
+            "symbol": "validateBusinessLines",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "symbol": "businessLines",
+            "count": 1,
+            "category": "create-writer",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "symbol": "resolveBusinessLinesOnCreate",
+            "count": 2,
+            "category": "create-writer",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "symbol": "resultingLines",
+            "count": 2,
+            "category": "create-writer",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "symbol": "_beforeUpdate",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "symbol": "businessLines",
+            "count": 1,
+            "category": "create-writer",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "symbol": "storedLines",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "symbol": "resultingLines",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "symbol": "_beforeUpdate",
+            "count": 1,
+            "category": "decider",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/seed/src/data-migrations/0136-hos1830-business-lines-verification.ts",
+            "symbol": "empty",
+            "count": 3,
+            "category": "facts",
+            "spec": ".hoja/contexto.md:28-39"
+        },
+        {
+            "file": "packages/service-core/src/services/experience/experience.review.service.ts",
+            "symbol": "presence",
+            "count": 1,
+            "category": "review-validation",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/venue/venue.review.service.ts",
+            "symbol": "presence",
+            "count": 1,
+            "category": "review-validation",
+            "spec": ".hoja/notas.md:2"
+        },
+        {
+            "file": "packages/service-core/src/services/venue/venue.create-sections.ts",
+            "symbol": "assertVenueCreateSectionsPresent",
+            "count": 1,
+            "category": "editor",
+            "spec": "apps/api/docs/error-contract.md:42"
+        },
+        {
+            "file": "packages/service-core/src/services/venue/venue.service.ts",
+            "symbol": "_beforeCreate",
+            "count": 1,
+            "category": "editor",
+            "spec": "apps/api/docs/error-contract.md:42"
+        },
+        {
+            "file": "apps/web/src/lib/forms/field-errors.ts",
+            "symbol": "apiErrorToFieldErrors",
+            "count": 1,
+            "category": "error-mapping",
+            "spec": ".hoja/notas.md:6"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BusinessLinesField.client.tsx",
+            "symbol": "error",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "symbol": "ListingCreateForm",
+            "count": 1,
+            "category": "create-form",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
+            "symbol": "handleSubmit",
+            "count": 1,
+            "category": "create-form",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/editor/BasicInfoSection.client.tsx",
+            "symbol": "BasicInfoSection",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "buildPatchPayload",
+            "count": 4,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "packages/schemas/src/common/listing-completeness.ts",
+            "symbol": "resolveListingCompleteness",
+            "count": 2,
+            "category": "publish-gate",
+            "spec": ".hoja/notas.md:44"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "symbol": "hypothetical",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/sectionStates.ts",
+            "symbol": "businessLines",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/contexto.md:44-50"
+        },
+        {
+            "file": "apps/web/src/lib/api/endpoints-protected.ts",
+            "symbol": "getListingSectionStates",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "businessLinesError",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "symbol": "ListingEditor",
+            "count": 1,
+            "category": "editor",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "packages/db/src/models/venue/venue-business-line-filter.ts",
+            "symbol": "buildVenueBusinessLineCondition",
+            "count": 1,
+            "category": "list-filter",
+            "spec": ".hoja/notas.md:54"
+        },
+        {
+            "file": "apps/admin/src/features/venue/config/venue.columns.ts",
+            "symbol": "lines",
+            "count": 1,
+            "category": "list-column",
+            "spec": ".hoja/notas.md:5"
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/changeBusinessLines.ts",
+            "symbol": "adminChangeVenueBusinessLinesRoute",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
+        },
+        {
+            "file": "apps/admin/src/features/venue/hooks/useChangeVenueBusinessLinesMutation.ts",
+            "symbol": "useChangeVenueBusinessLinesMutation",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
+        },
+        {
+            "file": "apps/admin/src/features/venue/hooks/useVenuePage.ts",
+            "symbol": "useVenuePage",
+            "count": 1,
+            "category": "editor",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/7-admin.md:21"
+        }
+    ],
+    "imports": [
+        {
+            "file": "packages/schemas/src/catalog/listing-catalog.types.ts",
+            "category": "type-only",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/schemas/src/catalog/business-lines.validator.ts",
+            "category": "decider",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/db/src/schemas/accommodation/accommodation.dbschema.ts",
+            "category": "database-check",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/db/src/schemas/experience/experiences.dbschema.ts",
+            "category": "database-check",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/db/src/schemas/venue/venue.dbschema.ts",
+            "category": "database-check",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/service-core/src/services/listing/base-listing.service.ts",
+            "category": "create-preselection",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/create.ts",
+            "category": "create-preselection",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/verticals/src/listing-sections/resolve-listing-sections.ts",
+            "category": "resolver",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/verticals/src/listing-sections/business-lines-change.ts",
+            "category": "resolver",
+            "spec": ".hoja/contexto.md:250-255"
+        },
+        {
+            "file": "packages/seed/src/example/venues.seed.ts",
+            "category": "seed",
+            "spec": ".hoja/contexto.md:47-56"
+        },
+        {
+            "file": "packages/schemas/src/entities/experience/experience.access.schema.ts",
+            "category": "response-projection",
+            "spec": ".hoja/contexto.md:47-56"
+        }
+    ]
+}

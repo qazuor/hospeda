@@ -142,6 +142,10 @@
             "yearRound": "Todo el año",
             "seasonal": "De temporada",
             "unset": "Sin indicar"
+        },
+        "extraCharge": {
+            "label": "Con cargo extra",
+            "badge": "Con cargo"
         }
     },
     "amenityNames": {
@@ -252,6 +256,9 @@
         "insurance_included": "Seguro incluido",
         "hotel_pickup": "Traslado desde el hotel",
         "lockers_available": "Casilleros disponibles",
+        "dance_floor": "Pista de baile",
+        "vip_area": "Sector VIP",
+        "cloakroom": "Guardarropa",
         "streaming_services": "Servicios de streaming",
         "outdoor_games": "Juegos de exterior",
         "hammocks": "Hamacas",
@@ -311,7 +318,13 @@
         "security_cameras": "Cámaras de seguridad",
         "baby_bathtub": "Bañera de bebé",
         "desk": "Escritorio",
-        "ergonomic_chair": "Silla cómoda de trabajo"
+        "ergonomic_chair": "Silla cómoda de trabajo",
+        "outdoor_tables": "Mesas al aire libre",
+        "baby_changing_table": "Cambiador para bebés",
+        "boat_included": "Embarcación incluida",
+        "changing_rooms": "Vestuarios",
+        "life_jacket_included": "Chaleco salvavidas incluido",
+        "towels_provided": "Toallas"
     },
     "featureNames": {
         "river_front": "Frente al río",
@@ -407,12 +420,19 @@
         "pregnancy_safe": "Apto para embarazadas",
         "private_available": "Disponible en formato privado",
         "senior_friendly": "Apto adultos mayores",
+        "dj_sets": "DJ",
+        "karaoke": "Karaoke",
         "river_view": "Vista al río",
         "river_access": "Acceso al río",
         "lagoon_view": "Vista a la laguna",
         "stream_view": "Vista al arroyo",
         "countryside_view": "Vista al campo",
-        "pool_view": "Vista a la pileta"
+        "pool_view": "Vista a la pileta",
+        "happy_hour": "Happy hour",
+        "thermal_waters": "Aguas termales",
+        "birdwatching": "Avistaje de aves",
+        "island_setting": "En las islas del Delta o del Paraná",
+        "parrilla_cuisine": "Parrilla"
     },
     "title": "Alojamientos",
     "tagline": "Encontrá tu lugar ideal",
@@ -886,8 +906,7 @@
             "additionalCost": "(costo adicional)"
         },
         "features": {
-            "title": "Características",
-            "smokingAllowed": "Se permite fumar"
+            "title": "Características"
         },
         "faqsDetail": {
             "title": "Preguntas frecuentes",
@@ -1000,7 +1019,10 @@
         "expand": "Expandir panel",
         "collapse": "Reducir panel",
         "consumerLimitReached": "Alcanzaste tu límite mensual de chats con IA. Actualizá tu plan para obtener más acceso.",
-        "consumerLimitUpgradeCta": "Ver planes"
+        "consumerLimitUpgradeCta": "Ver planes",
+        "error": {
+            "EMPTY_ANSWER": "No pudimos generar una respuesta. Probá de nuevo en un momento."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

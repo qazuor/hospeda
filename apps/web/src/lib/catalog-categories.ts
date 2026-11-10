@@ -233,3 +233,86 @@ export function groupFeaturesByCategory<T extends Categorized>({
         t
     });
 }
+
+/** A catalog row as the public filter sidebar receives it. */
+interface FilterCatalogRow {
+    readonly id: string;
+}
+
+/**
+ * Converts category groups into the `categories` map an `icon-chips` filter
+ * renders in its "Ver más" dialog (label → option values), so the public
+ * filters group amenities and features by the same taxonomy, order and
+ * "other" bucket as the owner picker and the detail grid (HOS-2061 AC-5).
+ *
+ * Runs over the list the caller ALREADY narrowed (HOS-1870: only values with a
+ * published listing in the collection), so a category with nothing to offer
+ * never appears.
+ *
+ * @param params.groups - Groups from `groupAmenitiesByCategory` / `groupFeaturesByCategory`
+ * @returns Option values keyed by localized category label, in display order
+ */
+export function toFilterCategories<T extends FilterCatalogRow>({
+    groups
+}: {
+    readonly groups: readonly CategoryGroup<T>[];
+}): Readonly<Record<string, readonly string[]>> {
+    const categories: Record<string, string[]> = {};
+    for (const group of groups) {
+        const bucket = categories[group.label] ?? [];
+        bucket.push(...group.items.map((item) => item.id));
+        categories[group.label] = bucket;
+    }
+    return categories;
+}
+
+/**
+ * Filter-dialog categories for the public amenity catalog. Amenities carry
+ * their category in `type` (`AmenitiesTypeEnum`).
+ *
+ * @param params.amenities - Narrowed public amenity rows
+ * @param params.t - Active locale translator
+ * @returns Option values keyed by localized category label
+ */
+export function buildAmenityFilterCategories({
+    amenities,
+    t
+}: {
+    readonly amenities: readonly (FilterCatalogRow & {
+        readonly slug?: string | null;
+        readonly type?: string | null;
+    })[];
+    readonly t: Translate;
+}): Readonly<Record<string, readonly string[]>> {
+    const rows: AmenityData[] = amenities.map((amenity) => ({
+        id: amenity.id,
+        slug: amenity.slug ?? '',
+        category: amenity.type ?? null
+    }));
+    return toFilterCategories({ groups: groupAmenitiesByCategory({ amenities: rows, t }) });
+}
+
+/**
+ * Filter-dialog categories for the public feature catalog (`FeatureCategoryEnum`).
+ *
+ * @param params.features - Narrowed public feature rows
+ * @param params.t - Active locale translator
+ * @returns Option values keyed by localized category label
+ */
+export function buildFeatureFilterCategories({
+    features,
+    t
+}: {
+    readonly features: readonly (FilterCatalogRow & { readonly category?: string | null })[];
+    readonly t: Translate;
+}): Readonly<Record<string, readonly string[]>> {
+    return toFilterCategories({
+        groups: groupFeaturesByCategory({
+            features: features.map((feature) => ({
+                ...feature,
+                category: feature.category ?? null
+            })),
+            t
+        })
+    });
+}

@@ -22,6 +22,10 @@ export const rAccommodationAmenity = pgTable(
         amenityId: uuid('amenity_id')
             .notNull()
             .references(() => amenities.id, { onDelete: 'cascade' }),
+        /**
+         * HOS-2084: "paid separately / extra charge" (UI: "Con cargo extra"). A flag
+         * only: no amount is captured. Written by the owner editor as `extraCharge`.
+         */
         isOptional: boolean('is_optional').notNull().default(false),
         additionalCost: jsonb('additional_cost').$type<PriceType>(),
         additionalCostPercent: doublePrecision('additional_cost_percent'),

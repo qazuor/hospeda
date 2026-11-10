@@ -69,7 +69,10 @@ async function createListing(
             tx
         );
     if (vertical === 'venue')
-        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+        return new VenueModel().create(
+            { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+            tx
+        );
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 
@@ -126,7 +129,7 @@ describe('TEST:V6:13 PB12 purge rows by vertical', () => {
                 .returning({ id: amenities.id });
             const [feature] = await tx
                 .insert(features)
-                .values({ slug: `pb12-${crypto.randomUUID()}` })
+                .values({ slug: `pb12-${crypto.randomUUID()}`, category: 'LOCATION' })
                 .returning({ id: features.id });
             const [tag] = await tx
                 .insert(tags)

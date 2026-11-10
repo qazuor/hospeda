@@ -12,7 +12,7 @@
  * All models are mocked.  No real DB.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { AmenityAvailabilityEnum, AmenityScopeEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     syncListingAmenityJunction,
@@ -206,6 +206,241 @@ describe('syncListingAmenityJunction', () => {
             expect(junctionModel.hardDelete).not.toHaveBeenCalled();
             expect(junctionModel.create).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// syncListingAmenityJunction — relation attributes (HOS-2061)
+// ---------------------------------------------------------------------------
+
+describe('syncListingAmenityJunction — relation attributes (HOS-2061)', () => {
+    const SHARED = AmenityScopeEnum.SHARED;
+    const SEASONAL = AmenityAvailabilityEnum.SEASONAL;
+    const YEAR_ROUND = AmenityAvailabilityEnum.YEAR_ROUND;
+
+    function makeAttributeJunctionModel(
+        rows: { amenityId: string; scope?: string | null; availability?: string | null }[]
+    ) {
+        const items = rows.map((row) => ({ [FK_COL]: ENTITY_ID, ...row }));
+        return {
+            findAll: vi.fn().mockResolvedValue({ items, total: items.length }),
+            hardDelete: vi.fn().mockResolvedValue(1),
+            create: vi.fn().mockResolvedValue({}),
+            update: vi.fn().mockResolvedValue({})
+        };
+    }
+
+    it('inserts new rows with their declared attributes', async () => {
+        // Arrange
+        const junctionModel = makeAttributeJunctionModel([]);
+
+        // Act
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A, UUID_B],
+            amenityAttributes: [{ amenityId: UUID_A, scope: SHARED, availability: SEASONAL }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        // Assert
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A, scope: 'shared', availability: 'seasonal' },
+            fakeTx
+        );
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_B, scope: null, availability: null },
+            fakeTx
+        );
+    });
+
+    it('updates kept rows that changed and resets unlisted ones to NULL', async () => {
+        // Arrange
+        const junctionModel = makeAttributeJunctionModel([
+            { amenityId: UUID_A, scope: 'private', availability: null },
+            { amenityId: UUID_B, scope: 'shared', availability: 'seasonal' },
+            { amenityId: UUID_C, scope: null, availability: 'year_round' }
+        ]);
+
+        // Act: A changes, B is unlisted (reset), C is unchanged.
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [
+                { amenityId: UUID_A, scope: SHARED, availability: null },
+                { amenityId: UUID_C, scope: null, availability: YEAR_ROUND }
+            ],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        // Assert
+        expect(junctionModel.update).toHaveBeenCalledTimes(2);
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+            { scope: 'shared', availability: null },
+            fakeTx
+        );
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_B },
+            { scope: null, availability: null },
+            fakeTx
+        );
+        expect(junctionModel.create).not.toHaveBeenCalled();
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+    });
+
+    it('rejects an attribute entry for an amenity that is not linked, before any write', async () => {
+        // Arrange
+        const junctionModel = makeAttributeJunctionModel([{ amenityId: UUID_A }]);
+
+        // Act
+        const run = syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A],
+            amenityAttributes: [{ amenityId: UUID_B, scope: SHARED }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        // Assert
+        await expect(run).rejects.toMatchObject({ code: ServiceErrorCode.VALIDATION_ERROR });
+        expect(junctionModel.update).not.toHaveBeenCalled();
+        expect(junctionModel.create).not.toHaveBeenCalled();
+        expect(junctionModel.hardDelete).not.toHaveBeenCalled();
+    });
+
+    it('leaves attributes untouched when amenityAttributes is undefined', async () => {
+        // Arrange
+        const junctionModel = makeAttributeJunctionModel([
+            { amenityId: UUID_A, scope: 'shared', availability: 'seasonal' }
+        ]);
+
+        // Act
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A, UUID_B],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        // Assert
+        expect(junctionModel.update).not.toHaveBeenCalled();
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_B },
+            fakeTx
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// syncListingAmenityJunction — extra charge flag (HOS-2084)
+// ---------------------------------------------------------------------------
+
+describe('syncListingAmenityJunction — extraCharge (HOS-2084)', () => {
+    function makeRows(rows: { amenityId: string; scope?: string | null; isOptional?: boolean }[]) {
+        const items = rows.map((row) => ({ [FK_COL]: ENTITY_ID, ...row }));
+        return {
+            findAll: vi.fn().mockResolvedValue({ items, total: items.length }),
+            hardDelete: vi.fn().mockResolvedValue(1),
+            create: vi.fn().mockResolvedValue({}),
+            update: vi.fn().mockResolvedValue({})
+        };
+    }
+
+    it('inserts a new row with is_optional true when extraCharge is sent', async () => {
+        const junctionModel = makeRows([]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: [UUID_A],
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: true }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.create).toHaveBeenCalledWith(
+            {
+                [FK_COL]: ENTITY_ID,
+                amenityId: UUID_A,
+                scope: null,
+                availability: null,
+                isOptional: true
+            },
+            fakeTx
+        );
+    });
+
+    it('updates a kept row when extraCharge changes', async () => {
+        const junctionModel = makeRows([{ amenityId: UUID_A, scope: null, isOptional: false }]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: true }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+            { scope: null, availability: null, isOptional: true },
+            fakeTx
+        );
+    });
+
+    it('keeps the stored value when extraCharge is omitted or the amenity is unlisted', async () => {
+        const junctionModel = makeRows([
+            { amenityId: UUID_A, scope: 'shared', isOptional: true },
+            { amenityId: UUID_B, scope: 'shared', isOptional: true }
+        ]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, scope: AmenityScopeEnum.PRIVATE }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledTimes(2);
+        for (const call of junctionModel.update.mock.calls) {
+            expect(call[1]).not.toHaveProperty('isOptional');
+        }
+    });
+
+    it('can clear the flag with extraCharge false', async () => {
+        const junctionModel = makeRows([{ amenityId: UUID_A, scope: null, isOptional: true }]);
+
+        await syncListingAmenityJunction({
+            entityId: ENTITY_ID,
+            entityFkColumn: FK_COL,
+            amenityIds: undefined,
+            amenityAttributes: [{ amenityId: UUID_A, extraCharge: false }],
+            junctionModel,
+            amenityModel: makeCatalogModel(),
+            tx: fakeTx
+        });
+
+        expect(junctionModel.update).toHaveBeenCalledWith(
+            { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+            { scope: null, availability: null, isOptional: false },
+            fakeTx
+        );
     });
 });
 

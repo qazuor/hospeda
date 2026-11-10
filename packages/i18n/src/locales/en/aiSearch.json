@@ -13,6 +13,7 @@
         "thinking": "Thinking…",
         "newConversation": "New conversation",
         "errorDefault": "An error occurred. Please try again.",
+        "errorEmptyAnswer": "We couldn't generate an answer. Please try again in a moment.",
         "emptyState": "Ask your first question and I'll help you find the perfect accommodation.",
         "resultsLabel": "Results found",
         "resultsEmpty": "No accommodations found with those filters.",

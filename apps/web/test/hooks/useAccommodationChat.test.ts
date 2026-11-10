@@ -146,6 +146,31 @@ describe('useAccommodationChat', () => {
         expect(result.current.state.currentAssistantContent).toBe('');
     });
 
+    it.each([
+        ['no tokens at all', [] as string[]],
+        ['whitespace-only tokens', [' ', '\n']]
+    ])('done with empty content (%s) sets an error and appends no blank bubble (HOS-2095)', async (_label, tokens) => {
+        mockStreamChat.mockImplementation(async function (params: {
+            onEvent: (e: SseEvent) => void;
+        }) {
+            for (const t of tokens) params.onEvent(createTokenEvent(t));
+            params.onEvent(createDoneEvent({ finishReason: 'length' }));
+        });
+
+        const { result } = renderHook(() => useAccommodationChat(baseParams));
+
+        await act(async () => {
+            result.current.send('¿Tiene parking?');
+        });
+
+        expect(result.current.state.status).toBe('error');
+        expect(result.current.state.errorCode).toBe('EMPTY_ANSWER');
+        expect(result.current.state.messages).toEqual([
+            { role: 'user', content: '¿Tiene parking?' }
+        ]);
+        expect(result.current.state.currentAssistantContent).toBe('');
+    });
+
     it('strips ---price-disclaimer--- marker and sets showPriceDisclaimer', async () => {
         mockStreamChat.mockImplementation(async function (params: {
             onEvent: (e: SseEvent) => void;

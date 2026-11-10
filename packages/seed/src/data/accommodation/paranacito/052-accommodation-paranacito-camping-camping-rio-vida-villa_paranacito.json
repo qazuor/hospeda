@@ -127,12 +127,9 @@
     },
     "extraInfo": {
         "capacity": 70,
-        "minNights": 2,
-        "maxNights": 30,
         "bedrooms": 8,
         "beds": 20,
         "bathrooms": 6,
-        "smokingAllowed": true,
         "extraInfo": [
             "Traslados en lancha desde el muelle principal de Villa Paranacito incluidos en la tarifa",
             "Se permiten mascotas con previo aviso, deben estar atadas en las áreas comunes",
@@ -140,6 +137,12 @@
             "Proveeduría básica en el camping, para compras mayores se recomienda abastecerse en Villa Paranacito",
             "Servicio de wifi solo en el área del salón comunitario"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "yes",
+        "minNights": 2,
+        "maxNights": 30
     },
     "seo": {
         "title": "Camping Río Vida - Experiencia única en el Delta de Villa",

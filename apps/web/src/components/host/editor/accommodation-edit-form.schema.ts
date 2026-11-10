@@ -105,15 +105,6 @@ const bathroomsField = z
     .nullable()
     .optional();
 
-/** G7 smoke (H-112): mirrors the HTTP schema's min(1)/max(365) bounds. */
-const minNightsField = z
-    .number()
-    .int()
-    .min(1, { message: 'zodError.accommodation.extraInfo.minNights.min' })
-    .max(365, { message: 'zodError.accommodation.extraInfo.minNights.max' })
-    .nullable()
-    .optional();
-
 /**
  * H-111: whole pesos only, no cents. Without `.int()` the form accepted
  * `1234.56`, the row was stored as `{"price": 1234.56}`, and the public
@@ -180,15 +171,21 @@ export const AccommodationBasicsSchema = z.object({
     destinationId: inherited.destinationId
 });
 
-/** `…/editar/capacidad-precio/` — guests, bedrooms, bathrooms, price, currency, minNights. */
+/**
+ * `…/editar/capacidad-precio/` — guests, bedrooms, bathrooms, price, currency,
+ * and the minimum stay (`policies.minNights`, HOS-2060).
+ */
 export const AccommodationCapacityPricingSchema = z.object({
     maxGuests: maxGuestsField,
     bedrooms: bedroomsField,
     bathrooms: bathroomsField,
     basePrice: basePriceField,
     currency: currencyField,
-    /** G7 smoke (H-112): minimum stay, writable since the HTTP schema grew a slot for it. */
-    minNights: minNightsField
+    /**
+     * HOS-2060: a PATCH object of house rules. This page sends only
+     * `{ minNights }`; the API merges it per key and re-validates the result.
+     */
+    policies: inherited.policies
 });
 
 /**
@@ -233,7 +230,12 @@ export const AccommodationSeoSchema = z.object({
 export const AccommodationServicesSchema = z.object({
     amenityIds: inherited.amenityIds,
     amenityAttributes: inherited.amenityAttributes,
-    featureIds: inherited.featureIds
+    featureIds: inherited.featureIds,
+    /**
+     * HOS-2060: the Policies panel's house rules, sent as a PATCH object of
+     * the keys this page owns (everything except `minNights`).
+     */
+    policies: inherited.policies
 });
 
 /** `…/editar/contacto/` — contact channels plus the six social URLs. */

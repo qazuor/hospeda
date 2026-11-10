@@ -2074,6 +2074,10 @@
             "path": "/api/v1/admin/venues/:id/assign-owner"
         },
         {
+            "method": "PATCH",
+            "path": "/api/v1/admin/venues/:id/business-lines"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/venues/:id/faqs"
         },
@@ -2787,6 +2791,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/sections"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/experiences/:id/support-edits"
         },
         {
@@ -3399,6 +3407,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/venues/:id/sections"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/venues/:id/support-edits"
         },
         {
@@ -3711,6 +3723,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/experiences/filter-options"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/experiences/slug/:slug"
         },
         {
@@ -3912,6 +3928,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/venues/destination/:destinationId"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/filter-options"
         },
         {
             "method": "GET",

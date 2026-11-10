@@ -164,17 +164,20 @@
     },
     "extraInfo": {
         "capacity": 3,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Barrio residencial tranquilo",
             "Ideal para parejas o viajeros solos",
             "Cerca de transporte público"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Sueño Tranquilo - Apartamento sereno en Concepción del",

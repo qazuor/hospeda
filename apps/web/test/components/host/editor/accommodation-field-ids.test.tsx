@@ -66,7 +66,7 @@ const MOCK_INITIAL_DATA = {
     bedrooms: 2,
     bathrooms: 1,
     beds: 3,
-    minNights: 2,
+    policies: { minNights: 2 },
     basePrice: 15000,
     currency: 'ARS',
     isAvailable: true,
@@ -157,7 +157,6 @@ const SECTION_OF: Readonly<Record<string, { section: string; controlName?: strin
     bedrooms: { section: 'capacityPricing' },
     bathrooms: { section: 'capacityPricing' },
     basePrice: { section: 'capacityPricing' },
-    minNights: { section: 'capacityPricing' },
     latitude: { section: 'location' },
     longitude: { section: 'location' },
     street: { section: 'location' },
@@ -188,11 +187,15 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // until multi-currency ships), so there is no control to focus.
     currency: 'static read-only indicator, not an editable control',
     // Checkbox GROUPS — many controls, one key, no single focus target.
-    amenityIds: 'checkbox group in AmenitiesSection',
+    amenityIds: 'checkbox group in CatalogPicker',
     // HOS-2058: per-amenity radio GROUPS (scope + availability for every
     // checked amenity), one key, no single focus target.
-    amenityAttributes: 'per-amenity radio groups in AmenitiesSection',
-    featureIds: 'checkbox group in AmenitiesSection'
+    amenityAttributes: 'per-amenity radio groups in CatalogPicker',
+    featureIds: 'checkbox group in CatalogPicker',
+    // HOS-2060: a per-key PATCH object split across two pages. Its leaves
+    // render under dotted ids (`acc-policies-minNights` on capacity/pricing,
+    // `acc-policies-smokingAllowed`, ... on services).
+    policies: 'JSONB block; leaf controls carry dotted ids'
 };
 
 const ALL_SCHEMA_KEYS = Object.keys(AccommodationEditFormSchema.shape);

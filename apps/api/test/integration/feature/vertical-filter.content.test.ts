@@ -51,16 +51,18 @@ interface FeatureItem {
 /**
  * The integration DB is migrated but NOT seeded, so this suite seeds the rows
  * its assertions name (it used to rely on a pre-seeded dev DB). Slugs and
- * `applicableVerticals` mirror `packages/seed/src/data/feature/*.json`.
+ * `applicableVerticals` and `category` (NOT NULL since HOS-2058 N+1) mirror
+ * `packages/seed/src/data/feature/*.json`.
  */
 const SEED_ROWS: (typeof features.$inferInsert)[] = [
-    { slug: 'kid_friendly', applicableVerticals: ['experience'] },
+    { slug: 'kid_friendly', applicableVerticals: ['experience'], category: 'AUDIENCE' },
     {
         slug: 'bilingual_services',
-        applicableVerticals: ['accommodation', 'venue', 'experience']
+        applicableVerticals: ['accommodation', 'venue', 'experience'],
+        category: 'LANGUAGE'
     },
-    { slug: 'river_front', applicableVerticals: ['accommodation'] },
-    { slug: 'adults_only_area', applicableVerticals: ['accommodation'] }
+    { slug: 'river_front', applicableVerticals: ['accommodation'], category: 'LOCATION' },
+    { slug: 'adults_only_area', applicableVerticals: ['accommodation'], category: 'AUDIENCE' }
 ];
 
 const BASE = '/api/v1/public/features';

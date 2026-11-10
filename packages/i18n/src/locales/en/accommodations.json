@@ -568,8 +568,7 @@
             "additionalCost": "(additional cost)"
         },
         "features": {
-            "title": "Features",
-            "smokingAllowed": "Smoking allowed"
+            "title": "Features"
         },
         "faqsDetail": {
             "title": "Frequently asked questions",
@@ -668,6 +667,10 @@
             "yearRound": "Year-round",
             "seasonal": "Seasonal",
             "unset": "Not specified"
+        },
+        "extraCharge": {
+            "label": "Extra charge",
+            "badge": "Extra charge"
         }
     },
     "amenityNames": {
@@ -778,6 +781,9 @@
         "insurance_included": "Insurance included",
         "hotel_pickup": "Hotel pickup",
         "lockers_available": "Lockers available",
+        "dance_floor": "Dance floor",
+        "vip_area": "VIP area",
+        "cloakroom": "Cloakroom",
         "streaming_services": "Streaming services",
         "outdoor_games": "Outdoor games",
         "hammocks": "Hammocks",
@@ -837,7 +843,13 @@
         "security_cameras": "Security cameras",
         "baby_bathtub": "Baby bathtub",
         "desk": "Desk",
-        "ergonomic_chair": "Comfortable work chair"
+        "ergonomic_chair": "Comfortable work chair",
+        "outdoor_tables": "Outdoor tables",
+        "baby_changing_table": "Baby changing table",
+        "boat_included": "Boat included",
+        "changing_rooms": "Changing rooms",
+        "life_jacket_included": "Life jacket included",
+        "towels_provided": "Towels"
     },
     "featureNames": {
         "river_front": "Riverfront",
@@ -933,12 +945,19 @@
         "pregnancy_safe": "Pregnancy-safe",
         "private_available": "Available as private session",
         "senior_friendly": "Senior-friendly",
+        "dj_sets": "DJ sets",
+        "karaoke": "Karaoke",
         "river_view": "River view",
         "river_access": "River access",
         "lagoon_view": "Lagoon view",
         "stream_view": "Stream view",
         "countryside_view": "Countryside view",
-        "pool_view": "Pool view"
+        "pool_view": "Pool view",
+        "happy_hour": "Happy hour",
+        "thermal_waters": "Thermal waters",
+        "birdwatching": "Birdwatching",
+        "island_setting": "On the Delta or Paraná islands",
+        "parrilla_cuisine": "Grill house"
     },
     "list": {
         "searchContext": {
@@ -1000,7 +1019,10 @@
         "expand": "Expand panel",
         "collapse": "Collapse panel",
         "consumerLimitReached": "You've reached your monthly AI chat limit. Upgrade your plan for more access.",
-        "consumerLimitUpgradeCta": "View plans"
+        "consumerLimitUpgradeCta": "View plans",
+        "error": {
+            "EMPTY_ANSWER": "We couldn't generate an answer. Please try again in a moment."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

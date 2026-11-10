@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "116-feature-thermal_waters",
+    "slug": "thermal_waters",
+    "category": "LOCATION",
+    "description": {
+        "es": "Aguas termales en el lugar o como parte de la propuesta",
+        "en": "Thermal waters on site or as part of the offer",
+        "pt": "Águas termais no local ou como parte da proposta"
+    },
+    "applicableVerticals": ["accommodation", "experience"],
+    "icon": "ThermalPoolsIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

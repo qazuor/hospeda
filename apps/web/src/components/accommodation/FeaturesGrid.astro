@@ -1,8 +1,10 @@
 ---
 /**
  * @file FeaturesGrid.astro
- * @description Features grid with icons and optional smoking allowed synthetic item.
- * Hidden if empty and no smoking.
+ * @description Features grid with icons. Hidden when empty.
+ *
+ * HOS-2060: the synthetic "smoking allowed" item is gone — smoking is a house
+ * rule now (`policies.smokingAllowed`) and renders in `ListingHouseRules`.
  *
  * HOS-2058: when any feature carries a `category`, the grid renders one
  * sub-heading + grid per category (canonical order, unclassified ones under
@@ -13,21 +15,18 @@ import type { AccommodationFeatureItem } from '@/data/types';
 import { groupFeaturesForDisplay } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { SmokingAllowedIcon } from '@repo/icons';
 import { resolveIcon } from '@repo/icons/resolver';
 import { isMissingTranslation } from '@repo/i18n/web';
 
 interface Props {
   readonly features: readonly AccommodationFeatureItem[];
-  readonly smokingAllowed: boolean | null;
   readonly lang: string;
 }
 
-const { features, smokingAllowed, lang } = Astro.props;
+const { features, lang } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
-const hasSmoking = smokingAllowed === true;
-if (features.length === 0 && !hasSmoking) return;
+if (features.length === 0) return;
 
 /**
  * Translate feature label via i18n by slug, falling back to humanized slug.
@@ -60,7 +59,7 @@ const sections: readonly { readonly key: string; readonly label: string | null; 
 <section class="features-section">
   <h2 class="features-section__title">{t('accommodations.detail.features.title')}</h2>
 
-  {sections.map((section, index) => (
+  {sections.map((section) => (
     <div class="features-group">
       {section.label && <h3 class="features-group__title">{section.label}</h3>}
       <div class="features-grid">
@@ -85,17 +84,6 @@ const sections: readonly { readonly key: string; readonly label: string | null; 
             </div>
           );
         })}
-        {/* The synthetic smoking item closes the last grid, as it always did. */}
-        {index === sections.length - 1 && hasSmoking && (
-          <div class="feature-item">
-            <SmokingAllowedIcon size="sm" weight="duotone" aria-hidden="true" />
-            <div class="feature-item__content">
-              <span class="feature-item__name">
-                {t('accommodations.detail.features.smokingAllowed')}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   ))}

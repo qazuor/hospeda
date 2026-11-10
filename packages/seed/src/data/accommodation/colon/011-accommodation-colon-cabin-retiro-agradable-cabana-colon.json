@@ -83,18 +83,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 1,
-        "maxNights": 7,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Cocina equipada",
             "Parrilla individual",
             "Entorno tranquilo",
             "Ideal para parejas"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 7
     },
     "seo": {
         "title": "Retiro Agradable - Cabaña cerca de Colón, Entre Ríos ",

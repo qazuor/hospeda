@@ -20,9 +20,9 @@
  * bold word. `white-space: pre-line` preserves the owner's line breaks without
  * letting any markup through.
  *
- * Renders nothing when there is no policy: `toExperienceDetailPageProps`
- * collapses an empty or whitespace-only string to `null`, so the single presence
- * check below is the whole gate.
+ * Renders nothing when there is no policy: `parseListingPolicyValues` drops
+ * an empty or whitespace-only string, so the single presence check below is
+ * the whole gate.
  *
  * Not entitlement-gated — ficha data from the basic tier (owner decision,
  * 2026-09-01).
@@ -32,21 +32,24 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    /** The owner's policy text, or `null` when none was declared. */
-    readonly cancellationPolicy: string | null;
+    /**
+     * The owner's policy text (`policies.cancellation`, HOS-2060), or
+     * `undefined` when none was declared.
+     */
+    readonly cancellation: string | undefined;
     readonly locale: SupportedLocale;
 }
 
-const { cancellationPolicy, locale } = Astro.props;
+const { cancellation, locale } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
-{cancellationPolicy && (
+{cancellation && (
     <section class="exp-cancel">
         <h3 class="exp-cancel__title">
             {t('experience.detail.cancellationPolicy.title', 'Si la salida no sale')}
         </h3>
-        <p class="exp-cancel__body">{cancellationPolicy}</p>
+        <p class="exp-cancel__body">{cancellation}</p>
     </section>
 )}
 

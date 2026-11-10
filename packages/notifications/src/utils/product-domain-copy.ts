@@ -4,9 +4,8 @@
  *
  * This package does not depend on `@repo/schemas` (see the
  * `PartnerMentionEntryPayload` doc in `types/notification.types.ts`), so every
- * function here takes the raw `billing_subscriptions.product_domain` string
- * rather than the `ProductDomainEnum` member, and switches on the literal
- * values instead of importing the enum.
+ * function here takes the product-domain string supplied by its caller and
+ * switches on the literal values rather than importing the enum.
  *
  * `resolveTrialSeriesCopy` only branches on `'venue'` and `'experience'`
  * beyond the accommodation default: those are the only two verticals whose
@@ -68,13 +67,12 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
 /** Vocabulary matches the venue landing page (`venue.json`'s `landing`). */
 const VENUE_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
-    searchIntent: 'dónde comer',
-    detailsLabel: 'menú',
-    savedItemsLine: 'Tus fotos, tu menú, tus horarios y tus datos',
-    descriptionTip:
-        'Un menú actualizado con tus platos y precios reales, no sólo el nombre del local.',
-    detailsTip: 'Los horarios y el menú cargados completos: es lo que la gente filtra al buscar.',
-    expiredSavedLine: 'fotos, menú, horarios, ubicación y datos de contacto'
+    searchIntent: 'dónde comer o salir',
+    detailsLabel: 'horarios',
+    savedItemsLine: 'Tus fotos, tus horarios y tus datos',
+    descriptionTip: 'Una descripción que cuente qué ofrecés en tu local, no sólo su nombre.',
+    detailsTip: 'Completá tu local: horarios, fotos y lo que ofrecés.',
+    expiredSavedLine: 'fotos, descripción, horarios, ubicación y datos de contacto'
 };
 
 /** Vocabulary matches the experience landing page (`experience.json`'s `landing`). */
@@ -94,9 +92,8 @@ const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
  * Fails OPEN to accommodation for `null`, `undefined`, `'accommodation'`
  * itself, or any value not explicitly branched (`'tourist'`, `'partner'`,
  * `'addon'`, or a future one) — matching this repo's standing fail-open
- * convention for the accommodation domain (`subscriptionMatchesDomain`'s doc
- * in `@repo/service-core`). Accommodation is the vertical every one of these
- * nine templates was originally written for, so an unrecognized value
+ * convention for the accommodation domain. Accommodation is the vertical
+ * every one of these nine templates was originally written for, so an unrecognized value
  * reproducing that copy is a safe default, never a silent misfire.
  */
 export function resolveTrialSeriesCopy(
@@ -120,7 +117,7 @@ export function resolveTrialSeriesCopy(
 export function resolveRenewalReminderFooter(productDomain: string | null | undefined): string {
     switch (productDomain) {
         case 'venue':
-            return 'Gracias por confiar en Hospeda para hacer crecer tu local gastronómico.';
+            return 'Gracias por confiar en Hospeda para hacer crecer tu local.';
         case 'experience':
             return 'Gracias por confiar en Hospeda para hacer crecer tu experiencia turística.';
         case 'tourist':

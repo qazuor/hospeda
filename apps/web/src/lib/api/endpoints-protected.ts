@@ -49,10 +49,12 @@ import type {
     VerticalEnum
 } from '@repo/schemas';
 import {
+    type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnSubscriptionsResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
-    type SubscriptionCancellationResponseSchema
+    type SubscriptionCancellationResponseSchema,
+    type VenueListingSectionStatesSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
@@ -2173,6 +2175,13 @@ export const partnersApi = {
 /** Analytics window type for time-range queries */
 type AnalyticsWindow = '7d' | '30d';
 
+/**
+ * Windows the QR scan aggregate accepts (HOS-1787 leaf 5.7 added `90d` for the
+ * business-line removal notice). Deliberately narrower than `AnalyticsWindow`
+ * for the view-stat endpoints, which keep the original two values.
+ */
+type QrScanWindow = AnalyticsWindow | '90d';
+
 /** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
 export const hostAnalyticsApi = {
     /**
@@ -2423,7 +2432,59 @@ export const ownerListingsApi = {
     }
 };
 
+/** Section-state response for one vertical, inferred from its catalog schema. */
+type ListingSectionStatesResponse<V extends ListingAnalyticsVertical> = V extends 'venue'
+    ? z.infer<typeof VenueListingSectionStatesSchema>
+    : z.infer<typeof ExperienceListingSectionStatesSchema>;
+
 export const listingAnalyticsApi = {
+    /**
+     * Read the owner's resolved section and trait availability for one listing.
+     *
+     * Generic on the vertical so a venue caller keeps the venue-shaped record
+     * (`sections.menu.traits.qr`) and an experience caller the experience one.
+     * The route already exists for both (`GET /{id}/sections`); until this leaf
+     * only the venue half had a web caller.
+     */
+    getListingSectionStates<V extends ListingAnalyticsVertical>({
+        vertical,
+        listingId,
+        businessLines,
+        cookieHeader
+    }: {
+        readonly vertical: V;
+        readonly listingId: string;
+        /**
+         * HOS-1787 leaf 5.7: comma-separated hypothetical selection. The API
+         * resolves the map for it instead of the stored row, which is how the
+         * editor learns what a removal would hide before saving it.
+         */
+        readonly businessLines?: readonly string[];
+        /** Forwarded when called from SSR, like `fetchOwnerListingDetail`. */
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<ListingSectionStatesResponse<V>>> {
+        return apiClient.getProtected<ListingSectionStatesResponse<V>>({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/${listingId}/sections`,
+            ...(businessLines ? { params: { businessLines: businessLines.join(',') } } : {}),
+            cookieHeader
+        });
+    },
+
+    /** Read the owner's resolved venue section and trait availability. */
+    getVenueSectionStates({
+        venueId,
+        cookieHeader
+    }: {
+        readonly venueId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof VenueListingSectionStatesSchema>>> {
+        return listingAnalyticsApi.getListingSectionStates({
+            vertical: 'venue',
+            listingId: venueId,
+            cookieHeader
+        });
+    },
+
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
      * venue/experience verticals, over a rolling window.
@@ -2524,10 +2585,10 @@ export const listingAnalyticsApi = {
         window: windowParam
     }: {
         readonly venueId: string;
-        readonly window: AnalyticsWindow;
+        readonly window: QrScanWindow;
     }): Promise<
         ApiResult<{
-            readonly window: AnalyticsWindow;
+            readonly window: QrScanWindow;
             readonly total: number;
             readonly dailySeries: readonly { readonly date: string; readonly total: number }[];
             readonly byDeviceType: Readonly<Record<string, number>>;

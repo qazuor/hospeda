@@ -342,13 +342,12 @@ const draftEntityPayload = {
 };
 
 describe('AccommodationProtectedSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {
-    it('accepts extraInfo missing minNights/bedrooms/bathrooms (only capacity provided)', () => {
+    it('accepts extraInfo missing bedrooms/bathrooms (only capacity provided)', () => {
         const payload = { ...draftEntityPayload, extraInfo: { capacity: 4 } };
         const result = AccommodationProtectedSchema.safeParse(payload);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.extraInfo?.capacity).toBe(4);
-            expect(result.data.extraInfo?.minNights).toBeUndefined();
             expect(result.data.extraInfo?.bedrooms).toBeUndefined();
             expect(result.data.extraInfo?.bathrooms).toBeUndefined();
         }
@@ -441,13 +440,12 @@ describe('AccommodationProtectedSchema / AccommodationAdminSchema — slug toler
 });
 
 describe('AccommodationAdminSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {
-    it('accepts extraInfo missing minNights/bedrooms/bathrooms (only capacity provided)', () => {
+    it('accepts extraInfo missing bedrooms/bathrooms (only capacity provided)', () => {
         const payload = { ...draftEntityPayload, extraInfo: { capacity: 4 } };
         const result = AccommodationAdminSchema.safeParse(payload);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.extraInfo?.capacity).toBe(4);
-            expect(result.data.extraInfo?.minNights).toBeUndefined();
             expect(result.data.extraInfo?.bedrooms).toBeUndefined();
             expect(result.data.extraInfo?.bathrooms).toBeUndefined();
         }

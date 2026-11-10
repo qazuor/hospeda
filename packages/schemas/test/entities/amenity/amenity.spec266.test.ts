@@ -32,6 +32,7 @@ const baseFeature = () => ({
     id: '550e8400-e29b-41d4-a716-446655440000',
     slug: 'base-feature',
     applicableVerticals: ['accommodation'] as ('accommodation' | 'venue' | 'experience')[],
+    category: 'LOCATION' as const,
     lifecycleState: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),

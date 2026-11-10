@@ -49,9 +49,17 @@ export const FeatureSelectField = React.forwardRef<HTMLButtonElement, FeatureSel
         { config, value, onChange, error, hasError, errorMessage, disabled, required, className },
         ref
     ) => {
-        const { multiple = true, clearable = true, itemClassName } = config.typeConfig || {};
+        const {
+            multiple = true,
+            clearable = true,
+            itemClassName,
+            applicableVertical
+        } = config.typeConfig || {};
 
-        const loadAllCallback = React.useCallback(loadAllFeatures, []);
+        const loadAllCallback = React.useCallback(
+            () => loadAllFeatures({ applicableVertical }),
+            [applicableVertical]
+        );
         const loadByIdsCallback = React.useCallback(loadFeaturesByIds, []);
 
         const entitySelectConfig: FieldConfig & { typeConfig: EntitySelectFieldConfig } = {

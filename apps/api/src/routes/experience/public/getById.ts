@@ -11,8 +11,8 @@ import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicRoute } from '../../../utils/route-factory';
-import { applyExperienceDirectionsGate } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -47,10 +47,12 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
         }
 
         // Keep formerly plan-gated directions hidden until replacement coverage exists.
-        return applyExperienceDirectionsGate({
-            experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
-            ownerGrantsDirections: false
+        const [projected] = await projectPublicListings({
+            vertical: 'experience',
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store'),
+            listings: [withPublicIsFeatured(withPublicVisibleFaqs(experience))]
         });
+        return projected;
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }

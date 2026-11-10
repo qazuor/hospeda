@@ -346,6 +346,7 @@ vi.mock('@repo/ai-core', () => {
         AnthropicAdapter,
         getMonthlyCallCount: vi.fn(async () => nextSearchCallCount.current),
         recordAiUsage: mockRecordAiUsage,
+        resolveConfig: vi.fn(async () => ({ providers: {}, features: {} })),
         checkCostCeiling: vi.fn(async () => ({ allowed: true })),
         createAiService: vi.fn(() => ({
             generateObject: vi.fn()

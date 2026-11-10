@@ -22,7 +22,8 @@ const { mockRecordAiUsage, mockWarn, mockDebug } = vi.hoisted(() => ({
 }));
 
 vi.mock('@repo/ai-core', () => ({
-    recordAiUsage: mockRecordAiUsage
+    recordAiUsage: mockRecordAiUsage,
+    resolveConfig: vi.fn().mockResolvedValue({ providers: {}, features: {} })
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -72,7 +73,8 @@ describe('meterAiUsage', () => {
                 promptTokens: 100,
                 completionTokens: 40,
                 latencyMs: 820,
-                status: 'success'
+                status: 'success',
+                onMissingRate: expect.any(Function)
             });
             expect(mockWarn).not.toHaveBeenCalled();
         });

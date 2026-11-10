@@ -12,5 +12,8 @@ export * from './experience.faq.schema.js';
 // Media schemas (HOS-372 relational gallery, mirrors accommodation.media.schema.ts)
 export * from './experience.media.schema.js';
 
+// Policies (HOS-2060 — the experience extension of the shared listing policies)
+export * from './experience.policies.schema.js';
+
 // Review schemas (uses ExperienceRatingSchema for the rating breakdown)
 export * from './experience.review.schema.js';

@@ -1,7 +1,10 @@
 import type { Experience } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { experiences } from '../../schemas/experience/experiences.dbschema.ts';
+import { rExperienceAmenity } from '../../schemas/experience/r_experience_amenity.dbschema.ts';
+import { rExperienceFeature } from '../../schemas/experience/r_experience_feature.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
@@ -186,6 +189,55 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'findIdsByOwnerId', ctx, err);
             throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
+
+    /**
+     * Reads the catalog values held by at least one published experience
+     * (HOS-2085). Mirrors `VenueModel.findPublicFilterOptions`: the public
+     * listing narrows its amenity and feature sidebar to these ids so it never
+     * offers a filter that would return an empty page.
+     *
+     * Only non-deleted, PUBLISHED listings count.
+     *
+     * @param tx - Optional transaction client.
+     * @returns The distinct amenity and feature ids carried by published listings.
+     */
+    async findPublicFilterOptions(
+        tx?: DrizzleClient
+    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+        const db = this.getClient(tx);
+        const ctx = {};
+        const where = and(
+            isNull(experiences.deletedAt),
+            eq(experiences.publicationStatus, PublicationStatusEnum.PUBLISHED)
+        );
+        try {
+            const [amenities, features] = await Promise.all([
+                db
+                    .selectDistinct({ amenityId: rExperienceAmenity.amenityId })
+                    .from(rExperienceAmenity)
+                    .innerJoin(experiences, eq(experiences.id, rExperienceAmenity.experienceId))
+                    .where(where),
+                db
+                    .selectDistinct({ featureId: rExperienceFeature.featureId })
+                    .from(rExperienceFeature)
+                    .innerJoin(experiences, eq(experiences.id, rExperienceFeature.experienceId))
+                    .where(where)
+            ]);
+            const result = {
+                amenityIds: amenities.map((row) => row.amenityId),
+                featureIds: features.map((row) => row.featureId)
+            };
+            logQuery(this.entityName, 'findPublicFilterOptions', ctx, {
+                amenityIds: result.amenityIds.length,
+                featureIds: result.featureIds.length
+            });
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findPublicFilterOptions', ctx, err);
+            throw new DbError(this.entityName, 'findPublicFilterOptions', ctx, err.message);
         }
     }
 }

@@ -5,7 +5,9 @@
  *
  * Covers:
  *  - createVenueConsolidatedConfig returns at least 3 sections
- *  - Includes a venue-specific section with the type, priceRange, menuUrl fields
+ *  - Includes a venue-specific section with the type, businessLines and priceRange fields
+ *  - The online-menu link is absent from view, edit and create (HOS-1874)
+ *  - No nightlife-section field is exposed by the form (HOS-1874)
  *  - listing-identity section is present
  *  - listing-operational section is present
  *  - Metadata has entityName / entityNamePlural
@@ -14,7 +16,10 @@
  *  - priceRange field is optional
  */
 
+import { LISTING_SECTIONS, PermissionEnum, VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
 import { createVenueConsolidatedConfig } from '../config/venue-consolidated.config';
 
 // ---------------------------------------------------------------------------
@@ -67,11 +72,28 @@ describe('createVenueConsolidatedConfig', () => {
         expect(field?.required).toBeFalsy();
     });
 
-    it('venue-specific section should include a "menuUrl" field', () => {
+    it('does not expose an online-menu field in any mode (HOS-1874)', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'venue-specific');
-        const field = section?.fields.find((f) => f.id === 'menuUrl');
-        expect(field).toBeDefined();
+        for (const mode of ['view', 'edit', 'create'] as const) {
+            const ids = filterSectionsByMode(config.sections, mode).flatMap((section) =>
+                section.fields.map((field) => field.id)
+            );
+            expect(ids).not.toContain('menuUrl');
+        }
+    });
+
+    it('does not expose any field of the nightlife section (HOS-1874)', () => {
+        const config = createVenueConsolidatedConfig(t);
+        const nightInfo = LISTING_SECTIONS.venue.find((entry) => entry.id === 'nightInfo');
+        const nightInfoFields: readonly string[] = nightInfo ? [...nightInfo.fields] : [];
+        expect(nightInfoFields.length).toBeGreaterThan(0);
+
+        const configuredIds = config.sections.flatMap((section) =>
+            section.fields.map((field) => field.id)
+        );
+        for (const id of configuredIds) {
+            expect(nightInfoFields).not.toContain(id);
+        }
     });
 
     it('should include metadata with entityName and entityNamePlural', () => {
@@ -107,10 +129,8 @@ describe('createVenueConsolidatedConfig', () => {
         const typeField = section?.fields.find((f) => f.id === 'type');
         const options = (typeField?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);
-        expect(values).toContain('RESTAURANT');
-        expect(values).toContain('BAR');
-        expect(values).toContain('CAFE');
-        expect(values).toContain('FOOD_TRUCK');
+        expect(values).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...values].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('priceRange field should have select options for all price ranges', () => {
@@ -123,5 +143,45 @@ describe('createVenueConsolidatedConfig', () => {
         expect(values).toContain('MID');
         expect(values).toContain('HIGH');
         expect(values).toContain('PREMIUM');
+    });
+});
+
+describe('createVenueConsolidatedConfig — business lines (HOS-1873)', () => {
+    const venueSpecific = () =>
+        createVenueConsolidatedConfig(t).sections.find((s) => s.id === 'venue-specific');
+
+    it('declares the businessLines field in the venue-specific section', () => {
+        const field = venueSpecific()?.fields.find((f) => f.id === 'businessLines');
+        expect(field).toBeDefined();
+        expect(field?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+        expect(field?.required).toBe(true);
+        expect(field?.typeConfig).toEqual({ vertical: 'venue', typeFieldId: 'type' });
+    });
+
+    it('renders BUSINESS_LINES in edit and create, and SELECT_MULTIPLE in view', () => {
+        const config = createVenueConsolidatedConfig(t);
+
+        const editField = filterSectionsByMode(config.sections, 'edit')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(editField?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+
+        const createField = filterSectionsByMode(config.sections, 'create')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(createField?.type).toBe(FieldTypeEnum.BUSINESS_LINES);
+
+        const viewField = filterSectionsByMode(config.sections, 'view')
+            .find((s) => s.id === 'venue-specific')
+            ?.fields.find((f) => f.id === 'businessLines');
+        expect(viewField?.type).toBe(FieldTypeEnum.SELECT_MULTIPLE);
+        const options =
+            (viewField?.typeConfig as { options?: { value: string }[] } | undefined)?.options ?? [];
+        expect(options).toHaveLength(2);
+    });
+
+    it('gates editing on VENUE_EDIT_ALL, like the type field', () => {
+        const field = venueSpecific()?.fields.find((f) => f.id === 'businessLines');
+        expect(field?.permissions?.edit).toEqual([PermissionEnum.VENUE_EDIT_ALL]);
     });
 });

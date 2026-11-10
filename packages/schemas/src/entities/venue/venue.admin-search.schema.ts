@@ -5,6 +5,7 @@
  * for use in admin list endpoints.
  */
 import { z } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
@@ -38,6 +39,13 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
 
     /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional().describe('Filter by venue type'),
+
+    /**
+     * Filter by one business line (HOS-1787 leaf 7.1). Singular, like `type`:
+     * one line per filter. The value is a catalog row shared by every vertical,
+     * so the enum rejects a line from another vertical at request shape time.
+     */
+    businessLine: z.enum(VENUE_BUSINESS_LINE_VALUES).optional().describe('Filter by business line'),
 
     /** Filter by destination UUID. */
     destinationId: z

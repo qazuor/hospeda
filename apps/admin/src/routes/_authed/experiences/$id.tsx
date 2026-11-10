@@ -56,15 +56,16 @@ interface PendingReview {
 /**
  * Inline reviews moderation panel displayed as a sub-tab in the view page.
  *
+ * The panel requests pending reviews scoped to its own listing (HOS-2051):
+ * `experienceId` is forwarded to the query hook, and the server-side filter
+ * keeps reviews of other listings out of this tab.
+ *
  * @param experienceId - UUID of the parent experience entity
  */
-function ExperienceReviewsPanel({
-    experienceId: _experienceId
-}: {
-    readonly experienceId: string;
-}) {
+function ExperienceReviewsPanel({ experienceId }: { readonly experienceId: string }) {
     const { t } = useTranslations();
     const { data: reviewsData, isLoading } = useExperiencePendingReviewsQuery({
+        experienceId,
         page: 1,
         pageSize: 20
     });

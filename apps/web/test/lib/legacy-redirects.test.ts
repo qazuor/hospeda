@@ -174,6 +174,27 @@ describe('resolveLegacyRedirectTarget — never resolves a path to itself (loop 
     });
 });
 
+describe('retired venue URLs are permanent (HOS-1956)', () => {
+    const [deep, plans, presentation, publish, account, accountNew] = RETIRED_VENUE_URL_PREFIXES;
+    const forms = [
+        ['deep route', `/es${deep}/sample/`, '/es/comer-y-salir/sample/'],
+        ['carta', `/es${deep}/sample/carta/`, '/es/comer-y-salir/sample/carta/'],
+        ['prices', `/es${plans}/precios/`, '/es/planes/comer-y-salir/precios/'],
+        ['presentation', `/es${presentation}/`, '/es/presentacion/comer-y-salir/'],
+        ['publish', `/es${publish}/`, '/es/publicar/comer-y-salir/'],
+        ['mi-cuenta', `/es${account}/abc/editar/`, '/es/mi-cuenta/comercio/venue/abc/editar/'],
+        ['mi-cuenta new', `/es${accountNew}/`, '/es/publicar/comer-y-salir/']
+    ] as const;
+    it('exposes 301 as the shared status', () => {
+        expect(RETIRED_ROUTE_REDIRECT_STATUS).toBe(301);
+    });
+    it.each(forms)('%s answers 301 in one hop', (_name, source, target) => {
+        const result = resolveLegacyRedirectTarget({ path: source });
+        expect(result).toEqual({ target, status: 301 });
+        expect(resolveLegacyRedirectTarget({ path: target })).toBeUndefined();
+    });
+});
+
 describe('retired venue URLs (HOS-1821)', () => {
     it.each(RETIRED_VENUE_URL_PREFIXES)('redirects %s with tail directly', (prefix) => {
         const source = `/es${prefix}/abc/editar/`;

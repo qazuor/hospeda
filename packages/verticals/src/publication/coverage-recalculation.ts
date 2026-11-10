@@ -22,7 +22,16 @@ export interface CoverageRecalculationResult {
     readonly warnings: readonly PostCommitWarning[];
 }
 
-/** Applies PB2 or PB3 and the covered-owner surplus reconciliation under one lock. */
+/**
+ * Applies PB2 or PB3 and the covered-owner surplus reconciliation under one lock.
+ *
+ * The post-commit revalidation covers every listing that was PUBLISHED when the
+ * recalculation started, plus the ones this pass lowered or restored. A plan
+ * change can remove paid content — the menu, the video, the enriched
+ * description — without changing any publication status, so revalidating only
+ * the rows that moved would leave the paid pages cached
+ * (HOS-1787 F-V1-029; HOS-1793).
+ */
 export async function recalculateCoverage(args: {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: PublicationBilling;
@@ -36,7 +45,7 @@ export async function recalculateCoverage(args: {
         readonly vertical: PublicationVertical;
     }) => Promise<number | null>;
 }): Promise<CoverageRecalculationResult> {
-    const decision = await withPublicationLock({
+    const { publishedAtStart, ...decision } = await withPublicationLock({
         unitOfWork: args.unitOfWork,
         userId: args.userId,
         vertical: args.vertical,
@@ -55,6 +64,9 @@ export async function recalculateCoverage(args: {
                     row.publicationStatus === PublicationStatusEnum.PUBLISHED ||
                     row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
+            const publishedAtStart = applicable
+                .filter((row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED)
+                .map((row) => row.id);
             const at = args.clock.now();
             const lowered: string[] = [];
             const loweredBySurplus: string[] = [];
@@ -95,7 +107,14 @@ export async function recalculateCoverage(args: {
                         at
                     });
                 stamped.push(...others);
-                return { lowered, loweredBySurplus, restored, restoredFromArchived, stamped };
+                return {
+                    publishedAtStart,
+                    lowered,
+                    loweredBySurplus,
+                    restored,
+                    restoredFromArchived,
+                    stamped
+                };
             }
 
             const limit = args.liveLimit
@@ -239,9 +258,19 @@ export async function recalculateCoverage(args: {
                     });
                 }
             }
-            return { lowered, loweredBySurplus, restored, restoredFromArchived, stamped };
+            return {
+                publishedAtStart,
+                lowered,
+                loweredBySurplus,
+                restored,
+                restoredFromArchived,
+                stamped
+            };
         }
     });
+    const revalidatedIds = [
+        ...new Set([...publishedAtStart, ...decision.lowered, ...decision.restored])
+    ];
     const warnings = await publicationAfterCommit({
         tasks: [
             {
@@ -253,7 +282,7 @@ export async function recalculateCoverage(args: {
                 run: () =>
                     args.afterCommit.revalidate({
                         vertical: args.vertical,
-                        listingIds: [...decision.lowered, ...decision.restored]
+                        listingIds: revalidatedIds
                     })
             }
         ]

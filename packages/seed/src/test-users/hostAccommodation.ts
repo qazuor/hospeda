@@ -266,16 +266,20 @@ export function buildHostAccommodationCoreFields(
         },
         extraInfo: {
             capacity: 4,
-            minNights: 2,
-            maxNights: 20,
             bedrooms: 2,
             beds: 3,
             bathrooms: 1,
-            smokingAllowed: false,
             extraInfo: [
                 'Alojamiento de prueba generado por el seed de test users (HOS-30)',
                 'No representa una propiedad real'
             ]
+        },
+        // HOS-2060: house rules are policies.
+        policies: {
+            paymentMethods: ['cash'],
+            smokingAllowed: 'no',
+            minNights: 2,
+            maxNights: 20
         },
         seo: {
             title: `Alojamiento Completo - ${spec.displayName} (Seed Test)`,

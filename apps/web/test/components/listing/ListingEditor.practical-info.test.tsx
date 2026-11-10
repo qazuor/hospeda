@@ -138,12 +138,13 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 
 function renderEditor(
     vertical: 'venue' | 'experience',
-    initialData: ListingDetail = buildListing()
+    initialData: ListingDetail = buildListing(),
+    sectionId: 'practicalInfo' | 'amenities' = 'practicalInfo'
 ) {
     return render(
         <ListingEditor
             vertical={vertical}
-            sectionId="practicalInfo"
+            sectionId={sectionId}
             listingId="abc"
             locale="es"
             initialData={initialData}
@@ -186,6 +187,14 @@ describe('ListingEditor — practical details', () => {
             expect(minutesBox()).toBeInTheDocument();
             expect(whatToBringBox()).toBeInTheDocument();
             expect(requirementsBox()).toBeInTheDocument();
+            // HOS-2060: cancellation and private groups are house rules now and
+            // live in the Policies panel of the amenities page.
+            expect(screen.queryByLabelText('Política de cancelación')).toBeNull();
+        });
+
+        it('renders cancellation and private groups in the amenities Policies panel', () => {
+            renderEditor('experience', buildListing(), 'amenities');
+
             expect(policyBox()).toBeInTheDocument();
             expect(groupsToggle()).toBeInTheDocument();
         });
@@ -204,10 +213,12 @@ describe('ListingEditor — practical details', () => {
             // HOS-1080: a section entry, not an in-page anchor. The ordering
             // still matters — it is the order the nav and the hub both render.
             const experienceIds = buildListingEditorSections({
-                vertical: 'experience'
+                vertical: 'experience',
+                sectionStates: {}
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'venue'
+                vertical: 'venue',
+                sectionStates: {}
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('practicalInfo');
@@ -248,14 +259,15 @@ describe('ListingEditor — practical details', () => {
             expect(requirementsBox()).toHaveValue('Edad mínima 12 años');
         });
 
-        it('opens with the stored policy and group flag', () => {
+        it('opens with the stored policy and group flag from policies', () => {
             renderEditor(
                 'experience',
-                buildListing({ cancellationPolicy: POLICY, acceptsPrivateGroups: true })
+                buildListing({ policies: { cancellation: POLICY, privateGroups: true } }),
+                'amenities'
             );
 
             expect(policyBox()).toHaveValue(POLICY);
-            expect(groupsToggle()).toBeChecked();
+            expect(groupsToggle()).toHaveValue('yes');
         });
 
         it('survives a row saved before the columns existed', () => {
@@ -264,7 +276,12 @@ describe('ListingEditor — practical details', () => {
             renderEditor('experience', buildListing());
 
             expect(whatToBringBox()).toHaveValue('');
-            expect(groupsToggle()).not.toBeChecked();
+        });
+
+        it('shows an undeclared group flag as not informed, never as a no', () => {
+            renderEditor('experience', buildListing(), 'amenities');
+
+            expect(groupsToggle()).toHaveValue('');
         });
     });
 
@@ -310,13 +327,11 @@ describe('ListingEditor — practical details', () => {
             fireEvent.change(hoursBox(), { target: { value: '1' } });
             fireEvent.change(minutesBox(), { target: { value: '90' } });
             // A sibling edit so the form is dirty and the save actually fires.
-            // (Before HOS-1080 this used the name field, which lives on another
-            // page now.)
-            fireEvent.change(policyBox(), { target: { value: 'Reprogramamos sin cargo.' } });
+            fireEvent.change(requirementsBox(), { target: { value: 'Saber nadar' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toHaveProperty('cancellationPolicy', 'Reprogramamos sin cargo.');
+            expect(body).toHaveProperty('requirements', ['Saber nadar']);
             expect(body).not.toHaveProperty('durationMinutes');
         });
 
@@ -359,26 +374,31 @@ describe('ListingEditor — practical details', () => {
             expect(body).toHaveProperty('whatToBring', []);
         });
 
-        it('sends an explicit null when the cancellation policy is cleared', async () => {
-            renderEditor('experience', buildListing({ cancellationPolicy: POLICY }));
+        it('sends policies.cancellation=null when the cancellation policy is cleared', async () => {
+            renderEditor(
+                'experience',
+                buildListing({ policies: { cancellation: POLICY, privateGroups: true } }),
+                'amenities'
+            );
 
             fireEvent.change(policyBox(), { target: { value: '' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toHaveProperty('cancellationPolicy', null);
+            expect(body).toEqual({ policies: { cancellation: null } });
         });
 
-        it('sends false — not null — when the group toggle is switched off', async () => {
-            // The column is NOT NULL with a false default, so switching off is a
-            // real value, never an absence.
-            renderEditor('experience', buildListing({ acceptsPrivateGroups: true }));
+        it('sends privateGroups=false for an explicit no, null for not informed', async () => {
+            renderEditor(
+                'experience',
+                buildListing({ policies: { privateGroups: true } }),
+                'amenities'
+            );
 
-            fireEvent.click(groupsToggle());
+            fireEvent.change(groupsToggle(), { target: { value: 'no' } });
             fireEvent.click(saveButton());
 
-            const body = await wireBody();
-            expect(body).toHaveProperty('acceptsPrivateGroups', false);
+            expect(await wireBody()).toEqual({ policies: { privateGroups: false } });
         });
 
         it('omits every untouched practical key when only one of them changed', async () => {
@@ -391,8 +411,7 @@ describe('ListingEditor — practical details', () => {
                 buildListing({
                     durationMinutes: 150,
                     whatToBring: ['Repelente'],
-                    cancellationPolicy: POLICY,
-                    acceptsPrivateGroups: true
+                    policies: { cancellation: POLICY, privateGroups: true }
                 })
             );
 
@@ -403,8 +422,7 @@ describe('ListingEditor — practical details', () => {
             expect(body).toHaveProperty('requirements', ['Saber nadar']);
             expect(body).not.toHaveProperty('durationMinutes');
             expect(body).not.toHaveProperty('whatToBring');
-            expect(body).not.toHaveProperty('cancellationPolicy');
-            expect(body).not.toHaveProperty('acceptsPrivateGroups');
+            expect(body).not.toHaveProperty('policies');
         });
 
         it('never sends a practical key from a venue save', async () => {
@@ -421,7 +439,7 @@ describe('ListingEditor — practical details', () => {
                     locale="es"
                     initialData={buildListing({
                         durationMinutes: 150,
-                        acceptsPrivateGroups: true
+                        policies: { privateGroups: true }
                     })}
                     destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
                 />
@@ -434,7 +452,7 @@ describe('ListingEditor — practical details', () => {
 
             const body = await wireBody();
             expect(body).not.toHaveProperty('durationMinutes');
-            expect(body).not.toHaveProperty('acceptsPrivateGroups');
+            expect(body).not.toHaveProperty('policies');
         });
     });
 });

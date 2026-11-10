@@ -99,7 +99,8 @@
                 "contactSocial": "Contact and social",
                 "menu": "Menu",
                 "dailySpecials": "Today's menu",
-                "venueEvents": "Events"
+                "venueEvents": "Events",
+                "nightInfo": "Night out info"
             },
             "sections": {
                 "type": "Category",
@@ -146,12 +147,7 @@
                 "whatToBringHint": "One item per line. What the person signing up has to bring.",
                 "requirements": "Requirements",
                 "requirementsPlaceholder": "Minimum age 12\nMust know how to swim\nNot suitable during pregnancy",
-                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in.",
-                "cancellationPolicy": "Cancellation policy",
-                "cancellationPolicyPlaceholder": "If there is a weather alert or the river runs low, we let you know 12 hours ahead and reschedule at no cost.",
-                "cancellationPolicyHint": "What happens if the outing does not run: rain, wind, a low river, or not reaching the minimum group size.",
-                "acceptsPrivateGroups": "I offer special pricing for private groups",
-                "acceptsPrivateGroupsHint": "When this is on, the listing invites people to write to you about groups. We publish no rate card."
+                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in."
             },
             "contactField": {
                 "mobilePhone": "Phone",
@@ -227,6 +223,9 @@
             "noChanges": "No changes to save",
             "success": "Changes saved.",
             "error": "Changes could not be saved. Please try again.",
+            "errors": {
+                "sectionAbsent": "That section no longer applies to your venue's business lines."
+            },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
                 "featured": "Featured image",
@@ -273,11 +272,47 @@
                     "faqs_other": "{{count}} questions",
                     "selected_one": "{{count}} selected",
                     "selected_other": "{{count}} selected",
-                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}",
+                    "lockedWithData_one": "Locked by your plan · {{count}} item saved (not published)",
+                    "lockedWithData_other": "Locked by your plan · {{count}} items saved (not published)",
+                    "lockedEmpty": "Locked by your plan"
+                },
+                "hidden": {
+                    "title": "Saved but hidden by your business lines",
+                    "intro": "These sections are not shown because your current business lines do not include them. Their data is still saved: if you add the line back, it returns.",
+                    "count_one": "{{count}} saved item",
+                    "count_other": "{{count}} saved items"
                 }
             },
+            "lockedNotice": {
+                "plan_one": "You have {{count}} saved item that is not published: your plan does not include {{section}}.",
+                "plan_other": "You have {{count}} saved items that are not published: your plan does not include {{section}}."
+            },
             "amenities": {
-                "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
+                "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again.",
+                "picker": {
+                    "searchLabel": "Search services and features",
+                    "searchPlaceholder": "E.g.: wifi, pool, vegan",
+                    "featured": "Featured",
+                    "showAll": "Show all",
+                    "noResults": "Nothing matches \"{{query}}\"."
+                }
+            },
+            "nightInfo": {
+                "entryPriceFrom": "Price from (in pesos)",
+                "entryNoteLabel": "Note (es/en/pt)",
+                "dressCodeNoteLabel": "Dress code note (es/en/pt)",
+                "notInformed": "Not informed",
+                "priceUpdatedAt": "Updated {{month}}",
+                "localeEs": "Spanish",
+                "localeEn": "English",
+                "localePt": "Portuguese"
+            },
+            "errorPage": {
+                "title": "We could not load the editor",
+                "description": "We could not read your listing section states. Please try again in a few minutes.",
+                "retry": "Try again",
+                "back": "Back to my listings"
             }
         },
         "checklist": {
@@ -288,6 +323,7 @@
                 "destinationId": "City / Destination",
                 "ownerId": "Owner",
                 "type": "Category",
+                "businessLines": "Business lines",
                 "featuredImage": "Main photo",
                 "contactInfo": "A contact detail (phone or email)",
                 "openingHours": "Opening hours",
@@ -427,6 +463,89 @@
             "draftIsYours": "Publishing it is up to you.",
             "fixRequestOpen": "The fix request is still open."
         },
-        "surplusTitle": "Listing unpublished by your plan limit"
+        "surplusTitle": "Listing unpublished by your plan limit",
+        "businessLinesChanged": {
+            "title": "Support changed the business lines of this listing",
+            "added": "Added: {{lines}}.",
+            "removed": "Removed: {{lines}}.",
+            "shownSections": "Now visible: {{sections}}.",
+            "hiddenSections": "No longer visible: {{sections}}.",
+            "nothingDeleted": "Nothing was deleted: whatever you saved in a hidden section comes back if you restore the line.",
+            "changedAt": "Change from {{date}}."
+        }
+    },
+    "policies": {
+        "panelTitle": "Policies",
+        "panelHint": "Anything you leave blank shows as “not specified”, never as a “no”.",
+        "houseRulesTitle": "Rules and policies",
+        "notInformed": "Not specified",
+        "yes": "Yes",
+        "no": "No",
+        "locale": {
+            "es": "Spanish",
+            "en": "English",
+            "pt": "Portuguese"
+        },
+        "paymentMethods": {
+            "label": "Payment methods",
+            "cash": "Cash",
+            "debit": "Debit card",
+            "credit": "Credit card",
+            "transfer": "Bank transfer",
+            "mercadopago": "Mercado Pago"
+        },
+        "pets": {
+            "label": "Pets",
+            "admissionLabel": "Are pets allowed?",
+            "admission": {
+                "no": "No pets allowed",
+                "yes": "Pets allowed",
+                "on_request": "Pets on request"
+            },
+            "extraCost": "extra charge",
+            "extraCostLabel": "I charge an extra fee per pet",
+            "notesLabel": "Note"
+        },
+        "smokingAllowed": {
+            "label": "Smoking",
+            "no": "No smoking",
+            "yes": "Smoking allowed",
+            "outdoor_only": "Outdoor areas only"
+        },
+        "eventsAllowed": {
+            "label": "Events",
+            "editorLabel": "Can private events be held?",
+            "yes": "Private events allowed",
+            "no": "No events allowed"
+        },
+        "checkIn": {
+            "label": "Check-in"
+        },
+        "checkOut": {
+            "label": "Check-out"
+        },
+        "time": {
+            "from": "From",
+            "to": "Until",
+            "range": "{{from}} to {{to}}",
+            "fromOnly": "From {{from}}",
+            "toOnly": "Until {{to}}"
+        },
+        "maxNights": {
+            "label": "Maximum nights"
+        },
+        "reservations": {
+            "label": "Reservations",
+            "required": "Reservation required",
+            "recommended": "Reservation recommended",
+            "not_accepted": "No reservations"
+        },
+        "privateGroups": {
+            "editorLabel": "I offer a special price for private groups"
+        },
+        "cancellation": {
+            "label": "Cancellation policy",
+            "placeholder": "If there is a weather alert or the river drops, we notify you 12 hours in advance and reschedule at no cost."
+        }
     }
 }

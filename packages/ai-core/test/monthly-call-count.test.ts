@@ -75,6 +75,34 @@ describe('getMonthlyCallCount', () => {
         });
     });
 
+    describe('quota key column (HOS-2095)', () => {
+        it('omits keyedBy (storage default user_id) when the caller does not pass it', async () => {
+            mockCountAiUsageForUserFeatureMonth.mockResolvedValue(0);
+            await getMonthlyCallCount({
+                userId: USER_ID,
+                feature: FEATURE,
+                now: new Date('2026-11-09T00:00:00Z')
+            });
+            expect(mockCountAiUsageForUserFeatureMonth.mock.calls[0]?.[0]).not.toHaveProperty(
+                'keyedBy'
+            );
+        });
+
+        it('forwards keyedBy=consumer to the storage layer', async () => {
+            mockCountAiUsageForUserFeatureMonth.mockResolvedValue(2);
+            const result = await getMonthlyCallCount({
+                userId: USER_ID,
+                feature: 'chat',
+                now: new Date('2026-11-09T00:00:00Z'),
+                keyedBy: 'consumer'
+            });
+            expect(result).toBe(2);
+            expect(mockCountAiUsageForUserFeatureMonth).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: USER_ID, feature: 'chat', keyedBy: 'consumer' })
+            );
+        });
+    });
+
     describe('when no usage exists for the current month', () => {
         it('should return 0', async () => {
             // Arrange

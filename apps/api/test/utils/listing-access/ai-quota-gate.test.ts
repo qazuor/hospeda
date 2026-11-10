@@ -69,6 +69,25 @@ describe('AI quota gate', () => {
         ).resolves.toEqual({ allowed: true });
     });
 
+    it('counts by user_id by default and forwards countKeyedBy=consumer (HOS-2095)', async () => {
+        const base = {
+            userId: 'tourist',
+            vertical: VerticalEnum.TOURIST,
+            feature: 'chat',
+            limitKey: 'max_ai_chat_consumer_per_month'
+        } as const;
+
+        await evaluateAiQuota(base);
+        expect(vi.mocked(getMonthlyCallCount).mock.calls[0]?.[0]).not.toHaveProperty('keyedBy');
+
+        await evaluateAiQuota({ ...base, countKeyedBy: 'consumer' });
+        expect(vi.mocked(getMonthlyCallCount).mock.calls[1]?.[0]).toMatchObject({
+            userId: 'tourist',
+            feature: 'chat',
+            keyedBy: 'consumer'
+        });
+    });
+
     it('records quota_exceeded before throwing at the effective limit', async () => {
         state.count = 5;
         state.effectiveSet.mockImplementation(async () =>

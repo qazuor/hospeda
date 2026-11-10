@@ -1106,6 +1106,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             id: UUID1,
             slug: 'test-feature',
             applicableVerticals: ['accommodation'],
+            category: 'LOCATION',
             isBuiltin: false,
             isFeatured: false,
             displayWeight: 50

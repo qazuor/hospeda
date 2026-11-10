@@ -147,18 +147,21 @@
     },
     "extraInfo": {
         "capacity": 8,
-        "minNights": 2,
-        "maxNights": 30,
         "bedrooms": 4,
         "beds": 6,
         "bathrooms": 3,
-        "smokingAllowed": false,
         "extraInfo": [
             "Ideal para familias grandes o grupos",
             "Cocina independiente",
             "Estacionamiento amplio",
             "Jardín grande con asador"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 30
     },
     "seo": {
         "title": "Sueño Soleado House - Casa amplia y luminosa en Colón",

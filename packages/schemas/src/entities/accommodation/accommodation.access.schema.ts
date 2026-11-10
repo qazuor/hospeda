@@ -174,9 +174,23 @@ const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend({
      * NULL = not declared.
      */
     scope: AmenityScopeEnumSchema.nullish(),
-    availability: AmenityAvailabilityEnumSchema.nullish()
+    availability: AmenityAvailabilityEnumSchema.nullish(),
+    /** HOS-2084: `is_optional` -- the amenity is paid separately ("Con cargo extra"). */
+    isOptional: z.boolean().optional()
 });
-const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
+/**
+ * HOS-2058 N+1: `features.category` is NOT NULL, so the strict feature schemas
+ * require it. This nested read overlay keeps it `.nullish()` on purpose: per
+ * the one-directional rule above, a junction projection that does not carry
+ * the column must not turn the accommodation read into a 500.
+ */
+const LenientFeatureCategoryField = {
+    category: FeatureCategoryEnumSchema.nullish()
+};
+const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend({
+    ...LenientCatalogRowFields,
+    ...LenientFeatureCategoryField
+});
 /**
  * Admin-tier amenity row on an accommodation: the full catalog row plus the
  * HOS-2058 relation attributes from `r_accommodation_amenity`.
@@ -184,7 +198,9 @@ const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCata
  */
 const AccommodationAmenityAdminReadSchema = AmenityAdminSchema.extend({
     scope: AmenityScopeEnumSchema.nullish(),
-    availability: AmenityAvailabilityEnumSchema.nullish()
+    availability: AmenityAvailabilityEnumSchema.nullish(),
+    /** HOS-2084: `is_optional` -- the amenity is paid separately. */
+    isOptional: z.boolean().optional()
 });
 
 /**
@@ -246,7 +262,10 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     socialNetworks: true,
 
     // Extra Info (public)
-    extraInfo: true
+    extraInfo: true,
+
+    // HOS-2060: structured house rules (public).
+    policies: true
 }).extend({
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
@@ -545,6 +564,8 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     price: true,
     tags: true,
     extraInfo: true,
+    // HOS-2060: structured house rules, round-tripped to the owner editor.
+    policies: true,
 
     // Protected fields - ownership
     ownerId: true,
@@ -711,8 +732,11 @@ export const AccommodationAdminSchema = AccommodationSchema.extend({
     cityDestination: CityDestinationRefSchema.optional(),
     /** Amenities with junction table data from r_accommodation_amenity (admin tier). */
     amenities: z.array(AccommodationAmenityAdminReadSchema).optional(),
-    /** Features with junction table data from r_accommodation_feature (admin tier). */
-    features: z.array(FeatureAdminSchema).optional(),
+    /**
+     * Features with junction table data from r_accommodation_feature (admin
+     * tier). `category` stays lenient here, like the protected overlay.
+     */
+    features: z.array(FeatureAdminSchema.extend(LenientFeatureCategoryField)).optional(),
     /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
     approximateLocation: ApproximateLocationSchema.optional()
 });

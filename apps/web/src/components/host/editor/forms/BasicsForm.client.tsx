@@ -52,7 +52,7 @@ export function BasicsForm({
                 before: {
                     description: before.description,
                     capacity: before.maxGuests,
-                    minNights: before.minNights,
+                    minNights: before.policies.minNights ?? null,
                     bedrooms: before.bedrooms,
                     bathrooms: before.bathrooms,
                     hasMainImage
@@ -60,7 +60,7 @@ export function BasicsForm({
                 after: {
                     description: after.description,
                     capacity: after.maxGuests,
-                    minNights: after.minNights,
+                    minNights: after.policies.minNights ?? null,
                     bedrooms: after.bedrooms,
                     bathrooms: after.bathrooms,
                     hasMainImage

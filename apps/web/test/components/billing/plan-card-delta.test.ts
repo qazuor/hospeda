@@ -288,6 +288,29 @@ describe('computePlanDelta', () => {
             );
         });
 
+        it('curates the venue and experience chat limits right after the accommodation one (HOS-2077)', () => {
+            const chat = LIMIT_DISPLAY_ORDER.indexOf('max_ai_chat_per_month');
+            expect(chat).toBeGreaterThan(-1);
+            expect(LIMIT_DISPLAY_ORDER.indexOf('max_ai_chat_venue_per_month')).toBe(chat + 1);
+            expect(LIMIT_DISPLAY_ORDER.indexOf('max_ai_chat_experience_per_month')).toBe(chat + 2);
+
+            const venueBasic = plan({
+                slug: 'venue-basico',
+                limits: {
+                    max_ai_chat_consumer_per_month: 200,
+                    max_ai_chat_venue_per_month: 20,
+                    max_ai_search_per_month: 10,
+                    max_venues: 1
+                }
+            });
+            expect(computePlanDelta({ plan: venueBasic }).limitChanges.map((c) => c.key)).toEqual([
+                'max_venues',
+                'max_ai_chat_venue_per_month',
+                'max_ai_search_per_month',
+                'max_ai_chat_consumer_per_month'
+            ]);
+        });
+
         it('appends an uncurated key rather than dropping it', () => {
             const only = plan({
                 slug: 'future',

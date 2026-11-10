@@ -26,6 +26,7 @@ import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 // listing copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import type { VenueOpeningHoursEntry } from '@/data/types';
 
 interface Props {
@@ -78,11 +79,11 @@ const openingHours =
     />
 )}
 
-<!-- Amenities and features the provider ticked (HOS-1072). Both grids
-     self-hide on an empty list, so no guard is needed here. `smokingAllowed`
-     is an accommodation-only column and is passed as null. -->
-<FeaturesGrid features={experience.features} smokingAllowed={null} lang={locale} />
+<!-- Amenities and features the provider ticked (HOS-1072), then the house
+     rules (HOS-2060). All three self-hide when empty, so no guard is needed. -->
+<FeaturesGrid features={experience.features} lang={locale} />
 <AmenitiesGrid amenities={experience.amenities} lang={locale} />
+<ListingHouseRules policies={experience.policies} locale={locale} />
 
 <!-- Social networks. No longer the page's only contact affordance: HOS-815
      added `ExperienceContactBlock`, which publishes the phone / email /

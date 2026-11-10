@@ -29,7 +29,14 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { aiUsage, and, count, eq, getDb, gte, lt, sql } from '@repo/db';
+import { aiUsage, and, count, eq, getDb, gte, isNull, lt, or, sql } from '@repo/db';
+
+/**
+ * Column a per-user quota count is keyed on (HOS-2095): `'user'` matches
+ * `ai_usage.user_id` (the cost bearer), `'consumer'` matches
+ * `ai_usage.consumer_user_id` (the tourist in a listing chat).
+ */
+export type AiUsageQuotaKey = 'user' | 'consumer';
 
 // ---------------------------------------------------------------------------
 // aggregateAiUsageByMonth
@@ -330,6 +337,18 @@ export async function aggregateAiUsageByFeature(
 export interface CountAiUsageForUserFeatureMonthInput {
     /** UUID of the authenticated user. */
     readonly userId: string;
+    /**
+     * Which column `userId` is matched against (HOS-2095).
+     *
+     * - `'user'` (default): `ai_usage.user_id` — the cost bearer. Every quota
+     *   except the listing chat's tourist-side one.
+     * - `'consumer'`: `ai_usage.consumer_user_id` — the user who consumed a
+     *   call somebody else paid for (the tourist in a listing chat). Legacy
+     *   rows written before that column existed (`consumer_user_id IS NULL`)
+     *   are counted by `user_id`, so the cutover month never resets a
+     *   tourist's used quota to zero.
+     */
+    readonly keyedBy?: AiUsageQuotaKey;
     /** AI feature to count (e.g. `'text_improve'`, `'chat'`). */
     readonly feature: string;
     /**
@@ -394,10 +413,28 @@ export async function countAiUsageForUserFeatureMonth(
     input: CountAiUsageForUserFeatureMonthInput
 ): Promise<number> {
     const { userId, feature, monthStart, monthEnd, statuses, tx } = input;
+    const keyedBy: AiUsageQuotaKey = input.keyedBy ?? 'user';
     const db = tx ?? getDb();
 
-    // Build base conditions using the shared helper.
-    const baseConditions = buildConditions({ since: monthStart, until: monthEnd, userId, feature });
+    // Build base conditions using the shared helper. The user filter is added
+    // below, on the column `keyedBy` names (HOS-2095).
+    const baseConditions = buildConditions({ since: monthStart, until: monthEnd, feature });
+
+    // HOS-2095 cutover: before `consumer_user_id` existed, the listing chat
+    // recorded the consumer as a SEPARATE row keyed by `user_id`. Those legacy
+    // rows carry `consumer_user_id IS NULL`. Every chat row written since
+    // carries it set (the chat never omits it), so a NULL here means "written
+    // before the cutover" by construction, without a date to configure. Counting
+    // them the old way keeps a tourist's already-used quota for the cutover
+    // month instead of resetting it to zero (fail-open); they age out of the
+    // window at the next month boundary.
+    const userCondition =
+        keyedBy === 'consumer'
+            ? or(
+                  eq(aiUsage.consumerUserId, userId),
+                  and(isNull(aiUsage.consumerUserId), eq(aiUsage.userId, userId))
+              )
+            : eq(aiUsage.userId, userId);
 
     // Build the status IN (...) condition via sql template because `inArray`
     // is not re-exported by `@repo/db` and `drizzle-orm` is not a direct
@@ -415,7 +452,7 @@ export async function countAiUsageForUserFeatureMonth(
     const placeholders = statuses.map((s) => sql`${s}`);
     const statusCondition = sql`${aiUsage.status} IN (${sql.join(placeholders, sql`, `)})`;
 
-    const allConditions = [...baseConditions, statusCondition];
+    const allConditions = [...baseConditions, userCondition, statusCondition];
 
     const [row] = await db
         .select({ total: count(aiUsage.id) })

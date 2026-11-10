@@ -49,8 +49,12 @@ per-vertical permission (`VENUE_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`):
 - **Media** (`media`: featured image + gallery, uploaded via
   `POST /protected/media/upload-entity`)
 - **Amenities / features** (`amenityIds` / `featureIds`)
-- **Per-vertical price fields**: venue → `priceRange` + `menuUrl`;
-  experience → `isPriceOnRequest`
+- **Per-vertical price fields**: venue → `priceRange`;
+  experience → `isPriceOnRequest`, `priceFrom`, `priceUnit`
+- **The menu link** (`menuUrl`): edited inside the venue's **Carta** section,
+  next to the structured carta and the uploaded file (DEC-FAC-062). It is saved
+  by its own one-key `PATCH /protected/venues/{id}` (`{ menuUrl }`, or
+  `{ menuUrl: null }` to clear it), never by the price page
 
 The editor PATCHes ONLY the field groups the owner actually changed (dirty
 tracking), so editing one section never re-submits the rest.

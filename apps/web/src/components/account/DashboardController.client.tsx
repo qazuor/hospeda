@@ -27,7 +27,11 @@ export function DashboardController({ locale, userRoles }: DashboardControllerPr
         // HOS-788: an account can now have SEVERAL applicable tours at once
         // (e.g. tourist + host), so "pending" means "at least one of them is
         // still unseen" — not just whether the highest-priority one is.
-        const tours = getWelcomeToursForRoles({ roles: userRoles });
+        // HOS-1856: only tours that run on THIS page gate What's New. A
+        // pending `comercio` tour must not suppress the dashboard forever.
+        const tours = getWelcomeToursForRoles({ roles: userRoles }).filter(
+            (tour) => tour.page === 'dashboard'
+        );
         if (tours.length === 0) return false;
         if (tourLoading) return true;
         return tours.some((tour) => !hasSeen({ tourId: tour.id, version: tour.version }));
@@ -50,6 +54,7 @@ export function DashboardController({ locale, userRoles }: DashboardControllerPr
             <TourController
                 locale={locale}
                 userRoles={userRoles}
+                page="dashboard"
             />
 
             <WhatsNewModal

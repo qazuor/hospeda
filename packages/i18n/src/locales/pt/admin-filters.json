@@ -258,6 +258,9 @@
         "rotiseria": "Rotisseria",
         "foodTruck": "Food Truck"
     },
+    "businessLine": {
+        "label": "Segmento"
+    },
     "priceRange": {
         "label": "Faixa de preço",
         "budget": "Econômico",

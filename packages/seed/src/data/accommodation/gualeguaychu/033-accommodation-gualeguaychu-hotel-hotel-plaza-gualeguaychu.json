@@ -97,12 +97,9 @@
     },
     "extraInfo": {
         "capacity": 48,
-        "minNights": 1,
-        "maxNights": 30,
         "bedrooms": 24,
         "beds": 36,
         "bathrooms": 24,
-        "smokingAllowed": false,
         "extraInfo": [
             "Recepción 24 horas",
             "Desayuno buffet incluido",
@@ -110,6 +107,12 @@
             "Servicio de traslado al Corsódromo durante temporada de Carnaval",
             "Personal multilingüe (español, inglés, portugués)"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 30
     },
     "seo": {
         "title": "Hotel Plaza - Alojamiento 3 estrellas en centro de",

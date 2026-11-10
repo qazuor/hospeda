@@ -1166,3 +1166,32 @@ fuera de web.
 **Por qué**: el owner pidió acortar el camino a la promoción. El namespace i18n se toca dos veces si va en `1.A5` y otra vez en `1.B5`; en una sola hoja se toca una vez.
 
 **Consecuencia**: cada hoja que mueve archivos deja entradas `renamedFrom` (DEC-FAC-088). Esas entradas dan rojo en cuanto el rename llega a la base. Por eso, después de mergear cada hoja, el inventario se regenera contra la base nueva (#3851, #3852).
+
+## DEC-FAC-091 · El guard de umbrella descubre toda `epic/*` de origin
+**Fecha**: 2026-11-02 · **Decidió**: owner (recomendación del orquestador).
+**Qué**: `scripts/check-umbrella-branch-target.sh` deja la lista fija (`epic/HOS-1352-verticales-billing`,
+`epic/HOS-1801-renombrado-fisico`) y lista en cada corrida toda `epic/*` del remoto. Falla cerrado si no puede listar;
+`UMBRELLA_BRANCHES` sigue reemplazando el descubrimiento. Va en un PR chico a `staging`, fuera de la regla de hojas,
+porque no lleva código de producto.
+**Por qué**: la decisión del 25/10 (vigilar toda `epic/*`) se había implementado como lista fija. Con eso, esta épica y
+`epic/HOS-1352-post-mvp` quedaban sin guard: un PR de hoja con `--base staging` pasaba el CI.
+
+## DEC-FAC-092 · La hoja 9.2 toca las plantillas de mail de billing dentro de la épica
+**Fecha**: 2026-11-02 · **Decidió**: owner.
+**Qué**: HOS-1851 edita `packages/notifications/src/templates/billing/renewal-reminder.tsx` y el copy de la serie de
+prueba (`product-domain-copy.ts`), sólo la línea de cierre neutra de vertical.
+**Por qué**: el cambio es de copy y llega a `staging` recién con la épica, después de la ventana de aceptación de
+HOS-1352 (~09/11), así que no choca con los arreglos de billing en curso.
+
+## DEC-FAC-093 · La hoja 9.1 se verifica antes de reabrirla
+**Fecha**: 2026-11-02 · **Decidió**: owner.
+**Qué**: HOS-1850 está In Progress y el PR #3985 (presentaciones de venta) ya se mergeó a `staging`. Antes de trabajar la
+hoja se mide qué falta contra AC:9:1 y AC:9:3; #3985 no se da por suficiente.
+
+## DEC-FAC-094 · El MVP arranca ya en la épica `epic/HOS-1787-comer-y-salir`
+**Fecha**: 2026-11-02 · **Decidió**: owner.
+**Qué**: las hojas del MVP (HOS-1802…1808) corren en paralelo a las fases 1 y 2 del plan del 01/11 (estabilizar prod),
+aunque ese plan las ponía en la fase 3.
+**Por qué**: la épica no toca `staging` hasta su merge final, que decide el owner. Orden de olas: 2.1→2.5 (con 9.1 y 4.1
+en paralelo), 3.1→3.12 (con 4.2→4.4 y 9.2), después 4.5 y los tramos 5, 6 y 7 en paralelo; al final, la épica entra a
+staging y se hacen los smokes.

@@ -162,6 +162,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // renders `listing.notices.fixRequest.*`, and imports the notices module.
     'listing.notices',
     'listing.owner',
+    // HOS-2060 — the house-rules panel (`PoliciesPanel.client.tsx`) shared by
+    // the listing and accommodation editors names this subtree.
+    'listing.policies',
     // The venue-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.
     'venue.owner',
@@ -258,9 +261,21 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // `experience.editOwn` above. Not an i18n key.
     // HOS-1264 — venue half of `experience.aiChat` above.
     'venue.aiChat',
+    // HOS-1787 leaf 6.3 — `VenueOpenNowBadge.client.tsx` renders
+    // `venue.card.openNow` / `venue.card.closedNow` in the browser.
+    'venue.card',
+    // HOS-1787 leaf 5.1 — `NightInfoSection.client.tsx` reuses the approved
+    // public `venue.detail.nightInfo.*` labels. The two-segment ancestor is what
+    // the guard derives from a literal under that subtree; the three-segment
+    // entry keeps the declaration honest about the only subtree the editor names.
+    'venue.detail',
+    'venue.detail.nightInfo',
     'venue.editOwn',
     // HOS-822 — venue half of the shared listing-type source above.
     'venue.types',
+    // HOS-1828 — the create form and the owner's editor show the selected
+    // type's description under the type selector, in the browser.
+    'venue.typeDescriptions',
     'home.featuredDestinations',
     'home.searchBar',
     'host-trades.card',
@@ -314,6 +329,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
+    'review.dimensions',
     'review.form',
     'review.venueSidebar',
     'review.list',

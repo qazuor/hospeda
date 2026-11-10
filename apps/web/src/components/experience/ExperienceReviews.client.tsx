@@ -21,6 +21,7 @@ import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveReviewCardRating } from '@/lib/review-card-rating';
 
 // API base URL — must be absolute (web app on host A, API on host B)
 const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
@@ -222,89 +223,92 @@ export function ExperienceReviews({
                         gap: 'var(--space-4, 16px)'
                     }}
                 >
-                    {reviews.map((review) => (
-                        <li
-                            key={review.id}
-                            style={{
-                                padding: 'var(--space-4, 16px)',
-                                backgroundColor: 'var(--core-card)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 'var(--radius-md, 12px)'
-                            }}
-                        >
-                            <div
+                    {reviews.map((review) => {
+                        const cardRating = resolveReviewCardRating(review);
+                        return (
+                            <li
+                                key={review.id}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    marginBottom: '6px'
+                                    padding: 'var(--space-4, 16px)',
+                                    backgroundColor: 'var(--core-card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md, 12px)'
                                 }}
                             >
-                                <p
+                                <div
                                     style={{
-                                        fontFamily: 'var(--font-sans)',
-                                        fontWeight: 600,
-                                        fontSize: '0.9rem',
-                                        color: 'var(--core-foreground)',
-                                        margin: 0
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '6px'
                                     }}
                                 >
-                                    {review.user?.name ?? t('common.anonymous')}
-                                </p>
-                                {review.averageRating != null && (
-                                    <div
+                                    <p
                                         style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '4px'
+                                            fontFamily: 'var(--font-sans)',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            color: 'var(--core-foreground)',
+                                            margin: 0
                                         }}
                                     >
-                                        <StarRow
-                                            rating={review.averageRating}
-                                            size={13}
-                                        />
-                                        <span
+                                        {review.user?.name ?? t('common.anonymous')}
+                                    </p>
+                                    {cardRating != null && (
+                                        <div
                                             style={{
-                                                fontFamily: 'var(--font-sans)',
-                                                fontSize: '0.85rem',
-                                                fontWeight: 500,
-                                                color: 'var(--rating-star)'
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
                                             }}
                                         >
-                                            {review.averageRating.toFixed(1)}
-                                        </span>
-                                    </div>
+                                            <StarRow
+                                                rating={cardRating}
+                                                size={13}
+                                            />
+                                            <span
+                                                style={{
+                                                    fontFamily: 'var(--font-sans)',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 500,
+                                                    color: 'var(--rating-star)'
+                                                }}
+                                            >
+                                                {cardRating.toFixed(1)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                {review.title && (
+                                    <p
+                                        style={{
+                                            fontFamily: 'var(--font-sans)',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            color: 'var(--core-foreground)',
+                                            marginBottom: '4px',
+                                            marginTop: 0
+                                        }}
+                                    >
+                                        {review.title}
+                                    </p>
                                 )}
-                            </div>
-                            {review.title && (
-                                <p
-                                    style={{
-                                        fontFamily: 'var(--font-sans)',
-                                        fontWeight: 600,
-                                        fontSize: '0.9rem',
-                                        color: 'var(--core-foreground)',
-                                        marginBottom: '4px',
-                                        marginTop: 0
-                                    }}
-                                >
-                                    {review.title}
-                                </p>
-                            )}
-                            {review.content && (
-                                <p
-                                    style={{
-                                        fontFamily: 'var(--font-sans)',
-                                        fontSize: '0.9rem',
-                                        lineHeight: 1.5,
-                                        color: 'var(--core-muted-foreground)',
-                                        margin: 0
-                                    }}
-                                >
-                                    {review.content}
-                                </p>
-                            )}
-                        </li>
-                    ))}
+                                {review.content && (
+                                    <p
+                                        style={{
+                                            fontFamily: 'var(--font-sans)',
+                                            fontSize: '0.9rem',
+                                            lineHeight: 1.5,
+                                            color: 'var(--core-muted-foreground)',
+                                            margin: 0
+                                        }}
+                                    >
+                                        {review.content}
+                                    </p>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
 

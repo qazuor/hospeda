@@ -93,7 +93,8 @@ const fixtures = {
         location: { street: 'Main', number: '123' },
         price: { price: 150, currency: 'ARS' },
         tags: [],
-        extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 },
+        extraInfo: { capacity: 4, bedrooms: 2, bathrooms: 1 },
+        policies: { paymentMethods: ['cash'], minNights: 1 },
         faqs: []
     },
     venue: {
@@ -229,7 +230,8 @@ describe.each(cases)('TEST:V5:1 $label resource step', ({ label, service, route 
         } else {
             vi.spyOn(service.prototype, 'loadJunctionIds').mockResolvedValue({
                 amenityIds: [],
-                featureIds: []
+                featureIds: [],
+                amenityAttributes: []
             });
         }
         const result = await probe(app, LISTING_ID);

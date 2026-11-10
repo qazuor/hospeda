@@ -43,11 +43,16 @@ export async function listSupportEdits(input: {
         .filter(
             (event) => event.actorType === 'admin' && SUPPORT_EDIT_EVENT_TYPES.has(event.eventType)
         )
-        .slice(-SUPPORT_EDITS_SHOWN)
-        .reverse()
+        // A business-line change has its own notice (ACC:27, HOS-1875): its event
+        // carries no content field, so `buildSupportEditParts` yields `[]` and row
+        // 26 must not render it as "support edited the content". The empty events
+        // are dropped BEFORE the cut, so they never eat one of the shown slots.
         .map((event) => ({
             occurredAt: event.occurredAt.toISOString(),
             parts: [...buildSupportEditParts({ changes: event.changes }).parts]
-        }));
+        }))
+        .filter((item) => item.parts.length > 0)
+        .slice(-SUPPORT_EDITS_SHOWN)
+        .reverse();
     return { items };
 }

@@ -206,18 +206,21 @@
     },
     "extraInfo": {
         "capacity": 4,
-        "minNights": 2,
-        "maxNights": 10,
         "bedrooms": 1,
         "beds": 2,
         "bathrooms": 1,
-        "smokingAllowed": false,
         "extraInfo": [
             "Entorno muy privado",
             "Ideal para parejas o familias pequeñas",
             "Piscina exterior o hot tub (consultar disponibilidad)",
             "Senderos privados en la propiedad"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 2,
+        "maxNights": 10
     },
     "seo": {
         "title": "Refugio Maravilloso - Cabaña privada cerca de Colón, Entre",

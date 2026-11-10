@@ -61,8 +61,7 @@ export function createTrialCampaignRenderers(input: {
         const slug = PRICING_SLUG[verticals[0] ?? ''];
         if (!slug) throw new TypeError('La primera vertical no tiene una ruta de precios');
         return {
-            recipientName: typeof data.recipientName === 'string' ? data.recipientName : 'Hola',
-            planName: 'tu plan de prueba',
+            recipientName: typeof data.recipientName === 'string' ? data.recipientName : null,
             trialEndDate,
             productDomain: verticals[0],
             upgradeUrl: `${input.siteUrl.replace(/\/$/, '')}/es/planes/${slug}/precios/`,

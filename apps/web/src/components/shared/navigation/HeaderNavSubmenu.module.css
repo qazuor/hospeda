@@ -1,0 +1,37 @@
+.submenu {
+    position: relative;
+}
+
+.submenuList {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: -0.75rem;
+    z-index: calc(var(--z-nav, 50) + 1);
+    min-width: 13rem;
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+    background: var(--core-background);
+    border: 1px solid var(--border-a35);
+    border-radius: var(--radius-card);
+}
+
+.submenu:hover .submenuList,
+.submenu:focus-within .submenuList {
+    display: block;
+}
+
+.submenuList a {
+    display: block;
+    padding: 0.625rem 0.75rem;
+    color: var(--core-foreground);
+    text-decoration: none;
+    border-radius: var(--radius-button);
+}
+
+.submenuList a:hover,
+.submenuList a:focus-visible {
+    color: var(--brand-primary-text);
+    background: var(--core-foreground-a05);
+}

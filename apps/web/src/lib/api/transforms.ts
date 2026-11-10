@@ -38,6 +38,7 @@ import type {
     VenueSocialNetworks
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
+import { parseListingPolicyValues } from '../listing/listing-policies';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
@@ -53,6 +54,11 @@ import {
 } from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
 import { SEO_SOURCE_LOCALE } from '../seo';
+import { toVenueNightInfo } from '../venue/night-info';
+import {
+    parsePublicDimensionRatings,
+    parsePublicReviewSectionStates
+} from '../venue/review-dimensions-view';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -1126,15 +1132,11 @@ export function toAccommodationDetailPageProps({
                   capacity: extraInfoObj.capacity == null ? null : Number(extraInfoObj.capacity),
                   bedrooms: extraInfoObj.bedrooms == null ? null : Number(extraInfoObj.bedrooms),
                   beds: extraInfoObj.beds == null ? null : Number(extraInfoObj.beds),
-                  bathrooms: extraInfoObj.bathrooms == null ? null : Number(extraInfoObj.bathrooms),
-                  minNights: extraInfoObj.minNights == null ? null : Number(extraInfoObj.minNights),
-                  maxNights: extraInfoObj.maxNights == null ? null : Number(extraInfoObj.maxNights),
-                  smokingAllowed:
-                      extraInfoObj.smokingAllowed == null
-                          ? null
-                          : Boolean(extraInfoObj.smokingAllowed)
+                  bathrooms: extraInfoObj.bathrooms == null ? null : Number(extraInfoObj.bathrooms)
               }
             : null,
+        // HOS-2060: house rules moved out of `extraInfo` into `policies`.
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seo: seoObj
             ? {
                   title: seoObj.title ? String(seoObj.title) : null,
@@ -1868,13 +1870,15 @@ export function toEventDetailProps({
 
 // --- Accommodation Editor Transforms (SPEC-208) ---
 
+import {
+    extractAmenityAttributes,
+    toAmenityAvailability,
+    toAmenityScope
+} from './amenity-attributes';
 import type {
     AccommodationEditData,
     AccommodationVideoEntry,
-    AmenityAttributeValue,
-    AmenityAvailabilityValue,
     AmenityData,
-    AmenityScopeValue,
     DestinationData,
     MediaImage
 } from './types';
@@ -1922,19 +1926,14 @@ export function transformAccommodationEdit({
     const latitude = coordLat != null && String(coordLat).length > 0 ? Number(coordLat) : null;
     const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
 
-    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
-    //
-    // `minNights` became writable in G7 smoke (H-112): both HTTP create mappings
-    // still force `minNights: 1` at creation time (so a self-service draft is
-    // always publishable), but `AccommodationUpdateHttpSchema` now accepts it, so
-    // the value read here also feeds the capacity/pricing form's own field.
+    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds).
+    // The minimum stay is a house rule since HOS-2060 (`policies.minNights`).
     const extraInfo = item.extraInfo as
         | {
               capacity?: number | null;
               bedrooms?: number | null;
               bathrooms?: number | null;
               beds?: number | null;
-              minNights?: number | null;
           }
         | null
         | undefined;
@@ -1983,7 +1982,7 @@ export function transformAccommodationEdit({
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
         beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
-        minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seoTitle: String(seoObj?.title ?? ''),
         seoDescription: String(seoObj?.description ?? ''),
         // The values the PUBLIC page falls back to when the overrides above are
@@ -2114,42 +2113,6 @@ function extractIdList(
         .filter((id) => id.length > 0);
 }
 
-/** Narrows a raw value to a declared amenity scope, or `null`. */
-function toAmenityScope(value: unknown): AmenityScopeValue | null {
-    return value === 'private' || value === 'shared' ? value : null;
-}
-
-/** Narrows a raw value to a declared amenity availability, or `null`. */
-function toAmenityAvailability(value: unknown): AmenityAvailabilityValue | null {
-    return value === 'year_round' || value === 'seasonal' ? value : null;
-}
-
-/**
- * Reads the HOS-2058 relation attributes off the protected amenity rows into a
- * map keyed by amenity id. Rows with nothing declared are left out, so the
- * map only ever holds real declarations.
- *
- * @param items - The `amenities` array of the protected accommodation read
- * @returns Declared scope/availability per amenity id
- */
-function extractAmenityAttributes(
-    items: readonly (Record<string, unknown> | string)[] | undefined
-): Readonly<Record<string, AmenityAttributeValue>> {
-    const result: Record<string, AmenityAttributeValue> = {};
-    if (!items) return result;
-    for (const entry of items) {
-        if (typeof entry === 'string') continue;
-        const nested = entry.amenity as Record<string, unknown> | undefined;
-        const id = String(entry.amenityId ?? nested?.id ?? entry.id ?? '');
-        if (id.length === 0) continue;
-        const scope = toAmenityScope(entry.scope);
-        const availability = toAmenityAvailability(entry.availability);
-        if (scope === null && availability === null) continue;
-        result[id] = { scope, availability };
-    }
-    return result;
-}
-
 /**
  * Transforms a list of raw amenity or feature catalog objects into AmenityData[].
  *
@@ -2182,7 +2145,10 @@ export function transformAmenityList({
         return {
             id: String(item.id ?? ''),
             slug,
-            category: rawCategory == null ? null : String(rawCategory)
+            category: rawCategory == null ? null : String(rawCategory),
+            // HOS-2061: featured-first ordering in the catalog picker.
+            isFeatured: item.isFeatured === true,
+            ...(typeof item.displayWeight === 'number' ? { displayWeight: item.displayWeight } : {})
         };
     });
 }
@@ -2815,12 +2781,11 @@ export function toVenueCardProps({
  * - `name` receives the **slug**, because the grid uses it as the i18n key
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
- * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The venue/experience junction tables have no such columns (see
- *   `ListingAmenityPublicSchema`), so there is nothing to read; the
- *   constants keep one grid component serving three verticals instead of
- *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no venue/experience owner could have set.
+ * - The relation attributes (`isOptional`, `additionalCost`, `scope`,
+ *   `availability`) are read straight through since HOS-2061 gave the
+ *   venue/experience junctions the accommodation columns, so the grid shows
+ *   the same badges in all three verticals. `displayWeight` stays the inert
+ *   `50`: the junction has no per-listing weight.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2835,9 +2800,11 @@ function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
             amenityId: String(item.amenityId ?? ''),
             name: String(item.slug ?? ''),
             icon: item.icon == null ? null : String(item.icon),
-            isOptional: false,
-            additionalCost: null,
-            displayWeight: 50
+            isOptional: item.isOptional === true,
+            additionalCost: typeof item.additionalCost === 'number' ? item.additionalCost : null,
+            displayWeight: 50,
+            scope: toAmenityScope(item.scope),
+            availability: toAmenityAvailability(item.availability)
         }))
         .filter((item) => item.name.length > 0);
 }
@@ -3051,6 +3018,10 @@ export function toVenueDetailPageProps({
         // re-applies either.
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),
+        nightInfo: toVenueNightInfo({ item, locale }),
+        policies: parseListingPolicyValues({ raw: item.policies }),
+        rating: parsePublicDimensionRatings(item.rating),
+        reviewSectionStates: parsePublicReviewSectionStates(item.reviewSectionStates),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
@@ -3294,7 +3265,7 @@ export function toExperienceDetailPageProps({
         // has no reason to tell those apart, and the FLAG below is what decides
         // whether the map is drawn.
         meetingPointDirections: normalizeChecklist(item.meetingPointDirections),
-        // Strictly `=== true`, like `acceptsPrivateGroups`. Absent means the
+        // Strictly `=== true`. Absent means the
         // payload never resolved the entitlement (a list card, a legacy
         // response), and only an explicit true may turn the paid map on — the
         // one direction where guessing gives the product away.
@@ -3307,13 +3278,11 @@ export function toExperienceDetailPageProps({
         // bullet, and a missing column reads as `[]` rather than `undefined`.
         whatToBring: normalizeChecklist(item.whatToBring),
         requirements: normalizeChecklist(item.requirements),
-        // HOS-1047: reuses the meeting point's normaliser — same problem, same
-        // answer. A whitespace-only policy must not render a heading over
-        // nothing.
-        cancellationPolicy: normalizeMeetingPoint(item.cancellationPolicy),
-        // HOS-1056: strictly `=== true`. A legacy row has no key, and only an
-        // explicit true may turn the CTA on.
-        acceptsPrivateGroups: item.acceptsPrivateGroups === true,
+        // HOS-2060: the cancellation text (HOS-1047) and private groups
+        // (HOS-1056) are `policies.cancellation` / `policies.privateGroups`.
+        // The parser drops a whitespace-only cancellation, so the view never
+        // renders a heading over nothing.
+        policies: parseListingPolicyValues({ raw: item.policies }),
         seo: seoObj
             ? {
                   title: seoObj.title == null ? null : String(seoObj.title),

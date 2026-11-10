@@ -67,25 +67,58 @@ describe('toVenueDetailPageProps — amenities (HOS-1072)', () => {
                 icon: 'credit-card',
                 isOptional: false,
                 additionalCost: null,
-                displayWeight: 50
+                displayWeight: 50,
+                scope: null,
+                availability: null
             }
         ]);
     });
 
-    it('never claims an additional cost the listing junction cannot store', () => {
-        // Arrange: even if a stray value arrived, the grid must not print
-        // "(costo adicional)" for a column `r_venue_amenity` does not have.
+    it('reads the relation attributes the junction now stores (HOS-2061)', () => {
+        // Arrange
         const raw = venuePayload({
             amenities: [
-                { amenityId: AMENITY_ID, slug: 'parking', icon: null, additionalCost: 5000 }
+                {
+                    amenityId: AMENITY_ID,
+                    slug: 'parking',
+                    icon: null,
+                    isOptional: true,
+                    additionalCost: 5000,
+                    scope: 'shared',
+                    availability: 'seasonal'
+                }
             ]
         });
 
         // Act
-        const result = toVenueDetailPageProps({ item: raw, locale: 'es' });
+        const [amenity] = toVenueDetailPageProps({ item: raw, locale: 'es' }).amenities;
 
         // Assert
-        expect(result.amenities[0]?.additionalCost).toBeNull();
+        expect(amenity).toMatchObject({
+            isOptional: true,
+            additionalCost: 5000,
+            scope: 'shared',
+            availability: 'seasonal'
+        });
+    });
+
+    it('reads an unknown scope/availability and a non-numeric cost as undeclared', () => {
+        const raw = venuePayload({
+            amenities: [
+                {
+                    amenityId: AMENITY_ID,
+                    slug: 'parking',
+                    icon: null,
+                    additionalCost: { amount: 5000 },
+                    scope: 'public',
+                    availability: 'sometimes'
+                }
+            ]
+        });
+
+        const [amenity] = toVenueDetailPageProps({ item: raw, locale: 'es' }).amenities;
+
+        expect(amenity).toMatchObject({ additionalCost: null, scope: null, availability: null });
     });
 
     it('preserves the API order instead of re-sorting on the flat weight', () => {

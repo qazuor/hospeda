@@ -19,9 +19,10 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
+import { TourController } from '@/components/account/TourController.client';
 import { VenueMenuQrWidget } from '@/components/venue/VenueMenuQrWidget.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
-import { publishApi } from '@/lib/api/endpoints-protected';
+import { listingAnalyticsApi, publishApi } from '@/lib/api/endpoints-protected';
 import {
     EMPTY_LISTING_NOTICES_INDEX,
     indexListingNotices,
@@ -29,7 +30,11 @@ import {
 } from '@/lib/listing/listing-notices';
 import { webLogger as logger } from '@/lib/logger';
 import { hasListingNavAccess } from '@/lib/nav-gating';
-import { fetchOwnerListingsWithState } from '@/lib/listing/owner-listings';
+import {
+    fetchOwnerListingsWithState,
+    isVenueListing,
+    VENUE_VERTICAL
+} from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
 import {
     buildListingUsage,
@@ -38,6 +43,7 @@ import {
 } from '@/lib/listing/vertical-usage';
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
+import { shouldAnchorMenuQrTour } from '@/lib/venue/menu-qr-tour-anchor';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PublicationStatusEnum } from '@repo/schemas';
@@ -72,6 +78,14 @@ const listings = await fetchOwnerListingsWithState({ cookieHeader });
  */
 const isPurged = (listing: (typeof listings)[number]): boolean =>
     listing.publicationStatus === PublicationStatusEnum.PURGED;
+
+/**
+ * HOS-1856: the menu QR widget's audience. The vertical check lives in
+ * `isVenueListing` (G-FAC-05 scans this file for bare vertical comparisons).
+ */
+const venueListings = listings.filter(
+    (listing) => isVenueListing(listing) && !isPurged(listing)
+);
 
 // HOS-1492: the notices of each listing (rows 8/9, 18, 20, 24, 30, 31), read
 // once per vertical this page lists. A failed read leaves that vertical's
@@ -123,6 +137,32 @@ const [publishAffordances, noticesByVertical, usageBadges] = await Promise.all([
         }
     })()
 ]);
+
+// HOS-1856: the venue welcome tour's `venue-qr` step must exist only when the
+// widget will render something. The widget resolves each venue's `menu` section
+// on the client, but the tour starts before `client:visible` has hydrated it, so
+// the anchor is decided here, in parallel, from the same section-state map. A
+// failed read withholds the anchor: the tour never points at an element whose
+// existence it cannot prove.
+const venueSectionStates = await Promise.all(
+    venueListings.map(async (listing) => {
+        try {
+            const result = await listingAnalyticsApi.getListingSectionStates({
+                vertical: VENUE_VERTICAL,
+                listingId: listing.id,
+                cookieHeader
+            });
+            return result.ok ? result.data : null;
+        } catch (error) {
+            logger.warn('[comercio] venue section states read failed', {
+                listingId: listing.id,
+                error: error instanceof Error ? error.message : String(error)
+            });
+            return null;
+        }
+    })
+);
+const anchorMenuQrTour = shouldAnchorMenuQrTour({ sectionStates: venueSectionStates });
 
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
 // button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
@@ -195,18 +235,16 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         />
     </div>
 
-    {/* HOS-788: welcome-tour anchor for the venue welcome tour only —
-        the menu QR/scan-analytics panel is exclusive to the venue vertical. A
-        VENUE_OWNER always holds at least one venue listing (the
-        role is granted alongside the listing's creation, never before), so
-        this is never empty for the audience that tour targets. */}
-    <div data-tour="venue-qr">
+    {/* HOS-788: welcome-tour anchor for the venue welcome tour — the menu
+        QR/scan-analytics panel is exclusive to the venue vertical. HOS-1856:
+        the anchor exists only when at least one venue's `menu` section is not
+        `absent`, i.e. when the widget will actually render something. The
+        widget mounts exactly as before; only the anchor is conditional. */}
+    <div data-tour={anchorMenuQrTour ? 'venue-qr' : undefined}>
         <VenueMenuQrWidget
             client:visible
             locale={locale}
-            listings={listings
-                .filter((listing) => listing.vertical === 'venue' && !isPurged(listing))
-                .map((listing) => ({ id: listing.id, name: listing.name }))}
+            listings={venueListings.map((listing) => ({ id: listing.id, name: listing.name }))}
         />
     </div>
 
@@ -273,6 +311,17 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         }
     </AccountSectionCard>
     </div>
+
+    {/* HOS-1856: the venue/experience welcome tour targets the anchors on this
+        page, so it has to run here. `TourController` skips steps whose target
+        is absent from the DOM (the BOLICHE-only venue tour has no `venue-qr`
+        step) and never starts a tour with no steps left. */}
+    <TourController
+        locale={locale}
+        userRoles={user.roles}
+        page="comercio"
+        client:idle
+    />
     </div>
 </AccountLayout>
 

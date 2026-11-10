@@ -23,6 +23,7 @@ interface Row {
     readonly amenityId: string;
     readonly scope?: AmenityScopeEnum | null;
     readonly availability?: AmenityAvailabilityEnum | null;
+    readonly isOptional?: boolean;
 }
 
 /** Junction stub holding `rows`; records every write. */
@@ -193,6 +194,85 @@ describe('syncAmenityJunction amenityAttributes (HOS-2058)', () => {
         });
 
         expect(junction.create).not.toHaveBeenCalled();
+        expect(junction.update).not.toHaveBeenCalled();
+    });
+});
+
+describe('syncAmenityJunction extraCharge (HOS-2084)', () => {
+    const run = (
+        rows: readonly Row[],
+        amenityAttributes: Parameters<typeof syncAmenityJunction>[0]['amenityAttributes'],
+        amenityIds: readonly string[] | undefined = undefined
+    ) => {
+        const junction = createJunctionModel(rows);
+        return syncAmenityJunction({
+            accommodationId: ACCOMMODATION_ID,
+            amenityIds,
+            amenityAttributes,
+            junctionModel: junction as unknown as RAccommodationAmenityModel,
+            amenityModel: catalog(),
+            tx
+        }).then(() => junction);
+    };
+
+    it('inserts a new row with isOptional true when extraCharge is sent', async () => {
+        const junction = await run([], [{ amenityId: POOL, extraCharge: true }], [POOL]);
+
+        expect(junction.create).toHaveBeenCalledWith(
+            {
+                accommodationId: ACCOMMODATION_ID,
+                amenityId: POOL,
+                isOptional: true,
+                scope: null,
+                availability: null
+            },
+            tx
+        );
+    });
+
+    it('updates isOptional when extraCharge changes, and can clear it', async () => {
+        const on = await run(
+            [{ amenityId: POOL, isOptional: false }],
+            [{ amenityId: POOL, extraCharge: true }]
+        );
+        expect(on.update).toHaveBeenCalledWith(
+            { accommodationId: ACCOMMODATION_ID, amenityId: POOL },
+            { scope: null, availability: null, isOptional: true },
+            tx
+        );
+
+        const off = await run(
+            [{ amenityId: POOL, isOptional: true }],
+            [{ amenityId: POOL, extraCharge: false }]
+        );
+        expect(off.update).toHaveBeenCalledWith(
+            { accommodationId: ACCOMMODATION_ID, amenityId: POOL },
+            { scope: null, availability: null, isOptional: false },
+            tx
+        );
+    });
+
+    it('keeps the stored flag when extraCharge is omitted or the amenity is unlisted', async () => {
+        const junction = await run(
+            [
+                { amenityId: POOL, scope: AmenityScopeEnum.SHARED, isOptional: true },
+                { amenityId: GRILL, scope: AmenityScopeEnum.SHARED, isOptional: true }
+            ],
+            [{ amenityId: POOL, scope: AmenityScopeEnum.PRIVATE }]
+        );
+
+        expect(junction.update).toHaveBeenCalledTimes(2);
+        for (const call of junction.update.mock.calls) {
+            expect(call[1]).not.toHaveProperty('isOptional');
+        }
+    });
+
+    it('writes nothing when the flag already matches', async () => {
+        const junction = await run(
+            [{ amenityId: POOL, isOptional: true }],
+            [{ amenityId: POOL, extraCharge: true }]
+        );
+
         expect(junction.update).not.toHaveBeenCalled();
     });
 });

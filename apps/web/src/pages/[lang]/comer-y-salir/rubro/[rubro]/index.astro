@@ -1,0 +1,461 @@
+---
+/**
+ * @file comer-y-salir/rubro/[rubro]/index.astro
+ * @description Business-line collection of the venue vertical (HOS-1787 leaf
+ * 6.8): the full listing UI of `/comer-y-salir/` scoped to one catalog line.
+ *
+ * The route segment is the public Spanish slug of a business line. It is
+ * resolved through the catalog map (`resolveVenueBusinessLineCollection`), which
+ * also re-derives the canonical slug from the internal value; an unknown
+ * segment answers 404 before any fetch or cache header is written.
+ *
+ * Filters and sort are the general listing's; the sidebar catalogs and the type
+ * chips are narrowed to the values present on this collection's published
+ * listings (HOS-1787 leaf 6.10). Pagination stays identical to the general
+ * listing.
+ *
+ * Structured data: `CollectionPage` (this collection) + `ItemList` (the visible
+ * page) + `BreadcrumbList` (Inicio / Comer y salir / {line}), the same
+ * three-node pattern as `alojamientos/tipo/[type]/`.
+ *
+ * @route /{lang}/comer-y-salir/rubro/{rubro}/
+ * @rendering SSR (on-demand)
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import VenueCard from '@/components/venue/VenueCard.astro';
+import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
+import {
+    buildVenueListingSummary,
+    DEFAULT_VENUE_TYPES,
+    DEFAULT_PRICE_RANGES
+} from '@/lib/listing-summary';
+import {
+    venueApi,
+    destinationsApi,
+    amenitiesApi,
+    featuresApi,
+    SSR_PUBLIC_CACHE_TTL_MS
+} from '@/lib/api/endpoints';
+import { toVenueCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { hasActiveVenueListingFilters } from '@/lib/listing-empty-state-filters';
+import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
+import {
+    buildVenueBusinessLineCollectionPath,
+    isVenueCollectionEmpty,
+    resolveVenueBusinessLineCollection,
+    resolveVenueCollectionCopy
+} from '@/lib/venue/business-line-collection';
+import {
+    buildVenueFilterGroups,
+    buildVenueTypeChips,
+    narrowVenueFilterCatalog
+} from '@/lib/venue/venue-listing-filters';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
+import { ORGANIZATION_INFO } from '@/lib/constants';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// --- Business line resolution (before any fetch or cache header) ---
+const collection = resolveVenueBusinessLineCollection({ urlSlug: Astro.params.rubro });
+if (!collection) {
+    return new Response(null, { status: 404 });
+}
+
+// The path is rebuilt from the catalog value, never echoed from the raw param,
+// so the canonical URL is exact for the resolved collection.
+const baseUrl = buildVenueBusinessLineCollectionPath({
+    locale,
+    businessLine: collection.businessLine
+});
+const listBaseUrl = buildUrl({ locale, path: 'comer-y-salir' });
+const businessLineLabel = t(`venue.owner.businessLines.${collection.businessLine}.label`);
+
+// --- Edge cacheability ---
+// This is a listing: every venue write must evict it. Same gate as the general
+// listing — anything beyond pagination makes the render an arbitrary slice.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+    cacheClass: 'catalog',
+    tags: [CACHE_TAG_COLLECTIONS.venue]
+});
+
+const url = Astro.url;
+
+// --- Pagination ---
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+// --- Filter params (identical to the general listing) ---
+const q = url.searchParams.get('q') ?? undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const priceRange = url.searchParams.get('priceRange') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
+const featuresParam = url.searchParams.get('features') ?? undefined;
+const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
+
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
+    newest: { sortBy: 'createdAt', sortOrder: 'desc' },
+    nameAsc: { sortBy: 'name', sortOrder: 'asc' }
+};
+const DEFAULT_SORT_KEY = 'featured';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+
+// --- Fetch destinations, the venue catalogs, the collection and its filters ---
+const [
+    destinationsResult,
+    amenitiesResult,
+    featuresResult,
+    filterOptionsResult,
+    result
+] = await Promise.all([
+    destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+    amenitiesApi.list({
+        pageSize: 100,
+        applicableVertical: 'venue',
+        sortBy: 'displayWeight',
+        sortOrder: 'desc',
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    }),
+    featuresApi.list({
+        pageSize: 100,
+        applicableVertical: 'venue',
+        sortBy: 'displayWeight',
+        sortOrder: 'desc',
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    }),
+    venueApi.getFilterOptions({ businessLine: collection.businessLine }),
+    venueApi.list({
+        page,
+        pageSize,
+        q,
+        destinationId,
+        type,
+        priceRange,
+        isFeatured,
+        minRating,
+        amenities: amenitiesParam,
+        features: featuresParam,
+        sortBy: sortResolved.sortBy,
+        sortOrder: sortResolved.sortOrder,
+        businessLine: collection.businessLine
+    })
+]);
+
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const destinationName = destinations.find(({ id }) => id === destinationId)?.name ?? ORGANIZATION_INFO.areaServed.name;
+const collectionCopy = resolveVenueCollectionCopy({ businessLine: collection.businessLine, destinationName, t });
+const { pageTitle, description, heading, intro, ogTagline } = collectionCopy;
+const amenityCatalog = amenitiesResult.ok ? amenitiesResult.data.items : [];
+const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
+
+// A failed options read must not offer a filter without published listings
+// (AC:6:11), and the render must not be frozen into the shared cache while it
+// shows that poorer sidebar. `null` makes the narrowing fail closed; the
+// rendered `VenueFilterOptionsDegradation` marks the response degraded.
+const filterOptions = filterOptionsResult.ok ? filterOptionsResult.data : null;
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
+    return new Response(null, { status: 404 });
+}
+
+// An empty collection has nothing to index. A failed fetch is not emptiness: a
+// transient API error must not drop the collection out of the index.
+const isEmptyCollection = isVenueCollectionEmpty({ fetchOk: result.ok, total });
+
+const cards = items.map((item) =>
+    toVenueCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+const hasActiveFilters = hasActiveVenueListingFilters({
+    q,
+    destinationId,
+    type,
+    priceRange,
+    isFeatured,
+    minRating,
+    amenities: amenitiesParam,
+    features: featuresParam
+});
+
+// --- Filter groups and chips (narrowed to this collection's published listings) ---
+const splitIds = (value: string | undefined): readonly string[] =>
+    (value ?? '')
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+
+const narrowedCatalog = narrowVenueFilterCatalog({
+    filterOptions,
+    amenities: amenityCatalog,
+    features: featureCatalog,
+    active: {
+        type,
+        amenityIds: splitIds(amenitiesParam),
+        featureIds: splitIds(featuresParam)
+    }
+});
+
+const filterGroups = buildVenueFilterGroups({
+    t,
+    destinations,
+    types: narrowedCatalog.types,
+    amenities: narrowedCatalog.amenities,
+    features: narrowedCatalog.features
+});
+
+const sortOptions = [
+    { value: 'featured', label: t('venue.listing.sort.featured') },
+    { value: 'ratingDesc', label: t('venue.listing.sort.ratingDesc') },
+    { value: 'newest', label: t('venue.listing.sort.newest') },
+    { value: 'nameAsc', label: t('venue.listing.sort.nameAsc') }
+];
+
+// --- Sidebar initial state (avoids hydration flash) ---
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (destinationId) initialParams.destinationId = destinationId;
+if (type) initialParams.type = type;
+if (priceRange) initialParams.priceRange = priceRange;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (amenitiesParam) initialParams.amenities = amenitiesParam;
+if (featuresParam) initialParams.features = featuresParam;
+initialParams.sortBy = sortKey;
+
+const destinationCatalog = destinations.map((d) => ({
+    key: d.id,
+    label: { es: d.name, en: d.name, pt: d.name } as const
+}));
+const filterSummary = buildVenueListingSummary({
+    locale,
+    filters: {
+        text: q,
+        type,
+        destinationId,
+        priceRange,
+        isFeatured,
+        minRating
+    },
+    counts: { shown: cards.length, total },
+    sort: { sortKey },
+    catalogs: {
+        destinations: destinationCatalog,
+        types: DEFAULT_VENUE_TYPES,
+        priceRanges: DEFAULT_PRICE_RANGES
+    }
+});
+
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+    basePath: baseUrl,
+    page,
+    totalPages
+});
+
+const typeChips = buildVenueTypeChips({
+    t,
+    types: narrowedCatalog.types,
+    baseUrl,
+    searchParams: url.searchParams,
+    activeType: type
+});
+
+// --- Structured data ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
+const itemListEntries = cards.map((card) => ({
+    url: new URL(buildUrl({ locale, path: `comer-y-salir/${card.slug}` }), Astro.site ?? Astro.url.origin)
+        .href,
+    name: card.name
+}));
+const breadcrumbJsonLdItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    { name: t('venue.listing.title'), url: `${siteOrigin}${listBaseUrl}` },
+    { name: businessLineLabel, url: `${siteOrigin}${baseUrl}` }
+];
+---
+
+<ListingLayout
+    locale={locale}
+    title={pageTitle}
+    description={description}
+    canonicalPath={canonicalPath}
+    prevPath={prevPath}
+    nextPath={nextPath}
+    showFilters={true}
+    filterPosition="left"
+    ogTagline={ogTagline}
+    totalCount={total}
+    filterSummary={filterSummary}
+    noindex={isEmptyCollection}
+>
+    <CollectionPageJsonLd
+        slot="head-extra"
+        name={pageTitle}
+        description={description}
+        url={collectionPageUrl}
+    />
+
+    <ItemListJsonLd
+        slot="head-extra"
+        name={pageTitle}
+        items={itemListEntries}
+        numberOfItems={total}
+        startPosition={(page - 1) * pageSize + 1}
+    />
+
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: t('venue.listing.title'), path: 'comer-y-salir' },
+            { label: businessLineLabel }
+        ]}
+    />
+
+    <ListingPageHeader
+        slot="page-header"
+        locale={locale}
+        tagline={t('venue.listing.title')}
+        title={heading}
+        subtitle={intro}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        sortOptions={sortOptions}
+        initialParams={initialParams}
+    />
+
+    <FilterChips
+        chips={typeChips}
+        ariaLabel={t('venue.typeChips.ariaLabel', 'Filtrar por tipo de establecimiento')}
+        showScrollButtons
+        prevLabel={t('common.prev', 'Anterior')}
+        nextLabel={t('common.next', 'Siguiente')}
+    />
+
+    <VenueFilterOptionsDegradation failed={!filterOptionsResult.ok || !amenitiesResult.ok || !featuresResult.ok} />
+
+    {hasError && !result.ok && (
+        <ErrorBanner
+            locale={locale}
+            error={result.error}
+            entityName={businessLineLabel}
+        />
+    )}
+
+    {!hasError && cards.length === 0 && hasActiveFilters && (
+        <EmptyState
+            locale={locale}
+            variant="no-results"
+            actionUrl={baseUrl}
+            message={t(
+                'venue.listing.emptyState',
+                'No se encontraron locales con los filtros seleccionados.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length === 0 && !hasActiveFilters && (
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            actionUrl={listBaseUrl}
+            actionLabel={t(
+                'venue.listing.collectionEmpty.viewAll',
+                'Ver todo {{vertical}}',
+                { vertical: t('venue.listing.title') }
+            )}
+            message={t(
+                'venue.listing.collectionEmpty.message',
+                'Todavía no hay locales publicados en {{line}}.',
+                { line: businessLineLabel }
+            )}
+            suggestions={[
+                {
+                    label: t('venue.listing.collectionEmpty.publish', 'Publicá tu local'),
+                    url: buildUrl({ locale, path: 'publicar/comer-y-salir' })
+                }
+            ]}
+        />
+    )}
+
+    {!hasError && cards.length > 0 && (
+        <div class="venue-grid">
+            {cards.map((card, i) => (
+                <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+                    <VenueCard
+                        data={card}
+                        locale={locale}
+                        eager={i < 3}
+                    />
+                </div>
+            ))}
+        </div>
+    )}
+
+    {totalPages > 1 && (
+        <Pagination
+            slot="pagination"
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl={baseUrl.slice(0, -1)}
+            locale={locale}
+            searchParams={(() => {
+                const sp = new URLSearchParams(url.searchParams);
+                sp.delete('page');
+                return sp;
+            })()}
+        />
+    )}
+</ListingLayout>
+
+<style>
+    .venue-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-card-gap);
+    }
+
+    @media (max-width: 480px) {
+        .venue-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

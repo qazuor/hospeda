@@ -94,18 +94,21 @@
     },
     "extraInfo": {
         "capacity": 38,
-        "minNights": 1,
-        "maxNights": 20,
         "bedrooms": 18,
         "beds": 28,
         "bathrooms": 18,
-        "smokingAllowed": false,
         "extraInfo": [
             "Muchas habitaciones con vistas al río o al jardín",
             "Piscina exterior con solárium",
             "Desayuno buffet incluido",
             "Estacionamiento descubierto gratuito"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 20
     },
     "seo": {
         "title": "Mirador Natural Hotel - Vistas al río en Concepción del",

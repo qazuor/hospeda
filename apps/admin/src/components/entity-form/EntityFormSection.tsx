@@ -3,6 +3,7 @@ import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums'
 import {
     AccommodationSelectField,
     AmenitySelectField,
+    BusinessLinesField,
     CheckboxField,
     CurrencyField,
     // Specific entity select fields
@@ -25,7 +26,10 @@ import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyFiel
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
-import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
+import type {
+    BusinessLinesFieldConfig,
+    SelectFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 import { Checkbox, Label as ShadLabel } from '@/components/ui-wrapped';
 
@@ -620,6 +624,21 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                     );
                                 })}
                             </div>
+                        );
+                    }
+
+                    case FieldTypeEnum.BUSINESS_LINES: {
+                        const businessLinesConfig = field.typeConfig as
+                            | BusinessLinesFieldConfig
+                            | undefined;
+                        const typeFieldId = businessLinesConfig?.typeFieldId ?? 'type';
+                        const listingType = String(readValue(values, typeFieldId) ?? '');
+                        return (
+                            <BusinessLinesField
+                                {...fieldProps}
+                                value={Array.isArray(fieldValue) ? (fieldValue as string[]) : []}
+                                listingType={listingType}
+                            />
                         );
                     }
 

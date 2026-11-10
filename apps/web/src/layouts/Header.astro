@@ -25,6 +25,7 @@
 import { getImage, Image } from "astro:assets";
 import { HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
+import HeaderNavSubmenu from "@/components/shared/navigation/HeaderNavSubmenu.astro";
 // Side-effect import of the mobile menu's CSS module. ClientRouter has
 // occasionally re-rendered the mobile menu island after a back navigation
 // without re-injecting the module's stylesheet — leaving the menu's raw
@@ -44,6 +45,7 @@ import { getAdminUrl } from "@/lib/env";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import { buildVenueCollectionNavItems } from "@/lib/venue/business-line-collection";
 import logoSrc from "@/assets/images/logo.webp";
 
 interface Props {
@@ -66,13 +68,13 @@ const navLinks = [
     { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("nav.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
     { label: t("nav.events"), href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: t("nav.venue"), href: buildUrl({ locale, path: "/comer-y-salir/" }) },
+    { label: t("nav.venue"), href: buildUrl({ locale, path: "/comer-y-salir/" }), children: buildVenueCollectionNavItems({ locale, t }) },
     { label: t("nav.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
     { label: t("nav.blog"), href: buildUrl({ locale, path: "/publicaciones/" }) },
     { label: t("nav.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
 ] as const;
 
-const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
+const mobileNavItems = navLinks.map(({ label, href, ...rest }) => ({ label, href, ...rest }));
 
 /** Current pathname (trailing-slash-normalized) used to highlight the active nav link. */
 const currentPath = Astro.url.pathname;
@@ -152,15 +154,21 @@ const serverUserRoles = serverUser?.roles ?? [];
                     // `startsWith(href)` keeps the trailing slash, so sibling
                     // sections with shared prefixes never collide.
                     const isActive = normalizedPath.startsWith(link.href);
+                    const children = 'children' in link ? link.children : undefined;
                     return (
                         <>
-                            <a
+                            {children ? <HeaderNavSubmenu
+                                label={link.label}
+                                href={link.href}
+                                isActive={isActive}
+                                children={children}
+                            /> : <a
                                 href={link.href}
                                 class:list={['header__nav-link', { 'header__nav-link--active': isActive }]}
                                 aria-current={isActive ? 'page' : undefined}
                             >
                                 {link.label}
-                            </a>
+                            </a>}
                             {i < navLinks.length - 1 && <span class="header__nav-divider" aria-hidden="true" />}
                         </>
                     );
@@ -335,7 +343,7 @@ const serverUserRoles = serverUser?.roles ?? [];
         }
     }
 
-    .header__nav-link {
+    .header__nav :global(.header__nav-link) {
         position: relative;
         font-family: var(--font-sans);
         font-weight: 600;
@@ -348,21 +356,21 @@ const serverUserRoles = serverUser?.roles ?? [];
         border-radius: 2px;
     }
 
-    .header__nav-link:hover {
+    .header__nav :global(.header__nav-link):hover {
         color: var(--brand-primary-text);
     }
 
-    .header__nav-link:focus-visible {
+    .header__nav :global(.header__nav-link):focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }
 
-    .header__nav-link--active {
+    .header__nav :global(.header__nav-link--active) {
         color: var(--brand-primary-text);
         font-weight: 700;
     }
 
-    .header__nav-link--active::after {
+    .header__nav :global(.header__nav-link--active)::after {
         content: '';
         position: absolute;
         bottom: -4px;

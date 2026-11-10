@@ -10,8 +10,14 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { ListingPolicyValues } from '../lib/listing/listing-policies';
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
+import type { VenueNightInfoData } from '../lib/venue/night-info';
+import type {
+    PublicDimensionRatings,
+    PublicReviewSectionStates
+} from '../lib/venue/review-dimensions-view';
 
 // Re-export UI types from split file for backward compatibility
 export type {
@@ -760,10 +766,13 @@ export interface AccommodationDetailData {
         readonly bedrooms: number | null;
         readonly beds: number | null;
         readonly bathrooms: number | null;
-        readonly minNights: number | null;
-        readonly maxNights: number | null;
-        readonly smokingAllowed: boolean | null;
     } | null;
+    /**
+     * House rules (HOS-2060): payment methods, pets, smoking, events,
+     * check-in/out and stay length. `{}` when nothing is declared; an absent
+     * key means "not informed", never "no".
+     */
+    readonly policies: ListingPolicyValues;
     readonly seo: {
         readonly title: string | null;
         readonly description: string | null;
@@ -1253,6 +1262,31 @@ export interface VenueDetailData extends VenueCardData {
      * `manage_venue_events` — same withholding as {@link menuSections}.
      */
     readonly venueEvents?: readonly VenueEvent[];
+    /**
+     * The `nightInfo` section (HOS-1849 / 4.5). Every field is `null` when the
+     * section is not `available` — the API's projector removes them — so the
+     * component renders nothing without asking about business lines.
+     */
+    readonly nightInfo?: VenueNightInfoData;
+    /**
+     * House rules (HOS-2060). The night-only keys (`minAge`, `dressCode`,
+     * `dressCodeNote`) are also mapped into {@link nightInfo}; the API strips
+     * them when that section is unavailable.
+     */
+    readonly policies?: ListingPolicyValues;
+    /**
+     * Public per-dimension review aggregates (HOS-1866 / 6.6). A missing key
+     * means zero votes; the API already removed every dimension bound to an
+     * `absent` section (DEC-FAC-072), so the page renders what arrives.
+     */
+    readonly rating?: PublicDimensionRatings;
+    /**
+     * Public state of the sections a review dimension is bound to (HOS-1866 /
+     * 6.6). Only `absent` and `available` — `locked` is published as
+     * `available`. Absent when the API did not derive it (an older cached
+     * payload), which the form reads as "offer every dimension".
+     */
+    readonly reviewSectionStates?: PublicReviewSectionStates;
     /** Social network links provided by the owner. */
     readonly socialNetworks: VenueSocialNetworks | null;
     /** SEO metadata fields. */
@@ -1509,19 +1543,11 @@ export interface ExperienceDetailData extends ExperienceCardData {
     /** Requirements to take part (HOS-1046). See {@link whatToBring}. */
     readonly requirements: readonly string[];
     /**
-     * What happens if the experience does not run (HOS-1047) — free text,
-     * `null` when not declared. Trimmed to `null` by the transform, so a
-     * whitespace-only policy cannot render a heading over nothing.
+     * House rules (HOS-2060), including the cancellation text (HOS-1047,
+     * `policies.cancellation`) and private groups (HOS-1056,
+     * `policies.privateGroups`). `{}` when nothing is declared.
      */
-    readonly cancellationPolicy: string | null;
-    /**
-     * Whether the provider takes private groups (HOS-1056).
-     *
-     * Drives a CTA and nothing else — there is no rate card and no group
-     * booking. The CTA anchors into the contact block, so the page also has to
-     * know that block exists before linking to it (`hasPublicContactChannel`).
-     */
-    readonly acceptsPrivateGroups: boolean;
+    readonly policies: ListingPolicyValues;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */

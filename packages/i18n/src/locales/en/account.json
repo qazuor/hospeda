@@ -80,19 +80,22 @@
             "body": "Edit the public content, opening hours and visible details of your business."
         },
         "greetingVenue": {
-            "title": "Welcome to your restaurant dashboard",
-            "body": "From here you can manage your account and the public content of your restaurant."
+            "title": "Welcome to your venue dashboard",
+            "body": "From here you can manage your account and the public content of your venue."
         },
         "listingVenue": {
-            "body": "Edit the menu, opening hours and visible details of your restaurant."
+            "body": "Edit your food or drinks, opening hours and visible details of your venue."
+        },
+        "listingVenueNoMenu": {
+            "body": "Edit the opening hours and visible details of your venue."
         },
         "myListings": {
             "title": "Your businesses",
             "body": "Review the status of each of your businesses and edit them."
         },
         "venueQr": {
-            "title": "Your menu QR code",
-            "body": "Generate your menu's QR code and check how many times your customers scanned it."
+            "title": "Your food or drinks QR code",
+            "body": "Generate the QR code for your food or drinks and check how many times your customers scanned it."
         },
         "listingViews": {
             "title": "Views on your listing",
@@ -166,13 +169,13 @@
                 },
                 "experience": {
                     "title": "Experiences",
-                    "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "description": "Do you offer tours, activities, or experiences for travelers? Create your account, add your experience's details and publish it from your dashboard.",
                     "cta": "List your experience"
                 },
                 "venue": {
-                    "title": "Dining",
-                    "description": "Add your food business to Hospeda — restaurant, grill, bakery, café or food truck. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
-                    "cta": "List your food business"
+                    "title": "Food & nightlife",
+                    "description": "Add your venue to Hospeda, for food or nightlife. Create your account, add your venue's details and publish it from your dashboard.",
+                    "cta": "List your venue"
                 }
             }
         },
@@ -1530,7 +1533,7 @@
         }
     },
     "description": "Gestioná tu cuenta en Hospeda",
-    "menu": "Menú de cuenta",
+    "menu": "Account menu",
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Change password",

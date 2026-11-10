@@ -1,9 +1,48 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
+import { VENUE_BUSINESS_LINE_VALUES } from '../../../src/catalog/business-lines.js';
 import {
     VenueFiltersSchema,
+    VenuePublicFilterOptionsQuerySchema,
+    VenuePublicFilterOptionsSchema,
     VenueSearchSchema
 } from '../../../src/entities/venue/venue.query.schema.js';
+import { VenueTypeEnum } from '../../../src/enums/venue-type.enum.js';
+
+describe('VenuePublicFilterOptions schemas', () => {
+    it('accepts an empty query and every venue business line', () => {
+        expect(VenuePublicFilterOptionsQuerySchema.parse({})).toEqual({});
+        for (const businessLine of VENUE_BUSINESS_LINE_VALUES) {
+            expect(VenuePublicFilterOptionsQuerySchema.parse({ businessLine }).businessLine).toBe(
+                businessLine
+            );
+        }
+    });
+
+    it('rejects unknown values and extra query keys', () => {
+        expect(
+            VenuePublicFilterOptionsQuerySchema.safeParse({ businessLine: 'unknown' }).success
+        ).toBe(false);
+        expect(VenuePublicFilterOptionsQuerySchema.safeParse({ extra: true }).success).toBe(false);
+    });
+
+    it('validates response enum values and relation UUIDs', () => {
+        expect(
+            VenuePublicFilterOptionsSchema.safeParse({
+                types: ['INVALID'],
+                amenityIds: [],
+                featureIds: []
+            }).success
+        ).toBe(false);
+        expect(
+            VenuePublicFilterOptionsSchema.safeParse({
+                types: [VenueTypeEnum.BAR],
+                amenityIds: ['bad'],
+                featureIds: []
+            }).success
+        ).toBe(false);
+    });
+});
 
 describe('VenueSearchSchema', () => {
     it('should validate an empty search (all defaults)', () => {

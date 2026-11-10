@@ -1,0 +1,354 @@
+{
+    "_note": "Public listing snapshots from hospeda.com.ar (public API only). Only the fields buildMarkdownContext reads are kept; contact data (phones, emails, WhatsApp, URLs, owner) is never stored. The public payload carries no policies or iaData.",
+    "entities": {
+        "real-isla": {
+            "kind": "accommodation",
+            "source": "https://api.hospeda.com.ar/api/v1/public/accommodations/slug/apartment-isla-de-los-pajaros (public detail, fetched 2026-11-09; contact fields dropped)",
+            "accommodation": {
+                "name": "Isla de los Pájaros",
+                "summary": "Isla de los Pájaros ofrece departamentos equipados para 2 y 4 personas en Concepción del Uruguay. Disfrutá de una estadía cómoda con Wi-Fi, cocina, aire acondicionado, calefacción, jardín y quincho con parrilla, en un ambiente tranquilo y familiar.",
+                "description": "**Isla de los Pájaros** te espera en Concepción del Uruguay, Entre Ríos, con departamentos de alquiler temporario pensados para quienes buscan comodidad, independencia y un ambiente tranquilo y familiar durante su estadía.\n\nNuestro alojamiento es una excelente alternativa para parejas, familias y pequeños grupos que desean conocer la ciudad, disfrutar de sus atractivos turísticos o simplemente descansar unos días.\n\n**Departamentos cómodos y equipados**\n\nContamos con departamentos para 2 y 4 personas, con una capacidad total de hasta 12 huéspedes en todo el complejo.\n\nCada departamento dispone de cocina y comedor, heladera, televisión, conexión Wi-Fi gratuita, calefacción y ropa de cama y toallas incluidas. Algunos ambientes también cuentan con aire acondicionado.\n\nLa posibilidad de preparar tus propias comidas y disfrutar de espacios independientes hace que Isla de los Pájaros sea una opción práctica tanto para escapadas de fin de semana como para estadías más prolongadas.\n\n**Espacios para disfrutar al aire libre**\n\nUno de los encantos de Isla de los Pájaros son sus espacios exteriores. El alojamiento cuenta con un jardín rodeado de vegetación, patio con mesas y sillas y un quincho de uso compartido con parrilla, ideal para preparar un asado y compartir buenos momentos.\n\n**Descubrí Concepción del Uruguay**\n\nDesde nuestro alojamiento podés salir a conocer los atractivos de la ciudad: recorrer su casco histórico, visitar la Plaza General Francisco Ramírez, pasear por la costanera del río Uruguay, disfrutar de las playas de la zona y descubrir la gastronomía local.\n\n**Una estadía a tu medida**\n\nAceptamos reservas desde una sola noche, sin estadía mínima. El ingreso es a partir de las 11:00 y la salida hasta las 10:00.\n\nEn Isla de los Pájaros te ofrecemos un ambiente acogedor, atención personalizada y las comodidades necesarias para que disfrutes de tu visita a Concepción del Uruguay.\n\n**¡Te esperamos para que te sientas como en casa!**",
+                "type": "APARTMENT",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 12,
+                    "bedrooms": 4,
+                    "bathrooms": 4
+                },
+                "price": null
+            },
+            "faqs": [
+                {
+                    "question": "¿Dónde está ubicado Isla de los Pájaros?",
+                    "answer": "El alojamiento se encuentra en el barrio Puerto Viejo de Concepción del Uruguay, Entre Ríos. Está ubicado en una zona residencial tranquila, con comercios y servicios cercanos, a solo unas cuadras de la plaza principal."
+                },
+                {
+                    "question": "¿Hay Wi-Fi disponible?",
+                    "answer": "Sí, ofrecemos conexión Wi-Fi gratuita en todos los departamentos y espacios del alojamiento."
+                },
+                {
+                    "question": "¿Cuáles son los horarios de ingreso y salida?",
+                    "answer": "El horario de check-in es a partir de las 11:00 y el check-out debe realizarse hasta las 10:00."
+                },
+                {
+                    "question": "¿Cuántas personas pueden alojarse?",
+                    "answer": "Contamos con departamentos para 2 y 4 personas, ideales para parejas, familias o grupos pequeños. La capacidad total del complejo es de 12 huéspedes, distribuidos entre los distintos departamentos."
+                },
+                {
+                    "question": "¿Incluyen ropa de cama y toallas?",
+                    "answer": "Sí, proporcionamos ropa de cama y toallas al ingresar. Tené en cuenta que no se realizan recambios durante la estadía."
+                },
+                {
+                    "question": "¿Se aceptan mascotas?",
+                    "answer": "No, por el momento no se permite el ingreso de mascotas al alojamiento."
+                },
+                {
+                    "question": "¿Los departamentos tienen aire acondicionado y calefacción?",
+                    "answer": "Sí, contamos con climatización para que puedas disfrutar de una estadía cómoda tanto en verano como en invierno. Consultanos por el equipamiento específico de cada departamento."
+                },
+                {
+                    "question": "¿Qué medios de pago aceptan?",
+                    "answer": "Aceptamos pagos mediante transferencia bancaria o en efectivo. Podés consultar directamente por WhatsApp para coordinar tu reserva."
+                },
+                {
+                    "question": "¿El alojamiento tiene parrilla?",
+                    "answer": "Sí, Isla de los Pájaros dispone de un quincho con parrilla, mesas y bancos de madera, ideal para compartir comidas durante la estadía."
+                },
+                {
+                    "question": "¿Hay una estadía mínima?",
+                    "answer": "No exigimos una estadía mínima de varias noches. Podés reservar desde una sola noche, según disponibilidad."
+                },
+                {
+                    "question": "¿El alojamiento cuenta con jardín o patio?",
+                    "answer": "Sí, dispone de espacios exteriores con vegetación, patio y sectores con mesas y sillas para disfrutar del aire libre."
+                },
+                {
+                    "question": "¿Los departamentos tienen televisión?",
+                    "answer": "Sí, todos nuestros departamentos cuentan con televisión para disfrutar durante tu estadía."
+                },
+                {
+                    "question": "¿Se permiten visitas durante la estadía?",
+                    "answer": "No se permite el ingreso de visitantes que no estén registrados como huéspedes del alojamiento."
+                },
+                {
+                    "question": "¿Los departamentos tienen cocina?",
+                    "answer": "Sí, los departamentos cuentan con cocina y comedor, con equipamiento para preparar y disfrutar tus comidas durante la estadía."
+                },
+                {
+                    "question": "¿El alojamiento dispone de estacionamiento?",
+                    "answer": "No contamos con estacionamiento propio."
+                }
+            ],
+            "amenities": [
+                "outdoor_furniture",
+                "full_kitchen",
+                "gas_electric_stove",
+                "kitchen_utensils",
+                "bed_linens",
+                "towels",
+                "soap_dispensers",
+                "patio",
+                "bbq_grill",
+                "water_heater",
+                "high_chair",
+                "outdoor_lighting",
+                "air_conditioning",
+                "refrigerator_freezer",
+                "fan",
+                "cable_tv",
+                "wifi",
+                "quincho",
+                "heating"
+            ],
+            "features": [
+                "modern_style",
+                "central_area",
+                "paved_access",
+                "family_suitable",
+                "couple_suitable",
+                "ideal_for_seniors"
+            ]
+        },
+        "real-casa": {
+            "kind": "accommodation",
+            "source": "https://api.hospeda.com.ar/api/v1/public/accommodations/slug/house-hermosa-casa-quinta-con-pileta-y-extenso-par (public detail, fetched 2026-11-09; contact fields dropped)",
+            "accommodation": {
+                "name": "Hermosa Casa Quinta con pileta y extenso parque",
+                "summary": "Cheroga te ofrece una casa rural completa pensada para disfrutar de tranquilidad, privacidad y espacios naturales. Es el lugar ideal para desconectar, celebrar y vivir unos días increíbles y realmente memorables.",
+                "description": "Cheroga es el lugar ideal para encontrar tranquilidad, privacidad y naturaleza para vivir unos días increíbles. En un entorno verde y alegre, la quinta está ubicada a solo unos minutos de Concepción del Uruguay, en la provincia de Entre Ríos.\n\nAquí vas a encontrar una casa de campo moderna y elegante, pensada para que disfrutes la calma que solo el campo puede brindar. Con grandes espacios rodeados de naturaleza, Cheroga es un escenario ideal para celebrar, descansar y compartir momentos que se vuelven memorables.\n\nYa sea para pasar un día entre amigos con el estilo argentino, festejar un evento importante o simplemente disfrutar del relax que siempre quisiste, esta quinta acompaña cada plan con un ambiente acogedor y relajado, fuera de lo convencional.\n\nLa propiedad cuenta con un extenso parque, una hermosa pileta, living de jardín y distintos rincones para caminar, relajarte o disfrutar de un bello atardecer (o amanecer, según cómo vaya la noche). La casa es amplia, muy luminosa gracias a sus ventanales, y organiza el día en un espacio abierto con cocina y living comedor, que resulta especialmente cómodo y práctico.\n\nCheroga está recomendado para quienes buscan un ambiente natural, más informal y relajado, con un presupuesto accesible.",
+                "type": "COUNTRY_HOUSE",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 11,
+                    "bedrooms": 3,
+                    "bathrooms": 3,
+                    "beds": 8
+                },
+                "price": {
+                    "price": 195000,
+                    "currency": "ARS"
+                }
+            },
+            "faqs": [
+                {
+                    "question": "¿A qué hora es el check-in y el check-out?",
+                    "answer": "El check-in es a partir de las 14:00 y el check-out hasta las 10:00."
+                },
+                {
+                    "question": "¿Se admiten mascotas?",
+                    "answer": "Sí, se admiten mascotas bien comportadas avisando con anticipación."
+                },
+                {
+                    "question": "¿La pileta está climatizada?",
+                    "answer": "La pileta es exterior y no está climatizada; es ideal para la temporada de verano."
+                },
+                {
+                    "question": "¿Hay estacionamiento?",
+                    "answer": "Sí, hay estacionamiento gratuito dentro del predio para varios vehículos."
+                },
+                {
+                    "question": "¿Cuál es la capacidad máxima?",
+                    "answer": "La casa tiene capacidad para hasta 11 huéspedes."
+                },
+                {
+                    "question": "¿Hay WiFi?",
+                    "answer": "Sí, ofrecemos WiFi gratuito de alta velocidad en toda la casa."
+                }
+            ],
+            "amenities": [
+                "heating",
+                "full_kitchen",
+                "refrigerator_freezer",
+                "microwave",
+                "coffee_maker",
+                "electric_kettle",
+                "kitchen_utensils",
+                "bed_linens",
+                "bbq_grill",
+                "pool",
+                "fan",
+                "wood_stove",
+                "private_garden",
+                "washer",
+                "hair_dryer",
+                "smart_tv",
+                "cable_tv",
+                "patio",
+                "outdoor_furniture",
+                "quincho",
+                "solarium",
+                "safe",
+                "fire_extinguisher",
+                "board_games",
+                "children_games",
+                "playground",
+                "crib",
+                "gas_electric_stove",
+                "soap_dispensers",
+                "covered_parking",
+                "tv_per_room",
+                "blackout_curtains",
+                "outdoor_lighting",
+                "outdoor_kitchen",
+                "pet_friendly",
+                "wifi",
+                "air_conditioning",
+                "wheelchair_accessible",
+                "smoke_free",
+                "accepts_cards",
+                "parking",
+                "security_parking",
+                "beach_chairs_umbrellas",
+                "relaxation_area"
+            ],
+            "features": [
+                "panoramic_view_extended",
+                "modern_style",
+                "natural_environment",
+                "rural_area",
+                "silent_environment",
+                "gravel_access",
+                "minimalist_style",
+                "family_suitable",
+                "couple_suitable",
+                "pet_suitable",
+                "ideal_for_groups",
+                "ideal_for_seniors"
+            ]
+        },
+        "real-ruca": {
+            "kind": "accommodation",
+            "source": "https://api.hospeda.com.ar/api/v1/public/accommodations/slug/cabin-ruca-lihuen-cabanas (public detail, fetched 2026-11-09; contact fields dropped)",
+            "accommodation": {
+                "name": "Ruca Lihuén Cabañas",
+                "summary": "Ruca Lihuén es un complejo de cabañas ubicado en Pueblo Escondido, a pocos kilómetros de Concepción del Uruguay. Rodeado de naturaleza y tranquilidad, ofrece cabañas cómodas y equipadas, además de quincho con parrilla para disfrutar durante la estadía.",
+                "description": "En Ruca Lihuén te invitamos a disfrutar de la tranquilidad y la naturaleza de Pueblo Escondido, a pocos kilómetros de Concepción del Uruguay. Nuestro complejo cuenta con seis cabañas de tres ambientes, cómodas y completamente equipadas para que puedas descansar y disfrutar de tu estadía.\n\nDisponemos de dos cabañas con capacidad para hasta 3 personas, dos para hasta 4 personas y dos para hasta 6 personas. Todas cuentan con camas matrimoniales e individuales tipo sommier, cocina completa, aire acondicionado frío/calor en el comedor, Wi-Fi disponible en todo el predio y televisión preparada para utilizar plataformas como YouTube, Netflix y Prime Video con la cuenta de cada huésped.\n\nTambién brindamos servicio de ropa blanca. Cada cabaña dispone de reposeras para utilizar dentro del complejo, mesa y sillas de madera en el exterior y cochera semiabierta.\n\nEn los espacios compartidos vas a encontrar una pileta de 4 × 9 metros, con una profundidad uniforme de 1,50 metros, y dos quinchos con parrillas y baño en sus instalaciones.\n\nRuca Lihuén es un lugar pensado para descansar en pareja, con amigos o en familia, rodeado de verde y con todas las comodidades necesarias para disfrutar de una escapada cerca de Concepción del Uruguay.",
+                "type": "CABIN",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 26,
+                    "bedrooms": 10,
+                    "bathrooms": 6
+                },
+                "price": null
+            },
+            "faqs": [],
+            "amenities": [
+                "full_kitchen",
+                "bed_linens",
+                "bbq_grill",
+                "pool",
+                "smart_tv",
+                "patio",
+                "outdoor_furniture",
+                "quincho",
+                "wifi",
+                "air_conditioning",
+                "parking",
+                "beach_chairs_umbrellas"
+            ],
+            "features": [
+                "natural_environment",
+                "rural_area",
+                "silent_environment",
+                "gravel_access",
+                "rustic_style",
+                "family_suitable",
+                "couple_suitable",
+                "ideal_for_groups"
+            ]
+        },
+        "real-balcones": {
+            "kind": "accommodation",
+            "source": "https://api.hospeda.com.ar/api/v1/public/accommodations/slug/apartment-balcones-al-rio (public detail, fetched 2026-11-09; contact fields dropped)",
+            "accommodation": {
+                "name": "Balcones al rio",
+                "summary": "Balcones al Río ofrece un espacio de hospedaje y relajación a la vera del río en un entorno náutico, privado y muy luminoso. Está equipado con parrilla propia para disfrutar al aire libre y cuenta con garage cubierto para mayor comodidad y seguridad durante tu estadía.",
+                "description": "Balcones al rio, que se encuentra en Concepción del Uruguay, tiene aire acondicionado y ofrece alojamiento con balcón. Hay un restaurante en el propio alojamiento, además de parking privado gratis y wifi gratis.\n\nEste apartamento cuenta con 1 dormitorio, cocina con nevera y horno, TV de pantalla plana, zona de estar y 1 baño con bidet. Hay toallas y ropa de cama en el apartamento.\n\nEl apartamento ofrece barbacoa. Hay servicio de alquiler de bicicletas y servicio de alquiler de coches en Balcones al rio.",
+                "type": "APARTMENT",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 4,
+                    "bedrooms": 1,
+                    "bathrooms": 1
+                },
+                "price": {
+                    "price": 80000,
+                    "currency": "ARS"
+                }
+            },
+            "faqs": [],
+            "amenities": [
+                "full_kitchen",
+                "refrigerator_freezer",
+                "microwave",
+                "electric_kettle",
+                "bed_linens",
+                "towels",
+                "bbq_grill",
+                "fan",
+                "balcony",
+                "washer",
+                "cable_tv",
+                "outdoor_furniture",
+                "pet_friendly",
+                "restaurant",
+                "air_conditioning",
+                "parking"
+            ],
+            "features": ["river_view", "river_front", "natural_environment", "paved_access"]
+        },
+        "real-monogris": {
+            "kind": "accommodation",
+            "source": "https://api.hospeda.com.ar/api/v1/public/accommodations/slug/apartment-el-mono-gris (public detail, fetched 2026-11-09; contact fields dropped)",
+            "accommodation": {
+                "name": "El mono gris",
+                "summary": "Disfrutá de una estadía moderna y céntrica, ideal para dos personas, con todas las comodidades necesarias para sentirte como en casa.",
+                "description": "¿Buscás un lugar súper limpio en Concepción del Uruguay? Te va a encantar la ubicación: está cerca de la terminal de ómnibus y de las calles principales. Ya sea por trabajo o turismo te esperamos con la mejor atención.",
+                "type": "APARTMENT",
+                "destinationName": "Concepción del Uruguay",
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "extraInfo": {
+                    "capacity": 2,
+                    "bedrooms": 1,
+                    "bathrooms": 1
+                },
+                "price": {
+                    "price": 42000,
+                    "currency": "ARS"
+                }
+            },
+            "faqs": [],
+            "amenities": [
+                "heating",
+                "refrigerator_freezer",
+                "microwave",
+                "electric_kettle",
+                "kitchen_utensils",
+                "bed_linens",
+                "towels",
+                "fan",
+                "hair_dryer",
+                "smart_tv",
+                "first_aid_kit",
+                "fire_extinguisher",
+                "gas_electric_stove",
+                "soap_dispensers",
+                "tv_per_room",
+                "blackout_curtains",
+                "wifi",
+                "air_conditioning"
+            ],
+            "features": ["modern_style", "central_area", "paved_access", "couple_suitable"]
+        }
+    }
+}

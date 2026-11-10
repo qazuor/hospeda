@@ -63,3 +63,22 @@ export const LISTING_FIELD_ID_SUFFIXES: Readonly<Record<string, string>> = {
  * so a fresh array per render would rebuild `validate` on every keystroke.
  */
 export const OPENING_HOURS_AGGREGATE_FIELDS: ReadonlyArray<string> = ['openingHours'] as const;
+
+/**
+ * Every Zod key whose nested issues must be rolled up to the bare key
+ * (`useZodForm`'s `aggregateFields`).
+ *
+ * `openingHours` keeps the reason above. The localized notes join it for
+ * the same mechanical reason: their controls are `entryNoteI18n.{es,en,pt}`,
+ * so a 201-character note arrives at `entryNoteI18n.<locale>` and neither the
+ * section's `<FieldError>` nor focus-on-error (both keyed by the bare field)
+ * would see it. The bare key is also where the `es` control derives its id —
+ * the focus target.
+ */
+export const LISTING_AGGREGATE_FIELDS: ReadonlyArray<string> = [
+    ...OPENING_HOURS_AGGREGATE_FIELDS,
+    'entryNoteI18n',
+    // HOS-2060: the dress-code note and the pets note live inside `policies`.
+    'policies.dressCodeNote',
+    'policies.pets.notes'
+] as const;

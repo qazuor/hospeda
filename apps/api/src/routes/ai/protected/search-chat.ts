@@ -138,13 +138,13 @@ const PERSISTENCE_TIMEOUT_MS = 1500;
 const BOOLEAN_SHORTCUT_AMENITY_SLUGS = {
     hasPool: 'pool',
     hasParking: 'parking',
-    hasWifi: 'wifi',
-    allowsPets: 'pet_friendly'
+    hasWifi: 'wifi'
 } as const;
 
 /**
  * Removes amenity slugs that are already covered by a `true` boolean shortcut
- * flag (`hasPool`, `hasParking`, `hasWifi`, `allowsPets`).
+ * flag (`hasPool`, `hasParking`, `hasWifi`). `allowsPets` has no amenity
+ * counterpart since HOS-2060: pets are a house rule (`policies.pets`).
  *
  * ## Why this is needed
  *
@@ -178,9 +178,6 @@ function dedupeAmenitySlugsAgainstBooleanShortcuts(
     }
     if (entities.hasWifi === true) {
         shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.hasWifi);
-    }
-    if (entities.allowsPets === true) {
-        shortcutSlugsToDrop.add(BOOLEAN_SHORTCUT_AMENITY_SLUGS.allowsPets);
     }
 
     if (shortcutSlugsToDrop.size === 0) {
@@ -723,7 +720,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // to DB-verified values in parallel.
         //
         // Amenity slugs are first deduped against any `true` boolean shortcut
-        // flag (hasPool/hasParking/hasWifi/allowsPets) — see
+        // flag (hasPool/hasParking/hasWifi) — see
         // `dedupeAmenitySlugsAgainstBooleanShortcuts` JSDoc for why: resolving
         // both would AND-filter on the exact amenity on top of the shortcut's
         // OR-based variant expansion, silently excluding valid matches.

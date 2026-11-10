@@ -382,6 +382,7 @@ export { PostIcon } from './icons/entities/PostIcon';
 export { PostSponsorIcon } from './icons/entities/PostSponsorIcon';
 export { PostSponsorshipIcon } from './icons/entities/PostSponsorshipIcon';
 export { PromotionsIcon } from './icons/entities/PromotionsIcon';
+export { VenueIcon } from './icons/entities/VenueIcon';
 // Export feature icons
 export { AccessibilityFriendlyIcon } from './icons/features/AccessibilityFriendlyIcon';
 export { AdultsOnlyIcon } from './icons/features/AdultsOnlyIcon';

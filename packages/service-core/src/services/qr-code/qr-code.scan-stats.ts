@@ -43,7 +43,8 @@ import { getLocalDayWindow } from '@repo/utils';
 /** Rolling window → number of calendar days it covers. */
 export const QR_SCAN_WINDOW_DAYS: Readonly<Record<QrCodeScanWindow, number>> = {
     '7d': 7,
-    '30d': 30
+    '30d': 30,
+    '90d': 90
 };
 
 /**
@@ -51,7 +52,7 @@ export const QR_SCAN_WINDOW_DAYS: Readonly<Record<QrCodeScanWindow, number>> = {
  * in `MARKET_TIMEZONE`: the UTC instant of local midnight of the oldest
  * included day, ready for a `WHERE scanned_at >= $windowStart` bound.
  *
- * @param windowDays - Number of calendar days in the window (7 or 30).
+ * @param windowDays - Number of calendar days in the window (7, 30 or 90).
  * @param now - Injectable for tests; defaults to the current instant.
  * @returns The UTC instant of local midnight of the oldest included day.
  */
@@ -72,7 +73,7 @@ export function computeScanWindowStart(windowDays: number, now: Date = new Date(
  *
  * @param rows - Sparse per-day counts, as returned by
  *   `QrCodeScanModel.getScanAggregateForCode`.
- * @param windowDays - Number of calendar days in the window (7 or 30).
+ * @param windowDays - Number of calendar days in the window (7, 30 or 90).
  * @param now - Injectable for tests; defaults to the current instant.
  * @returns Exactly `windowDays` items ordered by date ascending.
  */

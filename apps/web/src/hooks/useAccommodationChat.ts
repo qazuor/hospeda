@@ -16,6 +16,9 @@ import { streamChat } from '@/lib/api/ai-chat-stream';
 const PRICE_DISCLAIMER_MARKER = '---price-disclaimer---';
 const MAX_MESSAGES = 20;
 
+/** Error code set when the stream ends with no visible text (HOS-2095). */
+export const EMPTY_ANSWER_ERROR_CODE = 'EMPTY_ANSWER';
+
 export type ChatStatus = 'idle' | 'streaming' | 'error' | 'at_cap';
 
 export interface ChatMessage {
@@ -123,6 +126,21 @@ export function useAccommodationChat(
                             if (content.includes(PRICE_DISCLAIMER_MARKER)) {
                                 content = content.split(PRICE_DISCLAIMER_MARKER).join('').trimEnd();
                                 showPriceDisclaimer = true;
+                            }
+
+                            // HOS-2095: a model that spent its whole output budget
+                            // reasoning ends with ZERO text. Never append a blank
+                            // bubble; surface a retryable error instead.
+                            if (content.trim() === '') {
+                                return {
+                                    ...prev,
+                                    currentAssistantContent: '',
+                                    hasPartialContent: false,
+                                    conversationId: event.conversationId ?? prev.conversationId,
+                                    status: 'error',
+                                    errorMessage: null,
+                                    errorCode: EMPTY_ANSWER_ERROR_CODE
+                                };
                             }
 
                             const assistantMessage: ChatMessage = {

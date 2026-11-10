@@ -38,6 +38,10 @@ check answers 403 to someone the server never identified.
 | Signed in, email not verified, operation outside the closed list | **403** | `EMAIL_NOT_VERIFIED` |
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
+| Invalid venue business lines | **400** | `VALIDATION_ERROR` (`details.field = businessLines`, `details.reason` is `EMPTY`, `DUPLICATE`, `NOT_IN_VERTICAL`, `NOT_ALLOWED_FOR_TYPE`, `MAX_EXCEEDED` or `EXCLUDED_PAIR`) |
+| Create body touches a section the resulting business lines do not offer (`details.reason = SECTION_ABSENT`) | **400** | `VALIDATION_ERROR` |
+| Reserved listing slug (`details.field = slug`, `details.reason = RESERVED`) | **400** | `VALIDATION_ERROR` |
+| Review dimension vote for an absent bound section (`details.field = rating.<id>`) | **400** | `VALIDATION_ERROR` (`DIMENSION_NOT_APPLICABLE`) |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
@@ -62,13 +66,15 @@ For an unverified account, an operation on the list runs without the staff permi
 Listing access runs inside business rules (step 6 of the HTTP order), after
 request shape and resource existence or ownership. The route factory wraps the
 validated handler, so an invalid body receives 400 before listing access runs.
-The listing resolver then evaluates its own steps 3 through 7 in order.
+The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order. Step 4b returns 409 `ALREADY_EXISTS` with `details: { reason: 'SECTION_ABSENT', section }` to the owner when a requested section is absent for the listing's business lines; a foreign subject receives 404 `NOT_FOUND`. A create (CREATE) does not run step 4b — there is no stored listing to compare against — so the same inconsistency inside a create body is a 400 `VALIDATION_ERROR` from the service instead.
 
 | Listing decision | HTTP status | `error.code` | Public `error.details` |
 |---|---|---|---|
 | `NOT_FOUND` | 404 | `NOT_FOUND` | None; body matches the entity ownership 404 |
 | `FORBIDDEN` | 403 | `FORBIDDEN` | None |
 | `NO_COVERAGE` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey: null, reason: 'NO_COVERAGE' }` |
+| `SECTION_ABSENT` (owner) | 409 | `ALREADY_EXISTS` | `{ reason: 'SECTION_ABSENT', section }` |
+| `SECTION_ABSENT` (foreign subject) | 404 | `NOT_FOUND` | None; same hidden-resource response as a missing listing |
 | `NO_CAPABILITY` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey }` |
 | `NO_CAPABILITY` on `PUBLISH` without a live non-trial title | 403 | `FORBIDDEN` | Message: `subscription_required` (same response as PB1 when the trial cannot start) |
 | `NO_PLANS_AVAILABLE` | 403 | `FORBIDDEN` | Message: `no_plans_available` (la vertical no tiene ninguna versión de plan vigente y vendible; no es `subscription_required`: no hay nada que contratar) |
@@ -150,18 +156,35 @@ mounted their own hand-rolled `onError` instead of exercising
 `handleRouteError` (HOS-700).
 
 Two codes carry `details` the client is meant to read, so their `details` is
-now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off:
+now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off.
+There is also a narrow exception for `ALREADY_EXISTS` when
+`reason: 'SECTION_ABSENT'`: that response publishes its section details so the
+client can identify which section is unavailable. Other `ALREADY_EXISTS`
+errors keep the debug-only behavior.
+
+`VALIDATION_ERROR` gets the same narrow treatment for business-line
+rejections: the response publishes `details: { field: 'businessLines', reason }`
+so the owner form can show which rule rejected the selection. The gate accepts
+only the top-level `reason: 'BUSINESS_LINES_INVALID'` the service tags the error
+with — both owner handlers (create and patch) propagate `result.error.reason`
+when they rebuild the `ServiceError` — and never the shape of `details` itself,
+so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
+`details` debug-only. This is not an opening of the whole code.
 
 | `error.code` | `details` shape | Why the client needs it |
 |---|---|---|
 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
+| `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
+| `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
+| `VALIDATION_ERROR` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The admin create form needs the absent section identifier to explain which section the selected business lines do not offer. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
 comment) because widening it changes the public contract of every route that
-passes through `handleRouteError`. Every other code keeps the debug-only
-behavior. Adding a third code here is a contract change: update
+passes through `handleRouteError`. The `ALREADY_EXISTS` and `VALIDATION_ERROR`
+exceptions are gated by an exact, machine-readable reason; other errors with
+those codes keep debug-only details. Adding another public details case is a contract change: update
 `PUBLIC_DETAILS_ERROR_CODES` in `utils/response-helpers.ts` **and** this table
 in the same PR — do not fall back to "make it match the global handler" for
 every code.

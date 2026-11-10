@@ -16,6 +16,7 @@ import type { AiModelRate } from '@repo/schemas';
 import type { InsertAiUsageInput, SelectAiUsage } from '../storage/index.js';
 import { insertAiUsage } from '../storage/index.js';
 import { calculateCostMicroUsd } from './cost-calculator.js';
+import { type MissingModelRateHook, reportMissingModelRate } from './model-rate-resolver.js';
 
 // ---------------------------------------------------------------------------
 // Input type
@@ -30,6 +31,12 @@ export interface RecordAiUsageInput {
      * `null` for system-initiated calls or when actor resolution failed.
      */
     readonly userId: string | null;
+    /**
+     * UUID of the user who consumed the call when it is not the cost bearer
+     * (`userId`). The listing chat passes the tourist here so ONE row advances
+     * both the owner's and the tourist's quota (HOS-2095). Omit otherwise.
+     */
+    readonly consumerUserId?: string | null;
     /** AI feature that was invoked (e.g. `'text_improve'`, `'chat'`). */
     readonly feature: string;
     /** Provider that served or attempted the call (e.g. `'openai'`). */
@@ -56,6 +63,11 @@ export interface RecordAiUsageInput {
      * (decision A, owner-approved 2026-06-04).
      */
     readonly rateOverrides?: Readonly<Record<string, AiModelRate>>;
+    /**
+     * Optional hook fired once per process per model that has no cost rate
+     * (HOS-2096). Cost stays 0 either way; this only makes the gap visible.
+     */
+    readonly onMissingRate?: MissingModelRateHook;
     /** Optional Drizzle transaction client. Falls back to `getDb()` via storage. */
     readonly tx?: InsertAiUsageInput['tx'];
 }
@@ -96,6 +108,7 @@ export interface RecordAiUsageInput {
 export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAiUsage> {
     const {
         userId,
+        consumerUserId,
         feature,
         provider,
         model,
@@ -104,10 +117,11 @@ export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAi
         latencyMs,
         status,
         rateOverrides,
+        onMissingRate,
         tx
     } = input;
 
-    const { costMicroUsd } = calculateCostMicroUsd({
+    const { costMicroUsd, rated } = calculateCostMicroUsd({
         provider,
         model,
         promptTokens,
@@ -115,8 +129,11 @@ export async function recordAiUsage(input: RecordAiUsageInput): Promise<SelectAi
         rateOverrides
     });
 
+    if (!rated) reportMissingModelRate({ provider, model, onMissingRate });
+
     return insertAiUsage({
         userId,
+        consumerUserId: consumerUserId ?? null,
         feature,
         provider,
         model,

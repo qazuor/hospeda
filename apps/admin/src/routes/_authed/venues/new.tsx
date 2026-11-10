@@ -26,7 +26,7 @@ export const Route = createFileRoute('/_authed/venues/new')({
  * Create page for a new venue listing.
  *
  * The create form includes all listing identity fields, venue-specific
- * fields (type, priceRange, menuUrl), and operational fields.  An optional
+ * fields (type, businessLines, priceRange), and operational fields.  An optional
  * owner can be assigned on creation via the ownerId field in the identity
  * section (backed by OwnerSelect in the consolidated config).
  */

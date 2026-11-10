@@ -73,6 +73,8 @@ import {
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
+    VenueDressCodeEnum,
+    VenueEntryKindEnum,
     VenueTypeEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -327,6 +329,20 @@ export const NotificationRecipientSidePgEnum = pgEnum(
 export const VenueTypePgEnum = pgEnum('venue_type_enum', enumToTuple(VenueTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
+
+export const VenueEntryKindPgEnum = pgEnum(
+    'venue_entry_kind_enum',
+    enumToTuple(VenueEntryKindEnum)
+);
+
+/**
+ * LEGACY (HOS-2060): backs `venues.dress_code`, dropped with it in release N+1.
+ * No code may read or write it.
+ */
+export const VenueDressCodePgEnum = pgEnum(
+    'venue_dress_code_enum',
+    enumToTuple(VenueDressCodeEnum)
+);
 
 export const ExternalPlatformPgEnum = pgEnum(
     'external_platform_enum',

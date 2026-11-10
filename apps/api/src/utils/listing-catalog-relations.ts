@@ -41,6 +41,43 @@ import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
  * never given.
  */
 
+/** Junction + catalog columns read for one linked amenity (HOS-2061). */
+interface ListingAmenityRow {
+    readonly amenityId: string;
+    readonly slug: string;
+    readonly icon: string | null;
+    readonly isOptional: boolean;
+    readonly additionalCost: unknown;
+    /** pgEnum column; Drizzle types it as a plain string. */
+    readonly scope: string | null;
+    /** pgEnum column; Drizzle types it as a plain string. */
+    readonly availability: string | null;
+}
+
+/**
+ * Serializes one linked amenity exactly like the accommodation public detail
+ * (`accommodation/public/getBySlug.ts`), so the three verticals publish one
+ * shape: a structured price object is not published as `additionalCost`, and
+ * an undeclared `scope` / `availability` stays `null` (HOS-2061).
+ *
+ * @param row - Junction row joined with the catalog.
+ * @returns The public amenity item.
+ */
+function toListingAmenityPublic(row: ListingAmenityRow): ListingAmenityPublic {
+    return {
+        amenityId: row.amenityId,
+        slug: row.slug,
+        icon: row.icon ?? null,
+        isOptional: row.isOptional,
+        additionalCost:
+            row.additionalCost != null && typeof row.additionalCost === 'object'
+                ? null
+                : ((row.additionalCost as number | null | undefined) ?? null),
+        scope: (row.scope ?? null) as ListingAmenityPublic['scope'],
+        availability: (row.availability ?? null) as ListingAmenityPublic['availability']
+    };
+}
+
 /**
  * Amenities linked to one venue listing, joined with the shared catalog.
  *
@@ -56,18 +93,18 @@ export async function fetchVenueAmenities(
             amenityId: rVenueAmenity.amenityId,
             slug: amenities.slug,
             icon: amenities.icon,
-            displayWeight: amenities.displayWeight
+            displayWeight: amenities.displayWeight,
+            isOptional: rVenueAmenity.isOptional,
+            additionalCost: rVenueAmenity.additionalCost,
+            scope: rVenueAmenity.scope,
+            availability: rVenueAmenity.availability
         })
         .from(rVenueAmenity)
         .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
         .where(eq(rVenueAmenity.venueId, venueId))
         .orderBy(desc(amenities.displayWeight), asc(amenities.slug));
 
-    return rows.map((row) => ({
-        amenityId: row.amenityId,
-        slug: row.slug,
-        icon: row.icon ?? null
-    }));
+    return rows.map(toListingAmenityPublic);
 }
 
 /**
@@ -118,18 +155,18 @@ export async function fetchExperienceAmenities(
             amenityId: rExperienceAmenity.amenityId,
             slug: amenities.slug,
             icon: amenities.icon,
-            displayWeight: amenities.displayWeight
+            displayWeight: amenities.displayWeight,
+            isOptional: rExperienceAmenity.isOptional,
+            additionalCost: rExperienceAmenity.additionalCost,
+            scope: rExperienceAmenity.scope,
+            availability: rExperienceAmenity.availability
         })
         .from(rExperienceAmenity)
         .innerJoin(amenities, eq(rExperienceAmenity.amenityId, amenities.id))
         .where(eq(rExperienceAmenity.experienceId, experienceId))
         .orderBy(desc(amenities.displayWeight), asc(amenities.slug));
 
-    return rows.map((row) => ({
-        amenityId: row.amenityId,
-        slug: row.slug,
-        icon: row.icon ?? null
-    }));
+    return rows.map(toListingAmenityPublic);
 }
 
 /**

@@ -10,9 +10,18 @@
  * (the river view became a feature, the laundry service an amenity), so the
  * target names its family as well as its slug.
  *
- * The data-migration that retired the rows is
+ * The data-migrations that retired the rows are
  * `packages/seed/src/data-migrations/0147-hos-2059-catalog-curation.ts`
- * (`CATALOG_MERGES`, `FEATURE_SLUG_RENAMES`); this table is its public-URL
+ * (`CATALOG_MERGES`, `FEATURE_SLUG_RENAMES`) and, for the house rules that
+ * became `policies` with no survivor row,
+ * `0154-hos-2060-retire-policy-catalog-rows.ts` (HOS-2060), whose landings go
+ * to the accommodation search instead.
+ *
+ * `0155-hos-2061-venue-experience-catalog-curation.ts` (HOS-2061) adds NO
+ * entry on purpose: none of the four rows it retires ever applied to
+ * accommodation, so none had a landing here, and a 404 stays the honest
+ * answer. Every target must be a live accommodation-applicable row of the
+ * seed baseline (`catalog-retired-slugs.test.ts` enforces it). This table is their public-URL
  * counterpart, and `legacy-redirects.ts` resolves it as a 301.
  *
  * @module lib/catalog-retired-slugs
@@ -21,17 +30,24 @@
 /** The two catalog landing families, by their URL segment. */
 export type CatalogLandingFamily = 'comodidades' | 'caracteristicas';
 
-/** Where a retired slug's landing redirects to. */
-export interface CatalogLandingTarget {
-    readonly family: CatalogLandingFamily;
-    readonly slug: string;
-}
+/**
+ * Where a retired slug's landing redirects to: another catalog landing, or
+ * (HOS-2060) a listing search, for a row retired into `policies` with no
+ * catalog survivor. `search` is the query string, without the `?`.
+ */
+export type CatalogLandingTarget =
+    | { readonly family: CatalogLandingFamily; readonly slug: string }
+    | { readonly family: 'search'; readonly search: string };
 
 const amenityLanding = (slug: string): CatalogLandingTarget => ({ family: 'comodidades', slug });
 const featureLanding = (slug: string): CatalogLandingTarget => ({
     family: 'caracteristicas',
     slug
 });
+/** HOS-2060: the accommodation search, optionally filtered. */
+const searchLanding = (search = ''): CatalogLandingTarget => ({ family: 'search', search });
+/** HOS-2060: pets became a policy, and `allowsPets` filters on it. */
+const PETS_SEARCH = searchLanding('allowsPets=true');
 
 /** Retired AMENITY slugs (`/alojamientos/comodidades/{slug}/`) and their survivor. */
 export const RETIRED_AMENITY_SLUG_TARGETS: Readonly<Record<string, CatalogLandingTarget>> = {
@@ -40,7 +56,12 @@ export const RETIRED_AMENITY_SLUG_TARGETS: Readonly<Record<string, CatalogLandin
     panoramic_view: featureLanding('panoramic_view_extended'),
     shared_kitchen: amenityLanding('full_kitchen'),
     shared_patio: amenityLanding('patio'),
-    umbrella_gazebo: amenityLanding('gazebo')
+    umbrella_gazebo: amenityLanding('gazebo'),
+    // HOS-2060 (data-migration 0154): retired into `policies`, no survivor row.
+    pet_friendly: PETS_SEARCH,
+    smoke_free: searchLanding(),
+    accepts_cards: searchLanding(),
+    private_events: searchLanding()
 };
 
 /** Retired or renamed FEATURE slugs (`/alojamientos/caracteristicas/{slug}/`) and their survivor. */
@@ -58,7 +79,13 @@ export const RETIRED_FEATURE_SLUG_TARGETS: Readonly<Record<string, CatalogLandin
     private_grill: amenityLanding('bbq_grill'),
     covered_barbecue_area: amenityLanding('quincho'),
     transfer_service: amenityLanding('transfer_service'),
-    vehicle_rental: amenityLanding('vehicle_rental')
+    vehicle_rental: amenityLanding('vehicle_rental'),
+    // HOS-2060 (data-migration 0154): retired into `policies`, no survivor row.
+    pet_suitable: PETS_SEARCH,
+    pet_friendly_area: PETS_SEARCH,
+    autonomous_checkin: searchLanding(),
+    minimum_stay_required: searchLanding(),
+    smoking_area: searchLanding()
 };
 
 /**
@@ -88,5 +115,8 @@ export function resolveRetiredCatalogSlugPath({
         family === 'comodidades' ? RETIRED_AMENITY_SLUG_TARGETS : RETIRED_FEATURE_SLUG_TARGETS;
     const target = Object.hasOwn(table, slug) ? table[slug] : undefined;
     if (!target) return undefined;
+    if (target.family === 'search') {
+        return `/${locale}/alojamientos/${target.search ? `?${target.search}` : ''}`;
+    }
     return `/${locale}/alojamientos/${target.family}/${target.slug}/`;
 }

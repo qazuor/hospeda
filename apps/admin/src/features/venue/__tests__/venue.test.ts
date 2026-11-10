@@ -151,6 +151,8 @@ describe('venueListConfig', () => {
         for (const val of Object.values(VenueTypeEnum)) {
             expect(optionValues).toContain(val);
         }
+        expect(optionValues).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...optionValues].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('priceRange filter options cover all PriceRangeEnum values', () => {
@@ -174,11 +176,12 @@ describe('venueListConfig', () => {
 describe('createVenueConsolidatedConfig', () => {
     const config = createVenueConsolidatedConfig(t);
 
-    it('has exactly 3 sections in the correct order', () => {
-        expect(config.sections).toHaveLength(3);
+    it('has exactly 4 sections in the correct order', () => {
+        expect(config.sections).toHaveLength(4);
         expect(config.sections[0]?.id).toBe('listing-identity');
         expect(config.sections[1]?.id).toBe('venue-specific');
-        expect(config.sections[2]?.id).toBe('listing-operational');
+        expect(config.sections[2]?.id).toBe('listing-policies');
+        expect(config.sections[3]?.id).toBe('listing-operational');
     });
 
     it('listing-identity section contains required core text fields', () => {
@@ -191,11 +194,11 @@ describe('createVenueConsolidatedConfig', () => {
         expect(ids).toContain('ownerId');
     });
 
-    it('venue-specific section contains type, priceRange, and menuUrl fields', () => {
+    it('venue-specific section contains type and priceRange, and no menuUrl', () => {
         const ids = config.sections[1]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('type');
         expect(ids).toContain('priceRange');
-        expect(ids).toContain('menuUrl');
+        expect(ids).not.toContain('menuUrl');
     });
 
     it('type field is required and uses SELECT type', () => {
@@ -210,12 +213,6 @@ describe('createVenueConsolidatedConfig', () => {
         expect(priceRangeField?.type).toBe(FieldTypeEnum.SELECT);
     });
 
-    it('menuUrl field is optional and uses TEXT type', () => {
-        const menuUrlField = config.sections[1]?.fields.find((f) => f.id === 'menuUrl');
-        expect(menuUrlField?.required).toBe(false);
-        expect(menuUrlField?.type).toBe(FieldTypeEnum.TEXT);
-    });
-
     it('venue-specific section is visible in view, edit, and create modes', () => {
         const section = config.sections[1];
         expect(section?.modes).toContain('view');
@@ -224,7 +221,7 @@ describe('createVenueConsolidatedConfig', () => {
     });
 
     it('listing-operational section contains contact and social fields', () => {
-        const ids = config.sections[2]?.fields.map((f) => f.id) ?? [];
+        const ids = config.sections[3]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('contactInfo.phone');
         expect(ids).toContain('contactInfo.email');
         expect(ids).toContain('socialNetworks.instagram');

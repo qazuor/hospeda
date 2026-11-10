@@ -1,6 +1,6 @@
 ---
 /**
- * @file gastronomia/[slug]/carta.astro
+ * @file comer-y-salir/[slug]/carta.astro
  * @description Dedicated public page for one venue's menu (HOS-1044 §6.1,
  * G-1). A stable URL fit to be the destination of a printed QR — reuses
  * `VenueMenu.astro` verbatim (never reimplemented, per the spec's own
@@ -62,6 +62,7 @@ import type { VenueOpeningHoursEntry } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { decideCartaPage } from '@/lib/venue/carta-redirect';
 
 export const prerender = false;
 
@@ -87,16 +88,17 @@ const raw = result.data as unknown as Record<string, unknown>;
 
 const venue = toVenueDetailPageProps({ item: raw, locale });
 
-// --- The 404 that makes this a valid QR destination (AC-1) ---
-// A carta page with nothing to show is not "empty content" — it is a broken
-// printed sticker. Mirrors VenueMenu.astro's own render gate exactly so
-// the two can never disagree about whether there is a menu to show.
-const hasMenuContent =
-    (venue.menuSections?.length ?? 0) > 0 ||
-    Boolean(venue.menuFileUrl && venue.menuFileKind);
-
-if (!hasMenuContent) {
-    return new Response(null, { status: 404 });
+// Redirect reversible empty menu pages without allowing a browser or shared
+// cache to retain the decision after the owner changes plan or content.
+const listingPath = `comer-y-salir/${venue.slug}`;
+const listingUrl = buildUrl({ locale, path: listingPath });
+const cartaDecision = decideCartaPage({ listing: venue, listingUrl });
+if (cartaDecision.kind === 'redirect') {
+    const redirectHeaders = new Headers(Astro.response.headers);
+    for (const [name, value] of Object.entries(cartaDecision.headers)) {
+        redirectHeaders.set(name, value);
+    }
+    return new Response(null, { status: cartaDecision.status, headers: redirectHeaders });
 }
 
 // --- Edge cacheability (HOS-369 W2-4 pattern, same tags as the listing) ---
@@ -123,9 +125,6 @@ applyCacheHeaders({
 });
 
 // --- SEO ---
-const listingPath = `comer-y-salir/${venue.slug}`;
-const listingUrl = buildUrl({ locale, path: listingPath });
-
 const pageTitleWord = t('venue.detail.menuCarta.title', 'Carta');
 const seoTitle = `${pageTitleWord} - ${venue.name} | Hospeda`;
 const seoDescription = t('venue.detail.menuCarta.seoDescription', 'Carta de {{name}}', {
@@ -151,7 +150,7 @@ const hasOpeningHours =
         slot="breadcrumbs"
         locale={locale}
         items={[
-            { label: t('venue.listing.title', 'Gastronomía'), path: 'comer-y-salir/' },
+            { label: t('venue.listing.title'), path: 'comer-y-salir/' },
             { label: venue.name, path: listingPath },
             { label: pageTitleWord }
         ]}

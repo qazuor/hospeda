@@ -60,6 +60,23 @@ describe('AccommodationAmenitiesList', () => {
     });
 });
 
+describe('AccommodationAmenitiesList extra charge (HOS-2084)', () => {
+    it('shows the extra-charge badge only when isOptional is true', () => {
+        render(
+            <AccommodationAmenitiesList
+                amenities={[
+                    { id: 'x1', slug: 'pool', type: 'OUTDOORS', isOptional: true },
+                    { id: 'x2', slug: 'wifi', type: 'CONNECTIVITY', isOptional: false }
+                ]}
+            />
+        );
+        const badge = 'accommodations.amenityAttributes.extraCharge.badge';
+        expect(screen.getAllByText(badge)).toHaveLength(1);
+        expect(screen.getByText('Pileta').closest('li')?.textContent).toContain(badge);
+        expect(screen.getByText('WiFi').closest('li')?.textContent).not.toContain(badge);
+    });
+});
+
 describe('selectAccommodationAmenities', () => {
     it('returns the rows of the amenities relation', () => {
         expect(selectAccommodationAmenities({ amenities })).toEqual(amenities);

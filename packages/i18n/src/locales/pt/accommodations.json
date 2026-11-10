@@ -568,8 +568,7 @@
             "additionalCost": "(custo adicional)"
         },
         "features": {
-            "title": "Características",
-            "smokingAllowed": "Permitido fumar"
+            "title": "Características"
         },
         "faqsDetail": {
             "title": "Perguntas frequentes",
@@ -668,6 +667,10 @@
             "yearRound": "O ano todo",
             "seasonal": "Sazonal",
             "unset": "Não informado"
+        },
+        "extraCharge": {
+            "label": "Com custo extra",
+            "badge": "Com custo"
         }
     },
     "amenityNames": {
@@ -778,6 +781,9 @@
         "insurance_included": "Seguro incluído",
         "hotel_pickup": "Transfer do hotel",
         "lockers_available": "Armários disponíveis",
+        "dance_floor": "Pista de dança",
+        "vip_area": "Área VIP",
+        "cloakroom": "Guarda-volumes",
         "streaming_services": "Serviços de streaming",
         "outdoor_games": "Jogos ao ar livre",
         "hammocks": "Redes",
@@ -837,7 +843,13 @@
         "security_cameras": "Câmeras de segurança",
         "baby_bathtub": "Banheira de bebê",
         "desk": "Escrivaninha",
-        "ergonomic_chair": "Cadeira confortável de trabalho"
+        "ergonomic_chair": "Cadeira confortável de trabalho",
+        "outdoor_tables": "Mesas ao ar livre",
+        "baby_changing_table": "Trocador para bebês",
+        "boat_included": "Embarcação incluída",
+        "changing_rooms": "Vestiários",
+        "life_jacket_included": "Colete salva-vidas incluído",
+        "towels_provided": "Toalhas"
     },
     "featureNames": {
         "river_front": "Frente ao rio",
@@ -933,12 +945,19 @@
         "pregnancy_safe": "Seguro para gestantes",
         "private_available": "Disponível em formato privado",
         "senior_friendly": "Adequado para idosos",
+        "dj_sets": "DJ",
+        "karaoke": "Karaoke",
         "river_view": "Vista para o rio",
         "river_access": "Acesso ao rio",
         "lagoon_view": "Vista para a lagoa",
         "stream_view": "Vista para o riacho",
         "countryside_view": "Vista para o campo",
-        "pool_view": "Vista para a piscina"
+        "pool_view": "Vista para a piscina",
+        "happy_hour": "Happy hour",
+        "thermal_waters": "Águas termais",
+        "birdwatching": "Observação de aves",
+        "island_setting": "Nas ilhas do Delta ou do Paraná",
+        "parrilla_cuisine": "Parrilla"
     },
     "list": {
         "searchContext": {
@@ -1000,7 +1019,10 @@
         "expand": "Expandir painel",
         "collapse": "Recolher painel",
         "consumerLimitReached": "Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.",
-        "consumerLimitUpgradeCta": "Ver planos"
+        "consumerLimitUpgradeCta": "Ver planos",
+        "error": {
+            "EMPTY_ANSWER": "Não conseguimos gerar uma resposta. Tente novamente em instantes."
+        }
     },
     "byFeature": {
         "tagline": "Característica"

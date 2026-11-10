@@ -47,7 +47,10 @@ export interface ListingAccessPorts {
     readonly loadFacts: (args: {
         readonly vertical: ListingVertical;
         readonly listingId: string;
-    }) => Promise<{ readonly facts: ListingAccessFacts | null; readonly ownerId: string | null }>;
+    }) => Promise<{
+        readonly facts: (ListingAccessFacts & { readonly type?: string | null }) | null;
+        readonly ownerId: string | null;
+    }>;
 }
 
 let ports: ListingAccessPorts | undefined;
@@ -116,7 +119,18 @@ export function getListingAccessPorts(): ListingAccessPorts {
                 break;
         }
         const facts = readListingAccessFacts({ entity });
-        return { facts, ownerId: facts?.ownerId ?? null };
+        // The row was already selected with `select()`, so the vertical's `type`
+        // comes for free: no second query. `readListingAccessFacts` keeps its
+        // narrow contract; the persisted type rides alongside it only for the
+        // write-integrity log in `listing-access.ts`.
+        const type =
+            entity !== null &&
+            typeof entity === 'object' &&
+            'type' in entity &&
+            typeof entity.type === 'string'
+                ? entity.type
+                : null;
+        return { facts: facts ? { ...facts, type } : null, ownerId: facts?.ownerId ?? null };
     };
     ports = { billing, effectiveSet, preTrialDraftLimits, loadFacts };
     return ports;

@@ -76,15 +76,21 @@ export const protectedPutVenueMenuRoute = createProtectedRoute({
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a venue listing',
     description:
-        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_venue_menu (premium).',
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only. Writing menu content requires the manage_venue_menu entitlement granted by the professional venue plan and above; an empty sections array is treated as a delete and does not require that entitlement. A document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_venue_menu (premium).',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ({ body }) => [
-            'manage_venue_menu',
-            ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
-            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_venue_menu'] : [])
+        listingSection: ({ body }) => [
+            {
+                id: 'menu',
+                intent:
+                    Array.isArray(body?.sections) && body.sections.length === 0 ? 'delete' : 'write'
+            }
+        ],
+        sectionTraits: ({ body }) => [
+            ...(menuPayloadCarriesItemPhoto(body) ? ['itemPhotos'] : []),
+            ...(menuPayloadCarriesTranslations(body) ? ['translations'] : [])
         ]
     },
     tags: ['Venue', 'Venue Menu'],

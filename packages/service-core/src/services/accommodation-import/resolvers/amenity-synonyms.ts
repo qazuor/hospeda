@@ -30,7 +30,7 @@
  *   private_garden, washer, dryer, iron, hair_dryer, fan, kitchen_utensils,
  *   full_kitchen, refrigerator_freezer, microwave, coffee_maker, electric_kettle,
  *   gas_electric_stove, cable_tv, smart_tv, tv_per_room, bed_linens, towels,
- *   breakfast, pet_friendly, elevator, wheelchair_accessible, gym, spa,
+ *   breakfast, elevator, wheelchair_accessible, gym, spa,
  *   playground, crib, high_chair, bicycles, kayaks, first_aid_kit,
  *   smoke_detector, fire_extinguisher, safe, room_service, daily_cleaning,
  *   laundry_service, luggage_storage, bar, restaurant, coworking_space,
@@ -382,15 +382,8 @@ export const AMENITY_SYNONYMS: ReadonlyMap<string, string> = new Map<string, str
             ['breakfast included', 'breakfast'],
             ['cafe da manha', 'breakfast'], // Portuguese
 
-            // ----------------------------------------------------------------
-            // Pet friendly / mascotas
-            // ----------------------------------------------------------------
-            ['mascotas permitidas', 'pet_friendly'],
-            ['se admiten mascotas', 'pet_friendly'],
-            ['pets allowed', 'pet_friendly'],
-            ['pet friendly', 'pet_friendly'],
-            ['pet-friendly', 'pet_friendly'],
-            ['animais permitidos', 'pet_friendly'], // Portuguese
+            // Pets are a house rule (`policies.pets`) since HOS-2060, not an
+            // amenity, so an imported "pets allowed" maps to no catalog row.
 
             // ----------------------------------------------------------------
             // Accessibility

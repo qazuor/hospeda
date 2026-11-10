@@ -129,18 +129,21 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 20,
         "beds": 30,
         "bathrooms": 20,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior disponible en temporada",
             "Desayuno incluido",
             "Estacionamiento descubierto gratuito",
             "Ambiente tranquilo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Refugio Relajante Hotel - Piscina en Concordia",

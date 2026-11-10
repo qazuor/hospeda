@@ -100,6 +100,30 @@ export type ExperienceSearch = z.infer<typeof ExperienceSearchSchema>;
 export type ExperienceSearchInput = ExperienceSearch;
 
 /**
+ * Query for public experience filter options. It takes no parameters; the
+ * strict object rejects strays instead of silently ignoring them.
+ */
+export const ExperiencePublicFilterOptionsQuerySchema = z.object({}).strict();
+
+/** TypeScript type for {@link ExperiencePublicFilterOptionsQuerySchema}. */
+export type ExperiencePublicFilterOptionsQuery = z.infer<
+    typeof ExperiencePublicFilterOptionsQuerySchema
+>;
+
+/**
+ * Available public experience filters. Each list contains the catalog ids held
+ * by at least one non-deleted PUBLISHED experience. The response has no counts;
+ * consumers cross the ids with the catalog they display.
+ */
+export const ExperiencePublicFilterOptionsSchema = z.object({
+    amenityIds: z.array(z.string().uuid()),
+    featureIds: z.array(z.string().uuid())
+});
+
+/** TypeScript type for {@link ExperiencePublicFilterOptionsSchema}. */
+export type ExperiencePublicFilterOptions = z.infer<typeof ExperiencePublicFilterOptionsSchema>;
+
+/**
  * Standard experience search result schema.
  * Wraps an array of full experience schemas with pagination metadata.
  */

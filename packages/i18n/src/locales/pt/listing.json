@@ -99,7 +99,8 @@
                 "contactSocial": "Contato e redes",
                 "menu": "Cardápio",
                 "dailySpecials": "Menu do dia",
-                "venueEvents": "Eventos"
+                "venueEvents": "Eventos",
+                "nightInfo": "Info para sair"
             },
             "sections": {
                 "type": "Categoria",
@@ -146,12 +147,7 @@
                 "whatToBringHint": "Um item por linha. O que a pessoa que se inscreve precisa levar.",
                 "requirements": "Requisitos",
                 "requirementsPlaceholder": "Idade mínima 12 anos\nSaber nadar\nNão indicado para gestantes",
-                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar.",
-                "cancellationPolicy": "Política de cancelamento",
-                "cancellationPolicyPlaceholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo.",
-                "cancellationPolicyHint": "O que acontece se o passeio não sair: chuva, vento, rio baixo, ou se não houver o mínimo de pessoas.",
-                "acceptsPrivateGroups": "Faço preço especial para grupos privados",
-                "acceptsPrivateGroupsHint": "Se ativar, a ficha convida a escrever para você sobre grupos. Não publicamos nenhuma tabela de preços."
+                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar."
             },
             "contactField": {
                 "mobilePhone": "Telefone",
@@ -227,6 +223,9 @@
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",
             "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "errors": {
+                "sectionAbsent": "Essa seção não se aplica mais aos segmentos do seu estabelecimento."
+            },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "media": {
                 "featured": "Imagem principal",
@@ -273,11 +272,47 @@
                     "faqs_other": "{{count}} perguntas",
                     "selected_one": "{{count}} selecionado",
                     "selected_other": "{{count}} selecionados",
-                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}",
+                    "lockedWithData_one": "Bloqueada pelo seu plano · {{count}} item salvo (não é publicado)",
+                    "lockedWithData_other": "Bloqueada pelo seu plano · {{count}} itens salvos (não são publicados)",
+                    "lockedEmpty": "Bloqueada pelo seu plano"
+                },
+                "hidden": {
+                    "title": "Salvo e oculto pelos seus segmentos",
+                    "intro": "Estas seções não são exibidas porque seus segmentos atuais não as incluem. Os dados continuam salvos: se você adicionar o segmento novamente, eles voltam.",
+                    "count_one": "{{count}} salvo",
+                    "count_other": "{{count}} salvos"
                 }
             },
+            "lockedNotice": {
+                "plan_one": "Você tem {{count}} item salvo que não é publicado: seu plano não inclui {{section}}.",
+                "plan_other": "Você tem {{count}} itens salvos que não são publicados: seu plano não inclui {{section}}."
+            },
             "amenities": {
-                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
+                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente.",
+                "picker": {
+                    "searchLabel": "Buscar serviços e características",
+                    "searchPlaceholder": "Ex.: wifi, piscina, vegano",
+                    "featured": "Destaques",
+                    "showAll": "Ver todos",
+                    "noResults": "Não encontramos nada com \"{{query}}\"."
+                }
+            },
+            "nightInfo": {
+                "entryPriceFrom": "Preço a partir de (em pesos)",
+                "entryNoteLabel": "Nota (es/en/pt)",
+                "dressCodeNoteLabel": "Nota sobre o código de vestimenta (es/en/pt)",
+                "notInformed": "Não informado",
+                "priceUpdatedAt": "Atualizado {{month}}",
+                "localeEs": "Espanhol",
+                "localeEn": "Inglês",
+                "localePt": "Português"
+            },
+            "errorPage": {
+                "title": "Não foi possível carregar o editor",
+                "description": "Não foi possível ler o estado das seções da sua ficha. Tente novamente em alguns minutos.",
+                "retry": "Tentar novamente",
+                "back": "Voltar às minhas fichas"
             }
         },
         "checklist": {
@@ -288,6 +323,7 @@
                 "destinationId": "Cidade / Destino",
                 "ownerId": "Proprietário",
                 "type": "Categoria",
+                "businessLines": "Segmentos",
                 "featuredImage": "Foto principal",
                 "contactInfo": "Um dado de contato (telefone ou email)",
                 "openingHours": "Horários de funcionamento",
@@ -427,6 +463,89 @@
             "draftIsYours": "Publicá-lo é decisão sua.",
             "fixRequestOpen": "O pedido de correção continua aberto."
         },
-        "surplusTitle": "Anúncio despublicado pelo limite do seu plano"
+        "surplusTitle": "Anúncio despublicado pelo limite do seu plano",
+        "businessLinesChanged": {
+            "title": "O suporte alterou os rubros deste anúncio",
+            "added": "Adicionou: {{lines}}.",
+            "removed": "Removeu: {{lines}}.",
+            "shownSections": "Agora aparecem: {{sections}}.",
+            "hiddenSections": "Deixam de aparecer: {{sections}}.",
+            "nothingDeleted": "Nada foi apagado: o que você carregou em uma seção oculta volta se recuperar o rubro.",
+            "changedAt": "Mudança de {{date}}."
+        }
+    },
+    "policies": {
+        "panelTitle": "Políticas",
+        "panelHint": "O que você não preencher aparece como «não informado», nunca como um «não».",
+        "houseRulesTitle": "Regras e políticas",
+        "notInformed": "Não informado",
+        "yes": "Sim",
+        "no": "Não",
+        "locale": {
+            "es": "Espanhol",
+            "en": "Inglês",
+            "pt": "Português"
+        },
+        "paymentMethods": {
+            "label": "Formas de pagamento",
+            "cash": "Dinheiro",
+            "debit": "Cartão de débito",
+            "credit": "Cartão de crédito",
+            "transfer": "Transferência bancária",
+            "mercadopago": "Mercado Pago"
+        },
+        "pets": {
+            "label": "Animais de estimação",
+            "admissionLabel": "Aceita animais de estimação?",
+            "admission": {
+                "no": "Não aceita animais",
+                "yes": "Aceita animais",
+                "on_request": "Animais sob consulta"
+            },
+            "extraCost": "com custo extra",
+            "extraCostLabel": "Cobro uma taxa extra por animal",
+            "notesLabel": "Nota"
+        },
+        "smokingAllowed": {
+            "label": "Fumar",
+            "no": "Proibido fumar",
+            "yes": "Permitido fumar",
+            "outdoor_only": "Somente em áreas ao ar livre"
+        },
+        "eventsAllowed": {
+            "label": "Eventos",
+            "editorLabel": "É possível realizar eventos privados?",
+            "yes": "Eventos privados permitidos",
+            "no": "Eventos não permitidos"
+        },
+        "checkIn": {
+            "label": "Check-in"
+        },
+        "checkOut": {
+            "label": "Check-out"
+        },
+        "time": {
+            "from": "Das",
+            "to": "Até",
+            "range": "{{from}} às {{to}}",
+            "fromOnly": "A partir das {{from}}",
+            "toOnly": "Até as {{to}}"
+        },
+        "maxNights": {
+            "label": "Máximo de noites"
+        },
+        "reservations": {
+            "label": "Reservas",
+            "required": "Reserva obrigatória",
+            "recommended": "Reserva recomendada",
+            "not_accepted": "Não aceita reservas"
+        },
+        "privateGroups": {
+            "editorLabel": "Faço preço especial para grupos privados"
+        },
+        "cancellation": {
+            "label": "Política de cancelamento",
+            "placeholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo."
+        }
     }
 }

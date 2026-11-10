@@ -4,8 +4,9 @@
  * Dual-write (HOS-25): a fresh DB gets `features.category` and the moved
  * amenity `type` from the JSON fixtures; an already-seeded DB gets them from
  * 0146. This reads both off disk and fails if they drift, and checks the seed
- * JSON schemas still validate the enum values (and keep `category` optional so
- * fixtures added by other in-flight work keep validating).
+ * JSON schemas still validate the enum values. Since release N+1 made
+ * `features.category` NOT NULL, every feature fixture must declare one (a fresh
+ * DB runs migrate before seed, so a fixture without it would fail the insert).
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -20,6 +21,12 @@ import {
     CATALOG_MERGES,
     FEATURE_SLUG_RENAMES
 } from '../src/data-migrations/0147-hos-2059-catalog-curation.js';
+import { RETIRED_POLICY_FEATURE_SLUGS } from '../src/data-migrations/0154-hos-2060-retire-policy-catalog-rows.js';
+import {
+    CATALOG_MERGES as HOS_2061_MERGES,
+    RETIRED_POLICY_AMENITY_SLUGS as HOS_2061_RETIRED_AMENITIES,
+    RETIRED_POLICY_FEATURE_SLUGS as HOS_2061_RETIRED_FEATURES
+} from '../src/data-migrations/0155-hos-2061-venue-experience-catalog-curation.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, '../src');
@@ -42,15 +49,33 @@ const readSchema = (file: string) =>
     };
 
 /**
- * HOS-2059 (0147) later retires some of the 0146 rows and renames one. The
+ * HOS-2059 (0147) later retires some of the 0146 rows and renames one, and
+ * HOS-2060 (0154) retires the policy features. The
  * baseline reflects the END state, so a 0146 slug is looked up under its
  * current name, and a retired one is not looked up at all.
  */
-const RETIRED_FEATURES = new Set(
-    CATALOG_MERGES.filter((merge) => merge.source.kind === 'feature').map(
+const RETIRED_FEATURES = new Set([
+    ...CATALOG_MERGES.filter((merge) => merge.source.kind === 'feature').map(
         (merge) => merge.source.slug
-    )
-);
+    ),
+    // HOS-2060 (0154) retires the features that stood in for house rules.
+    ...RETIRED_POLICY_FEATURE_SLUGS,
+    // HOS-2061 (0155) merges `kid_friendly` and retires `private_available`.
+    ...HOS_2061_MERGES.filter((merge) => merge.source.kind === 'feature').map(
+        (merge) => merge.source.slug
+    ),
+    ...HOS_2061_RETIRED_FEATURES,
+    // HOS-2086 (0158) retires `family_friendly` into `family_suitable`.
+    'family_friendly'
+]);
+
+/** Amenities a later migration retired (HOS-2061 / 0155), so not looked up. */
+const RETIRED_AMENITIES = new Set([
+    ...HOS_2061_MERGES.filter((merge) => merge.source.kind === 'amenity').map(
+        (merge) => merge.source.slug
+    ),
+    ...HOS_2061_RETIRED_AMENITIES
+]);
 const RENAMED_FEATURES = new Map(FEATURE_SLUG_RENAMES.map((rename) => [rename.from, rename.to]));
 
 describe('feature fixtures carry a category (HOS-2058)', () => {
@@ -77,20 +102,19 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
     });
 
     it('every backfilled slug has a fixture that declares its category', () => {
-        // Scoped to the backfill on purpose: features added by other in-flight
-        // work (e.g. dj_sets/karaoke from HOS-1787) may land without a category
-        // while the column is nullable, and must not break this test.
+        // Scoped to the backfill; the test below covers every fixture.
         const bySlug = new Map(fixtures.map((fixture) => [fixture.slug, fixture]));
         for (const slug of liveCategoryBySlug.keys()) {
             expect(bySlug.get(slug)?.category, slug).toBeDefined();
         }
     });
 
-    it('every fixture that declares a category uses a FeatureCategoryEnum value', () => {
+    it('every fixture declares a FeatureCategoryEnum category (NOT NULL since N+1)', () => {
         const valid = new Set<string>(Object.values(FeatureCategoryEnum));
+        expect(fixtures.length).toBeGreaterThan(0);
         for (const fixture of fixtures) {
-            if (fixture.category === undefined) continue;
-            expect(valid.has(fixture.category), fixture.slug).toBe(true);
+            expect(fixture.category, fixture.slug).toBeDefined();
+            expect(valid.has(fixture.category ?? ''), fixture.slug).toBe(true);
         }
     });
 
@@ -101,17 +125,17 @@ describe('feature fixtures carry a category (HOS-2058)', () => {
         }
     });
 
-    it('feature.schema.json validates category against the enum and keeps it optional', () => {
+    it('feature.schema.json validates category against the enum and requires it (N+1)', () => {
         const schema = readSchema('feature.schema.json');
         expect(schema.properties.category?.enum).toEqual(Object.values(FeatureCategoryEnum));
-        expect(schema.required).not.toContain('category');
+        expect(schema.required).toContain('category');
     });
 });
 
 describe('amenity fixtures follow the HOS-2058 retype', () => {
     it('every moved amenity fixture carries its new type', () => {
         const bySlug = new Map(readDir('amenity').map((fixture) => [fixture.slug, fixture.type]));
-        for (const move of AMENITY_TYPE_MOVES) {
+        for (const move of AMENITY_TYPE_MOVES.filter((m) => !RETIRED_AMENITIES.has(m.slug))) {
             expect(bySlug.get(move.slug), move.slug).toBe(move.to);
         }
     });

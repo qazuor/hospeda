@@ -62,7 +62,7 @@ const EXPERIENCE_INFO = read('components/experience/ExperienceInfo.astro');
 const VENUE_PRESENTATION = read('pages/[lang]/presentacion/comer-y-salir/index.astro');
 const EXPERIENCE_PRESENTATION = read('pages/[lang]/presentacion/experiencias/index.astro');
 
-describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () => {
+describe('comer-y-salir/[slug].astro — mounts the catalog grids (HOS-1072)', () => {
     it('imports the shared grids instead of declaring per-vertical copies', () => {
         expect(VENUE_PRESENTATION).not.toContain('AmenitiesGrid');
         expect(VENUE_PAGE).toContain(
@@ -74,18 +74,28 @@ describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () 
     });
 
     it("binds AmenitiesGrid to the LISTING's own amenities", () => {
-        // HOS-1055: `amenitiesForGrid` is `venue.amenities` with
-        // `private_events` excluded ONLY when the dedicated events CTA renders
-        // in its place (see `apps/web/test/pages/venue-events-cta.test.ts`)
-        // — still the listing's own amenities, not a different source.
-        expect(VENUE_PAGE).toContain(
-            '<AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />'
+        // HOS-2060: `private_events` was retired, so there is nothing left to
+        // filter out — the grid gets the listing's own amenities as they are.
+        // HOS-1787 6.1: the grids are registry blocks now, not literal tags.
+        expect(VENUE_PAGE).toMatch(
+            /Component:\s*AmenitiesGrid,\s*props:\s*\{\s*amenities:\s*venue\.amenities,\s*lang:\s*locale\s*\}/
         );
     });
 
     it("binds FeaturesGrid to the listing's features, with no accommodation-only smoking flag", () => {
-        expect(VENUE_PAGE).toContain(
-            '<FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />'
+        expect(VENUE_PAGE).toMatch(
+            /Component:\s*FeaturesGrid,\s*props:\s*\{\s*features:\s*venue\.features,\s*lang:\s*locale\s*\}/
+        );
+        // HOS-2060: smoking is a house rule now, never a FeaturesGrid prop.
+        expect(VENUE_PAGE).not.toContain('smokingAllowed');
+    });
+
+    it('mounts the house rules after the grids (HOS-2060)', () => {
+        expect(VENUE_PAGE).toMatch(
+            /Component:\s*ListingHouseRules,\s*props:\s*\{\s*policies:\s*houseRulePolicies,\s*locale\s*\}/
+        );
+        expect(VENUE_PAGE.indexOf('Component: ListingHouseRules')).toBeGreaterThan(
+            VENUE_PAGE.indexOf('Component: AmenitiesGrid')
         );
     });
 });
@@ -96,7 +106,11 @@ describe('ExperienceInfo.astro — keeps the promise its own JSDoc made (HOS-107
             '<AmenitiesGrid amenities={experience.amenities} lang={locale} />'
         );
         expect(EXPERIENCE_INFO).toContain(
-            '<FeaturesGrid features={experience.features} smokingAllowed={null} lang={locale} />'
+            '<FeaturesGrid features={experience.features} lang={locale} />'
+        );
+        // HOS-2060: the experience's house rules render right after the grids.
+        expect(EXPERIENCE_INFO).toContain(
+            '<ListingHouseRules policies={experience.policies} locale={locale} />'
         );
     });
 

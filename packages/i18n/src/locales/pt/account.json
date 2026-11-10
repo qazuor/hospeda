@@ -84,15 +84,18 @@
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento."
         },
         "listingVenue": {
-            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento."
+            "body": "Edite as opções de comida ou bebida, os horários e os dados visíveis do seu estabelecimento."
+        },
+        "listingVenueNoMenu": {
+            "body": "Edite os horários e os dados visíveis do seu estabelecimento."
         },
         "myListings": {
             "title": "Seus negócios",
             "body": "Revise o status de cada um dos seus negócios e edite-os."
         },
         "venueQr": {
-            "title": "QR do seu cardápio",
-            "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
+            "title": "QR das suas opções de comida ou bebida",
+            "body": "Gere o código QR das suas opções de comida ou bebida e veja quantas vezes seus clientes o escanearam."
         },
         "listingViews": {
             "title": "Visitas à sua ficha",
@@ -166,12 +169,12 @@
                 },
                 "experience": {
                     "title": "Experiências",
-                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Crie sua conta, cadastre os dados da sua experiência e publique pelo seu painel.",
                     "cta": "Publique sua experiência"
                 },
                 "venue": {
                     "title": "Comer e sair",
-                    "description": "Some seu estabelecimento ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "description": "Some seu estabelecimento ao Hospeda: para comer ou sair. Crie sua conta, cadastre os dados do seu estabelecimento e publique pelo seu painel.",
                     "cta": "Publique seu estabelecimento"
                 }
             }
@@ -1530,7 +1533,7 @@
         }
     },
     "description": "Gestioná tu cuenta en Hospeda",
-    "menu": "Menú de cuenta",
+    "menu": "Menu da conta",
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Alterar senha",

@@ -175,18 +175,21 @@
     },
     "extraInfo": {
         "capacity": 20,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 4,
         "beds": 18,
         "bathrooms": 3,
-        "smokingAllowed": false,
         "extraInfo": [
             "Dormitorios compartidos y habitaciones privadas",
             "Cocina comunitaria equipada",
             "Patio con hamacas",
             "Cerca de la Terminal de Ómnibus"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Mirador Relajante Hostel en Concepción del Uruguay",

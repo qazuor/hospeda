@@ -46,8 +46,7 @@ const amenityId = String(amenity.id);
 const amenityName = t(`accommodations.amenityNames.${slug}`, slug);
 
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
-const result = await accommodationsApi.list({ page, pageSize: 9 });
-// TODO: Pass amenities=[amenityId] once the model JOIN is verified end-to-end
+const result = await accommodationsApi.list({ amenities: amenityId, page, pageSize: 9 });
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;

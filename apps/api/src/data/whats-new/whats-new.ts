@@ -152,6 +152,60 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4221
+    {
+        id: '2026-11-08-venue-experience-services-editor',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Un editor de servicios más claro para tu local o experiencia',
+            en: 'A clearer services editor for your venue or experience',
+            pt: 'Um editor de serviços mais claro para seu local ou experiência'
+        },
+        body: {
+            es: 'Los servicios destacados aparecen primero, hay un buscador y el resto se ordena por categorías. Además podés marcar cada servicio como **privado** o **compartido**, y como **todo el año** o **de temporada**, y se muestra en tu ficha pública. Sumamos nuevos servicios pensados para el Litoral y la cocina **Parrilla**.',
+            en: 'Featured services show up first, there is a search box, and the rest is grouped by category. You can also mark each service as **private** or **shared**, and as **year-round** or **seasonal**, and it shows on your public listing. We added new services for the Litoral region and the **Parrilla** cuisine.',
+            pt: 'Os serviços em destaque aparecem primeiro, há um buscador e o restante fica organizado por categorias. Você também pode marcar cada serviço como **privado** ou **compartilhado**, e como **o ano todo** ou **de temporada**, e isso aparece na sua página pública. Adicionamos novos serviços pensados para o Litoral e a culinária **Parrilla**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4217, #4228
+    {
+        id: '2026-11-08-listing-policies',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Normas y políticas en tu ficha',
+            en: 'House rules and policies on your listing',
+            pt: 'Normas e políticas na sua página'
+        },
+        body: {
+            es: 'Tu ficha ahora muestra un bloque de **Normas y políticas**: medios de pago, mascotas (sí, no o a consultar), fumar y eventos. En alojamientos suma check-in, check-out y cantidad de noches. Las editás desde el nuevo panel **Políticas** del editor, y el filtro de alojamientos que aceptan mascotas ahora usa esa información.',
+            en: 'Your listing now shows a **House rules and policies** block: payment methods, pets (yes, no or on request), smoking and events. For accommodations it also includes check-in, check-out and number of nights. You edit them from the new **Policies** panel in the editor, and the pet-friendly filter now uses that information.',
+            pt: 'Sua página agora mostra um bloco de **Normas e políticas**: formas de pagamento, animais de estimação (sim, não ou sob consulta), fumar e eventos. Nas acomodações inclui também check-in, check-out e quantidade de noites. Você as edita no novo painel **Políticas** do editor, e o filtro de acomodações que aceitam animais agora usa essa informação.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4200
+    {
+        id: '2026-11-07-publish-bars-and-boliches-in-comer-y-salir',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Publicá tu bar o tu boliche en Comer y salir',
+            en: 'List your bar or nightclub in Comer y salir',
+            pt: 'Publique seu bar ou sua balada no Comer y salir'
+        },
+        body: {
+            es: 'Al cargar tu local elegís sus rubros, **Gastronomía** y **Noche**, y te preseleccionamos los que corresponden a su tipo. Los locales de noche suman la sección **Info para salir** (entrada, edad mínima y código de vestimenta) y aparecen en la nueva colección **Noche** de Comer y salir. Si sacás un rubro, te avisamos qué deja de verse, y tus datos quedan guardados por si lo volvés a agregar.',
+            en: 'When you add your venue you choose its business lines, **Food** and **Nightlife**, and we preselect the ones that fit its type. Nightlife venues get the **Night out info** section (entry, minimum age and dress code) and appear in the new **Nightlife** collection in Comer y salir. If you remove a business line, we tell you what stops being shown, and your data stays saved in case you add it back.',
+            pt: 'Ao cadastrar seu local, você escolhe os ramos, **Gastronomia** e **Noite**, e pré-selecionamos os que combinam com o tipo. Os locais noturnos ganham a seção **Info para sair** (entrada, idade mínima e traje) e aparecem na nova coleção **Noite** do Comer y salir. Se você tirar um ramo, avisamos o que deixa de aparecer, e seus dados ficam salvos caso você o adicione de novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4161
     {
         id: '2026-11-06-amenity-details-and-feature-categories',

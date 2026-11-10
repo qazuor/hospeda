@@ -179,12 +179,9 @@
     },
     "extraInfo": {
         "capacity": 26,
-        "minNights": 1,
-        "maxNights": 14,
         "bedrooms": 5,
         "beds": 18,
         "bathrooms": 4,
-        "smokingAllowed": false,
         "extraInfo": [
             "Recepción abierta de 8:00 a 23:00",
             "Toque de queda en áreas comunes: 00:00 a 7:00",
@@ -192,6 +189,12 @@
             "Toallas disponibles para alquiler",
             "Guardaequipaje gratuito"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 14
     },
     "seo": {
         "title": "Hostel del Viajero - Alojamiento económico en Centro",

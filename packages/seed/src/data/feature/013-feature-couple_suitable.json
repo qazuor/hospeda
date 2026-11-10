@@ -8,7 +8,7 @@
         "en": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
         "pt": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales"
     },
-    "applicableVerticals": ["accommodation"],
+    "applicableVerticals": ["accommodation", "experience"],
     "icon": "CouplesFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

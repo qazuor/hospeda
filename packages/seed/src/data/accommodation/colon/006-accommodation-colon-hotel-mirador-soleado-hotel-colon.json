@@ -191,12 +191,9 @@
     },
     "extraInfo": {
         "capacity": 40,
-        "minNights": 1,
-        "maxNights": 30,
         "bedrooms": 20,
         "beds": 30,
         "bathrooms": 20,
-        "smokingAllowed": false,
         "extraInfo": [
             "Piscina exterior en la terraza",
             "Restaurante y bar en el hotel",
@@ -204,6 +201,12 @@
             "Recepción 24 horas",
             "Servicio de lavandería con cargo"
         ]
+    },
+    "policies": {
+        "paymentMethods": ["cash"],
+        "smokingAllowed": "no",
+        "minNights": 1,
+        "maxNights": 30
     },
     "seo": {
         "title": "Mirador Soleado Hotel - Vistas panorámicas en Colón, Entre",

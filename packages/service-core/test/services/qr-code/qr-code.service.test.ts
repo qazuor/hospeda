@@ -630,6 +630,26 @@ describe('QrCodeService', () => {
             );
         });
 
+        it('supports the 90d window added by the business-line removal notice', async () => {
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 0,
+                dailySeries: [],
+                byDeviceType: [],
+                byOs: [],
+                byBrowserLanguage: []
+            });
+
+            const result = await service.getScanStatsForCode({
+                actor,
+                qrCodeId: QR_ID,
+                window: '90d'
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.window).toBe('90d');
+            expect(result.data?.dailySeries).toHaveLength(90);
+        });
+
         it('passes the requested window straight through to the response', async () => {
             (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
                 total: 0,

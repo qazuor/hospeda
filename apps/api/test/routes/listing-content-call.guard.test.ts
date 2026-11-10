@@ -35,6 +35,7 @@ const WIRED: Readonly<Record<string, string>> = {
     'accommodation/admin/removeFaq.ts': 'accommodationService.removeFaq',
     'accommodation/admin/updateFaq.ts': 'accommodationService.updateFaq',
     'accommodation/admin/reorderFaqs.ts': 'accommodationService.reorderFaqs',
+    'venue/admin/changeBusinessLines.ts': 'venueService.update',
     'venue/admin/patch.ts': 'venueService.update',
     'venue/admin/update.ts': 'venueService.update',
     'experience/admin/patch.ts': 'experienceService.update',
@@ -59,6 +60,19 @@ const WIRED: Readonly<Record<string, string>> = {
     'experience/admin/setFeaturedMedia.ts': 'setFeaturedExperienceMedia',
     'experience/admin/updateFaq.ts': 'updateExperienceFaq',
     'experience/admin/updateMedia.ts': 'updateExperienceMedia'
+};
+
+/**
+ * The ONE admin EDIT route allowed to declare its administrative action.
+ *
+ * ACC_15 is the default action of a foreign EDIT and declaring it would send a
+ * host editing her own listing through step 3. The dedicated business-line
+ * route is the deliberate exception (owner decision 2026-11-05, HOS-1875): it
+ * exists for a third party, and step 3 refuses the owner on purpose. Any other
+ * route that declares one fails the per-route assertion below.
+ */
+const DECLARED_ACTION: Readonly<Record<string, string>> = {
+    'venue/admin/changeBusinessLines.ts': 'ACC_27'
 };
 
 /** Source without block and line comments, so prose never satisfies a pattern. */
@@ -110,9 +124,16 @@ describe('ACC:15 admin content routes open the scope around their content call o
             expect(scopes).toHaveLength(1);
             expect(wrapped).toBe(true);
             expect(contentCalls).toHaveLength(1);
-            // Action 15 is the default action of a foreign EDIT; declaring it would
-            // send a host editing her own listing through step 3 and refuse her.
-            expect(source).not.toMatch(/administrativeAction:/);
+            const declared = DECLARED_ACTION[route];
+            if (declared === undefined) {
+                // Action 15 is the default action of a foreign EDIT; declaring it
+                // would send a host editing her own listing through step 3 and
+                // refuse her.
+                expect(source).not.toMatch(/administrativeAction:/);
+            } else {
+                // The one deliberate exception declares exactly its own action.
+                expect(source).toMatch(new RegExp(`administrativeAction: '${declared}'`));
+            }
         });
     }
 });

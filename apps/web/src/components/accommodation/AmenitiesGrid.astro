@@ -71,6 +71,7 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
       const badges = resolveAmenityAttributeBadges({
         scope: amenity.scope,
         availability: amenity.availability,
+        extraCharge: amenity.isOptional,
         t
       });
       return (

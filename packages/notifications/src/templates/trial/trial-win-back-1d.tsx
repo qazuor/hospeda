@@ -3,7 +3,12 @@ import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/produc
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
-import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial-series-shared.js';
+import {
+    formatTrialGreeting,
+    resolveTrialPlanName,
+    trialSeriesStyles as styles,
+    type TrialSeriesEmailProps
+} from './trial-series-shared.js';
 
 /**
  * Send 5 of 9 — one day after expiry (HOS-1012 §4).
@@ -27,6 +32,7 @@ export function TrialWinBack1Day({
     productDomain,
     verticals
 }: TrialSeriesEmailProps) {
+    const plan = resolveTrialPlanName({ planName });
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
@@ -36,7 +42,7 @@ export function TrialWinBack1Day({
         >
             <Heading>Tu publicación te está esperando</Heading>
 
-            <Text style={styles.greeting}>Hola {recipientName},</Text>
+            <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (
                 <Text style={styles.paragraph}>
                     Tu prueba incluye {formatTrialVerticals({ verticals })}.
@@ -50,7 +56,10 @@ export function TrialWinBack1Day({
             </Text>
 
             <Text style={styles.paragraph}>
-                Volver es un solo paso. Elegís el plan {planName} —o el que te sirva mejor— y tu
+                Volver es un solo paso.{' '}
+                {plan
+                    ? `Elegís el plan ${plan} —o el que te sirva mejor— y tu`
+                    : 'Elegís el plan que te sirva mejor y tu'}
                 ficha vuelve a las búsquedas al instante.
             </Text>
 
