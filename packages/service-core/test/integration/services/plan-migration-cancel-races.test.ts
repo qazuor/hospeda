@@ -207,5 +207,58 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 rerun.rows.filter((row) => row.planMigrationSubscriptionId === scope.id)
             ).toHaveLength(0);
         });
+
+        it('skips the notice when cancellation takes the scope lock first', async () => {
+            const { seeded, migrationId } = await createAnnouncedExitCase();
+            recipients.push(seeded.user.id);
+            const [scope] = await db
+                .select()
+                .from(planMigrationSubscriptions)
+                .where(eq(planMigrationSubscriptions.planMigrationId, migrationId));
+            if (!scope) throw new Error('Migration row missing');
+            const due = new Date(scope.applicationDate.getTime() - 30 * 86_400_000);
+            let locked!: () => void;
+            const barrier = new Promise<void>((resolve) => {
+                locked = resolve;
+            });
+            // cancelPlanMigration calls the clock only after locking migration and ordered scope rows.
+            const cancellationClock = {
+                now: () => {
+                    locked();
+                    return due;
+                }
+            };
+            const cancellation = cancelPlanMigration(
+                { actor: seeded.actor, planMigrationId: migrationId, db },
+                { clock: cancellationClock }
+            );
+            await barrier;
+            const notice = db.transaction((tx) =>
+                applyPlanMigrationUpcomingNotice({
+                    tx,
+                    planMigrationSubscriptionId: scope.id,
+                    now: due
+                })
+            );
+            await cancellation;
+            expect(await notice).toEqual({
+                outcome: 'SKIPPED',
+                milestone: null,
+                recalculated: false
+            });
+            const [after] = await db
+                .select()
+                .from(planMigrationSubscriptions)
+                .where(eq(planMigrationSubscriptions.id, scope.id));
+            expect(after?.status).toBe('CANCELADA');
+            const mails = await db
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, seeded.user.id));
+            expect(mails.map((mail) => mail.template).sort()).toEqual([
+                'billing.plan-migration-announced',
+                'billing.plan-migration-cancelled'
+            ]);
+        });
     }
 );
