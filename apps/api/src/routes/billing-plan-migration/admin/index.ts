@@ -16,6 +16,7 @@ import type { Context } from 'hono';
 import { getRequestCorrelationId } from '../../../lib/request-context.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger.js';
+import { getClock } from '../../../utils/clock.js';
 import { createRouter } from '../../../utils/create-app.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
 import { adminCancelPlanMigrationRoute } from './cancel-route.js';
@@ -93,7 +94,8 @@ export const adminLaunchPlanMigrationRoute = createAdminRoute({
             const result = await launchPlanMigration({
                 actor,
                 input: body,
-                verticals: planMigrationVerticals()
+                verticals: planMigrationVerticals(),
+                clock: getClock().clock
             });
             auditLog({
                 auditEvent: AuditEventType.BILLING_MUTATION,
