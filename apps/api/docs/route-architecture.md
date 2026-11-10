@@ -964,6 +964,13 @@ this branch — only the free structured pass runs. See the module doc on
 | `POST` | `/api/v1/admin/addon-catalog/addons/{addonId}/versions` | `BILLING_PUBLISH_ADDON_VERSION` | Appends an immutable version; audits `ACC_20`. |
 | `POST` | `/api/v1/admin/billing-addon-products` | `BILLING_PUBLISH_ADDON_VERSION` | Creates the one saleable product; audits `ACC_20`. |
 
+## Subscription admin browse routes (HOS-2081)
+
+| Method | Path | `requiredPermissions` | Notes |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/billing-subscription` | `BILLING_SUBSCRIPTION_INSPECT` | Searches by owner email/name or subscription/user id; filters by vertical and status; `page`/`pageSize` only. Audits `BILLING_READ`. |
+| `GET` | `/api/v1/admin/billing-subscription/{subscriptionId}/overview` | `BILLING_SUBSCRIPTION_INSPECT` | One subscription detail: plan and version, next charge, open pause and current courtesy. Audits `BILLING_READ`. |
+
 ## Anti-Patterns
 
 **Never PUT/POST/DELETE in the public tier.**

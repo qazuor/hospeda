@@ -700,6 +700,19 @@ order: 401 unauthenticated, 403 without permission, 400 for a malformed
 read-only and lists only `REQUESTED` refund requests attached to payments of
 that subscription; requests for complements and one-time add-ons are excluded.
 
+## Administrative subscription browse reads (HOS-2081)
+
+`GET /api/v1/admin/billing-subscription` lists subscriptions for support and
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/overview` reads one
+detail. Both require `BILLING_SUBSCRIPTION_INSPECT` at the route factory and
+answer 401 unauthenticated, 403 without the permission, 400 for a malformed
+`subscriptionId` or query (an unknown key such as `limit`, a `pageSize` above
+100, or an unknown status), and 404 `NOT_FOUND` for an unknown subscription.
+The list rejects unknown query parameters and paginates with `page` and
+`pageSize` (never `limit`). Both reads are read-only, audit `BILLING_READ`, and
+search matches the owner's `users.email`/`displayName` or a subscription/user
+UUID; it never matches `declared_payer_email`.
+
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
