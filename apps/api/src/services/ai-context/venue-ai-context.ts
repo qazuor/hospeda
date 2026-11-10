@@ -50,6 +50,7 @@ import {
     truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
+import { buildVenueAgeWindowLines } from './venue-age-windows-context.js';
 import {
     AGE_SCOPE_AREA_SLOT,
     toVenueNightContext,
@@ -278,6 +279,19 @@ export function buildVenueMarkdownContext(
                     ? label
                     : label.split(AGE_SCOPE_AREA_SLOT).join(fenceOwnerValue(area));
             lines.push(`**Alcance de la edad mínima**: ${value}`);
+        }
+        // HOS-2098 root fix: the scope resolved against the opening hours into
+        // explicit windows, so the model never computes hours itself. Printed
+        // whenever there is an age; an unset scope reads as "every hour".
+        if (night.minAge !== null) {
+            lines.push(
+                ...buildVenueAgeWindowLines({
+                    minAge: night.minAge,
+                    scope: night.minAgeScope ?? { kind: 'all_day', from: null, area: null },
+                    openingHours: venue.openingHours,
+                    locale
+                }).lines
+            );
         }
         if (night.legalNotice) {
             lines.push(`**Aviso legal**: ${night.legalNotice}`);
