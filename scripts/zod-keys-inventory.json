@@ -1932,6 +1932,10 @@
         "zodError.venue.minAge.int",
         "zodError.venue.minAge.max",
         "zodError.venue.minAge.min",
+        "zodError.venue.minAgeScope.area.required",
+        "zodError.venue.minAgeScope.area.tooLong",
+        "zodError.venue.minAgeScope.from.invalid",
+        "zodError.venue.minAgeScope.kind.invalid",
         "zodError.venue.review.content.max",
         "zodError.venue.review.content.min",
         "zodError.venue.review.overallRating.max",
@@ -1944,7 +1948,7 @@
         "zodError.venueFeature.hostReWriteName.max",
         "zodError.venueFeature.hostReWriteName.min"
     ],
-    "total": 1943,
+    "total": 1947,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 5,
@@ -2048,7 +2052,7 @@
         "userIdentity": 11,
         "userProfile": 6,
         "validation": 10,
-        "venue": 68,
+        "venue": 72,
         "venueFeature": 4
     },
     "dynamicKeys": [
