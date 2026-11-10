@@ -1,5 +1,5 @@
 {
-  "id": "5c6ab831-a46a-403b-9a57-6d762f9ba80d",
+  "id": "10a12866-a844-45d4-8ffe-fa1bcf2a5a23",
   "prevId": "2351101b-0ad1-4499-9555-51e1fbccc329",
   "version": "7",
   "dialect": "postgresql",
@@ -2956,18 +2956,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "listing_entity_type": {
-          "name": "listing_entity_type",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "listing_entity_id": {
-          "name": "listing_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -2984,27 +2972,6 @@
               "expression": "created_at",
               "isExpression": false,
               "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "aiConversations_listing_idx": {
-          "name": "aiConversations_listing_idx",
-          "columns": [
-            {
-              "expression": "listing_entity_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "listing_entity_id",
-              "isExpression": false,
-              "asc": true,
               "nulls": "last"
             }
           ],
@@ -3191,12 +3158,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "answer_status": {
-          "name": "answer_status",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3257,27 +3218,6 @@
             },
             {
               "expression": "role",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "aiMessages_answerStatus_created_idx": {
-          "name": "aiMessages_answerStatus_created_idx",
-          "columns": [
-            {
-              "expression": "answer_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11198,19 +11138,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
-        },
-        "cancellation_policy": {
-          "name": "cancellation_policy",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "accepts_private_groups": {
-          "name": "accepts_private_groups",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "contact_info": {
           "name": "contact_info",
@@ -25274,25 +25201,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "min_age": {
-          "name": "min_age",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dress_code": {
-          "name": "dress_code",
-          "type": "venue_dress_code_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dress_code_note_i18n": {
-          "name": "dress_code_note_i18n",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "menu_url": {
           "name": "menu_url",
           "type": "text",
@@ -34225,16 +34133,6 @@
       "values": [
         "plus",
         "vip"
-      ]
-    },
-    "public.venue_dress_code_enum": {
-      "name": "venue_dress_code_enum",
-      "schema": "public",
-      "values": [
-        "casual",
-        "smart_casual",
-        "elegant",
-        "no_restrictions"
       ]
     },
     "public.venue_entry_kind_enum": {
