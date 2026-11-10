@@ -22,7 +22,7 @@
  */
 
 import { type Locale, trans } from '@repo/i18n';
-import { type I18nText, VenueMinAgeScopeSchema, type VenuePolicies } from '@repo/schemas';
+import { type I18nText, resolveVenueMinAgeScope, type VenuePolicies } from '@repo/schemas';
 
 /**
  * One `nightInfo` row, already read from the venues table. The minimum age and
@@ -117,9 +117,9 @@ function resolveNote(value: I18nText | null | undefined, locale: Locale): string
 /**
  * Resolves the minimum-age scope to the visitor's locale (HOS-2098).
  *
- * Mirrors the web's `readAgeScope` + `ageScopeLabel`: anything that is not a
- * valid `from_time` or `area` scope — absent, `all_day`, malformed, or an area
- * blank in every locale — reads as `all_day`.
+ * Resolution is `resolveVenueMinAgeScope` from `@repo/schemas`, the same
+ * function the web ficha calls, and the labels are the same i18n keys: the
+ * chat line can never be more permissive than the page.
  *
  * @param value - The stored `policies.minAgeScope`, of unknown shape.
  * @param locale - Visitor locale.
@@ -127,20 +127,23 @@ function resolveNote(value: I18nText | null | undefined, locale: Locale): string
  */
 export function toVenueNightAgeScope(value: unknown, locale: Locale): VenueNightAgeScopeContext {
     const prefix = `${NIGHT_INFO_KEY_PREFIX}.minAgeScope`;
-    const parsed = VenueMinAgeScopeSchema.safeParse(value);
-    if (parsed.success && parsed.data.kind === 'from_time') {
-        const { from } = parsed.data;
+    // The SAME reader the public ficha uses: trim + locale → es → en → pt.
+    const scope = resolveVenueMinAgeScope({ value, locale });
+    if (scope.kind === 'from_time') {
         return {
             kind: 'from_time',
-            label: translateNightKey(`${prefix}.fromTime`, locale).split('{{time}}').join(from),
+            label: translateNightKey(`${prefix}.fromTime`, locale)
+                .split('{{time}}')
+                .join(scope.from),
             area: null
         };
     }
-    if (parsed.success && parsed.data.kind === 'area') {
-        const area = resolveNote(parsed.data.area, locale);
-        if (area !== null) {
-            return { kind: 'area', label: translateNightKey(`${prefix}.area`, locale), area };
-        }
+    if (scope.kind === 'area') {
+        return {
+            kind: 'area',
+            label: translateNightKey(`${prefix}.area`, locale),
+            area: scope.area
+        };
     }
     return { kind: 'all_day', label: translateNightKey(`${prefix}.allDay`, locale), area: null };
 }

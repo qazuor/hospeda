@@ -65,15 +65,27 @@ function contextFor(policies: VenueNightContextRow['policies']): string {
 
 describe('toVenueNightAgeScope — same label as the public ficha', () => {
     it.each([
-        ['es', 'Rige todo el día', 'Rige desde las 00:00', 'Rige solo en: {{area}}', 'la pista'],
+        [
+            'es',
+            'Rige todo el día',
+            'Rige desde las 00:00 hasta el cierre',
+            'Rige solo en: {{area}}',
+            'la pista'
+        ],
         [
             'en',
             'Applies all day',
-            'Applies from 00:00',
+            'Applies from 00:00 until closing',
             'Applies only to: {{area}}',
             'the dance floor'
         ],
-        ['pt', 'Vale o dia todo', 'Vale a partir das 00:00', 'Vale só para: {{area}}', 'a pista']
+        [
+            'pt',
+            'Vale o dia todo',
+            'Vale das 00:00 até o fechamento',
+            'Vale só para: {{area}}',
+            'a pista'
+        ]
     ] as const)('resolves each kind in %s', (locale, allDay, fromTime, areaLabel, area) => {
         // Act / Assert
         expect(toVenueNightAgeScope({ kind: 'all_day' }, locale)).toEqual({
@@ -112,6 +124,35 @@ describe('toVenueNightAgeScope — same label as the public ficha', () => {
             locale: 'es'
         });
         expect(night?.minAgeScope ?? null).toBeNull();
+    });
+});
+
+/**
+ * HOS-2098 review: the ficha and the chat resolve the area with ONE function
+ * (`resolveVenueMinAgeScope`), so these cases are asserted with the SAME
+ * expected strings in `apps/web/test/lib/venue/night-info.test.ts` and
+ * `apps/api/test/services/ai-context/venue-ai-context-age-scope.test.ts`.
+ */
+const SHARED_AREA_CASES = [
+    ['es', { es: '  la pista  ', en: '', pt: '' }, 'la pista'],
+    ['en', { es: 'el show', en: '   ', pt: '' }, 'el show'],
+    ['es', { es: '', en: '', pt: 'a pista' }, 'a pista'],
+    ['es', { es: ' ', en: 'the floor', pt: 'a pista' }, 'the floor'],
+    ['pt', { es: 'la pista', en: 'the floor', pt: '' }, 'la pista']
+] as const;
+
+describe('area resolution is the one the ficha uses (HOS-2098 review)', () => {
+    it.each(SHARED_AREA_CASES)('in %s, %j resolves to %s', (locale, area, expected) => {
+        expect(toVenueNightAgeScope({ kind: 'area', area }, locale)).toMatchObject({
+            kind: 'area',
+            area: expected
+        });
+    });
+
+    it('a whitespace-only area in every locale reads as "all day"', () => {
+        expect(
+            toVenueNightAgeScope({ kind: 'area', area: { es: ' ', en: '\t', pt: '  ' } }, 'en').kind
+        ).toBe('all_day');
     });
 });
 
