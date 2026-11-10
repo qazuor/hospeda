@@ -66,6 +66,7 @@ import { resolveListingSections } from '@repo/verticals';
 import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
+import { scheduleChatAnswerClassification } from '../../../services/ai-chat-answer-classifier.js';
 import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
 import {
     CHAT_CONTEXT_ASSEMBLERS,
@@ -485,7 +486,17 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                         userMessage: getLastUserTurn(body.messages),
                         assistantMessage: accumulatedAssistantText,
                         meta: resolvedMeta
-                    }).then((result) => result.conversationId);
+                    }).then((result) => {
+                        // HOS-2101: detached, never awaited — see the classifier module.
+                        scheduleChatAnswerClassification({
+                            assistantMessageId: result.assistantMessageId,
+                            question: getLastUserTurn(body.messages),
+                            answer: accumulatedAssistantText,
+                            feature: FEATURE,
+                            locale
+                        });
+                        return result.conversationId;
+                    });
 
                     const timeoutPromise = new Promise<null>((resolve) => {
                         setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);

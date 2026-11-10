@@ -59,6 +59,15 @@ export interface PersistConversationTurnInput {
      */
     readonly contextNote: string;
     /**
+     * Structured listing reference written to the new conversation row
+     * (HOS-2101). Omitted for features not scoped to a listing. Only read on
+     * the first turn: a subsequent turn appends to a row that already has it.
+     */
+    readonly listing?: {
+        readonly entityType: AiChatEntityType;
+        readonly entityId: string;
+    };
+    /**
      * Existing conversation id, or `null` for the first turn. When `null`,
      * a new `aiConversations` row is created; when a UUID, the helper
      * appends messages to that conversation only (AC-3.2).
@@ -80,6 +89,13 @@ export interface PersistConversationTurnOutput {
      * the SSE `done` frame on win of the 1500 ms race (D-3).
      */
     readonly conversationId: string;
+    /** Id of the inserted user message row (HOS-2101). */
+    readonly userMessageId: string;
+    /**
+     * Id of the inserted assistant message row (HOS-2101) — the row the
+     * chat-answer classifier writes its verdict onto.
+     */
+    readonly assistantMessageId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,8 +119,16 @@ export interface PersistConversationTurnOutput {
 export async function persistConversationTurn(
     input: PersistConversationTurnInput
 ): Promise<PersistConversationTurnOutput> {
-    const { userId, feature, contextNote, conversationId, userMessage, assistantMessage, meta } =
-        input;
+    const {
+        userId,
+        feature,
+        contextNote,
+        listing,
+        conversationId,
+        userMessage,
+        assistantMessage,
+        meta
+    } = input;
 
     const db = getDb();
     let resolvedConversationId = conversationId;
@@ -124,7 +148,10 @@ export async function persistConversationTurn(
                     title: null,
                     // Use the schema's `contextNote` JSON column to attach
                     // feature-specific context without a new FK migration (D-4).
-                    contextNote
+                    contextNote,
+                    // HOS-2101: indexed listing reference for the host panel.
+                    listingEntityType: listing?.entityType ?? null,
+                    listingEntityId: listing?.entityId ?? null
                 })
                 .returning({ id: aiConversations.id });
             const newId = rows[0]?.id;
@@ -157,8 +184,9 @@ export async function persistConversationTurn(
     // -----------------------------------------------------------------------
     // Step 2 — User message row.
     // -----------------------------------------------------------------------
+    let userMessageId: string | undefined;
     try {
-        await db
+        const rows = await db
             .insert(aiMessages)
             .values({
                 conversationId: resolvedConversationId,
@@ -168,6 +196,10 @@ export async function persistConversationTurn(
                 tokens: 0
             })
             .returning({ id: aiMessages.id });
+        userMessageId = rows[0]?.id;
+        if (!userMessageId) {
+            throw new Error('persistConversationTurn: user aiMessages insert returned no id');
+        }
     } catch (error) {
         apiLogger.error(
             {
@@ -183,8 +215,9 @@ export async function persistConversationTurn(
     // -----------------------------------------------------------------------
     // Step 3 — Assistant message row.
     // -----------------------------------------------------------------------
+    let assistantMessageId: string | undefined;
     try {
-        await db
+        const rows = await db
             .insert(aiMessages)
             .values({
                 conversationId: resolvedConversationId,
@@ -194,6 +227,10 @@ export async function persistConversationTurn(
                 tokens: meta.usage.completionTokens
             })
             .returning({ id: aiMessages.id });
+        assistantMessageId = rows[0]?.id;
+        if (!assistantMessageId) {
+            throw new Error('persistConversationTurn: assistant aiMessages insert returned no id');
+        }
     } catch (error) {
         apiLogger.error(
             {
@@ -206,7 +243,7 @@ export async function persistConversationTurn(
         throw error;
     }
 
-    return { conversationId: resolvedConversationId };
+    return { conversationId: resolvedConversationId, userMessageId, assistantMessageId };
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +321,7 @@ export async function persistChatTurn(input: PersistChatTurnInput): Promise<Pers
             // Compatibility echo — see PersistChatTurnInput.entityType.
             ...(input.entityType === 'accommodation' ? { accommodationId: input.entityId } : {})
         }),
+        listing: { entityType: input.entityType, entityId: input.entityId },
         conversationId: input.conversationId,
         userMessage: input.userMessage,
         assistantMessage: input.assistantMessage,

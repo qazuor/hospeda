@@ -190,8 +190,17 @@ describe('persistChatTurn', () => {
         expect(assistantValues.tokens).toBe(100); // meta.usage.completionTokens
         expect(assistantValues.conversationId).toBe('new-conv-uuid-from-mock');
 
-        // Returned conversation id is the newly-created one
-        expect(out).toEqual({ conversationId: 'new-conv-uuid-from-mock' });
+        // HOS-2101: the structured, indexed listing reference.
+        expect(convValues.listingEntityType).toBe('accommodation');
+        expect(convValues.listingEntityId).toBe(ACCOMMODATION_ID);
+
+        // Returned conversation id is the newly-created one, plus the two
+        // message ids (HOS-2101 — the classifier writes onto the assistant row).
+        expect(out).toEqual({
+            conversationId: 'new-conv-uuid-from-mock',
+            userMessageId: 'new-conv-uuid-from-mock',
+            assistantMessageId: 'new-conv-uuid-from-mock'
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -212,7 +221,7 @@ describe('persistChatTurn', () => {
         expect(nthValues(1).role).toBe('assistant');
 
         // Returned conversation id is the input (echoed back)
-        expect(out).toEqual({ conversationId: EXISTING_CONVERSATION_ID });
+        expect(out.conversationId).toBe(EXISTING_CONVERSATION_ID);
     });
 
     // -----------------------------------------------------------------------
@@ -295,5 +304,37 @@ describe('persistChatTurn', () => {
 
         // 2 inserts attempted: user aiMessages + assistant aiMessages.
         expect(mockInsert).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('persistChatTurn — message ids (HOS-2101)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns the user and assistant row ids it inserted', async () => {
+        // Arrange: one id per insert, in order.
+        mockReturning
+            .mockResolvedValueOnce([{ id: 'conv-id' }])
+            .mockResolvedValueOnce([{ id: 'user-msg-id' }])
+            .mockResolvedValueOnce([{ id: 'assistant-msg-id' }]);
+
+        // Act
+        const out = await persistChatTurn(makeInput({ conversationId: null }));
+
+        // Assert
+        expect(out).toEqual({
+            conversationId: 'conv-id',
+            userMessageId: 'user-msg-id',
+            assistantMessageId: 'assistant-msg-id'
+        });
+    });
+
+    it('throws when the assistant insert returns no id', async () => {
+        mockReturning.mockResolvedValueOnce([{ id: 'user-msg-id' }]).mockResolvedValueOnce([]);
+
+        await expect(
+            persistChatTurn(makeInput({ conversationId: EXISTING_CONVERSATION_ID }))
+        ).rejects.toThrow('assistant aiMessages insert returned no id');
     });
 });
