@@ -18,11 +18,13 @@
  * Only the `rules` column, and only two clauses of the block the three
  * features share:
  *
- * - the capacity clause becomes the owner's group rule (09/11/2026): give the
- *   total capacity and, when the listing states it, the split by units, rooms
- *   or beds; always close with "depends on how they are distributed and on
- *   availability, confirm it with the place"; never "entran sin problema";
- *   reuse a group size the visitor already gave;
+ * - the capacity clause becomes the owner's group rule (09/11/2026): compare
+ *   the group with the total capacity explicitly; a group over the total gets
+ *   a plain "it does not fit" with no hedge; a group within it gets the total
+ *   and, when the listing states it, the split by units, rooms or beds, closed
+ *   with "depends on how they are distributed and on availability, confirm it
+ *   with the place" in the reply language; never "entran sin problema"; reuse
+ *   a group size the visitor already gave;
  * - "pets accepted" is never stretched to a number or size of pets.
  *
  * The `chat_venue` age clauses and the legal notice are untouched. `content`

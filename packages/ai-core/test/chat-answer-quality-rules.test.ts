@@ -113,8 +113,22 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain('say only whether pets are accepted');
     });
 
-    it('HOS-2100 group answers: total capacity, the stated split, and always confirm with the place', () => {
-        expect(rules).toContain('give the total capacity in your context');
+    it('HOS-2100 group over capacity: compare explicitly and say plainly it does not fit', () => {
+        expect(rules).toContain(
+            "compare the visitor's group with the total capacity your context states, explicitly"
+        );
+        expect(rules).toContain(
+            'If the group is larger than that total, say plainly that it does not fit, without any closing hedge'
+        );
+    });
+
+    it('HOS-2100 group close is said in the reply language', () => {
+        expect(rules).toContain('to confirm it with the place, in the reply language');
+        expect(rules).toContain('confirmalo con el lugar" in Spanish');
+    });
+
+    it('HOS-2100 group answers within capacity: total, the stated split, and confirm with the place', () => {
+        expect(rules).toContain('If it is within the total, give the total');
         expect(rules).toContain('the split into units, rooms or beds');
         expect(rules).toContain('it depends on how they are distributed and on availability');
         expect(rules).toContain(
