@@ -206,7 +206,8 @@
                 }
             ],
             "includeMenu": true,
-            "night": null
+            "night": null,
+            "amenities": ["air_conditioning", "terrace", "wifi"]
         },
         "bar-el-muelle": {
             "kind": "venue",
@@ -777,7 +778,8 @@
                 "openingHours": null
             },
             "faqs": [],
-            "includeDirections": true
+            "includeDirections": true,
+            "amenities": ["equipment_included", "guide_included"]
         },
         "cabanas-del-rio": {
             "kind": "accommodation",

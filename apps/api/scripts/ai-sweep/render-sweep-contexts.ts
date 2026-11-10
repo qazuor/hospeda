@@ -118,6 +118,8 @@ const VenueEntitySchema = z.object({
         })
     ),
     includeMenu: z.boolean(),
+    /** Amenity slugs (HOS-2100: venue amenities now reach the context); curation is joined in. */
+    amenities: z.array(z.string().min(1)).default([]),
     /** The `nightInfo` columns plus the section availability the route would resolve. */
     night: z
         .object({
@@ -153,7 +155,9 @@ const ExperienceEntitySchema = z.object({
         openingHours: z.record(z.string(), z.unknown()).nullable()
     }),
     faqs: z.array(FaqSchema),
-    includeDirections: z.boolean()
+    includeDirections: z.boolean(),
+    /** Amenity slugs (HOS-2100); curation is joined in. */
+    amenities: z.array(z.string().min(1)).default([])
 });
 
 /** One listing the sweep renders, discriminated by vertical. */
@@ -221,6 +225,12 @@ export function renderEntityContext(input: {
     readonly locale: SweepLocale;
 }): { readonly context: string } {
     const { entity, curation, locale } = input;
+    // Venue/experience amenity rows (HOS-2100), joined with the catalog curation.
+    const toAmenity = (slug: string) => ({
+        slug,
+        isFeatured: curation.amenities[slug]?.isFeatured ?? false,
+        displayWeight: curation.amenities[slug]?.displayWeight ?? 50
+    });
     if (entity.kind === 'accommodation') {
         const a = entity.accommodation;
         const toRow = (slug: string, table: CatalogCuration['amenities']) => ({
@@ -273,7 +283,8 @@ export function renderEntityContext(input: {
                 entity.menuItems,
                 entity.includeMenu,
                 night,
-                locale
+                locale,
+                entity.amenities.map(toAmenity)
             )
         };
     }
@@ -282,7 +293,8 @@ export function renderEntityContext(input: {
             { id: 'sweep', ...entity.experience },
             entity.faqs,
             entity.includeDirections,
-            locale
+            locale,
+            entity.amenities.map(toAmenity)
         )
     };
 }

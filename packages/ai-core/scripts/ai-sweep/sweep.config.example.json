@@ -67,9 +67,10 @@
         "venue-mixed-lunch-with-child",
         "venue-hours-missing-day",
         "experience-price-cents",
-        "acc-ac-past-position-20"
+        "acc-ac-past-position-20",
+        "venue-amenities-ac-parking"
     ],
     "concurrency": 2,
-    "maxCalls": 300,
+    "maxCalls": 320,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

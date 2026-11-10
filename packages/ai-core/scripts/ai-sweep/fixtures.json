@@ -496,6 +496,10 @@
                     {
                         "label": "ropa de cama incluida",
                         "pattern": "ropa de cama|toallas"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm"
                     }
                 ],
                 "mustNotClaim": [
@@ -510,6 +514,10 @@
                     {
                         "label": "afirma recambio de ropa de cama",
                         "pattern": "(hay|se hace|incluye)[^.]{0,20}recambio(?![^.]{0,30}no)"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -668,6 +676,10 @@
                     {
                         "label": "parque o quincho o parrilla",
                         "pattern": "parque|quincho|parrilla|jard[ií]n"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm"
                     }
                 ],
                 "mustNotClaim": [
@@ -682,6 +694,10 @@
                     {
                         "label": "implica que Hospeda reserva o confirma",
                         "pattern": "hospeda (te )?(reserva|gestiona|confirma|toma)|reserv\\w* (a trav[eé]s de|por medio de|en) hospeda"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -719,7 +735,7 @@
                     },
                     {
                         "label": "inventa descuentos o seña",
-                        "pattern": "descuento|se[ñn]a|dep[oó]sito"
+                        "pattern": "(?<!\\b(no|sin|ni)\\b[^.]{0,40})\\b(descuentos?|se[ñn]as?|dep[oó]sitos?)\\b"
                     },
                     {
                         "label": "implica que Hospeda reserva o confirma",
@@ -781,11 +797,15 @@
                     },
                     {
                         "label": "capacidades 3, 4 y 6",
-                        "pattern": "\\b3\\b[\\s\\S]*\\b4\\b[\\s\\S]*\\b6\\b"
+                        "pattern": "^(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(3|tres)\\b)(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(4|cuatro)\\b)(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(6|seis)\\b)"
                     },
                     {
                         "label": "capacidad total 26",
                         "pattern": "\\b26\\b"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm"
                     }
                 ],
                 "mustNotClaim": [
@@ -800,6 +820,10 @@
                     {
                         "label": "inventa un teléfono o contacto",
                         "pattern": "\\+?\\d{2}[\\d ()-]{7,}|@\\w+\\.\\w+"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1047,7 +1071,7 @@
                 "mustInclude": [
                     {
                         "label": "capacidad 2 huéspedes",
-                        "pattern": "\\b(2|dos)\\b"
+                        "pattern": "\\b(2|dos) (hu[eé]spedes|personas|pasajeros)|(capacidad|hasta|para)[^.\\d]{0,20}\\b(2|dos)\\b"
                     }
                 ],
                 "mustNotClaim": [
@@ -1185,6 +1209,40 @@
                 "notes": "Air conditioning is the 26th of 30 amenities in the listing order. The old builder kept 20 in arbitrary order and lost it; production now orders by catalog curation (AC is featured) and keeps 80. The answer is yes, there is air conditioning."
             },
             "rules": []
+        },
+        {
+            "id": "venue-amenities-ac-parking",
+            "feature": "chat_venue",
+            "entity": "parrilla-la-costanera",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#parrilla-la-costanera",
+            "question": "¿Tiene aire acondicionado? ¿Y estacionamiento?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "aire acondicionado sí",
+                        "pattern": "aire acondicionado"
+                    },
+                    {
+                        "label": "estacionamiento no figura",
+                        "pattern": "no (figura|est[aá]|se indica|se menciona|aparece|detalla|informa)[^.]{0,80}(estacionamiento|cochera)|(estacionamiento|cochera)[^.]{0,60}no (figura|est[aá]|se indica|se menciona|aparece|detalla)"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma estacionamiento",
+                        "pattern": "\\bs[ií],?\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento)"
+                    },
+                    {
+                        "label": "niega el aire acondicionado",
+                        "pattern": "no (tiene|hay|cuenta con|figura)[^.]{0,30}aire acondicionado"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100: venue amenities now reach the context. The parrilla lists air conditioning, a terrace and wifi under Comodidades; parking is not listed anywhere. A good answer says it has air conditioning, that the ficha does not mention parking, and suggests confirming with the venue."
+            },
+            "rules": ["unknown-must-say-dont-know"]
         }
     ]
 }
