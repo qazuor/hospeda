@@ -144,7 +144,7 @@ eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
 This PR proposes these messages and codes (BS); a separate documentation PR
 records them in the spec after merge.
 
-### Plan retirement migration (ACC:17, HOS-1612)
+### Plan migration: retirement and price increase (ACC:17, HOS-1612, HOS-1615)
 
 `GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`,
 `POST /api/v1/admin/plan-migrations`, `GET /api/v1/admin/plan-migrations/retired-versions`,
@@ -165,6 +165,9 @@ uses its literal reason as `error.code` and `error.reason`.
 | `PLAN_MIGRATION_TARGET_NOT_SELLABLE` | 422 |
 | `PLAN_MIGRATION_VERTICAL_MISMATCH` | 422 |
 | `PLAN_MIGRATION_SAME_VERSION` | 422 |
+| `PLAN_MIGRATION_INCREASE_OTHER_PLAN` | 422 |
+| `PLAN_MIGRATION_INCREASE_SOURCE_CURRENT` | 422 |
+| `PLAN_MIGRATION_INCREASE_CYCLE_MISSING` | 422 |
 | `PLAN_MIGRATION_COHORT_CHANGED` | 409 |
 | `PLAN_MIGRATION_EMPTY_COHORT` | 409 |
 | `PLAN_MIGRATION_NOT_FOUND` | 404 |
