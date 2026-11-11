@@ -169,6 +169,23 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4288
+    {
+        id: '2026-11-11-listing-only-priced-filter',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El filtro de alojamientos con precio definido ya funciona',
+            en: 'The filter for stays with a set price now works',
+            pt: 'O filtro de hospedagens com preço definido agora funciona'
+        },
+        body: {
+            es: 'Si destildás «Incluir sin precio» en el listado de alojamientos, ves solo los que tienen precio publicado, en lugar de una lista vacía. Lo mismo con «Incluir sin calificación».',
+            en: 'Untick "Include without price" on the stays listing and you see only the ones with a published price, instead of an empty list. The same goes for "Include without rating".',
+            pt: 'Se você desmarcar «Incluir sem preço» na lista de hospedagens, vê só as que têm preço publicado, em vez de uma lista vazia. O mesmo vale para «Incluir sem avaliação».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4282
     {
         id: '2026-11-11-listing-chat-honest-answers',
