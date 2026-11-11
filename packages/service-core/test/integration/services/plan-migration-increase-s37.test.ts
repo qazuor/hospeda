@@ -9,12 +9,14 @@ import {
     subscriptionScheduledChanges
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
+import { getLocalDateString } from '@repo/utils';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import {
     PLAN_MIGRATION_UPCOMING_TEMPLATE,
     planMigrationNoticeDedupKey
 } from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
 import { runPlanMigrationS37ForRow } from '../../../src/services/billing/plan-migration/plan-migration-s37.service.js';
+import { runPlanMigrationS37 } from '../../../src/services/billing/plan-migration/run-plan-migration-s37.service.js';
 import { composePromoAmount } from '../../../src/services/billing/promo/promo-composition.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { seedPlanChangePromo } from './support/plan-change-fixtures.js';
@@ -239,6 +241,28 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(changeAmount).toHaveBeenCalledTimes(0);
             vi.restoreAllMocks();
             expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+        });
+
+        it('el lote de S37 toma la fila del aumento siete días antes', async () => {
+            const caseRow = await createS37IncreaseCase({
+                paymentMethod: 'MANUAL',
+                nextChargeAt: new Date('2032-03-11T11:00:00.000Z'),
+                start: new Date('2032-03-04T13:00:00.000Z')
+            });
+            expect(getLocalDateString({ instant: caseRow.scope.applicationDate })).toBe(
+                '2032-03-11'
+            );
+
+            const result = await runPlanMigrationS37(
+                { limit: 500, correlationId: crypto.randomUUID() },
+                { provider: caseRow.provider, clock: caseRow.clock }
+            );
+
+            expect(
+                result.rows.filter((row) => row.planMigrationSubscriptionId === caseRow.scope.id)
+            ).toEqual([
+                { planMigrationSubscriptionId: caseRow.scope.id, outcome: 'APPLIED_MANUAL' }
+            ]);
         });
     }
 );

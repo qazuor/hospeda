@@ -21,6 +21,7 @@ import {
 } from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
 import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { applyPlanMigrationUpcomingNotice } from '../../../src/services/billing/plan-migration/plan-migration-upcoming-notice.js';
+import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     cleanupPlanMigrationCases,
@@ -206,6 +207,28 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ]);
         });
 
+        it('el lote de avisos toma la fila del aumento a 30 días', async () => {
+            const seeded = await createPriceIncreaseCase({ targetAmountMinor: 350000 });
+            const { scope } = await launchIncrease(seeded);
+            const applicationDate = getLocalDateString({ instant: scope.applicationDate });
+
+            const result = await sendPlanMigrationNotices(
+                { limit: 100, db: getServiceTestDb() },
+                { clock: { now: () => instantAt(shiftLocalDay(applicationDate, -30)) } }
+            );
+
+            expect(
+                result.rows.filter((row) => row.planMigrationSubscriptionId === scope.id)
+            ).toEqual([
+                {
+                    planMigrationSubscriptionId: scope.id,
+                    outcome: 'ENQUEUED',
+                    milestone: 'mig:-30d',
+                    recalculated: false
+                }
+            ]);
+        });
+
         it('una versión de plazos 11 con contactos [20, 5] mueve los hitos a mig:-20d y mig:-5d', async () => {
             const seeded = await createPriceIncreaseCase({ targetAmountMinor: 350000 });
             const db = getServiceTestDb();
@@ -264,9 +287,22 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         );
                         expect(
                             rows
-                                .map((row) => (row.payload as { daysBefore: number }).daysBefore)
-                                .sort((left, right) => left - right)
-                        ).toEqual([5, 20]);
+                                .map(
+                                    (row) =>
+                                        row.payload as {
+                                            daysBefore: number;
+                                            providerNotifies: boolean;
+                                        }
+                                )
+                                .map(({ daysBefore, providerNotifies }) => ({
+                                    daysBefore,
+                                    providerNotifies
+                                }))
+                                .sort((left, right) => left.daysBefore - right.daysBefore)
+                        ).toEqual([
+                            { daysBefore: 5, providerNotifies: true },
+                            { daysBefore: 20, providerNotifies: false }
+                        ]);
                         const [stored] = await tx
                             .select({ reason: planMigrations.reason })
                             .from(planMigrations)
