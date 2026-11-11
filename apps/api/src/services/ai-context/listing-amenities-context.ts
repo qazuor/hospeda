@@ -93,6 +93,23 @@ function prioritize(
 }
 
 /**
+ * The exact amenity list a context block renders: blank slugs dropped, ordered
+ * by the catalog curation, capped at {@link LISTING_CONTEXT_AMENITY_MAX}.
+ *
+ * Exported for the pets-absent scan (HOS-2102), which must read the same set
+ * that reaches the model — re-deriving the cap a second way is how the two
+ * lists would drift apart.
+ */
+export function capListingAmenities(
+    rows: ReadonlyArray<ListingContextAmenity>
+): ReadonlyArray<ListingContextAmenity> {
+    return prioritize(rows.filter((row) => row.slug.trim().length > 0)).slice(
+        0,
+        LISTING_CONTEXT_AMENITY_MAX
+    );
+}
+
+/**
  * Builds the `### Comodidades` block. PURE — no I/O.
  *
  * @param input.amenities - The listing's amenities, in any order.
@@ -108,9 +125,8 @@ export function buildListingAmenityLines({
     readonly amenities: ReadonlyArray<ListingContextAmenity>;
     readonly locale: Locale;
 }): { readonly lines: readonly string[] } {
-    const usable = rows.filter((row) => row.slug.trim().length > 0);
-    if (usable.length === 0) return { lines: [] };
-    const capped = prioritize(usable).slice(0, LISTING_CONTEXT_AMENITY_MAX);
+    const capped = capListingAmenities(rows);
+    if (capped.length === 0) return { lines: [] };
     return {
         lines: [
             '',

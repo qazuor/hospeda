@@ -43,9 +43,15 @@ Address the reader as "vos".`;
 
 /**
  * Guardrail half of {@link VOSEO_GUIDANCE}. Survives an admin prompt rewrite.
+ *
+ * HOS-2102: the scope sentence at the end keeps the voseo examples inside
+ * Spanish answers — the residual sweep on gpt-5.4-nano caught the model
+ * carrying rule wording like "podés" / "confirmalo" into English and
+ * Portuguese answers.
  */
 export const VOSEO_RULE = `Spanish output MUST use the rioplatense voseo register: "imaginate" / "vení" / "dejate" / "elegí" / "descubrí", NEVER "imagina" / "ven" / "déjate" / "elige" / "descubre". \
-Never address the reader with "tú", "ti", "contigo", or any "vosotros" form.`;
+Never address the reader with "tú", "ti", "contigo", or any "vosotros" form. \
+These voseo examples apply ONLY when the answer is written in Spanish: never copy any of them into an answer written in English or Portuguese.`;
 
 /**
  * Identity instruction: a proper name is data, not translatable prose.

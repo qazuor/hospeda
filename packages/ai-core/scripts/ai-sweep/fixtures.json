@@ -189,7 +189,7 @@
                 "mustNotClaim": [
                     {
                         "label": "afirma que admite mascotas",
-                        "pattern": "(s[ií],?\\s+)?(pod[eé]s|pueden|se permite|aceptan|admiten)[^.]{0,40}(perro|mascota)(?![^.]{0,30}no)"
+                        "pattern": "(?:s[ií],\\s+)?(?<!si )(?<!s[íi] )(pod[eé]s|pueden|se permite|aceptan|admiten)[^.]{0,40}(perro|mascota)(?![^.]{0,30}no)"
                     },
                     {
                         "label": "afirma que no admite mascotas",
@@ -415,7 +415,7 @@
                     },
                     {
                         "label": "wifi gratis",
-                        "pattern": "wi-?fi"
+                        "pattern": "wi[-\\u2011]?fi"
                     },
                     {
                         "label": "no se admiten mascotas",
@@ -1077,11 +1077,11 @@
                 "mustNotClaim": [
                     {
                         "label": "afirma estacionamiento",
-                        "pattern": "\\bs[ií],?\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento|garage)"
+                        "pattern": "\\bs[ií],\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento|garage)"
                     },
                     {
                         "label": "afirma que admite mascotas",
-                        "pattern": "\\bs[ií],?\\s+(se )?(admiten|aceptan|permiten)\\s+mascotas"
+                        "pattern": "\\bs[ií],\\s+(se )?(admiten|aceptan|permiten)\\s+mascotas"
                     },
                     {
                         "label": "afirma que entran 3",
@@ -1418,7 +1418,7 @@
                 "mustNotClaim": [
                     {
                         "label": "afirma que entran",
-                        "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
+                        "pattern": "\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
                     },
                     {
                         "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
@@ -1548,13 +1548,13 @@
                     },
                     {
                         "label": "dice que no entran",
-                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede"
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|entrar[ií]an|alcanza|caben|caber[ií]an|es posible|suficiente|aloja)|supera|excede"
                     }
                 ],
                 "mustNotClaim": [
                     {
                         "label": "afirma que entran",
-                        "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
+                        "pattern": "\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
                     },
                     {
                         "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
@@ -1867,6 +1867,414 @@
                 "expectedLanguage": "es",
                 "notes": "Minimum age 18 scoped to 'la pista de baile' only. Dinner in the salon, explicitly away from the dance floor, is another area: starts with 'sí' for the salon, says the 18 applies to the dance floor, repeats the legal notice and refers to the venue."
             }
+        },
+        {
+            "id": "acc-real-casa-portuguese-pets-size",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Olá! Posso levar meus dois cachorros grandes?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "aviso prévio para animais",
+                        "pattern": "avis|antecip|pr[ée]vi|previ"
+                    },
+                    {
+                        "label": "não informa quantidade ou tamanho",
+                        "pattern": "n[aã]o (informa|mencion|diz|especifica)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "voseo o palabra española en respuesta pt",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "niega animais",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "inventa límite de animales",
+                        "pattern": "(m[aá]ximo|at[ée]) (de )?\\d+ (cachorros|animais|pets)|(hasta|m[aá]ximo) \\d+ (perros|mascotas)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "The listing accepts well-behaved pets with advance notice (FAQ). The whole answer is Portuguese; Spanish words of the listing data are translated. Regression guard for the voseo leak of the staging smoke."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-portuguese-pets-absent",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Olá! Posso levar meu cachorro?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "n[aã]o (consta|tenho|h[aá]|informa|mencion|diz|especifica|fala)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta animales",
+                        "pattern": "(?<!n[aã]o )(?<!se )aceita(?:m)?\\s+(?:animais|pets|cachorros|c[ãa]es)|animais\\s+(?:s[aã]o\\s+)?(?:aceitos|permitidos|bem-vindos)"
+                    },
+                    {
+                        "label": "afirma que no acepta animales",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "pt",
+                "notes": "real-ruca has NO pet data at all: the answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected; all in Portuguese. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-english-pets-size",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Hi! Can I bring my two big dogs?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "pets accepted with advance notice",
+                        "pattern": "notice|advance|heads.?up|prior|let (them|the host|the place) know"
+                    },
+                    {
+                        "label": "does not say how many or size",
+                        "pattern": "(doesn[\\u2019\\u0027]?t|does not) (say|specify|state|mention)|no (limit|information about|details about)"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "voseo o palabra española en respuesta en",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "invents a limit",
+                        "pattern": "(up to|maximum of|max\\.) \\d+ (dogs|pets)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "English answer; pets accepted with advance notice per the FAQ; no Spanish words."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-isla-english-pets",
+            "feature": "chat",
+            "entity": "real-isla",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-isla",
+            "question": "Hi! Are pets allowed?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "says pets are not allowed",
+                        "pattern": "not (allowed|accepted|permitted)|(are|is)n[\\u2019\\u0027]?t (allowed|accepted|permitted)|no pets"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "claims pets allowed",
+                        "pattern": "(?<!whether )(?<!if )pets?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "The FAQ states pets are not allowed; the whole answer is English."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-pets-direct",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "¿Puedo llevar 2 perros grandes?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "no (lo |se )?(informa|mencion|detalla|especifica|figura|aparece|indica|dice|aclara)|no (hay|tenemos|tengo) (informaci[oó]n|informa)|no dice"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta mascotas",
+                        "pattern": "(?<!n[oó] )(?<!si )(?<!s[íi] )(?<!se )(?:se )?(?:acepta|aceptan|admiten)\\s+(?:mascotas|perros|animales)|(?<!no )aceptamos\\s+mascotas"
+                    },
+                    {
+                        "label": "afirma que no acepta mascotas",
+                        "pattern": "no (?:se )?(?:admiten|aceptan|permiten|se permiten)\\s+(?:mascotas|perros|animales)"
+                    },
+                    {
+                        "label": "inventa límite o condiciones",
+                        "pattern": "(hasta|m[aá]ximo (de )?)\\s*\\d+\\s*(perros|mascotas)|bien comportad"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "TRAP: the listing has no pet data at all. The answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected."
+            },
+            "rules": ["unknown-must-say-dont-know"]
+        },
+        {
+            "id": "acc-real-monogris-pets-direct",
+            "feature": "chat",
+            "entity": "real-monogris",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-monogris",
+            "question": "¿Aceptan mascotas?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "no (lo |se )?(informa|mencion|detalla|especifica|figura|aparece|indica|dice|aclara)|no (hay|tenemos|tengo) (informaci[oó]n|informa)|no dice"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta mascotas",
+                        "pattern": "(?<!n[oó] )(?<!si )(?<!s[íi] )(?<!se )(?:se )?(?:acepta|aceptan|admiten)\\s+(?:mascotas|perros|animales)|(?<!no )aceptamos\\s+mascotas"
+                    },
+                    {
+                        "label": "afirma que no acepta mascotas",
+                        "pattern": "no (?:se )?(?:admiten|aceptan|permiten|se permiten)\\s+(?:mascotas|perros|animales)"
+                    },
+                    {
+                        "label": "inventa límite o condiciones",
+                        "pattern": "(hasta|m[aá]ximo (de )?)\\s*\\d+\\s*(perros|mascotas)|bien comportad"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "TRAP: the listing has no pet data at all. The answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected."
+            },
+            "rules": ["unknown-must-say-dont-know"]
+        },
+        {
+            "id": "acc-real-ruca-pets-english",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Hi! Do you accept pets?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "says the listing does not inform pets",
+                        "pattern": "(doesn[\\u2019\\u0027]?t|does not) (inform|say|specify|mention|state)|no information about|nothing about"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "claims pets accepted",
+                        "pattern": "(?<!whether )(?<!if )pets?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)|(?<!whether )(?<!if )dogs?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)"
+                    },
+                    {
+                        "label": "claims pets rejected",
+                        "pattern": "pets?\\s+(?:are\\s+)?not\\s+(?:allowed|accepted|permitted)|pets?\\s+(?:are|is)[\\u2019\\u0027]?n[\\u2019\\u0027]?t\\s+(?:allowed|accepted|permitted)|no pets (?:are )?allowed"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "en",
+                "notes": "real-ruca has no pet data: the answer says the listing does not say; never claims accepted or rejected; English. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-pets-portuguese",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Aceitam animais?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "n[aã]o (consta|tenho|h[aá]|informa|mencion|diz|especifica|fala)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta animales",
+                        "pattern": "(?<!n[aã]o )(?<!se )aceita(?:m)?\\s+(?:animais|pets|cachorros|c[ãa]es)|animais\\s+(?:s[aã]o\\s+)?(?:aceitos|permitidos|bem-vindos)"
+                    },
+                    {
+                        "label": "afirma que no acepta animales",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "pt",
+                "notes": "real-ruca has NO pet data at all: the answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected; all in Portuguese. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-portuguese-group-over",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Olá! Somos 14 pessoas, cabemos todos na casa?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidade 11",
+                        "pattern": "\\b(11|onze)\\b"
+                    },
+                    {
+                        "label": "dice que no caben",
+                        "pattern": "(n[aã]o|no)\\s*\\*{0,2}\\s*(cabem|entram|entran|entrar[ií]an|cabe|caben|v[aã]o caber|d[aá])|n[aã]o (é|e) poss[ií]vel|(n[aã]o|no) alcan[çz]a|passa (da|de)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "agrega alternativas o esperanza falsa",
+                        "pattern": "outra opç|outros? (departamento|espaç|alojamento)|mesmo departamento|consult|confirm|quantas cabem|ver quantas|disponibilidade|alternativ|depende"
+                    },
+                    {
+                        "label": "afirma que caben",
+                        "pattern": "(?<!n[aã]o )(?<!\\*\\* )cabem todos|(?<!n[aã]o )(?<!\\*\\* )entram todos|(?<!n[aã]o )\\bsim,? (entram|cabem)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "Capacity 11, group 14: the whole answer is that they do not fit and the capacity is 11. No alternatives, no availability, no questions back."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-isla-english-group-over",
+            "feature": "chat",
+            "entity": "real-isla",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-isla",
+            "question": "Hi! We are 15 people, can we all stay?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 12",
+                        "pattern": "\\b(12|twelve)\\b"
+                    },
+                    {
+                        "label": "says they do not fit",
+                        "pattern": "don[\\u2019\\u0027]?t (all )?fit|do not (all )?fit|won[\\u2019\\u0027]?t (all )?fit|wouldn[\\u2019\\u0027]?t (all )?fit|can[\\u2019\\u0027]?t (all )?(fit|stay|accommodate)|not (big )?enough|too (many|small)|exceed|more than"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "adds false hope",
+                        "pattern": "another (unit|option|apartment|cabin|lodging)|other units|alternativ|availability|contact|confirm|check with|book"
+                    },
+                    {
+                        "label": "claims they fit",
+                        "pattern": "(you|all of you|everyone) (will |can )?fit\\b|no problem"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "Capacity 12, group 15: only 'you do not fit' plus the capacity of 12."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Somos 30 personas, ¿entramos todos en las cabañas?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 26",
+                        "pattern": "\\b(26|veintis[eé]is)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede|m[aá]s (personas )?de las que"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "(?<!no )\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact|ajustar el tama|reducir (el|su) grup|quedar[a-záéíóúñ]* \\d+ fuera"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Capacity 26, group 30: the answer says only that 30 do not fit and the capacity is 26. Nothing else."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-balcones-portuguese-group-over",
+            "feature": "chat",
+            "entity": "real-balcones",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-balcones",
+            "question": "Olá! Somos 7 amigos, entramos todos no departamento?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidade 4",
+                        "pattern": "\\b(4|quatro)\\b"
+                    },
+                    {
+                        "label": "dice que no caben",
+                        "pattern": "(n[aã]o|no)\\s*\\*{0,2}\\s*(cabem|entram|entran|entrar[ií]an|cabe|caben|v[aã]o caber|d[aá])|n[aã]o (é|e) poss[ií]vel|(n[aã]o|no) alcan[çz]a|passa (da|de)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "agrega alternativas o esperanza falsa",
+                        "pattern": "outra opç|outros? (departamento|espaç|alojamento)|mesmo departamento|consult|confirm|quantas cabem|ver quantas|disponibilidade|alternativ|depende"
+                    },
+                    {
+                        "label": "afirma que caben",
+                        "pattern": "(?<!n[aã]o )(?<!\\*\\* )cabem todos|(?<!n[aã]o )(?<!\\*\\* )entram todos|(?<!n[aã]o )\\bsim,? (entram|cabem)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "Capacity 4, group 7: only 'they do not fit' plus capacity 4, in Portuguese."
+            },
+            "rules": []
         }
     ]
 }

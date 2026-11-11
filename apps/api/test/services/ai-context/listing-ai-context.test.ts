@@ -262,6 +262,24 @@ describe('buildVenueMarkdownContext', () => {
         expect(block).not.toContain('Stored dish');
         expect(block).not.toContain('example.test/menu');
     });
+
+    it('states pets are not informed when the venue carries no pet signal (HOS-2102)', () => {
+        // Act
+        const block = buildVenueMarkdownContext(VENUE, [], [], true);
+
+        // Assert
+        expect(block).toContain('**Mascotas**: no figura información en la ficha');
+    });
+
+    it('omits the not-informed line when a pet amenity slug informs pets (HOS-2102)', () => {
+        // Act
+        const block = buildVenueMarkdownContext(VENUE, [], [], true, null, 'es', [
+            { slug: 'pet_friendly' }
+        ]);
+
+        // Assert
+        expect(block).not.toContain('**Mascotas**: no figura información en la ficha');
+    });
 });
 
 // ---------------------------------------------------------------------------

@@ -17,6 +17,15 @@
  * The rules live in DEFAULT_RULES (not the prompt) because they must survive an
  * admin rewrite of the descriptive prompt.
  *
+ * HOS-2102 (residual sweep of gpt-5.4-nano): the Spanish example phrases inside
+ * the rules leaked into English and Portuguese answers, so the guard tests also
+ * pin the language-leak clauses, the absolute over-capacity group answer, and
+ * the pets-not-informed wording ban. Round 2 (post-fix sweep): the
+ * over-capacity ban names the escape paraphrases ("repartirse", "otra opción")
+ * in any language, and the language ban carries lone-word examples. Round 3
+ * (final sweep): the over-capacity enumeration is absolute — no second
+ * sentence at all, no conditionals about smaller groups.
+ *
  * @module test/chat-answer-quality-rules
  */
 
@@ -83,7 +92,11 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             "you MUST NOT offer to consult, ask, confirm, forward or check anything with the place on the visitor's behalf"
         );
-        expect(rules).toContain('decime las fechas y te digo si hay lugar');
+        // HOS-2102: the example is English-only now — nano used to copy the
+        // Spanish phrasing into English and Portuguese answers.
+        expect(rules).toContain('no "tell me your dates and I will tell you if there is room"');
+        expect(rules).not.toContain('decime las fechas');
+        expect(rules).not.toContain('querés que te ayude a reservar');
         // Review M1: the "no closing question" ban is scoped to availability/booking.
         expect(rules).toContain(
             'never close an answer with an availability or booking offer or question'
@@ -113,22 +126,75 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain('say only whether pets are accepted');
     });
 
+    it('HOS-2102 pets not informed by the listing: never accepted, allowed or rejected wording', () => {
+        expect(rules).toContain(
+            'When your context states that the listing does not inform pets, NEVER write that pets are accepted, allowed or welcome'
+        );
+        expect(rules).toContain(
+            'do not use the words "acepta", "aceptan", "admite", "admiten" next to "mascotas"/"perros"'
+        );
+        expect(rules).toContain('"aceita(m)" next to "animais"');
+        expect(rules).toContain('"accepted/allowed/welcome" next to "pets"');
+        expect(rules).toContain(
+            'never say they are not accepted either: say only that the listing does not inform it and that the visitor should confirm it with the place'
+        );
+    });
+
     it('HOS-2100 group over capacity: compare explicitly and say plainly it does not fit', () => {
         expect(rules).toContain(
             "first compare the visitor's group with the total capacity your context states"
         );
+    });
+
+    it('HOS-2102 group over capacity is absolute and comes before the fits branch', () => {
         expect(rules).toContain(
-            'If the group is larger than the total capacity, answer only that they do not fit and state the total capacity. Stop there: do not mention other units, availability or alternatives, and do not suggest asking the place.'
+            "If the visitor's group is larger than the total capacity your context states, your ENTIRE answer is ONE short sentence: say the group does not fit and state the total capacity."
+        );
+        // Round 2 (post-fix sweep): nano paraphrased its way around the ban
+        // ("repartirse en otras opciones", "otra opción con más capacidad"), so
+        // the ban names those words explicitly. Round 3 (final sweep): nano
+        // still appended a second sentence (a conditional about a smaller
+        // group, "depends on distribution"), so the enumeration is absolute.
+        expect(rules).toContain(
+            'Nothing else, and no second sentence at all: no question to the visitor, no conditional about a smaller or different group ("if you were fewer…"), no suggestion to split up or look for another option or place ("repartirse", "otra opción", another unit, more beds), nothing about availability or distribution, and nothing about asking or confirming anything with the place.'
+        );
+        expect(rules).toContain('no second sentence at all');
+        expect(rules).toContain('no conditional about a smaller or different group');
+        expect(rules).toContain('no suggestion to split up');
+        expect(rules).toContain('"repartirse"');
+        expect(rules).toContain('"otra opción"');
+        expect(rules).toContain('nothing about availability or distribution');
+        // Round 4 (post-round-3 sweep): nano answered over-capacity questions
+        // with the fits-close template from the reply-language line, so the
+        // over-capacity rule now states its precedence over everything else.
+        expect(rules).toContain('wins over EVERYTHING else');
+        expect(rules).toContain('never close an over-capacity answer');
+        expect(rules).toContain('never suggest checking or confirming anything with the place');
+        // The precedence sentence sits between the over-capacity enumeration
+        // and the fits branch (same paragraph flow).
+        expect(rules.indexOf('wins over EVERYTHING else')).toBeGreaterThan(
+            rules.indexOf('Nothing else, and no second sentence at all')
+        );
+        expect(rules.indexOf('wins over EVERYTHING else')).toBeLessThan(
+            rules.indexOf('Only when the group fits within the total capacity')
+        );
+        // Over-capacity first, absolutely; the fits branch comes after it.
+        expect(rules.indexOf('your ENTIRE answer is ONE short sentence')).toBeLessThan(
+            rules.indexOf('Only when the group fits within the total capacity')
         );
     });
 
     it('HOS-2100 group close is said in the reply language', () => {
-        expect(rules).toContain('to confirm it with the place, in the reply language');
+        // HOS-2102: the Spanish close template moved to the reply-language
+        // instructions; the rules only demand it in the reply language, in the
+        // model's own words.
+        expect(rules).toContain('written IN THE REPLY LANGUAGE in your own words');
+        expect(rules).toContain('never copy a phrase from these rules');
         // The close lives inside the in-capacity branch, after the over-capacity one.
-        expect(rules.indexOf('Stop there: do not mention other units')).toBeLessThan(
-            rules.indexOf('depende de cómo se repartan')
+        expect(rules.indexOf('Nothing else, and no second sentence at all')).toBeLessThan(
+            rules.indexOf('Only when the group fits within the total capacity')
         );
-        expect(rules).toContain('confirmalo con el lugar" in Spanish');
+        expect(rules).not.toContain('confirmalo con el lugar');
     });
 
     it('HOS-2100 group answers within capacity: total, the stated split, and confirm with the place', () => {
@@ -137,15 +203,16 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         );
         expect(rules).toContain('say the group is within the total capacity');
         expect(rules).toContain('the split into units, rooms or beds');
-        expect(rules).toContain('it depends on how they are distributed and on availability');
         expect(rules).toContain(
-            'depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar'
+            'it depends on how the group is distributed and on availability and to confirm with the place'
         );
-        expect(rules).toContain(
-            'Never say the group surely fits ("entran sin problema", "sí, entran")'
-        );
+        // HOS-2102: the Spanish close lives in the reply-language instructions now.
+        expect(rules).not.toContain('depende de cómo se repartan');
+        expect(rules).toContain('Never say the group surely fits or will definitely fit');
         expect(rules).toContain('never invent a split');
         expect(rules).toContain('if your context states no capacity, say so');
+        // HOS-2102: the Spanish examples are gone from the rules.
+        expect(rules).not.toContain('entran sin problema');
     });
 
     it('HOS-2100 reuses the group size the visitor already gave instead of asking again', () => {
@@ -176,6 +243,33 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
             'A question about this listing is on-topic whatever language it is written in'
         );
         expect(rules).toContain('you MUST NOT decline it');
+    });
+
+    it('HOS-2102 every sentence stays in the reply language: rules examples are Spanish illustrations only', () => {
+        expect(rules).toContain('Every sentence of your answer must be in that language');
+        expect(rules).toContain(
+            'the rule examples above and the listing data are Spanish illustrations of WHAT to say, not phrases to copy'
+        );
+        expect(rules).toContain('never leave a Spanish word in the reply');
+        // Round 2 (post-fix sweep): lone Spanish function words still leaked
+        // ("Não: la capacidad…", "não informa si aceitam"), so the ban carries
+        // lone-word examples for both target languages.
+        expect(rules).toContain('not even a lone word such as "sí" instead of "yes"/"sim"');
+        expect(rules).toContain('"la capacidad" instead of "the capacity"/"a capacidade"');
+    });
+
+    it('HOS-2102 the voseo examples apply only to Spanish answers', () => {
+        expect(rules).toContain(
+            'These voseo examples apply ONLY when the answer is written in Spanish: never copy any of them into an answer written in English or Portuguese.'
+        );
+    });
+
+    it('HOS-2102 the shared rules carry no Spanish example phrases any more', () => {
+        expect(rules).not.toContain('¡De una!');
+        expect(rules).not.toContain('decime');
+        expect(rules).not.toContain('confirmalo');
+        expect(rules).not.toContain('entran sin problema');
+        expect(rules).not.toContain('depende de cómo se repartan');
     });
 
     it('M2 says each thing once: the availability, off-topic and confirm clauses are not repeated', () => {

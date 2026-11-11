@@ -17,6 +17,7 @@ import {
     featureLabel,
     formatContextMoney
 } from './ai-context/listing-labels.js';
+import { buildListingPetsLines } from './ai-context/listing-pets-context.js';
 import {
     buildListingPoliciesLines,
     type ListingPoliciesContextInput
@@ -225,6 +226,10 @@ export function buildMarkdownContext(
         sanitizeOwnerDelimiters(accommodation.description),
         CONTEXT_DESCRIPTION_MAX_CHARS
     );
+    // The rendered Summary text, computed once: fenceOwnerValue only wraps it
+    // in markers, so this is what the model reads (HOS-2102 scans this, not the
+    // raw field — a truncation cut can hide a word).
+    const truncatedSummary = truncateAtWord(accommodation.summary, CONTEXT_SHORT_TEXT_MAX_CHARS);
     // HOS-393 AC-11: filter by isUsableByAi BEFORE the cap, not after.
     const aiUsableFaqs = faqs.filter((faq) => faq.isUsableByAi !== false);
     const cappedFaqs = aiUsableFaqs.slice(0, CONTEXT_FAQ_MAX);
@@ -242,7 +247,7 @@ export function buildMarkdownContext(
         `## Accommodation: ${fenceOwnerValue(truncateAtWord(accommodation.name, CONTEXT_SHORT_TEXT_MAX_CHARS))}`,
         `**Type**: ${accommodationTypeLabel({ type: accommodation.type, locale }).label}`,
         `**Destino**: ${destinationName}${LOCATION_SUFFIX}`,
-        `**Summary**: ${fenceOwnerValue(truncateAtWord(accommodation.summary, CONTEXT_SHORT_TEXT_MAX_CHARS))}`
+        `**Summary**: ${fenceOwnerValue(truncatedSummary)}`
     ];
 
     // --- Capacity & Space ---
@@ -257,6 +262,28 @@ export function buildMarkdownContext(
 
     // --- House rules (HOS-2060) ---
     lines.push(...buildListingPoliciesLines({ policies: accommodation.policies }).lines);
+
+    // --- Pets (HOS-2102) ---
+    // When nothing in the block informs pets, say so explicitly instead of
+    // leaving the model to invent "acepta mascotas". The scan reads exactly
+    // what this block renders: the capped amenity/feature lists, the capped
+    // FAQs, the truncated description and summary, and the iaData entries as
+    // rendered. FAQs are scanned pre-render (buildFencedFaqLines only
+    // sanitizes and word-cuts each string, then may budget later ones out), so
+    // the scan can only OVER-detect — it never hides a rendered pet word.
+    lines.push(
+        ...buildListingPetsLines({
+            policies: accommodation.policies,
+            amenitySlugs: cappedAmenities.map((amenity) => amenity.name),
+            featureSlugs: cappedFeatures.map((feature) => feature.name),
+            texts: [
+                truncatedSummary,
+                truncatedDescription,
+                ...cappedIaData.flatMap((entry) => renderIaDataTexts(entry)),
+                ...cappedFaqs.map((faq) => `${faq.question} ${faq.answer}`)
+            ]
+        }).lines
+    );
 
     // --- Pricing ---
     if (accommodation.price?.price != null) {
@@ -300,13 +327,8 @@ export function buildMarkdownContext(
         for (const [category, entries] of grouped) {
             lines.push(`#### ${sanitizeOwnerDelimiters(category)}`);
             for (const entry of entries) {
-                const content = truncateAtWord(
-                    sanitizeOwnerDelimiters(entry.content),
-                    CONTEXT_IADATA_CONTENT_MAX_CHARS
-                );
-                lines.push(
-                    `**${truncateAtWord(sanitizeOwnerDelimiters(entry.title), CONTEXT_IADATA_TITLE_MAX_CHARS)}**: ${content}`
-                );
+                const [title, content] = renderIaDataTexts(entry);
+                lines.push(`**${title}**: ${content}`);
                 lines.push('');
             }
         }
@@ -366,6 +388,19 @@ function prioritizeCatalogEntries(
             return weight === 0 ? a.index - b.index : weight;
         })
         .map(({ entry }) => entry);
+}
+
+/**
+ * Renders one IA data entry's title and content exactly as the Información
+ * Especial block prints them (sanitized, then cut at a word). Shared by the
+ * render loop and the pets-absent scan (HOS-2102) so the two cannot drift:
+ * the scan must read the text the model sees, not a near-copy of it.
+ */
+function renderIaDataTexts(entry: IaDataEntry): [string, string] {
+    return [
+        truncateAtWord(sanitizeOwnerDelimiters(entry.title), CONTEXT_IADATA_TITLE_MAX_CHARS),
+        truncateAtWord(sanitizeOwnerDelimiters(entry.content), CONTEXT_IADATA_CONTENT_MAX_CHARS)
+    ];
 }
 
 /**
