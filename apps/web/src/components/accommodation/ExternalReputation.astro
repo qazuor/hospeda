@@ -108,7 +108,7 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
              * every other third-party URL the site links to (HOS-592 / F-02).
              * A refused value drops the link and leaves the chip's score intact.
              */
-            const deepLinkHref = resolveSafeExternalUrl(item.deepLink ?? item.url);
+            const deepLinkHref = resolveSafeExternalUrl(item.deepLink) ?? resolveSafeExternalUrl(item.url);
             return (
             <div class={styles.chip}>
                 {/* AC-4.5: platform name as chip heading labels the source */}

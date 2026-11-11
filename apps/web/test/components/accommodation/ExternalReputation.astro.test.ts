@@ -30,7 +30,9 @@ const componentSrc = readFileSync(
 describe('ExternalReputation.astro', () => {
     describe('Chip link (fix E + HOS-592 allow-list)', () => {
         it('resolves deepLink ?? url through resolveSafeExternalUrl', () => {
-            expect(componentSrc).toContain('resolveSafeExternalUrl(item.deepLink ?? item.url)');
+            expect(componentSrc).toContain(
+                'resolveSafeExternalUrl(item.deepLink) ?? resolveSafeExternalUrl(item.url)'
+            );
         });
 
         it('never puts an unresolved raw URL into an href', () => {
