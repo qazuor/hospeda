@@ -109,6 +109,7 @@ export const adminLaunchPlanMigrationRoute = createAdminRoute({
                     planMigrationId: result.planMigrationId,
                     sourcePlanVersionId: body.sourcePlanVersionId,
                     targetPlanVersionId: body.targetPlanVersionId,
+                    reason: result.reason,
                     deadlineVersion: result.deadlineVersion,
                     rowCount: result.rows.length,
                     excludedCount: result.excluded.length,

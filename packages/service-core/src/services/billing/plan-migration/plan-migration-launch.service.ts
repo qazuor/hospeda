@@ -81,15 +81,22 @@ export async function launchPlanMigration(args: {
             message: 'Forbidden'
         });
     const { sourcePlanVersionId, targetPlanVersionId, cohortFingerprint } = parsed.data;
+    const reason = parsed.data.reason ?? 'RETIREMENT';
     const { source, target } = await validatePlanMigrationVersions({
         sourcePlanVersionId,
         targetPlanVersionId,
-        verticals: args.verticals
+        verticals: args.verticals,
+        reason
     });
-    const { direction } = await args.verticals.changeDirection({
-        fromPlanVersionId: source.id,
-        toPlanVersionId: target.id
-    });
+    const direction =
+        reason === 'PRICE_INCREASE'
+            ? ('UP' as const)
+            : (
+                  await args.verticals.changeDirection({
+                      fromPlanVersionId: source.id,
+                      toPlanVersionId: target.id
+                  })
+              ).direction;
     try {
         return await getDb().transaction(async (tx) => {
             const [sourcePlan, targetPlan] = await Promise.all([
@@ -130,6 +137,19 @@ export async function launchPlanMigration(args: {
                 .select({ cycle: billingOptions.cycle })
                 .from(billingOptions)
                 .where(eq(billingOptions.planVersionId, targetPlanVersionId));
+            if (
+                reason === 'PRICE_INCREASE' &&
+                cohort.some(
+                    (row) =>
+                        row.userId !== actor.id &&
+                        !row.alreadyInMigration &&
+                        !targetOptions.some((option) => option.cycle === row.cycle)
+                )
+            )
+                throw planMigrationRejection({
+                    reason: 'PLAN_MIGRATION_INCREASE_CYCLE_MISSING',
+                    message: 'The new version does not offer every customer cycle.'
+                });
             const classified = cohort.map((row) => {
                 const excludedReason =
                     row.userId === actor.id
@@ -169,14 +189,15 @@ export async function launchPlanMigration(args: {
                 .limit(1);
             if (!deadlines) throw new Error('Current billing deadlines missing');
             const announcedAt = args.clock?.now() ?? new Date();
-            const noticeDays = deadlines.values['12'].noticeDays;
+            const noticeDays =
+                deadlines.values[reason === 'PRICE_INCREASE' ? '11' : '12'].noticeDays;
             const [migration] = await tx
                 .insert(planMigrations)
                 .values({
                     vertical: source.vertical,
                     sourcePlanVersionId,
                     targetPlanVersionId,
-                    reason: 'RETIREMENT',
+                    reason,
                     announcedAt,
                     noticeDays,
                     deadlineVersion: deadlines.version,
@@ -217,7 +238,8 @@ export async function launchPlanMigration(args: {
                     tx,
                     row: entry.row,
                     targetPlanVersionId,
-                    at: announcedAt
+                    at: announcedAt,
+                    reason
                 });
                 const variant =
                     entry.outcome === 'PARA_RESOLVER'
@@ -249,12 +271,16 @@ export async function launchPlanMigration(args: {
                         applicationDate: variant === 'SCHEDULED' ? scheduled.applicationDate : null,
                         losesPromo: pricing.losesPromo,
                         variant,
-                        deadlinesVersion: deadlines.version
+                        deadlinesVersion: deadlines.version,
+                        // A retirement keeps its original payload byte for byte; the increase
+                        // spells out its reason for the announcement renderer.
+                        ...(reason === 'PRICE_INCREASE' ? { reason } : {})
                     }
                 });
             }
             return PlanMigrationLaunchResponseSchema.parse({
                 planMigrationId: migration.id,
+                reason,
                 announcedAt,
                 deadlineVersion: deadlines.version,
                 noticeDays,

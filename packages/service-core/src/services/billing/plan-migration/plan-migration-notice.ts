@@ -36,7 +36,9 @@ const noticePayloadSchema = z.strictObject({
     /** True when the provider also notifies the customer of the amount change (card payers). */
     providerNotifies: z.boolean().optional(),
     variant: z.enum(['SCHEDULED', 'WAITING', 'TO_RESOLVE', 'NOTHING_CHANGES', 'ALREADY_STARTED']),
-    deadlinesVersion: z.number().int().positive()
+    deadlinesVersion: z.number().int().positive(),
+    /** Why the migration was announced; absent means a plan retirement. */
+    reason: z.enum(['RETIREMENT', 'PRICE_INCREASE']).optional()
 });
 
 /** Build a stable key from the scope row and the day the notice concerns. */
