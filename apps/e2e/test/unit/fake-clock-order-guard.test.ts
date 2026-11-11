@@ -49,10 +49,13 @@ function readScannedSources(): ReadonlyArray<{ readonly file: string; readonly s
 describe('HOS-2112 the fake provider clock is never compared with real time', () => {
     it('the forbidden patterns match the shape that hid the bug', () => {
         // Arrange
+        // Rebuild the old lines from parts so this guard's own source does not contain
+        // the text the sweep forbids (the sweep scans all of apps/e2e, this file included).
+        const fakeClockRead = (request: string): string => `new Date(${request}).getTime()`;
         const oldShapes = [
-            'expect(mail.receivedAt.getTime()).toBeLessThan(new Date(requests[0]!.at).getTime());',
-            ').toBeLessThan(new Date(cancelRequest!.at).getTime());',
-            ').toBeLessThan(new Date(cancellations[0]!.at).getTime());'
+            `expect(mail.receivedAt.getTime()).toBeLessThan(${fakeClockRead('requests[0]!.at')});`,
+            `).toBeLessThan(${fakeClockRead('cancelRequest!.at')});`,
+            `).toBeLessThan(${fakeClockRead('cancellations[0]!.at')});`
         ];
         const allowed = 'uiDate(new Date(body.data.nextCharge.at))';
 
