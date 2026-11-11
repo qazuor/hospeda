@@ -165,4 +165,13 @@ describe('ResetPasswordTemplate', () => {
             expect(html).toContain(url);
         });
     });
+    it('should render a readable plain-text alternative carrying the greeting and the reset link (HOS-2107)', async () => {
+        // Arrange & Act
+        const text = await render(<ResetPasswordTemplate {...defaultProps} />, { plainText: true });
+
+        // Assert
+        expect(text).not.toContain('<');
+        expect(text).toContain('María García');
+        expect(text).toContain(defaultProps.resetUrl);
+    });
 });
