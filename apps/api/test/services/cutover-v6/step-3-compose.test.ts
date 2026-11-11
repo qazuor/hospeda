@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
     stopEffectiveSetInvalidation: vi.fn(),
     drain: vi.fn(),
     subscribeListing: vi.fn(),
-    subscribeEffectiveSetInvalidation: vi.fn()
+    subscribeEffectiveSetInvalidation: vi.fn(),
+    disconnectRedis: vi.fn()
 }));
 vi.mock('../../../src/utils/listing-publication/coverage-listener.js', () => ({
     subscribeListingCoverageRecalculation: mocks.subscribeListing,
@@ -14,6 +15,8 @@ vi.mock('../../../src/utils/listing-publication/coverage-listener.js', () => ({
 vi.mock('../../../src/utils/effective-set-coverage-invalidation.js', () => ({
     subscribeEffectiveSetCoverageInvalidation: mocks.subscribeEffectiveSetInvalidation
 }));
+vi.mock('../../../src/utils/redis.js', () => ({ disconnectRedis: mocks.disconnectRedis }));
+vi.mock('../../../src/utils/logger.js', () => ({ apiLogger: { error: vi.fn() } }));
 
 import { composeStep3Process } from '../../../src/services/cutover-v6/step-3.compose.js';
 
@@ -22,6 +25,7 @@ describe('HOS-2091 step 3 composes the coverage listeners', () => {
         vi.clearAllMocks();
         mocks.subscribeListing.mockReturnValue(mocks.stopListing);
         mocks.subscribeEffectiveSetInvalidation.mockReturnValue(mocks.stopEffectiveSetInvalidation);
+        mocks.disconnectRedis.mockResolvedValue(undefined);
     });
 
     it('subscribes the listing recalculation and the effective-set invalidation once each', () => {
@@ -56,8 +60,18 @@ describe('HOS-2091 step 3 composes the coverage listeners', () => {
         expect(settled).toBe(false);
         expect(mocks.stopListing).toHaveBeenCalledTimes(1);
         expect(mocks.stopEffectiveSetInvalidation).toHaveBeenCalledTimes(1);
+        expect(mocks.disconnectRedis).not.toHaveBeenCalled();
         resolveDrain();
         await stopping;
         expect(settled).toBe(true);
+        expect(mocks.disconnectRedis).toHaveBeenCalledTimes(1);
+    });
+
+    it('stop does not propagate a Redis disconnect failure', async () => {
+        mocks.drain.mockResolvedValue(undefined);
+        mocks.disconnectRedis.mockRejectedValue(new Error('disconnect failed'));
+
+        await expect(composeStep3Process().stop()).resolves.toBeUndefined();
+        expect(mocks.disconnectRedis).toHaveBeenCalledTimes(1);
     });
 });

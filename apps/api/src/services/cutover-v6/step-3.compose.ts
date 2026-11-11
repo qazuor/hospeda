@@ -3,6 +3,8 @@ import {
     drainListingCoverageRecalculations,
     subscribeListingCoverageRecalculation
 } from '../../utils/listing-publication/coverage-listener.js';
+import { apiLogger } from '../../utils/logger.js';
+import { disconnectRedis } from '../../utils/redis.js';
 
 /** The coverage listeners of one V6 step 3 CLI run; `stop` waits for in-flight listing recalculations. */
 export interface Step3ProcessComposition {
@@ -24,6 +26,11 @@ export function composeStep3Process(): Step3ProcessComposition {
             stopListing();
             stopEffectiveSetInvalidation();
             await drainListingCoverageRecalculations();
+            try {
+                await disconnectRedis();
+            } catch (error) {
+                apiLogger.error({ error }, 'Failed to disconnect Redis after cutover step 3');
+            }
         }
     };
 }

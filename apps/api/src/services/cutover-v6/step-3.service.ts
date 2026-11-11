@@ -36,7 +36,12 @@ export interface Step3Result {
     readonly planned: readonly Step3PlannedRow[];
     readonly written: readonly CutoverTrialListing[];
     readonly skipped: readonly CutoverTrialListing[];
-    /** Written trials whose post-commit coverage notice failed (HOS-2091); the daily coverage reconciler is the net. */
+    /**
+     * Written trials whose coverage event was invalid and failed emitter validation (HOS-2091).
+     * Listener failures (including Redis invalidation and listing recalculation) are caught by
+     * the registry's Promise.allSettled and logged, not listed here. An empty array does not prove
+     * that invalidation succeeded.
+     */
     readonly coverageNoticeFailed: readonly CutoverTrialListing[];
 }
 

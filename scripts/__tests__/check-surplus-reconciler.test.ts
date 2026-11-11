@@ -203,7 +203,10 @@ describe('TEST:B4:10 GUARD:G5 a turn-off notified by its caller (via caller, not
             'packages/service-core/src/services/billing/subscription/cancel-inherited-tourist-vip.service.ts'
         );
     });
-    it('the repository inventory notifies writeCutoverTrials through runStep3 (HOS-2091)', () => {
+});
+
+describe('HOS-2091 turn-on notified by its caller', () => {
+    it('the repository inventory notifies writeCutoverTrials through runStep3', () => {
         const inventory = JSON.parse(
             readFileSync(
                 path.join(
