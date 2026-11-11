@@ -212,6 +212,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Enqueue due retirement migration reminders for each customer (HOS-1613).'
     },
     {
+        name: 'plan-migration-application',
+        displayName: 'Aplicación de migraciones de plan',
+        category: 'billing',
+        schedule: '28 * * * *',
+        description:
+            'Run S37 on due retirement migration rows seven days before their application date (HOS-1614, AC:B12:4-5).'
+    },
+    {
         name: 'billing-reconciliation-summary',
         displayName: 'Resumen de conciliación',
         category: 'billing',

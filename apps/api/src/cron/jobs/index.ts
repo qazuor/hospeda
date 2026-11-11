@@ -49,6 +49,7 @@ export { notificationLogPurgeJob } from './notification-log-purge.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { paymentWindowExpiryJob } from './payment-window-expiry.job.js';
+export { planMigrationApplicationJob } from './plan-migration-application.job.js';
 export { planMigrationNoticeJob } from './plan-migration-notice.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { providerNotificationRetentionJob } from './provider-notification-retention.job.js';
