@@ -11,6 +11,7 @@ import {
     usePlanMigrationOptions,
     usePreviewPlanMigration
 } from '../hooks/usePlanMigration';
+import { planVersionLabel } from '../utils/plan-version-label';
 import { PlanMigrationConfirm } from './PlanMigrationConfirm';
 import { PlanMigrationDetail } from './PlanMigrationDetail';
 import { PlanMigrationList } from './PlanMigrationList';
@@ -184,7 +185,14 @@ export function PlanMigrationScreen() {
                                                             {tPlural(
                                                                 'admin-pages.planMigration.sourceOption',
                                                                 source.customerCount,
-                                                                { name: source.name }
+                                                                {
+                                                                    name: planVersionLabel({
+                                                                        t,
+                                                                        name: source.name,
+                                                                        versionNumber:
+                                                                            source.versionNumber
+                                                                    })
+                                                                }
                                                             )}
                                                         </option>
                                                     ))}
@@ -237,7 +245,12 @@ export function PlanMigrationScreen() {
                                                                         key={target.id}
                                                                         value={target.id}
                                                                     >
-                                                                        {target.name}
+                                                                        {planVersionLabel({
+                                                                            t,
+                                                                            name: target.name,
+                                                                            versionNumber:
+                                                                                target.versionNumber
+                                                                        })}
                                                                     </option>
                                                                 ))}
                                                             </select>

@@ -36,26 +36,30 @@ const increaseSource = {
     planId,
     name: 'Anclada',
     vertical: 'accommodation',
+    versionNumber: 1,
     customerCount: 2
 };
 const increaseTarget = {
     id: '33333333-3333-4333-8333-333333333333',
     planId,
     name: 'Vigente',
-    vertical: 'accommodation'
+    vertical: 'accommodation',
+    versionNumber: 2
 };
 const retirementSource = {
     id: '44444444-4444-4444-8444-444444444444',
     planId: '55555555-5555-4555-8555-555555555555',
     name: 'Retirada',
     vertical: 'accommodation',
+    versionNumber: 1,
     customerCount: 1
 };
 const retirementTarget = {
     id: '66666666-6666-4666-8666-666666666666',
     planId: '77777777-7777-4777-8777-777777777777',
     name: 'Destino retiro',
-    vertical: 'accommodation'
+    vertical: 'accommodation',
+    versionNumber: 1
 };
 const options = {
     sources: [retirementSource],
@@ -164,13 +168,33 @@ describe('AC:B12:9 el aumento se lanza por la acción 17 con el motivo «aumento
             '',
             increaseSource.id
         ]);
-        expect(source.options[1]?.textContent).toContain('Anclada · 2 clientes');
+        expect(source.options[1]?.textContent).toContain('Anclada · versión 1 · 2 clientes');
         fireEvent.change(source, { target: { value: increaseSource.id } });
         const target = screen.getByTestId('plan-migration-target') as HTMLSelectElement;
         expect(Array.from(target.options).map((option) => option.value)).toEqual([
             '',
             increaseTarget.id
         ]);
+    });
+
+    it('con «aumento» el origen y el destino del par se distinguen por su número de versión (HOS-1616 O-3)', async () => {
+        setup();
+        await screen.findByTestId('plan-migration-reason');
+        fireEvent.change(screen.getByTestId('plan-migration-reason'), {
+            target: { value: 'PRICE_INCREASE' }
+        });
+        const source = screen.getByTestId('plan-migration-source') as HTMLSelectElement;
+        const sourceOption = Array.from(source.options).find(
+            (option) => option.value === increaseSource.id
+        );
+        expect(sourceOption).toHaveTextContent('Anclada · versión 1 · 2 clientes');
+        fireEvent.change(source, { target: { value: increaseSource.id } });
+        const target = screen.getByTestId('plan-migration-target') as HTMLSelectElement;
+        const targetOption = Array.from(target.options).find(
+            (option) => option.value === increaseTarget.id
+        );
+        expect(targetOption).toHaveTextContent('Vigente · versión 2');
+        expect(sourceOption?.textContent).not.toBe(targetOption?.textContent);
     });
 
     it('previsualiza y lanza con reason PRICE_INCREASE', async () => {
