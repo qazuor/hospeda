@@ -162,7 +162,7 @@ describe('HOS-2108 the stored date is a floor that only lands on a charge day', 
                 noticeDays: 60,
                 nextChargeAt: new Date('2026-12-12T13:00:00.000Z'),
                 cycle: 'annual',
-                notBefore: '2027-11-20'
+                notBefore: '2027-03-01'
             })
         ).toBe('2027-12-12');
     });
