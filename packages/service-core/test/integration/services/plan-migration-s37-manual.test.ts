@@ -4,6 +4,7 @@ import {
     emailOutbox,
     eq,
     getDb,
+    manualPaymentModel,
     manualPayments,
     planMigrationSubscriptions,
     promoRedemptions,
@@ -182,22 +183,35 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 onApplied: () => undefined
             });
 
-            await openDueManualInstallments(
-                { pageSize: 1000 },
-                {
-                    clock: caseRow.clock,
-                    planPolicy: async () => ({
-                        graceDays: 10,
-                        allowsPause: false,
-                        current: true,
-                        sellable: true
-                    }),
-                    recipients: {
-                        list: async () => [{ userId: admin.id, email: admin.email }]
-                    },
-                    scheduledChangeApplier: applier
-                }
-            );
+            // MP5 is a global batch, and other files (manual-installment-open, b7-manual-payer-arrears)
+            // seed MANUAL principals without sharing this file's serial lock. Keep the real query
+            // but scope its result to this case, so this run never opens installments on their rows.
+            const findDue = manualPaymentModel.findDueManualSubscriptions.bind(manualPaymentModel);
+            const ownRowsOnly = vi
+                .spyOn(manualPaymentModel, 'findDueManualSubscriptions')
+                .mockImplementation(async (input) =>
+                    (await findDue(input)).filter((row) => row.id === caseRow.subscriptionId)
+                );
+            try {
+                await openDueManualInstallments(
+                    { pageSize: 1000 },
+                    {
+                        clock: caseRow.clock,
+                        planPolicy: async () => ({
+                            graceDays: 10,
+                            allowsPause: false,
+                            current: true,
+                            sellable: true
+                        }),
+                        recipients: {
+                            list: async () => [{ userId: admin.id, email: admin.email }]
+                        },
+                        scheduledChangeApplier: applier
+                    }
+                );
+            } finally {
+                ownRowsOnly.mockRestore();
+            }
 
             const [current] = await db
                 .select()
