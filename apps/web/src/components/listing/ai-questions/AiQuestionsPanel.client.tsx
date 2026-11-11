@@ -389,7 +389,7 @@ export function AiQuestionsPanel({
                         <p className={styles.status}>
                             {t(
                                 'host.properties.editor.aiQuestions.dismissedTruncated',
-                                'Mostramos las últimas {{shown}} de {{total}} preguntas descartadas.',
+                                'Descartadas mostradas: {{shown}} de {{total}}. Ves las más recientes.',
                                 { shown: data.dismissed?.length ?? 0, total: data.dismissedCount }
                             )}
                         </p>

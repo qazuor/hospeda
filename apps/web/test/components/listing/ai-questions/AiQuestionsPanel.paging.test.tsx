@@ -96,8 +96,6 @@ describe('AiQuestionsPanel paging notices', () => {
         );
 
         // Assert
-        expect(
-            await screen.findByText(/Mostramos las últimas 50 de 52 preguntas descartadas/)
-        ).toBeInTheDocument();
+        expect(await screen.findByText(/Descartadas mostradas: 50 de 52/)).toBeInTheDocument();
     });
 });
