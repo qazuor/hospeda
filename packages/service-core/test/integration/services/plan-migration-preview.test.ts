@@ -38,6 +38,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planId: seeded.planId,
                     name: 'Succession plan',
                     vertical: 'accommodation',
+                    // The source is the first version created for its plan.
+                    versionNumber: 1,
                     customerCount: 1
                 }
             ]);
@@ -50,7 +52,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     id: seeded.targetPlanVersionId,
                     planId: expect.any(String),
                     name: 'Succession target plan',
-                    vertical: 'accommodation'
+                    vertical: 'accommodation',
+                    // The target plan has a single version, so it restarts at 1.
+                    versionNumber: 1
                 }
             ]);
         });

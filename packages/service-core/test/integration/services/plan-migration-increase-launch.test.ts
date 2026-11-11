@@ -298,13 +298,17 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         planId: seeded.planId,
                         name: 'Succession plan',
                         vertical: 'accommodation',
+                        // The source is the first version created for its plan.
+                        versionNumber: 1,
                         customerCount: 1
                     },
                     target: {
                         id: seeded.increaseTarget.id,
                         planId: seeded.planId,
                         name: 'Succession plan',
-                        vertical: 'accommodation'
+                        vertical: 'accommodation',
+                        // The increase target is the second version of the same plan.
+                        versionNumber: 2
                     }
                 }
             ]);

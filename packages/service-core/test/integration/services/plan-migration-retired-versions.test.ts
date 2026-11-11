@@ -109,6 +109,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planId: seeded.planId,
                     name: 'Succession plan',
                     vertical: 'accommodation',
+                    // The source is the first version created for its plan.
+                    versionNumber: 1,
                     liveSubscriptionCount: 3
                 }
             ]);
@@ -183,6 +185,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planId: seeded.planId,
                     name: 'Succession plan',
                     vertical: 'accommodation',
+                    // The source is the first version created for its plan.
+                    versionNumber: 1,
                     liveSubscriptionCount: 1
                 }
             ]);
