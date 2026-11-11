@@ -196,12 +196,18 @@ export function changeAmountRequests(
 }
 
 /**
- * Plain text of a captured mail: tags and React text-node markers (`<!-- -->`)
- * become spaces, then any stray `<` left behind is dropped too, so no markup
- * can survive a partial match.
+ * Plain text of a captured mail. HTML comments go first and leave nothing
+ * behind: React puts a `<!-- -->` marker between adjacent text nodes, so
+ * `pasará al plan {name}.` renders as `pasará al plan <!-- -->Name<!-- -->.`, and
+ * turning the marker into a space would split it into `Name .`. Then tags become
+ * spaces, and any stray `<` left behind is dropped too, so no markup can survive
+ * a partial match.
  */
 export function mailText(html: string): string {
-    const stripped = html.replace(/<[^>]*>/g, ' ').replace(/</g, ' ');
+    const stripped = html
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/</g, ' ');
     return decodeHtmlEntities(stripped).replace(/\s+/g, ' ').trim();
 }
 
