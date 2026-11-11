@@ -261,8 +261,8 @@ export function ExternalReputationSection({
             setListings(parsed.data.listings);
             setMasterToggle(parsed.data.reputation.showExternalReputation);
             setAggregateFetchedAt(parsed.data.reputation.aggregateFetchedAt);
-            setAutoEnabledAt(parsed.data.reputation.autoEnabledAt);
-            setToggleDecidedAt(parsed.data.reputation.toggleDecidedAt);
+            setAutoEnabledAt(parsed.data.reputation.autoEnabledAt ?? null);
+            setToggleDecidedAt(parsed.data.reputation.toggleDecidedAt ?? null);
         } catch {
             setLoadError(
                 t(
@@ -663,8 +663,8 @@ export function ExternalReputationSection({
     const showAutoEnabledNotice =
         masterToggle &&
         !hasManuallyToggled &&
-        autoEnabledAt !== null &&
-        toggleDecidedAt !== null &&
+        autoEnabledAt != null &&
+        toggleDecidedAt != null &&
         autoEnabledAt.getTime() === toggleDecidedAt.getTime();
 
     return (
