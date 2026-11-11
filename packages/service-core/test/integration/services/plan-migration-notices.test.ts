@@ -256,6 +256,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     daysBefore: 30,
                     losesPromo: preview.rows[0]?.losesPromo,
                     variant: 'SCHEDULED',
+                    providerNotifies: false,
                     deadlinesVersion: launched.deadlineVersion
                 },
                 {
@@ -279,6 +280,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     daysBefore: 7,
                     losesPromo: preview.rows[0]?.losesPromo,
                     variant: 'SCHEDULED',
+                    providerNotifies: true,
                     deadlinesVersion: launched.deadlineVersion
                 }
             ]);

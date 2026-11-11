@@ -184,7 +184,11 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             daysBefore: due.daysBefore,
             losesPromo: pricing.losesPromo,
             variant: 'SCHEDULED',
-            providerNotifies: row.paymentMethod === 'CARD',
+            // Only the third notice (the closest contact day, which travels with S37) tells a card
+            // payer that Mercado Pago also announces the amount change (B12 §4, Q-1).
+            providerNotifies:
+                row.paymentMethod === 'CARD' &&
+                due.daysBefore === Math.min(...deadlines.data['12'].contactDays),
             deadlinesVersion: row.deadlineVersion
         }
     });
