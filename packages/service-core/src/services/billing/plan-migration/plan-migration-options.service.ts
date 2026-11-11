@@ -67,5 +67,27 @@ export async function listPlanMigrationOptions(args: {
             targets[version.vertical] = [...(targets[version.vertical] ?? []), version];
         }
     }
-    return PlanMigrationOptionsSchema.parse({ sources, targets });
+    const increases: Array<{
+        source: (typeof candidates)[number];
+        target: { id: string; planId: string; name: string; vertical: string };
+    }> = [];
+    for (const candidate of candidates) {
+        const current = await planCatalogModel.findCurrentPlanVersion({
+            planId: candidate.planId
+        });
+        if (!current || current.id === candidate.id) continue;
+        const policy = await args.verticals.planPolicy({ planVersionId: current.id });
+        if (policy.current && policy.sellable) {
+            increases.push({
+                source: candidate,
+                target: {
+                    id: current.id,
+                    planId: current.planId,
+                    name: candidate.name,
+                    vertical: current.vertical
+                }
+            });
+        }
+    }
+    return PlanMigrationOptionsSchema.parse({ sources, targets, increases });
 }

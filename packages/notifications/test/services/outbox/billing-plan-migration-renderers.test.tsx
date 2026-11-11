@@ -240,3 +240,143 @@ describe('plan migration payload validation', () => {
         expect(() => render(template, payload)).toThrow(TypeError);
     });
 });
+
+describe('AC:B12:9 el anuncio del aumento', () => {
+    it('renders the increase subject and every increase phrase with the real amounts', () => {
+        const { subject, html } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'SCHEDULED',
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cambia el precio de tu plan');
+        expect(html).toContain('El precio de tu plan Plan Inicial va a aumentar.');
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain('El nuevo precio se aplica desde tu cobro del');
+        expect(html).toContain(formattedDate);
+        expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
+        expect(html).toContain(
+            'Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.'
+        );
+        expect(html).toContain('Mercado Pago también te va a avisar del cambio de monto.');
+    });
+
+    it('renders the waiting increase without a date', () => {
+        const { subject, html } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'WAITING',
+            applicationDate: null,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cambia el precio de tu plan');
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain('Te avisamos la fecha cuando tu suscripción vuelva a estar activa.');
+        expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
+        expect((html.match(new RegExp(formattedDate, 'g')) ?? []).length).toBe(0);
+    });
+
+    it('keeps the retirement subject when no reason is present', () => {
+        const { subject } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'SCHEDULED'
+        });
+        expect(subject).toBe('Tu plan deja de venderse');
+    });
+});
+
+describe('AC:B12:9 el recordatorio del aumento', () => {
+    const providerPhrase = 'Mercado Pago también te va a mandar un aviso del cambio de monto';
+    const occurrences = (html: string, phrase: string) =>
+        (html.match(new RegExp(phrase, 'g')) ?? []).length;
+
+    it('dice el plazo del aumento, los dos precios y la fecha de ese cliente, y permite cancelar', () => {
+        const { subject, html } = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Se acerca el cambio de precio de tu plan');
+        expect(html).toContain(
+            'Faltan 7 días para el cambio de precio de tu plan Plan Inicial: se aplica desde tu cobro del'
+        );
+        expect(html).toContain(formattedDate);
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain(
+            'Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.'
+        );
+        expect(occurrences(html, 'subida de precio')).toBe(0);
+        expect(occurrences(html, 'bajada de precio')).toBe(0);
+        expect(occurrences(html, 'perdés tu promoción actual')).toBe(0);
+    });
+
+    it('sólo el tarjetahabiente recibe la frase de Mercado Pago', () => {
+        const card = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: true,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(occurrences(card.html, providerPhrase)).toBe(1);
+        const manual = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: false,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(occurrences(manual.html, providerPhrase)).toBe(0);
+    });
+});
+
+describe('AC:B12:9 la cancelación del aumento', () => {
+    it('renders the increase NOTHING_CHANGES subject and literal copy', () => {
+        const { subject, html } = render('billing.plan-migration-cancelled', {
+            variant: 'NOTHING_CHANGES',
+            planName: 'Plan Inicial',
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cancelamos el cambio de precio de tu plan');
+        expect(html).toContain(
+            'Cancelamos el aumento de precio de tu plan Plan Inicial: ya no cambia nada.'
+        );
+    });
+
+    it('renders the increase ALREADY_STARTED copy with the formatted date and amount', () => {
+        const { subject, html } = render('billing.plan-migration-cancelled', {
+            variant: 'ALREADY_STARTED',
+            planName: 'Plan Inicial',
+            newAmountMinor,
+            currency,
+            applicationDate,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cancelamos el cambio de precio de tu plan');
+        expect(html).toContain(
+            'El aumento de tu plan Plan Inicial ya empezó a aplicarse y la cancelación no lo alcanza'
+        );
+        expect(html).toContain(`desde el ${formattedDate} pagás ${newAmount}.`);
+    });
+
+    it('keeps the retirement subject and copy when no reason is present', () => {
+        const nothing = render('billing.plan-migration-cancelled', {
+            variant: 'NOTHING_CHANGES',
+            planName: 'Plan Inicial'
+        });
+        expect(nothing.subject).toBe('Cancelamos el cambio de tu plan');
+        expect(nothing.html).toContain(
+            'Cancelamos la migración de tu plan Plan Inicial: ya no cambia nada.'
+        );
+        const started = render('billing.plan-migration-cancelled', {
+            variant: 'ALREADY_STARTED',
+            planName: 'Plan Inicial',
+            newAmountMinor,
+            currency,
+            applicationDate
+        });
+        expect(started.subject).toBe('Cancelamos el cambio de tu plan');
+        expect(started.html).toContain(
+            'La cancelación no alcanza a tu plan Plan Inicial porque tu cambio ya empezó.'
+        );
+    });
+});

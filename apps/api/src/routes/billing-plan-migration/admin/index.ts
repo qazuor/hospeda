@@ -23,6 +23,7 @@ import { adminCancelPlanMigrationRoute } from './cancel-route.js';
 import { planMigrationVerticals } from './ports.js';
 import { adminGetPlanMigrationDetailRoute, adminListPlanMigrationsRoute } from './read-routes.js';
 import { answerPlanMigrationRejection } from './rejections.js';
+import { adminListRetiredPlanVersionsRoute } from './retired-versions-route.js';
 
 /** List retired origins and current, sellable destinations. */
 export const adminPlanMigrationOptionsRoute = createAdminRoute({
@@ -109,6 +110,7 @@ export const adminLaunchPlanMigrationRoute = createAdminRoute({
                     planMigrationId: result.planMigrationId,
                     sourcePlanVersionId: body.sourcePlanVersionId,
                     targetPlanVersionId: body.targetPlanVersionId,
+                    reason: result.reason,
                     deadlineVersion: result.deadlineVersion,
                     rowCount: result.rows.length,
                     excludedCount: result.excluded.length,
@@ -126,6 +128,7 @@ const router = createRouter();
 router.route('/', adminPlanMigrationOptionsRoute);
 router.route('/', adminPreviewPlanMigrationRoute);
 router.route('/', adminLaunchPlanMigrationRoute);
+router.route('/', adminListRetiredPlanVersionsRoute);
 router.route('/', adminListPlanMigrationsRoute);
 router.route('/', adminGetPlanMigrationDetailRoute);
 router.route('/', adminCancelPlanMigrationRoute);

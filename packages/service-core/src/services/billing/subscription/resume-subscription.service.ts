@@ -16,6 +16,7 @@ import type { PaymentProvider } from '@repo/payments';
 import { BILLING_CYCLE_MONTHS } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
+import { pendingIncreaseAmountForCharge } from '../plan-migration/plan-migration-increase-on-resume.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import {
     createCutExpectedAmountPolicy,
@@ -292,7 +293,17 @@ export async function resumeSubscription(
                 subscription,
                 purpose: { kind: 'PERIOD', chargeCreatedAt: written.nextChargeAt }
             });
-            if (expected.kind === 'COMPARABLE')
+            const increase = await pendingIncreaseAmountForCharge({
+                subscriptionId: value.subscriptionId,
+                chargeAt: written.nextChargeAt
+            });
+            if (increase)
+                nextCharge = {
+                    at: written.nextChargeAt,
+                    amountMinor: increase.amountMinor,
+                    currency: increase.currency
+                };
+            else if (expected.kind === 'COMPARABLE')
                 nextCharge = {
                     at: written.nextChargeAt,
                     amountMinor: expected.amountMinor,

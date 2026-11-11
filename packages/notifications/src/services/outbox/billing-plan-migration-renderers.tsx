@@ -2,13 +2,16 @@ import type { EmailOutboxRow } from '@repo/db';
 import { z } from 'zod';
 import {
     PLAN_MIGRATION_ANNOUNCED_SUBJECT,
+    PLAN_MIGRATION_INCREASE_ANNOUNCED_SUBJECT,
     PlanMigrationAnnounced
 } from '../../templates/billing/plan-migration-announced.js';
 import {
     PLAN_MIGRATION_CANCELLED_SUBJECT,
+    PLAN_MIGRATION_INCREASE_CANCELLED_SUBJECT,
     PlanMigrationCancelled
 } from '../../templates/billing/plan-migration-cancelled.js';
 import {
+    PLAN_MIGRATION_INCREASE_UPCOMING_SUBJECT,
     PLAN_MIGRATION_UPCOMING_SUBJECT,
     PlanMigrationUpcoming
 } from '../../templates/billing/plan-migration-upcoming.js';
@@ -18,6 +21,7 @@ import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 const nonEmptyString = z.string().refine((value) => value.trim() !== '');
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const amountMinor = z.number().int().nonnegative();
+const reasonSchema = z.enum(['RETIREMENT', 'PRICE_INCREASE']).optional();
 const migrationDetailsSchema = z.object({
     planName: nonEmptyString,
     targetPlanName: nonEmptyString,
@@ -25,13 +29,14 @@ const migrationDetailsSchema = z.object({
     losesPromo: z.boolean(),
     currentAmountMinor: amountMinor,
     newAmountMinor: amountMinor,
-    currency: nonEmptyString
+    currency: nonEmptyString,
+    reason: reasonSchema
 });
 
 const announcedSchema = z.discriminatedUnion('variant', [
     migrationDetailsSchema.extend({ variant: z.literal('SCHEDULED'), applicationDate: dateString }),
     migrationDetailsSchema.extend({ variant: z.literal('WAITING') }),
-    z.object({ variant: z.literal('TO_RESOLVE'), planName: nonEmptyString })
+    z.object({ variant: z.literal('TO_RESOLVE'), planName: nonEmptyString, reason: reasonSchema })
 ]);
 const upcomingSchema = migrationDetailsSchema.extend({
     applicationDate: dateString,
@@ -39,13 +44,18 @@ const upcomingSchema = migrationDetailsSchema.extend({
     providerNotifies: z.boolean().optional()
 });
 const cancelledSchema = z.discriminatedUnion('variant', [
-    z.object({ variant: z.literal('NOTHING_CHANGES'), planName: nonEmptyString }),
+    z.object({
+        variant: z.literal('NOTHING_CHANGES'),
+        planName: nonEmptyString,
+        reason: reasonSchema
+    }),
     z.object({
         variant: z.literal('ALREADY_STARTED'),
         planName: nonEmptyString,
         applicationDate: dateString,
         newAmountMinor: amountMinor,
-        currency: nonEmptyString
+        currency: nonEmptyString,
+        reason: reasonSchema
     })
 ]);
 
@@ -63,8 +73,12 @@ function announced(row: EmailOutboxRow) {
     if (!parsed.success) throw new TypeError('Faltan datos requeridos del anuncio de migración');
     const data = parsed.data;
     const amounts = data.variant === 'TO_RESOLVE' ? null : migrationAmounts(data);
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_ANNOUNCED_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_ANNOUNCED_SUBJECT
+                : PLAN_MIGRATION_ANNOUNCED_SUBJECT,
         react: (
             <PlanMigrationAnnounced
                 variant={data.variant}
@@ -75,6 +89,7 @@ function announced(row: EmailOutboxRow) {
                 newAmount={amounts?.next ?? null}
                 applicationDate={data.variant === 'SCHEDULED' ? data.applicationDate : null}
                 losesPromo={data.variant === 'TO_RESOLVE' ? false : data.losesPromo}
+                reason={reason}
             />
         )
     };
@@ -86,8 +101,12 @@ function upcoming(row: EmailOutboxRow) {
         throw new TypeError('Faltan datos requeridos del recordatorio de migración');
     const data = parsed.data;
     const amounts = migrationAmounts(data);
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_UPCOMING_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_UPCOMING_SUBJECT
+                : PLAN_MIGRATION_UPCOMING_SUBJECT,
         react: (
             <PlanMigrationUpcoming
                 daysBefore={data.daysBefore}
@@ -99,6 +118,7 @@ function upcoming(row: EmailOutboxRow) {
                 applicationDate={data.applicationDate}
                 losesPromo={data.losesPromo}
                 providerNotifies={data.providerNotifies ?? false}
+                reason={reason}
             />
         )
     };
@@ -109,8 +129,12 @@ function cancelled(row: EmailOutboxRow) {
     if (!parsed.success)
         throw new TypeError('Faltan datos requeridos de la cancelación de migración');
     const data = parsed.data;
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_CANCELLED_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_CANCELLED_SUBJECT
+                : PLAN_MIGRATION_CANCELLED_SUBJECT,
         react: (
             <PlanMigrationCancelled
                 variant={data.variant}
@@ -121,6 +145,7 @@ function cancelled(row: EmailOutboxRow) {
                         : null
                 }
                 applicationDate={data.variant === 'ALREADY_STARTED' ? data.applicationDate : null}
+                reason={reason}
             />
         )
     };

@@ -272,6 +272,13 @@
             "row": 20,
             "subject": "addon_instance",
             "why": "AC:B13b:3: the action 20 editor counts PENDING_AUTHORIZATION and ACTIVE purchases by immutable addon version."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/plan-migration/plan-migration-retired-versions.service.ts",
+            "symbol": "listRetiredPlanVersions",
+            "row": null,
+            "subject": "subscription",
+            "why": "AC:B12:10 (HOS-1615): the retired-version list counts the subscriptions still anchored to each version over LIVE_SUBSCRIPTION_STATUSES; it only reads, never writes status."
         }
     ],
     "grant_vivo_ancla_viva": [

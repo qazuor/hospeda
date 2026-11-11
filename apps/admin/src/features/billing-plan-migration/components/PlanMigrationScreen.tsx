@@ -15,6 +15,7 @@ import { PlanMigrationConfirm } from './PlanMigrationConfirm';
 import { PlanMigrationDetail } from './PlanMigrationDetail';
 import { PlanMigrationList } from './PlanMigrationList';
 import { PlanMigrationPreviewTable } from './PlanMigrationPreviewTable';
+import { RetiredPlanVersions } from './RetiredPlanVersions';
 
 const errorCodes = new Set([
     'ADMINISTRATIVE_ACTION_FORBIDDEN',
@@ -25,7 +26,10 @@ const errorCodes = new Set([
     'PLAN_MIGRATION_VERTICAL_MISMATCH',
     'PLAN_MIGRATION_SAME_VERSION',
     'PLAN_MIGRATION_COHORT_CHANGED',
-    'PLAN_MIGRATION_EMPTY_COHORT'
+    'PLAN_MIGRATION_EMPTY_COHORT',
+    'PLAN_MIGRATION_INCREASE_OTHER_PLAN',
+    'PLAN_MIGRATION_INCREASE_SOURCE_CURRENT',
+    'PLAN_MIGRATION_INCREASE_CYCLE_MISSING'
 ]);
 
 /** Selects versions, previews every customer, and confirms action 17. */
@@ -40,15 +44,24 @@ export function PlanMigrationScreen() {
     const [result, setResult] = useState<PlanMigrationLaunchResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showList, setShowList] = useState(false);
+    const [showRetired, setShowRetired] = useState(false);
     const [selectedMigrationId, setSelectedMigrationId] = useState<string | null>(null);
     const errorText = (reason: unknown) => {
         const code = isApiError(reason) ? reason.code : '';
         return errorCodes.has(code) ? tr(`errors.${code}`) : tr('errors.generic');
     };
     const form = useForm({
-        defaultValues: { sourcePlanVersionId: '', targetPlanVersionId: '' },
+        defaultValues: {
+            sourcePlanVersionId: '',
+            targetPlanVersionId: '',
+            reason: 'RETIREMENT' as 'RETIREMENT' | 'PRICE_INCREASE'
+        },
         onSubmit: async ({ value }) => {
-            const parsed = PlanMigrationPreviewRequestSchema.safeParse(value);
+            const parsed = PlanMigrationPreviewRequestSchema.safeParse({
+                sourcePlanVersionId: value.sourcePlanVersionId,
+                targetPlanVersionId: value.targetPlanVersionId,
+                ...(value.reason === 'PRICE_INCREASE' ? { reason: 'PRICE_INCREASE' as const } : {})
+            });
             if (!parsed.success) {
                 setError(tr('errors.invalidSelection'));
                 return;
@@ -68,7 +81,8 @@ export function PlanMigrationScreen() {
         const input = {
             sourcePlanVersionId: preview.source.id,
             targetPlanVersionId: preview.target.id,
-            cohortFingerprint: preview.cohortFingerprint
+            cohortFingerprint: preview.cohortFingerprint,
+            ...(preview.reason === 'PRICE_INCREASE' ? { reason: 'PRICE_INCREASE' as const } : {})
         };
         setError(null);
         try {
@@ -81,7 +95,8 @@ export function PlanMigrationScreen() {
                     setPreview(
                         await previewMutation.mutateAsync({
                             sourcePlanVersionId: input.sourcePlanVersionId,
-                            targetPlanVersionId: input.targetPlanVersionId
+                            targetPlanVersionId: input.targetPlanVersionId,
+                            ...(input.reason ? { reason: input.reason } : {})
                         })
                     );
                 } catch (refreshReason) {
@@ -106,76 +121,133 @@ export function PlanMigrationScreen() {
                         void form.handleSubmit();
                     }}
                 >
-                    <form.Field name="sourcePlanVersionId">
+                    <form.Field name="reason">
                         {(field) => (
                             <label className="space-y-1 text-sm">
-                                {tr('source')}
+                                {tr('reason')}
                                 <select
-                                    data-testid="plan-migration-source"
+                                    data-testid="plan-migration-reason"
                                     className="block h-10 min-w-52 rounded-md border bg-background px-3"
                                     value={field.state.value}
                                     onChange={(event) => {
-                                        field.handleChange(event.target.value);
+                                        field.handleChange(
+                                            event.target.value as 'RETIREMENT' | 'PRICE_INCREASE'
+                                        );
+                                        form.setFieldValue('sourcePlanVersionId', '');
                                         form.setFieldValue('targetPlanVersionId', '');
                                         setPreview(null);
                                         setResult(null);
                                         setError(null);
                                     }}
                                 >
-                                    <option value="">{tr('chooseSource')}</option>
-                                    {options.data.sources.map((source) => (
-                                        <option
-                                            key={source.id}
-                                            value={source.id}
-                                        >
-                                            {tPlural(
-                                                'admin-pages.planMigration.sourceOption',
-                                                source.customerCount,
-                                                { name: source.name }
-                                            )}
-                                        </option>
-                                    ))}
+                                    <option value="RETIREMENT">{tr('reasons.RETIREMENT')}</option>
+                                    <option value="PRICE_INCREASE">
+                                        {tr('reasons.PRICE_INCREASE')}
+                                    </option>
                                 </select>
                             </label>
                         )}
                     </form.Field>
-                    <form.Subscribe selector={(state) => state.values.sourcePlanVersionId}>
-                        {(sourceId) => {
-                            const source = options.data.sources.find(
-                                (item) => item.id === sourceId
-                            );
-                            const targets = source
-                                ? (options.data.targets[source.vertical] ?? [])
-                                : [];
+                    <form.Subscribe selector={(state) => state.values.reason}>
+                        {(reason) => {
+                            const sources =
+                                reason === 'PRICE_INCREASE'
+                                    ? options.data.increases.map((pair) => pair.source)
+                                    : options.data.sources;
                             return (
-                                <form.Field name="targetPlanVersionId">
-                                    {(field) => (
-                                        <label className="space-y-1 text-sm">
-                                            {tr('target')}
-                                            <select
-                                                data-testid="plan-migration-target"
-                                                className="block h-10 min-w-52 rounded-md border bg-background px-3"
-                                                value={field.state.value}
-                                                onChange={(event) => {
-                                                    field.handleChange(event.target.value);
-                                                    setPreview(null);
-                                                    setResult(null);
-                                                    setError(null);
-                                                }}
-                                            >
-                                                <option value="">{tr('chooseTarget')}</option>
-                                                {targets.map((target) => (
-                                                    <option
-                                                        key={target.id}
-                                                        value={target.id}
-                                                    >
-                                                        {target.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </label>
-                                    )}
-                                </form.Field>
+                                <>
+                                    <form.Field name="sourcePlanVersionId">
+                                        {(field) => (
+                                            <label className="space-y-1 text-sm">
+                                                {tr('source')}
+                                                <select
+                                                    data-testid="plan-migration-source"
+                                                    className="block h-10 min-w-52 rounded-md border bg-background px-3"
+                                                    value={field.state.value}
+                                                    onChange={(event) => {
+                                                        field.handleChange(event.target.value);
+                                                        form.setFieldValue(
+                                                            'targetPlanVersionId',
+                                                            ''
+                                                        );
+                                                        setPreview(null);
+                                                        setResult(null);
+                                                        setError(null);
+                                                    }}
+                                                >
+                                                    <option value="">{tr('chooseSource')}</option>
+                                                    {sources.map((source) => (
+                                                        <option
+                                                            key={source.id}
+                                                            value={source.id}
+                                                        >
+                                                            {tPlural(
+                                                                'admin-pages.planMigration.sourceOption',
+                                                                source.customerCount,
+                                                                { name: source.name }
+                                                            )}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
+                                    </form.Field>
+                                    <form.Subscribe
+                                        selector={(state) => state.values.sourcePlanVersionId}
+                                    >
+                                        {(sourceId) => {
+                                            const increasePair = options.data.increases.find(
+                                                (pair) => pair.source.id === sourceId
+                                            );
+                                            const source = sources.find(
+                                                (item) => item.id === sourceId
+                                            );
+                                            const targets =
+                                                reason === 'PRICE_INCREASE'
+                                                    ? increasePair
+                                                        ? [increasePair.target]
+                                                        : []
+                                                    : source
+                                                      ? (options.data.targets[source.vertical] ??
+                                                        [])
+                                                      : [];
+                                            return (
+                                                <form.Field name="targetPlanVersionId">
+                                                    {(field) => (
+                                                        <label className="space-y-1 text-sm">
+                                                            {tr('target')}
+                                                            <select
+                                                                data-testid="plan-migration-target"
+                                                                className="block h-10 min-w-52 rounded-md border bg-background px-3"
+                                                                value={field.state.value}
+                                                                onChange={(event) => {
+                                                                    field.handleChange(
+                                                                        event.target.value
+                                                                    );
+                                                                    setPreview(null);
+                                                                    setResult(null);
+                                                                    setError(null);
+                                                                }}
+                                                            >
+                                                                <option value="">
+                                                                    {tr('chooseTarget')}
+                                                                </option>
+                                                                {targets.map((target) => (
+                                                                    <option
+                                                                        key={target.id}
+                                                                        value={target.id}
+                                                                    >
+                                                                        {target.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                    )}
+                                                </form.Field>
+                                            );
+                                        }}
+                                    </form.Subscribe>
+                                </>
                             );
                         }}
                     </form.Subscribe>
@@ -207,6 +279,17 @@ export function PlanMigrationScreen() {
                     />
                 </>
             ) : null}
+            <div className="border-t pt-5">
+                <Button
+                    data-testid="plan-migration-retired-toggle"
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRetired((current) => !current)}
+                >
+                    {tr(showRetired ? 'retiredVersions.hide' : 'retiredVersions.show')}
+                </Button>
+            </div>
+            {showRetired ? <RetiredPlanVersions /> : null}
             <div className="border-t pt-5">
                 <Button
                     type="button"

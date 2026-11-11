@@ -5,7 +5,8 @@ import {
     type PlanMigrationPreview,
     PlanMigrationPreviewRequestSchema,
     type PlanMigrationPreviewRow,
-    PlanMigrationPreviewSchema
+    PlanMigrationPreviewSchema,
+    type PlanMigrationReason
 } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service.js';
@@ -36,12 +37,14 @@ async function previewRow(args: {
     readonly direction: 'UP' | 'DOWN';
     readonly announcedAt: Date;
     readonly noticeDays: number;
+    readonly reason: PlanMigrationReason;
 }): Promise<PlanMigrationPreviewRow> {
     const { row } = args;
     const pricing = await planMigrationRowPricing({
         row,
         targetPlanVersionId: args.targetPlanVersionId,
-        at: args.announcedAt
+        at: args.announcedAt,
+        reason: args.reason
     });
     const excludedReason =
         row.userId === args.actorId
@@ -98,23 +101,43 @@ export async function previewPlanMigration(args: {
             message: 'Invalid plan migration input.'
         });
     const { sourcePlanVersionId, targetPlanVersionId } = parsed.data;
+    const reason: PlanMigrationReason = parsed.data.reason ?? 'RETIREMENT';
     const { source, target } = await validatePlanMigrationVersions({
         sourcePlanVersionId,
         targetPlanVersionId,
-        verticals: args.verticals
+        verticals: args.verticals,
+        reason
     });
-    const { direction } = await args.verticals.changeDirection({
-        fromPlanVersionId: source.id,
-        toPlanVersionId: target.id
-    });
+    const direction =
+        reason === 'PRICE_INCREASE'
+            ? ('UP' as const)
+            : (
+                  await args.verticals.changeDirection({
+                      fromPlanVersionId: source.id,
+                      toPlanVersionId: target.id
+                  })
+              ).direction;
     const deadlines = await getCurrentBillingDeadlines();
-    const noticeDays = deadlines.values['12'].noticeDays;
+    const noticeDays = deadlines.values[reason === 'PRICE_INCREASE' ? '11' : '12'].noticeDays;
     const announcedAt = args.clock?.now() ?? new Date();
     const cohort = await readPlanMigrationCohort({ sourcePlanVersionId });
     const targetOptions = await getDb()
         .select({ cycle: billingOptions.cycle, amount: billingOptions.amount })
         .from(billingOptions)
         .where(eq(billingOptions.planVersionId, target.id));
+    if (
+        reason === 'PRICE_INCREASE' &&
+        cohort.some(
+            (cohortRow) =>
+                cohortRow.userId !== actor.id &&
+                !cohortRow.alreadyInMigration &&
+                !targetOptions.some((option) => option.cycle === cohortRow.cycle)
+        )
+    )
+        throw planMigrationRejection({
+            reason: 'PLAN_MIGRATION_INCREASE_CYCLE_MISSING',
+            message: 'The new version does not offer every customer cycle.'
+        });
     const rows: PlanMigrationPreviewRow[] = [];
     for (const cohortRow of cohort) {
         rows.push(
@@ -125,7 +148,8 @@ export async function previewPlanMigration(args: {
                 targetOption: targetOptions.find((option) => option.cycle === cohortRow.cycle),
                 direction,
                 announcedAt,
-                noticeDays
+                noticeDays,
+                reason
             })
         );
     }
@@ -147,6 +171,7 @@ export async function previewPlanMigration(args: {
             name: targetPlan[0]?.name ?? '',
             vertical: target.vertical
         },
+        reason,
         direction,
         noticeDays,
         deadlineVersion: deadlines.version,

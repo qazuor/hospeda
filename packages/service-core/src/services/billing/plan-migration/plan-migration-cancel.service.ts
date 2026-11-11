@@ -40,7 +40,9 @@ const announcementSchema = z.object({
     currency: z.string().min(1),
     applicationDate: z.string().nullable(),
     losesPromo: z.boolean(),
-    deadlinesVersion: z.number().int().positive()
+    deadlinesVersion: z.number().int().positive(),
+    // Absent on a retirement announcement, which is what keeps its payload byte-identical.
+    reason: z.enum(['RETIREMENT', 'PRICE_INCREASE']).optional()
 });
 
 /** Cancel an announced migration and queue each affected customer's notice atomically. */
@@ -177,7 +179,7 @@ async function enqueueCancellation(args: {
         .select({ payload: emailOutbox.payload })
         .from(emailOutbox)
         .where(eq(emailOutbox.dedupKey, announcementKey));
-    const details = announcementSchema.parse(announcement?.payload);
+    const { reason, ...details } = announcementSchema.parse(announcement?.payload);
     if (args.variant === 'ALREADY_STARTED' && details.newAmountMinor === null)
         throw new Error('Applied migration destination price missing');
     await enqueuePlanMigrationNotice({
@@ -196,7 +198,9 @@ async function enqueueCancellation(args: {
                 args.variant === 'ALREADY_STARTED'
                     ? getLocalDateString({ instant: args.row.applicationDate })
                     : null,
-            variant: args.variant
+            variant: args.variant,
+            // Same criterion as the announcement and the reminder: only an increase names its motive.
+            ...(reason === 'PRICE_INCREASE' ? { reason } : {})
         }
     });
 }

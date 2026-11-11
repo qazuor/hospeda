@@ -112,6 +112,108 @@ async function createUnlockedPlanMigrationCase(args: {
     return { ...seeded, actor, verticals, retired, targetOption, pendingCustomer };
 }
 
+/**
+ * Build a live customer anchored to a version of a plan and publish the current
+ * sellable successor of that SAME plan, priced for a price-increase migration.
+ *
+ * The succession fixture seeds the source plan's version and its customer; this
+ * fixture never retires the source plan (the increase target is a new version of
+ * the same plan), so the retirement path of `createPlanMigrationCase` cannot be
+ * reused.
+ */
+export async function createPriceIncreaseCase(
+    args: {
+        readonly sourceCycle?: 'monthly' | 'annual';
+        readonly targetCycle?: 'monthly' | 'annual';
+        readonly targetAmountMinor?: number;
+        readonly nextChargeAt?: Date;
+    } = {}
+) {
+    const client = await getServiceTestPool().connect();
+    let locked = false;
+    try {
+        await client.query('SELECT pg_advisory_lock(1612, 2)');
+        locked = true;
+        return await createUnlockedPriceIncreaseCase(args);
+    } finally {
+        if (locked) await client.query('SELECT pg_advisory_unlock(1612, 2)');
+        client.release();
+    }
+}
+
+async function createUnlockedPriceIncreaseCase(args: {
+    readonly sourceCycle?: 'monthly' | 'annual';
+    readonly targetCycle?: 'monthly' | 'annual';
+    readonly targetAmountMinor?: number;
+    readonly nextChargeAt?: Date;
+}) {
+    const seeded = await seedPlanChange({
+        sourceCycle: args.sourceCycle,
+        ...(args.nextChargeAt ? { nextChargeAt: args.nextChargeAt } : {})
+    });
+    const db = getServiceTestDb();
+    const [admin] = await db
+        .insert(users)
+        .values({
+            email: `increase-admin-${crypto.randomUUID()}@example.test`,
+            displayName: 'Price increase admin',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE'
+        })
+        .returning();
+    if (!admin) throw new Error('Price increase admin fixture missing');
+    adminIds.push(admin.id);
+    const actor = {
+        id: admin.id,
+        roles: [],
+        permissions: [
+            PermissionEnum.BILLING_MIGRATE_PLAN,
+            PermissionEnum.MAINTENANCE_MODE_WRITE,
+            PermissionEnum.BILLING_SET_CYCLE_PRICE
+        ]
+    };
+    const [version] = await db
+        .select()
+        .from(planVersions)
+        .where(eq(planVersions.id, seeded.planVersionId));
+    if (!version) throw new Error('Price increase source version missing');
+    const increaseTarget = await insertMigrationVersion({
+        planId: seeded.planId,
+        previousVersionId: version.id,
+        rank: version.rank + 1,
+        sellable: true,
+        graceDays: version.graceDays,
+        allowsPause: version.allowsPause
+    });
+    const priced = await setMigrationTargetCycle({
+        actor,
+        planVersionId: increaseTarget.id,
+        cycle: args.targetCycle ?? args.sourceCycle ?? 'monthly',
+        amount: args.targetAmountMinor ?? 350000
+    });
+    const increaseTargetOption = priced.billingOption;
+    const verticals = new VerticalsForBillingSimulator({ clock: migrationClock });
+    verticals.setPlanPolicy({
+        planVersionId: increaseTarget.id,
+        policy: {
+            graceDays: increaseTarget.graceDays,
+            allowsPause: increaseTarget.allowsPause,
+            current: true,
+            sellable: true
+        }
+    });
+    verticals.setPlanPolicy({
+        planVersionId: seeded.planVersionId,
+        policy: {
+            graceDays: version.graceDays,
+            allowsPause: version.allowsPause,
+            current: false,
+            sellable: true
+        }
+    });
+    return { ...seeded, actor, verticals, increaseTarget, increaseTargetOption };
+}
+
 /** Seed a current version without running publication validation against other tests' catalogs. */
 export async function insertMigrationVersion(args: {
     readonly planId: string;

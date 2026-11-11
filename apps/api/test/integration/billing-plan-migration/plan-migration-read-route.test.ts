@@ -108,7 +108,8 @@ describe('TEST:B12:6 AC:B12:6 y el panel la lista sin plazo y con su antigüedad
         expect(options.status, JSON.stringify(optionsPayload)).toBe(200);
         expect(optionsPayload.data).toEqual({
             sources: expect.any(Array),
-            targets: expect.any(Object)
+            targets: expect.any(Object),
+            increases: expect.any(Array)
         });
         expect(
             optionsPayload.data.sources.filter((row: { id: string }) => row.id === seeded.sourceId)
