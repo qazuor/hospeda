@@ -53,7 +53,7 @@ async function readVerticalRows(input: {
     const answer = alias(aiMessages, 'answer');
 
     const question = db
-        .select({ content: aiMessages.content })
+        .select({ content: aiMessages.content, ownerDismissedAt: aiMessages.ownerDismissedAt })
         .from(aiMessages)
         .where(
             and(
@@ -88,7 +88,8 @@ async function readVerticalRows(input: {
                 lt(answer.createdAt, input.windowEnd),
                 eq(aiConversations.listingEntityType, input.entityType),
                 isNull(aiConversations.deletedAt),
-                isNull(table.deletedAt)
+                isNull(table.deletedAt),
+                isNull(question.ownerDismissedAt)
             )
         );
 

@@ -11,7 +11,7 @@
  */
 
 import { getMonthlyCallCount } from '@repo/ai-core';
-import { accommodations, aiConversations, aiMessages, aiUsage, eq, getDb } from '@repo/db';
+import { accommodations, aiConversations, aiMessages, aiUsage, and, eq, getDb } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE,
@@ -23,9 +23,11 @@ import {
 import { persistChatTurn } from '../../../src/services/ai-chat-persistence';
 import {
     isListingOwnedBy,
-    listListingQuestions
+    listListingQuestions,
+    setQuestionDismissed
 } from '../../../src/services/ai-listing-questions.service';
 import { purgeExpiredChatQuestions } from '../../../src/services/ai-listing-questions-retention';
+import { readDigestRows } from '../../../src/services/ai-questions-digest.selection';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { createMockActorUser } from '../helpers/mock-actor';
@@ -174,6 +176,125 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
             ['¿Hay wifi?', 'Sí, hay wifi.', 'answered']
         ]);
         expect(JSON.stringify(response)).not.toContain(touristId);
+        expect(response.othersNextCursor).toBeNull();
+        expect(response.dismissedCount).toBe(0);
+    });
+
+    it('dismisses idempotently, removes an unanswered question from active counts, and restores it', async () => {
+        const { conversationId } = await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            turns: [
+                {
+                    question: '¿Mascotas?',
+                    answer: 'No sé.',
+                    at: new Date('2026-11-01T10:00:00Z'),
+                    status: 'unanswered'
+                }
+            ]
+        });
+        const [question] = await getDb()
+            .select({ id: aiMessages.id })
+            .from(aiMessages)
+            .where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.role, 'user')));
+        const messageId = question?.id as string;
+        const first = await setQuestionDismissed({
+            messageId,
+            userId: seeded.ownerId,
+            dismissed: true
+        });
+        const repeated = await setQuestionDismissed({
+            messageId,
+            userId: seeded.ownerId,
+            dismissed: true
+        });
+        const dismissed = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW
+        });
+        expect(first.ownerDismissedAt).toEqual(repeated.ownerDismissedAt);
+        expect(dismissed.unansweredCount).toBe(0);
+        expect(dismissed.dismissedCount).toBe(1);
+        expect(dismissed.dismissed[0]?.id).toBe(messageId);
+        await setQuestionDismissed({ messageId, userId: seeded.ownerId, dismissed: false });
+        const restored = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW
+        });
+        expect(restored.unansweredCount).toBe(1);
+        expect(restored.dismissedCount).toBe(0);
+    });
+
+    it('excludes dismissed unanswered questions from the weekly digest while retaining active questions', async () => {
+        const { conversationId } = await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            turns: [
+                {
+                    question: 'Descartada',
+                    answer: 'No sé.',
+                    at: new Date('2026-11-08T10:00:00Z'),
+                    status: 'unanswered'
+                },
+                {
+                    question: 'Activa',
+                    answer: 'No sé.',
+                    at: new Date('2026-11-09T10:00:00Z'),
+                    status: 'unanswered'
+                }
+            ]
+        });
+        const questions = await getDb()
+            .select({ id: aiMessages.id, content: aiMessages.content })
+            .from(aiMessages)
+            .where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.role, 'user')));
+        const dismissed = questions.find((item) => item.content === 'Descartada');
+        await setQuestionDismissed({
+            messageId: dismissed?.id as string,
+            userId: seeded.ownerId,
+            dismissed: true
+        });
+        const digest = await readDigestRows({
+            windowStart: new Date('2026-11-08T00:00:00Z'),
+            windowEnd: new Date('2026-11-10T00:00:00Z')
+        });
+        expect(digest.rows.map((row) => row.question)).toContain('Activa');
+        expect(digest.rows.map((row) => row.question)).not.toContain('Descartada');
+    });
+
+    it('pages active others in stable composite order without gaps or duplicates at an identical askedAt', async () => {
+        const askedAt = new Date('2026-11-05T10:00:00Z');
+        await seedConversation({
+            touristId,
+            listingId: seeded.id,
+            turns: Array.from({ length: 52 }, (_, index) => ({
+                question: `Question ${index}`,
+                answer: `Answer ${index}`,
+                at: askedAt,
+                status: 'answered'
+            }))
+        });
+        const firstPage = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW
+        });
+        expect(firstPage.items).toHaveLength(50);
+        expect(firstPage.othersNextCursor).not.toBeNull();
+        const secondPage = await listListingQuestions({
+            entityType: 'accommodation',
+            entityId: seeded.id,
+            now: NOW,
+            othersCursor: firstPage.othersNextCursor as string
+        });
+        expect(secondPage.items).toHaveLength(2);
+        expect(secondPage.othersNextCursor).toBeNull();
+        expect(secondPage.total).toBe(52);
+        expect(new Set([...firstPage.items, ...secondPage.items].map((item) => item.id)).size).toBe(
+            52
+        );
     });
 
     it('lists every unanswered question up to its cap, however many answered ones are newer', async () => {

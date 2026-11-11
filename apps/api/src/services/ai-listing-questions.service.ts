@@ -24,14 +24,15 @@
 
 import { accommodations, aiConversations, aiMessages, experiences, getDb, venues } from '@repo/db';
 import {
-    AI_LISTING_QUESTIONS_MAX_ITEMS,
+    AI_LISTING_QUESTIONS_DISMISSED_CAP,
+    AI_LISTING_QUESTIONS_OTHERS_PAGE_SIZE,
     AI_LISTING_QUESTIONS_RETENTION_MONTHS,
     type AiChatEntityType,
     type AiListingQuestion,
     type AiListingQuestionStatus,
     type AiListingQuestionsResponse
 } from '@repo/schemas';
-import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 /**
@@ -82,6 +83,63 @@ export async function isListingOwnedBy(
     return { owned: row !== undefined && row.ownerId === input.userId };
 }
 
+/** Checks message existence, user role and listing ownership without revealing foreign ids. */
+export async function isQuestionOwnedBy(input: {
+    readonly messageId: string;
+    readonly userId: string;
+}): Promise<{ readonly owned: boolean }> {
+    const [row] = await getDb()
+        .select({
+            entityType: aiConversations.listingEntityType,
+            entityId: aiConversations.listingEntityId
+        })
+        .from(aiMessages)
+        .innerJoin(aiConversations, eq(aiConversations.id, aiMessages.conversationId))
+        .where(
+            and(
+                eq(aiMessages.id, input.messageId),
+                eq(aiMessages.role, 'user'),
+                isNull(aiMessages.deletedAt),
+                isNull(aiConversations.deletedAt)
+            )
+        )
+        .limit(1);
+    if (!row?.entityType || !row.entityId) return { owned: false };
+    return isListingOwnedBy({
+        entityType: row.entityType as AiChatEntityType,
+        entityId: row.entityId,
+        userId: input.userId
+    });
+}
+
+/** Sets or clears the owner's dismissal timestamp for an owned question. */
+export async function setQuestionDismissed(input: {
+    readonly messageId: string;
+    readonly userId: string;
+    readonly dismissed: boolean;
+}): Promise<{ readonly ownerDismissedAt: Date | null }> {
+    const db = getDb();
+    const changed = await db
+        .update(aiMessages)
+        .set({ ownerDismissedAt: input.dismissed ? new Date() : null })
+        .where(
+            and(
+                eq(aiMessages.id, input.messageId),
+                input.dismissed
+                    ? isNull(aiMessages.ownerDismissedAt)
+                    : isNotNull(aiMessages.ownerDismissedAt)
+            )
+        )
+        .returning({ ownerDismissedAt: aiMessages.ownerDismissedAt });
+    if (changed[0]) return { ownerDismissedAt: changed[0].ownerDismissedAt };
+    const [current] = await db
+        .select({ ownerDismissedAt: aiMessages.ownerDismissedAt })
+        .from(aiMessages)
+        .where(eq(aiMessages.id, input.messageId))
+        .limit(1);
+    return { ownerDismissedAt: current?.ownerDismissedAt ?? null };
+}
+
 /**
  * The start of the retention horizon relative to `now`.
  *
@@ -102,8 +160,7 @@ export function retentionCutoff(input: { readonly now: Date }): { readonly cutof
 export const AI_LISTING_QUESTIONS_UNANSWERED_CAP = 100;
 
 /** The rest of the item budget goes to the latest answered / unclassified ones. */
-export const AI_LISTING_QUESTIONS_OTHERS_CAP =
-    AI_LISTING_QUESTIONS_MAX_ITEMS - AI_LISTING_QUESTIONS_UNANSWERED_CAP;
+export const AI_LISTING_QUESTIONS_OTHERS_CAP = AI_LISTING_QUESTIONS_OTHERS_PAGE_SIZE;
 
 /** One row of a listing query, before mapping. */
 export interface ListingQuestionRow {
@@ -114,6 +171,7 @@ export interface ListingQuestionRow {
     readonly answerStatus: string | null;
     /** Rows in the same block over the whole horizon (window count). */
     readonly blockTotal: number | string;
+    readonly ownerDismissedAt?: Date | string | null;
 }
 
 /**
@@ -162,13 +220,23 @@ export function toListingQuestionsResponse(input: {
         askedAt: (row.askedAt instanceof Date ? row.askedAt : new Date(row.askedAt)).toISOString(),
         answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
     }));
-    return { items, total, unansweredCount, truncated: total > items.length };
+    return {
+        items,
+        total,
+        unansweredCount,
+        truncated: total > items.length,
+        othersNextCursor: null,
+        dismissed: [],
+        dismissedCount: 0
+    };
 }
 
 /** Input of {@link listListingQuestions}. */
 export interface ListListingQuestionsInput {
     readonly entityType: AiChatEntityType;
     readonly entityId: string;
+    /** Opaque composite cursor received from the previous "others" page. */
+    readonly othersCursor?: string;
     /** Reference instant for the retention horizon (injectable for tests). */
     readonly now?: Date;
     /** Block caps (injectable for tests); default to the exported constants. */
@@ -188,6 +256,8 @@ async function readQuestionBlock(input: {
     readonly cutoff: Date;
     readonly unanswered: boolean;
     readonly limit: number;
+    readonly dismissed?: boolean;
+    readonly after?: { readonly createdAt: Date; readonly id: string };
 }): Promise<ListingQuestionRow[]> {
     const db = getDb();
     const question = alias(aiMessages, 'question');
@@ -210,9 +280,11 @@ async function readQuestionBlock(input: {
         .limit(1)
         .as('answer');
 
-    const statusFilter = input.unanswered
-        ? sql`${answer.answerStatus} = 'unanswered'`
-        : sql`${answer.answerStatus} is distinct from 'unanswered'`;
+    const statusFilter = input.dismissed
+        ? sql`true`
+        : input.unanswered
+          ? sql`${answer.answerStatus} = 'unanswered'`
+          : sql`${answer.answerStatus} is distinct from 'unanswered'`;
 
     return db
         .select({
@@ -221,6 +293,7 @@ async function readQuestionBlock(input: {
             answer: answer.content,
             askedAt: question.createdAt,
             answerStatus: answer.answerStatus,
+            ownerDismissedAt: question.ownerDismissedAt,
             // Window aggregates are computed before LIMIT: the exact block size.
             blockTotal: sql<number>`count(*) over ()`
         })
@@ -234,11 +307,25 @@ async function readQuestionBlock(input: {
                 isNull(aiConversations.deletedAt),
                 eq(question.role, 'user'),
                 isNull(question.deletedAt),
+                input.dismissed === undefined
+                    ? isNull(question.ownerDismissedAt)
+                    : input.dismissed
+                      ? sql`${question.ownerDismissedAt} is not null`
+                      : isNull(question.ownerDismissedAt),
                 gte(question.createdAt, input.cutoff),
+                input.after
+                    ? or(
+                          lt(question.createdAt, input.after.createdAt),
+                          and(
+                              eq(question.createdAt, input.after.createdAt),
+                              lt(question.id, input.after.id)
+                          )
+                      )
+                    : undefined,
                 statusFilter
             )
         )
-        .orderBy(desc(question.createdAt))
+        .orderBy(desc(question.createdAt), desc(question.id))
         .limit(input.limit);
 }
 
@@ -258,7 +345,8 @@ export async function listListingQuestions(
 ): Promise<AiListingQuestionsResponse> {
     const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
     const base = { entityType: input.entityType, entityId: input.entityId, cutoff };
-    const [unansweredRows, otherRows] = await Promise.all([
+    const after = input.othersCursor ? decodeOthersCursor(input.othersCursor) : undefined;
+    const [unansweredRows, otherRows, otherCountRows, dismissedRows] = await Promise.all([
         readQuestionBlock({
             ...base,
             unanswered: true,
@@ -267,8 +355,63 @@ export async function listListingQuestions(
         readQuestionBlock({
             ...base,
             unanswered: false,
-            limit: input.othersCap ?? AI_LISTING_QUESTIONS_OTHERS_CAP
+            after,
+            limit: (input.othersCap ?? AI_LISTING_QUESTIONS_OTHERS_CAP) + 1
+        }),
+        after
+            ? readQuestionBlock({
+                  ...base,
+                  unanswered: false,
+                  limit: 1
+              })
+            : Promise.resolve([] as ListingQuestionRow[]),
+        readQuestionBlock({
+            ...base,
+            unanswered: false,
+            dismissed: true,
+            limit: AI_LISTING_QUESTIONS_DISMISSED_CAP
         })
     ]);
-    return toListingQuestionsResponse({ unansweredRows, otherRows });
+    const hasMore = otherRows.length > (input.othersCap ?? AI_LISTING_QUESTIONS_OTHERS_CAP);
+    const pageRows = hasMore ? otherRows.slice(0, -1) : otherRows;
+    const mapped = toListingQuestionsResponse({ unansweredRows, otherRows: pageRows });
+    const activeOtherCount = after ? blockTotal(otherCountRows) : blockTotal(otherRows);
+    const last = pageRows.at(-1);
+    const encode = (row: ListingQuestionRow) =>
+        Buffer.from(`${new Date(row.askedAt).toISOString()}|${row.id}`).toString('base64url');
+    const total = blockTotal(unansweredRows) + activeOtherCount;
+    return {
+        ...mapped,
+        total,
+        truncated: total > mapped.items.length,
+        dismissed: dismissedRows.map((row) => ({
+            ...mapQuestion(row),
+            ownerDismissedAt: row.ownerDismissedAt
+                ? new Date(row.ownerDismissedAt).toISOString()
+                : null
+        })),
+        dismissedCount: Number(dismissedRows[0]?.blockTotal ?? 0),
+        othersNextCursor: hasMore && last ? encode(last) : null
+    };
+}
+
+function mapQuestion(row: ListingQuestionRow): AiListingQuestion {
+    return {
+        id: row.id,
+        question: row.question,
+        answer: row.answer,
+        askedAt: new Date(row.askedAt).toISOString(),
+        answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
+    };
+}
+
+function decodeOthersCursor(cursor: string): { readonly createdAt: Date; readonly id: string } {
+    try {
+        const [date, id] = Buffer.from(cursor, 'base64url').toString().split('|');
+        if (!date || !id || Number.isNaN(Date.parse(date)) || !/^[0-9a-f-]{36}$/i.test(id))
+            throw new Error();
+        return { createdAt: new Date(date), id };
+    } catch {
+        throw new Error('Invalid others cursor');
+    }
 }
