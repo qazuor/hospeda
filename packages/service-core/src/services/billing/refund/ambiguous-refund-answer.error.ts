@@ -47,6 +47,10 @@ export class AmbiguousRefundAnswerError extends Error {
     readonly expectedAmountMinor: number;
     readonly reason: AmbiguousRefundAnswerReason;
     readonly candidates: readonly AmbiguousRefundCandidate[];
+    /** Flat fields remain readable in Sentry events normalized at depth 3. */
+    readonly candidateProviderRefundIds: readonly string[];
+    readonly candidateAmountsMinor: readonly number[];
+    readonly candidateSummary: string;
 
     constructor(input: AmbiguousRefundAnswerInput) {
         super(
@@ -62,5 +66,12 @@ export class AmbiguousRefundAnswerError extends Error {
         this.expectedAmountMinor = input.expectedAmountMinor;
         this.reason = input.reason;
         this.candidates = input.candidates.map((candidate) => ({ ...candidate }));
+        this.candidateProviderRefundIds = this.candidates.map(
+            (candidate) => candidate.providerRefundId ?? ''
+        );
+        this.candidateAmountsMinor = this.candidates.map((candidate) => candidate.amountMinor);
+        this.candidateSummary = this.candidates
+            .map((candidate) => `${candidate.providerRefundId ?? ''}:${candidate.amountMinor}`)
+            .join(',');
     }
 }

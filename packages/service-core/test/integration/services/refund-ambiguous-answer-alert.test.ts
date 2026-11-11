@@ -94,7 +94,11 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 paymentId: seeded.payment.id,
                 providerFactId: seeded.payment.providerFactId,
                 expectedAmountMinor: 4000,
-                reason: 'SEVERAL_NEW_ORDER_REFUNDS'
+                reason: 'SEVERAL_NEW_ORDER_REFUNDS',
+                refundCallKey: rows.keys[0]?.key,
+                candidateProviderRefundIds: [fakeRefundId, 'unexpected'].sort(),
+                candidateAmountsMinor: [4000, 4000],
+                candidateSummary: `${fakeRefundId}:4000,unexpected:4000`
             });
             expect(
                 error instanceof AmbiguousRefundAnswerError
@@ -145,7 +149,9 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 { actor: seeded.actor, refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider }
             );
-            const error = ambiguousFor(captured, seeded.refundId)[0]?.error;
+            const matches = ambiguousFor(captured, seeded.refundId);
+            expect(matches).toHaveLength(1);
+            const error = matches[0]?.error;
 
             // Assert
             expect(error).toMatchObject({ reason: 'ORDER_REFUND_AMOUNT_MISMATCH' });
@@ -173,7 +179,9 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 { actor: seeded.actor, refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider }
             );
-            const error = ambiguousFor(captured, seeded.refundId)[0]?.error;
+            const matches = ambiguousFor(captured, seeded.refundId);
+            expect(matches).toHaveLength(1);
+            const error = matches[0]?.error;
 
             // Assert
             expect(error).toMatchObject({ reason: 'NO_NEW_ORDER_REFUND' });
@@ -212,7 +220,10 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 { refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider: lost.wrapped }
             );
-            const error = ambiguousFor(captured, seeded.refundId)[0]?.error;
+            const rows = await orderRefundRows(seeded.refundId);
+            const matches = ambiguousFor(captured, seeded.refundId);
+            expect(matches).toHaveLength(1);
+            const error = matches[0]?.error;
             const charge = await seeded.fixture.provider.readCharge({
                 chargeId: seeded.charge.chargeId
             });
@@ -224,7 +235,15 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 paymentId: seeded.payment.id,
                 providerFactId: seeded.charge.chargeId,
                 expectedAmountMinor: 4000,
-                reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS'
+                reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
+                refundCallKey: rows.keys[0]?.key,
+                candidateProviderRefundIds: expect.arrayContaining(
+                    charge.snapshot.refunds.map(({ refundId }) => refundId)
+                ),
+                candidateAmountsMinor: expect.arrayContaining(
+                    charge.snapshot.refunds.map(({ amount }) => amount.amountMinor)
+                ),
+                candidateSummary: expect.stringContaining(':4000')
             });
             expect(
                 error instanceof AmbiguousRefundAnswerError
@@ -275,14 +294,24 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
             });
 
             // Act
-            await resendUnansweredRefundCalls(
+            const outcomes = await resendUnansweredRefundCalls(
                 { refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider }
             );
-            const error = ambiguousFor(captured, seeded.refundId)[0]?.error;
+            const matches = ambiguousFor(captured, seeded.refundId);
+            expect(matches).toHaveLength(1);
+            const error = matches[0]?.error;
 
             // Assert
-            expect(error).toMatchObject({ reason: 'NO_UNNAMED_PAYMENT_REFUND' });
+            expect(error).toMatchObject({
+                reason: 'NO_UNNAMED_PAYMENT_REFUND',
+                candidateProviderRefundIds: [],
+                candidateAmountsMinor: [],
+                candidateSummary: ''
+            });
+            expect(outcomes.outcomes).toContainEqual(
+                expect.objectContaining({ outcome: 'AWAITING_PROVIDER_ANSWER' })
+            );
             expect(error instanceof AmbiguousRefundAnswerError ? error.candidates : []).toEqual([]);
         }
     );
