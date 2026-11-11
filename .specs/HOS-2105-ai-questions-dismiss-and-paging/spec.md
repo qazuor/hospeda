@@ -430,7 +430,7 @@ El servicio vive en un módulo propio hermano del clasificador:
 - **Modelo**: el de `ai_settings.features.faq_draft.model`, inyectado por el
   engine (`engine.ts:690-692`). La entry la trae una data-migration de seed con
   `gpt-5.4-mini` como modelo por defecto (decisión 12; el patrón de la entry es el de
-  `packages/seed/src/data-migrations/0101-hos-1220-ai-settings-commerce-chat-features.ts:105
+  `packages/seed/src/data-migrations/0101-hos-1220-*.ts:105
   y 121`); el admin puede cambiarlo en runtime. Razón: generación de texto
   plano acotada (≤ 1024 tokens) donde el riesgo principal es inventar, y mini es
   el que menos inventó en los barridos. Las tarifas de `gpt-5.4-nano` y

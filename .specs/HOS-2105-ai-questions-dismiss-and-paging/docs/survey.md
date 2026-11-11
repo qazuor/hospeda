@@ -231,6 +231,6 @@ on-demand del owner. Facts only, con `ruta:línea`.
 ### 11.9 Qué NO existe (y dónde viviría)
 
 - No existe ningún endpoint de borrador/generación para el owner asociado a preguntas (solo text-improve, translate e import). Viviría junto a los POST de acción §5.3, en `apps/api/src/routes/ai/protected/`.
-- No existe un feature AiFeature de FAQ/draft: habría que sumar el miembro a `AiFeatureSchema` (`ai-provider.schema.ts:78-88`), sus entries en `DEFAULT_PROMPTS`/`DEFAULT_RULES` (`default-prompts.ts`), el mapping en `ai-quota-catalog.ts` y la entry de `ai_settings` vía data-migration de seed (patrón `packages/seed/src/data-migrations/0101-hos-1220-ai-settings-commerce-chat-features.ts:105,121`, cuyo fallback model es `gpt-4o-mini` en `:121`).
+- No existe un feature AiFeature de FAQ/draft: habría que sumar el miembro a `AiFeatureSchema` (`ai-provider.schema.ts:78-88`), sus entries en `DEFAULT_PROMPTS`/`DEFAULT_RULES` (`default-prompts.ts`), el mapping en `ai-quota-catalog.ts` y la entry de `ai_settings` vía data-migration de seed (patrón `packages/seed/src/data-migrations/0101-hos-1220-*.ts:105,121`, cuyo fallback model es `gpt-4o-mini` en `:121`).
 - No existe un `AiFaqDraftOutputSchema` ni schema de response del draft en `packages/schemas`; el lugar natural es `packages/schemas/src/entities/ai/` (hermano de `ai-chat.schema.ts`).
 - No existe entrada per-feature de `faq_draft` en `DEFAULT_COST_CEILINGS` (`model-rates.ts:93-114`): sin sumarla, el feature queda cubierto SOLO por el techo global.
