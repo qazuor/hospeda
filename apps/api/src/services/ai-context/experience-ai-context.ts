@@ -27,6 +27,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import {
     buildListingAmenityLines,
+    capListingAmenities,
     type ListingContextAmenity,
     safeLoadListingAmenities
 } from './listing-amenities-context.js';
@@ -35,6 +36,7 @@ import {
     experienceTypeLabel,
     formatContextMoney
 } from './listing-labels.js';
+import { buildListingPetsLines } from './listing-pets-context.js';
 import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
@@ -158,6 +160,10 @@ export function buildExperienceMarkdownContext(
         sanitizeOwnerDelimiters(experience.description),
         EXPERIENCE_DESCRIPTION_MAX_CHARS
     );
+    // The rendered Resumen text, computed once: fenceOwnerValue only wraps it
+    // in markers, so this is what the model reads (HOS-2102 scans this, not the
+    // raw field — a truncation cut can hide a word).
+    const truncatedSummary = truncateAtWord(experience.summary, EXPERIENCE_SHORT_TEXT_MAX_CHARS);
 
     // `type` stays unfenced: it is a closed enum, not owner free text. HOS-2095:
     // rendered as its localized label, never the raw enum.
@@ -166,7 +172,7 @@ export function buildExperienceMarkdownContext(
         '',
         `## Experiencia: ${fenceOwnerValue(truncateAtWord(experience.name, EXPERIENCE_SHORT_TEXT_MAX_CHARS))}`,
         `**Tipo**: ${experienceTypeLabel({ type: experience.type, locale }).label}`,
-        `**Resumen**: ${fenceOwnerValue(truncateAtWord(experience.summary, EXPERIENCE_SHORT_TEXT_MAX_CHARS))}`
+        `**Resumen**: ${fenceOwnerValue(truncatedSummary)}`
     ];
 
     // --- Logistics: the block this vertical exists for ---
@@ -294,6 +300,27 @@ export function buildExperienceMarkdownContext(
 
     // --- House rules (closed values; the cancellation paragraph is above) ---
     lines.push(...buildListingPoliciesLines({ policies }).lines);
+
+    // --- Pets (HOS-2113) ---
+    // Same contract as the accommodation and venue blocks: the line appears only
+    // when nothing informs pets, and the scan reads exactly what renders — the
+    // capped amenity list, the capped FAQs, the truncated summary and
+    // description. The experience block renders no features and no iaData; the
+    // logistics free text (meeting point, requirements, what to bring and the
+    // cancellation paragraph) is deliberately out of the scan, the same call the
+    // venue made for its carta (HOS-2102 scope).
+    lines.push(
+        ...buildListingPetsLines({
+            policies: experience.policies,
+            amenitySlugs: capListingAmenities(amenities).map((amenity) => amenity.slug),
+            featureSlugs: [],
+            texts: [
+                truncatedSummary,
+                truncatedDescription,
+                ...cappedFaqs.map((faq) => `${faq.question} ${faq.answer}`)
+            ]
+        }).lines
+    );
 
     // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
     lines.push(
