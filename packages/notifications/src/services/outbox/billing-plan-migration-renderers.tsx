@@ -7,6 +7,7 @@ import {
 } from '../../templates/billing/plan-migration-announced.js';
 import {
     PLAN_MIGRATION_CANCELLED_SUBJECT,
+    PLAN_MIGRATION_INCREASE_CANCELLED_SUBJECT,
     PlanMigrationCancelled
 } from '../../templates/billing/plan-migration-cancelled.js';
 import {
@@ -43,13 +44,18 @@ const upcomingSchema = migrationDetailsSchema.extend({
     providerNotifies: z.boolean().optional()
 });
 const cancelledSchema = z.discriminatedUnion('variant', [
-    z.object({ variant: z.literal('NOTHING_CHANGES'), planName: nonEmptyString }),
+    z.object({
+        variant: z.literal('NOTHING_CHANGES'),
+        planName: nonEmptyString,
+        reason: reasonSchema
+    }),
     z.object({
         variant: z.literal('ALREADY_STARTED'),
         planName: nonEmptyString,
         applicationDate: dateString,
         newAmountMinor: amountMinor,
-        currency: nonEmptyString
+        currency: nonEmptyString,
+        reason: reasonSchema
     })
 ]);
 
@@ -123,8 +129,12 @@ function cancelled(row: EmailOutboxRow) {
     if (!parsed.success)
         throw new TypeError('Faltan datos requeridos de la cancelación de migración');
     const data = parsed.data;
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_CANCELLED_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_CANCELLED_SUBJECT
+                : PLAN_MIGRATION_CANCELLED_SUBJECT,
         react: (
             <PlanMigrationCancelled
                 variant={data.variant}
@@ -135,6 +145,7 @@ function cancelled(row: EmailOutboxRow) {
                         : null
                 }
                 applicationDate={data.variant === 'ALREADY_STARTED' ? data.applicationDate : null}
+                reason={reason}
             />
         )
     };

@@ -12,10 +12,12 @@ import {
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { cancelPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-cancel.service.js';
+import { launchPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import {
     PLAN_MIGRATION_CANCELLED_TEMPLATE,
     planMigrationNoticeDedupKey
 } from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
+import { previewPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
 import { cancelPendingAttempt } from '../../../src/services/billing/subscription/cancel-pending-attempt.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -23,6 +25,7 @@ import {
     cleanupAnnouncedExitCases,
     createAnnouncedExitCase
 } from './support/plan-migration-exit-fixtures.js';
+import { createPriceIncreaseCase, migrationClock } from './support/plan-migration-fixtures.js';
 import { registerPlanMigrationNoticeSerial } from './support/plan-migration-notice-serial.js';
 
 registerPlanMigrationNoticeSerial();
@@ -32,6 +35,8 @@ const clock = { now: () => new Date('2026-10-11T13:00:00.000Z') };
 const pendingClock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
 const usersToClean: string[] = [];
 const queueIdsToClean: string[] = [];
+const increaseRecipients: string[] = [];
+const increaseMigrationIds: string[] = [];
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
 
 afterEach(async () => {
@@ -43,6 +48,16 @@ afterEach(async () => {
         await db
             .delete(subscriptionScheduledChanges)
             .where(inArray(subscriptionScheduledChanges.id, queueIdsToClean.splice(0)));
+    if (increaseRecipients.length)
+        await db
+            .delete(emailOutbox)
+            .where(inArray(emailOutbox.recipientUserId, increaseRecipients.splice(0)));
+    for (const id of increaseMigrationIds.splice(0)) {
+        await db
+            .delete(planMigrationSubscriptions)
+            .where(eq(planMigrationSubscriptions.planMigrationId, id));
+        await db.delete(planMigrations).where(eq(planMigrations.id, id));
+    }
     await cleanupAnnouncedExitCases();
 });
 afterAll(closeServiceTestPool);
@@ -360,6 +375,66 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
             expect(await scopeFor(seeded.predecessor.id)).toEqual(before);
             expect(await cancellationMail(seeded.user.id)).toHaveLength(0);
+        });
+
+        it('cancelar un aumento nombra el motivo en el correo de cancelación', async () => {
+            const seeded = await createPriceIncreaseCase({ targetAmountMinor: 350000 });
+            increaseRecipients.push(seeded.user.id);
+            const input = {
+                sourcePlanVersionId: seeded.planVersionId,
+                targetPlanVersionId: seeded.increaseTarget.id,
+                reason: 'PRICE_INCREASE' as const
+            };
+            const preview = await previewPlanMigration({
+                actor: seeded.actor,
+                input,
+                verticals: seeded.verticals,
+                clock: migrationClock
+            });
+            const launched = await launchPlanMigration({
+                actor: seeded.actor,
+                input: { ...input, cohortFingerprint: preview.cohortFingerprint },
+                verticals: seeded.verticals,
+                clock: migrationClock
+            });
+            increaseMigrationIds.push(launched.planMigrationId);
+            const scope = await scopeFor(seeded.predecessor.id);
+            const announced = await announcementPayload(seeded.user.id);
+            expect(announced.reason).toBe('PRICE_INCREASE');
+
+            expect(
+                await cancelPlanMigration(
+                    { actor: seeded.actor, planMigrationId: launched.planMigrationId, db },
+                    { clock }
+                )
+            ).toEqual({
+                planMigrationId: launched.planMigrationId,
+                cancelledAt: clock.now(),
+                rows: { cancelled: 1, alreadyStarted: 0, untouched: 0 }
+            });
+
+            expect(
+                (await cancellationMail(seeded.user.id)).map((mail) => ({
+                    payload: mail.payload,
+                    dedupKey: mail.dedupKey
+                }))
+            ).toEqual([
+                {
+                    payload: {
+                        ...announced,
+                        variant: 'NOTHING_CHANGES',
+                        applicationDate: null,
+                        reason: 'PRICE_INCREASE'
+                    },
+                    dedupKey: planMigrationNoticeDedupKey({
+                        recipientUserId: seeded.user.id,
+                        template: PLAN_MIGRATION_CANCELLED_TEMPLATE,
+                        planMigrationSubscriptionId: scope.id,
+                        milestone: 'mig:cancel',
+                        targetDate: '2026-10-11'
+                    })
+                }
+            ]);
         });
     }
 );

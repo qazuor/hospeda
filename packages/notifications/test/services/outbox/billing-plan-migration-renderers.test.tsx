@@ -328,3 +328,55 @@ describe('AC:B12:9 el recordatorio del aumento', () => {
         expect(occurrences(manual.html, providerPhrase)).toBe(0);
     });
 });
+
+describe('AC:B12:9 la cancelación del aumento', () => {
+    it('renders the increase NOTHING_CHANGES subject and literal copy', () => {
+        const { subject, html } = render('billing.plan-migration-cancelled', {
+            variant: 'NOTHING_CHANGES',
+            planName: 'Plan Inicial',
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cancelamos el cambio de precio de tu plan');
+        expect(html).toContain(
+            'Cancelamos el aumento de precio de tu plan Plan Inicial: ya no cambia nada.'
+        );
+    });
+
+    it('renders the increase ALREADY_STARTED copy with the formatted date and amount', () => {
+        const { subject, html } = render('billing.plan-migration-cancelled', {
+            variant: 'ALREADY_STARTED',
+            planName: 'Plan Inicial',
+            newAmountMinor,
+            currency,
+            applicationDate,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cancelamos el cambio de precio de tu plan');
+        expect(html).toContain(
+            'El aumento de tu plan Plan Inicial ya empezó a aplicarse y la cancelación no lo alcanza'
+        );
+        expect(html).toContain(`desde el ${formattedDate} pagás ${newAmount}.`);
+    });
+
+    it('keeps the retirement subject and copy when no reason is present', () => {
+        const nothing = render('billing.plan-migration-cancelled', {
+            variant: 'NOTHING_CHANGES',
+            planName: 'Plan Inicial'
+        });
+        expect(nothing.subject).toBe('Cancelamos el cambio de tu plan');
+        expect(nothing.html).toContain(
+            'Cancelamos la migración de tu plan Plan Inicial: ya no cambia nada.'
+        );
+        const started = render('billing.plan-migration-cancelled', {
+            variant: 'ALREADY_STARTED',
+            planName: 'Plan Inicial',
+            newAmountMinor,
+            currency,
+            applicationDate
+        });
+        expect(started.subject).toBe('Cancelamos el cambio de tu plan');
+        expect(started.html).toContain(
+            'La cancelación no alcanza a tu plan Plan Inicial porque tu cambio ya empezó.'
+        );
+    });
+});
