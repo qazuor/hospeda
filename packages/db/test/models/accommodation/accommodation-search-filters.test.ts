@@ -122,6 +122,39 @@ describe('accommodation search filter ledger (HOS-1922)', () => {
         );
     });
 
+    it('HOS-2017: includeNoPrice=false requires a JSONB base price', () => {
+        // Act
+        const query = dialect.sqlToQuery(
+            buildAccommodationSearchWhere({ params: { includeNoPrice: false } }) as NonNullable<
+                ReturnType<typeof buildAccommodationSearchWhere>
+            >
+        );
+
+        // Assert
+        expect(query.sql).toContain('"price"->>\'price\') IS NOT NULL');
+    });
+
+    it('HOS-2017: includeNoReviews=false requires reviews_count > 0', () => {
+        // Act
+        const query = dialect.sqlToQuery(
+            buildAccommodationSearchWhere({ params: { includeNoReviews: false } }) as NonNullable<
+                ReturnType<typeof buildAccommodationSearchWhere>
+            >
+        );
+
+        // Assert
+        expect(query.sql).toContain('"reviews_count" >');
+        expect(query.params).toContain(0);
+    });
+
+    it.each([
+        ['includeNoPrice'],
+        ['includeNoReviews']
+    ] as const)('HOS-2017: %s absent or true leaves the WHERE untouched', (key) => {
+        expect(render({ [key]: true })).toBe(baseline);
+        expect(render({})).toBe(baseline);
+    });
+
     it('HOS-2060: allowsPets reads the pets policy and nothing else', () => {
         // Act
         const query = dialect.sqlToQuery(

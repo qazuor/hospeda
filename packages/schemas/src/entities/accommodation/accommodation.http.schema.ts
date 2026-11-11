@@ -85,6 +85,16 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     hasWifi: createBooleanQueryParam('Filter accommodations with WiFi'),
     allowsPets: createBooleanQueryParam('Filter pet-friendly accommodations'),
     hasParking: createBooleanQueryParam('Filter accommodations with parking'),
+    /**
+     * Listing sidebar toggles (HOS-2017). Absent or `true` keeps every row;
+     * `false` drops the rows that have no price / no reviews.
+     */
+    includeNoPrice: createBooleanQueryParam(
+        'Include accommodations without a price (false excludes them)'
+    ),
+    includeNoReviews: createBooleanQueryParam(
+        'Include accommodations without reviews (false excludes them)'
+    ),
 
     // Type filters
     type: upperCasedAccommodationType.optional(),
@@ -701,6 +711,8 @@ export const httpToDomainAccommodationSearch = (
     maxBathrooms: httpParams.maxBathrooms,
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
+    includeNoPrice: httpParams.includeNoPrice,
+    includeNoReviews: httpParams.includeNoReviews,
     amenities: httpParams.amenities,
     features: httpParams.features,
     includeAmenities: httpParams.includeAmenities,
