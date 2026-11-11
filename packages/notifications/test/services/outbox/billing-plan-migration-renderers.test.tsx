@@ -240,3 +240,32 @@ describe('plan migration payload validation', () => {
         expect(() => render(template, payload)).toThrow(TypeError);
     });
 });
+
+describe('AC:B12:9 el anuncio del aumento', () => {
+    it('renders the increase subject and every increase phrase with the real amounts', () => {
+        const { subject, html } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'SCHEDULED',
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cambia el precio de tu plan');
+        expect(html).toContain('El precio de tu plan Plan Inicial va a aumentar.');
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain('El nuevo precio se aplica desde tu cobro del');
+        expect(html).toContain(formattedDate);
+        expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
+        expect(html).toContain(
+            'Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.'
+        );
+        expect(html).toContain('Mercado Pago también te va a avisar del cambio de monto.');
+    });
+
+    it('keeps the retirement subject when no reason is present', () => {
+        const { subject } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'SCHEDULED'
+        });
+        expect(subject).toBe('Tu plan deja de venderse');
+    });
+});

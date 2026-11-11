@@ -2,6 +2,7 @@ import type { EmailOutboxRow } from '@repo/db';
 import { z } from 'zod';
 import {
     PLAN_MIGRATION_ANNOUNCED_SUBJECT,
+    PLAN_MIGRATION_INCREASE_ANNOUNCED_SUBJECT,
     PlanMigrationAnnounced
 } from '../../templates/billing/plan-migration-announced.js';
 import {
@@ -18,6 +19,7 @@ import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 const nonEmptyString = z.string().refine((value) => value.trim() !== '');
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const amountMinor = z.number().int().nonnegative();
+const reasonSchema = z.enum(['RETIREMENT', 'PRICE_INCREASE']).optional();
 const migrationDetailsSchema = z.object({
     planName: nonEmptyString,
     targetPlanName: nonEmptyString,
@@ -25,13 +27,14 @@ const migrationDetailsSchema = z.object({
     losesPromo: z.boolean(),
     currentAmountMinor: amountMinor,
     newAmountMinor: amountMinor,
-    currency: nonEmptyString
+    currency: nonEmptyString,
+    reason: reasonSchema
 });
 
 const announcedSchema = z.discriminatedUnion('variant', [
     migrationDetailsSchema.extend({ variant: z.literal('SCHEDULED'), applicationDate: dateString }),
     migrationDetailsSchema.extend({ variant: z.literal('WAITING') }),
-    z.object({ variant: z.literal('TO_RESOLVE'), planName: nonEmptyString })
+    z.object({ variant: z.literal('TO_RESOLVE'), planName: nonEmptyString, reason: reasonSchema })
 ]);
 const upcomingSchema = migrationDetailsSchema.extend({
     applicationDate: dateString,
@@ -63,8 +66,12 @@ function announced(row: EmailOutboxRow) {
     if (!parsed.success) throw new TypeError('Faltan datos requeridos del anuncio de migración');
     const data = parsed.data;
     const amounts = data.variant === 'TO_RESOLVE' ? null : migrationAmounts(data);
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_ANNOUNCED_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_ANNOUNCED_SUBJECT
+                : PLAN_MIGRATION_ANNOUNCED_SUBJECT,
         react: (
             <PlanMigrationAnnounced
                 variant={data.variant}
@@ -75,6 +82,7 @@ function announced(row: EmailOutboxRow) {
                 newAmount={amounts?.next ?? null}
                 applicationDate={data.variant === 'SCHEDULED' ? data.applicationDate : null}
                 losesPromo={data.variant === 'TO_RESOLVE' ? false : data.losesPromo}
+                reason={reason}
             />
         )
     };
