@@ -11,9 +11,11 @@
  *
  * ## What counts as a pet signal
  *
- * - `policies.pets.admission` set (non-empty string): the policies builder
- *   renders the value («sí, se admiten» / «a consultar» / «no se admiten»), so
- *   pets ARE informed — an explicit "no" included.
+ * - `policies.pets.admission` set to a value the policies builder renders
+ *   («sí, se admiten» / «a consultar» / «no se admiten», see
+ *   {@link RENDERED_PETS_ADMISSIONS}), so pets ARE informed — an explicit "no"
+ *   included. An unknown stored value renders nothing there, so it is NOT a
+ *   signal here either.
  * - An amenity or feature slug starting with `pet`: the catalog is CLOSED and
  *   today holds exactly `pet_friendly` (amenity) and `pet_suitable` /
  *   `pet_friendly_area` (features), per migration
@@ -26,11 +28,16 @@
  *
  * ## Scan what is rendered, not what is stored
  *
- * The caller passes the EXACT text the context renders — the truncated and
+ * The caller passes the text the context renders — the truncated and
  * sanitized variants, the capped lists — never the raw fields. Scanning text
  * the model does not see, or missing text it does, both turn the line into a
  * lie: a mention hidden by a truncation cut must read as "not informed", and a
  * rendered mention must suppress the line.
+ *
+ * Known gap: the FAQ texts are scanned before the FAQ renderer applies its
+ * per-answer word cut and section budget, so a pet word that only lives in a
+ * cut-off FAQ suppresses the line. That can only OVER-detect (no line, the
+ * pre-HOS-2102 behaviour), never state "not informed" over rendered pet data.
  *
  * @module apps/api/services/ai-context/listing-pets-context
  */
@@ -38,15 +45,21 @@
 /** Pet words across the three page locales (es / en / pt), matched whole-word. */
 const PET_WORDS = [
     // es
+    'mascota',
     'mascotas',
+    'perrito',
+    'perrita',
+    'perritos',
     'perro',
     'perros',
     'perra',
     'perras',
     'gato',
     'gatos',
+    'animal',
     'animales',
-    // en
+    // en ("pet" also matches the hyphenated "pet-friendly")
+    'pet',
     'pets',
     'dog',
     'dogs',
@@ -59,6 +72,7 @@ const PET_WORDS = [
     'animais',
     'cachorro',
     'cachorros',
+    'cão',
     'cães'
 ] as const;
 
@@ -67,6 +81,12 @@ const PET_WORDS = [
  * flag, so `test()` is stateless across calls.
  */
 const PET_WORD_PATTERN = new RegExp(`\\b(?:${PET_WORDS.join('|')})\\b`, 'i');
+
+/**
+ * The `policies.pets.admission` values `listing-policies-context.ts` renders
+ * (its `PETS_LABELS` keys). Kept in step with that map by the unit test.
+ */
+export const RENDERED_PETS_ADMISSIONS: ReadonlySet<string> = new Set(['yes', 'on_request', 'no']);
 
 /** The line rendered when nothing in the context informs pets (Spanish, like every label). */
 const PETS_NOT_INFORMED_LINE = '**Mascotas**: no figura información en la ficha';
@@ -97,7 +117,8 @@ export interface ListingPetSignalInput {
  * @returns True when at least one pet signal exists.
  */
 export function findListingPetSignal(input: ListingPetSignalInput): boolean {
-    if (input.policies?.pets?.admission) return true;
+    const admission = input.policies?.pets?.admission;
+    if (admission && RENDERED_PETS_ADMISSIONS.has(admission)) return true;
     if (input.amenitySlugs.some((slug) => slug.startsWith('pet'))) return true;
     if (input.featureSlugs.some((slug) => slug.startsWith('pet'))) return true;
     return input.texts.some((text) => PET_WORD_PATTERN.test(text));

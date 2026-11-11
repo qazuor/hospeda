@@ -14,8 +14,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildListingPetsLines,
-    findListingPetSignal
+    findListingPetSignal,
+    RENDERED_PETS_ADMISSIONS
 } from '../../../src/services/ai-context/listing-pets-context.js';
+import { buildListingPoliciesLines } from '../../../src/services/ai-context/listing-policies-context.js';
 
 /** The exact line the builder must render when nothing informs pets. */
 const PETS_NOT_INFORMED_LINE = '**Mascotas**: no figura información en la ficha';
@@ -51,6 +53,39 @@ describe('findListingPetSignal', () => {
 
         // Act + Assert
         expect(findListingPetSignal(input)).toBe(false);
+    });
+
+    it('is false for an admission value the policies builder does not render', () => {
+        // Arrange: an unknown value renders no policy line, so the absent line must stay.
+        const input = { ...NO_SIGNAL, policies: { pets: { admission: 'legacy_value' } } };
+
+        // Act + Assert
+        expect(findListingPetSignal(input)).toBe(false);
+    });
+
+    it.each([
+        ...RENDERED_PETS_ADMISSIONS
+    ])('admission "%s" is one the policies builder actually renders', (admission) => {
+        // Act
+        const { lines } = buildListingPoliciesLines({ policies: { pets: { admission } } });
+
+        // Assert: keeps RENDERED_PETS_ADMISSIONS in step with PETS_LABELS.
+        expect(lines.some((line) => line.startsWith('**Mascotas**:'))).toBe(true);
+    });
+
+    it.each([
+        'Se admite una mascota pequeña',
+        'Traé a tu mascota',
+        'Pet friendly',
+        'Pet-friendly cabin',
+        'Aceita pet',
+        'Allows your pet',
+        'Un animal por unidad',
+        'Aceitamos um cão',
+        'Perrito ok'
+    ])('is true for the singular or "pet" free-text mention %j', (text) => {
+        // Act + Assert
+        expect(findListingPetSignal({ ...NO_SIGNAL, texts: [text] })).toBe(true);
     });
 
     it('is true for the real pet amenity slug with policies null', () => {
