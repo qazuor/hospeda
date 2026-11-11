@@ -34,6 +34,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { logError } from '../../utils/logging.js';
 import { hasPermission } from '../../utils/permission.js';
 import type { ReputationFailureCode } from './adapters/adapter.types.js';
 import type { ReputationAdapterCredentials } from './adapters/index.js';
@@ -537,10 +538,18 @@ export class AccommodationExternalReputationService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+            // Log the full error server-side; never return the raw driver text
+            // (a DbError message carries the SQL and its bind params).
+            logError(
+                'accommodationExternalReputation.refresh',
+                err instanceof Error ? err : new Error(String(err)),
+                { accommodationId },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not refresh the external reputation. Please try again later.'
                 }
             };
         }
@@ -561,7 +570,7 @@ export class AccommodationExternalReputationService {
      * 2. The block is built from the accommodation's visible **listings** (not
      *    only its reputation rows): every non-deleted listing with
      *    `showLink OR showReviews` produces one item, joined to its reputation
-     *    row by `listingId` (falling back to `platform`) or left with null
+     *    row by `listingId` only (never by platform — see the body) or left with null
      *    aggregate/deepLink/snippets when no row exists yet. A link-only listing
      *    therefore still appears before its first fetch.
      * 3. For Google: if `snippetsFetchedAt` is older than
@@ -598,10 +607,15 @@ export class AccommodationExternalReputationService {
                 return { data: { items: [] } };
             }
 
-            // Load reputation rows separately (NOT findForDisplay): its inner
-            // join to the listing hides a row whose original listing was
-            // soft-deleted and later re-added under a new id. We join by id /
-            // platform in memory instead.
+            // Reputation rows are joined to listings by `listingId` ONLY, never by
+            // platform. The reputation table is keyed by (accommodation,
+            // platform) and `remove()` soft-deletes the listing without touching
+            // its reputation row, so after a remove + re-add the old row still
+            // carries the DELETED listing's id, rating, snippets and deepLink. A
+            // platform fallback would publish that data — and link visitors to
+            // the old place — under the new listing until the next fetch
+            // rewrites the row. Unjoined, the new listing shows as link-only.
+            // Bounded: at most one row per platform (4 enum members).
             const { items: reputationRows } = await this.reputationModel.findAll(
                 { accommodationId },
                 { pageSize: 200 },
@@ -610,10 +624,8 @@ export class AccommodationExternalReputationService {
             );
 
             const reputationByListingId = new Map<string, AccommodationExternalReputation>();
-            const reputationByPlatform = new Map<string, AccommodationExternalReputation>();
             for (const rep of reputationRows) {
                 reputationByListingId.set(rep.listingId, rep);
-                reputationByPlatform.set(rep.platform, rep);
             }
 
             // Determine Google snippet TTL from env.
@@ -624,14 +636,10 @@ export class AccommodationExternalReputationService {
             const safeDay = Number.isNaN(ttlDays) || ttlDays < 1 ? 30 : ttlDays;
             const ttlMs = safeDay * 24 * 60 * 60 * 1000;
 
-            // Build one source per visible listing, joined to its reputation
-            // row by listingId first, then platform as fallback, or nulls when
-            // the platform has never been fetched.
+            // Build one source per visible listing, joined to ITS reputation row,
+            // or nulls when this listing has never been fetched.
             const sources = visibleListings.map((listing) => {
-                const rep =
-                    reputationByListingId.get(listing.id) ??
-                    reputationByPlatform.get(listing.platform) ??
-                    null;
+                const rep = reputationByListingId.get(listing.id) ?? null;
                 return {
                     platform: listing.platform,
                     url: listing.url,
@@ -727,10 +735,18 @@ export class AccommodationExternalReputationService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+            // Log the full error server-side; never return the raw driver text
+            // (a DbError message carries the SQL and its bind params).
+            logError(
+                'accommodationExternalReputation.disableReputation',
+                err instanceof Error ? err : new Error(String(err)),
+                { accommodationId },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not disable the external reputation. Please try again later.'
                 }
             };
         }
@@ -817,10 +833,18 @@ export class AccommodationExternalReputationService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+            // Log the full error server-side; never return the raw driver text
+            // (a DbError message carries the SQL and its bind params).
+            logError(
+                'accommodationExternalReputation.getRefreshStatus',
+                err instanceof Error ? err : new Error(String(err)),
+                { accommodationId },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not read the refresh status. Please try again later.'
                 }
             };
         }

@@ -763,7 +763,8 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('unexpected DB error in refresh');
+            // The raw error text must never reach the caller.
+            expect(result.error?.message).not.toContain('unexpected DB error in refresh');
         });
     });
 
@@ -1082,10 +1083,11 @@ describe('AccommodationExternalReputationService', () => {
             expect(airbnb?.rating).toBeNull();
         });
 
-        it('should join a reputation row to an active listing by platform when its listingId points at an old, replaced listing (F)', async () => {
+        it('should NOT attach a deleted listing reputation row to the re-added listing of the same platform', async () => {
             // The active listing has a new id; the reputation row still carries the
-            // id of the soft-deleted original. findForDisplay's inner join would
-            // hide it — the platform fallback must surface it.
+            // id of the soft-deleted original (remove() keeps the row). Its rating,
+            // snippets and deepLink describe the OLD place, so they must not be
+            // published under the new listing: it shows as link-only until fetched.
             const STALE_LISTING_ID = '77777777-7777-4777-8777-777777777777';
             const accommodationModel = makeAccommodationModel();
             const googleListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
@@ -1115,8 +1117,11 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.data?.items).toHaveLength(1);
             const item = result.data?.items[0];
             expect(item?.platform).toBe(ExternalPlatformEnum.GOOGLE);
-            // Aggregate came from the stale-id row, joined by platform.
-            expect(item?.rating).toBe(4.5);
+            // Nothing from the stale-id row leaks onto the new listing.
+            expect(item?.rating).toBeNull();
+            expect(item?.reviewsCount).toBeNull();
+            expect(item?.deepLink).toBeNull();
+            expect(item?.snippets ?? null).toBeNull();
             expect(item?.url).toBe(googleListing.url);
         });
     });
@@ -1187,7 +1192,13 @@ describe('AccommodationExternalReputationService', () => {
             const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const listingModel = makeListingModel({
                 findByAccommodation: vi.fn().mockResolvedValue([activeListing]),
-                update: vi.fn().mockRejectedValue(new Error('DB write failure'))
+                update: vi
+                    .fn()
+                    .mockRejectedValue(
+                        new Error(
+                            'Failed query: update "accommodation_external_listings" set ... params: secret-param'
+                        )
+                    )
             });
             const reputationModel = makeReputationModel();
             const svc = new AccommodationExternalReputationService(ctx, {
@@ -1200,7 +1211,9 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('DB write failure');
+            // The raw driver text (SQL + bind params) must never reach the caller.
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('secret-param');
         });
 
         it('should pass ctx.tx to model calls when a ServiceContext is provided', async () => {
@@ -1243,7 +1256,8 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('plain string failure');
+            // The raw error text must never reach the caller.
+            expect(result.error?.message).not.toContain('plain string failure');
         });
 
         it('should propagate ServiceError code when listingModel.update throws a ServiceError', async () => {
