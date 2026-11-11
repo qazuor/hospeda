@@ -1,7 +1,7 @@
 {
     "systemColumns": {
         "counts": {
-            "accommodations": 27,
+            "accommodations": 29,
             "venues": 22,
             "experiences": 22
         },
@@ -33,6 +33,14 @@
             {
                 "key": "accommodations.show_external_reputation",
                 "reason": "Owner display preference for external reputation blocks; a setting that survives the purge, not one of the content categories (NUCLEO/08 §1.2)."
+            },
+            {
+                "key": "accommodations.external_reputation_toggle_decided_at",
+                "reason": "Audit timestamp of the owner's last master-toggle decision; system, survives the purge."
+            },
+            {
+                "key": "accommodations.external_reputation_auto_enabled_at",
+                "reason": "Audit timestamp of the one-time automatic enable; system, survives the purge."
             },
             {
                 "key": "accommodations.is_verified",

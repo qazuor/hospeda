@@ -45,6 +45,7 @@
         "rateLimitHit_one": "Você pode atualizar novamente em {{minutes}} minuto",
         "rateLimitHit_other": "Você pode atualizar novamente em {{minutes}} minutos",
         "googleOnlyExplainer": "O texto das avaliações está disponível apenas para o Google. As outras plataformas exibem a pontuação e um link.",
+        "autoEnabledNotice": "Ativamos esta seção automaticamente porque já temos dados das suas plataformas. Você pode desativá-la quando quiser.",
         "verifiedHint": "O link foi verificado e corresponde a esta hospedagem",
         "loading": "Carregando listagens…",
         "urlHint": {

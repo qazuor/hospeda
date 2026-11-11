@@ -218,7 +218,12 @@ export class AccommodationExternalReputationModel extends BaseModelImpl<Accommod
                     runStatus: accommodationExternalReputation.runStatus,
                     runStartedAt: accommodationExternalReputation.runStartedAt,
                     // Listing URL is needed by mapDatasetItems(items, listing)
-                    listingUrl: accommodationExternalListings.url
+                    listingUrl: accommodationExternalListings.url,
+                    // Visibility flags feed `isWorkingReputationResult`: the
+                    // auto-enable only fires for a listing guests can see.
+                    showLink: accommodationExternalListings.showLink,
+                    showReviews: accommodationExternalListings.showReviews,
+                    listingDeletedAt: accommodationExternalListings.deletedAt
                 })
                 .from(accommodationExternalReputation)
                 .innerJoin(
@@ -335,6 +340,16 @@ export interface PendingRunRow {
      * so the adapter can construct the deepLink fallback.
      */
     readonly listingUrl: string;
+    /** `accommodation_external_listings.show_link` — owner wants the link shown. */
+    readonly showLink: boolean;
+    /** `accommodation_external_listings.show_reviews` — owner wants reviews shown. */
+    readonly showReviews: boolean;
+    /**
+     * `accommodation_external_listings.deleted_at`. Used by the poller's shared
+     * "working result" predicate so a soft-deleted listing cannot trigger the
+     * one-time automatic enable.
+     */
+    readonly listingDeletedAt: Date | null;
 }
 
 /** Singleton instance of AccommodationExternalReputationModel for use across the application. */

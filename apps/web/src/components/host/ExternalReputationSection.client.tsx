@@ -173,6 +173,18 @@ export function ExternalReputationSection({
     // Held as the `Date` the shared schema already coerced — no ISO round trip.
     const [aggregateFetchedAt, setAggregateFetchedAt] =
         useState<ReputationMeta['aggregateFetchedAt']>(null);
+    /**
+     * Audit timestamps behind the one-time auto-enable notice. Both are the
+     * `Date` the shared schema coerced, so equality is a timestamp comparison.
+     */
+    const [autoEnabledAt, setAutoEnabledAt] = useState<ReputationMeta['autoEnabledAt']>(null);
+    const [toggleDecidedAt, setToggleDecidedAt] = useState<ReputationMeta['toggleDecidedAt']>(null);
+    /**
+     * True once the owner flips the toggle in THIS session. The notice must
+     * disappear immediately, even before the next GET reflects the new
+     * `toggleDecidedAt`.
+     */
+    const [hasManuallyToggled, setHasManuallyToggled] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -249,6 +261,8 @@ export function ExternalReputationSection({
             setListings(parsed.data.listings);
             setMasterToggle(parsed.data.reputation.showExternalReputation);
             setAggregateFetchedAt(parsed.data.reputation.aggregateFetchedAt);
+            setAutoEnabledAt(parsed.data.reputation.autoEnabledAt ?? null);
+            setToggleDecidedAt(parsed.data.reputation.toggleDecidedAt ?? null);
         } catch {
             setLoadError(
                 t(
@@ -329,6 +343,9 @@ export function ExternalReputationSection({
             if (res.ok) {
                 setMasterToggle((prev) => !prev);
                 setMasterToggleError(null);
+                // The owner has now made an explicit decision: hide the
+                // auto-enabled notice without waiting for the next load.
+                setHasManuallyToggled(true);
             } else {
                 // Never fail silently here: a 400 on EVERY toggle went unnoticed
                 // all the way to production precisely because this branch did
@@ -638,6 +655,18 @@ export function ExternalReputationSection({
     // Render
     // ---------------------------------------------------------------------------
 
+    /**
+     * The notice is relevant ONLY while the section is on, the automation set
+     * it, and the owner has not decided since (equal timestamps mean the
+     * auto-enable's `decidedAt` was never overwritten by a manual toggle).
+     */
+    const showAutoEnabledNotice =
+        masterToggle &&
+        !hasManuallyToggled &&
+        autoEnabledAt != null &&
+        toggleDecidedAt != null &&
+        autoEnabledAt.getTime() === toggleDecidedAt.getTime();
+
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
@@ -651,6 +680,19 @@ export function ExternalReputationSection({
                     'El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.'
                 )}
             </p>
+
+            {/* One-time automatic-enable notice */}
+            {showAutoEnabledNotice && (
+                <p
+                    className={styles.autoEnabledNotice}
+                    role="status"
+                >
+                    {t(
+                        'external-reputation.ownerConfig.autoEnabledNotice',
+                        'Activamos esta sección automáticamente porque ya tenemos datos de tus plataformas. Podés desactivarla cuando quieras.'
+                    )}
+                </p>
+            )}
 
             {/* Master toggle */}
             <div className={styles.masterToggleRow}>

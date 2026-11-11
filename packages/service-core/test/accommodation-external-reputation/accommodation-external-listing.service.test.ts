@@ -637,6 +637,48 @@ describe('AccommodationExternalListingService', () => {
             expect(accommodationModel.update).toHaveBeenCalledOnce();
         });
 
+        it('records the manual decision timestamp when enabling', async () => {
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            await svc.setMasterToggle(makeOwnerActor(), ACC_ID, true);
+
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: ACC_ID },
+                expect.objectContaining({
+                    showExternalReputation: true,
+                    externalReputationToggleDecidedAt: expect.any(Date)
+                }),
+                undefined
+            );
+        });
+
+        it('records the manual decision timestamp when disabling', async () => {
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            await svc.setMasterToggle(makeOwnerActor(), ACC_ID, false);
+
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: ACC_ID },
+                expect.objectContaining({
+                    showExternalReputation: false,
+                    externalReputationToggleDecidedAt: expect.any(Date)
+                }),
+                undefined
+            );
+        });
+
         it('should allow admin to flip the toggle', async () => {
             const listingModel = makeListingModel();
             const accommodationModel = makeAccommodationModel();

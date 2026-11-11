@@ -36,9 +36,11 @@ import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../
 import { ServiceError } from '../../types/index.js';
 import { logError } from '../../utils/logging.js';
 import { hasPermission } from '../../utils/permission.js';
+import { serviceLogger } from '../../utils/service-logger.js';
 import type { ReputationFailureCode } from './adapters/adapter.types.js';
 import type { ReputationAdapterCredentials } from './adapters/index.js';
 import { getReputationAdapter } from './adapters/index.js';
+import { isWorkingReputationResult } from './is-working-reputation-result.js';
 
 /**
  * Maps an adapter's {@link ReputationFailureCode} onto the persisted
@@ -393,6 +395,12 @@ export class AccommodationExternalReputationService {
             const enqueuedAsync: ExternalPlatformEnum[] = [];
             const inlineFailed: RefreshFailureEntry[] = [];
 
+            // The automatic enable fires at most once per refresh run: the
+            // first platform that comes back working decides the whole run.
+            // The model primitive is idempotent regardless, but this keeps the
+            // intent explicit and avoids N conditional UPDATEs per run.
+            let autoEnableAttempted = false;
+
             for (const listing of enabledListings) {
                 try {
                     const platform = listing.platform as ExternalPlatformEnum;
@@ -438,6 +446,47 @@ export class AccommodationExternalReputationService {
                             inlineSucceeded.push(platform);
                         } else {
                             inlineFailed.push({ platform, error: failureCode });
+                        }
+
+                        // One-time opt-in: the FIRST working provider enables
+                        // the section for the owner. A failure here must never
+                        // fail the refresh — the data was already persisted.
+                        if (
+                            !autoEnableAttempted &&
+                            isWorkingReputationResult({
+                                fetchStatus: failureCodeToFetchStatus(failureCode),
+                                rating: inlineResult.rating,
+                                snippets: inlineResult.snippets,
+                                listing
+                            })
+                        ) {
+                            autoEnableAttempted = true;
+                            try {
+                                const { enabled } =
+                                    await this.accommodationModel.autoEnableExternalReputationIfUndecided(
+                                        { id: accommodationId },
+                                        ctx?.tx
+                                    );
+                                if (enabled) {
+                                    serviceLogger.info(
+                                        {
+                                            accommodationId,
+                                            platform: listing.platform,
+                                            actorId: actor.id
+                                        },
+                                        'Auto-enabled external reputation after first working provider'
+                                    );
+                                }
+                            } catch (autoEnableErr) {
+                                logError(
+                                    'accommodationExternalReputation.autoEnableExternalReputation',
+                                    autoEnableErr instanceof Error
+                                        ? autoEnableErr
+                                        : new Error(String(autoEnableErr)),
+                                    { accommodationId, platform: listing.platform },
+                                    actor
+                                );
+                            }
                         }
                     } else {
                         // --- Async path ---

@@ -140,12 +140,27 @@ const LISTING_OTHER = {
 
 const REPUTATION_META = {
     showExternalReputation: true,
-    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+    autoEnabledAt: null,
+    toggleDecidedAt: null
 };
 
 const EMPTY_REPUTATION_META = {
     showExternalReputation: false,
-    aggregateFetchedAt: null
+    aggregateFetchedAt: null,
+    autoEnabledAt: null,
+    toggleDecidedAt: null
+};
+
+/**
+ * Reputation metadata for the auto-enabled-untouched case: the automation set
+ * the toggle and both audit timestamps are identical (no manual decision since).
+ */
+const AUTO_ENABLED_REPUTATION_META = {
+    showExternalReputation: true,
+    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
 };
 
 /**
@@ -157,9 +172,17 @@ const EMPTY_REPUTATION_META = {
  * now built THROUGH the shared response schema, so a fixture that does not
  * match the real contract fails here instead of shipping.
  */
+/** Wire-shaped reputation metadata (dates arrive as ISO strings over HTTP). */
+interface ReputationMetaFixture {
+    showExternalReputation: boolean;
+    aggregateFetchedAt: string | null;
+    autoEnabledAt: string | null;
+    toggleDecidedAt: string | null;
+}
+
 function makeListingsOkResponse(
     listings: AccommodationExternalListingsResponse['listings'] = [LISTING_GOOGLE],
-    reputation = REPUTATION_META
+    reputation: ReputationMetaFixture = REPUTATION_META
 ): Response {
     const data = AccommodationExternalListingsResponseSchema.parse({ listings, reputation });
     return {
@@ -261,7 +284,9 @@ describe('ExternalReputationSection', () => {
             vi.mocked(global.fetch).mockResolvedValue(
                 makeListingsOkResponse([LISTING_GOOGLE], {
                     showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: null,
+                    toggleDecidedAt: null
                 })
             );
             renderSection();
@@ -331,7 +356,9 @@ describe('ExternalReputationSection', () => {
             vi.mocked(global.fetch).mockResolvedValue(
                 makeListingsOkResponse([LISTING_GOOGLE], {
                     showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: null,
+                    toggleDecidedAt: null
                 })
             );
             renderSection();
@@ -357,6 +384,76 @@ describe('ExternalReputationSection', () => {
                 expect(
                     screen.getByText(/No se pudieron cargar las reseñas externas/)
                 ).toBeInTheDocument();
+            });
+        });
+    });
+
+    // ── 2c. One-time automatic-enable notice ────────────────────────────────
+
+    describe('Auto-enabled notice', () => {
+        const NOTICE = /Activamos esta sección automáticamente/;
+
+        it('shows the notice when the automation enabled it and the owner has not decided since', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByText(NOTICE)).toBeInTheDocument();
+            });
+        });
+
+        it('hides the notice when the owner decided after the automatic enable', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: true,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+                    toggleDecidedAt: '2026-06-02T09:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).toBeChecked();
+            });
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        });
+
+        it('hides the notice when the toggle is off', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: false,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+                    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).not.toBeChecked();
+            });
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        });
+
+        it('hides the notice after the owner clicks the toggle', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByText(NOTICE)).toBeInTheDocument();
+            });
+
+            const toggle = document.querySelector('#ext-rep-master-toggle');
+            if (!toggle) throw new Error('toggle not rendered');
+            fireEvent.click(toggle);
+
+            await waitFor(() => {
+                expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
             });
         });
     });
