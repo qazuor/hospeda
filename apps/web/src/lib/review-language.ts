@@ -33,6 +33,14 @@ function primarySubtag(code: string): string {
 }
 
 /**
+ * BCP-47 special-purpose tags that name no human language: `und`
+ * (undetermined — Google's tag for reviews it cannot classify, such as a lone
+ * emoji), `mul` (multiple) and `zxx` (no linguistic content). `Intl` still
+ * "names" them (`und` → "root"), so they must be refused explicitly.
+ */
+const NON_LANGUAGE_TAGS: ReadonlySet<string> = new Set(['und', 'mul', 'zxx']);
+
+/**
  * Resolves the localized name for a review's language, but only when it
  * differs from the page locale's language.
  *
@@ -60,7 +68,7 @@ export function getReviewLanguageLabel({
     }
 
     const reviewLanguage = primarySubtag(languageCode);
-    if (reviewLanguage === '') {
+    if (reviewLanguage === '' || NON_LANGUAGE_TAGS.has(reviewLanguage)) {
         return null;
     }
 

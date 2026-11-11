@@ -33,6 +33,14 @@ describe('getReviewLanguageLabel', () => {
         expect(getReviewLanguageLabel({ languageCode: 'zz', locale: 'es' })).toBeNull();
     });
 
+    it.each([
+        'und',
+        'mul',
+        'zxx'
+    ])('returns null for the special-purpose tag %s (Intl would name und "root")', (code) => {
+        expect(getReviewLanguageLabel({ languageCode: code, locale: 'es' })).toBeNull();
+    });
+
     it('resolves the language name in the page locale', () => {
         expect(getReviewLanguageLabel({ languageCode: 'pt', locale: 'en' })).toBe('Portuguese');
     });

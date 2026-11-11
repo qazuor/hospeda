@@ -240,6 +240,23 @@ describe('ExternalReviews', () => {
         expect(screen.getByRole('img', { name: '4 de 5 estrellas' })).toBeDefined();
     });
 
+    it('renders the profile photo img when profilePhoto is present', () => {
+        render(
+            <ExternalReviews
+                snippets={[
+                    makeSnippet({
+                        author: 'Carlos',
+                        profilePhoto: 'https://lh3.googleusercontent.com/a/photo.jpg'
+                    })
+                ]}
+                locale="es"
+            />
+        );
+        const img = screen.getByAltText('Carlos');
+        expect(img.getAttribute('src')).toBe('https://lh3.googleusercontent.com/a/photo.jpg');
+        expect(img.getAttribute('referrerpolicy')).toBe('no-referrer');
+    });
+
     it('renders the avatar fallback initial when profilePhoto is absent', () => {
         render(
             <ExternalReviews

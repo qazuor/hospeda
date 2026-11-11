@@ -17,7 +17,7 @@
 
 import { GoogleIcon, StarIcon } from '@repo/icons';
 import type { ExternalReviewSnippet } from '@repo/schemas';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -93,6 +93,7 @@ function ReviewCard({
      * refused value renders the plain name instead.
      */
     const authorHref = resolveSafeExternalUrl(snippet.authorUrl);
+    const textId = useId();
 
     const relativeTime = useMemo(() => {
         if (!snippet.timeIso) {
@@ -119,8 +120,17 @@ function ReviewCard({
             setIsClamped(element.scrollHeight > element.clientHeight + 1);
         };
         measure();
-        window.addEventListener('resize', measure);
-        return () => window.removeEventListener('resize', measure);
+        // A ResizeObserver re-measures on every layout change of the paragraph,
+        // not only on window resizes: a web font that finishes loading after
+        // hydration changes the text metrics, and without this a card that only
+        // overflows after the swap would stay cut at 5 lines with no toggle.
+        if (typeof ResizeObserver === 'undefined') {
+            window.addEventListener('resize', measure);
+            return () => window.removeEventListener('resize', measure);
+        }
+        const observer = new ResizeObserver(measure);
+        observer.observe(element);
+        return () => observer.disconnect();
     }, [expanded]);
 
     return (
@@ -134,6 +144,7 @@ function ReviewCard({
                         width={36}
                         height={36}
                         loading="lazy"
+                        referrerPolicy="no-referrer"
                     />
                 ) : (
                     <span
@@ -175,6 +186,9 @@ function ReviewCard({
                             <time
                                 className={styles.relativeTime}
                                 dateTime={snippet.timeIso}
+                                // SSR and hydration compute "hace N …" a moment
+                                // apart; across a unit boundary the text can differ.
+                                suppressHydrationWarning
                             >
                                 {relativeTime}
                             </time>
@@ -185,6 +199,7 @@ function ReviewCard({
 
             <p
                 ref={textRef}
+                id={textId}
                 className={cn(styles.text, !expanded && styles.textClamped)}
             >
                 {snippet.text}
@@ -196,6 +211,7 @@ function ReviewCard({
                     className={styles.readToggle}
                     onClick={() => setExpanded((current) => !current)}
                     aria-expanded={expanded}
+                    aria-controls={textId}
                 >
                     {expanded
                         ? t('external-reputation.reviews.readLess', 'Leer menos')
@@ -230,13 +246,19 @@ export function ExternalReviews({ snippets, locale }: Props) {
 
     return (
         <div className={styles.container}>
+            {/* tabIndex makes the horizontally scrollable list (mobile
+                carousel) keyboard-reachable even when no card holds a focusable
+                element (axe: scrollable-region-focusable). */}
             <ul
                 className={styles.list}
                 aria-label={t('external-reputation.reviews.listLabel', 'Reseñas de Google')}
+                // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be keyboard-focusable
+                tabIndex={0}
             >
-                {visible.map((snippet) => (
+                {visible.map((snippet, index) => (
                     <ReviewCard
-                        key={`${snippet.author}:${(snippet.text ?? '').slice(0, 32)}`}
+                        // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, server-ordered list that never reorders; the index disambiguates identical author+date pairs
+                        key={`${index}:${snippet.author}:${snippet.timeIso ?? ''}`}
                         snippet={snippet}
                         locale={locale}
                     />
