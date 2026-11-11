@@ -13,6 +13,8 @@ export interface PlanMigrationUpcomingProps {
     readonly newAmount: string;
     readonly applicationDate: string;
     readonly losesPromo: boolean;
+    /** When true, the card payer is told the provider also announces the amount change. */
+    readonly providerNotifies?: boolean;
 }
 
 /** Subject of the plan migration reminder. */
@@ -27,7 +29,8 @@ export function PlanMigrationUpcoming({
     currentAmount,
     newAmount,
     applicationDate,
-    losesPromo
+    losesPromo,
+    providerNotifies = false
 }: PlanMigrationUpcomingProps) {
     return (
         <EmailLayout previewText={PLAN_MIGRATION_UPCOMING_SUBJECT}>
@@ -41,6 +44,9 @@ export function PlanMigrationUpcoming({
             <Text>Tu precio actual es {currentAmount}.</Text>
             <Text>El precio nuevo será {newAmount}.</Text>
             {losesPromo ? <Text>Con el cambio perdés tu promoción actual.</Text> : null}
+            {providerNotifies ? (
+                <Text>Mercado Pago también te va a mandar un aviso del cambio de monto.</Text>
+            ) : null}
             <Text>Podés darte de baja o elegir otro plan antes del cambio.</Text>
         </EmailLayout>
     );

@@ -63,6 +63,7 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             class: subscriptions.class,
             status: subscriptions.status,
             nextChargeAt: subscriptions.nextChargeAt,
+            paymentMethod: subscriptions.paymentMethod,
             billingOptionId: billingOptions.id,
             cycle: billingOptions.cycle
         })
@@ -183,6 +184,7 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             daysBefore: due.daysBefore,
             losesPromo: pricing.losesPromo,
             variant: 'SCHEDULED',
+            providerNotifies: row.paymentMethod === 'CARD',
             deadlinesVersion: row.deadlineVersion
         }
     });
