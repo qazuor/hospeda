@@ -35,7 +35,8 @@ const announcedSchema = z.discriminatedUnion('variant', [
 ]);
 const upcomingSchema = migrationDetailsSchema.extend({
     applicationDate: dateString,
-    daysBefore: z.number().int().positive()
+    daysBefore: z.number().int().positive(),
+    providerNotifies: z.boolean().optional()
 });
 const cancelledSchema = z.discriminatedUnion('variant', [
     z.object({ variant: z.literal('NOTHING_CHANGES'), planName: nonEmptyString }),
@@ -97,6 +98,7 @@ function upcoming(row: EmailOutboxRow) {
                 newAmount={amounts.next}
                 applicationDate={data.applicationDate}
                 losesPromo={data.losesPromo}
+                providerNotifies={data.providerNotifies ?? false}
             />
         )
     };

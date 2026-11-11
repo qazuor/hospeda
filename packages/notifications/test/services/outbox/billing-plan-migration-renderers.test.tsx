@@ -77,6 +77,25 @@ describe('TEST:B12:3 AC:B12:3 el aviso, sus correos y la fecha de cada cliente',
         expect(html).toContain('perdés tu promoción actual');
         expect(html).toContain('Podés darte de baja o elegir otro plan antes');
     });
+
+    it('tells only card payers that Mercado Pago also announces the amount change', () => {
+        const phrase = 'Mercado Pago también te va a mandar un aviso del cambio de monto';
+        const occurrences = (html: string) => (html.match(new RegExp(phrase, 'g')) ?? []).length;
+        const card = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: true
+        });
+        expect(occurrences(card.html)).toBe(1);
+        const manual = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: false
+        });
+        expect(occurrences(manual.html)).toBe(0);
+        const absent = render('billing.plan-migration-upcoming', { ...base, daysBefore: 7 });
+        expect(occurrences(absent.html)).toBe(0);
+    });
 });
 
 describe('TEST:B12:6 AC:B12:6 la que no tiene su ciclo en el destino queda PARA_RESOLVER y recibe sólo el correo del anuncio diciendo que la van a contactar', () => {

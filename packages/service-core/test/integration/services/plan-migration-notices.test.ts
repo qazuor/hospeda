@@ -234,7 +234,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 (row) => row.template === 'billing.plan-migration-upcoming'
             );
             expect(upcoming).toHaveLength(2);
-            expect(upcoming.map(({ payload }) => payload)).toEqual([
+            // The outbox read has no ORDER BY: sort by milestone so the -30d notice comes first.
+            const byDaysBefore = upcoming
+                .map(({ payload }) => payload as { daysBefore: number })
+                .sort((a, b) => b.daysBefore - a.daysBefore);
+            expect(byDaysBefore).toEqual([
                 {
                     planMigrationId: launched.planMigrationId,
                     planMigrationSubscriptionId: scope.id,
@@ -256,6 +260,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     daysBefore: 30,
                     losesPromo: preview.rows[0]?.losesPromo,
                     variant: 'SCHEDULED',
+                    providerNotifies: false,
                     deadlinesVersion: launched.deadlineVersion
                 },
                 {
@@ -279,6 +284,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     daysBefore: 7,
                     losesPromo: preview.rows[0]?.losesPromo,
                     variant: 'SCHEDULED',
+                    providerNotifies: true,
                     deadlinesVersion: launched.deadlineVersion
                 }
             ]);
