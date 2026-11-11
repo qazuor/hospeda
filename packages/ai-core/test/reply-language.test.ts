@@ -250,7 +250,7 @@ describe('buildReplyLanguageInstruction', () => {
         // accepts only specific words («no figura», «consulta…»), so the es
         // line carries the not-informed template.
         expect(es).toContain(
-            'cuando la ficha no informa algo, escribí «la ficha no figura información sobre eso» y sugerí «consultarlo con el lugar»'
+            'cuando la ficha no informa algo, escribí «en la ficha no figura información sobre eso» y sugerí «consultarlo con el lugar»'
         );
         expect(en).toContain(
             '"it depends on how you distribute yourselves and on availability — confirm with the place"'
@@ -273,7 +273,7 @@ describe('buildReplyLanguageInstruction', () => {
     it('HOS-2100: the Spanish line reminds conjugation and the plural of vos', () => {
         expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('oraciones completas y bien conjugadas');
         expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain(
-            'lo mejor es que lo consultes con el lugar'
+            'lo mejor es que lo consultés con el lugar'
         );
         expect(REPLY_LANGUAGE_INSTRUCTIONS.es).toContain('el plural de «vos» es «ustedes»');
     });
