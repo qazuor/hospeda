@@ -951,6 +951,18 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
 
+`subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
+failed row can no longer starve the rows behind it. Each failure increments that row's
+`attempt_count` and records `last_error_at`/`last_error` outside the rolled-back transaction
+(migration `0215`). When a row reaches `SCHEDULED_CHANGE_MAX_ATTEMPTS` (5), it leaves the batch,
+raises one Sentry event through the logger capture hook, and is reported as `EXHAUSTED` (with
+`exhausted` in the run summary) on every run until it is re-enabled. Re-enable an exhausted row
+with the owner's approval, from `hops psql` on the target environment:
+
+```sql
+UPDATE subscription_scheduled_change SET attempt_count = 0 WHERE id = '<id>';
+```
+
 ---
 
 ### notification-schedule

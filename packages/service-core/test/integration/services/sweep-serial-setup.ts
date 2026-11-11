@@ -14,14 +14,21 @@ import { afterAll, beforeAll, expect } from 'vitest';
  * - The S38 due-change batch (`applyDueScheduledChanges`, HOS-2103) applies every due queue entry
  *   in the database. A batch run by one file applied the rows another file had just seeded, so
  *   that file's own run never saw them: no coverage notice for its user, no FAILED result for its
- *   spied row.
+ *   spied row. The group therefore covers BOTH the files that run the batch and every file that
+ *   writes queue rows: seeding a row due before the batch clock is enough to have it stolen,
+ *   whether or not the file ever names `applyDueScheduledChanges`. Queue rows are written through
+ *   three fixtures (`seedScheduledChange`, `seedDifferentScheduledAmount`, `seedPriceIncrease`) or
+ *   by a direct `insert(subscriptionScheduledChanges)`, and each of those tokens is listed.
  */
 const SERIAL_GROUPS = [
     {
         key: 1_999_001,
         drives: /billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/
     },
-    { key: 1_999_002, drives: /\bapplyDueScheduledChanges\b/ }
+    {
+        key: 1_999_002,
+        drives: /\bapplyDueScheduledChanges\b|\bseedScheduledChange\b|\bseedDifferentScheduledAmount\b|\bseedPriceIncrease\b|\binsert\(subscriptionScheduledChanges\)/
+    }
 ] as const;
 const LOCK_WAIT_MS = 15 * 60_000;
 

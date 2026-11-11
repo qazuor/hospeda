@@ -1506,6 +1506,13 @@
       "when": 1794275832894,
       "tag": "0214_hos1612_migrate_plan_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1794350052734,
+      "tag": "0215_hos2104_scheduled_change_attempts",
+      "breakpoints": true
     }
   ]
 }
