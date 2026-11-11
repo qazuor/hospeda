@@ -1,10 +1,7 @@
 /** Owner dismissal actions for AI listing questions (HOS-2105). */
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import {
-    isQuestionOwnedBy,
-    setQuestionDismissed
-} from '../../../services/ai-listing-questions.service.js';
+import { setQuestionDismissed } from '../../../services/ai-listing-questions.service.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { createProtectedRoute } from '../../../utils/route-factory.js';
 import { z } from '../../../utils/zod.js';
@@ -29,14 +26,14 @@ export function createListingQuestionDismissRoute(input: { readonly dismissed: b
         handler: async (ctx, params) => {
             const actor = getActorFromContext(ctx);
             const messageId = String(params.messageId);
-            if (!(await isQuestionOwnedBy({ messageId, userId: actor.id })).owned) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Question not found.');
-            }
             const result = await setQuestionDismissed({
                 messageId,
                 userId: actor.id,
                 dismissed: input.dismissed
             });
+            if (!result) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Question not found.');
+            }
             return {
                 messageId,
                 ownerDismissedAt: result.ownerDismissedAt?.toISOString() ?? null

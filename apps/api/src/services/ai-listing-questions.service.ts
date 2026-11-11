@@ -32,7 +32,7 @@ import {
     type AiListingQuestionStatus,
     type AiListingQuestionsResponse
 } from '@repo/schemas';
-import { and, asc, desc, eq, gte, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lt, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 /**
@@ -83,61 +83,46 @@ export async function isListingOwnedBy(
     return { owned: row !== undefined && row.ownerId === input.userId };
 }
 
-/** Checks message existence, user role and listing ownership without revealing foreign ids. */
-export async function isQuestionOwnedBy(input: {
+/** Sets or clears dismissal only when the message's listing belongs to the actor. */
+export async function setQuestionDismissed(input: {
     readonly messageId: string;
     readonly userId: string;
-}): Promise<{ readonly owned: boolean }> {
-    const [row] = await getDb()
-        .select({
-            entityType: aiConversations.listingEntityType,
-            entityId: aiConversations.listingEntityId
+    readonly dismissed: boolean;
+}): Promise<{ readonly ownerDismissedAt: Date | null } | null> {
+    const db = getDb();
+    const ownerListing = or(
+        ...(['accommodation', 'venue', 'experience'] as const).map((entityType) => {
+            const table = listingTableFor(entityType);
+            return sql`EXISTS (
+                SELECT 1 FROM ${aiConversations} AS c
+                INNER JOIN ${table} AS l ON l.id = c.listing_entity_id
+                WHERE c.id = ${aiMessages.conversationId}
+                    AND c.listing_entity_type = ${entityType}
+                    AND c.listing_entity_id IS NOT NULL
+                    AND c.deleted_at IS NULL
+                    AND l.deleted_at IS NULL
+                    AND l.owner_id = ${input.userId}
+            )`;
         })
-        .from(aiMessages)
-        .innerJoin(aiConversations, eq(aiConversations.id, aiMessages.conversationId))
+    );
+    const changed = await db
+        .update(aiMessages)
+        .set({
+            ownerDismissedAt: input.dismissed
+                ? sql`COALESCE(${aiMessages.ownerDismissedAt}, now())`
+                : null
+        })
         .where(
             and(
                 eq(aiMessages.id, input.messageId),
                 eq(aiMessages.role, 'user'),
                 isNull(aiMessages.deletedAt),
-                isNull(aiConversations.deletedAt)
-            )
-        )
-        .limit(1);
-    if (!row?.entityType || !row.entityId) return { owned: false };
-    return isListingOwnedBy({
-        entityType: row.entityType as AiChatEntityType,
-        entityId: row.entityId,
-        userId: input.userId
-    });
-}
-
-/** Sets or clears the owner's dismissal timestamp for an owned question. */
-export async function setQuestionDismissed(input: {
-    readonly messageId: string;
-    readonly userId: string;
-    readonly dismissed: boolean;
-}): Promise<{ readonly ownerDismissedAt: Date | null }> {
-    const db = getDb();
-    const changed = await db
-        .update(aiMessages)
-        .set({ ownerDismissedAt: input.dismissed ? new Date() : null })
-        .where(
-            and(
-                eq(aiMessages.id, input.messageId),
-                input.dismissed
-                    ? isNull(aiMessages.ownerDismissedAt)
-                    : isNotNull(aiMessages.ownerDismissedAt)
+                ownerListing
             )
         )
         .returning({ ownerDismissedAt: aiMessages.ownerDismissedAt });
-    if (changed[0]) return { ownerDismissedAt: changed[0].ownerDismissedAt };
-    const [current] = await db
-        .select({ ownerDismissedAt: aiMessages.ownerDismissedAt })
-        .from(aiMessages)
-        .where(eq(aiMessages.id, input.messageId))
-        .limit(1);
-    return { ownerDismissedAt: current?.ownerDismissedAt ?? null };
+    const row = changed[0];
+    return row ? { ownerDismissedAt: row.ownerDismissedAt } : null;
 }
 
 /**
@@ -408,7 +393,13 @@ function mapQuestion(row: ListingQuestionRow): AiListingQuestion {
 function decodeOthersCursor(cursor: string): { readonly createdAt: Date; readonly id: string } {
     try {
         const [date, id] = Buffer.from(cursor, 'base64url').toString().split('|');
-        if (!date || !id || Number.isNaN(Date.parse(date)) || !/^[0-9a-f-]{36}$/i.test(id))
+        if (
+            !date ||
+            !id ||
+            Number.isNaN(Date.parse(date)) ||
+            new Date(date).toISOString() !== date ||
+            !/^[0-9a-f-]{36}$/i.test(id)
+        )
             throw new Error();
         return { createdAt: new Date(date), id };
     } catch {

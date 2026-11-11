@@ -50,9 +50,11 @@ function isValidOthersCursor(cursor: string): boolean {
         const base64 = cursor.replace(/-/g, '+').replace(/_/g, '/');
         const decoded = atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4));
         const [askedAt, messageId, extra] = decoded.split('|');
+        const validDate = z.string().datetime().safeParse(askedAt).success;
         return (
             extra === undefined &&
-            z.string().datetime().safeParse(askedAt).success &&
+            validDate &&
+            new Date(askedAt as string).toISOString() === askedAt &&
             z.string().uuid().safeParse(messageId).success
         );
     } catch {

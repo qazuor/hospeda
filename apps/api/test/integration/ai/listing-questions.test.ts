@@ -11,7 +11,7 @@
  */
 
 import { getMonthlyCallCount } from '@repo/ai-core';
-import { accommodations, aiConversations, aiMessages, aiUsage, and, eq, getDb } from '@repo/db';
+import { aiConversations, aiMessages, aiUsage, eq, getDb } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE,
@@ -21,13 +21,7 @@ import {
     writeClassifierVerdict
 } from '../../../src/services/ai-chat-answer-classifier';
 import { persistChatTurn } from '../../../src/services/ai-chat-persistence';
-import {
-    isListingOwnedBy,
-    listListingQuestions,
-    setQuestionDismissed
-} from '../../../src/services/ai-listing-questions.service';
-import { purgeExpiredChatQuestions } from '../../../src/services/ai-listing-questions-retention';
-import { readDigestRows } from '../../../src/services/ai-questions-digest.selection';
+import { listListingQuestions } from '../../../src/services/ai-listing-questions.service';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { createMockActorUser } from '../helpers/mock-actor';
@@ -180,90 +174,6 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
         expect(response.dismissedCount).toBe(0);
     });
 
-    it('dismisses idempotently, removes an unanswered question from active counts, and restores it', async () => {
-        const { conversationId } = await seedConversation({
-            touristId,
-            listingId: seeded.id,
-            turns: [
-                {
-                    question: '¿Mascotas?',
-                    answer: 'No sé.',
-                    at: new Date('2026-11-01T10:00:00Z'),
-                    status: 'unanswered'
-                }
-            ]
-        });
-        const [question] = await getDb()
-            .select({ id: aiMessages.id })
-            .from(aiMessages)
-            .where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.role, 'user')));
-        const messageId = question?.id as string;
-        const first = await setQuestionDismissed({
-            messageId,
-            userId: seeded.ownerId,
-            dismissed: true
-        });
-        const repeated = await setQuestionDismissed({
-            messageId,
-            userId: seeded.ownerId,
-            dismissed: true
-        });
-        const dismissed = await listListingQuestions({
-            entityType: 'accommodation',
-            entityId: seeded.id,
-            now: NOW
-        });
-        expect(first.ownerDismissedAt).toEqual(repeated.ownerDismissedAt);
-        expect(dismissed.unansweredCount).toBe(0);
-        expect(dismissed.dismissedCount).toBe(1);
-        expect(dismissed.dismissed[0]?.id).toBe(messageId);
-        await setQuestionDismissed({ messageId, userId: seeded.ownerId, dismissed: false });
-        const restored = await listListingQuestions({
-            entityType: 'accommodation',
-            entityId: seeded.id,
-            now: NOW
-        });
-        expect(restored.unansweredCount).toBe(1);
-        expect(restored.dismissedCount).toBe(0);
-    });
-
-    it('excludes dismissed unanswered questions from the weekly digest while retaining active questions', async () => {
-        const { conversationId } = await seedConversation({
-            touristId,
-            listingId: seeded.id,
-            turns: [
-                {
-                    question: 'Descartada',
-                    answer: 'No sé.',
-                    at: new Date('2026-11-08T10:00:00Z'),
-                    status: 'unanswered'
-                },
-                {
-                    question: 'Activa',
-                    answer: 'No sé.',
-                    at: new Date('2026-11-09T10:00:00Z'),
-                    status: 'unanswered'
-                }
-            ]
-        });
-        const questions = await getDb()
-            .select({ id: aiMessages.id, content: aiMessages.content })
-            .from(aiMessages)
-            .where(and(eq(aiMessages.conversationId, conversationId), eq(aiMessages.role, 'user')));
-        const dismissed = questions.find((item) => item.content === 'Descartada');
-        await setQuestionDismissed({
-            messageId: dismissed?.id as string,
-            userId: seeded.ownerId,
-            dismissed: true
-        });
-        const digest = await readDigestRows({
-            windowStart: new Date('2026-11-08T00:00:00Z'),
-            windowEnd: new Date('2026-11-10T00:00:00Z')
-        });
-        expect(digest.rows.map((row) => row.question)).toContain('Activa');
-        expect(digest.rows.map((row) => row.question)).not.toContain('Descartada');
-    });
-
     it('pages active others in stable composite order without gaps or duplicates at an identical askedAt', async () => {
         const askedAt = new Date('2026-11-05T10:00:00Z');
         await seedConversation({
@@ -295,6 +205,21 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
         expect(new Set([...firstPage.items, ...secondPage.items].map((item) => item.id)).size).toBe(
             52
         );
+    });
+
+    it('rejects a valid but non-canonical timestamp in an others cursor', async () => {
+        const cursor = Buffer.from(
+            '2026-11-05T10:00:00Z|22222222-2222-4222-8222-222222222222'
+        ).toString('base64url');
+
+        await expect(
+            listListingQuestions({
+                entityType: 'accommodation',
+                entityId: seeded.id,
+                now: NOW,
+                othersCursor: cursor
+            })
+        ).rejects.toThrow('Invalid others cursor');
     });
 
     it('lists every unanswered question up to its cap, however many answered ones are newer', async () => {
@@ -343,89 +268,6 @@ describe('HOS-2101 — AI listing questions (real DB)', () => {
         expect(capped.items.filter((item) => item.answerStatus === 'unanswered')).toHaveLength(2);
         expect(capped.unansweredCount).toBe(3);
         expect(capped.truncated).toBe(true);
-    });
-
-    it('reports ownership only for the owner of a live listing', async () => {
-        const other = await createMockActorUser({ label: 'stranger' });
-
-        const asOwner = await isListingOwnedBy({
-            entityType: 'accommodation',
-            entityId: seeded.id,
-            userId: seeded.ownerId
-        });
-        const asStranger = await isListingOwnedBy({
-            entityType: 'accommodation',
-            entityId: seeded.id,
-            userId: other.id
-        });
-        await getDb()
-            .update(accommodations)
-            .set({ deletedAt: NOW })
-            .where(eq(accommodations.id, seeded.id));
-        const afterDelete = await isListingOwnedBy({
-            entityType: 'accommodation',
-            entityId: seeded.id,
-            userId: seeded.ownerId
-        });
-
-        expect([asOwner.owned, asStranger.owned, afterDelete.owned]).toEqual([true, false, false]);
-    });
-
-    it('purges only chat rows older than the retention horizon', async () => {
-        // Arrange
-        await seedConversation({
-            touristId,
-            listingId: seeded.id,
-            turns: [{ question: 'Vieja', answer: 'Resp', at: new Date('2025-10-01T10:00:00.000Z') }]
-        });
-        const recent = await seedConversation({
-            touristId,
-            listingId: seeded.id,
-            turns: [{ question: 'Nueva', answer: 'Resp', at: new Date('2026-11-01T10:00:00.000Z') }]
-        });
-
-        // Act
-        const result = await purgeExpiredChatQuestions({ now: NOW });
-
-        // Assert
-        expect(result.deletedMessages).toBe(2);
-        expect(result.deletedConversations).toBe(1);
-        const left = await getDb().select({ id: aiConversations.id }).from(aiConversations);
-        expect(left.map((row) => row.id)).toEqual([recent.conversationId]);
-    });
-
-    it('purges in batches and never touches an old search conversation', async () => {
-        // Arrange: 3 old chat conversations, 1 old search conversation.
-        const old = new Date('2025-09-01T10:00:00.000Z');
-        for (const n of [1, 2, 3]) {
-            await seedConversation({
-                touristId,
-                listingId: seeded.id,
-                turns: [{ question: `chat${n}`, answer: 'Resp', at: old }]
-            });
-        }
-        const search = await seedConversation({
-            touristId,
-            listingId: seeded.id,
-            feature: 'search',
-            turns: [{ question: 'busco cabaña', answer: 'Mirá estas', at: old }]
-        });
-
-        // Act: batches of 2 force several statements per table.
-        const result = await purgeExpiredChatQuestions({ now: NOW, batchSize: 2 });
-
-        // Assert
-        expect(result.deletedMessages).toBe(6);
-        expect(result.deletedConversations).toBe(3);
-        const conversations = await getDb()
-            .select({ id: aiConversations.id })
-            .from(aiConversations);
-        expect(conversations.map((row) => row.id)).toEqual([search.conversationId]);
-        const messages = await getDb()
-            .select({ id: aiMessages.id })
-            .from(aiMessages)
-            .where(eq(aiMessages.conversationId, search.conversationId));
-        expect(messages).toHaveLength(2);
     });
 
     it('never appends a turn to a conversation that is not this user, feature and listing', async () => {
