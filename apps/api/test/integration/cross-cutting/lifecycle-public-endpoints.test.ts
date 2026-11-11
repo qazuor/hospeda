@@ -335,7 +335,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
     //   - packages/service-core/test/services/destinationReview/listByDestination.test.ts
     // ------------------------------------------------------------------------
     describe('T-009: non-ACTIVE records excluded from public result set', () => {
-        it('AccommodationReview: route rejects ?lifecycleState with 400 INVALID_PAGINATION_PARAMS (unknown query param)', async () => {
+        it('AccommodationReview: route rejects ?lifecycleState with 400 VALIDATION_ERROR (unknown query param)', async () => {
             // Arrange
             const accommodationId = '123e4567-e89b-12d3-a456-426614174000';
             const spy = vi.fn().mockResolvedValue({
@@ -354,7 +354,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
             // The service must NOT be called.
             expect(res.status).toBe(400);
             const body = (await res.json()) as { error?: { code?: string } };
-            expect(body.error?.code).toBe('INVALID_PAGINATION_PARAMS');
+            expect(body.error?.code).toBe('VALIDATION_ERROR');
             expect(spy).not.toHaveBeenCalled();
         });
 
