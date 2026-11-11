@@ -86,9 +86,11 @@ export function AiQuestionsPanel({
     const { t } = createTranslations(locale);
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
     const [mutationError, setMutationError] = useState<string | null>(null);
+    const [hasLoadedMore, setHasLoadedMore] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
+        setHasLoadedMore(false);
         const load = async (): Promise<void> => {
             const result = await apiClient.getProtected<AiListingQuestionsResponse>({
                 path: AI_LISTING_QUESTIONS_PATH,
@@ -231,7 +233,8 @@ export function AiQuestionsPanel({
             path: AI_LISTING_QUESTIONS_PATH,
             params: { entityType, entityId, othersCursor: data.othersNextCursor }
         });
-        if (result.ok)
+        if (result.ok) {
+            setHasLoadedMore(true);
             setState({
                 kind: 'ready',
                 data: {
@@ -245,6 +248,7 @@ export function AiQuestionsPanel({
                     ]
                 }
             });
+        }
     };
     const renderItem = (item: AiListingQuestion, withAction: boolean): JSX.Element => (
         <li
@@ -355,7 +359,7 @@ export function AiQuestionsPanel({
                     <ul className={styles.list}>{others.map((item) => renderItem(item, false))}</ul>
                 </section>
             )}
-            {data.truncated && (
+            {data.truncated && !hasLoadedMore && (
                 <p className={styles.status}>
                     {t(
                         'host.properties.editor.aiQuestions.truncated',
@@ -381,6 +385,15 @@ export function AiQuestionsPanel({
                         {t('host.properties.editor.aiQuestions.dismissedTitle', 'Descartadas')} (
                         {data.dismissedCount})
                     </summary>
+                    {data.dismissedCount > (data.dismissed?.length ?? 0) && (
+                        <p className={styles.status}>
+                            {t(
+                                'host.properties.editor.aiQuestions.dismissedTruncated',
+                                'Mostramos las últimas {{shown}} de {{total}} preguntas descartadas.',
+                                { shown: data.dismissed?.length ?? 0, total: data.dismissedCount }
+                            )}
+                        </p>
+                    )}
                     <ul className={styles.list}>
                         {(data.dismissed ?? []).map((item) => (
                             <li
