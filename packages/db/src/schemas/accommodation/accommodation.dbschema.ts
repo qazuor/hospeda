@@ -103,6 +103,29 @@ export const accommodations = pgTable(
          * so that the feature ships dark and the host opts in explicitly.
          */
         showExternalReputation: boolean('show_external_reputation').notNull().default(false),
+        /**
+         * Timestamp of the owner's last explicit decision about the external
+         * reputation master toggle — set on EVERY manual toggle (on or off) and
+         * by the one-time automatic enable.
+         *
+         * The automatic enable is allowed ONLY while this column is NULL: once
+         * the owner has ever touched the checkbox, the automation never acts
+         * again and can neither re-enable nor disable what the owner chose.
+         */
+        externalReputationToggleDecidedAt: timestamp('external_reputation_toggle_decided_at', {
+            withTimezone: true
+        }),
+        /**
+         * Set ONLY by the automatic enable — never by a manual toggle.
+         *
+         * Drives the editor notice that tells the owner the section was turned
+         * on for them. The notice is shown only while this timestamp equals
+         * {@link externalReputationToggleDecidedAt}, i.e. the owner has not made
+         * a manual decision since the automation fired.
+         */
+        externalReputationAutoEnabledAt: timestamp('external_reputation_auto_enabled_at', {
+            withTimezone: true
+        }),
         // SPEC-291: Admin-set verification badge. NO KYC — manual admin action only.
         // verifiedAt and verifiedById are audit columns tracking who last verified/unverified.
         isVerified: boolean('is_verified').notNull().default(false),

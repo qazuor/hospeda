@@ -41,6 +41,7 @@ const {
     mockFindPendingRuns,
     mockUpsertReputation,
     mockUpdateRunStatus,
+    mockAutoEnableExternalReputation,
     mockGetApifyRunStatus,
     mockGetApifyDatasetItems,
     mockGetReputationAdapter,
@@ -60,6 +61,7 @@ const {
         mockFindPendingRuns: vi.fn().mockResolvedValue([]),
         mockUpsertReputation: vi.fn().mockResolvedValue({}),
         mockUpdateRunStatus: vi.fn().mockResolvedValue(undefined),
+        mockAutoEnableExternalReputation: vi.fn().mockResolvedValue({ enabled: false }),
         mockGetApifyRunStatus: vi.fn().mockResolvedValue(null),
         mockGetApifyDatasetItems: vi.fn().mockResolvedValue([]),
         mockGetReputationAdapter: vi.fn().mockReturnValue({ mapDatasetItems }),
@@ -93,6 +95,11 @@ vi.mock('@repo/db', async (importOriginal) => {
                 findPendingRuns: mockFindPendingRuns,
                 upsertReputation: mockUpsertReputation,
                 updateRunStatus: mockUpdateRunStatus
+            };
+        }),
+        AccommodationModel: vi.fn().mockImplementation(function () {
+            return {
+                autoEnableExternalReputationIfUndecided: mockAutoEnableExternalReputation
             };
         })
     };
@@ -148,6 +155,9 @@ function makePendingRow(
         runStatus: 'pending' | 'running';
         runStartedAt: Date | null;
         listingUrl: string;
+        showLink: boolean;
+        showReviews: boolean;
+        listingDeletedAt: Date | null;
     }> = {}
 ) {
     return {
@@ -160,6 +170,9 @@ function makePendingRow(
         runStatus: 'pending' as const,
         runStartedAt: new Date('2026-06-20T10:00:00Z'),
         listingUrl: LISTING_URL,
+        showLink: true,
+        showReviews: true,
+        listingDeletedAt: null,
         ...overrides
     };
 }
@@ -189,6 +202,7 @@ describe('Poll Apify Reputation Runs Cron Job', () => {
         mockFindPendingRuns.mockResolvedValue([]);
         mockUpsertReputation.mockResolvedValue({});
         mockUpdateRunStatus.mockResolvedValue(undefined);
+        mockAutoEnableExternalReputation.mockResolvedValue({ enabled: false });
         mockGetApifyRunStatus.mockResolvedValue(null);
         mockGetApifyDatasetItems.mockResolvedValue([]);
         mockMapDatasetItems.mockReturnValue({
@@ -312,6 +326,74 @@ describe('Poll Apify Reputation Runs Cron Job', () => {
             );
             expect(result.processed).toBe(1);
             expect(result.errors).toBe(0);
+            expect(result.success).toBe(true);
+        });
+
+        it('auto-enables the section when the resolved data is displayable', async () => {
+            mockFindPendingRuns.mockResolvedValue([makePendingRow()]);
+            mockGetApifyRunStatus.mockResolvedValue({
+                status: 'SUCCEEDED',
+                defaultDatasetId: DATASET_ID
+            });
+            mockMapDatasetItems.mockReturnValue({
+                rating: 4.5,
+                reviewsCount: 120,
+                deepLink: LISTING_URL,
+                snippets: null,
+                attributionUrl: null
+            });
+
+            await pollApifyReputationRunsJob.handler(makeCtx());
+
+            expect(mockAutoEnableExternalReputation).toHaveBeenCalledTimes(1);
+            expect(mockAutoEnableExternalReputation).toHaveBeenCalledWith({ id: ACC_ID });
+        });
+
+        it('does NOT auto-enable when the resolved data has no rating or snippets', async () => {
+            mockFindPendingRuns.mockResolvedValue([makePendingRow()]);
+            mockGetApifyRunStatus.mockResolvedValue({
+                status: 'SUCCEEDED',
+                defaultDatasetId: DATASET_ID
+            });
+            mockMapDatasetItems.mockReturnValue({
+                rating: null,
+                reviewsCount: null,
+                deepLink: null,
+                snippets: null,
+                attributionUrl: null
+            });
+
+            await pollApifyReputationRunsJob.handler(makeCtx());
+
+            expect(mockAutoEnableExternalReputation).not.toHaveBeenCalled();
+        });
+
+        it('does NOT auto-enable for a hidden listing', async () => {
+            mockFindPendingRuns.mockResolvedValue([
+                makePendingRow({ showLink: false, showReviews: false })
+            ]);
+            mockGetApifyRunStatus.mockResolvedValue({
+                status: 'SUCCEEDED',
+                defaultDatasetId: DATASET_ID
+            });
+
+            await pollApifyReputationRunsJob.handler(makeCtx());
+
+            expect(mockAutoEnableExternalReputation).not.toHaveBeenCalled();
+        });
+
+        it('keeps processing when the auto-enable primitive throws', async () => {
+            mockFindPendingRuns.mockResolvedValue([makePendingRow()]);
+            mockGetApifyRunStatus.mockResolvedValue({
+                status: 'SUCCEEDED',
+                defaultDatasetId: DATASET_ID
+            });
+            mockAutoEnableExternalReputation.mockRejectedValue(new Error('auto-enable exploded'));
+
+            const result = await pollApifyReputationRunsJob.handler(makeCtx());
+
+            expect(result.errors).toBe(0);
+            expect(result.processed).toBe(1);
             expect(result.success).toBe(true);
         });
     });

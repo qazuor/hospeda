@@ -173,6 +173,18 @@ export function ExternalReputationSection({
     // Held as the `Date` the shared schema already coerced — no ISO round trip.
     const [aggregateFetchedAt, setAggregateFetchedAt] =
         useState<ReputationMeta['aggregateFetchedAt']>(null);
+    /**
+     * Audit timestamps behind the one-time auto-enable notice. Both are the
+     * `Date` the shared schema coerced, so equality is a timestamp comparison.
+     */
+    const [autoEnabledAt, setAutoEnabledAt] = useState<ReputationMeta['autoEnabledAt']>(null);
+    const [toggleDecidedAt, setToggleDecidedAt] = useState<ReputationMeta['toggleDecidedAt']>(null);
+    /**
+     * True once the owner flips the toggle in THIS session. The notice must
+     * disappear immediately, even before the next GET reflects the new
+     * `toggleDecidedAt`.
+     */
+    const [hasManuallyToggled, setHasManuallyToggled] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -249,6 +261,8 @@ export function ExternalReputationSection({
             setListings(parsed.data.listings);
             setMasterToggle(parsed.data.reputation.showExternalReputation);
             setAggregateFetchedAt(parsed.data.reputation.aggregateFetchedAt);
+            setAutoEnabledAt(parsed.data.reputation.autoEnabledAt ?? null);
+            setToggleDecidedAt(parsed.data.reputation.toggleDecidedAt ?? null);
         } catch {
             setLoadError(
                 t(
@@ -264,6 +278,49 @@ export function ExternalReputationSection({
     useEffect(() => {
         void loadListings();
     }, [loadListings]);
+
+    const platformLabel = useCallback(
+        (platform: ExternalPlatform) =>
+            t(
+                `external-reputation.platform.${platform.toLowerCase()}`,
+                PLATFORM_FALLBACK[platform]
+            ),
+        [t]
+    );
+
+    // --- Platforms still available to add ---
+
+    /**
+     * Platforms that have no listing yet for this accommodation.
+     *
+     * HOS-190 follow-up: the select used to offer all four `PLATFORMS` even
+     * when one was already registered, so the only way to discover a platform
+     * was taken was a duplicate 400 after filling the form. Soft-deleted rows
+     * (`deletedAt != null`) do not occupy a platform: their slot can be reused.
+     */
+    const availablePlatforms = useMemo<readonly ExternalPlatform[]>(() => {
+        const taken = new Set<string>(
+            listings
+                .filter((listing) => listing.deletedAt == null)
+                .map((listing) => listing.platform)
+        );
+        return PLATFORMS.filter((platform) => !taken.has(platform));
+    }, [listings]);
+
+    // Keep the selection valid as the available set changes (after the initial
+    // load, after a successful add, after a remove). Guarded so it converges
+    // after a single render instead of looping.
+    useEffect(() => {
+        if (availablePlatforms.length === 0) {
+            return;
+        }
+        if (!availablePlatforms.includes(addPlatform)) {
+            const [firstAvailable] = availablePlatforms;
+            if (firstAvailable !== undefined) {
+                setAddPlatform(firstAvailable);
+            }
+        }
+    }, [availablePlatforms, addPlatform]);
 
     // --- Master toggle handler ---
     const handleMasterToggle = useCallback(async () => {
@@ -286,6 +343,9 @@ export function ExternalReputationSection({
             if (res.ok) {
                 setMasterToggle((prev) => !prev);
                 setMasterToggleError(null);
+                // The owner has now made an explicit decision: hide the
+                // auto-enabled notice without waiting for the next load.
+                setHasManuallyToggled(true);
             } else {
                 // Never fail silently here: a 400 on EVERY toggle went unnoticed
                 // all the way to production precisely because this branch did
@@ -345,28 +405,68 @@ export function ExternalReputationSection({
                 setAddShowReviews(false);
                 await loadListings();
             } else {
-                // The API has TWO 400 shapes: Hono/zod-openapi validation
+                // The API has TWO error shapes: Hono/zod-openapi validation
                 // failures (create-app.ts defaultHook) send `{ messageKey,
-                // summary, userFriendlyMessage }`; a handler-thrown ServiceError
-                // (e.g. DUPLICATE_PLATFORM — this route's documented primary 400)
-                // is serialized by the global onError as `{ code, message,
-                // details }`. Read all three so neither shape is swallowed.
+                // summary, userFriendlyMessage }`; a handler-thrown
+                // ServiceError (e.g. DUPLICATE_PLATFORM — this route's
+                // documented primary 400) is serialized by the global onError
+                // as `{ code, message, details }`.
+                //
+                // `message` is NEVER rendered: for an unexpected 500 it is the
+                // raw driver text (SQL, bind params). Only server-authored
+                // user-facing fields reach the banner; everything else maps to
+                // the generic `addFailed` copy.
                 const errBody = (await res.json().catch(() => ({}))) as {
-                    error?: { userFriendlyMessage?: string; summary?: string; message?: string };
+                    error?: {
+                        code?: string;
+                        message?: string;
+                        details?: { reason?: string };
+                        userFriendlyMessage?: string;
+                        summary?: string;
+                    };
                 };
-                setAddError(
-                    errBody.error?.userFriendlyMessage ??
-                        errBody.error?.summary ??
-                        errBody.error?.message ??
-                        t('external-reputation.errors.fetchFailed', 'Error al agregar el enlace.')
-                );
+                const isDuplicate =
+                    errBody.error?.details?.reason === 'DUPLICATE_PLATFORM' ||
+                    errBody.error?.code === 'DUPLICATE_PLATFORM';
+                if (isDuplicate) {
+                    setAddError(
+                        t(
+                            'external-reputation.errors.duplicatePlatform',
+                            'Ya tenés un enlace de {{platform}} cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.',
+                            { platform: platformLabel(addPlatform) }
+                        )
+                    );
+                } else {
+                    setAddError(
+                        errBody.error?.userFriendlyMessage ??
+                            errBody.error?.summary ??
+                            t(
+                                'external-reputation.errors.addFailed',
+                                'No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos.'
+                            )
+                    );
+                }
             }
         } catch {
-            setAddError(t('external-reputation.errors.fetchFailed', 'Error al agregar el enlace.'));
+            setAddError(
+                t(
+                    'external-reputation.errors.addFailed',
+                    'No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos.'
+                )
+            );
         } finally {
             setIsAdding(false);
         }
-    }, [accommodationId, addPlatform, addUrl, addShowLink, addShowReviews, loadListings, t]);
+    }, [
+        accommodationId,
+        addPlatform,
+        addUrl,
+        addShowLink,
+        addShowReviews,
+        loadListings,
+        platformLabel,
+        t
+    ]);
 
     // --- Per-listing toggle handler ---
     const handleListingToggle = useCallback(
@@ -523,15 +623,6 @@ export function ExternalReputationSection({
     // Render helpers
     // ---------------------------------------------------------------------------
 
-    const platformLabel = useCallback(
-        (platform: ExternalPlatform) =>
-            t(
-                `external-reputation.platform.${platform.toLowerCase()}`,
-                PLATFORM_FALLBACK[platform]
-            ),
-        [t]
-    );
-
     /**
      * Instructions for where to find the public listing URL, dynamic on the
      * currently-selected `addPlatform` (BETA-136). Recomputed whenever the
@@ -564,6 +655,18 @@ export function ExternalReputationSection({
     // Render
     // ---------------------------------------------------------------------------
 
+    /**
+     * The notice is relevant ONLY while the section is on, the automation set
+     * it, and the owner has not decided since (equal timestamps mean the
+     * auto-enable's `decidedAt` was never overwritten by a manual toggle).
+     */
+    const showAutoEnabledNotice =
+        masterToggle &&
+        !hasManuallyToggled &&
+        autoEnabledAt != null &&
+        toggleDecidedAt != null &&
+        autoEnabledAt.getTime() === toggleDecidedAt.getTime();
+
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
@@ -577,6 +680,19 @@ export function ExternalReputationSection({
                     'El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.'
                 )}
             </p>
+
+            {/* One-time automatic-enable notice */}
+            {showAutoEnabledNotice && (
+                <p
+                    className={styles.autoEnabledNotice}
+                    role="status"
+                >
+                    {t(
+                        'external-reputation.ownerConfig.autoEnabledNotice',
+                        'Activamos esta sección automáticamente porque ya tenemos datos de tus plataformas. Podés desactivarla cuando quieras.'
+                    )}
+                </p>
+            )}
 
             {/* Master toggle */}
             <div className={styles.masterToggleRow}>
@@ -716,122 +832,134 @@ export function ExternalReputationSection({
                 </ul>
             )}
 
-            {/* Add listing form */}
-            <div className={styles.addForm}>
-                <p className={styles.addFormTitle}>
-                    {t(
-                        'external-reputation.ownerConfig.addListing',
-                        'Agregar enlace de plataforma'
+            {/* Add listing form — hidden once every platform is registered */}
+            {availablePlatforms.length > 0 ? (
+                <div className={styles.addForm}>
+                    <p className={styles.addFormTitle}>
+                        {t(
+                            'external-reputation.ownerConfig.addListing',
+                            'Agregar enlace de plataforma'
+                        )}
+                    </p>
+
+                    <div className={styles.addFormRow}>
+                        <label
+                            htmlFor="ext-rep-platform"
+                            className={styles.addFormLabel}
+                        >
+                            {'Plataforma'}
+                        </label>
+                        <select
+                            id="ext-rep-platform"
+                            className={styles.addFormSelect}
+                            value={addPlatform}
+                            onChange={(e) => setAddPlatform(e.target.value as ExternalPlatform)}
+                        >
+                            {availablePlatforms.map((p) => (
+                                <option
+                                    key={p}
+                                    value={p}
+                                >
+                                    {platformLabel(p)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <p
+                        className={styles.fieldHint}
+                        data-testid="ext-rep-url-hint"
+                    >
+                        {urlHint}
+                    </p>
+
+                    <div className={styles.addFormRow}>
+                        <label
+                            htmlFor="ext-rep-url"
+                            className={styles.addFormLabel}
+                        >
+                            {'URL'}
+                        </label>
+                        <input
+                            id="ext-rep-url"
+                            type="url"
+                            className={styles.addFormInput}
+                            value={addUrl}
+                            onChange={(e) => {
+                                setAddUrl(e.target.value);
+                                if (addUrlError) setAddUrlError(null);
+                            }}
+                            placeholder={'https://...'}
+                            aria-invalid={addUrlError ? true : undefined}
+                            aria-describedby={addUrlError ? fieldErrorId('ext-rep-url') : undefined}
+                        />
+                    </div>
+                    <FieldError
+                        id={fieldErrorId('ext-rep-url')}
+                        message={addUrlError}
+                    />
+
+                    <div className={styles.addFormCheckboxRow}>
+                        <label className={styles.addFormCheckbox}>
+                            <input
+                                type="checkbox"
+                                checked={addShowLink}
+                                onChange={(e) => setAddShowLink(e.target.checked)}
+                            />
+                            <span>
+                                {t(
+                                    'external-reputation.ownerConfig.showLink',
+                                    'Mostrar enlace a la plataforma'
+                                )}
+                            </span>
+                        </label>
+
+                        <label className={styles.addFormCheckbox}>
+                            <input
+                                type="checkbox"
+                                checked={addShowReviews}
+                                onChange={(e) => setAddShowReviews(e.target.checked)}
+                            />
+                            <span>
+                                {t(
+                                    'external-reputation.ownerConfig.showReviews',
+                                    'Mostrar reseñas de texto'
+                                )}
+                            </span>
+                        </label>
+                    </div>
+
+                    {addError && (
+                        <div
+                            className={styles.errorBanner}
+                            role="alert"
+                        >
+                            {addError}
+                        </div>
                     )}
-                </p>
 
-                <div className={styles.addFormRow}>
-                    <label
-                        htmlFor="ext-rep-platform"
-                        className={styles.addFormLabel}
+                    <button
+                        type="button"
+                        className={styles.addButton}
+                        onClick={() => void handleAddListing()}
+                        disabled={isAdding || !addUrl.trim()}
                     >
-                        {'Plataforma'}
-                    </label>
-                    <select
-                        id="ext-rep-platform"
-                        className={styles.addFormSelect}
-                        value={addPlatform}
-                        onChange={(e) => setAddPlatform(e.target.value as ExternalPlatform)}
-                    >
-                        {PLATFORMS.map((p) => (
-                            <option
-                                key={p}
-                                value={p}
-                            >
-                                {platformLabel(p)}
-                            </option>
-                        ))}
-                    </select>
+                        {isAdding
+                            ? t('external-reputation.ownerConfig.addListing', 'Agregando...')
+                            : t('external-reputation.ownerConfig.addListing', 'Agregar')}
+                    </button>
                 </div>
-
+            ) : (
                 <p
                     className={styles.fieldHint}
-                    data-testid="ext-rep-url-hint"
+                    data-testid="ext-rep-all-platforms"
                 >
-                    {urlHint}
+                    {t(
+                        'external-reputation.ownerConfig.allPlatformsAdded',
+                        'Ya agregaste todas las plataformas disponibles.'
+                    )}
                 </p>
-
-                <div className={styles.addFormRow}>
-                    <label
-                        htmlFor="ext-rep-url"
-                        className={styles.addFormLabel}
-                    >
-                        {'URL'}
-                    </label>
-                    <input
-                        id="ext-rep-url"
-                        type="url"
-                        className={styles.addFormInput}
-                        value={addUrl}
-                        onChange={(e) => {
-                            setAddUrl(e.target.value);
-                            if (addUrlError) setAddUrlError(null);
-                        }}
-                        placeholder={'https://...'}
-                        aria-invalid={addUrlError ? true : undefined}
-                        aria-describedby={addUrlError ? fieldErrorId('ext-rep-url') : undefined}
-                    />
-                </div>
-                <FieldError
-                    id={fieldErrorId('ext-rep-url')}
-                    message={addUrlError}
-                />
-
-                <div className={styles.addFormCheckboxRow}>
-                    <label className={styles.addFormCheckbox}>
-                        <input
-                            type="checkbox"
-                            checked={addShowLink}
-                            onChange={(e) => setAddShowLink(e.target.checked)}
-                        />
-                        <span>
-                            {t(
-                                'external-reputation.ownerConfig.showLink',
-                                'Mostrar enlace a la plataforma'
-                            )}
-                        </span>
-                    </label>
-
-                    <label className={styles.addFormCheckbox}>
-                        <input
-                            type="checkbox"
-                            checked={addShowReviews}
-                            onChange={(e) => setAddShowReviews(e.target.checked)}
-                        />
-                        <span>
-                            {t(
-                                'external-reputation.ownerConfig.showReviews',
-                                'Mostrar reseñas de texto'
-                            )}
-                        </span>
-                    </label>
-                </div>
-
-                {addError && (
-                    <div
-                        className={styles.errorBanner}
-                        role="alert"
-                    >
-                        {addError}
-                    </div>
-                )}
-
-                <button
-                    type="button"
-                    className={styles.addButton}
-                    onClick={() => void handleAddListing()}
-                    disabled={isAdding || !addUrl.trim()}
-                >
-                    {isAdding
-                        ? t('external-reputation.ownerConfig.addListing', 'Agregando...')
-                        : t('external-reputation.ownerConfig.addListing', 'Agregar')}
-                </button>
-            </div>
+            )}
 
             {/* Per-platform async run status chips (SPEC-250 Phase 7) */}
             {platformStatusEntries.length > 0 && (

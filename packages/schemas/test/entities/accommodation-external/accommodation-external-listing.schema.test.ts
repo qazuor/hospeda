@@ -104,6 +104,45 @@ describe('ExternalReviewSnippetSchema', () => {
         // Assert
         expect(result.success).toBe(false);
     });
+
+    it('should accept a languageCode', () => {
+        // Arrange
+        const snippet = { author: 'Alice', text: 'Hermoso lugar.', languageCode: 'es' };
+
+        // Act
+        const result = ExternalReviewSnippetSchema.safeParse(snippet);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.languageCode).toBe('es');
+        }
+    });
+
+    it('should accept a snippet stored before languageCode existed (legacy row)', () => {
+        // Arrange — old JSONB rows have no languageCode key at all.
+        const snippet = { author: 'Bob', text: 'Great place!' };
+
+        // Act
+        const result = ExternalReviewSnippetSchema.safeParse(snippet);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.languageCode).toBeUndefined();
+        }
+    });
+
+    it('should reject a languageCode shorter than 2 characters', () => {
+        // Arrange
+        const snippet = { author: 'Alice', text: 'Hi', languageCode: 'x' };
+
+        // Act
+        const result = ExternalReviewSnippetSchema.safeParse(snippet);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
 });
 
 // ============================================================================

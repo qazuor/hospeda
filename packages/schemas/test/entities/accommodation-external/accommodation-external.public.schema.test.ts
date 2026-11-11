@@ -457,4 +457,73 @@ describe('buildExternalReputationBlock', () => {
             expect(block.items).toHaveLength(0);
         });
     });
+
+    describe('fix E — snippetsTtlExpired only claims expiry when there is an aggregate', () => {
+        it('does NOT set snippetsTtlExpired for a never-fetched Google item with no aggregate', () => {
+            // Arrange — the production case: fetch error, no rating, no reviews,
+            // snippets never fetched. There was never any data to expire.
+            const sources = [
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showLink: true,
+                    showReviews: true,
+                    rating: null,
+                    reviewsCount: null,
+                    deepLink: null,
+                    snippets: null,
+                    snippetsFetchedAt: null
+                })
+            ];
+
+            // Act
+            const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+
+            // Assert — item is still present (url), but the "only the score" note
+            // would be false, so the flag stays undefined.
+            expect(block.items).toHaveLength(1);
+            expect(block.items[0]?.snippetsTtlExpired).toBeUndefined();
+            expect(block.items[0]?.snippetsTtlExpired).not.toBe(true);
+        });
+
+        it('sets snippetsTtlExpired=true for a never-fetched Google item that DOES have a rating', () => {
+            // Arrange — never fetched, but there is a score to show.
+            const sources = [
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showReviews: true,
+                    rating: 4.5,
+                    snippets: null,
+                    snippetsFetchedAt: null
+                })
+            ];
+
+            // Act
+            const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+
+            // Assert
+            expect(block.items).toHaveLength(1);
+            expect(block.items[0]?.snippetsTtlExpired).toBe(true);
+        });
+
+        it('sets snippetsTtlExpired=true when snippets are old and a rating exists', () => {
+            // Arrange — fetched but stale, aggregate present.
+            const sources = [
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showReviews: true,
+                    rating: 4.2,
+                    snippets: [SNIPPET],
+                    snippetsFetchedAt: staleFetchedAt()
+                })
+            ];
+
+            // Act
+            const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+
+            // Assert
+            expect(block.items).toHaveLength(1);
+            expect(block.items[0]?.snippetsTtlExpired).toBe(true);
+            expect(block.items[0]?.snippets).toBeNull();
+        });
+    });
 });

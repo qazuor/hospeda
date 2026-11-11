@@ -13,9 +13,10 @@
  *    `before` side does not (guards against swapped halves).
  * 5. **Chain.** `before` is byte-identical to the previous frozen `after`:
  *    0161-hos-2098 for `chat_venue`, 0160 for `chat` and `chat_experience`.
- * 6. **No drift.** `after` equals `DEFAULT_RULES` read from source for `chat` and
- *    `chat_experience`; for `chat_venue` it is exactly what 0163-hos-2098 starts
- *    from, since that migration changed the venue rules again.
+ * 6. **Chain.** `after` is exactly what 0165-hos-2102 starts from for `chat`
+ *    and `chat_experience`, and what 0163-hos-2098 starts from for
+ *    `chat_venue`; the anti-drift check against source moved to 0165 when
+ *    HOS-2102 changed the rules again.
  *
  * @module test/data-migrations/0162-hos-2100-chat-group-pet-rules
  */
@@ -25,9 +26,6 @@ import { fileURLToPath } from 'node:url';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
-// Read from SOURCE, never from the built package that `@repo/ai-core` resolves
-// to: a stale build would make this sync check compare old strings.
-import { DEFAULT_RULES } from '../../../ai-core/src/engine/default-prompts.js';
 import * as migration from '../../src/data-migrations/0162-hos-2100-chat-group-pet-rules.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -82,6 +80,17 @@ const venueDecideFirst = JSON.parse(
         'utf-8'
     )
 ) as { readonly before: { readonly rules: { readonly chat_venue: string } } };
+
+/** 0165-hos-2102's frozen snapshot: its `chat`/`chat_experience` `before` is this `after`. */
+const next = JSON.parse(
+    readFileSync(
+        path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            '../../src/data-migrations/0165-hos-2102-chat-residual-rules.data.json'
+        ),
+        'utf-8'
+    )
+) as FrozenBaseline;
 
 /** One anchor per HOS-2100 shared clause. */
 const HOS_2100_CLAUSES = [
@@ -209,9 +218,9 @@ describe('0162-hos-2100-chat-group-pet-rules', () => {
         expect(before.rules.chat_experience).toBe(previous.after.rules.chat_experience);
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
-        expect(after.rules.chat).toBe(DEFAULT_RULES.chat);
-        expect(after.rules.chat_experience).toBe(DEFAULT_RULES.chat_experience);
+    it('AC-5: the frozen "after" rules are exactly what 0165 starts from (chain without a gap)', () => {
+        expect(after.rules.chat).toBe(next.before.rules.chat);
+        expect(after.rules.chat_experience).toBe(next.before.rules.chat_experience);
     });
 
     it('AC-5b: the frozen chat_venue "after" is exactly what 0163 starts from (chain without a gap)', () => {
