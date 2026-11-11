@@ -195,11 +195,19 @@ export function changeAmountRequests(
         );
 }
 
-/** Plain text of a captured mail: React text-node markers and tags removed. */
+/**
+ * Plain text of a captured mail: React text-node markers and tags removed.
+ * The strip repeats until nothing changes, so a marker rebuilt by a previous
+ * pass (`<!<!---->--`) cannot survive.
+ */
 export function mailText(html: string): string {
-    return decodeHtmlEntities(html.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, ' '))
-        .replace(/\s+/g, ' ')
-        .trim();
+    let stripped = html;
+    let previous: string;
+    do {
+        previous = stripped;
+        stripped = stripped.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, ' ');
+    } while (stripped !== previous);
+    return decodeHtmlEntities(stripped).replace(/\s+/g, ' ').trim();
 }
 
 /** Minor units in the notification templates' `formatCurrency` shape (`$2.500,00`). */
