@@ -643,7 +643,8 @@
         "symbol": "writeCutoverTrials",
         "table": "trials",
         "effect": "turns-on",
-        "via": null,
-        "reason": "V6 cutover inserts an active trial for an eligible listing; a conflict skips the insert and preserves existing coverage; gap tracked in HOS-2091: no post-commit coverage notice; must be resolved before cutover."
+        "via": "caller",
+        "notifiedBy": "apps/api/src/services/cutover-v6/step-3.service.ts",
+        "reason": "V6 cutover inserts an active trial for an eligible listing inside runStep3's transaction; runStep3 emits one TRIAL/CHANGED coverage notice per written trial after that commit and none for a conflict-skipped one (HOS-2091)."
     }
 ]

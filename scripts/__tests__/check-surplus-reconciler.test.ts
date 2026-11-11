@@ -203,4 +203,18 @@ describe('TEST:B4:10 GUARD:G5 a turn-off notified by its caller (via caller, not
             'packages/service-core/src/services/billing/subscription/cancel-inherited-tourist-vip.service.ts'
         );
     });
+    it('the repository inventory notifies writeCutoverTrials through runStep3 (HOS-2091)', () => {
+        const inventory = JSON.parse(
+            readFileSync(
+                path.join(
+                    path.dirname(fileURLToPath(import.meta.url)),
+                    '../guards/source-off-writers.json'
+                ),
+                'utf8'
+            )
+        ) as { symbol: string; via: string | null; notifiedBy?: string }[];
+        const entry = inventory.find((item) => item.symbol === 'writeCutoverTrials');
+        expect(entry?.via).toBe('caller');
+        expect(entry?.notifiedBy).toBe('apps/api/src/services/cutover-v6/step-3.service.ts');
+    });
 });
