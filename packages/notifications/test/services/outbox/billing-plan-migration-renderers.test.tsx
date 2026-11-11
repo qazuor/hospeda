@@ -261,6 +261,21 @@ describe('AC:B12:9 el anuncio del aumento', () => {
         expect(html).toContain('Mercado Pago también te va a avisar del cambio de monto.');
     });
 
+    it('renders the waiting increase without a date', () => {
+        const { subject, html } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'WAITING',
+            applicationDate: null,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Cambia el precio de tu plan');
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain('Te avisamos la fecha cuando tu suscripción vuelva a estar activa.');
+        expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
+        expect((html.match(new RegExp(formattedDate, 'g')) ?? []).length).toBe(0);
+    });
+
     it('keeps the retirement subject when no reason is present', () => {
         const { subject } = render('billing.plan-migration-announced', {
             ...base,

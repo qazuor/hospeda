@@ -244,10 +244,31 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 userId: seeded.user.id
             });
             // 350000 list minus the seeded FIXED 1000 promo.
-            const { preview } = await launchIncrease(seeded);
+            const { preview, launched, scope } = await launchIncrease(seeded);
             expect(preview.rows[0]?.currentAmount).toBe(249000);
             expect(preview.rows[0]?.newAmount).toBe(349000);
             expect(preview.rows[0]?.losesPromo).toBe(false);
+            const [mail] = await getServiceTestDb()
+                .select({ payload: emailOutbox.payload })
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, seeded.user.id));
+            expect(mail?.payload).toEqual({
+                planMigrationId: launched.planMigrationId,
+                planMigrationSubscriptionId: scope.id,
+                subscriptionId: seeded.predecessor.id,
+                vertical: 'accommodation',
+                planName: 'Succession plan',
+                targetPlanName: 'Succession plan',
+                direction: 'UP',
+                currentAmountMinor: 249000,
+                newAmountMinor: 349000,
+                currency: 'ARS',
+                applicationDate: preview.rows[0]?.applicationDate,
+                losesPromo: false,
+                variant: 'SCHEDULED',
+                deadlinesVersion: preview.deadlineVersion,
+                reason: 'PRICE_INCREASE'
+            });
         });
 
         it('las opciones ofrecen el par de aumento y no lo mezclan con las versiones retiradas', async () => {

@@ -142,6 +142,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización, por el panel
                 targetPlanVersionId: seeded.upId,
                 rowCount: 1,
                 excludedCount: 0,
+                reason: 'RETIREMENT',
                 deadlineVersion: payload.data.deadlineVersion
             }
         });
