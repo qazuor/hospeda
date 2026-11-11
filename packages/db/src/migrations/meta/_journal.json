@@ -1408,6 +1408,13 @@
       "when": 1794366737487,
       "tag": "0200_accommodation_reputation_auto_enable",
       "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1794420374704,
+      "tag": "0201_mean_madame_masque",
+      "breakpoints": true
     }
   ]
 }
