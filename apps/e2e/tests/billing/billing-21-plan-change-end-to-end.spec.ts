@@ -271,6 +271,13 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             }),
             `TEST:B8b:26 ${args.worldName}: provider has not cancelled before mail.`
         ).toHaveLength(0);
+        // HOS-2112: real time against real time, position against position.
+        const requestsBefore = world.fakeServer.requests().length;
+        const reevaluationStartedAt = new Date();
+        expect(
+            mail.receivedAt.getTime(),
+            `TEST:B8b:26 ${args.worldName}: our mail precedes the S17 reevaluation.`
+        ).toBeLessThan(reevaluationStartedAt.getTime());
         const reevaluation = await runCron({
             jobName: 'subscription-succession-reevaluation',
             adminCookie: args.adminCookie
@@ -297,18 +304,20 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             closed.find((row) => row.id === successor.id)?.succeeds_id,
             `TEST:B8b:26 ${args.worldName}: S17 cleared the temporary successor link.`
         ).toBeNull();
-        const cancellations = cancelRequestsFor({
-            requests: world.fakeServer.requests(),
-            authorizationId: args.authorizationId
-        });
         expect(
-            cancellations,
-            `TEST:B8b:26 ${args.worldName}: provider received one predecessor cancellation.`
+            cancelRequestsFor({
+                requests: world.fakeServer.requests().slice(requestsBefore),
+                authorizationId: args.authorizationId
+            }),
+            `TEST:B8b:26 ${args.worldName}: provider received the predecessor cancellation after our mail.`
         ).toHaveLength(1);
         expect(
-            mail.receivedAt.getTime(),
-            `TEST:B8b:26 ${args.worldName}: our mail precedes provider cancellation.`
-        ).toBeLessThan(new Date(cancellations[0]!.at).getTime());
+            cancelRequestsFor({
+                requests: world.fakeServer.requests(),
+                authorizationId: args.authorizationId
+            }),
+            `TEST:B8b:26 ${args.worldName}: provider received one predecessor cancellation.`
+        ).toHaveLength(1);
     }
 
     test('upgrade: checkout activates successor and mail precedes predecessor cancellation', async ({
