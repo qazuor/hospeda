@@ -84,8 +84,19 @@ export async function recordScheduledChangeFailure(input: {
     readonly now: Date;
     readonly error: unknown;
 }): Promise<{ readonly attemptCount: number | null }> {
-    const { scheduledChangeId, subscriptionId, effectiveAt, now, error } =
-        recordFailureInputSchema.parse(input);
+    const parsed = recordFailureInputSchema.safeParse(input);
+    if (!parsed.success) {
+        logger.error(
+            {
+                scheduledChangeId: input.scheduledChangeId,
+                subscriptionId: input.subscriptionId,
+                error: parsed.error
+            },
+            'Scheduled change failure input failed validation; skipping attempt counter update'
+        );
+        return { attemptCount: null };
+    }
+    const { scheduledChangeId, subscriptionId, effectiveAt, now, error } = parsed.data;
     const lastError = failureMessage(error);
     try {
         const [updated] = await getDb()
