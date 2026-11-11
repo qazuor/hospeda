@@ -67,7 +67,7 @@ type Launched = MigrationCohort & {
  */
 test.describe('TEST:B12:12 AC:B12:11 la migración de un plan retirado, de punta a punta @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
-    test.setTimeout(900_000);
+    test.setTimeout(300_000);
     let world: FakeWorld | null = null;
     let providerNamespace = '';
     let sourceVersionId = '';
