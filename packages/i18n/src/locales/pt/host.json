@@ -727,7 +727,14 @@
                 "unansweredTitle": "Sem resposta",
                 "unansweredHint": "O assistente não encontrou a resposta no seu anúncio. Adicioná-las como perguntas frequentes o ajuda a responder na próxima vez.",
                 "othersTitle": "Outras perguntas",
-                "truncated": "Perguntas exibidas: {{shown}} de {{total}}. As sem resposta vêm primeiro."
+                "truncated": "Perguntas exibidas: {{shown}} de {{total}}. As sem resposta vêm primeiro.",
+                "markSeen": "Já vi",
+                "undo": "Desfazer",
+                "dismissedTitle": "Descartadas",
+                "dismissedError": "Não foi possível descartar a pergunta.",
+                "undoError": "Não foi possível restaurar a pergunta.",
+                "viewMore": "Ver mais",
+                "faqAnswerHelp": "Não há uma resposta confirmada. Preencha com as informações do seu anúncio."
             }
         },
         "empty": {

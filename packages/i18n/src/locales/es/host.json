@@ -727,7 +727,14 @@
                 "unansweredTitle": "Sin responder",
                 "unansweredHint": "El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.",
                 "othersTitle": "Otras preguntas",
-                "truncated": "Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero."
+                "truncated": "Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero.",
+                "markSeen": "Ya lo vi",
+                "undo": "Deshacer",
+                "dismissedTitle": "Descartadas",
+                "dismissedError": "No se pudo descartar la pregunta.",
+                "undoError": "No se pudo recuperar la pregunta.",
+                "viewMore": "Ver más",
+                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha."
             }
         },
         "empty": {
