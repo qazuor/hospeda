@@ -183,6 +183,22 @@ function httpStatusToFailureCode(status: number): ReputationFailureCode {
 // ---------------------------------------------------------------------------
 
 /**
+ * Normalises a language code reported by Google to the shape
+ * `ExternalReviewSnippetSchema` accepts (2–16 chars), or `null`.
+ *
+ * Normalising here, at the provider boundary, matters because the snippet
+ * schema validates the whole `snippets` array: one odd value (an empty string,
+ * an over-long tag) would otherwise invalidate every review of the listing.
+ */
+function normalizeLanguageCode(code: string | undefined): string | null {
+    const trimmed = code?.trim();
+    if (!trimmed || trimmed.length < 2 || trimmed.length > 16) {
+        return null;
+    }
+    return trimmed;
+}
+
+/**
  * Maps a Places API (New) review entry to an {@link ExternalReviewSnippet}.
  *
  * **Original text wins (why).** Place Details is requested with no
@@ -202,12 +218,12 @@ function mapReviewToSnippet(review: PlacesReview): ExternalReviewSnippet | null 
 
     // Prefer the guest's original wording; only fall back to the translation
     // when the API did not return originalText.
-    const originalText = review.originalText?.text;
-    const translatedText = review.text?.text;
+    const originalText = review.originalText?.text?.trim() || undefined;
+    const translatedText = review.text?.text?.trim() || undefined;
     const text = originalText ?? translatedText;
-    const languageCode = originalText
-        ? (review.originalText?.languageCode ?? null)
-        : (review.text?.languageCode ?? null);
+    const languageCode = normalizeLanguageCode(
+        originalText ? review.originalText?.languageCode : review.text?.languageCode
+    );
 
     // Both author and text are required by the ExternalReviewSnippet schema.
     if (!author || !text) {
