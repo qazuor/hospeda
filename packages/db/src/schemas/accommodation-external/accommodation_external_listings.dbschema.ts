@@ -68,8 +68,13 @@ export const accommodationExternalListings = pgTable(
          * rows are excluded — a platform can be re-added after a listing is
          * removed without tripping the constraint.
          *
-         * Enforced at the DB level to guarantee the ON CONFLICT upsert in the
-         * reputation model targets exactly one active row.
+         * Any `ON CONFLICT (accommodation_id, platform)` against this table
+         * MUST repeat the predicate (`... WHERE deleted_at IS NULL`):
+         * Postgres only infers a partial unique index when the conflict target
+         * carries its WHERE clause, and otherwise fails with "there is no
+         * unique or exclusion constraint matching the ON CONFLICT
+         * specification". (The reputation model's upsert targets the OTHER
+         * table, `accommodation_external_reputation`, and is unaffected.)
          */
         accommodation_external_listings_accommodation_platform_uniq: uniqueIndex(
             'accommodation_external_listings_accommodation_platform_uniq'
