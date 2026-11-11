@@ -56,11 +56,13 @@ export const ExternalReputationPlatformItemSchema = z.object({
      */
     snippets: z.array(ExternalReviewSnippetSchema).nullish(),
     /**
-     * Set to `true` when platform=GOOGLE, the owner has showReviews=true,
-     * and the cached snippet fetch has exceeded the TTL window so snippets
-     * were stripped. Absent (undefined) in all other cases — in particular,
-     * when the owner intentionally set showReviews=false this will NOT be
-     * set (FIX L5: prevents misleading "TTL expired" note for deliberate opt-out).
+     * Set to `true` when platform=GOOGLE and the owner has showReviews=true,
+     * and either (a) cached snippets exceeded the TTL window and were stripped,
+     * or (b) snippets were never fetched but an aggregate (rating/review count)
+     * exists to show. Absent (undefined) in all other cases — in particular
+     * when the owner intentionally set showReviews=false (FIX L5) or when a
+     * never-fetched item has no aggregate at all (there was never any data, so
+     * the "showing only the score" note would be false).
      */
     snippetsTtlExpired: z.boolean().optional()
 });
@@ -124,6 +126,11 @@ export interface ExternalReputationSource {
  * 2. `url` and `deepLink` are only included when `showLink` is true.
  * 3. `snippets` are only included when `showReviews` is true AND the platform
  *    is GOOGLE AND the `snippetsFetchedAt` timestamp is within `ttlMs`.
+ * 4. `snippetsTtlExpired` is set (Google, showReviews=true) when cached snippets
+ *    exist but are stale, or when they were never fetched AND there is an
+ *    aggregate to show. A never-fetched item with no aggregate leaves it
+ *    `undefined`: there was never any data, so the "showing only the score"
+ *    note would be a false claim.
  *
  * @param sources - Raw DB rows joining listing + reputation data.
  * @param ttlMs - Snippet TTL in milliseconds. Defaults to {@link SNIPPETS_TTL_MS}.
@@ -167,6 +174,18 @@ export function buildExternalReputationBlock(
         const url = src.showLink ? (src.url ?? null) : null;
         const deepLink = src.showLink ? (src.deepLink ?? null) : null;
 
+        // Parse numeric rating defensively (DB may return string from NUMERIC column).
+        // Parsed before the snippets block because the "never fetched" branch needs
+        // to know whether there is an aggregate to show before flagging TTL expiry.
+        const ratingRaw = src.rating;
+        const parsedRating =
+            ratingRaw === null || ratingRaw === undefined
+                ? null
+                : Number.parseFloat(String(ratingRaw));
+        const rating = Number.isNaN(parsedRating ?? Number.NaN) ? null : parsedRating;
+        const reviewsCount = src.reviewsCount ?? null;
+        const hasAggregate = rating != null || reviewsCount != null;
+
         // Rule 4: snippets only for GOOGLE + showReviews + within TTL
         let snippets: ExternalReputationPlatformItem['snippets'] = null;
         // FIX L5: track whether snippets were stripped due to TTL expiry vs. a
@@ -194,27 +213,22 @@ export function buildExternalReputationBlock(
                     snippetsTtlExpired = true;
                 }
             }
-            // If snippetsFetchedAt is null, snippets were never fetched — treat as
-            // expired (pending first fetch) rather than deliberate opt-out.
-            else {
+            // Never fetched. Only signal "temporarily unavailable, showing only
+            // the score" when there actually IS a score to show — otherwise there
+            // was never any data, and that note would be a false claim about data
+            // that never existed. Leave it undefined in that case.
+            else if (hasAggregate) {
                 snippetsTtlExpired = true;
             }
         }
         // When showReviews=false, snippetsTtlExpired remains undefined (no note shown).
 
-        // Parse numeric rating defensively (DB may return string from NUMERIC column)
-        const ratingRaw = src.rating;
-        const rating =
-            ratingRaw === null || ratingRaw === undefined
-                ? null
-                : Number.parseFloat(String(ratingRaw));
-
         const itemResult = ExternalReputationPlatformItemSchema.safeParse({
             platform,
             url,
             deepLink,
-            rating: Number.isNaN(rating ?? Number.NaN) ? null : rating,
-            reviewsCount: src.reviewsCount ?? null,
+            rating,
+            reviewsCount,
             snippets,
             snippetsTtlExpired
         });

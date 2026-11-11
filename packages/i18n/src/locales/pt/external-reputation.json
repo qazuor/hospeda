@@ -52,7 +52,8 @@
         "removeConfirm": "Excluir esta plataforma? As avaliações dela deixam de aparecer no seu anúncio.",
         "removeConfirmButton": "Excluir plataforma",
         "removing": "Excluindo...",
-        "removeError": "Não foi possível excluir a plataforma."
+        "removeError": "Não foi possível excluir a plataforma.",
+        "allPlatformsAdded": "Você já adicionou todas as plataformas disponíveis."
     },
     "errors": {
         "fetchFailed": "Não foi possível carregar as avaliações externas. Tente novamente mais tarde.",
@@ -60,7 +61,9 @@
         "blocked": "O acesso aos dados desta plataforma foi bloqueado temporariamente.",
         "statusFailed": "Não foi possível obter o status da atualização.",
         "invalidUrl": "Ingresá una URL válida (https://...).",
-        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo."
+        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
+        "duplicatePlatform": "Você já tem um link do {{platform}} cadastrado. Para alterá-lo, exclua o atual e adicione o novo.",
+        "addFailed": "Não foi possível salvar o link. Tente novamente em alguns minutos; se continuar falhando, fale com a gente."
     },
     "status": {
         "pending": "Atualizando...",

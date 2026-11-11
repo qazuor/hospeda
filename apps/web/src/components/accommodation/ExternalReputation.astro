@@ -102,13 +102,13 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
     <div class={styles.chips}>
         {items.map((item) => {
             /*
-             * The deep link arrives from an outside platform through the API
-             * and is stored, never re-validated for scheme — so it goes through
-             * the allow-list like every other third-party URL the site links to
-             * (HOS-592 / F-02). A refused value drops the link and leaves the
-             * chip's score intact.
+             * The deep link (or, when absent, the plain listing URL) arrives
+             * from an outside platform through the API and is stored, never
+             * re-validated for scheme — so it goes through the allow-list like
+             * every other third-party URL the site links to (HOS-592 / F-02).
+             * A refused value drops the link and leaves the chip's score intact.
              */
-            const deepLinkHref = resolveSafeExternalUrl(item.deepLink);
+            const deepLinkHref = resolveSafeExternalUrl(item.deepLink) ?? resolveSafeExternalUrl(item.url);
             return (
             <div class={styles.chip}>
                 {/* AC-4.5: platform name as chip heading labels the source */}

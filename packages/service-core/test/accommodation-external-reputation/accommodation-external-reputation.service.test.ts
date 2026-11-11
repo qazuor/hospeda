@@ -763,7 +763,8 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('unexpected DB error in refresh');
+            // The raw error text must never reach the caller.
+            expect(result.error?.message).not.toContain('unexpected DB error in refresh');
         });
     });
 
@@ -790,7 +791,7 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.items).toHaveLength(0);
-            expect(reputationModel.findForDisplay).not.toHaveBeenCalled();
+            expect(reputationModel.findAll).not.toHaveBeenCalled();
         });
 
         it('should return the reputation block for enabled platforms', async () => {
@@ -823,7 +824,7 @@ describe('AccommodationExternalReputationService', () => {
                 }
             );
             const reputationModel = makeReputationModel({
-                findForDisplay: vi.fn().mockResolvedValue([googleRep])
+                findAll: vi.fn().mockResolvedValue({ items: [googleRep], total: 1 })
             });
             const svc = new AccommodationExternalReputationService(ctx, {
                 listingModel: listingModel as never,
@@ -874,7 +875,7 @@ describe('AccommodationExternalReputationService', () => {
                 }
             );
             const reputationModel = makeReputationModel({
-                findForDisplay: vi.fn().mockResolvedValue([googleRep])
+                findAll: vi.fn().mockResolvedValue({ items: [googleRep], total: 1 })
             });
             const svc = new AccommodationExternalReputationService(ctx, {
                 listingModel: listingModel as never,
@@ -908,7 +909,7 @@ describe('AccommodationExternalReputationService', () => {
                 LIST_BOOKING_ID
             );
             const reputationModel = makeReputationModel({
-                findForDisplay: vi.fn().mockResolvedValue([bookingRep])
+                findAll: vi.fn().mockResolvedValue({ items: [bookingRep], total: 1 })
             });
             const svc = new AccommodationExternalReputationService(ctx, {
                 listingModel: listingModel as never,
@@ -920,13 +921,22 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.items).toHaveLength(0);
+            // Both toggles off → no visible listing → reputation rows never needed.
+            expect(reputationModel.findAll).not.toHaveBeenCalled();
         });
 
-        it('should return empty block when no reputation rows exist for the accommodation', async () => {
+        it('should still emit items (with null aggregates) when listings have display flags but no reputation rows yet (F)', async () => {
             const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel();
+            const googleListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
+                showLink: true,
+                showReviews: true,
+                url: 'https://share.google/IUko8vyFORxaIjDM1'
+            });
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([googleListing])
+            });
             const reputationModel = makeReputationModel({
-                findForDisplay: vi.fn().mockResolvedValue([])
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
             });
             const svc = new AccommodationExternalReputationService(ctx, {
                 listingModel: listingModel as never,
@@ -937,8 +947,32 @@ describe('AccommodationExternalReputationService', () => {
             const result = await svc.listForDisplay(ACC_ID);
 
             expect(result.error).toBeUndefined();
+            expect(result.data?.items).toHaveLength(1);
+            const item = result.data?.items[0];
+            expect(item?.platform).toBe(ExternalPlatformEnum.GOOGLE);
+            expect(item?.url).toBe('https://share.google/IUko8vyFORxaIjDM1');
+            expect(item?.rating).toBeNull();
+            expect(item?.reviewsCount).toBeNull();
+            expect(item?.deepLink).toBeNull();
+        });
+
+        it('should return empty block when there are no listings at all', async () => {
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([])
+            });
+            const reputationModel = makeReputationModel();
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.listForDisplay(ACC_ID);
+
+            expect(result.error).toBeUndefined();
             expect(result.data?.items).toHaveLength(0);
-            expect(listingModel.findByAccommodation).not.toHaveBeenCalled();
+            expect(reputationModel.findAll).not.toHaveBeenCalled();
         });
 
         it('should return empty block when accommodationModel.findById throws (graceful degrade)', async () => {
@@ -975,7 +1009,7 @@ describe('AccommodationExternalReputationService', () => {
                 LIST_GOOGLE_ID
             );
             const reputationModel = makeReputationModel({
-                findForDisplay: vi.fn().mockResolvedValue([googleRep])
+                findAll: vi.fn().mockResolvedValue({ items: [googleRep], total: 1 })
             });
             const svc = new AccommodationExternalReputationService(ctx, {
                 listingModel: listingModel as never,
@@ -987,6 +1021,108 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data?.items).toHaveLength(1);
             expect(result.data?.items[0]?.platform).toBe(ExternalPlatformEnum.GOOGLE);
+        });
+
+        it('should render both platforms from the real production case: GOOGLE with a row and AIRBNB with none (F)', async () => {
+            // Production data: accommodation 2ad30000-… with show_external_reputation=true.
+            //   GOOGLE listing: share.google url, showLink + showReviews true.
+            //   AIRBNB listing: airbnb url, showLink true, showReviews false.
+            //   Only a GOOGLE reputation row exists (fetch error, all-null data).
+            const accommodationModel = makeAccommodationModel();
+            const googleListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
+                url: 'https://share.google/IUko8vyFORxaIjDM1',
+                showLink: true,
+                showReviews: true
+            });
+            const airbnbListing = makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB, {
+                url: 'https://www.airbnb.com.ar/rooms/817515602448448452',
+                showLink: true,
+                showReviews: false
+            });
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([googleListing, airbnbListing])
+            });
+            const errorGoogleRep = makeReputation(
+                REP_GOOGLE_ID,
+                ExternalPlatformEnum.GOOGLE,
+                LIST_GOOGLE_ID,
+                {
+                    rating: null,
+                    reviewsCount: null,
+                    deepLink: null,
+                    snippets: null,
+                    snippetsFetchedAt: null,
+                    fetchStatus: 'error',
+                    fetchMessage: 'unresolvable_url'
+                }
+            );
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [errorGoogleRep], total: 1 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.listForDisplay(ACC_ID);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toHaveLength(2);
+
+            const google = result.data?.items.find(
+                (i) => i.platform === ExternalPlatformEnum.GOOGLE
+            );
+            const airbnb = result.data?.items.find(
+                (i) => i.platform === ExternalPlatformEnum.AIRBNB
+            );
+
+            expect(google?.url).toBe('https://share.google/IUko8vyFORxaIjDM1');
+            expect(airbnb?.url).toBe('https://www.airbnb.com.ar/rooms/817515602448448452');
+            expect(google?.rating).toBeNull();
+            expect(airbnb?.rating).toBeNull();
+        });
+
+        it('should NOT attach a deleted listing reputation row to the re-added listing of the same platform', async () => {
+            // The active listing has a new id; the reputation row still carries the
+            // id of the soft-deleted original (remove() keeps the row). Its rating,
+            // snippets and deepLink describe the OLD place, so they must not be
+            // published under the new listing: it shows as link-only until fetched.
+            const STALE_LISTING_ID = '77777777-7777-4777-8777-777777777777';
+            const accommodationModel = makeAccommodationModel();
+            const googleListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
+                showLink: true,
+                showReviews: true
+            });
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([googleListing])
+            });
+            const staleGoogleRep = makeReputation(
+                REP_GOOGLE_ID,
+                ExternalPlatformEnum.GOOGLE,
+                STALE_LISTING_ID // not equal to LIST_GOOGLE_ID
+            );
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [staleGoogleRep], total: 1 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.listForDisplay(ACC_ID);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toHaveLength(1);
+            const item = result.data?.items[0];
+            expect(item?.platform).toBe(ExternalPlatformEnum.GOOGLE);
+            // Nothing from the stale-id row leaks onto the new listing.
+            expect(item?.rating).toBeNull();
+            expect(item?.reviewsCount).toBeNull();
+            expect(item?.deepLink).toBeNull();
+            expect(item?.snippets ?? null).toBeNull();
+            expect(item?.url).toBe(googleListing.url);
         });
     });
 
@@ -1056,7 +1192,13 @@ describe('AccommodationExternalReputationService', () => {
             const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const listingModel = makeListingModel({
                 findByAccommodation: vi.fn().mockResolvedValue([activeListing]),
-                update: vi.fn().mockRejectedValue(new Error('DB write failure'))
+                update: vi
+                    .fn()
+                    .mockRejectedValue(
+                        new Error(
+                            'Failed query: update "accommodation_external_listings" set ... params: secret-param'
+                        )
+                    )
             });
             const reputationModel = makeReputationModel();
             const svc = new AccommodationExternalReputationService(ctx, {
@@ -1069,7 +1211,9 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('DB write failure');
+            // The raw driver text (SQL + bind params) must never reach the caller.
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('secret-param');
         });
 
         it('should pass ctx.tx to model calls when a ServiceContext is provided', async () => {
@@ -1112,7 +1256,8 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('plain string failure');
+            // The raw error text must never reach the caller.
+            expect(result.error?.message).not.toContain('plain string failure');
         });
 
         it('should propagate ServiceError code when listingModel.update throws a ServiceError', async () => {

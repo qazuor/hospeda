@@ -53,10 +53,10 @@ export function hasAggregate(input: { item: ExternalReputationPlatformItem }): b
 
 /**
  * Whether a platform item has anything a visitor can actually read: a score, a
- * review count, a link out to the platform, or review text.
+ * review count, a URL or deep link out to the platform, or review text.
  *
- * A link alone is enough — "Ver en Google →" is real, useful content even with
- * no score behind it. Nothing at all is not.
+ * A URL or deep link alone is enough — "Ver en Google →" is real, useful content
+ * even with no score behind it. Nothing at all is not.
  *
  * @param input.item - The platform item to inspect.
  * @returns `true` when the item is worth rendering.
@@ -67,6 +67,7 @@ export function hasAnythingToShow(input: { item: ExternalReputationPlatformItem 
         item.rating != null ||
         item.reviewsCount != null ||
         item.deepLink != null ||
+        (item.url != null && item.url.length > 0) ||
         hasValidSnippets({ item })
     );
 }
