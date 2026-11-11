@@ -109,15 +109,16 @@ export async function applyPlanMigrationUpcomingNotice(input: {
     // A price increase follows the 11th deadline (60 days, contacts at 30 and 7);
     // a retirement follows the 12th (B12 §4, PLAZO:11).
     const deadlineKey = reason.data === 'PRICE_INCREASE' ? '11' : '12';
-    const computed = computeApplicationDate({
+    const stored = getLocalDateString({ instant: row.applicationDate });
+    // HOS-2108: one rule with the resume helper. The stored date is a floor, and the result is always a charge day.
+    const applicationDate = computeApplicationDate({
         nextChargeAt: row.nextChargeAt,
         cycle,
         announcedAt: row.announcedAt,
-        noticeDays: row.noticeDays
+        noticeDays: row.noticeDays,
+        notBefore: stored
     });
-    const stored = getLocalDateString({ instant: row.applicationDate });
-    const applicationDate = computed > stored ? computed : stored;
-    const recalculated = computed > stored;
+    const recalculated = applicationDate !== stored;
     if (recalculated)
         await input.tx
             .update(planMigrationSubscriptions)
