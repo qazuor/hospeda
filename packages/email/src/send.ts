@@ -136,6 +136,10 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
     try {
         const htmlContent = await render(react);
+        // HOS-2107: send a text/plain alternative rendered from the same component.
+        // HTML-only mail is flagged by spam filters (MIME_HTML_ONLY) and is
+        // unreadable in text clients; Brevo takes the plain part as `textContent`.
+        const textContent = await render(react, { plainText: true });
 
         const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
 
@@ -143,7 +147,8 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
             sender: { email: fromEmail, name: fromName },
             to: recipients,
             subject,
-            htmlContent
+            htmlContent,
+            textContent
         };
         if (replyTo) {
             body.replyTo = { email: replyTo };

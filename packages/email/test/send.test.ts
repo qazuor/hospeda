@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@react-email/render', () => ({
-    render: vi.fn().mockResolvedValue('<html><body>rendered</body></html>')
+    render: vi.fn(async (_node: unknown, options?: { plainText?: boolean }) =>
+        options?.plainText ? 'rendered plain text' : '<html><body>rendered</body></html>'
+    )
 }));
 
 import type { EmailClient } from '../src/client.js';
@@ -171,6 +173,27 @@ describe('sendEmail', () => {
             const body = JSON.parse((init as RequestInit).body as string);
             expect(body.htmlContent).toBe('<html><body>rendered</body></html>');
             expect(body.subject).toBe('Hello');
+        });
+
+        it('should send a non-empty plain-text part rendered from the same component (HOS-2107)', async () => {
+            // Arrange
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Reset your password',
+                react: mockReact
+            });
+
+            // Assert
+            const { render } = await import('@react-email/render');
+            expect(render).toHaveBeenCalledWith(mockReact, { plainText: true });
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.textContent).toBe('rendered plain text');
+            expect(body.htmlContent).toBe('<html><body>rendered</body></html>');
         });
     });
 
