@@ -284,3 +284,47 @@ describe('AC:B12:9 el anuncio del aumento', () => {
         expect(subject).toBe('Tu plan deja de venderse');
     });
 });
+
+describe('AC:B12:9 el recordatorio del aumento', () => {
+    const providerPhrase = 'Mercado Pago también te va a mandar un aviso del cambio de monto';
+    const occurrences = (html: string, phrase: string) =>
+        (html.match(new RegExp(phrase, 'g')) ?? []).length;
+
+    it('dice el plazo del aumento, los dos precios y la fecha de ese cliente, y permite cancelar', () => {
+        const { subject, html } = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(subject).toBe('Se acerca el cambio de precio de tu plan');
+        expect(html).toContain(
+            'Faltan 7 días para el cambio de precio de tu plan Plan Inicial: se aplica desde tu cobro del'
+        );
+        expect(html).toContain(formattedDate);
+        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
+        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain(
+            'Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.'
+        );
+        expect(occurrences(html, 'subida de precio')).toBe(0);
+        expect(occurrences(html, 'bajada de precio')).toBe(0);
+        expect(occurrences(html, 'perdés tu promoción actual')).toBe(0);
+    });
+
+    it('sólo el tarjetahabiente recibe la frase de Mercado Pago', () => {
+        const card = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: true,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(occurrences(card.html, providerPhrase)).toBe(1);
+        const manual = render('billing.plan-migration-upcoming', {
+            ...base,
+            daysBefore: 7,
+            providerNotifies: false,
+            reason: 'PRICE_INCREASE'
+        });
+        expect(occurrences(manual.html, providerPhrase)).toBe(0);
+    });
+});
