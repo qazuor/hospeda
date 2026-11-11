@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getProtected } = vi.hoisted(() => ({ getProtected: vi.fn() }));
 
-vi.mock('../../../src/components/listing/ai-questions/AiQuestionsPanel.module.css', () => ({
+vi.mock('../../../../src/components/listing/ai-questions/AiQuestionsPanel.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_target, key) => String(key) })
 }));
-vi.mock('../../../src/lib/i18n', async () => {
-    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+vi.mock('../../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../../helpers/i18n-catalog');
     return { createTranslations: () => ({ t: tFromCatalog }) };
 });
-vi.mock('../../../src/lib/api/client', () => ({
+vi.mock('../../../../src/lib/api/client', () => ({
     apiClient: { getProtected, postProtected: vi.fn() }
 }));
 
-import { AiQuestionsPanel } from '../../../src/components/listing/ai-questions/AiQuestionsPanel.client';
+import { AiQuestionsPanel } from '../../../../src/components/listing/ai-questions/AiQuestionsPanel.client';
 
 const question = {
     id: '22222222-2222-4222-8222-222222222222',
@@ -41,6 +41,7 @@ describe('AiQuestionsPanel paging notices', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('hides the first-page truncation notice after loading more', async () => {
+        // Arrange
         getProtected.mockResolvedValueOnce({ ok: true, data: response() }).mockResolvedValueOnce({
             ok: true,
             data: response({
@@ -58,14 +59,18 @@ describe('AiQuestionsPanel paging notices', () => {
         );
 
         expect(await screen.findByText(/Preguntas mostradas: 1 de 2/)).toBeInTheDocument();
+
+        // Act
         fireEvent.click(screen.getByRole('button', { name: 'Ver más' }));
 
+        // Assert
         await waitFor(() =>
             expect(screen.queryByText(/Preguntas mostradas:/)).not.toBeInTheDocument()
         );
     });
 
     it('explains that only the latest 50 dismissed questions are listed', async () => {
+        // Arrange
         getProtected.mockResolvedValue({
             ok: true,
             data: response({
@@ -79,6 +84,8 @@ describe('AiQuestionsPanel paging notices', () => {
                 }))
             })
         });
+
+        // Act
         render(
             <AiQuestionsPanel
                 locale="es"
@@ -88,6 +95,7 @@ describe('AiQuestionsPanel paging notices', () => {
             />
         );
 
+        // Assert
         expect(
             await screen.findByText(/Mostramos las últimas 50 de 52 preguntas descartadas/)
         ).toBeInTheDocument();
