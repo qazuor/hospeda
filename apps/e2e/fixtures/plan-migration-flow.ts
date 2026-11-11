@@ -45,16 +45,44 @@ export async function createMigrationPlan(args: {
     });
     expect(plan.ok(), await plan.text()).toBe(true);
     const planId = PlanId.parse(await plan.json()).data.id;
-    const versionId = await publishMigrationVersion({
-        page: args.page,
-        admin: args.admin,
+    const versionId = await withVersionlessPlanDiscarded({
         planId,
-        rank: args.rank,
-        sellable: true,
-        limitKey: args.limitKey,
-        limitValue: args.limitValue
+        publish: () =>
+            publishMigrationVersion({
+                page: args.page,
+                admin: args.admin,
+                planId,
+                rank: args.rank,
+                sellable: true,
+                limitKey: args.limitKey,
+                limitValue: args.limitValue
+            })
     });
     return { planId, versionId };
+}
+
+/**
+ * Run the first publication of a freshly created plan, and delete the plan when
+ * that publication fails while the plan still has no version.
+ *
+ * Plan publication rejects every publish in the vertical while another plan has
+ * no current version ("el plan no queda con exactamente una versión vigente").
+ * A plan left versionless by a failed first publish would make every later
+ * publish fail too, the Playwright retry of the same test included.
+ */
+export async function withVersionlessPlanDiscarded<T>(args: {
+    readonly planId: string;
+    readonly publish: () => Promise<T>;
+}): Promise<T> {
+    try {
+        return await args.publish();
+    } catch (error) {
+        await execSQL(
+            'DELETE FROM plan WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM plan_version WHERE plan_id = $1)',
+            [args.planId]
+        );
+        throw error;
+    }
 }
 
 /** Publish a new immutable version through administrative action 18. */

@@ -14,6 +14,7 @@ import {
 } from '../../../fixtures/arrears-cycle.ts';
 import { execSQL } from '../../../fixtures/db-helpers.ts';
 import { cleanupPlanChangeCase } from '../../../fixtures/plan-change-e2e.ts';
+import { withVersionlessPlanDiscarded } from '../../../fixtures/plan-migration-flow.ts';
 
 const IdBody = z.object({ data: z.object({ id: z.string().uuid() }) });
 const PROTECTED = `${API_URL}/api/v1/protected/billing-subscription`;
@@ -21,15 +22,24 @@ const START = `${API_URL}/api/v1/protected/billing/subscriptions`;
 
 /**
  * Grace long enough that a renewal declined in the last cycle before the
- * migration date is still in grace when `S37` runs seven days before it.
+ * migration date is still in grace when `S37` runs seven days before it, and
+ * the sweep one day later: that renewal is at most one month (31 days) before
+ * the date, so the grace has run at most about 25 days by then.
+ *
+ * It must also stay strictly below the 28 days of the shortest monthly cycle
+ * (`CYCLE_MINIMUM_DAYS.monthly`): publication rejects a longer grace with "la
+ * gracia debe ser menor que el ciclo más corto que la versión ofrece", and the
+ * cycle price rejects it with `CYCLE_NOT_LONGER_THAN_GRACE`.
  */
-export const MIGRATION_GRACE_DAYS = 40;
+export const MIGRATION_GRACE_DAYS = 27;
 
 /**
- * Create an action 18 plan whose first version allows a pause and carries a long
- * grace. `createMigrationPlan` (fixtures/plan-migration-flow.ts) publishes with
- * `allowsPause: false` and ten grace days, which rules out the paused and the
- * grace members of the cohort.
+ * Create an action 18 plan whose first version allows a pause and carries the
+ * longest grace a monthly version accepts. `createMigrationPlan`
+ * (fixtures/plan-migration-flow.ts) publishes with `allowsPause: false` and ten
+ * grace days, which rules out the paused and the grace members of the cohort.
+ * A failed first publication deletes the versionless plan, so a retry can
+ * publish again.
  */
 export async function createPausableMigrationPlan(args: {
     readonly page: Page;
@@ -50,26 +60,32 @@ export async function createPausableMigrationPlan(args: {
     });
     expect(plan.ok(), await plan.text()).toBe(true);
     const planId = IdBody.parse(await plan.json()).data.id;
-    const version = await args.page.request.post(
-        `${API_URL}/api/v1/admin/plan-catalog/plans/${planId}/versions`,
-        {
-            headers,
-            data: PublishPlanVersionRequestSchema.parse({
-                rank: args.rank,
-                sellable: true,
-                trialDays: 0,
-                graceDays: MIGRATION_GRACE_DAYS,
-                allowsPause: true,
-                inheritsTouristVip: false,
-                entitlements: [],
-                limits: [{ key: args.limitKey, value: 2 }],
-                cycles: ['monthly'],
-                confirmed: true
-            })
+    const versionId = await withVersionlessPlanDiscarded({
+        planId,
+        publish: async () => {
+            const version = await args.page.request.post(
+                `${API_URL}/api/v1/admin/plan-catalog/plans/${planId}/versions`,
+                {
+                    headers,
+                    data: PublishPlanVersionRequestSchema.parse({
+                        rank: args.rank,
+                        sellable: true,
+                        trialDays: 0,
+                        graceDays: MIGRATION_GRACE_DAYS,
+                        allowsPause: true,
+                        inheritsTouristVip: false,
+                        entitlements: [],
+                        limits: [{ key: args.limitKey, value: 2 }],
+                        cycles: ['monthly'],
+                        confirmed: true
+                    })
+                }
+            );
+            expect(version.ok(), await version.text()).toBe(true);
+            return IdBody.parse(await version.json()).data.id;
         }
-    );
-    expect(version.ok(), await version.text()).toBe(true);
-    return { planId, versionId: IdBody.parse(await version.json()).data.id };
+    });
+    return { planId, versionId };
 }
 
 /** A card subscription started through the protected API and the fake checkout. */
