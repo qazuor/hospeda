@@ -147,7 +147,8 @@ records them in the spec after merge.
 ### Plan retirement migration (ACC:17, HOS-1612)
 
 `GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`,
-`POST /api/v1/admin/plan-migrations`, `GET /api/v1/admin/plan-migrations`,
+`POST /api/v1/admin/plan-migrations`, `GET /api/v1/admin/plan-migrations/retired-versions`,
+`GET /api/v1/admin/plan-migrations`,
 `GET /api/v1/admin/plan-migrations/{id}` and
 `POST /api/v1/admin/plan-migrations/{id}/cancel` require `billing.migratePlan`. The order is
 401 (missing session or guest), 403 (missing permission), 400 (invalid input),
