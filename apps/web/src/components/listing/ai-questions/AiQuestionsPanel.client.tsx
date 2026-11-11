@@ -196,11 +196,10 @@ export function AiQuestionsPanel({
                 action === 'dismiss'
                     ? [{ ...item, ownerDismissedAt: new Date().toISOString() }, ...data.dismissed]
                     : data.dismissed.filter((entry) => entry.id !== item.id),
-            unansweredCount:
-                data.unansweredCount +
-                (item.answerStatus === 'unanswered' ? (action === 'dismiss' ? -1 : 1) : 0),
-            total: data.total + (action === 'dismiss' ? -1 : 1),
-            dismissedCount: data.dismissedCount + (action === 'dismiss' ? 1 : -1)
+            // Counts come from the GET response below; keep them server-owned.
+            unansweredCount: data.unansweredCount,
+            total: data.total,
+            dismissedCount: data.dismissedCount
         };
         setState({ kind: 'ready', data: optimistic });
         const result = await apiClient.postProtected({
