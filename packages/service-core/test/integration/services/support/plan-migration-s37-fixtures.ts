@@ -90,17 +90,22 @@ export interface S37Case {
  *
  * @param options.paymentMethod - CARD (default) or MANUAL
  * @param options.start - The case clock's start instant
+ * @param options.nextChargeAt - Overrides the seeded next charge (and thus the application day)
  * @returns Everything a S37 test needs
  */
 export async function createS37MigrationCase(
-    options: { readonly paymentMethod?: 'CARD' | 'MANUAL'; readonly start?: Date } = {}
+    options: {
+        readonly paymentMethod?: 'CARD' | 'MANUAL';
+        readonly start?: Date;
+        readonly nextChargeAt?: Date;
+    } = {}
 ): Promise<S37Case> {
     const paymentMethod = options.paymentMethod ?? 'CARD';
     const seeded = await createPlanMigrationCase();
     const db = getServiceTestDb();
     await db
         .update(subscriptions)
-        .set({ nextChargeAt: S37_NEXT_CHARGE_AT, paymentMethod })
+        .set({ nextChargeAt: options.nextChargeAt ?? S37_NEXT_CHARGE_AT, paymentMethod })
         .where(eq(subscriptions.id, seeded.predecessor.id));
     await setMigrationTargetCycle({
         actor: seeded.actor,
