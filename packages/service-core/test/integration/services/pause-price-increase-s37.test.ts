@@ -466,5 +466,22 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 DEFERRED_APPLICATION_DAY
             );
         });
+
+        it('si el cobro reanudado cumple el aviso pero cae antes de la fecha guardada, informa el precio viejo y S37 no muta', async () => {
+            const caseRow = await createPausedIncreaseCase({
+                nextChargeAt: localDayInstant(STORED_APPLICATION_DAY)
+            });
+            await pauseCase(caseRow);
+            const result = await resumeCase(caseRow, { at: '2026-12-11', chargeAt: '2026-12-12' });
+            expect(result.nextCharge).toEqual({
+                at: localDayInstant('2026-12-12'),
+                amountMinor: caseRow.currentAmountMinor,
+                currency: 'ARS'
+            });
+            expect(await runS37(caseRow)).toEqual({
+                outcome: 'SKIPPED',
+                reason: 'APPLICATION_DATE_MISMATCH'
+            });
+        });
     }
 );

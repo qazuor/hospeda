@@ -20,6 +20,8 @@ function anchor(overrides: Partial<PendingIncreaseAnchor> = {}): PendingIncrease
         billingOptionId: '44444444-4444-4444-8444-444444444444',
         cycle: 'monthly',
         nextChargeAt: null,
+        applicationDate: new Date('2026-12-15T12:00:00.000Z'),
+        reason: 'PRICE_INCREASE',
         ...overrides
     };
 }
@@ -59,6 +61,20 @@ describe('AC:B8b:4 el monto informado al reanudar cuando el cobro es la fecha de
         expect(priceRow).toHaveBeenCalledTimes(0);
     });
 
+    it('returns null when the charge honours the notice but is before the stored application day', async () => {
+        vi.spyOn(pendingIncreaseOnResumeReaders, 'readAnchor').mockResolvedValue(anchor());
+        const priceRow = vi.spyOn(pendingIncreaseOnResumeReaders, 'priceRow');
+
+        // The notice is already fulfilled, but the stored day (2026-12-15) never moves back.
+        expect(
+            await pendingIncreaseAmountForCharge({
+                subscriptionId,
+                chargeAt: new Date('2026-12-12T13:00:00.000Z')
+            })
+        ).toBeNull();
+        expect(priceRow).toHaveBeenCalledTimes(0);
+    });
+
     it('returns the new amount when the charge is exactly the application day', async () => {
         vi.spyOn(pendingIncreaseOnResumeReaders, 'readAnchor').mockResolvedValue(anchor());
         const priceRow = vi.spyOn(pendingIncreaseOnResumeReaders, 'priceRow').mockResolvedValue({
@@ -78,6 +94,32 @@ describe('AC:B8b:4 el monto informado al reanudar cuando el cobro es la fecha de
         expect(priceRow).toHaveBeenCalledWith(
             expect.objectContaining({
                 reason: 'PRICE_INCREASE',
+                at: new Date('2027-01-15T13:00:00.000Z')
+            })
+        );
+    });
+
+    it('reports the destination amount for a retirement row too', async () => {
+        vi.spyOn(pendingIncreaseOnResumeReaders, 'readAnchor').mockResolvedValue(
+            anchor({ reason: 'RETIREMENT' })
+        );
+        const priceRow = vi.spyOn(pendingIncreaseOnResumeReaders, 'priceRow').mockResolvedValue({
+            currentAmount: 250000,
+            newAmount: 300000,
+            currency: 'ARS',
+            losesPromo: true
+        });
+
+        expect(
+            await pendingIncreaseAmountForCharge({
+                subscriptionId,
+                chargeAt: new Date('2027-01-15T13:00:00.000Z')
+            })
+        ).toEqual({ amountMinor: 300000, currency: 'ARS' });
+        // The motive of the row travels to the pricing, so a retirement drops the promo.
+        expect(priceRow).toHaveBeenCalledWith(
+            expect.objectContaining({
+                reason: 'RETIREMENT',
                 at: new Date('2027-01-15T13:00:00.000Z')
             })
         );

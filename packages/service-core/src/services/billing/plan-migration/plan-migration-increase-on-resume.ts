@@ -10,7 +10,12 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { type BillingCycle, BillingCycleSchema } from '@repo/schemas';
+import {
+    type BillingCycle,
+    BillingCycleSchema,
+    type PlanMigrationReason,
+    PlanMigrationReasonSchema
+} from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { z } from 'zod';
 import { computeApplicationDate } from './plan-migration-application-date.js';
@@ -33,12 +38,15 @@ export interface PendingIncreaseAnchor {
     readonly billingOptionId: string;
     readonly cycle: BillingCycle;
     readonly nextChargeAt: Date | null;
+    readonly applicationDate: Date;
+    readonly reason: PlanMigrationReason;
 }
 
 /**
- * Read the pending `PRICE_INCREASE` migration of one subscription together with
- * its anchored billing option. A retirement, a cancelled increase or an already
- * applied row never answers this lookup.
+ * Read the pending migration of one subscription together with its anchored
+ * billing option. Both motives answer the lookup: a retirement and a price
+ * increase follow the same resume rule. A cancelled or already applied row
+ * never answers it.
  */
 async function readPendingIncreaseAnchor(args: {
     readonly tx?: DrizzleClient;
@@ -56,7 +64,9 @@ async function readPendingIncreaseAnchor(args: {
             customerEmail: users.email,
             billingOptionId: billingOptions.id,
             cycle: billingOptions.cycle,
-            nextChargeAt: subscriptions.nextChargeAt
+            nextChargeAt: subscriptions.nextChargeAt,
+            applicationDate: planMigrationSubscriptions.applicationDate,
+            reason: planMigrations.reason
         })
         .from(planMigrationSubscriptions)
         .innerJoin(
@@ -70,13 +80,16 @@ async function readPendingIncreaseAnchor(args: {
             and(
                 eq(planMigrationSubscriptions.subscriptionId, args.subscriptionId),
                 eq(planMigrationSubscriptions.status, 'PENDIENTE'),
-                eq(planMigrations.reason, 'PRICE_INCREASE'),
                 isNull(planMigrations.cancelledAt)
             )
         )
         .limit(1);
     if (!row) return null;
-    return { ...row, cycle: BillingCycleSchema.parse(row.cycle) };
+    return {
+        ...row,
+        cycle: BillingCycleSchema.parse(row.cycle),
+        reason: PlanMigrationReasonSchema.parse(row.reason)
+    };
 }
 
 /**
@@ -90,12 +103,15 @@ export const pendingIncreaseOnResumeReaders = {
 
 /**
  * AC:B8b:4 and Q-3: the amount the resumed first charge is billed when that
- * charge is exactly the price increase's application day.
+ * charge is exactly the migration's application day. Both motives apply: an
+ * increase reports the discounted destination and a retirement reports the
+ * destination list price, because a retirement drops the live promo.
  *
- * The application day is the first local charge day strictly after the notice
- * (the same rule `S37` uses). When the resumed charge is not that day, an early
- * return `null` keeps the anchored amount, because the increase still waits for
- * a later cycle.
+ * The application day is the one `applyPlanMigrationUpcomingNotice` writes and
+ * `S37` checks: the first local charge day strictly after the notice, never
+ * earlier than the stored application date. When the resumed charge is not that
+ * day, an early return `null` keeps the anchored amount, because the migration
+ * still waits for a later cycle.
  *
  * @param input.subscriptionId - The principal subscription being resumed
  * @param input.chargeAt - The next charge the resume just wrote
@@ -116,13 +132,16 @@ export async function pendingIncreaseAmountForCharge(input: {
         subscriptionId: parsed.subscriptionId
     });
     if (!anchor) return null;
-    const applicationDate = computeApplicationDate({
+    const computed = computeApplicationDate({
         nextChargeAt: parsed.chargeAt,
         cycle: anchor.cycle,
         announcedAt: anchor.announcedAt,
         noticeDays: anchor.noticeDays
     });
-    if (applicationDate !== getLocalDateString({ instant: parsed.chargeAt })) return null;
+    const stored = getLocalDateString({ instant: anchor.applicationDate });
+    // Same floor as applyPlanMigrationUpcomingNotice: the stored date never moves back.
+    const applicationDay = computed > stored ? computed : stored;
+    if (applicationDay !== getLocalDateString({ instant: parsed.chargeAt })) return null;
     const pricing = await pendingIncreaseOnResumeReaders.priceRow({
         ...(input.tx ? { tx: input.tx } : {}),
         row: {
@@ -138,7 +157,7 @@ export async function pendingIncreaseAmountForCharge(input: {
         },
         targetPlanVersionId: anchor.targetPlanVersionId,
         at: parsed.chargeAt,
-        reason: 'PRICE_INCREASE'
+        reason: anchor.reason
     });
     if (pricing.newAmount === null) return null;
     return { amountMinor: pricing.newAmount, currency: pricing.currency };
