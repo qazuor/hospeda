@@ -76,6 +76,9 @@ export const aiMessages = pgTable(
          */
         answerStatus: varchar('answer_status', { length: 20 }),
 
+        /** Owner dismissal timestamp for user questions (HOS-2105). */
+        ownerDismissedAt: timestamp('owner_dismissed_at', { withTimezone: true }),
+
         // ---- Timestamps ----
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

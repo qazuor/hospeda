@@ -727,7 +727,15 @@
                 "unansweredTitle": "Unanswered",
                 "unansweredHint": "The assistant could not find the answer in your listing. Adding them as FAQs helps it answer next time.",
                 "othersTitle": "Other questions",
-                "truncated": "Questions shown: {{shown}} of {{total}}. Unanswered ones come first."
+                "truncated": "Questions shown: {{shown}} of {{total}}. Unanswered ones come first.",
+                "dismissedTruncated": "Dismissed shown: {{shown}} of {{total}}. You see the most recent ones.",
+                "markSeen": "I've seen this",
+                "undo": "Undo",
+                "dismissedTitle": "Dismissed",
+                "dismissedError": "The question could not be dismissed.",
+                "undoError": "The question could not be restored.",
+                "viewMore": "View more",
+                "faqAnswerHelp": "There is no confirmed answer. Fill it in using information from your listing."
             }
         },
         "empty": {

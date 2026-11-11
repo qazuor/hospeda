@@ -6,12 +6,21 @@ import { render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     buildFaqPrefillHref,
+    FAQ_PREFILL_ANSWER_MAX_LENGTH,
     FAQ_PREFILL_MAX_LENGTH,
     readFaqPrefill,
     useFaqPrefill
 } from '../../src/hooks/use-faq-prefill';
 
-function Probe({ onPrefill }: { readonly onPrefill: (question: string) => void }) {
+function Probe({
+    onPrefill
+}: {
+    readonly onPrefill: (prefill: {
+        question: string;
+        answer: string;
+        messageId: string | null;
+    }) => void;
+}) {
     useFaqPrefill({ onPrefill });
     return null;
 }
@@ -32,6 +41,15 @@ describe('readFaqPrefill', () => {
         expect(readFaqPrefill({ search: `?pregunta=${long}` }).question).toHaveLength(
             FAQ_PREFILL_MAX_LENGTH
         );
+    });
+
+    it('caps the answer and only accepts a UUID message id', () => {
+        const answer = 'a'.repeat(FAQ_PREFILL_ANSWER_MAX_LENGTH + 9);
+        const parsed = readFaqPrefill({
+            search: `?pregunta=q&respuesta=${answer}&mensaje=not-a-uuid`
+        });
+        expect(parsed.answer).toHaveLength(FAQ_PREFILL_ANSWER_MAX_LENGTH);
+        expect(parsed.messageId).toBeNull();
     });
 });
 
@@ -67,7 +85,11 @@ describe('useFaqPrefill', () => {
 
         // Assert
         expect(onPrefill).toHaveBeenCalledTimes(1);
-        expect(onPrefill).toHaveBeenCalledWith('Hay wifi');
+        expect(onPrefill).toHaveBeenCalledWith({
+            question: 'Hay wifi',
+            answer: '',
+            messageId: null
+        });
         expect(window.location.search).toBe('?x=1');
     });
 

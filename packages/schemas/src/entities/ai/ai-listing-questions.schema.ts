@@ -38,6 +38,29 @@ export const AI_LISTING_QUESTIONS_RETENTION_MONTHS = 12;
 
 /** Maximum questions one panel response carries; `truncated` reports the rest. */
 export const AI_LISTING_QUESTIONS_MAX_ITEMS = 200;
+/** Page size for active answered and unclassified questions. */
+export const AI_LISTING_QUESTIONS_OTHERS_PAGE_SIZE = 50;
+/** Maximum dismissed questions in the response. */
+export const AI_LISTING_QUESTIONS_DISMISSED_CAP = 50;
+
+/** Checks the timestamp and message UUID inside a base64url page cursor. */
+function isValidOthersCursor(cursor: string): boolean {
+    try {
+        if (!/^[A-Za-z0-9_-]+$/.test(cursor)) return false;
+        const base64 = cursor.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4));
+        const [askedAt, messageId, extra] = decoded.split('|');
+        const validDate = z.string().datetime().safeParse(askedAt).success;
+        return (
+            extra === undefined &&
+            validDate &&
+            new Date(askedAt as string).toISOString() === askedAt &&
+            z.string().uuid().safeParse(messageId).success
+        );
+    } catch {
+        return false;
+    }
+}
 
 /**
  * Query of `GET /api/v1/protected/ai/listing-questions`.
@@ -47,7 +70,13 @@ export const AiListingQuestionsQuerySchema = z
         /** Vertical of the listing. */
         entityType: AiChatEntityTypeSchema,
         /** Listing id. A non-UUID is a 400, never a database round-trip. */
-        entityId: z.string().uuid()
+        entityId: z.string().uuid(),
+        /** Opaque composite cursor for the next "others" page. */
+        othersCursor: z
+            .string()
+            .max(128)
+            .refine(isValidOthersCursor, 'Invalid others cursor')
+            .optional()
     })
     .strict();
 
@@ -70,7 +99,9 @@ export const AiListingQuestionSchema = z
         /** When the question was asked (ISO 8601). */
         askedAt: z.string(),
         /** Classifier verdict. */
-        answerStatus: AiListingQuestionStatusSchema
+        answerStatus: AiListingQuestionStatusSchema,
+        /** When the owner dismissed the question, when present in the dismissed block. */
+        ownerDismissedAt: z.string().datetime().nullable().optional()
     })
     .strict();
 
@@ -92,7 +123,11 @@ export const AiListingQuestionsResponseSchema = z
         /** Exact number of unanswered questions inside the retention horizon. */
         unansweredCount: z.number().int().nonnegative(),
         /** True when some question inside the horizon is not in `items`. */
-        truncated: z.boolean()
+        truncated: z.boolean(),
+        /** Cursor for fetching another page of active "other" questions. */
+        othersNextCursor: z.string().nullable(),
+        dismissed: z.array(AiListingQuestionSchema),
+        dismissedCount: z.number().int().nonnegative()
     })
     .strict();
 

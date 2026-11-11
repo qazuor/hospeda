@@ -13,9 +13,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockIsOwned, mockList } = vi.hoisted(() => ({
+const { mockIsOwned, mockList, mockSetDismissed } = vi.hoisted(() => ({
     mockIsOwned: vi.fn(),
-    mockList: vi.fn()
+    mockList: vi.fn(),
+    mockSetDismissed: vi.fn()
 }));
 
 // The global setup swaps `ServiceError` for a test double the error handler
@@ -25,7 +26,8 @@ vi.mock('@repo/service-core', async () => vi.importActual('@repo/service-core'))
 
 vi.mock('../../src/services/ai-listing-questions.service.js', () => ({
     isListingOwnedBy: mockIsOwned,
-    listListingQuestions: mockList
+    listListingQuestions: mockList,
+    setQuestionDismissed: mockSetDismissed
 }));
 
 import { initApp } from '../../src/app.js';
@@ -62,8 +64,12 @@ describe('GET /protected/ai/listing-questions', () => {
             items: [ITEM],
             total: 1,
             unansweredCount: 1,
-            truncated: false
+            truncated: false,
+            othersNextCursor: null,
+            dismissed: [],
+            dismissedCount: 0
         });
+        mockSetDismissed.mockResolvedValue({ ownerDismissedAt: new Date('2026-11-10T12:00:00Z') });
     });
 
     it('answers 401 without a session and never reads', async () => {
@@ -78,7 +84,16 @@ describe('GET /protected/ai/listing-questions', () => {
     it.each([
         ['a non-uuid id', 'entityType=accommodation&entityId=abc'],
         ['an unknown vertical', `entityType=partner&entityId=${LISTING_ID}`],
-        ['a missing id', 'entityType=venue']
+        ['a missing id', 'entityType=venue'],
+        ['a malformed page cursor', `entityType=venue&entityId=${LISTING_ID}&othersCursor=!!!`],
+        [
+            'a malformed encoded page cursor',
+            `entityType=venue&entityId=${LISTING_ID}&othersCursor=aaaa`
+        ],
+        [
+            'a non-canonical cursor date',
+            `entityType=venue&entityId=${LISTING_ID}&othersCursor=${Buffer.from('2026-11-05T10:00:00Z|22222222-2222-4222-8222-222222222222').toString('base64url')}`
+        ]
     ])('answers 400 for %s before any read', async (_label, query) => {
         const res = await app.request(`${BASE}?${query}`, { headers: AUTH_HEADERS });
 
@@ -119,12 +134,68 @@ describe('GET /protected/ai/listing-questions', () => {
             data: { items: Record<string, unknown>[] } & Record<string, unknown>;
         };
         expect(Object.keys(body.data).sort()).toEqual(
-            ['items', 'total', 'truncated', 'unansweredCount'].sort()
+            [
+                'items',
+                'total',
+                'truncated',
+                'unansweredCount',
+                'othersNextCursor',
+                'dismissed',
+                'dismissedCount'
+            ].sort()
         );
         expect(Object.keys(body.data.items[0] ?? {}).sort()).toEqual(
             ['answer', 'answerStatus', 'askedAt', 'id', 'question'].sort()
         );
         expect(JSON.stringify(body)).not.toContain(ACTOR_ID);
-        expect(mockList).toHaveBeenCalledWith({ entityType: 'experience', entityId: LISTING_ID });
+        expect(mockList).toHaveBeenCalledWith({
+            entityType: 'experience',
+            entityId: LISTING_ID,
+            othersCursor: undefined
+        });
+    });
+
+    it('rejects malformed action ids before calling the ownership service', async () => {
+        const response = await app.request(`${BASE}/bad/dismiss`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(response.status).toBe(400);
+        expect(mockSetDismissed).not.toHaveBeenCalled();
+    });
+
+    it('answers 401 to dismiss without a session', async () => {
+        const response = await app.request(`${BASE}/22222222-2222-4222-8222-222222222222/dismiss`, {
+            method: 'POST',
+            headers: { 'user-agent': 'vitest' }
+        });
+        expect(response.status).toBe(401);
+        expect(mockSetDismissed).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 when the atomic dismissal update finds no owned question', async () => {
+        mockSetDismissed.mockResolvedValue(null);
+        const response = await app.request(`${BASE}/22222222-2222-4222-8222-222222222222/dismiss`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(response.status).toBe(404);
+        expect(mockSetDismissed).toHaveBeenCalledWith({
+            messageId: '22222222-2222-4222-8222-222222222222',
+            userId: ACTOR_ID,
+            dismissed: true
+        });
+    });
+
+    it('dismisses an owned message and returns its persisted timestamp', async () => {
+        const response = await app.request(`${BASE}/22222222-2222-4222-8222-222222222222/dismiss`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toEqual({
+            messageId: '22222222-2222-4222-8222-222222222222',
+            ownerDismissedAt: '2026-11-10T12:00:00.000Z'
+        });
     });
 });

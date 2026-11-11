@@ -3,13 +3,16 @@
  * the FAQ shortcut, the rest below, and the empty / error states.
  */
 
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGetProtected } = vi.hoisted(() => ({ mockGetProtected: vi.fn() }));
+const { mockGetProtected, mockPostProtected } = vi.hoisted(() => ({
+    mockGetProtected: vi.fn(),
+    mockPostProtected: vi.fn()
+}));
 
 vi.mock('../../../../src/lib/api/client', () => ({
-    apiClient: { getProtected: mockGetProtected }
+    apiClient: { getProtected: mockGetProtected, postProtected: mockPostProtected }
 }));
 
 vi.mock('../../../../src/components/listing/ai-questions/AiQuestionsPanel.module.css', () => ({
@@ -56,7 +59,15 @@ describe('AiQuestionsPanel', () => {
     it('asks the API for this listing', async () => {
         mockGetProtected.mockResolvedValue({
             ok: true,
-            data: { items: [], total: 0, unansweredCount: 0, truncated: false }
+            data: {
+                items: [],
+                total: 0,
+                unansweredCount: 0,
+                truncated: false,
+                dismissed: [],
+                dismissedCount: 0,
+                othersNextCursor: null
+            }
         });
 
         renderPanel();
@@ -74,8 +85,12 @@ describe('AiQuestionsPanel', () => {
             ok: true,
             data: {
                 items: [
-                    item('a', '¿Hay wifi?', 'answered'),
-                    item('b', '¿Aceptan mascotas?', 'unanswered'),
+                    { ...item('a', '¿Hay wifi?', 'answered'), answer: '**Hay wifi**' },
+                    item(
+                        '22222222-2222-4222-8222-222222222222',
+                        '¿Aceptan mascotas?',
+                        'unanswered'
+                    ),
                     item('c', '¿Tiene cochera?', 'unclassified')
                 ],
                 total: 3,
@@ -94,14 +109,23 @@ describe('AiQuestionsPanel', () => {
         const link = within(unanswered).getByRole('link', {
             name: 'Agregar como pregunta frecuente'
         });
-        expect(link.getAttribute('href')).toBe(
-            `${FAQ_URL}?pregunta=${encodeURIComponent('¿Aceptan mascotas?')}`
-        );
+        const linkUrl = new URL(link.getAttribute('href') ?? '', 'https://example.test');
+        expect(linkUrl.searchParams.get('pregunta')).toBe('¿Aceptan mascotas?');
+        expect(linkUrl.searchParams.get('mensaje')).toBe('22222222-2222-4222-8222-222222222222');
+        expect(linkUrl.searchParams.has('respuesta')).toBe(false);
 
         const others = screen.getByRole('region', { name: /otras preguntas/i });
         expect(within(others).getByText('¿Hay wifi?')).toBeTruthy();
         expect(within(others).getByText('¿Tiene cochera?')).toBeTruthy();
-        expect(within(others).queryByRole('link')).toBeNull();
+        const answeredFaqLink = within(others).getAllByRole('link', {
+            name: 'Agregar como pregunta frecuente'
+        })[0];
+        expect(answeredFaqLink).toBeDefined();
+        const answeredFaqUrl = new URL(
+            answeredFaqLink.getAttribute('href') ?? '',
+            'https://example.test'
+        );
+        expect(answeredFaqUrl.searchParams.get('respuesta')).toBe('Hay wifi');
 
         const regions = screen.getAllByRole('region');
         expect(regions[0]).toBe(unanswered);
@@ -118,6 +142,9 @@ describe('AiQuestionsPanel', () => {
                         answer: 'En la ficha de **Bar Smoke** no figura si hay estacionamiento.'
                     }
                 ],
+                dismissed: [],
+                dismissedCount: 0,
+                othersNextCursor: null,
                 total: 1,
                 unansweredCount: 1,
                 truncated: false
@@ -136,7 +163,15 @@ describe('AiQuestionsPanel', () => {
     it('says so when nobody asked anything', async () => {
         mockGetProtected.mockResolvedValue({
             ok: true,
-            data: { items: [], total: 0, unansweredCount: 0, truncated: false }
+            data: {
+                items: [],
+                total: 0,
+                unansweredCount: 0,
+                truncated: false,
+                dismissed: [],
+                dismissedCount: 0,
+                othersNextCursor: null
+            }
         });
 
         renderPanel();
@@ -192,6 +227,89 @@ describe('AiQuestionsPanel', () => {
         renderPanel();
 
         expect(await screen.findByText(/preguntas mostradas/i)).toBeTruthy();
+    });
+
+    it('dismisses an unanswered question and refreshes it into the dismissed section', async () => {
+        mockPostProtected.mockResolvedValue({ ok: true, data: {} });
+        mockGetProtected
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    items: [
+                        item('22222222-2222-4222-8222-222222222222', '¿Mascotas?', 'unanswered')
+                    ],
+                    total: 1,
+                    unansweredCount: 1,
+                    truncated: false,
+                    dismissed: [],
+                    dismissedCount: 0,
+                    othersNextCursor: null
+                }
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    items: [],
+                    total: 0,
+                    unansweredCount: 0,
+                    truncated: false,
+                    dismissed: [
+                        {
+                            ...item(
+                                '22222222-2222-4222-8222-222222222222',
+                                '¿Mascotas?',
+                                'unanswered'
+                            ),
+                            ownerDismissedAt: '2026-11-10T12:00:00.000Z'
+                        }
+                    ],
+                    dismissedCount: 1,
+                    othersNextCursor: null
+                }
+            });
+        renderPanel();
+        await screen.findByText('¿Mascotas?');
+        fireEvent.click(screen.getByRole('button', { name: 'Ya lo vi' }));
+        await waitFor(() =>
+            expect(document.querySelector('details')?.textContent).toContain('Descartadas')
+        );
+        expect(screen.getByText('¿Mascotas?')).toBeTruthy();
+        expect(mockPostProtected).toHaveBeenCalledWith({
+            path: `${AI_LISTING_QUESTIONS_PATH}/22222222-2222-4222-8222-222222222222/dismiss`
+        });
+    });
+
+    it('loads the next page of other questions and hides the paging button when exhausted', async () => {
+        mockGetProtected
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    items: [item('a', 'Primera', 'answered')],
+                    total: 2,
+                    unansweredCount: 0,
+                    truncated: true,
+                    dismissed: [],
+                    dismissedCount: 0,
+                    othersNextCursor: 'cursor'
+                }
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    items: [item('b', 'Siguiente', 'answered')],
+                    total: 2,
+                    unansweredCount: 0,
+                    truncated: false,
+                    dismissed: [],
+                    dismissedCount: 0,
+                    othersNextCursor: null
+                }
+            });
+        renderPanel();
+        await screen.findByText('Primera');
+        screen.getByRole('button', { name: 'Ver más' }).click();
+        expect(await screen.findByText('Siguiente')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Ver más' })).toBeNull();
     });
 });
 

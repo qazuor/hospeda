@@ -50,7 +50,11 @@ export const protectedAiListingQuestionsRoute = createProtectedRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, `${entityType} not found.`);
         }
 
-        return listListingQuestions({ entityType, entityId });
+        return listListingQuestions({
+            entityType,
+            entityId,
+            othersCursor: query?.othersCursor as string | undefined
+        });
     },
     options: {
         customRateLimit: { requests: 60, windowMs: 60_000 }
