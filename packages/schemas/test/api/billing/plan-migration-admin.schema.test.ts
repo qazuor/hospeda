@@ -7,8 +7,10 @@ import {
     PlanMigrationLaunchResponseSchema,
     PlanMigrationListItemSchema,
     PlanMigrationListQuerySchema,
+    PlanMigrationOptionsSchema,
     PlanMigrationPreviewRequestSchema,
-    PlanMigrationPreviewRowSchema
+    PlanMigrationPreviewRowSchema,
+    RetiredPlanVersionListSchema
 } from '../../../src/api/billing/plan-migration-admin.schema.js';
 
 describe('AC:B12:2 action 17 preview contracts', () => {
@@ -193,6 +195,79 @@ describe('AC:B12:2 action 17 launch contracts', () => {
                         applicationDate: null
                     }
                 ]
+            }).success
+        ).toBe(false);
+    });
+});
+
+describe('HOS-1616 O-3 versionNumber distingue las versiones de un mismo plan contracts', () => {
+    const base = {
+        id: crypto.randomUUID(),
+        planId: crypto.randomUUID(),
+        name: 'Succession plan',
+        vertical: 'accommodation'
+    };
+    const numbered = { ...base, versionNumber: 1 };
+    const options = {
+        sources: [{ ...numbered, customerCount: 1 }],
+        targets: { accommodation: [numbered] },
+        increases: [
+            {
+                source: { ...numbered, customerCount: 1 },
+                target: { ...base, versionNumber: 2 }
+            }
+        ]
+    };
+
+    it('accepts the 1-based ordinal in options and in the retired versions list', () => {
+        expect(PlanMigrationOptionsSchema.parse(options)).toEqual(options);
+        const retired = { ...numbered, liveSubscriptionCount: 1 };
+        expect(RetiredPlanVersionListSchema.parse({ items: [retired] })).toEqual({
+            items: [retired]
+        });
+    });
+
+    it('rejects a zero, a fraction and a missing ordinal in both shapes', () => {
+        for (const versionNumber of [0, 1.5]) {
+            expect(
+                PlanMigrationOptionsSchema.safeParse({
+                    ...options,
+                    sources: [{ ...numbered, customerCount: 1, versionNumber }]
+                }).success
+            ).toBe(false);
+            expect(
+                PlanMigrationOptionsSchema.safeParse({
+                    ...options,
+                    targets: { accommodation: [{ ...base, versionNumber }] }
+                }).success
+            ).toBe(false);
+            expect(
+                PlanMigrationOptionsSchema.safeParse({
+                    ...options,
+                    increases: [
+                        {
+                            source: { ...numbered, customerCount: 1, versionNumber },
+                            target: { ...base, versionNumber: 2 }
+                        }
+                    ]
+                }).success
+            ).toBe(false);
+            expect(
+                RetiredPlanVersionListSchema.safeParse({
+                    items: [{ ...numbered, versionNumber, liveSubscriptionCount: 1 }]
+                }).success
+            ).toBe(false);
+        }
+        const { versionNumber: _omitted, ...unumbered } = numbered;
+        expect(
+            PlanMigrationOptionsSchema.safeParse({
+                ...options,
+                targets: { accommodation: [unumbered] }
+            }).success
+        ).toBe(false);
+        expect(
+            RetiredPlanVersionListSchema.safeParse({
+                items: [{ ...unumbered, liveSubscriptionCount: 1 }]
             }).success
         ).toBe(false);
     });
