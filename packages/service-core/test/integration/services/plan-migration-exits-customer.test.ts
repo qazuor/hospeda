@@ -5,8 +5,10 @@ import {
     eq,
     idempotencyKeys,
     inArray,
+    payments,
     planMigrationSubscriptions,
     providerLinks,
+    reconciliationMarkPayments,
     reconciliationMarks,
     subscriptions
 } from '@repo/db';
@@ -45,10 +47,63 @@ const complements = {
 const orphanhood = complements;
 const coverageNotices = { emitCoverageChanged: async () => undefined };
 
-const markOwners: string[] = [];
+const ownedSubscriptions: string[] = [];
 const creditRows: string[] = [];
 const closedSuccessors: Array<{ id: string; predecessorId: string; userId: string }> = [];
+
+const db = () => getServiceTestDb();
+
+/**
+ * Seeds one announced exit case and records every subscription it created, so
+ * cleanup can remove the dependants other parallel files may have attached.
+ */
+async function trackedExitCase(
+    args: Parameters<typeof createAnnouncedExitCase>[0] = {}
+): ReturnType<typeof createAnnouncedExitCase> {
+    const created = await createAnnouncedExitCase(args);
+    ownedSubscriptions.push(created.seeded.predecessor.id);
+    for (const customer of [
+        created.pendingCustomer,
+        created.unresolvedCustomer,
+        ...created.additionalCustomers
+    ]) {
+        if (customer) ownedSubscriptions.push(customer.subscriptionId);
+    }
+    return created;
+}
+
+/**
+ * Removes children that reference this file's subscriptions or payments first:
+ * a parallel sweep can hang a reconciliation mark (and its payment links) on a
+ * row this file owns, and the FK blocks deleting the parent otherwise.
+ */
+async function retireOwnDependants(subscriptionIds: readonly string[]): Promise<void> {
+    if (subscriptionIds.length === 0) return;
+    const marks = await db()
+        .select({ id: reconciliationMarks.id })
+        .from(reconciliationMarks)
+        .where(inArray(reconciliationMarks.subscriptionId, subscriptionIds));
+    const paymentRows = await db()
+        .select({ id: payments.id })
+        .from(payments)
+        .where(inArray(payments.subscriptionId, subscriptionIds));
+    const markIds = marks.map((row) => row.id);
+    const paymentIds = paymentRows.map((row) => row.id);
+    if (markIds.length)
+        await db()
+            .delete(reconciliationMarkPayments)
+            .where(inArray(reconciliationMarkPayments.markId, markIds));
+    if (paymentIds.length)
+        await db()
+            .delete(reconciliationMarkPayments)
+            .where(inArray(reconciliationMarkPayments.paymentId, paymentIds));
+    await db()
+        .delete(reconciliationMarks)
+        .where(inArray(reconciliationMarks.subscriptionId, subscriptionIds));
+}
+
 afterEach(async () => {
+    await retireOwnDependants(ownedSubscriptions.splice(0));
     for (const successor of closedSuccessors.splice(0)) {
         await getServiceTestDb()
             .delete(emailOutbox)
@@ -70,10 +125,6 @@ afterEach(async () => {
             .update(subscriptions)
             .set({ succeedsId: null })
             .where(inArray(subscriptions.id, creditRows.splice(0)));
-    if (markOwners.length)
-        await getServiceTestDb()
-            .delete(reconciliationMarks)
-            .where(inArray(reconciliationMarks.subscriptionId, markOwners.splice(0)));
     await cleanupAnnouncedExitCases();
 });
 afterAll(closeServiceTestPool);
@@ -106,7 +157,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
     '§3.7.8 si el cliente se da de baja por su cuenta durante el aviso, sale de la migración',
     () => {
         it('cancelActiveSubscription exits a PENDIENTE row in the S11 transaction', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             const result = await cancelActiveSubscription(
                 {
                     actor: { id: seeded.user.id, roles: [], permissions: [] },
@@ -131,8 +182,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('cancelDirectSubscription retains the customer reason across the terminal trigger', async () => {
-            const { seeded } = await createAnnouncedExitCase();
-            markOwners.push(seeded.predecessor.id);
+            const { seeded } = await trackedExitCase();
             await seeded.fake.pause({ authorizationId: seeded.started.authorizationId });
             const suspended = await suspendForArrears(
                 {
@@ -167,8 +217,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('cancelPausedSubscription exits after a real customer pause', async () => {
-            const { seeded } = await createAnnouncedExitCase();
-            markOwners.push(seeded.predecessor.id);
+            const { seeded } = await trackedExitCase();
             const paused = await pauseSubscription(
                 { subscriptionId: seeded.predecessor.id, requestedMonths: 2 },
                 {
@@ -204,10 +253,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('credited paused cancellation exits when S22 schedules the end', async () => {
-            const { seeded, pendingCustomer } = await createAnnouncedExitCase({
+            const { seeded, pendingCustomer } = await trackedExitCase({
                 addPendingCustomer: true
             });
-            markOwners.push(seeded.predecessor.id);
             if (!pendingCustomer) throw new Error('Credit predecessor missing');
             // Seeded succession credit facts; the pause and cancellation remain real acts.
             await getServiceTestDb()
@@ -254,7 +302,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('an APLICADA row stays intact when its owner cancels', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             // Seeded APLICADA: S37, its only writer, belongs to HOS-1614.
             await getServiceTestDb()
                 .update(planMigrationSubscriptions)
@@ -279,7 +327,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('an owner cancellation also exits PARA_RESOLVER', async () => {
-            const { seeded } = await createAnnouncedExitCase({ unresolved: true });
+            const { seeded } = await trackedExitCase({ unresolved: true });
             expect((await scope(seeded.predecessor.id)).status).toBe('PARA_RESOLVER');
             const result = await cancelActiveSubscription(
                 {
@@ -304,7 +352,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B12:6 AC:B12:6 quien cambia de plan en el medio sale con «cambió de plan»',
     () => {
         it('an accepted downgrade exits while a rejected act leaves PENDIENTE', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             seeded.verticals.setChangeDirection({
                 fromPlanVersionId: seeded.planVersionId,
                 toPlanVersionId: seeded.targetPlanVersionId,
@@ -339,8 +387,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('an accepted upgrade exits before the predecessor reaches a terminal state', async () => {
-            const { seeded } = await createAnnouncedExitCase();
-            markOwners.push(seeded.predecessor.id);
+            const { seeded } = await trackedExitCase();
             const accepted = await requestPlanChange(seeded.input, {
                 ...seeded.ports,
                 changeDirection: seeded.verticals.changeDirection.bind(seeded.verticals),
@@ -354,6 +401,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 predecessorId: seeded.predecessor.id,
                 userId: seeded.user.id
             });
+            ownedSubscriptions.push(accepted.subscriptionId);
             const [link] = await getServiceTestDb()
                 .select({ providerId: providerLinks.providerId })
                 .from(providerLinks)
@@ -391,7 +439,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('replacing an accepted downgrade preserves its original exit reason', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             const [monthly] = await getServiceTestDb()
                 .select({ id: billingOptions.id })
                 .from(billingOptions)
@@ -435,7 +483,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('PARA_RESOLVER exits and a seeded APLICADA row remains untouched', async () => {
-            const { seeded } = await createAnnouncedExitCase({ unresolved: true });
+            const { seeded } = await trackedExitCase({ unresolved: true });
             const before = await scope(seeded.predecessor.id);
             expect(before.status).toBe('PARA_RESOLVER');
             await getServiceTestDb().transaction((tx) =>
@@ -464,7 +512,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('a rejected transaction rolls back its exit', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             const before = await scope(seeded.predecessor.id);
             const rollback = new Error('reject customer act');
             await expect(
@@ -480,7 +528,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(await scope(seeded.predecessor.id)).toEqual(before);
         });
         it('a duplicate queued change aborts without exiting PENDIENTE', async () => {
-            const { seeded } = await createAnnouncedExitCase();
+            const { seeded } = await trackedExitCase();
             await seedScheduledChange({
                 subscriptionId: seeded.predecessor.id,
                 effectiveAt: clock.now()
