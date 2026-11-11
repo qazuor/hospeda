@@ -16,6 +16,7 @@ export * from './plan-migration-notice.js';
 export * from './plan-migration-options.service.js';
 export * from './plan-migration-preview.service.js';
 export * from './plan-migration-read.service.js';
+export * from './plan-migration-retired-versions.service.js';
 export * from './plan-migration-s37.service.js';
 export * from './plan-migration-s37-guards.js';
 export * from './plan-migration-s37-notice-gate.js';

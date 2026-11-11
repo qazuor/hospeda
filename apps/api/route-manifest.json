@@ -1531,6 +1531,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/retired-versions"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/platform-settings/:key"
         },
         {

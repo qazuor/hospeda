@@ -211,3 +211,25 @@ export const PlanMigrationDetailSchema = PlanMigrationListItemSchema.extend({
 }).strict();
 /** Validated migration detail response. */
 export type PlanMigrationDetail = z.infer<typeof PlanMigrationDetailSchema>;
+
+/**
+ * One plan version nobody can buy anymore, with the live subscriptions still
+ * anchored to it. Being retired is derived from the catalog policy, never a
+ * stored state on the version.
+ */
+export const RetiredPlanVersionSchema = z.strictObject({
+    id: Id,
+    planId: Id,
+    name: z.string(),
+    vertical: z.string(),
+    liveSubscriptionCount: z.number().int().positive()
+});
+/** Validated retired plan version. */
+export type RetiredPlanVersion = z.infer<typeof RetiredPlanVersionSchema>;
+
+/** Retired plan versions ordered by live customers, the most anchored first. */
+export const RetiredPlanVersionListSchema = z.strictObject({
+    items: z.array(RetiredPlanVersionSchema)
+});
+/** Validated retired plan version list. */
+export type RetiredPlanVersionList = z.infer<typeof RetiredPlanVersionListSchema>;
