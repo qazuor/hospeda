@@ -168,6 +168,25 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(changeAmount).toHaveBeenCalledTimes(1);
         });
 
+        it('el correo que falló y después salió no escala la mutación', async () => {
+            const caseRow = await createS37MigrationCase();
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+            await run(caseRow);
+
+            // Declared seed: the sender exhausts the retries (`failed`) and a later
+            // retry delivers the same notice (`sent`) before S37 acts.
+            await setNoticeStatus(caseRow, 'failed');
+            await setNoticeStatus(caseRow, 'sent');
+
+            expect(await run(caseRow)).toEqual({
+                outcome: 'APPLIED_CARD',
+                escalated: false
+            });
+            expect(await scopeRow(caseRow.scope.id)).toMatchObject({ status: 'APLICADA' });
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(1);
+            expect(changeAmount).toHaveBeenCalledTimes(1);
+        });
+
         it('con el preapproval no authorized, S37 no corre', async () => {
             for (const status of ['paused', 'cancelled'] as const) {
                 const caseRow = await createS37MigrationCase();

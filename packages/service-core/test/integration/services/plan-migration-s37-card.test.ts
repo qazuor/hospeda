@@ -5,7 +5,8 @@ import {
     eq,
     planMigrationSubscriptions,
     promoRedemptions,
-    subscriptionScheduledChanges
+    subscriptionScheduledChanges,
+    subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import type { FakePaymentProvider } from '@repo/payments/fake';
@@ -281,6 +282,73 @@ describe.skipIf(!isServiceTestDbAvailable())(
             });
             expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
             expect((await scopeRow(caseRow.scope.id))?.status).toBe('CANCELADA');
+        });
+
+        it('si la transacción de cierre revierte después de mutar, la retoma cierra sin un segundo changeAmount', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            await markNoticeSent(caseRow);
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+
+            // Declared failure: the closing transaction is the third one of this
+            // run (service gate, decision, closure) and fails only this once.
+            const original = db.transaction.bind(db);
+            vi.spyOn(db, 'transaction')
+                .mockImplementationOnce(original)
+                .mockImplementationOnce(original)
+                .mockImplementationOnce(async () => {
+                    throw new Error('S37 closing transaction failed');
+                });
+
+            await expect(run(caseRow)).rejects.toThrow('S37 closing transaction failed');
+            expect(changeAmount).toHaveBeenCalledTimes(1);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect((await scopeRow(caseRow.scope.id))?.status).toBe('PENDIENTE');
+
+            // The next run reads the destination and closes; it must not mutate again.
+            expect(await run(caseRow)).toEqual({
+                outcome: 'APPLIED_CARD',
+                escalated: false
+            });
+            expect(changeAmount).toHaveBeenCalledTimes(1);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(1);
+            expect((await scopeRow(caseRow.scope.id))?.status).toBe('APLICADA');
+            vi.restoreAllMocks();
+        });
+
+        it('si el día del próximo cobro cambia después de mutar, la fila queda MUTATED_BUT_ROW_LEFT', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            await markNoticeSent(caseRow);
+            const original = caseRow.fake.changeAmount.bind(caseRow.fake);
+            let moved = false;
+            const provider = withChangeAmount(caseRow.fake, async (input) => {
+                const acknowledgement = await original(input);
+                if (!moved) {
+                    moved = true;
+                    // Declared seed: the next charge day moves after MP accepted,
+                    // so D-4 catches the row at closing time.
+                    await db
+                        .update(subscriptions)
+                        .set({ nextChargeAt: new Date('2026-12-12T11:00:00.000Z') })
+                        .where(eq(subscriptions.id, caseRow.subscriptionId));
+                }
+                return acknowledgement;
+            });
+
+            expect(await run(caseRow, provider)).toEqual({ outcome: 'MUTATED_BUT_ROW_LEFT' });
+
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            const scope = await scopeRow(caseRow.scope.id);
+            expect(scope?.status).toBe('PENDIENTE');
+            expect(scope?.appliedAt).toBeNull();
+            const after = await caseRow.fake.readAuthorization({
+                authorizationId: caseRow.authorizationId
+            });
+            expect(after.snapshot.amount).toEqual({
+                amountMinor: caseRow.targetAmountMinor,
+                currency: 'ARS'
+            });
         });
 
         it('No es el upgrade ni el downgrade: el cambio real del cliente queda con MIGRATION_CHANGE_QUEUED', async () => {

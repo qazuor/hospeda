@@ -10,7 +10,7 @@ import {
     subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
-import type { FakePaymentProvider } from '@repo/payments/fake';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import {
     PLAN_MIGRATION_UPCOMING_TEMPLATE,
@@ -18,7 +18,10 @@ import {
 } from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
 import { runPlanMigrationS37ForRow } from '../../../src/services/billing/plan-migration/plan-migration-s37.service.js';
 import { composePromoAmount } from '../../../src/services/billing/promo/promo-composition.js';
-import { createAmountComparison } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-comparison.js';
+import {
+    AMOUNT_MUTATION_RETRY_WINDOW_MS,
+    createAmountComparison
+} from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-comparison.js';
 import { createRecordedAmountMutationDecisions } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
 import { createCutExpectedAmountPolicy } from '../../../src/services/billing/reconciliation/sweep/comparisons/expected-amount.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -237,6 +240,124 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
             expect(await run(caseRow)).toEqual({ outcome: 'DIVERGED' });
             expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+        });
+
+        it('en el borde exacto de los 3 días la comparación y la retoma dan DIVERGED', async () => {
+            const caseRow = await createS37MigrationCase();
+            await startWithoutApplying(caseRow);
+
+            caseRow.clock.set(new Date(S37_DAY.getTime() + AMOUNT_MUTATION_RETRY_WINDOW_MS));
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+            const divergences = await compare(caseRow, caseRow.fake);
+            expect(divergences).toHaveLength(1);
+            expect(divergences[0]).toMatchObject({ reason: 'DIVERGENCIA_DE_MONTO' });
+            expect(divergences[0]?.detail).toContainEqual({
+                field: 'reconciliation_mark.expected_minor',
+                new: caseRow.targetAmountMinor
+            });
+
+            expect(await run(caseRow)).toEqual({ outcome: 'DIVERGED' });
+            expect(changeAmount).toHaveBeenCalledTimes(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRowStatus(caseRow.scope.id)).toBe('PENDIENTE');
+            vi.restoreAllMocks();
+        });
+
+        it('un milisegundo antes del borde la retoma espera al barrido sin escribir', async () => {
+            const caseRow = await createS37MigrationCase();
+            await startWithoutApplying(caseRow);
+
+            caseRow.clock.set(new Date(S37_DAY.getTime() + AMOUNT_MUTATION_RETRY_WINDOW_MS - 1));
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+
+            expect(await run(caseRow)).toEqual({ outcome: 'AWAITING_SWEEP' });
+
+            expect(changeAmount).toHaveBeenCalledTimes(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRowStatus(caseRow.scope.id)).toBe('PENDIENTE');
+            expect(await decisionEvents(caseRow.subscriptionId)).toHaveLength(1);
+            vi.restoreAllMocks();
+        });
+
+        it('un PaymentProviderError en la mutación deja NOT_APPLIED, la decisión y la fila PENDIENTE', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            await markNoticeSent(caseRow);
+
+            // The fake's own network-cut simulation makes changeAmount reject with
+            // UNAVAILABLE before it touches a ledger; reads stay on the real fake.
+            const cut = new FakePaymentProvider({
+                clock: caseRow.clock,
+                idNamespace: crypto.randomUUID(),
+                simulate: [
+                    {
+                        simulation: 'networkCut',
+                        why: 'S37 must leave the row pending when the provider cannot be reached'
+                    }
+                ]
+            });
+            const provider = delegatingProvider(caseRow.fake, (input) => cut.changeAmount(input));
+            const changeAmount = vi.spyOn(cut, 'changeAmount');
+
+            expect(await run(caseRow, provider)).toEqual({ outcome: 'NOT_APPLIED' });
+
+            expect(changeAmount).toHaveBeenCalledTimes(1);
+            vi.restoreAllMocks();
+            const after = await caseRow.fake.readAuthorization({
+                authorizationId: caseRow.authorizationId
+            });
+            expect(after.snapshot.amount).toEqual({ amountMinor: 250000, currency: 'ARS' });
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRowStatus(caseRow.scope.id)).toBe('PENDIENTE');
+            expect(await decisionEvents(caseRow.subscriptionId)).toHaveLength(1);
+        });
+
+        it('un error que no es del proveedor se propaga sin escribir', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            await markNoticeSent(caseRow);
+            const provider = delegatingProvider(caseRow.fake, async () => {
+                throw new Error('database unavailable');
+            });
+
+            await expect(run(caseRow, provider)).rejects.toThrow('database unavailable');
+
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRowStatus(caseRow.scope.id)).toBe('PENDIENTE');
+            expect(await decisionEvents(caseRow.subscriptionId)).toHaveLength(1);
+        });
+
+        it('con la decisión registrada, un monto no comparable deja NOT_APPLIED sin escribir', async () => {
+            const caseRow = await createS37MigrationCase();
+            expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+            await markNoticeSent(caseRow);
+            const changeAmount = vi.spyOn(caseRow.fake, 'changeAmount');
+
+            // Declared seed: the subscription stops being a principal right after
+            // the decision transaction commits and before the expected amount is read.
+            const original = db.transaction.bind(db);
+            let calls = 0;
+            vi.spyOn(db, 'transaction').mockImplementation(((
+                callback: Parameters<typeof original>[0]
+            ) => {
+                calls += 1;
+                return original(callback).then(async (result) => {
+                    if (calls === 2)
+                        await db
+                            .update(subscriptions)
+                            .set({ class: 'COMPLEMENTO' })
+                            .where(eq(subscriptions.id, caseRow.subscriptionId));
+                    return result;
+                });
+            }) as typeof db.transaction);
+
+            expect(await run(caseRow)).toEqual({ outcome: 'NOT_APPLIED' });
+
+            expect(changeAmount).toHaveBeenCalledTimes(0);
+            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+            expect(await scopeRowStatus(caseRow.scope.id)).toBe('PENDIENTE');
+            expect(await decisionEvents(caseRow.subscriptionId)).toHaveLength(1);
+            vi.restoreAllMocks();
         });
 
         it('D-1 no cambia nada fuera de su ventana: sin decisión el esperado es el de origen con su promo', async () => {
