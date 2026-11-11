@@ -195,17 +195,22 @@ export function changeAmountRequests(
         );
 }
 
+/** The comment React renders between two adjacent text nodes. */
+const REACT_TEXT_MARKER = '<!-- -->';
+
 /**
- * Plain text of a captured mail. Tags become spaces, except React's text-node
- * markers (`<!-- -->`), which leave nothing behind: React puts one between
- * adjacent text nodes, so `pasará al plan {name}.` renders as
- * `pasará al plan <!-- -->Name<!-- -->.`, and a space there would split it into
- * `Name .`. Then any stray `<` left behind is dropped too, so no markup can
- * survive a partial match.
+ * Plain text of a captured mail. React's exact text-node marker (`<!-- -->`)
+ * leaves nothing behind: React puts one between adjacent text nodes, so
+ * `pasará al plan {name}.` renders as `pasará al plan <!-- -->Name<!-- -->.`, and
+ * a space there would split it into `Name .`. Then every tag becomes a space and
+ * any stray `<` left behind is dropped too, so no markup can survive a partial
+ * match.
  */
 export function mailText(html: string): string {
     const stripped = html
-        .replace(/<[^>]*>/g, (tag) => (tag.startsWith('<!--') ? '' : ' '))
+        .split(REACT_TEXT_MARKER)
+        .join('')
+        .replace(/<[^>]*>/g, ' ')
         .replace(/</g, ' ');
     return decodeHtmlEntities(stripped).replace(/\s+/g, ' ').trim();
 }
