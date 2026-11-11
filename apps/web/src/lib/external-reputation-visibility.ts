@@ -22,6 +22,7 @@
  */
 
 import type { ExternalReputationPlatformItem } from '@repo/schemas';
+import { resolveSafeExternalUrl } from './safe-external-url';
 
 /**
  * Whether a platform item carries valid Google review snippets.
@@ -52,6 +53,33 @@ export function hasAggregate(input: { item: ExternalReputationPlatformItem }): b
 }
 
 /**
+ * Resolves the public href for a platform item, preferring the review deep
+ * link and falling back to the plain listing URL.
+ *
+ * Both values arrive from an outside platform and are scheme-checked through
+ * the shared allow-list (HOS-592). A refused value yields `undefined`, and the
+ * caller must then omit the link rather than fall back to the raw string.
+ *
+ * @param input.item - The platform item to resolve.
+ * @returns The allow-listed URL, or `undefined` when neither value is safe.
+ */
+export function resolvePlatformHref(input: {
+    item: ExternalReputationPlatformItem;
+}): string | undefined {
+    return resolveSafeExternalUrl(input.item.deepLink) ?? resolveSafeExternalUrl(input.item.url);
+}
+
+/**
+ * Whether a platform item has at least one safe outbound link.
+ *
+ * @param input.item - The platform item to inspect.
+ * @returns `true` when the deep link or the listing URL passes the allow-list.
+ */
+export function hasSafeExternalLink(input: { item: ExternalReputationPlatformItem }): boolean {
+    return resolvePlatformHref(input) !== undefined;
+}
+
+/**
  * Whether a platform item has anything a visitor can actually read: a score, a
  * review count, a URL or deep link out to the platform, or review text.
  *
@@ -66,8 +94,7 @@ export function hasAnythingToShow(input: { item: ExternalReputationPlatformItem 
     return (
         item.rating != null ||
         item.reviewsCount != null ||
-        item.deepLink != null ||
-        (item.url != null && item.url.length > 0) ||
+        hasSafeExternalLink({ item }) ||
         hasValidSnippets({ item })
     );
 }
@@ -86,4 +113,30 @@ export function selectVisibleReputationItems(input: {
     items: readonly ExternalReputationPlatformItem[];
 }): readonly ExternalReputationPlatformItem[] {
     return input.items.filter((item) => hasAnythingToShow({ item }));
+}
+
+/**
+ * Selects the platforms that belong in the summary row: those with an
+ * aggregate score or review count. One row is rendered per selected platform.
+ *
+ * @param input.items - Already-visible platform items.
+ * @returns Items with an aggregate, in their original order.
+ */
+export function selectSummaryReputationItems(input: {
+    items: readonly ExternalReputationPlatformItem[];
+}): readonly ExternalReputationPlatformItem[] {
+    return input.items.filter((item) => hasAggregate({ item }));
+}
+
+/**
+ * Selects the platforms that belong in the "También en" pill row: those with
+ * no aggregate but at least one safe outbound link.
+ *
+ * @param input.items - Already-visible platform items.
+ * @returns Link-only items with a safe link, in their original order.
+ */
+export function selectLinkOnlyReputationItems(input: {
+    items: readonly ExternalReputationPlatformItem[];
+}): readonly ExternalReputationPlatformItem[] {
+    return input.items.filter((item) => !hasAggregate({ item }) && hasSafeExternalLink({ item }));
 }

@@ -24,7 +24,11 @@ import { describe, expect, it } from 'vitest';
 import {
     hasAggregate,
     hasAnythingToShow,
+    hasSafeExternalLink,
     hasValidSnippets,
+    resolvePlatformHref,
+    selectLinkOnlyReputationItems,
+    selectSummaryReputationItems,
     selectVisibleReputationItems
 } from '../../src/lib/external-reputation-visibility';
 
@@ -208,6 +212,97 @@ describe('H-133 — the reputation block must not publish itself with nothing to
 
         it('is false when the url is an empty string and there is nothing else', () => {
             expect(hasAnythingToShow({ item: emptyGoogleItem({ url: '' }) })).toBe(false);
+        });
+
+        it('is false when the only link is an unsafe scheme', () => {
+            expect(
+                hasAnythingToShow({ item: emptyGoogleItem({ url: 'javascript:alert(1)' }) })
+            ).toBe(false);
+        });
+    });
+});
+
+describe('public block layout predicates', () => {
+    describe('resolvePlatformHref', () => {
+        it('prefers the deep link when it is safe', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({
+                        deepLink: 'https://maps.google.com/?cid=1',
+                        url: 'https://example.com/listing'
+                    })
+                })
+            ).toBe('https://maps.google.com/?cid=1');
+        });
+
+        it('falls back to the listing url when the deep link is absent', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({ url: 'https://example.com/listing' })
+                })
+            ).toBe('https://example.com/listing');
+        });
+
+        it('returns undefined when neither link is safe', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({
+                        deepLink: 'javascript:alert(1)',
+                        url: 'data:text/html,<script></script>'
+                    })
+                })
+            ).toBeUndefined();
+        });
+    });
+
+    describe('hasSafeExternalLink', () => {
+        it('is true for a safe listing url', () => {
+            expect(
+                hasSafeExternalLink({
+                    item: emptyGoogleItem({ url: 'https://airbnb.com/rooms/1' })
+                })
+            ).toBe(true);
+        });
+
+        it('is false for an unsafe deep link and no safe url', () => {
+            expect(
+                hasSafeExternalLink({
+                    item: emptyGoogleItem({ deepLink: 'javascript:alert(1)' })
+                })
+            ).toBe(false);
+        });
+    });
+
+    describe('selectSummaryReputationItems', () => {
+        it('keeps only platforms with a rating or review count', () => {
+            const withRating = emptyGoogleItem({ rating: 4.8 });
+            const withCount = emptyGoogleItem({
+                platform: 'BOOKING',
+                reviewsCount: 12
+            } as Partial<ExternalReputationPlatformItem>);
+            const linkOnly = emptyGoogleItem({ url: 'https://airbnb.com/rooms/1' });
+
+            expect(
+                selectSummaryReputationItems({ items: [withRating, withCount, linkOnly] })
+            ).toEqual([withRating, withCount]);
+        });
+    });
+
+    describe('selectLinkOnlyReputationItems', () => {
+        it('keeps platforms with no aggregate but a safe link', () => {
+            const withRating = emptyGoogleItem({ rating: 4.8 });
+            const linkOnly = emptyGoogleItem({
+                platform: 'AIRBNB',
+                url: 'https://airbnb.com/rooms/1'
+            } as Partial<ExternalReputationPlatformItem>);
+            const unsafeLink = emptyGoogleItem({
+                platform: 'BOOKING',
+                url: 'javascript:alert(1)'
+            } as Partial<ExternalReputationPlatformItem>);
+
+            expect(
+                selectLinkOnlyReputationItems({ items: [withRating, linkOnly, unsafeLink] })
+            ).toEqual([linkOnly]);
         });
     });
 });

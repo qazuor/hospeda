@@ -1,8 +1,8 @@
 {
     "section": {
-        "title": "Reputación en otras plataformas",
-        "subtitle": "Opiniones de viajeros verificados en los principales sitios de alojamiento"
+        "title": "Lo que dicen en otras plataformas"
     },
+    "alsoOn": "También en:",
     "platform": {
         "google": "Google",
         "booking": "Booking.com",
@@ -11,23 +11,28 @@
     },
     "link": {
         "cta": "Mirá nuestro alojamiento en {{platform}} →",
-        "viewOn": "Ver en {{platform}} →"
+        "viewOn": "Ver en {{platform}}"
     },
     "reviews": {
-        "title": "Reseñas destacadas",
-        "via": "vía {{platform}}"
+        "listLabel": "Reseñas de Google",
+        "readMore": "Leer más",
+        "readLess": "Leer menos",
+        "writtenIn": "Escrita en {{language}}",
+        "seeAllOn_one": "Ver la reseña en {{platform}}",
+        "seeAllOn_other": "Ver las {{count}} reseñas en {{platform}}",
+        "starsLabel": "{{count}} de 5 estrellas"
     },
     "aggregate": {
         "rating": "Puntuación promedio",
         "reviewsCount_one": "{{count}} reseña",
         "reviewsCount_other": "{{count}} reseñas",
+        "reviewsCountOn_one": "{{count}} reseña en {{platform}}",
+        "reviewsCountOn_other": "{{count}} reseñas en {{platform}}",
         "noData": "Sin datos disponibles"
     },
     "snippets": {
-        "googleOnly": "Solo Google muestra el texto completo de las reseñas porque ofrece una API oficial. Las demás plataformas muestran el puntaje agregado y un enlace directo por razones legales.",
         "ttlExpired": "Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje",
-        "byAuthor": "Por {{author}}",
-        "on": "en {{platform}}"
+        "byAuthor": "Por {{author}}"
     },
     "ownerConfig": {
         "title": "Configuración de reputación externa",

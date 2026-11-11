@@ -1,20 +1,21 @@
 /**
  * @file ExternalReputation.astro.test.ts
- * @description Source-level invariants for the public "Reputación en otras
- * plataformas" block (fix E).
+ * @description Source-level invariants for the public "Lo que dicen en otras
+ * plataformas" block.
  *
  * An `.astro` component cannot be rendered under vitest, so what is left here
- * is a static guard. It intentionally asserts only real invariants — the two
- * ways this component has published a false claim or an unsafe link:
+ * is a static guard. It intentionally asserts only real invariants:
  *
- * 1. A chip's `href` must never be the raw third-party URL. The value comes
- *    from outside platforms and was never scheme-validated, so it must pass
- *    through `resolveSafeExternalUrl` (HOS-592 allow-list). Fix E extends the
- *    source to `deepLink ?? url` so a link-only listing still renders.
- * 2. The "mostrando solo el puntaje" note is gated by `hasAggregate` — it may
- *    only appear when there is actually a score to show.
+ * 1. Every outbound link must pass through `resolvePlatformHref`, which applies
+ *    the HOS-592 scheme allow-list. A raw third-party URL must never reach an
+ *    `href`.
+ * 2. The section is signal-gated through `selectVisibleReputationItems`, so an
+ *    all-empty block renders nothing (H-133).
+ * 3. The TTL note stays gated by `hasAggregate`, so it cannot claim a score
+ *    that is not there.
+ * 4. The retired subtitle and "why only Google" explainer are gone.
  *
- * Behaviour of the underlying predicate is covered by
+ * Behaviour of the underlying predicates is covered by
  * `test/lib/external-reputation-visibility.test.ts`, which can execute.
  */
 
@@ -28,27 +29,44 @@ const componentSrc = readFileSync(
 );
 
 describe('ExternalReputation.astro', () => {
-    describe('Chip link (fix E + HOS-592 allow-list)', () => {
-        it('resolves deepLink ?? url through resolveSafeExternalUrl', () => {
-            expect(componentSrc).toContain(
-                'resolveSafeExternalUrl(item.deepLink) ?? resolveSafeExternalUrl(item.url)'
-            );
+    describe('Outbound links (HOS-592 allow-list)', () => {
+        it('resolves every platform href through resolvePlatformHref', () => {
+            expect(componentSrc).toContain('resolvePlatformHref({ item })');
         });
 
         it('never puts an unresolved raw URL into an href', () => {
             // A stored third-party URL may carry `javascript:` / `data:`; the
-            // only value allowed into an href is the allow-listed result.
+            // only values allowed into an href are the allow-listed results.
             expect(componentSrc).not.toContain('href={item.url}');
             expect(componentSrc).not.toContain('href={item.deepLink}');
             expect(componentSrc).toContain('href={deepLinkHref}');
+            expect(componentSrc).toContain('href={pillHref}');
+            expect(componentSrc).toContain('href={googleHref}');
         });
 
         it('renders nothing at all when every platform is empty', () => {
-            // The block must be signal-gated through selectVisibleReputationItems.
             expect(componentSrc).toContain(
                 'selectVisibleReputationItems({ items: configuredItems })'
             );
             expect(componentSrc).toContain('if (items.length === 0) {');
+        });
+    });
+
+    describe('Block structure', () => {
+        it('uses the redesigned title and drops the subtitle', () => {
+            expect(componentSrc).toContain('external-reputation.section.title');
+            expect(componentSrc).not.toContain('external-reputation.section.subtitle');
+        });
+
+        it('renders summary rows and link-only pills through the predicates', () => {
+            expect(componentSrc).toContain('selectSummaryReputationItems({ items })');
+            expect(componentSrc).toContain('selectLinkOnlyReputationItems({ items })');
+            expect(componentSrc).toContain('external-reputation.aggregate.reviewsCountOn');
+            expect(componentSrc).toContain('external-reputation.alsoOn');
+        });
+
+        it('removes the "why only Google" explainer', () => {
+            expect(componentSrc).not.toContain('external-reputation.snippets.googleOnly');
         });
     });
 
@@ -61,6 +79,7 @@ describe('ExternalReputation.astro', () => {
         it('only shows the TTL note in the reviews block', () => {
             expect(componentSrc).toContain('googleItemTtlExpired != null');
             expect(componentSrc).toContain('showReviewsBlock');
+            expect(componentSrc).toContain('external-reputation.snippets.ttlExpired');
         });
     });
 });
