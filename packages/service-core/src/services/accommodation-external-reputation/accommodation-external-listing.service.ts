@@ -417,14 +417,22 @@ export class AccommodationExternalListingService {
             );
             assertCanUpdateAccommodation(actor, ownerId);
 
-            // TYPE-WORKAROUND: the additive `showExternalReputation` column and the audit
-            // field `updatedById` are not surfaced by the accommodation model's inferred
+            // TYPE-WORKAROUND: the additive `showExternalReputation` /
+            // `externalReputationToggleDecidedAt` columns and the audit field
+            // `updatedById` are not surfaced by the accommodation model's inferred
             // update-input type, so the master-toggle payload needs a cast.
+            //
+            // Every manual toggle records the owner's decision. That timestamp is
+            // what permanently disables the one-time automatic enable, so it must
+            // be written for BOTH `true` and `false`.
             await this.accommodationModel.update(
                 { id: accommodationId },
-                { showExternalReputation: value, updatedById: actor.id } as unknown as Parameters<
-                    typeof this.accommodationModel.update
-                >[1],
+                {
+                    showExternalReputation: value,
+                    externalReputationToggleDecidedAt: new Date(),
+                    updatedById: actor.id
+                    // TYPE-WORKAROUND: additive audit columns are absent from the entity update input type.
+                } as unknown as Parameters<typeof this.accommodationModel.update>[1],
                 ctx?.tx
             );
 

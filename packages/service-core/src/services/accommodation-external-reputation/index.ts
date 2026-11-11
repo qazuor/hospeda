@@ -16,3 +16,8 @@ export type {
 } from './accommodation-external-reputation.service.js';
 export { AccommodationExternalReputationService } from './accommodation-external-reputation.service.js';
 export * from './adapters/index.js';
+export type {
+    WorkingReputationListing,
+    WorkingReputationResultInput
+} from './is-working-reputation-result.js';
+export { isWorkingReputationResult } from './is-working-reputation-result.js';

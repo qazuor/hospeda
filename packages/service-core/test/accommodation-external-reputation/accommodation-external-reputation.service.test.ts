@@ -197,6 +197,7 @@ function makeAccommodationModel(overrides: Record<string, unknown> = {}) {
     return {
         findById: vi.fn().mockResolvedValue(makeAccommodation()),
         update: vi.fn().mockResolvedValue(makeAccommodation()),
+        autoEnableExternalReputationIfUndecided: vi.fn().mockResolvedValue({ enabled: false }),
         ...overrides
     };
 }
@@ -765,6 +766,201 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             // The raw error text must never reach the caller.
             expect(result.error?.message).not.toContain('unexpected DB error in refresh');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // auto-enable on first working provider
+    // -------------------------------------------------------------------------
+
+    describe('refresh — automatic enable', () => {
+        it('calls the model primitive once when a platform comes back ok with a rating', async () => {
+            const accommodationModel = makeAccommodationModel({
+                autoEnableExternalReputationIfUndecided: vi
+                    .fn()
+                    .mockResolvedValue({ enabled: true })
+            });
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(result.error).toBeUndefined();
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).toHaveBeenCalledTimes(1);
+            expect(accommodationModel.autoEnableExternalReputationIfUndecided).toHaveBeenCalledWith(
+                { id: ACC_ID },
+                undefined
+            );
+        });
+
+        it('calls the primitive at most once when several platforms come back working', async () => {
+            const accommodationModel = makeAccommodationModel({
+                autoEnableExternalReputationIfUndecided: vi
+                    .fn()
+                    .mockResolvedValue({ enabled: true })
+            });
+            const listingModel = makeListingModel();
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT call the primitive for an ok fetch with no displayable data', async () => {
+            mockGoogleFetch.mockResolvedValue({
+                rating: null,
+                reviewsCount: null,
+                deepLink: null,
+                snippets: null,
+                attributionUrl: null
+            });
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).not.toHaveBeenCalled();
+        });
+
+        it('does NOT call the primitive when the adapter errors', async () => {
+            mockGoogleFetch.mockRejectedValue(new Error('google down'));
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).not.toHaveBeenCalled();
+        });
+
+        it('does NOT call the primitive when the platform is enqueued asynchronously', async () => {
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(result.data?.enqueuedAsync).toContain(ExternalPlatformEnum.AIRBNB);
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).not.toHaveBeenCalled();
+        });
+
+        it('does NOT call the primitive for a hidden listing', async () => {
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([
+                    makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
+                        showLink: false,
+                        showReviews: false
+                    })
+                ])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(mockGoogleFetch).not.toHaveBeenCalled();
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).not.toHaveBeenCalled();
+        });
+
+        it('still succeeds when the primitive throws', async () => {
+            const accommodationModel = makeAccommodationModel({
+                autoEnableExternalReputationIfUndecided: vi
+                    .fn()
+                    .mockRejectedValue(new Error('auto-enable exploded'))
+            });
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toContain(ExternalPlatformEnum.GOOGLE);
+            expect(
+                accommodationModel.autoEnableExternalReputationIfUndecided
+            ).toHaveBeenCalledTimes(1);
         });
     });
 
