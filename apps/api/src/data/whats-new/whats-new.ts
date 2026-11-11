@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4287
+    {
+        id: '2026-11-11-account-emails-plain-text',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los mails de tu cuenta llegan mejor a tu bandeja',
+            en: 'Your account emails reach your inbox more reliably',
+            pt: 'Os e-mails da sua conta chegam melhor à sua caixa de entrada'
+        },
+        body: {
+            es: 'Los mails para restablecer la contraseña, verificar tu cuenta y avisarte de mensajes nuevos ahora incluyen también una versión en texto. Así es menos probable que terminen en spam, y se leen bien en cualquier programa de correo.',
+            en: 'Emails to reset your password, verify your account and tell you about new messages now also include a plain-text version. That makes them less likely to land in spam, and they read well in any email app.',
+            pt: 'Os e-mails para redefinir a senha, verificar sua conta e avisar sobre novas mensagens agora incluem também uma versão em texto. Assim é menos provável que caiam no spam, e eles ficam legíveis em qualquer programa de e-mail.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4282
     {
         id: '2026-11-11-listing-chat-honest-answers',
