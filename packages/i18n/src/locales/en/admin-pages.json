@@ -1433,6 +1433,7 @@
         "target": "Destination version",
         "chooseSource": "Choose a version",
         "chooseTarget": "Choose a destination",
+        "reason": "Reason",
         "sourceOption_one": "{name} · {{count}} customer",
         "sourceOption_other": "{name} · {{count}} customers",
         "preview": "Preview",
@@ -1480,6 +1481,17 @@
             "page": "Page {page} of {total}"
         },
         "reasons": { "RETIREMENT": "Catalog retirement", "PRICE_INCREASE": "Price increase" },
+        "retiredVersions": {
+            "title": "Retired versions",
+            "show": "Show retired versions",
+            "hide": "Hide retired versions",
+            "empty": "No retired versions have live subscriptions.",
+            "columns": {
+                "name": "Version",
+                "vertical": "Vertical",
+                "liveSubscriptions": "Live subscriptions"
+            }
+        },
         "states": {
             "PENDIENTE": "Pending",
             "PARA_RESOLVER": "To resolve",
@@ -1526,7 +1538,10 @@
             "PLAN_MIGRATION_COHORT_CHANGED": "The cohort changed. Preview again before confirming.",
             "PLAN_MIGRATION_EMPTY_COHORT": "There are no customers to migrate.",
             "PLAN_MIGRATION_NOT_FOUND": "This migration does not exist.",
-            "PLAN_MIGRATION_ALREADY_CANCELLED": "This migration was already cancelled."
+            "PLAN_MIGRATION_ALREADY_CANCELLED": "This migration was already cancelled.",
+            "PLAN_MIGRATION_INCREASE_OTHER_PLAN": "A price increase goes from one version of the same plan to another.",
+            "PLAN_MIGRATION_INCREASE_SOURCE_CURRENT": "The source version is the current one: publish the new version with the new price first.",
+            "PLAN_MIGRATION_INCREASE_CYCLE_MISSING": "The new version does not offer every customer cycle."
         }
     },
     "billing": {

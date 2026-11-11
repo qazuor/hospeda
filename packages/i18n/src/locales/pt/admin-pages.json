@@ -1433,6 +1433,7 @@
         "target": "Versão de destino",
         "chooseSource": "Escolha uma versão",
         "chooseTarget": "Escolha um destino",
+        "reason": "Motivo",
         "sourceOption_one": "{name} · {{count}} cliente",
         "sourceOption_other": "{name} · {{count}} clientes",
         "preview": "Pré-visualizar",
@@ -1480,6 +1481,17 @@
             "page": "Página {page} de {total}"
         },
         "reasons": { "RETIREMENT": "Retirada do catálogo", "PRICE_INCREASE": "Aumento de preço" },
+        "retiredVersions": {
+            "title": "Versões retiradas",
+            "show": "Mostrar versões retiradas",
+            "hide": "Ocultar versões retiradas",
+            "empty": "Não há versões retiradas com assinaturas ativas.",
+            "columns": {
+                "name": "Versão",
+                "vertical": "Vertical",
+                "liveSubscriptions": "Assinaturas ativas"
+            }
+        },
         "states": {
             "PENDIENTE": "Pendente",
             "PARA_RESOLVER": "Para resolver",
@@ -1526,7 +1538,10 @@
             "PLAN_MIGRATION_COHORT_CHANGED": "A coorte mudou. Pré-visualize novamente antes de confirmar.",
             "PLAN_MIGRATION_EMPTY_COHORT": "Não há clientes para migrar.",
             "PLAN_MIGRATION_NOT_FOUND": "Esta migração não existe.",
-            "PLAN_MIGRATION_ALREADY_CANCELLED": "Esta migração já estava cancelada."
+            "PLAN_MIGRATION_ALREADY_CANCELLED": "Esta migração já estava cancelada.",
+            "PLAN_MIGRATION_INCREASE_OTHER_PLAN": "Um aumento vai de uma versão a outra do mesmo plano.",
+            "PLAN_MIGRATION_INCREASE_SOURCE_CURRENT": "A versão de origem é a vigente: publique primeiro a versão nova com o preço novo.",
+            "PLAN_MIGRATION_INCREASE_CYCLE_MISSING": "A versão nova não oferece todos os ciclos dos clientes."
         }
     },
     "billing": {
