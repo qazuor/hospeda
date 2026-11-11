@@ -728,7 +728,7 @@
                 "unansweredHint": "The assistant could not find the answer in your listing. Adding them as FAQs helps it answer next time.",
                 "othersTitle": "Other questions",
                 "truncated": "Questions shown: {{shown}} of {{total}}. Unanswered ones come first.",
-                "dismissedTruncated": "Showing the latest {{shown}} of {{total}} dismissed questions.",
+                "dismissedTruncated": "Dismissed shown: {{shown}} of {{total}}. You see the most recent ones.",
                 "markSeen": "I've seen this",
                 "undo": "Undo",
                 "dismissedTitle": "Dismissed",
