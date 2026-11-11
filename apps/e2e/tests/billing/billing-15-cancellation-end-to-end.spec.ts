@@ -126,6 +126,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
                 })
             )?.status
         ).toBe('sent');
+        const requestsBefore = world.fakeServer.requests().length;
         const sweepStartedAt = new Date();
         expect(
             mail.receivedAt.getTime(),
@@ -135,21 +136,18 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
         });
-        const cancelRequest = cancelRequestsFor({
-            requests: world.fakeServer.requests(),
-            authorizationId
-        })[0];
+        // HOS-2112: the cancellation is located by position, never by the fake clock's `at`.
         expect(
-            cancelRequest,
-            'Expected reconciliation to cancel the provider authorization.'
-        ).toBeTruthy();
+            cancelRequestsFor({
+                requests: world.fakeServer.requests().slice(requestsBefore),
+                authorizationId
+            }),
+            'Expected reconciliation to cancel the provider authorization after our mail.'
+        ).toHaveLength(1);
         expect(
-            mail.receivedAt.getTime(),
-            'Expected our mail before provider cancellation.'
-        ).toBeLessThan(new Date(cancelRequest!.at).getTime());
-        expect(new Date(cancelRequest!.at).getTime()).toBeGreaterThanOrEqual(
-            sweepStartedAt.getTime()
-        );
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId }),
+            'Expected exactly one provider cancellation for this authorization.'
+        ).toHaveLength(1);
         await world.fakeServer.setClock({ at: new Date(serviceEndsAt.getTime() + 60_000) });
         await runCron({
             jobName: 'subscription-service-end',
@@ -223,6 +221,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
                 })
             )?.status
         ).toBe('sent');
+        const requestsBefore = world.fakeServer.requests().length;
         const sweepStartedAt = new Date();
         expect(
             mail.receivedAt.getTime(),
@@ -232,18 +231,18 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
         });
-        const cancelRequest = cancelRequestsFor({
-            requests: world.fakeServer.requests(),
-            authorizationId
-        })[0];
+        // HOS-2112: the cancellation is located by position, never by the fake clock's `at`.
         expect(
-            cancelRequest,
+            cancelRequestsFor({
+                requests: world.fakeServer.requests().slice(requestsBefore),
+                authorizationId
+            }),
             'Expected direct cancellation to reach the provider after its mail.'
-        ).toBeTruthy();
-        expect(mail.receivedAt.getTime()).toBeLessThan(new Date(cancelRequest!.at).getTime());
-        expect(new Date(cancelRequest!.at).getTime()).toBeGreaterThanOrEqual(
-            sweepStartedAt.getTime()
-        );
+        ).toHaveLength(1);
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId }),
+            'Expected exactly one provider cancellation for this authorization.'
+        ).toHaveLength(1);
     });
 
     test('SUSPENDED: reached by the real arrears flow, S23 ends service today without a second provider cancellation', async ({
