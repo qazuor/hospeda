@@ -91,6 +91,7 @@ interface PlacesReview {
     };
     readonly originalText?: {
         readonly text?: string;
+        readonly languageCode?: string;
     };
     readonly authorAttribution?: PlacesReviewAuthor;
     readonly publishTime?: string;
@@ -184,13 +185,29 @@ function httpStatusToFailureCode(status: number): ReputationFailureCode {
 /**
  * Maps a Places API (New) review entry to an {@link ExternalReviewSnippet}.
  *
+ * **Original text wins (why).** Place Details is requested with no
+ * `languageCode`, so Google answers in its default language and *translates*
+ * every review into it: `text.text` is that translation, while
+ * `originalText.text` is what the guest actually wrote. Storing `text` first
+ * put English translations of Spanish reviews on the Spanish site. We prefer
+ * `originalText` and record its language so the UI can show the author's own
+ * words and label reviews written in another language.
+ *
  * @param review - A single Places API review object.
  * @returns A mapped snippet, or `null` when the review lacks the minimum
- *   required fields (`author` and `text`).
+ *   required fields (`author` and text).
  */
 function mapReviewToSnippet(review: PlacesReview): ExternalReviewSnippet | null {
     const author = review.authorAttribution?.displayName;
-    const text = review.text?.text ?? review.originalText?.text;
+
+    // Prefer the guest's original wording; only fall back to the translation
+    // when the API did not return originalText.
+    const originalText = review.originalText?.text;
+    const translatedText = review.text?.text;
+    const text = originalText ?? translatedText;
+    const languageCode = originalText
+        ? (review.originalText?.languageCode ?? null)
+        : (review.text?.languageCode ?? null);
 
     // Both author and text are required by the ExternalReviewSnippet schema.
     if (!author || !text) {
@@ -204,7 +221,8 @@ function mapReviewToSnippet(review: PlacesReview): ExternalReviewSnippet | null 
         timeIso: review.publishTime ?? null,
         authorUrl: review.authorAttribution?.uri ?? null,
         profilePhoto: review.authorAttribution?.photoUri ?? null,
-        relativeTime: review.relativePublishTimeDescription ?? null
+        relativeTime: review.relativePublishTimeDescription ?? null,
+        languageCode
     };
 }
 
