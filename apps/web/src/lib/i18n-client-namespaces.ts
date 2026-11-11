@@ -254,7 +254,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.ownerConfig',
     'external-reputation.platform',
     'external-reputation.refresh',
-    'external-reputation.snippets',
+    'external-reputation.reviews',
     'external-reputation.status',
     'footer.newsletter',
     // HOS-1077: venue half of the permission-value pair described at
