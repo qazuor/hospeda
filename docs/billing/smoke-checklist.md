@@ -355,6 +355,20 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Dialog, email, My Account, withdrawal and editor captures; read-only instance, complement, product, version, principal and outbox rows; sandbox preapproval and cancellation records; E2E P0 CI result.
 - **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3.
 
+### S23 — B12 plan migration and price increase (HOS-1616)
+
+- **Preconditions:** Staging has the Phase 3 epic deployed, Mercado Pago sandbox, a `SUPER_ADMIN`, and two plans of one vertical with sandbox card customers: plan A to retire with a monthly and an annual customer, and plan B with a monthly customer whose new version (higher price) is published by action 18.
+- **Steps:**
+  1. Retire plan A by action 18. Confirm nobody moved: amounts, next charge dates and entitlements of both customers are unchanged.
+  2. In action 17, launch the retirement migration A → the current sellable target. Check the preview shows each customer with the version label, current and new price, and their own date. Read the announcement email of each customer.
+  3. Launch the price increase on plan B (reason «increase»). Check the preview uses the 60-day notice and keeps a live promo on the new price.
+  4. With the adjustable clock or by waiting, reach seven days before the monthly customer's date: observe our third email BEFORE the Mercado Pago amount-change email, then read the preapproval by ID and confirm `transaction_amount` is the new amount (minus the promo for the increase).
+  5. Open the retired versions list: plan A's version shows its live customers; it disappears when its last customer leaves.
+  6. Cancel a second migration with a pending customer and read the «nothing changes» email.
+- **Expected:** Retiring moves nobody. Each email carries the customer's own date. The amount mutates seven days before that date, after our email, on the same preapproval, and is verified by reading it back. The annual customer is untouched. Cancelling leaves applied rows alone and notifies each pending customer.
+- **Evidence:** Preview and retired-versions captures; the four emails (ours before the provider's); read-only preapproval, scope row and outbox records; CI results of TEST:B12:8, TEST:B12:9, TEST:B12:10 and the E2E P0 TEST:B12:12.
+- **Covers:** AC:B12:8, AC:B12:9, AC:B12:10, AC:B12:11; TEST:B12:8, TEST:B12:10, TEST:B12:11, TEST:B12:12.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -495,6 +509,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Owner confirmation and withdrawal captures; read-only addon, complement, principal and outbox rows; provider preapproval and charge history; both email observations; E2E P0 CI result.
 - **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3. The editor and retirement coverage is from staging S22 and CI, not a production action.
 
+### P14 — B12 real price increase mutation (HOS-1616)
+
+- **Preconditions:** The owner's internal production account has an active card principal on a plan version whose successor (higher price, approved by the owner) is published; only the owner runs this item.
+- **Steps:** Launch the price increase for that one account from action 17. Read the announcement. Seven days before the account's date, observe our third email and then the Mercado Pago amount-change email; read the preapproval and the next charge.
+- **Expected:** No charge at the new price before the account's date; the amount mutates seven days before it, after our email, on the same preapproval; on the date the subscription moves to the new version and the charge is the new amount.
+- **Evidence:** Announcement and both emails; read-only preapproval, scope row, scheduled change and payment records; card statement.
+- **Covers:** AC:B12:8, AC:B12:9; TEST:B12:10, TEST:B12:12. Retirement mutation in production is covered by staging S23 and CI, not a production action.
+
 ### Sign-off
 
 This part is run **only by the owner** with their card and a pre-approved amount. The observation
@@ -518,6 +540,7 @@ Phase 3 (B10, HOS-1373) starts with HOS-1593: S18 and P9.
 Phase 3 (B10, HOS-1373) continues with HOS-1595: S20 and P11.
 Phase 3 (B10, HOS-1373) closes with HOS-1596: S21 and P12.
 Phase 3 (B13b, HOS-1625): S22 and P13.
+Phase 3 (B12, HOS-1375) closes with HOS-1616: S23 and P14.
 
 ## Related
 

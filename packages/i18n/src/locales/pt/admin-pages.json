@@ -1436,6 +1436,7 @@
         "reason": "Motivo",
         "sourceOption_one": "{name} · {{count}} cliente",
         "sourceOption_other": "{name} · {{count}} clientes",
+        "versionLabel": "{name} · versão {number}",
         "preview": "Pré-visualizar",
         "confirm": "Confirmar migração",
         "notice_one": "Aviso de {{count}} dia · versão de prazos {version}",

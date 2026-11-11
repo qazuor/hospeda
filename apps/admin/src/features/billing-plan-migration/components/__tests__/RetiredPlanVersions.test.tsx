@@ -34,6 +34,7 @@ const retired = {
     planId: '22222222-2222-4222-8222-222222222222',
     name: 'Succession plan',
     vertical: 'accommodation',
+    versionNumber: 1,
     liveSubscriptionCount: 3
 };
 
@@ -54,7 +55,7 @@ describe('AC:B12:10 la cola del retiro se ve', () => {
         fetchApi.mockResolvedValue({ data: { data: { items: [retired] } } });
         setup();
         const row = await screen.findByTestId(`retired-plan-version-${retired.id}`);
-        expect(within(row).getByText('Succession plan')).toBeInTheDocument();
+        expect(within(row).getByText('Succession plan · versión 1')).toBeInTheDocument();
         expect(within(row).getByText('accommodation')).toBeInTheDocument();
         expect(within(row).getByText('3')).toBeInTheDocument();
         expect(screen.getByTestId('retired-plan-versions')).toHaveTextContent(

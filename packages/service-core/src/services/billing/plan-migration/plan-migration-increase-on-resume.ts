@@ -108,10 +108,10 @@ export const pendingIncreaseOnResumeReaders = {
  * destination list price, because a retirement drops the live promo.
  *
  * The application day is the one `applyPlanMigrationUpcomingNotice` writes and
- * `S37` checks: the first local charge day strictly after the notice, never
- * earlier than the stored application date. When the resumed charge is not that
- * day, an early return `null` keeps the anchored amount, because the migration
- * still waits for a later cycle.
+ * `S37` checks: the first local charge day strictly after the notice and not
+ * before the stored application date. When the resumed charge is not that day,
+ * an early return `null` keeps the anchored amount, because the migration still
+ * waits for a later cycle.
  *
  * @param input.subscriptionId - The principal subscription being resumed
  * @param input.chargeAt - The next charge the resume just wrote
@@ -132,15 +132,15 @@ export async function pendingIncreaseAmountForCharge(input: {
         subscriptionId: parsed.subscriptionId
     });
     if (!anchor) return null;
-    const computed = computeApplicationDate({
+    const stored = getLocalDateString({ instant: anchor.applicationDate });
+    // Same rule as applyPlanMigrationUpcomingNotice: the stored date is a floor that only lands on a charge day (HOS-2108).
+    const applicationDay = computeApplicationDate({
         nextChargeAt: parsed.chargeAt,
         cycle: anchor.cycle,
         announcedAt: anchor.announcedAt,
-        noticeDays: anchor.noticeDays
+        noticeDays: anchor.noticeDays,
+        notBefore: stored
     });
-    const stored = getLocalDateString({ instant: anchor.applicationDate });
-    // Same floor as applyPlanMigrationUpcomingNotice: the stored date never moves back.
-    const applicationDay = computed > stored ? computed : stored;
     if (applicationDay !== getLocalDateString({ instant: parsed.chargeAt })) return null;
     const pricing = await pendingIncreaseOnResumeReaders.priceRow({
         ...(input.tx ? { tx: input.tx } : {}),

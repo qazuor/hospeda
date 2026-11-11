@@ -4,6 +4,13 @@ import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
 const Id = z.string().uuid();
 const LocalDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Version = z.object({ id: Id, planId: Id, name: z.string(), vertical: z.string() });
+/**
+ * A plan version with its derived ordinal inside its own plan (HOS-1616 O-3).
+ *
+ * `versionNumber` is the 1-based ordinal of the version inside its plan, by
+ * creation; it is derived at read time with `row_number()` and never stored.
+ */
+const NumberedVersion = Version.extend({ versionNumber: z.number().int().positive() });
 
 /** Why an admin announces a migration: a retired plan or a price increase. */
 export const PlanMigrationReasonSchema = z.enum(['RETIREMENT', 'PRICE_INCREASE']);
@@ -109,13 +116,13 @@ export type PlanMigrationCancelResult = z.infer<typeof PlanMigrationCancelResult
 
 /** Retired source versions and sellable current targets grouped by vertical. */
 export const PlanMigrationOptionsSchema = z.object({
-    sources: z.array(Version.extend({ customerCount: z.number().int().nonnegative() })),
-    targets: z.record(z.string(), z.array(Version)),
+    sources: z.array(NumberedVersion.extend({ customerCount: z.number().int().nonnegative() })),
+    targets: z.record(z.string(), z.array(NumberedVersion)),
     increases: z
         .array(
             z.object({
-                source: Version.extend({ customerCount: z.number().int().nonnegative() }),
-                target: Version
+                source: NumberedVersion.extend({ customerCount: z.number().int().nonnegative() }),
+                target: NumberedVersion
             })
         )
         .default([])
@@ -222,6 +229,7 @@ export const RetiredPlanVersionSchema = z.strictObject({
     planId: Id,
     name: z.string(),
     vertical: z.string(),
+    versionNumber: z.number().int().positive(),
     liveSubscriptionCount: z.number().int().positive()
 });
 /** Validated retired plan version. */

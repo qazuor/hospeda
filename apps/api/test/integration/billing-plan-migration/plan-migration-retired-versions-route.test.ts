@@ -52,6 +52,8 @@ describe('TEST:B12:11 AC:B12:10 la cola del retiro se ve', () => {
                 planId: plan.planId,
                 name: plan.name,
                 vertical: 'accommodation',
+                // The source is the first version created for its plan.
+                versionNumber: 1,
                 liveSubscriptionCount: 1
             }
         ]);

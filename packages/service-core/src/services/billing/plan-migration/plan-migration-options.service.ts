@@ -15,6 +15,7 @@ import { type PlanMigrationOptions, PlanMigrationOptionsSchema } from '@repo/sch
 import type { Actor } from '../../../types/index.js';
 import { assertPlanMigrationActionPermitted } from './plan-migration-authorization.js';
 import { PLAN_MIGRATION_COHORT_STATUSES } from './plan-migration-cohort.js';
+import { readPlanVersionNumbers, withPlanVersionNumber } from './plan-version-number.js';
 
 /** List eligible source versions and target versions for action 17. */
 export async function listPlanMigrationOptions(args: {
@@ -89,5 +90,27 @@ export async function listPlanMigrationOptions(args: {
             });
         }
     }
-    return PlanMigrationOptionsSchema.parse({ sources, targets, increases });
+    const planIds = [
+        ...new Set([
+            ...sources.map((version) => version.planId),
+            ...Object.values(targets)
+                .flat()
+                .map((version) => version.planId),
+            ...increases.flatMap((entry) => [entry.source.planId, entry.target.planId])
+        ])
+    ];
+    const versionNumbers = await readPlanVersionNumbers({ db, planIds });
+    return PlanMigrationOptionsSchema.parse({
+        sources: sources.map((version) => withPlanVersionNumber(version, versionNumbers)),
+        targets: Object.fromEntries(
+            Object.entries(targets).map(([vertical, versions]) => [
+                vertical,
+                versions.map((version) => withPlanVersionNumber(version, versionNumbers))
+            ])
+        ),
+        increases: increases.map((entry) => ({
+            source: withPlanVersionNumber(entry.source, versionNumbers),
+            target: withPlanVersionNumber(entry.target, versionNumbers)
+        }))
+    });
 }

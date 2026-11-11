@@ -12,6 +12,7 @@ import {
 import { type RetiredPlanVersionList, RetiredPlanVersionListSchema } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import { assertPlanMigrationActionPermitted } from './plan-migration-authorization.js';
+import { readPlanVersionNumbers, withPlanVersionNumber } from './plan-version-number.js';
 
 /**
  * List the plan versions nobody can buy anymore (AC:B12:10).
@@ -56,10 +57,15 @@ export async function listRetiredPlanVersions(args: {
         if (policy.current && policy.sellable) continue;
         items.push(version);
     }
-    items.sort(
+    const versionNumbers = await readPlanVersionNumbers({
+        db,
+        planIds: items.map((version) => version.planId)
+    });
+    const numbered = items.map((version) => withPlanVersionNumber(version, versionNumbers));
+    numbered.sort(
         (left, right) =>
             right.liveSubscriptionCount - left.liveSubscriptionCount ||
             left.id.localeCompare(right.id)
     );
-    return RetiredPlanVersionListSchema.parse({ items });
+    return RetiredPlanVersionListSchema.parse({ items: numbered });
 }

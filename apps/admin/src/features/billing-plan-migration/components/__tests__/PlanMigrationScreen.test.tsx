@@ -36,25 +36,29 @@ const source = {
     planId: '22222222-2222-4222-8222-222222222222',
     name: 'Retirado',
     vertical: 'accommodation',
+    versionNumber: 1,
     customerCount: 3
 };
 const target = {
     id: '33333333-3333-4333-8333-333333333333',
     planId: '44444444-4444-4444-8444-444444444444',
     name: 'Nuevo',
-    vertical: 'accommodation'
+    vertical: 'accommodation',
+    versionNumber: 1
 };
 const downTarget = {
     id: '14141414-1414-4414-8414-141414141414',
     planId: '15151515-1515-4515-8515-151515151515',
     name: 'Destino de bajada',
-    vertical: 'accommodation'
+    vertical: 'accommodation',
+    versionNumber: 1
 };
 const other = {
     id: '55555555-5555-4555-8555-555555555555',
     planId: '66666666-6666-4666-8666-666666666666',
     name: 'Otra vertical',
-    vertical: 'venue'
+    vertical: 'venue',
+    versionNumber: 1
 };
 const options = {
     sources: [source],
@@ -291,7 +295,7 @@ describe('TEST:B12:2 AC:B12:2 la acción 17 y su previsualización en el panel',
         expect(
             (screen.getByTestId('plan-migration-source') as HTMLSelectElement).options[1]
                 ?.textContent
-        ).toContain('3 clientes');
+        ).toContain('Retirado · versión 1 · 3 clientes');
     });
     it('confirma con cohortFingerprint y muestra filas escritas y excluidas', async () => {
         setup();

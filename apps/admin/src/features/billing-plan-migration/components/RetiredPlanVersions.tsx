@@ -1,6 +1,7 @@
 import type { TranslationKey } from '@repo/i18n';
 import { useTranslations } from '@/hooks/use-translations';
 import { useRetiredPlanVersions } from '../hooks/useRetiredPlanVersions';
+import { planVersionLabel } from '../utils/plan-version-label';
 
 /** Lists every retired plan version with the live subscriptions still anchored to it. */
 export function RetiredPlanVersions() {
@@ -39,7 +40,13 @@ export function RetiredPlanVersions() {
                                     data-testid={`retired-plan-version-${item.id}`}
                                     className="border-t"
                                 >
-                                    <td className="p-2">{item.name}</td>
+                                    <td className="p-2">
+                                        {planVersionLabel({
+                                            t,
+                                            name: item.name,
+                                            versionNumber: item.versionNumber
+                                        })}
+                                    </td>
                                     <td className="p-2">{item.vertical}</td>
                                     <td className="p-2">{item.liveSubscriptionCount}</td>
                                 </tr>
