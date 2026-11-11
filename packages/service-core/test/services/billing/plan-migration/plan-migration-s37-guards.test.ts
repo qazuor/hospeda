@@ -34,10 +34,16 @@ describe('S37 guards', () => {
         });
     });
 
-    it('skips any motive other than retirement', () => {
+    it('proceeds with a price-increase motive seven local days before', () => {
         expect(evaluateS37Guards(baseInput({ reason: 'PRICE_INCREASE' }))).toEqual({
+            verdict: 'PROCEED'
+        });
+    });
+
+    it('skips a motive that is not in PLAN_MIGRATION_REASONS', () => {
+        expect(evaluateS37Guards(baseInput({ reason: 'OTHER' }))).toEqual({
             verdict: 'SKIPPED',
-            reason: 'REASON_NOT_RETIREMENT'
+            reason: 'REASON_NOT_SUPPORTED'
         });
     });
 

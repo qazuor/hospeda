@@ -9,7 +9,12 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { BillingCycleSchema, BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
+import {
+    BillingCycleSchema,
+    BillingDeadlineValuesSchema,
+    PlanMigrationReasonSchema,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
@@ -82,7 +87,8 @@ export async function applyPlanMigrationUpcomingNotice(input: {
         .where(eq(planMigrationSubscriptions.id, input.planMigrationSubscriptionId))
         .limit(1)
         .for('update', { of: [planMigrationSubscriptions, subscriptions] });
-    if (!row || row.cancelledAt || row.reason !== 'RETIREMENT' || row.scopeStatus !== 'PENDIENTE')
+    const reason = PlanMigrationReasonSchema.safeParse(row?.reason);
+    if (!row || row.cancelledAt || !reason.success || row.scopeStatus !== 'PENDIENTE')
         return { outcome: 'SKIPPED', milestone: null, recalculated: false };
     if (row.class !== 'PRINCIPAL' || row.status !== 'ACTIVE')
         return { outcome: 'WAITING', milestone: null, recalculated: false };
@@ -100,6 +106,9 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             deadlines.error.issues
         );
     const cycle = BillingCycleSchema.parse(row.cycle);
+    // A price increase follows the 11th deadline (60 days, contacts at 30 and 7);
+    // a retirement follows the 12th (B12 §4, PLAZO:11).
+    const deadlineKey = reason.data === 'PRICE_INCREASE' ? '11' : '12';
     const computed = computeApplicationDate({
         nextChargeAt: row.nextChargeAt,
         cycle,
@@ -118,7 +127,7 @@ export async function applyPlanMigrationUpcomingNotice(input: {
     const due = resolveDueRenewalMilestone({
         nextChargeAt: new Date(`${applicationDate}T12:00:00.000Z`),
         now: input.now,
-        daysBefore: deadlines.data['12'].contactDays
+        daysBefore: deadlines.data[deadlineKey].contactDays
     });
     if (!due) return { outcome: 'NOT_DUE', milestone: null, recalculated };
 
@@ -155,7 +164,8 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             alreadyInMigration: true
         },
         targetPlanVersionId: row.targetPlanVersionId,
-        at: input.now
+        at: input.now,
+        reason: reason.data
     });
     if (pricing.newAmount === null)
         throw new ServiceError(
@@ -184,11 +194,13 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             daysBefore: due.daysBefore,
             losesPromo: pricing.losesPromo,
             variant: 'SCHEDULED',
+            // Only an increase names its motive; a retirement payload stays byte-identical.
+            ...(reason.data === 'PRICE_INCREASE' ? { reason: reason.data } : {}),
             // Only the third notice (the closest contact day, which travels with S37) tells a card
             // payer that Mercado Pago also announces the amount change (B12 §4, Q-1).
             providerNotifies:
                 row.paymentMethod === 'CARD' &&
-                due.daysBefore === Math.min(...deadlines.data['12'].contactDays),
+                due.daysBefore === Math.min(...deadlines.data[deadlineKey].contactDays),
             deadlinesVersion: row.deadlineVersion
         }
     });

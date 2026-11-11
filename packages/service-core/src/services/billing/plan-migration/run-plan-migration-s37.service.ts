@@ -7,9 +7,11 @@ import {
     getDb,
     gt,
     gte,
+    inArray,
     isNull,
     lt,
     or,
+    PLAN_MIGRATION_REASONS,
     planMigrationSubscriptions,
     planMigrations
 } from '@repo/db';
@@ -155,7 +157,7 @@ export async function runPlanMigrationS37(
             .where(
                 and(
                     eq(planMigrationSubscriptions.status, 'PENDIENTE'),
-                    eq(planMigrations.reason, 'RETIREMENT'),
+                    inArray(planMigrations.reason, [...PLAN_MIGRATION_REASONS]),
                     isNull(planMigrations.cancelledAt),
                     gte(planMigrationSubscriptions.applicationDate, windowStart),
                     lt(planMigrationSubscriptions.applicationDate, windowEndExclusive),

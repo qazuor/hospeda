@@ -52,6 +52,10 @@ export type S37ClosureResult =
  * Writes `S37`'s closing act in the caller's transaction: the version change
  * (same assembly as the manual payer), promos to zero and `APLICADA`.
  *
+ * Promos go to zero only for a plan retirement; with `PRICE_INCREASE` the live
+ * promo is kept (BZ, DEC-MP-002 📌3), because the customer keeps paying the new
+ * list price minus that same promo.
+ *
  * It re-locks the same order as `cancelPlanMigration` and re-reads the row and
  * the subscription, so a cancellation or an exit that won in between leaves the
  * row untouched. It also re-checks the local-day rule (D-4) that the manual
@@ -76,6 +80,7 @@ export async function applyS37ClosureInTx(input: {
     if (!scope) return { kind: 'ROW_LEFT' };
     const [migration] = await tx
         .select({
+            reason: planMigrations.reason,
             targetPlanVersionId: planMigrations.targetPlanVersionId,
             cancelledAt: planMigrations.cancelledAt
         })
@@ -139,10 +144,11 @@ export async function applyS37ClosureInTx(input: {
         planMigrationSubscriptionId: input.scopeId,
         keepSelection: null
     });
-    await tx
-        .update(promoRedemptions)
-        .set({ remainingCharges: 0 })
-        .where(eq(promoRedemptions.subscriptionId, row.subscriptionId));
+    if (migration.reason === 'RETIREMENT')
+        await tx
+            .update(promoRedemptions)
+            .set({ remainingCharges: 0 })
+            .where(eq(promoRedemptions.subscriptionId, row.subscriptionId));
     await tx
         .update(planMigrationSubscriptions)
         .set({ status: 'APLICADA', appliedAt: input.now })

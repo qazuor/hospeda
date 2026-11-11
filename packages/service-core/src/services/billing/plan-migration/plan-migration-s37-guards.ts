@@ -1,3 +1,4 @@
+import { PLAN_MIGRATION_REASONS } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 
 /**
@@ -11,7 +12,7 @@ export const PLAN_MIGRATION_S37_LEAD_DAYS = 7;
 /** Typed reason a row does not proceed through `S37`. */
 export type PlanMigrationS37GuardReason =
     | 'MIGRATION_CANCELLED'
-    | 'REASON_NOT_RETIREMENT'
+    | 'REASON_NOT_SUPPORTED'
     | 'SCOPE_NOT_PENDING'
     | 'NOT_PRINCIPAL'
     | 'SUBSCRIPTION_NOT_ACTIVE'
@@ -32,12 +33,12 @@ export type PlanMigrationS37GuardVerdict =
 /**
  * Evaluates every `S37` guard for one migration row (TRANS:B:S37).
  *
- * The `reason` of the migration is a parameter, not a buried branch: this change
- * builds only `RETIREMENT`; the price-increase motive belongs to HOS-1615.
+ * Both motives of `PLAN_MIGRATION_REASONS` walk the same `S37` path; any other
+ * motive is skipped with a typed reason instead of a buried branch.
  * The window compares MARKET-LOCAL calendar days (never instants), so a clock
  * late in the local day still lands on the right day.
  *
- * @param input.reason - The migration motive (`RETIREMENT` today)
+ * @param input.reason - The migration motive (`RETIREMENT` or `PRICE_INCREASE`)
  * @param input.migrationCancelled - Whether `plan_migration.cancelled_at` is set
  * @param input.scopeStatus - The participation row status
  * @param input.subscription - The principal row's class, status and succession slots
@@ -62,8 +63,8 @@ export function evaluateS37Guards(input: {
     readonly today: Date;
 }): PlanMigrationS37GuardVerdict {
     if (input.migrationCancelled) return { verdict: 'SKIPPED', reason: 'MIGRATION_CANCELLED' };
-    if (input.reason !== 'RETIREMENT')
-        return { verdict: 'SKIPPED', reason: 'REASON_NOT_RETIREMENT' };
+    if (!(PLAN_MIGRATION_REASONS as readonly string[]).includes(input.reason))
+        return { verdict: 'SKIPPED', reason: 'REASON_NOT_SUPPORTED' };
     if (input.scopeStatus !== 'PENDIENTE')
         return { verdict: 'SKIPPED', reason: 'SCOPE_NOT_PENDING' };
     if (input.subscription.class !== 'PRINCIPAL')
