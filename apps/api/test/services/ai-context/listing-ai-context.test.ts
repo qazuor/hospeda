@@ -390,6 +390,71 @@ describe('buildExperienceMarkdownContext', () => {
         );
         expect(block).not.toContain('Turn left at the bridge');
     });
+
+    describe('the pets line (HOS-2113)', () => {
+        it('states pets are not informed when the experience carries no pet signal (es)', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(EXPERIENCE, [], true);
+
+            // Assert
+            expect(block).toContain('**Mascotas**: no figura información en la ficha');
+        });
+
+        it('renders the same not-informed line with an en page locale', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(EXPERIENCE, [], true, 'en');
+
+            // Assert
+            expect(block).toContain('**Mascotas**: no figura información en la ficha');
+        });
+
+        it('omits the not-informed line when a FAQ mentions pets («perro»)', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(
+                EXPERIENCE,
+                [{ question: '¿Puedo llevar mi perro?', answer: 'Consultalo al reservar.' }],
+                true
+            );
+
+            // Assert
+            expect(block).not.toContain('**Mascotas**: no figura información en la ficha');
+        });
+
+        it('omits the not-informed line when the description mentions pets ("pet-friendly")', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(
+                { ...EXPERIENCE, description: 'Un pet-friendly paseo guiado por el río.' },
+                [],
+                true
+            );
+
+            // Assert
+            expect(block).not.toContain('**Mascotas**: no figura información en la ficha');
+        });
+
+        it('omits the not-informed line when a pet amenity slug informs pets (HOS-2102)', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(EXPERIENCE, [], true, 'es', [
+                { slug: 'pet_friendly' }
+            ]);
+
+            // Assert
+            expect(block).not.toContain('**Mascotas**: no figura información en la ficha');
+        });
+
+        it('renders the pets policy line instead when the policies inform pets', () => {
+            // Act
+            const block = buildExperienceMarkdownContext(
+                { ...EXPERIENCE, policies: { ...EXPERIENCE.policies, pets: { admission: 'no' } } },
+                [],
+                true
+            );
+
+            // Assert
+            expect(block).toContain('**Mascotas**: no se admiten');
+            expect(block).not.toContain('**Mascotas**: no figura información en la ficha');
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
