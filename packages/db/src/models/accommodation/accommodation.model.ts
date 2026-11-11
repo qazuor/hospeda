@@ -942,23 +942,29 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const logContext = { id: input.id };
 
         try {
-            const rows = await db
-                .update(accommodations)
-                .set({
-                    showExternalReputation: true,
-                    externalReputationToggleDecidedAt: sql`now()`,
-                    externalReputationAutoEnabledAt: sql`now()`,
-                    updatedAt: sql`now()`
-                })
-                .where(
-                    and(
-                        eq(accommodations.id, input.id),
-                        eq(accommodations.showExternalReputation, false),
-                        isNull(accommodations.externalReputationToggleDecidedAt),
-                        isNull(accommodations.deletedAt)
+            // Run inside a (nested) transaction: on a caller-supplied tx this is a
+            // SAVEPOINT, so a failure here rolls back only this statement instead
+            // of aborting the caller's transaction for every later statement —
+            // callers treat this enable as best-effort and keep going.
+            const rows = await db.transaction(async (inner) =>
+                inner
+                    .update(accommodations)
+                    .set({
+                        showExternalReputation: true,
+                        externalReputationToggleDecidedAt: sql`now()`,
+                        externalReputationAutoEnabledAt: sql`now()`,
+                        updatedAt: sql`now()`
+                    })
+                    .where(
+                        and(
+                            eq(accommodations.id, input.id),
+                            eq(accommodations.showExternalReputation, false),
+                            isNull(accommodations.externalReputationToggleDecidedAt),
+                            isNull(accommodations.deletedAt)
+                        )
                     )
-                )
-                .returning({ id: accommodations.id });
+                    .returning({ id: accommodations.id })
+            );
 
             logQuery(this.entityName, 'autoEnableExternalReputationIfUndecided', logContext, rows);
             return { enabled: rows.length > 0 };
