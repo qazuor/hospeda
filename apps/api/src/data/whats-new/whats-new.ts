@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4282
+    {
+        id: '2026-11-11-listing-chat-honest-answers',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El asistente de cada ficha responde en tu idioma y no inventa',
+            en: 'Each listing assistant answers in your language and never makes things up',
+            pt: 'O assistente de cada página responde no seu idioma e não inventa'
+        },
+        body: {
+            es: 'Si preguntás en portugués o en inglés, la respuesta llega entera en ese idioma. Cuando la ficha no informa algo, como si se aceptan mascotas, el asistente te lo dice en lugar de suponerlo, y si tu grupo supera la capacidad te dice cuántos entran.',
+            en: 'Ask in Portuguese or English and the whole answer comes back in that language. When the listing does not say something, such as whether pets are allowed, the assistant tells you so instead of guessing, and if your group is too big it tells you how many people fit.',
+            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceita animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4263, #4270, #4274
     {
         id: '2026-11-10-venue-min-age-scope',
