@@ -1,32 +1,22 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { VerticalsForBillingSimulator } from '@repo/billing-verticals-contract/testing';
 import {
     emailOutbox,
     eq,
     inArray,
     planMigrationSubscriptions,
     planMigrations,
-    planVersions,
     providerLinks,
     subscriptionScheduledChanges,
-    subscriptions,
-    users
+    subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { PermissionEnum } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { launchPlanMigration } from '../../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import { previewPlanMigration } from '../../../../src/services/billing/plan-migration/plan-migration-preview.service.js';
 import { getServiceTestDb } from '../helpers.js';
-import { adjustablePauseHarness, seedPausePrincipal } from './pause-fixtures.js';
 import { seedPlanChangePromo } from './plan-change-fixtures.js';
-import {
-    createPriceIncreaseCase,
-    insertMigrationVersion,
-    migrationClock,
-    setMigrationTargetCycle
-} from './plan-migration-fixtures.js';
+import { createPriceIncreaseCase, migrationClock } from './plan-migration-fixtures.js';
 import { S37_DAY, S37_NEXT_CHARGE_AT } from './plan-migration-s37-fixtures.js';
 
 /** Destination list price seeded through action 19 for every S37 increase case. */
@@ -376,182 +366,4 @@ export async function alignNextChargeWithApplication(journey: IncreaseJourney): 
         .update(subscriptions)
         .set({ nextChargeAt: localDayInstant(journey.applicationDate) })
         .where(eq(subscriptions.id, journey.subscriptionId));
-}
-
-/** Announcement instant every paused increase is launched at. */
-const PAUSED_INCREASE_ANNOUNCED_AT = migrationClock.now();
-
-/** A real price increase launched over a card principal S8 can pause. */
-export interface PausedIncreaseCase {
-    readonly subscriptionId: string;
-    readonly userId: string;
-    readonly planVersionId: string;
-    readonly targetPlanVersionId: string;
-    readonly targetOptionId: string;
-    readonly targetAmountMinor: number;
-    readonly currentAmountMinor: number;
-    readonly migrationId: string;
-    readonly scope: typeof planMigrationSubscriptions.$inferSelect;
-    readonly announcedAt: Date;
-    readonly applicationDate: string;
-    readonly authorizationId: string;
-    readonly harness: ReturnType<typeof adjustablePauseHarness>;
-    readonly provider: PaymentProvider;
-}
-
-const pausedCases: Array<{
-    readonly migrationId: string;
-    readonly subscriptionId: string;
-    readonly userId: string;
-    readonly adminId: string;
-}> = [];
-
-/**
- * Launches a real price-increase migration over a card principal seeded by
- * `seedPausePrincipal`, so S8 can pause it and S10 must honour the increase.
- *
- * The customer and its fake authorization come from the pause fixture; the new
- * sellable version of the SAME plan, its literal target price and the migration
- * come from `insertMigrationVersion` + action 19 + `previewPlanMigration` +
- * `launchPlanMigration` with `reason: 'PRICE_INCREASE'`.
- *
- * Two states are seeded because no service starts them here: the next charge is
- * moved to the value the case declares (a real renewal would have advanced it)
- * and the admin is inserted directly, as the other migration fixtures do.
- */
-export async function createPausedIncreaseCase(options: {
-    readonly nextChargeAt: Date;
-    readonly targetAmountMinor?: number;
-    readonly announcedAt?: Date;
-}): Promise<PausedIncreaseCase> {
-    const announcedAt = options.announcedAt ?? PAUSED_INCREASE_ANNOUNCED_AT;
-    const targetAmountMinor = options.targetAmountMinor ?? S37_INCREASE_TARGET_AMOUNT_MINOR;
-    const harness = adjustablePauseHarness();
-    const principal = await seedPausePrincipal({ harness });
-    const db = getServiceTestDb();
-    await db
-        .update(subscriptions)
-        .set({ nextChargeAt: options.nextChargeAt, paymentMethod: 'CARD' })
-        .where(eq(subscriptions.id, principal.subscriptionId));
-    const [source] = await db
-        .select()
-        .from(planVersions)
-        .where(eq(planVersions.id, principal.planVersionId));
-    if (!source) throw new Error('Paused increase source version missing');
-    const [admin] = await db
-        .insert(users)
-        .values({
-            email: `paused-increase-admin-${crypto.randomUUID()}@example.test`,
-            displayName: 'Paused price increase admin',
-            emailVerified: true,
-            lifecycleState: 'ACTIVE'
-        })
-        .returning();
-    if (!admin) throw new Error('Paused increase admin fixture missing');
-    const actor = {
-        id: admin.id,
-        roles: [],
-        permissions: [
-            PermissionEnum.BILLING_MIGRATE_PLAN,
-            PermissionEnum.MAINTENANCE_MODE_WRITE,
-            PermissionEnum.BILLING_SET_CYCLE_PRICE
-        ]
-    };
-    const target = await insertMigrationVersion({
-        planId: source.planId,
-        previousVersionId: principal.planVersionId,
-        rank: source.rank + 1,
-        sellable: true,
-        graceDays: source.graceDays,
-        allowsPause: source.allowsPause
-    });
-    const priced = await setMigrationTargetCycle({
-        actor,
-        planVersionId: target.id,
-        cycle: 'monthly',
-        amount: targetAmountMinor
-    });
-    const clock = { now: () => announcedAt };
-    const verticals = new VerticalsForBillingSimulator({ clock });
-    verticals.setPlanPolicy({
-        planVersionId: target.id,
-        policy: {
-            graceDays: target.graceDays,
-            allowsPause: target.allowsPause,
-            current: true,
-            sellable: true
-        }
-    });
-    verticals.setPlanPolicy({
-        planVersionId: principal.planVersionId,
-        policy: {
-            graceDays: source.graceDays,
-            allowsPause: source.allowsPause,
-            current: false,
-            sellable: true
-        }
-    });
-    const input = {
-        sourcePlanVersionId: principal.planVersionId,
-        targetPlanVersionId: target.id,
-        reason: 'PRICE_INCREASE' as const
-    };
-    const preview = await previewPlanMigration({ actor, input, verticals, clock });
-    const launched = await launchPlanMigration({
-        actor,
-        input: { ...input, cohortFingerprint: preview.cohortFingerprint },
-        verticals,
-        clock
-    });
-    const [scope] = await db
-        .select()
-        .from(planMigrationSubscriptions)
-        .where(eq(planMigrationSubscriptions.planMigrationId, launched.planMigrationId));
-    if (!scope) throw new Error('Paused increase scope missing');
-    pausedCases.push({
-        migrationId: launched.planMigrationId,
-        subscriptionId: principal.subscriptionId,
-        userId: principal.userId,
-        adminId: admin.id
-    });
-    return {
-        subscriptionId: principal.subscriptionId,
-        userId: principal.userId,
-        planVersionId: principal.planVersionId,
-        targetPlanVersionId: target.id,
-        targetOptionId: priced.billingOption.id,
-        targetAmountMinor,
-        currentAmountMinor: INCREASE_CURRENT_AMOUNT_MINOR,
-        migrationId: launched.planMigrationId,
-        scope,
-        announcedAt,
-        applicationDate: getLocalDateString({ instant: scope.applicationDate }),
-        authorizationId: principal.authorizationId,
-        harness,
-        provider: harness.provider
-    };
-}
-
-/** Removes only the rows a paused increase case created; the catalog stays put. */
-export async function cleanupPausedIncreaseCases(): Promise<void> {
-    const db = getServiceTestDb();
-    const own = pausedCases.splice(0);
-    if (own.length === 0) return;
-    const userIds = own.map((entry) => entry.userId);
-    const subscriptionIds = own.map((entry) => entry.subscriptionId);
-    const migrationIds = own.map((entry) => entry.migrationId);
-    await db.delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, userIds));
-    await db
-        .delete(subscriptionScheduledChanges)
-        .where(inArray(subscriptionScheduledChanges.subscriptionId, subscriptionIds));
-    await db
-        .delete(planMigrationSubscriptions)
-        .where(inArray(planMigrationSubscriptions.planMigrationId, migrationIds));
-    await db.delete(planMigrations).where(inArray(planMigrations.id, migrationIds));
-    await db.delete(users).where(
-        inArray(
-            users.id,
-            own.map((entry) => entry.adminId)
-        )
-    );
 }
