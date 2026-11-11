@@ -196,17 +196,12 @@ export function changeAmountRequests(
 }
 
 /**
- * Plain text of a captured mail: React text-node markers and tags removed.
- * The strip repeats until nothing changes, so a marker rebuilt by a previous
- * pass (`<!<!---->--`) cannot survive.
+ * Plain text of a captured mail: tags and React text-node markers (`<!-- -->`)
+ * become spaces, then any stray `<` left behind is dropped too, so no markup
+ * can survive a partial match.
  */
 export function mailText(html: string): string {
-    let stripped = html;
-    let previous: string;
-    do {
-        previous = stripped;
-        stripped = stripped.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, ' ');
-    } while (stripped !== previous);
+    const stripped = html.replace(/<[^>]*>/g, ' ').replace(/</g, ' ');
     return decodeHtmlEntities(stripped).replace(/\s+/g, ' ').trim();
 }
 
