@@ -906,6 +906,73 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             throw new DbError(this.entityName, 'getMarketComparisonByOwnerId', ctx, err.message);
         }
     }
+
+    /**
+     * Enables `showExternalReputation` ONCE for an accommodation whose owner has
+     * never made an explicit decision about it.
+     *
+     * WHY a single conditional UPDATE: the trigger is an automated fetch, and
+     * several independent writers can observe the same "working" data at almost
+     * the same moment (weekly cron, owner-triggered refresh, Apify poller). A
+     * read-then-write sequence would let two of them both see the toggle off and
+     * both enable it, and — worse — could overwrite a manual decision the owner
+     * made between the read and the write. Folding the guard into the `WHERE`
+     * makes PostgreSQL arbitrate: exactly one writer can transition an
+     * undecided row, every other attempt matches zero rows, and a manual toggle
+     * recorded in `external_reputation_toggle_decided_at` makes the update
+     * impossible from then on.
+     *
+     * The same statement stamps both audit columns. `now()` is the transaction
+     * timestamp, so `external_reputation_toggle_decided_at` and
+     * `external_reputation_auto_enabled_at` are identical for an auto-enable —
+     * the editor compares them to detect an untouched automatic decision.
+     *
+     * @param input - `{ id }` of the accommodation to enable.
+     * @param tx - Optional transaction client.
+     * @returns `{ enabled: true }` only for the writer that actually flipped
+     *   the row; `{ enabled: false }` when the row was already on, already
+     *   decided, soft-deleted, or missing.
+     * @throws {DbError} When the database query fails.
+     */
+    async autoEnableExternalReputationIfUndecided(
+        input: { readonly id: string },
+        tx?: DrizzleClient
+    ): Promise<{ enabled: boolean }> {
+        const db = this.getClient(tx);
+        const logContext = { id: input.id };
+
+        try {
+            const rows = await db
+                .update(accommodations)
+                .set({
+                    showExternalReputation: true,
+                    externalReputationToggleDecidedAt: sql`now()`,
+                    externalReputationAutoEnabledAt: sql`now()`,
+                    updatedAt: sql`now()`
+                })
+                .where(
+                    and(
+                        eq(accommodations.id, input.id),
+                        eq(accommodations.showExternalReputation, false),
+                        isNull(accommodations.externalReputationToggleDecidedAt),
+                        isNull(accommodations.deletedAt)
+                    )
+                )
+                .returning({ id: accommodations.id });
+
+            logQuery(this.entityName, 'autoEnableExternalReputationIfUndecided', logContext, rows);
+            return { enabled: rows.length > 0 };
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'autoEnableExternalReputationIfUndecided', logContext, err);
+            throw new DbError(
+                this.entityName,
+                'autoEnableExternalReputationIfUndecided',
+                logContext,
+                err.message
+            );
+        }
+    }
 }
 
 /** Singleton instance of AccommodationModel for use across the application. */

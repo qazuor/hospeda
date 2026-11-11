@@ -1,0 +1,2 @@
+ALTER TABLE "accommodations" ADD COLUMN "external_reputation_toggle_decided_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "accommodations" ADD COLUMN "external_reputation_auto_enabled_at" timestamp with time zone;
