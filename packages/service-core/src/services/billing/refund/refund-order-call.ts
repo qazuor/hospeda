@@ -7,6 +7,7 @@ import { PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import { AmbiguousRefundAnswerError } from './ambiguous-refund-answer.error';
 import { rereadOrderForRefund } from './refund-order-reread';
 import { completeCall, persistCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
@@ -111,14 +112,27 @@ export async function sendOrderRefundCall(input: {
     const newRefunds = response.refunds.filter(({ refundId }) => !ids.has(refundId));
     const only = newRefunds.length === 1 ? newRefunds[0] : undefined;
     if (!only || only.amountMinor !== amount) {
-        logger.error(
-            {
-                orderId,
-                refundId: refund.id,
-                seenIds: response.refunds.map(({ refundId }) => refundId)
-            },
-            'Order refund response has ambiguous id'
-        );
+        const ambiguous = new AmbiguousRefundAnswerError({
+            kind: 'ORDER',
+            refundId: refund.id,
+            refundCallKey: key,
+            paymentId: payment.id,
+            providerFactId: payment.providerFactId,
+            orderId,
+            expectedAmountMinor: amount,
+            reason:
+                newRefunds.length === 0
+                    ? 'NO_NEW_ORDER_REFUND'
+                    : newRefunds.length > 1
+                      ? 'SEVERAL_NEW_ORDER_REFUNDS'
+                      : 'ORDER_REFUND_AMOUNT_MISMATCH',
+            candidates: newRefunds.map(({ refundId, amountMinor }) => ({
+                providerRefundId: refundId,
+                amountMinor
+            }))
+        });
+        // HOS-2007: captured so the API's logger hook raises a Sentry alert; the call stays unanswered.
+        logger.error(ambiguous, ambiguous.message, { capture: true });
         return { outcome: 'AWAITING_PROVIDER_ANSWER', calls: [unanswered] };
     }
     try {

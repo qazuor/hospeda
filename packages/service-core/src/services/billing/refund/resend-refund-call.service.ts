@@ -14,6 +14,7 @@ import {
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
+import { AmbiguousRefundAnswerError } from './ambiguous-refund-answer.error';
 import { sendOrderRefundCall } from './refund-order-call';
 import { rereadOrderForRefund } from './refund-order-reread';
 import { completeCall } from './refund-provider-call';
@@ -157,10 +158,25 @@ export async function resendUnansweredRefundCalls(
                 const namedIds = new Set(named.map(({ id }) => id));
                 const candidates = matching.filter((entry) => !namedIds.has(entry.refundId));
                 if (candidates.length !== 1) {
-                    logger.error(
-                        { refundId: input.refundId, key, candidates: candidates.length },
-                        'Payment refund replay has ambiguous id'
-                    );
+                    const ambiguous = new AmbiguousRefundAnswerError({
+                        kind: 'PAYMENT',
+                        refundId: input.refundId,
+                        refundCallKey: key,
+                        paymentId: payment.id,
+                        providerFactId: payment.providerFactId,
+                        orderId: null,
+                        expectedAmountMinor: call.amount,
+                        reason:
+                            candidates.length === 0
+                                ? 'NO_UNNAMED_PAYMENT_REFUND'
+                                : 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
+                        candidates: candidates.map((entry) => ({
+                            providerRefundId: entry.refundId,
+                            amountMinor: entry.amount.amountMinor
+                        }))
+                    });
+                    // HOS-2007: captured so the API's logger hook raises a Sentry alert; the call stays unanswered.
+                    logger.error(ambiguous, ambiguous.message, { capture: true });
                     outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
                     continue;
                 }
