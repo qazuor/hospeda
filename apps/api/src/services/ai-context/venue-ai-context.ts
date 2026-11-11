@@ -33,10 +33,12 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
 import {
     buildListingAmenityLines,
+    capListingAmenities,
     type ListingContextAmenity,
     safeLoadListingAmenities
 } from './listing-amenities-context.js';
 import { formatContextMoney, priceRangeLabel, venueTypeLabel } from './listing-labels.js';
+import { buildListingPetsLines } from './listing-pets-context.js';
 import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
@@ -162,6 +164,10 @@ export function buildVenueMarkdownContext(
         sanitizeOwnerDelimiters(venue.description),
         VENUE_DESCRIPTION_MAX_CHARS
     );
+    // The rendered Resumen text, computed once: fenceOwnerValue only wraps it
+    // in markers, so this is what the model reads (HOS-2102 scans this, not the
+    // raw field — a truncation cut can hide a word).
+    const truncatedSummary = truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS);
 
     // The directive is line 1 so it precedes every fence below it. `type` and
     // `priceRange` stay unfenced: both are closed enums, not owner free text.
@@ -171,7 +177,7 @@ export function buildVenueMarkdownContext(
         '',
         `## Local: ${fenceOwnerValue(truncateAtWord(venue.name, VENUE_SHORT_TEXT_MAX_CHARS))}`,
         `**Tipo de local**: ${venueTypeLabel({ type: venue.type, locale }).label}`,
-        `**Resumen**: ${fenceOwnerValue(truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS))}`
+        `**Resumen**: ${fenceOwnerValue(truncatedSummary)}`
     ];
 
     if (venue.priceRange) {
@@ -328,6 +334,26 @@ export function buildVenueMarkdownContext(
 
     // --- House rules (closed values only; night keys render with nightInfo) ---
     lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
+
+    // --- Pets (HOS-2102) ---
+    // Same contract as the accommodation block: the line appears only when
+    // nothing informs pets, and the scan reads exactly what renders — the
+    // capped amenity list, the capped FAQs, the truncated summary and
+    // description. A venue has no features and no iaData; the carta text is
+    // deliberately out of the scan (HOS-2102 scope), so a pet word buried in a
+    // dish description does not suppress the line.
+    lines.push(
+        ...buildListingPetsLines({
+            policies: venue.policies,
+            amenitySlugs: capListingAmenities(amenities).map((amenity) => amenity.slug),
+            featureSlugs: [],
+            texts: [
+                truncatedSummary,
+                truncatedDescription,
+                ...cappedFaqs.map((faq) => `${faq.question} ${faq.answer}`)
+            ]
+        }).lines
+    );
 
     // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
     lines.push(
