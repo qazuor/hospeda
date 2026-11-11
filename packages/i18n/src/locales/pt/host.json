@@ -728,6 +728,7 @@
                 "unansweredHint": "O assistente não encontrou a resposta no seu anúncio. Adicioná-las como perguntas frequentes o ajuda a responder na próxima vez.",
                 "othersTitle": "Outras perguntas",
                 "truncated": "Perguntas exibidas: {{shown}} de {{total}}. As sem resposta vêm primeiro.",
+                "dismissedTruncated": "Mostramos as {{shown}} perguntas descartadas mais recentes de um total de {{total}}.",
                 "markSeen": "Já vi",
                 "undo": "Desfazer",
                 "dismissedTitle": "Descartadas",

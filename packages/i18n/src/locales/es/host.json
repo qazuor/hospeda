@@ -728,6 +728,7 @@
                 "unansweredHint": "El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.",
                 "othersTitle": "Otras preguntas",
                 "truncated": "Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero.",
+                "dismissedTruncated": "Mostramos las últimas {{shown}} de {{total}} preguntas descartadas.",
                 "markSeen": "Ya lo vi",
                 "undo": "Deshacer",
                 "dismissedTitle": "Descartadas",
