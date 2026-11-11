@@ -208,11 +208,66 @@ describe('buildReplyLanguageInstruction', () => {
         // Assert
         expect(en).toContain('Write every word of the answer in English');
         expect(en).toContain('"pileta" → "pool"');
-        expect(pt).toContain('Escreva toda a resposta em português, sem nenhuma frase em espanhol');
+        expect(pt).toContain('Escreva toda a resposta em português');
         expect(pt).toContain('"pileta" → "piscina"');
         // Proper names are still never translated.
         expect(en).toContain('keeping only proper names unchanged');
         expect(pt).toContain('mantendo apenas os nomes próprios');
+    });
+
+    it('HOS-2102: per-language templates carry the capacity phrasing, the Spanish-word ban and the group close', () => {
+        // Arrange / Act: the instruction table is the unit under test.
+        const { en, es, pt } = REPLY_LANGUAGE_INSTRUCTIONS;
+
+        // Assert — the capacity phrasing of the Spanish context is translated.
+        expect(en).toContain('"capacidad para N huéspedes" → "capacity for N guests"');
+        expect(pt).toContain('"capacidad para N huéspedes" → "capacidade para N hóspedes"');
+        expect(pt).toContain('hóspedes');
+        // Assert — Spanish words are banned outright in en and pt answers.
+        expect(en).toContain('Never leave a Spanish word in your answer');
+        expect(en).toContain('«confirmalo»');
+        expect(en).toContain('«huéspedes»');
+        expect(pt).toContain('Nunca deixe uma palavra em espanhol na resposta');
+        expect(pt).toContain('«huéspedes»');
+        // Assert — round 2 (post-fix sweep): lone Spanish words leaked into
+        // en/pt answers, so «sí» is in the banned list of both.
+        expect(en).toContain('«mascotas», «sí»');
+        expect(pt).toContain('«mascotas», «sí»');
+        // Assert — the group-close template lives in each reply language,
+        // scoped to groups that fit (round 4: nano copied it onto
+        // over-capacity answers, so the es close is fits-scoped now).
+        expect(es).toContain(
+            'cuando el grupo entra en la capacidad, cerrá con algo como «depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar»'
+        );
+        // Assert — round 4 (post-round-3 sweep): the es line states the
+        // over-capacity answer as ONE short sentence with none of those
+        // templates, no question and no suggestion to consult anything.
+        expect(es).toContain(
+            'pero si el grupo NO entra en la capacidad, la respuesta es UNA sola frase corta que diga que no entran y cuántos caben en total, sin ninguna de esas frases, sin preguntar y sin sugerir consultar nada'
+        );
+        expect(es).not.toContain('en una pregunta de grupos');
+        // Assert — round 3 (final sweep): the es unknown-phrasing heuristic
+        // accepts only specific words («no figura», «consulta…»), so the es
+        // line carries the not-informed template.
+        expect(es).toContain(
+            'cuando la ficha no informa algo, escribí «la ficha no figura información sobre eso» y sugerí «consultarlo con el lugar»'
+        );
+        expect(en).toContain(
+            '"it depends on how you distribute yourselves and on availability — confirm with the place"'
+        );
+        expect(pt).toContain(
+            'Quando o grupo cabe na capacidade, feche com algo como «depende de como vocês se distribuem e da disponibilidade: confirme com o lugar»'
+        );
+        // Assert — round 2: the over-capacity template lives in the reply
+        // language too, next to the fitting-group close.
+        expect(en).toContain(
+            'For a group over the total capacity, the whole answer is one short sentence like "No, they do not all fit: the total capacity is 12 guests," with the real number.'
+        );
+        expect(pt).toContain(
+            'Quando o grupo passa da capacidade total, a resposta inteira é uma frase curta como «Não, não cabem todos: a capacidade total é de 11 hóspedes», com o número real.'
+        );
+        // Assert — the es line still exists with its voseo grammar reminder.
+        expect(es).toContain('Respondé en español.');
     });
 
     it('HOS-2100: the Spanish line reminds conjugation and the plural of vos', () => {
