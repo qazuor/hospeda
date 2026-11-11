@@ -5,22 +5,28 @@ const Id = z.string().uuid();
 const LocalDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Version = z.object({ id: Id, planId: Id, name: z.string(), vertical: z.string() });
 
+/** Why an admin announces a migration: a retired plan or a price increase. */
+export const PlanMigrationReasonSchema = z.enum(['RETIREMENT', 'PRICE_INCREASE']);
+/** Validated migration reason. */
+export type PlanMigrationReason = z.infer<typeof PlanMigrationReasonSchema>;
+
 /** Strict input for action 17 preview. */
 export const PlanMigrationPreviewRequestSchema = z
     .object({
         sourcePlanVersionId: Id,
-        targetPlanVersionId: Id
+        targetPlanVersionId: Id,
+        reason: PlanMigrationReasonSchema.optional()
     })
     .strict();
-/** Validated action 17 preview input. */
-export type PlanMigrationPreviewRequest = z.infer<typeof PlanMigrationPreviewRequestSchema>;
+/** Raw action 17 preview input; the service defaults an absent reason to a retirement. */
+export type PlanMigrationPreviewRequest = z.input<typeof PlanMigrationPreviewRequestSchema>;
 
 /** Strict confirmation of the cohort shown in action 17 preview. */
 export const LaunchPlanMigrationRequestSchema = PlanMigrationPreviewRequestSchema.extend({
     cohortFingerprint: z.string()
 }).strict();
-/** Validated action 17 launch input. */
-export type LaunchPlanMigrationRequest = z.infer<typeof LaunchPlanMigrationRequestSchema>;
+/** Raw action 17 launch input; the service defaults an absent reason to a retirement. */
+export type LaunchPlanMigrationRequest = z.input<typeof LaunchPlanMigrationRequestSchema>;
 
 /** One affected or excluded subscription. */
 export const PlanMigrationPreviewRowSchema = z.object({
@@ -47,6 +53,7 @@ export type PlanMigrationPreviewRow = z.infer<typeof PlanMigrationPreviewRowSche
 export const PlanMigrationPreviewSchema = z.object({
     source: Version,
     target: Version,
+    reason: PlanMigrationReasonSchema.default('RETIREMENT'),
     direction: z.enum(['UP', 'DOWN']),
     noticeDays: z.number().int().nonnegative(),
     deadlineVersion: z.number().int().positive(),
@@ -61,6 +68,7 @@ export type PlanMigrationPreview = z.infer<typeof PlanMigrationPreviewSchema>;
 /** Persisted migration and each included or excluded customer. */
 export const PlanMigrationLaunchResponseSchema = z.object({
     planMigrationId: Id,
+    reason: PlanMigrationReasonSchema.default('RETIREMENT'),
     announcedAt: z.date(),
     deadlineVersion: z.number().int().positive(),
     noticeDays: z.number().int().nonnegative(),
@@ -102,7 +110,15 @@ export type PlanMigrationCancelResult = z.infer<typeof PlanMigrationCancelResult
 /** Retired source versions and sellable current targets grouped by vertical. */
 export const PlanMigrationOptionsSchema = z.object({
     sources: z.array(Version.extend({ customerCount: z.number().int().nonnegative() })),
-    targets: z.record(z.string(), z.array(Version))
+    targets: z.record(z.string(), z.array(Version)),
+    increases: z
+        .array(
+            z.object({
+                source: Version.extend({ customerCount: z.number().int().nonnegative() }),
+                target: Version
+            })
+        )
+        .default([])
 });
 /** Validated selection options. */
 export type PlanMigrationOptions = z.infer<typeof PlanMigrationOptionsSchema>;
@@ -133,7 +149,7 @@ const PlanMigrationCountsSchema = z.strictObject({
 /** One migration and the complete count of its scope states. */
 export const PlanMigrationListItemSchema = z.strictObject({
     id: Id,
-    reason: z.enum(['RETIREMENT', 'PRICE_INCREASE']),
+    reason: PlanMigrationReasonSchema,
     sourcePlanVersionId: Id,
     targetPlanVersionId: Id,
     sourcePlanName: z.string(),

@@ -169,6 +169,7 @@ describe('AC:B12:2 action 17 launch contracts', () => {
     it('requires every persisted customer and excluded reason', () => {
         const result = {
             planMigrationId: crypto.randomUUID(),
+            reason: 'RETIREMENT',
             announcedAt: new Date(),
             deadlineVersion: 2,
             noticeDays: 90,
