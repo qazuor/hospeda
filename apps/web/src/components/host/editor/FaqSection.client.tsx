@@ -44,6 +44,7 @@ import {
 import { type JSX, useCallback, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
+import { apiClient } from '@/lib/api/client';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -147,13 +148,22 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
     const [editFieldErrors, setEditFieldErrors] = useState<FaqFieldErrors>({});
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
     const [addFieldErrors, setAddFieldErrors] = useState<FaqFieldErrors>({});
     // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
     useFaqPrefill({
-        onPrefill: useCallback((question: string) => {
-            setAddValues((values) => ({ ...values, question }));
-            setIsAdding(true);
-        }, [])
+        onPrefill: useCallback(
+            (prefill: { question: string; answer: string; messageId: string | null }) => {
+                setAddValues((values) => ({
+                    ...values,
+                    question: prefill.question,
+                    answer: prefill.answer
+                }));
+                setPrefillMessageId(prefill.messageId);
+                setIsAdding(true);
+            },
+            []
+        )
     });
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -231,13 +241,25 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
             setAddValues(EMPTY_EDITOR);
             setAddFieldErrors({});
             setIsAdding(false);
+            if (prefillMessageId) {
+                void apiClient
+                    .postProtected({
+                        path: `/api/v1/protected/ai/listing-questions/${prefillMessageId}/dismiss`
+                    })
+                    .then((dismissResult) => {
+                        if (!dismissResult.ok)
+                            webLogger.warn('[FaqSection] question dismissal failed');
+                    })
+                    .catch(() => webLogger.warn('[FaqSection] question dismissal failed'));
+                setPrefillMessageId(null);
+            }
         } else {
             webLogger.warn('[FaqSection] add failed:', result.error);
             reportError(
                 t('host.properties.editor.faq.saveError', 'No se pudo guardar la pregunta.')
             );
         }
-    }, [addValues, accommodationId, t, reportError, reportValidationErrors]);
+    }, [addValues, accommodationId, t, reportError, reportValidationErrors, prefillMessageId]);
 
     // ---------------------------------------------------------------------------
     // Edit
@@ -776,6 +798,14 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                             setAddFieldErrors((prev) => clearFaqFieldError(prev, 'answer'));
                         }}
                     />
+                    {prefillMessageId && addValues.answer === '' && (
+                        <p>
+                            {t(
+                                'host.properties.editor.aiQuestions.faqAnswerHelp',
+                                'There is no confirmed answer. Fill it in using information from your listing.'
+                            )}
+                        </p>
+                    )}
                     {addFieldErrors.answer && (
                         <p
                             id="faq-new-a-error"

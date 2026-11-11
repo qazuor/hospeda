@@ -26,6 +26,7 @@ import { apiClient } from '@/lib/api/client';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { stripMarkdownPlain } from '@/lib/render-plain';
 import styles from './AiQuestionsPanel.module.css';
 
 /** Endpoint behind the panel. */
@@ -84,6 +85,7 @@ export function AiQuestionsPanel({
 }: AiQuestionsPanelProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
+    const [mutationError, setMutationError] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -161,8 +163,8 @@ export function AiQuestionsPanel({
         );
     }
 
-    const { data } = state;
-    if (data.items.length === 0) {
+    const data = state.data;
+    if (data.items.length === 0 && (data.dismissed?.length ?? 0) === 0) {
         return (
             <div className={styles.panel}>
                 {intro}
@@ -177,6 +179,74 @@ export function AiQuestionsPanel({
     }
 
     const { unanswered, others } = splitAiQuestions({ items: data.items });
+    const mutateQuestion = async (
+        item: AiListingQuestion,
+        action: 'dismiss' | 'undismiss'
+    ): Promise<void> => {
+        setMutationError(null);
+        const optimistic: AiListingQuestionsResponse = {
+            ...data,
+            items:
+                action === 'dismiss'
+                    ? data.items.filter((entry) => entry.id !== item.id)
+                    : [...data.items, item].sort((left, right) =>
+                          right.askedAt.localeCompare(left.askedAt)
+                      ),
+            dismissed:
+                action === 'dismiss'
+                    ? [{ ...item, ownerDismissedAt: new Date().toISOString() }, ...data.dismissed]
+                    : data.dismissed.filter((entry) => entry.id !== item.id),
+            unansweredCount:
+                data.unansweredCount +
+                (item.answerStatus === 'unanswered' ? (action === 'dismiss' ? -1 : 1) : 0),
+            total: data.total + (action === 'dismiss' ? -1 : 1),
+            dismissedCount: data.dismissedCount + (action === 'dismiss' ? 1 : -1)
+        };
+        setState({ kind: 'ready', data: optimistic });
+        const result = await apiClient.postProtected({
+            path: `${AI_LISTING_QUESTIONS_PATH}/${item.id}/${action}`
+        });
+        if (!result.ok) {
+            setState({ kind: 'ready', data });
+            setMutationError(
+                t(
+                    action === 'dismiss'
+                        ? 'host.properties.editor.aiQuestions.dismissedError'
+                        : 'host.properties.editor.aiQuestions.undoError',
+                    action === 'dismiss'
+                        ? 'The question could not be dismissed.'
+                        : 'The question could not be restored.'
+                )
+            );
+            return;
+        }
+        const refreshed = await apiClient.getProtected<AiListingQuestionsResponse>({
+            path: AI_LISTING_QUESTIONS_PATH,
+            params: { entityType, entityId }
+        });
+        if (refreshed.ok) setState({ kind: 'ready', data: refreshed.data });
+    };
+    const loadMore = async (): Promise<void> => {
+        if (!data.othersNextCursor) return;
+        const result = await apiClient.getProtected<AiListingQuestionsResponse>({
+            path: AI_LISTING_QUESTIONS_PATH,
+            params: { entityType, entityId, othersCursor: data.othersNextCursor }
+        });
+        if (result.ok)
+            setState({
+                kind: 'ready',
+                data: {
+                    ...result.data,
+                    total: data.total,
+                    unansweredCount: data.unansweredCount,
+                    truncated: data.truncated,
+                    items: [
+                        ...data.items,
+                        ...result.data.items.filter((item) => item.answerStatus !== 'unanswered')
+                    ]
+                }
+            });
+    };
     const renderItem = (item: AiListingQuestion, withAction: boolean): JSX.Element => (
         <li
             key={item.id}
@@ -207,16 +277,32 @@ export function AiQuestionsPanel({
                         options: { day: 'numeric', month: 'short', year: 'numeric' }
                     })}
                 </time>
-                {withAction && faqUrl !== '' && (
+                {faqUrl !== '' && (
                     <a
                         className={styles.addFaq}
-                        href={buildFaqPrefillHref({ faqUrl, question: item.question }).href}
+                        href={
+                            buildFaqPrefillHref({
+                                faqUrl,
+                                question: item.question,
+                                answer: stripMarkdownPlain(item.answer),
+                                messageId: item.id,
+                                includeAnswer: item.answerStatus === 'answered'
+                            }).href
+                        }
                     >
                         {t(
                             'host.properties.editor.aiQuestions.addAsFaq',
                             'Agregar como pregunta frecuente'
                         )}
                     </a>
+                )}
+                {withAction && (
+                    <button
+                        type="button"
+                        onClick={() => void mutateQuestion(item, 'dismiss')}
+                    >
+                        {t('host.properties.editor.aiQuestions.markSeen', 'Ya lo vi')}
+                    </button>
                 )}
             </div>
         </li>
@@ -225,6 +311,14 @@ export function AiQuestionsPanel({
     return (
         <div className={styles.panel}>
             {intro}
+            {mutationError && (
+                <p
+                    role="alert"
+                    className={styles.error}
+                >
+                    {mutationError}
+                </p>
+            )}
             {unanswered.length > 0 && (
                 <section
                     className={styles.block}
@@ -270,6 +364,49 @@ export function AiQuestionsPanel({
                         { shown: data.items.length, total: data.total }
                     )}
                 </p>
+            )}
+            {data.othersNextCursor && (
+                <button
+                    type="button"
+                    onClick={() => void loadMore()}
+                >
+                    {t('host.properties.editor.aiQuestions.viewMore', 'Ver más')}
+                </button>
+            )}
+            {data.dismissedCount > 0 && (
+                <details
+                    className={styles.block}
+                    open={data.items.length === 0}
+                >
+                    <summary>
+                        {t('host.properties.editor.aiQuestions.dismissedTitle', 'Descartadas')} (
+                        {data.dismissedCount})
+                    </summary>
+                    <ul className={styles.list}>
+                        {(data.dismissed ?? []).map((item) => (
+                            <li
+                                key={item.id}
+                                className={styles.item}
+                            >
+                                <p className={styles.question}>{item.question}</p>
+                                <p>{item.answer}</p>
+                                <time dateTime={item.askedAt}>
+                                    {formatDate({
+                                        date: new Date(item.askedAt),
+                                        locale,
+                                        options: { day: 'numeric', month: 'short', year: 'numeric' }
+                                    })}
+                                </time>
+                                <button
+                                    type="button"
+                                    onClick={() => void mutateQuestion(item, 'undismiss')}
+                                >
+                                    {t('host.properties.editor.aiQuestions.undo', 'Deshacer')}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </details>
             )}
         </div>
     );
