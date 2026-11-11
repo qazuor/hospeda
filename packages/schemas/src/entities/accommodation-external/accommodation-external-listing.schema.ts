@@ -31,7 +31,13 @@ export const ExternalReviewSnippetSchema = z.object({
     /** URL to the reviewer's profile photo. */
     profilePhoto: z.string().url().nullish(),
     /** Human-readable relative time string (e.g. "hace 2 semanas"). */
-    relativeTime: z.string().nullish()
+    relativeTime: z.string().nullish(),
+    /**
+     * BCP-47 language of `text`, as reported by the platform. The text is
+     * always the author's original wording, never a machine translation.
+     * Nullish so rows stored before this field existed remain valid.
+     */
+    languageCode: z.string().min(2).max(16).nullish()
 });
 export type ExternalReviewSnippet = z.infer<typeof ExternalReviewSnippetSchema>;
 

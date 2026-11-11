@@ -1,8 +1,8 @@
 {
     "section": {
-        "title": "Reputation on other platforms",
-        "subtitle": "Reviews from verified travellers on the main accommodation sites"
+        "title": "What guests say on other platforms"
     },
+    "alsoOn": "Also on:",
     "platform": {
         "google": "Google",
         "booking": "Booking.com",
@@ -11,23 +11,28 @@
     },
     "link": {
         "cta": "See our accommodation on {{platform}} →",
-        "viewOn": "View on {{platform}} →"
+        "viewOn": "View on {{platform}}"
     },
     "reviews": {
-        "title": "Featured reviews",
-        "via": "via {{platform}}"
+        "listLabel": "Google reviews",
+        "readMore": "Read more",
+        "readLess": "Read less",
+        "writtenIn": "Written in {{language}}",
+        "seeAllOn_one": "See the review on {{platform}}",
+        "seeAllOn_other": "See all {{count}} reviews on {{platform}}",
+        "starsLabel": "{{count}} out of 5 stars"
     },
     "aggregate": {
         "rating": "Average score",
         "reviewsCount_one": "{{count}} review",
         "reviewsCount_other": "{{count}} reviews",
+        "reviewsCountOn_one": "{{count}} review on {{platform}}",
+        "reviewsCountOn_other": "{{count}} reviews on {{platform}}",
         "noData": "No data available"
     },
     "snippets": {
-        "googleOnly": "Only Google displays full review text because it provides an official API. Other platforms show the aggregate score and a direct link for legal reasons.",
         "ttlExpired": "Text reviews are temporarily unavailable; showing score only",
-        "byAuthor": "By {{author}}",
-        "on": "on {{platform}}"
+        "byAuthor": "By {{author}}"
     },
     "ownerConfig": {
         "title": "External reputation settings",
