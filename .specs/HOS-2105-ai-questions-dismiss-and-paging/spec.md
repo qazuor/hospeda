@@ -443,7 +443,7 @@ El servicio vive en un módulo propio hermano del clasificador:
   `limit-keys.ts:26-34`), miembros en `key-enums.ts:50-55 y 64-87`, mappings en
   `apps/api/src/utils/listing-access/ai-quota-catalog.ts:4-25`, SQL de catálogo
   regenerado en una migración NUEVA (`pnpm gen:catalog-sql`; guard G18,
-  `check-catalog-sql.ts:2-9`) y grants por plan con los valores de OQ-5 (§9).
+  `check-catalog-sql.ts:2-9`) y grants por plan iguales al tope de chat de la ficha de cada plan (OQ-5, §9).
   G3 vigila que el código no use una key fuera del catálogo
   (`check-catalog-key-usage.ts:2-10`).
 - **Gate**: `enforceAiQuota({ userId: ownerId, vertical: <de la ficha>,
@@ -672,14 +672,26 @@ digest sin descartadas (5).
 
 ## 9. Preguntas abiertas
 
-- **OQ-5 — Cuotas por plan para `max_ai_faq_draft_per_month`.** La key nueva
-  necesita valores por tier en `scripts/production-catalog/catalog.ts` (y su
-  reflejo en la migración de catálogo, G18) antes de mergear; los otros
-  features AI usan escalas tipo 10/50/250
-  (`packages/db/src/migrations/0144_production_plan_catalog.sql:334, 348, 362`).
-  **Recomendación: espejar la escala de `max_ai_text_improve_per_month`**
-  (verificar sus valores vigentes en el catálogo de producción al mergear). El
-  valor exacto es decisión comercial, no de diseño.
+- **OQ-5 — Cuotas por plan para `max_ai_faq_draft_per_month`. RESUELTA
+  (owner, 11/11/2026): el mismo tope que el chat IA de la ficha en cada plan.**
+  El borrador solo responde preguntas que llegaron por ese chat, así que nunca
+  puede haber más borradores útiles que preguntas; un plan sin chat no recibe
+  preguntas y no necesita borradores. Valores en
+  `scripts/production-catalog/catalog.ts` (y su reflejo en la migración de
+  catálogo, G18), espejo de la key de chat de cada vertical:
+
+  | Plan | Key de chat que se espeja | `max_ai_faq_draft_per_month` |
+  |---|---|---|
+  | `owner-basico` / `owner-pro` / `owner-premium` | `max_ai_chat_per_month` | 50 / 250 / 1250 |
+  | `venue-basico` / `venue-pro` / `venue-premium` | `max_ai_chat_venue_per_month` | 0 / 0 / 1250 |
+  | `experience-basico` / `experience-pro` / `experience-premium` | `max_ai_chat_experience_per_month` | 0 / 0 / 1250 |
+
+  El entitlement `ai_faq_draft` se concede en los mismos planes donde el chat de
+  la ficha tiene tope mayor que 0. Se descartó espejar
+  `max_ai_text_improve_per_month` (la recomendación original): esa key solo
+  existe en los planes de alojamiento. Valores verificados contra el catálogo de
+  `origin/staging` del 11/11/2026; si el catálogo cambió al implementar, manda
+  la regla (igual al chat), no los números de esta tabla.
 
 ## 10. Smoke
 
