@@ -10,6 +10,7 @@ import {
     PlanMigrationCancelled
 } from '../../templates/billing/plan-migration-cancelled.js';
 import {
+    PLAN_MIGRATION_INCREASE_UPCOMING_SUBJECT,
     PLAN_MIGRATION_UPCOMING_SUBJECT,
     PlanMigrationUpcoming
 } from '../../templates/billing/plan-migration-upcoming.js';
@@ -94,8 +95,12 @@ function upcoming(row: EmailOutboxRow) {
         throw new TypeError('Faltan datos requeridos del recordatorio de migración');
     const data = parsed.data;
     const amounts = migrationAmounts(data);
+    const reason = data.reason ?? 'RETIREMENT';
     return {
-        subject: PLAN_MIGRATION_UPCOMING_SUBJECT,
+        subject:
+            reason === 'PRICE_INCREASE'
+                ? PLAN_MIGRATION_INCREASE_UPCOMING_SUBJECT
+                : PLAN_MIGRATION_UPCOMING_SUBJECT,
         react: (
             <PlanMigrationUpcoming
                 daysBefore={data.daysBefore}
@@ -107,6 +112,7 @@ function upcoming(row: EmailOutboxRow) {
                 applicationDate={data.applicationDate}
                 losesPromo={data.losesPromo}
                 providerNotifies={data.providerNotifies ?? false}
+                reason={reason}
             />
         )
     };
