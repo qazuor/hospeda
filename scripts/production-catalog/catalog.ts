@@ -116,6 +116,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
+                    key: 'ai_faq_draft'
+                },
+                {
                     key: 'ai_translate',
                     planQuota: 200,
                     trialQuota: 200
@@ -169,6 +172,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'max_ai_text_improve_per_month',
+                    value: 50
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
                     value: 50
                 },
                 {
@@ -290,6 +297,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
+                    key: 'ai_faq_draft'
+                },
+                {
                     key: 'ai_translate',
                     planQuota: 1000,
                     trialQuota: 200
@@ -343,6 +353,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'max_ai_text_improve_per_month',
+                    value: 250
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
                     value: 250
                 },
                 {
@@ -473,6 +487,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
+                    key: 'ai_faq_draft'
+                },
+                {
                     key: 'ai_translate',
                     planQuota: 5000,
                     trialQuota: 200
@@ -526,6 +543,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'max_ai_text_improve_per_month',
+                    value: 1250
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
                     value: 1250
                 },
                 {
@@ -648,6 +669,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'max_ai_chat_venue_per_month',
+                    value: 0
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
                     value: 0
                 },
                 {
@@ -774,6 +799,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 0
                 },
                 {
+                    key: 'max_ai_faq_draft_per_month',
+                    value: 0
+                },
+                {
                     key: 'max_active_private_galleries',
                     value: 0
                 }
@@ -870,6 +899,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
+                    key: 'ai_faq_draft'
+                },
+                {
                     key: 'multilingual_venue_menu'
                 },
                 {
@@ -908,6 +940,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 {
                     key: 'max_venues',
                     value: 5
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
+                    value: 1250
                 },
                 {
                     key: 'max_ai_chat_venue_per_month',
@@ -1025,6 +1061,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'max_ai_chat_experience_per_month',
+                    value: 0
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
                     value: 0
                 },
                 {
@@ -1148,6 +1188,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 0
                 },
                 {
+                    key: 'max_ai_faq_draft_per_month',
+                    value: 0
+                },
+                {
                     key: 'max_active_private_galleries',
                     value: 0
                 }
@@ -1238,6 +1282,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
+                    key: 'ai_faq_draft'
+                },
+                {
                     key: 'manage_experience_private_galleries'
                 }
             ],
@@ -1273,6 +1320,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                 {
                     key: 'max_experiences',
                     value: 10
+                },
+                {
+                    key: 'max_ai_faq_draft_per_month',
+                    value: 1250
                 },
                 {
                     key: 'max_ai_chat_experience_per_month',
