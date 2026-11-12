@@ -137,6 +137,7 @@ describe('HOS-2064 own declined signup list', () => {
         const ownerA = await seedUser('declined-owner-a');
         const ownerB = await seedUser('declined-owner-b');
         await seedDeclined(ownerA);
+        expect(await readDeclined(ownerA)).toHaveLength(1);
         // Act
         const notices = await readDeclined(ownerB);
         // Assert

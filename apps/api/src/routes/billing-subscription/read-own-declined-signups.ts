@@ -39,7 +39,12 @@ export interface DeclinedSignupNotice {
     readonly plan: { readonly slug: string; readonly name: string };
 }
 
-/** Pure rule of §4 (one notice per vertical at most), ordered by vertical. */
+/**
+ * Pure rule of §4 (one notice per vertical at most), ordered by vertical.
+ * Known risk: the seven-day window uses `updatedAt`, and the `set_updated_at`
+ * trigger rewrites it on every UPDATE. A future writer that updates a
+ * `CHARGE_DECLINED` row without changing its status would restart the window.
+ */
 export function selectDeclinedSignupNotices(input: {
     readonly rows: readonly DeclinedSignupCandidateRow[];
     readonly now: Date;

@@ -285,8 +285,7 @@
                 "cancelledOnActivation": "You have a Tourist VIP subscription. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
                 "unknownOnActivation": "If you have a Tourist VIP subscription and this plan includes its benefits, that subscription is cancelled once the plan is active, with no refund."
             },
-            "retry": "Try another payment method",
-            "attemptPlan": "Plan you tried to subscribe to: {{plan}}",
+            "retry": "Try again",
             "vertical": {
                 "accommodation": "accommodation",
                 "experience": "experiences",
