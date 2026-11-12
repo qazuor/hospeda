@@ -30,6 +30,15 @@ describe('resolveManualInstallmentView (HOS-1782)', () => {
             amountLine: expect.stringContaining('account.partner.installment.amount'),
             dueLine: expect.stringContaining('account.partner.installment.dueOn')
         });
+        expect(result?.amountLine).toContain('"amount":"$ 100"');
+
+        const fractional = resolveManualInstallmentView({
+            result: input([{ ...item, amount: { amountMinor: 10050, currency: 'ARS' as const } }]),
+            vertical: 'partner',
+            locale: 'es',
+            t
+        });
+        expect(fractional?.amountLine).toContain('"amount":"$ 100,50"');
     });
 
     it('says the team confirms the amount when it is unknown', () => {

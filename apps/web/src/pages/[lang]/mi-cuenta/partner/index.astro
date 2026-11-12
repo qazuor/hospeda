@@ -189,8 +189,10 @@ try {
                 </AccountSectionCard>
 
                 {!isRevoked && installmentView && (
-                    <AccountSectionCard data-testid="partner-installment">
-                        <h2>{t('account.partner.installment.title', 'Tu cuota a pagar')}</h2>
+                    <AccountSectionCard
+                        data-testid="partner-installment"
+                        title={t('account.partner.installment.title', 'Tu cuota a pagar')}
+                    >
                         <p>{installmentView.planLine}</p>
                         <p data-testid="partner-installment-amount">{installmentView.amountLine}</p>
                         <p data-testid="partner-installment-due">{installmentView.dueLine}</p>

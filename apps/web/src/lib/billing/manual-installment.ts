@@ -26,7 +26,7 @@ export function resolveManualInstallmentView(input: {
     const date = formatSelfCancelDate({ iso: installment.dueAt, locale: input.locale });
     if (!date) return null;
     const planLine = input.t('account.partner.installment.plan', undefined, {
-        plan: getPlanName({ plan: { ...installment.plan, description: '' }, t: input.t })
+        plan: getPlanName({ plan: installment.plan, t: input.t })
     });
     const amountLine = installment.amount
         ? input.t('account.partner.installment.amount', undefined, {
