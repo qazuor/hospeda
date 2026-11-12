@@ -34,6 +34,11 @@ import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import type { ChargebackSuspensionNoticeContent } from './chargeback-suspension-notice';
+import {
+    assertNewPaidSignupsOpen,
+    type PaidSignupsFreezePort,
+    platformPaidSignupsFreeze
+} from './paid-signups-freeze';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
 import {
     appliedAuthorizationResult,
@@ -78,6 +83,8 @@ export interface StartSubscriptionPorts {
     readonly planPolicy: VerticalsForBilling['planPolicy'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly touristVipInheritance: TouristVipInheritancePort;
+    /** Defaults to platformPaidSignupsFreeze; tests inject a port to isolate the global row. */
+    readonly paidSignupsFreeze?: PaidSignupsFreezePort;
 }
 
 export interface StartSubscriptionInput {
@@ -319,6 +326,11 @@ export async function startSubscription(
         vertical: choice.vertical,
         userId: input.userId,
         touristVipInheritance: ports.touristVipInheritance
+    });
+
+    // HOS-1749: refuse before declined-attempt cleanup, commitment or provider calls.
+    await assertNewPaidSignupsOpen({
+        freeze: ports.paidSignupsFreeze ?? platformPaidSignupsFreeze
     });
 
     await closeDeclinedAttempts({ userId: input.userId, vertical: choice.vertical }, ports);

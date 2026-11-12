@@ -19,6 +19,7 @@ export type PublishDeniedReason =
     | 'INVALID_FROM'
     | 'LIMIT_REACHED'
     | 'TRIAL_LIMIT_REACHED'
+    | 'NEW_PAID_SIGNUPS_FROZEN'
     | 'STATE_CHANGED'
     | TrialStartDeniedReason;
 
@@ -52,6 +53,8 @@ export async function publishListing(args: {
     readonly event: VerticalActivationEvent;
     readonly emailPseudonym: string;
     readonly correlationId: string;
+    /** Optional global signup freeze check, consulted only when PB1 would start T1. */
+    readonly newSignupsFrozen?: () => Promise<boolean>;
 }): Promise<PublishListingResult> {
     const decision = await withPublicationLock({
         unitOfWork: args.unitOfWork,
@@ -122,6 +125,9 @@ export async function publishListing(args: {
                 });
                 if (!preflight.starts)
                     return { published: false, reason: preflight.reason } as const;
+                if (await args.newSignupsFrozen?.()) {
+                    return { published: false, reason: 'NEW_PAID_SIGNUPS_FROZEN' } as const;
+                }
                 const trial = await startTrialInTransaction({
                     tx,
                     billing: args.billing,
