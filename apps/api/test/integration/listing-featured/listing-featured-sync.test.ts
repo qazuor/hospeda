@@ -301,6 +301,26 @@ describe('HOS-1718 a live LISTING boost features its listing on every public rea
         // Assert
         expect(await featured(VerticalEnum.ACCOMMODATION, id)).toBe(false);
         expect(schedule).toHaveBeenCalledTimes(0);
+        // Arrange: model a concurrent writer winning the compare-and-set.
+        await setFlag(VerticalEnum.ACCOMMODATION, id, true);
+        await getDb().execute(
+            sql`CREATE OR REPLACE FUNCTION hos1718_suppress_featured_update() RETURNS trigger LANGUAGE plpgsql AS $body$ BEGIN IF OLD.featured_by_entitlement = TRUE AND NEW.featured_by_entitlement = FALSE THEN RETURN NULL; END IF; RETURN NEW; END $body$`
+        );
+        await getDb().execute(
+            sql`CREATE TRIGGER hos1718_suppress_featured_update BEFORE UPDATE ON accommodations FOR EACH ROW EXECUTE FUNCTION hos1718_suppress_featured_update()`
+        );
+        try {
+            // Act: the lost CAS must not report a write or schedule revalidation.
+            await notice(userId, VerticalEnum.ACCOMMODATION);
+            // Assert
+            expect(await featured(VerticalEnum.ACCOMMODATION, id)).toBe(true);
+            expect(schedule).toHaveBeenCalledTimes(0);
+        } finally {
+            await getDb().execute(
+                sql`DROP TRIGGER IF EXISTS hos1718_suppress_featured_update ON accommodations`
+            );
+            await getDb().execute(sql`DROP FUNCTION IF EXISTS hos1718_suppress_featured_update()`);
+        }
     });
 
     it.each(
