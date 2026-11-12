@@ -1,28 +1,48 @@
 -- Owner decision 2026-11-12: grant FAQ drafts to existing subscribers immediately.
--- This is a documented additive-only exception to DEC-ARCH-001. New plan versions
--- are intentionally not published: subscriptions anchor plan_version_id and
--- billing_option_id through a composite FK, and billing options are tied to MercadoPago.
---
--- The immutability trigger permits child rows only for versions recorded as created
--- in this transaction. These are the current version ids published by 0144. Setting
--- the transaction-local allowlist is harmless on fresh databases before the extra
--- trigger is installed, and enables the same inserts on staging/production.
-SELECT set_config(
-    'hospeda.catalog_versions_created_in_xact',
-    concat_ws(',',
-        nullif(current_setting('hospeda.catalog_versions_created_in_xact', true), ''),
-        '8f23bcdd-1abc-5342-bfb4-b7dcca4bbf9d',
-        '5171d736-8b7d-5840-9262-4ac6cb83bcac',
-        '3696b354-122a-528f-9090-41e22a61091f',
-        '8e4b0c4e-702f-5203-85e3-e9c06365eb87',
-        'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9',
-        '54a6f750-1b4c-53ff-ba51-c27f51921598',
-        '3b701ee3-ea7b-5360-a6fb-58bc75842680',
-        'c42b276a-4382-5f17-b81e-19f6ab4a55f2',
-        'cfbb3e23-b39b-5711-985a-ce20714a05df'
-    ),
-    true
-);
+-- The local additive grant signal is bounded by extras 041's trigger: only new
+-- child-table keys may be inserted; duplicates, UPDATE, and DELETE remain rejected.
+-- New plan versions are intentionally not published: subscriptions anchor
+-- plan_version_id and billing_option_id through a composite FK, and billing
+-- options are tied to MercadoPago.
+-- Live runs apply this migration before extras, so define the exact same function
+-- body here. Fresh databases have no trigger yet; extras later installs the
+-- triggers and re-applies this identical function. Keep every INSERT as a
+-- separate statement: restoreProductionPlanCatalog replays the two child INSERT
+-- chunks inside the transaction that creates the versions.
+CREATE OR REPLACE FUNCTION reject_catalog_child_insert_into_published_version()
+  RETURNS TRIGGER AS $$
+DECLARE
+  parent_id uuid;
+  parent_exists boolean;
+  created text := coalesce(current_setting('hospeda.catalog_versions_created_in_xact', true), '');
+  additive_grant text := coalesce(current_setting('hospeda.catalog_additive_grant', true), '');
+  key_exists boolean;
+BEGIN
+  parent_id := (to_jsonb(NEW) ->> TG_ARGV[1])::uuid;
+  EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I WHERE id = $1)', TG_ARGV[0])
+    INTO parent_exists USING parent_id;
+  -- A missing parent is left to the foreign key, which names it.
+  IF parent_exists AND NOT (parent_id::text = ANY (string_to_array(created, ','))) THEN
+    IF additive_grant = '' THEN
+      RAISE EXCEPTION '% is immutable: % % was published by another transaction; publish a new version instead',
+        TG_TABLE_NAME, TG_ARGV[0], parent_id
+        USING ERRCODE = 'P0001';
+    END IF;
+    EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I WHERE %I = $1 AND key = $2)', TG_TABLE_NAME, TG_ARGV[1])
+      INTO key_exists USING parent_id, to_jsonb(NEW) ->> 'key';
+    IF key_exists THEN
+      RAISE EXCEPTION '% is immutable: additive grant % cannot duplicate key % for version %',
+        TG_TABLE_NAME, additive_grant, to_jsonb(NEW) ->> 'key', parent_id
+        USING ERRCODE = 'P0001';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+-- Use a transaction-local reason, never claim old versions were created here.
+SELECT set_config('hospeda.catalog_additive_grant', 'HOS-2105', true);
 --> statement-breakpoint
 
 INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enforcement_strategy", "key_class") VALUES
