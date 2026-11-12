@@ -9,7 +9,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Required additive migration metadata. */
 export const meta = {
-    name: '0167-hos1595-publish-addon-version-permission',
+    name: '0168-hos1595-publish-addon-version-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

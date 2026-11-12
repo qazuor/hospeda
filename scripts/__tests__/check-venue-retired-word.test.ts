@@ -307,7 +307,10 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(126);
+        expect(history.length).toBe(127);
+        expect(history).toContain(
+            'packages/seed/test/data-migrations/0167-hos-2105-faq-draft-ai-settings.test.ts'
+        );
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(

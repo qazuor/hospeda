@@ -45,6 +45,13 @@ Consistency across a monorepo with 15+ packages requires strict dependency gover
 - **Never**: ag-grid, react-table v7, custom table implementations
 - **Reason**: Headless, type-safe, feature-complete
 
+### Drag-and-Drop Sorting
+
+- **Use**: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities` (admin and web — web since HOS-2126, the accommodation photo gallery)
+- **Never**: react-beautiful-dnd, react-dnd, SortableJS, hand-rolled HTML5 drag events for reordering
+- **Reason**: Headless, keyboard and touch sensors built in, screen-reader announcements we can localize. Keep a non-drag alternative (e.g. move up/down buttons) next to it
+- **Note**: HTML5 drag events are still fine for dropping FILES onto an upload zone — that is not reordering
+
 ### Data Fetching (Admin)
 
 - **Use**: TanStack Query

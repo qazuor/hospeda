@@ -267,3 +267,120 @@ describe('venue minimum-age scope needs a minimum age (HOS-2098)', () => {
         });
     });
 });
+
+describe('HOS-910: the minimum stay can be cleared on a draft', () => {
+    it('removes minNights when the body sets it to null, keeping the other rules', () => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'accommodation',
+            payload: { policies: { minNights: null } },
+            current: { paymentMethods: ['cash'], minNights: 3, maxNights: 10 }
+        });
+
+        // Assert
+        expect(result.policies).toEqual({ paymentMethods: ['cash'], maxNights: 10 });
+    });
+});
+
+describe('accommodation event details need events allowed (HOS-2122)', () => {
+    const DETAILS = { maxGuests: 30, endTime: '00:00', amplifiedSound: true };
+
+    /** Asserts the call throws the 400 that names `policies.eventsDetails`. */
+    function expectDetailsRejected(run: () => unknown): void {
+        try {
+            run();
+            expect.unreachable('expected a VALIDATION_ERROR');
+        } catch (error) {
+            expect(error).toBeInstanceOf(ServiceError);
+            expect((error as ServiceError).code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(JSON.stringify((error as ServiceError).details)).toContain(
+                'policies.eventsDetails'
+            );
+        }
+    }
+
+    it('keeps details sent together with eventsAllowed: true', () => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'accommodation',
+            payload: { policies: { eventsAllowed: true, eventsDetails: DETAILS } },
+            current: { paymentMethods: ['cash'] }
+        });
+
+        // Assert
+        expect(result.policies).toEqual({
+            paymentMethods: ['cash'],
+            eventsAllowed: true,
+            eventsDetails: DETAILS
+        });
+    });
+
+    it.each([
+        ['switched to no', { eventsAllowed: false }],
+        ['switched to not informed', { eventsAllowed: null }]
+    ])('drops the stored details when events are %s', (_label, patch) => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'accommodation',
+            payload: { policies: patch },
+            current: { paymentMethods: ['cash'], eventsAllowed: true, eventsDetails: DETAILS }
+        });
+
+        // Assert
+        expect(result.policies).not.toHaveProperty('eventsDetails');
+        expect(result.policies).toMatchObject({ paymentMethods: ['cash'] });
+    });
+
+    it('rejects details sent while events are not allowed', () => {
+        expectDetailsRejected(() =>
+            resolveUpdatePolicies({
+                vertical: 'accommodation',
+                payload: { policies: { eventsDetails: DETAILS } },
+                current: { eventsAllowed: false }
+            })
+        );
+    });
+
+    it('rejects a body that sends details together with eventsAllowed: false', () => {
+        expectDetailsRejected(() =>
+            resolveUpdatePolicies({
+                vertical: 'accommodation',
+                payload: { policies: { eventsAllowed: false, eventsDetails: DETAILS } },
+                current: { eventsAllowed: true, eventsDetails: DETAILS }
+            })
+        );
+    });
+
+    it('accepts the editor patch that switches events off and clears the details', () => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'accommodation',
+            payload: { policies: { eventsAllowed: false, eventsDetails: null } },
+            current: { paymentMethods: ['cash'], eventsAllowed: true, eventsDetails: DETAILS }
+        });
+
+        // Assert
+        expect(result.policies).toEqual({ paymentMethods: ['cash'], eventsAllowed: false });
+    });
+
+    it('rejects details without eventsAllowed on create', () => {
+        expectDetailsRejected(() =>
+            resolveCreatePolicies({
+                vertical: 'accommodation',
+                payload: { policies: { eventsDetails: DETAILS } }
+            })
+        );
+    });
+
+    it('does not touch venues: the rule is accommodation-only', () => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: { policies: { eventsAllowed: false } },
+            current: { paymentMethods: ['cash'], eventsAllowed: true }
+        });
+
+        // Assert
+        expect(result.policies).toEqual({ paymentMethods: ['cash'], eventsAllowed: false });
+    });
+});

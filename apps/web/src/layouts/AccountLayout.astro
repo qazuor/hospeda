@@ -24,6 +24,7 @@ import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
+import { placeProviderGroup, resolveGroupDefaultOpen } from '@/lib/account-nav-collapse';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -106,7 +107,12 @@ const { groups: baseNavGroups } = getNavForSurface({
  */
 const isProvider = Astro.locals.user?.ownsHostTradeListing === true;
 
-const navGroups = isProvider ? [...baseNavGroups, PROVIDER_NAV_GROUP] : baseNavGroups;
+// HOS-2124: provider goes right before Tourist so Tourist is always last.
+const navGroups = placeProviderGroup({
+	groups: baseNavGroups,
+	providerGroup: isProvider ? PROVIDER_NAV_GROUP : null,
+});
+const visibleGroupIds = navGroups.map((group) => group.id);
 
 /**
  * Discovery doors (HOS-131 §6.2/§6.3) render ONLY on this surface — they're
@@ -188,10 +194,32 @@ const activeLabel = resolveActiveLabel();
 					{navGroups.map((group) => {
 						const suppressHeader = group.suppressHeaderWhenSingle && group.items.length === 1;
 
+						const containsActive = group.items.some(
+							(item: NavItem) => getActiveSectionKey(item.href) === activeSection,
+						);
+						const defaultOpen = resolveGroupDefaultOpen({
+							groupId: group.id,
+							visibleGroupIds,
+							containsActive,
+						});
+						const Wrapper = suppressHeader ? 'div' : 'details';
+
 						return (
-						<div class="account-nav__group">
+						<Wrapper
+							class="account-nav__group"
+							{...(suppressHeader
+								? {}
+								: {
+									'data-nav-group': group.id,
+									'data-contains-active': containsActive ? 'true' : undefined,
+									open: defaultOpen,
+								})}
+						>
 							{!suppressHeader && (
-								<p class="account-nav__group-label">{t(group.i18nKey)}</p>
+								<summary class="account-nav__group-label">
+									<span>{t(group.i18nKey)}</span>
+									<span class="account-nav__group-chevron" aria-hidden="true">▾</span>
+								</summary>
 							)}
 							<ul class="account-nav__list">
 								{group.items.map((item: NavItem) => {
@@ -222,7 +250,7 @@ const activeLabel = resolveActiveLabel();
 									);
 								})}
 							</ul>
-						</div>
+						</Wrapper>
 						);
 					})}
 				</nav>
@@ -276,7 +304,56 @@ const activeLabel = resolveActiveLabel();
 </BaseLayout>
 
 <script>
+	import { ACCOUNT_NAV_STORAGE_KEY, parseStoredNavState } from '@/lib/account-nav-collapse';
+
+	/**
+	 * HOS-2124: layers the remembered open/closed state of each area on top of
+	 * the server-rendered `open` defaults. The area holding the current page
+	 * (`data-contains-active`) is never closed. Every storage access is wrapped
+	 * in try/catch: without storage the server defaults simply stand.
+	 */
+	function initAccountNavGroups(): void {
+		const groups = document.querySelectorAll<HTMLDetailsElement>('details[data-nav-group]');
+		if (groups.length === 0) return;
+
+		let raw: string | null = null;
+		try {
+			raw = localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY);
+		} catch {
+			raw = null;
+		}
+		const stored = parseStoredNavState({ raw });
+
+		for (const details of groups) {
+			const id = details.dataset.navGroup;
+			if (!id) continue;
+			const remembered = stored[id];
+			if (typeof remembered === 'boolean' && details.dataset.containsActive !== 'true') {
+				details.open = remembered;
+			}
+			// Persist on the user's own gesture (click / Enter / Space on the
+			// summary), not on `toggle`, so applying the state above never
+			// writes back. The click default flips `open` AFTER this handler,
+			// so the new state is the inverse of the current one.
+			details.querySelector('summary')?.addEventListener('click', () => {
+				const next = !details.open;
+				try {
+					const current = parseStoredNavState({
+						raw: localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY),
+					});
+					localStorage.setItem(
+						ACCOUNT_NAV_STORAGE_KEY,
+						JSON.stringify({ ...current, [id]: next }),
+					);
+				} catch {
+					// Storage unavailable: the choice just won't be remembered.
+				}
+			});
+		}
+	}
+
 	function initAccountNav(): void {
+		initAccountNavGroups();
 		const wrapper = document.querySelector<HTMLDivElement>('.account-page__nav');
 		const toggle = document.querySelector<HTMLButtonElement>('.account-page__toggle');
 		const nav = document.getElementById('account-nav');
@@ -431,15 +508,49 @@ const activeLabel = resolveActiveLabel();
 		border-top: 1px solid var(--core-foreground-a05);
 	}
 
+	/* Area header: a native <summary>, styled as the group label. */
 	.account-nav__group-label {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		margin: 0 0 var(--space-1);
-		padding: 0 var(--space-3);
+		padding: 0.25rem var(--space-3);
 		font-family: var(--font-sans);
 		font-size: 0.6875rem;
 		font-weight: 600;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--core-muted-foreground);
+		cursor: pointer;
+		list-style: none;
+		border-radius: var(--radius-button);
+	}
+
+	.account-nav__group-label::-webkit-details-marker {
+		display: none;
+	}
+
+	.account-nav__group-label:hover {
+		color: var(--core-foreground);
+	}
+
+	.account-nav__group-label:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	.account-nav__group-chevron {
+		transition: transform var(--duration-fast) ease;
+		transform: rotate(-90deg);
+	}
+
+	.account-nav__group[open] > .account-nav__group-label .account-nav__group-chevron {
+		transform: rotate(0deg);
+	}
+
+	/* Closed areas keep no bottom gap under the label. */
+	.account-nav__group:not([open]) > .account-nav__group-label {
+		margin-bottom: 0;
 	}
 
 	.account-nav__list {

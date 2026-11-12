@@ -70,7 +70,9 @@ describe('HOS-2096 rate overrides wiring', () => {
     it('records 0 when settings have no override for the model', async () => {
         mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
 
-        await meterAiUsage(input);
+        // This deliberately unknown model has neither a DB override nor an
+        // in-code rate. gpt-5.4-nano now has a default rate of its own.
+        await meterAiUsage({ ...input, model: 'unrated-test-model' });
 
         expect(recorded).toEqual([0]);
     });
@@ -79,7 +81,7 @@ describe('HOS-2096 rate overrides wiring', () => {
         mockResolveConfig.mockRejectedValue(new Error('db down'));
 
         await expect(loadModelRateOverrides()).resolves.toBeUndefined();
-        await meterAiUsage(input);
+        await meterAiUsage({ ...input, model: 'unrated-test-model' });
 
         expect(recorded).toEqual([0]);
     });

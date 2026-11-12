@@ -9,7 +9,8 @@ export const AI_ENTITLEMENT_KEY_BY_FEATURE = {
     search: 'ai_search',
     support: 'ai_support',
     translate: 'ai_translate',
-    accommodation_import: 'ai_accommodation_import'
+    accommodation_import: 'ai_accommodation_import',
+    faq_draft: 'ai_faq_draft'
 } as const satisfies Partial<Record<AiFeature, string>>;
 
 /** Catalog monthly limit key used by each metered AI feature. */
@@ -21,5 +22,6 @@ export const AI_LIMIT_KEY_BY_FEATURE = {
     search: 'max_ai_search_per_month',
     support: 'max_ai_support_per_month',
     translate: 'max_ai_translate_per_month',
-    accommodation_import: 'max_ai_accommodation_import_per_month'
+    accommodation_import: 'max_ai_accommodation_import_per_month',
+    faq_draft: 'max_ai_faq_draft_per_month'
 } as const satisfies Partial<Record<AiFeature, string>>;

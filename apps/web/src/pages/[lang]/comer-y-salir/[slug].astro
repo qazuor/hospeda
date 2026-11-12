@@ -153,7 +153,7 @@ const faqs: readonly DetailFaq[] =
 // --- Gallery images ---
 const galleryImages = (() => {
     const mediaObj = raw.media as
-        | { gallery?: Array<{ url?: string; caption?: string }> }
+        | { gallery?: Array<{ url?: string; caption?: string; description?: string }> }
         | undefined;
     const gallery = mediaObj?.gallery ?? [];
     if (gallery.length > 0) {
@@ -162,7 +162,8 @@ const galleryImages = (() => {
             .map((g) => ({
                 url: String(g.url),
                 alt: g.caption ?? venue.name,
-                caption: g.caption
+                caption: g.caption,
+                description: g.description
             }));
     }
     if (venue.featuredImage.url && !venue.featuredImage.url.includes('placeholder')) {

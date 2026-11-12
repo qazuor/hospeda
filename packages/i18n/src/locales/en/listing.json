@@ -530,6 +530,21 @@
             "yes": "Private events allowed",
             "no": "No events allowed"
         },
+        "eventsDetails": {
+            "title": "Event details",
+            "maxGuestsLabel": "Maximum guests",
+            "maxGuests": "max. guests: {{count}}",
+            "amplifiedSoundLabel": "Amplified music or sound is allowed",
+            "amplifiedSound": {
+                "yes": "amplified music allowed",
+                "no": "no amplified music"
+            },
+            "endTimeLabel": "Latest end time",
+            "endTime": "until {{time}}",
+            "extraCostLabel": "I charge an extra fee for events",
+            "extraCost": "extra charge",
+            "notesLabel": "Note"
+        },
         "checkIn": {
             "label": "Check-in"
         },
@@ -545,6 +560,28 @@
         },
         "maxNights": {
             "label": "Maximum nights"
+        },
+        "deposit": {
+            "label": "Booking deposit",
+            "editorLabel": "Do you ask for a deposit to book?",
+            "yes": "A deposit is required",
+            "yesWithPercentage": "A {{percentage}}% deposit is required",
+            "no": "No deposit required",
+            "percentageLabel": "Deposit percentage (%)",
+            "notesLabel": "Note"
+        },
+        "spokenLanguages": {
+            "label": "Languages we speak",
+            "editorHint": "Tick the languages you can attend guests in.",
+            "language": {
+                "es": "Spanish",
+                "en": "English",
+                "pt": "Portuguese",
+                "it": "Italian",
+                "fr": "French",
+                "de": "German",
+                "other": "Other languages"
+            }
         },
         "reservations": {
             "label": "Reservations",

@@ -153,5 +153,7 @@ export enum ServiceErrorCode {
      * which have opposite next steps.
      */
     NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN',
-    ADDON_PURCHASES_FROZEN = 'ADDON_PURCHASES_FROZEN'
+    ADDON_PURCHASES_FROZEN = 'ADDON_PURCHASES_FROZEN',
+    /** FAQ draft generation is only available for unanswered or unclassified questions. */
+    FAQ_DRAFT_NOT_ELIGIBLE = 'FAQ_DRAFT_NOT_ELIGIBLE'
 }

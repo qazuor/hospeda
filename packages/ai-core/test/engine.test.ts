@@ -658,6 +658,44 @@ describe('generateObject routing', () => {
         expect(result.provider).toBe('stub');
     });
 
+    it('sends the resolved system content once, inside the prompt, never as systemPrompt', async () => {
+        // Arrange
+        const stub = new StubProvider();
+        const generateObjectSpy = vi.fn(stub.generateObject.bind(stub));
+        const provider: AiProvider = { ...stub, id: 'openai', generateObject: generateObjectSpy };
+        const engine = makeEngine(new Map<string, AiProvider>([['openai', provider]]));
+
+        // Act
+        await engine.generateObject(
+            { feature: 'search', locale: 'es', prompt: 'test' },
+            TestSchema
+        );
+
+        // Assert
+        const sent = generateObjectSpy.mock.calls[0]?.[0];
+        expect(sent?.systemPrompt).toBeUndefined();
+        expect(sent?.prompt.endsWith('\n\nUser request: test')).toBe(true);
+    });
+
+    it('lets a caller systemPrompt win without sending it twice', async () => {
+        // Arrange
+        const stub = new StubProvider();
+        const generateObjectSpy = vi.fn(stub.generateObject.bind(stub));
+        const provider: AiProvider = { ...stub, id: 'openai', generateObject: generateObjectSpy };
+        const engine = makeEngine(new Map<string, AiProvider>([['openai', provider]]));
+
+        // Act
+        await engine.generateObject(
+            { feature: 'search', locale: 'es', prompt: 'test', systemPrompt: 'CALLER SYSTEM' },
+            TestSchema
+        );
+
+        // Assert
+        const sent = generateObjectSpy.mock.calls[0]?.[0];
+        expect(sent?.systemPrompt).toBeUndefined();
+        expect(sent?.prompt).toBe('CALLER SYSTEM\n\nUser request: test');
+    });
+
     it('should fall back on retryable primary failure', async () => {
         // Arrange
         const failOpenAi = makeFailingProvider('openai', retryableError());

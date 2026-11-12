@@ -443,6 +443,9 @@
         },
         "max_active_private_galleries": {
             "title": "You've reached your active private galleries limit"
+        },
+        "max_ai_faq_draft_per_month": {
+            "title": "Monthly AI FAQ draft limit reached"
         }
     },
     "limits": {
@@ -621,7 +624,8 @@
         "partner_carousel_presence": "Logo in the partner carousel",
         "recover_own_listing": "View, export, reactivate or delete your listings",
         "subscribe_to_plan": "Subscribe to a plan",
-        "activate_trial": "Start the trial period"
+        "activate_trial": "Start the trial period",
+        "ai_faq_draft": "AI FAQ answer drafts"
     },
     "entitlementByAudience": {
         "venue": {
@@ -783,7 +787,8 @@
             "max_ai_accommodation_import_per_month": "AI imports per month",
             "max_search_history_entries": "Search history entries",
             "max_collections": "Favorites collections",
-            "max_active_private_galleries": "Active private galleries"
+            "max_active_private_galleries": "Active private galleries",
+            "max_ai_faq_draft_per_month": "AI FAQ answer drafts per month"
         },
         "lineMark": "For listings in the {{rubro}} category"
     },
@@ -809,7 +814,8 @@
         "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
         "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
-        "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
+        "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse.",
+        "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month."
     },
     "addonPurchase": {
         "title": "Buy add-ons",

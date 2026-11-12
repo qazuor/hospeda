@@ -60,3 +60,105 @@ describe('buildHouseRuleRows', () => {
         expect(rows).toEqual([{ id: 'pets', label: 'Mascotas', value: 'No se admiten mascotas' }]);
     });
 });
+
+describe('buildHouseRuleRows — deposit, languages and event details (HOS-2120, HOS-2122)', () => {
+    it('renders a deposit with its percentage and note', () => {
+        // Act
+        const rows = buildHouseRuleRows({
+            policies: {
+                deposit: {
+                    required: true,
+                    percentage: 30,
+                    notes: { es: 'Por transferencia', en: 'By transfer', pt: '' }
+                }
+            },
+            t,
+            locale: 'en'
+        });
+
+        // Assert
+        expect(rows).toEqual([
+            {
+                id: 'deposit',
+                label: 'Seña para reservar',
+                value: 'Se pide seña del 30%',
+                note: 'By transfer'
+            }
+        ]);
+    });
+
+    it.each([
+        ['without a percentage', { required: true }, 'Se pide seña'],
+        ['when none is asked', { required: false }, 'No se pide seña']
+    ])('renders a deposit %s', (_label, deposit, value) => {
+        const rows = buildHouseRuleRows({ policies: { deposit }, t, locale: 'es' });
+        expect(rows.map((row) => [row.id, row.value])).toEqual([['deposit', value]]);
+    });
+
+    it('renders the spoken languages, and nothing for an empty list', () => {
+        expect(
+            buildHouseRuleRows({
+                policies: { spokenLanguages: ['es', 'it', 'other'] },
+                t,
+                locale: 'es'
+            })
+        ).toEqual([
+            {
+                id: 'spokenLanguages',
+                label: 'Idiomas en que te atendemos',
+                value: 'Español, Italiano, Otros idiomas'
+            }
+        ]);
+        expect(buildHouseRuleRows({ policies: { spokenLanguages: [] }, t, locale: 'es' })).toEqual(
+            []
+        );
+    });
+
+    it('appends only the informed event details when events are allowed', () => {
+        // Act
+        const rows = buildHouseRuleRows({
+            policies: {
+                eventsAllowed: true,
+                eventsDetails: {
+                    maxGuests: 40,
+                    endTime: '00:00',
+                    amplifiedSound: false,
+                    extraCost: true,
+                    notes: { es: 'Avisar con una semana', en: '', pt: '' }
+                }
+            },
+            t,
+            locale: 'es'
+        });
+
+        // Assert
+        expect(rows).toEqual([
+            {
+                id: 'eventsAllowed',
+                label: 'Eventos',
+                value: 'Se permiten eventos privados · máximo de invitados: 40 · hasta las 00:00 · sin música amplificada · con cargo extra',
+                note: 'Avisar con una semana'
+            }
+        ]);
+    });
+
+    it('renders the bare yes when no detail is informed', () => {
+        const rows = buildHouseRuleRows({
+            policies: { eventsAllowed: true, eventsDetails: {} },
+            t,
+            locale: 'es'
+        });
+        expect(rows.map((row) => row.value)).toEqual(['Se permiten eventos privados']);
+    });
+
+    it('ignores orphan details when events are not allowed', () => {
+        const rows = buildHouseRuleRows({
+            policies: { eventsAllowed: false, eventsDetails: { maxGuests: 40, extraCost: true } },
+            t,
+            locale: 'es'
+        });
+        expect(rows).toEqual([
+            { id: 'eventsAllowed', label: 'Eventos', value: 'No se permiten eventos' }
+        ]);
+    });
+});

@@ -33,7 +33,7 @@ import {
     type AiListingQuestionsResponse
 } from '@repo/schemas';
 import { and, asc, desc, eq, gte, isNull, lt, or, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, alias } from 'drizzle-orm/pg-core';
 
 /**
  * Listing table per chat vertical — total over `AiChatEntityType`.
@@ -62,6 +62,34 @@ export interface IsListingOwnedByInput {
 export interface IsListingOwnedByOutput {
     /** True only for an existing, non-deleted listing owned by `userId`. */
     readonly owned: boolean;
+}
+
+/** Builds the shared LATERAL pairing: an assistant answer must precede the next user turn. */
+function pairedAnswerQuery(
+    db: ReturnType<typeof getDb>,
+    question: { readonly conversationId: AnyPgColumn; readonly createdAt: AnyPgColumn }
+) {
+    return db
+        .select({ content: aiMessages.content, answerStatus: aiMessages.answerStatus })
+        .from(aiMessages)
+        .where(
+            and(
+                eq(aiMessages.conversationId, question.conversationId),
+                eq(aiMessages.role, 'assistant'),
+                isNull(aiMessages.deletedAt),
+                gte(aiMessages.createdAt, question.createdAt),
+                sql`not exists (
+                    select 1 from ${aiMessages} as next_question
+                    where next_question.conversation_id = ${question.conversationId}
+                      and next_question.role = 'user'
+                      and next_question.deleted_at is null
+                      and next_question.created_at > ${question.createdAt}
+                      and next_question.created_at <= ${aiMessages.createdAt}
+                )`
+            )
+        )
+        .orderBy(asc(aiMessages.createdAt))
+        .limit(1);
 }
 
 /**
@@ -247,23 +275,7 @@ async function readQuestionBlock(input: {
     const db = getDb();
     const question = alias(aiMessages, 'question');
 
-    const answer = db
-        .select({
-            content: aiMessages.content,
-            answerStatus: aiMessages.answerStatus
-        })
-        .from(aiMessages)
-        .where(
-            and(
-                eq(aiMessages.conversationId, question.conversationId),
-                eq(aiMessages.role, 'assistant'),
-                isNull(aiMessages.deletedAt),
-                gte(aiMessages.createdAt, question.createdAt)
-            )
-        )
-        .orderBy(asc(aiMessages.createdAt))
-        .limit(1)
-        .as('answer');
+    const answer = pairedAnswerQuery(db, question).as('answer');
 
     const statusFilter = input.dismissed
         ? sql`true`
@@ -312,6 +324,28 @@ async function readQuestionBlock(input: {
         )
         .orderBy(desc(question.createdAt), desc(question.id))
         .limit(input.limit);
+}
+
+/** Reads the status from the same bounded answer pairing used by the listing panel. */
+export async function readPairedQuestionAnswer(input: {
+    readonly messageId: string;
+}): Promise<{ readonly answerStatus: string | null } | null> {
+    const question = alias(aiMessages, 'faq_question');
+    const db = getDb();
+    const answer = pairedAnswerQuery(db, question).as('paired_answer');
+    const rows = await db
+        .select({ answerStatus: answer.answerStatus })
+        .from(question)
+        .innerJoinLateral(answer, sql`true`)
+        .where(
+            and(
+                eq(question.id, input.messageId),
+                eq(question.role, 'user'),
+                isNull(question.deletedAt)
+            )
+        )
+        .limit(1);
+    return rows[0] ?? null;
 }
 
 /**

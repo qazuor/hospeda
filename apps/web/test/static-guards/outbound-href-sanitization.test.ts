@@ -82,7 +82,7 @@ const SRC_ROOT = join(__dirname, '../../src');
  * instead.
  */
 const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
-    'components/ImageGallery.client.tsx#{current.credit.url}':
+    'components/ImageGallery.client.tsx#{credit.url}':
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
         'same `formatPhotoCredit` output as the lightbox above',

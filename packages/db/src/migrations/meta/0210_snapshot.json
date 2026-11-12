@@ -1,6 +1,6 @@
 {
-  "id": "41583741-9a54-4457-b2d5-d5883dc8a0ea",
-  "prevId": "6e2b57d7-98a6-4f62-9dda-b619126094f8",
+  "id": "6e2b57d7-98a6-4f62-9dda-b619126094f8",
+  "prevId": "5d130fd2-e415-4183-8f9b-c02be81d555f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -8223,7 +8223,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -33867,7 +33867,6 @@
         "partner.viewAll",
         "partner.manage",
         "partner.resolveApplication",
-        "partner.configureBilling",
         "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",

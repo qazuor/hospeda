@@ -34,6 +34,7 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.FORBIDDEN]: 403,
     [ServiceErrorCode.EMAIL_NOT_VERIFIED]: 403,
     [ServiceErrorCode.NOT_FOUND]: 404,
+    [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
     [ServiceErrorCode.ALREADY_EXISTS]: 409,
     [ServiceErrorCode.INTERNAL_ERROR]: 500,
     [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
