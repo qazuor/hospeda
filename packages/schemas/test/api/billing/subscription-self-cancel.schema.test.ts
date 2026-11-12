@@ -7,6 +7,49 @@ import {
 } from '../../../src/api/billing/subscription-self-cancel.schema.js';
 
 describe('self cancellation schemas', () => {
+    describe('HOS-2064 declined signups', () => {
+        const entry = {
+            subscriptionId: '00000000-0000-4000-8000-000000000002',
+            vertical: 'accommodation',
+            billingOptionId: '00000000-0000-4000-8000-000000000003',
+            declaredPayerEmail: 'payer@example.test',
+            declinedAt: '2026-11-10T12:00:00.000Z',
+            plan: { slug: 'basic', name: 'Basic' }
+        };
+        it('S1 defaults declinedSignups to an empty list when absent', () => {
+            // Arrange
+            const response = { subscriptions: [], deferredCourtesies: [] };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.parse(response);
+            // Assert
+            expect(result.declinedSignups).toEqual([]);
+        });
+        it('S2 parses a declined signup entry', () => {
+            // Arrange
+            const response = {
+                subscriptions: [],
+                deferredCourtesies: [],
+                declinedSignups: [entry]
+            };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse(response);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) expect(result.data.declinedSignups).toEqual([entry]);
+        });
+        it('S3 rejects a declined signup without billingOptionId', () => {
+            // Arrange
+            const { billingOptionId: _billingOptionId, ...invalidEntry } = entry;
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse({
+                subscriptions: [],
+                deferredCourtesies: [],
+                declinedSignups: [invalidEntry]
+            });
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
     it('TEST:1878:21 accepts an empty body or a valid closed cancellation reason only', () => {
         expect(SubscriptionCancellationRequestSchema.safeParse({}).success).toBe(true);
         expect(SubscriptionCancellationRequestSchema.safeParse({ reason: 'OTHER' }).success).toBe(
