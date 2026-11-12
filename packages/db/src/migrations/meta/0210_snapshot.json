@@ -1,6 +1,6 @@
 {
-  "id": "fb19b032-ad64-4f20-8276-c59527ec11e9",
-  "prevId": "6969ad6d-111a-4f71-b73a-6eb7d088945d",
+  "id": "41583741-9a54-4457-b2d5-d5883dc8a0ea",
+  "prevId": "6e2b57d7-98a6-4f62-9dda-b619126094f8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -275,6 +275,18 @@
         "rating": {
           "name": "rating",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_reputation_toggle_decided_at": {
+          "name": "external_reputation_toggle_decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_reputation_auto_enabled_at": {
+          "name": "external_reputation_auto_enabled_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -2595,7 +2607,8 @@
           "isUnique": true,
           "concurrently": false,
           "method": "btree",
-          "with": {}
+          "with": {},
+          "where": "\"accommodation_external_listings\".\"deleted_at\" is null"
         }
       },
       "foreignKeys": {
@@ -2956,6 +2969,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "listing_entity_type": {
+          "name": "listing_entity_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "listing_entity_id": {
+          "name": "listing_entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2972,6 +2997,27 @@
               "expression": "created_at",
               "isExpression": false,
               "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiConversations_listing_idx": {
+          "name": "aiConversations_listing_idx",
+          "columns": [
+            {
+              "expression": "listing_entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "listing_entity_id",
+              "isExpression": false,
+              "asc": true,
               "nulls": "last"
             }
           ],
@@ -3183,6 +3229,18 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "owner_dismissed_at": {
+          "name": "owner_dismissed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "answer_status": {
+          "name": "answer_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3218,6 +3276,27 @@
             },
             {
               "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiMessages_answerStatus_created_idx": {
+          "name": "aiMessages_answerStatus_created_idx",
+          "columns": [
+            {
+              "expression": "answer_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8144,7 +8223,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -33751,9 +33830,6 @@
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
         "billing.managePromoCodes",
-        "billing.setCyclePrice",
-        "billing.pauseSubscription",
-        "billing.changeSubscriptionPlan",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
@@ -33792,7 +33868,6 @@
         "partner.manage",
         "partner.resolveApplication",
         "partner.configureBilling",
-        "partner.emptyPresence",
         "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",
@@ -34284,5 +34359,6 @@
     "columns": {},
     "schemas": {},
     "tables": {}
-  }
+  },
+  "checkConstraints": {}
 }
