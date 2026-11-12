@@ -140,11 +140,17 @@ export function reconciliationSubjectStatusLabel(input: {
 }): string {
     if (input.status === null)
         return input.t('admin-billing.reconciliationMarks.subjectUnresolved');
-    const map =
-        input.kind === 'SUBSCRIPTION'
-            ? RECONCILIATION_SUBSCRIPTION_STATUS_KEYS
-            : RECONCILIATION_ADDON_STATUS_KEYS;
-    return reconciliationLabel({ map, value: input.status, t: input.t });
+    if (input.kind === 'SUBSCRIPTION')
+        return reconciliationLabel({
+            map: RECONCILIATION_SUBSCRIPTION_STATUS_KEYS,
+            value: input.status,
+            t: input.t
+        });
+    return reconciliationLabel({
+        map: RECONCILIATION_ADDON_STATUS_KEYS,
+        value: input.status,
+        t: input.t
+    });
 }
 
 /** Human label for the payment status selected by its ledger source. */
@@ -153,9 +159,15 @@ export function reconciliationPaymentStatusLabel(input: {
     readonly status: string;
     readonly t: Translate;
 }): string {
-    const map =
-        input.source === 'PAYMENT'
-            ? RECONCILIATION_PAYMENT_STATUS_KEYS
-            : RECONCILIATION_MANUAL_PAYMENT_STATUS_KEYS;
-    return reconciliationLabel({ map, value: input.status, t: input.t });
+    if (input.source === 'PAYMENT')
+        return reconciliationLabel({
+            map: RECONCILIATION_PAYMENT_STATUS_KEYS,
+            value: input.status,
+            t: input.t
+        });
+    return reconciliationLabel({
+        map: RECONCILIATION_MANUAL_PAYMENT_STATUS_KEYS,
+        value: input.status,
+        t: input.t
+    });
 }
