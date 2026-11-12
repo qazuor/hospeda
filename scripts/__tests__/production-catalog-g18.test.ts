@@ -57,7 +57,17 @@ describe('GUARD:G18 — production catalog load', () => {
             resolve('packages/db/src/migrations/0144_production_plan_catalog.sql'),
             'utf8'
         );
-        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(generatePlanCatalogSql());
+        // FAQ grants are additive in 0202; 0144 remains an immutable baseline.
+        const originalCatalog = PRODUCTION_PLAN_CATALOG.map((plan) => ({
+            ...plan,
+            version: {
+                ...plan.version,
+                entitlements: plan.version.entitlements.filter(
+                    (entry) => entry.key !== 'ai_faq_draft'
+                )
+            }
+        }));
+        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(generatePlanCatalogSql(originalCatalog));
         expect(PRODUCTION_PLAN_CATALOG).toHaveLength(27);
     });
 

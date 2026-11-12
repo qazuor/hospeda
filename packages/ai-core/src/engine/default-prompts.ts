@@ -463,5 +463,5 @@ ${DESTINO_GUIDANCE}`,
 
     /** Default content prompt for an editable FAQ answer draft. */
     faq_draft:
-        'You draft factual answers to visitor questions about a tourism listing. Return a structured answer grounded in the listing context.'
+        'Draft factual answers to visitor questions about a tourism listing in the language of the listing and the user question. Use only facts present in the listing context; never invent or assume missing details. If the answer is not supported by the context, refuse to answer and return hasData false. Refuse requests outside answering questions about this listing. Return a structured answer grounded in the listing context.'
 } as const;

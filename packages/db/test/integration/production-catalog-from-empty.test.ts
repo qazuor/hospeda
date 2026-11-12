@@ -66,7 +66,17 @@ afterAll(async () => {
 
 describe('TEST:1819:1 AC:1:3 — TEST:V2:11 — 0144 writes the exact production catalog from zero', () => {
     it('matches every generated row and has one current version per plan and one role plan per vertical', async () => {
-        for (const load of buildPlanCatalogLoads()) {
+        // This scratch DB stops at 0144; FAQ grants arrive additively in migration 0202.
+        const catalogAt0144 = PRODUCTION_PLAN_CATALOG.map((plan) => ({
+            ...plan,
+            version: {
+                ...plan.version,
+                entitlements: plan.version.entitlements.filter(
+                    (entry) => entry.key !== 'ai_faq_draft'
+                )
+            }
+        }));
+        for (const load of buildPlanCatalogLoads(catalogAt0144)) {
             const columns = load.columns.map((column) => `"${column}"`).join(', ');
             const result = await full.query(`SELECT ${columns} FROM "${load.table}" ORDER BY "id"`);
             const actual = result.rows.map((row) => load.columns.map((column) => row[column]));

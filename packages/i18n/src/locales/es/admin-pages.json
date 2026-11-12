@@ -456,7 +456,8 @@
                 "support": "Soporte",
                 "translate": "Traducción",
                 "accommodation_import": "Importación de alojamiento",
-                "post_generate": "Generación de publicación"
+                "post_generate": "Generación de publicación",
+                "faq_draft": "Borrador de respuesta FAQ"
             },
             "providers": {
                 "openai": "OpenAI",
