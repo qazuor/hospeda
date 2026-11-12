@@ -858,14 +858,15 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                             )}
                         </PlanEntitlementGate>
                     )}
-                    {prefillMessageId && addValues.answer === '' && (
-                        <p>
-                            {t(
-                                'host.properties.editor.aiQuestions.faqAnswerHelp',
-                                'There is no confirmed answer. Fill it in using information from your listing.'
-                            )}
-                        </p>
-                    )}
+                    {prefillMessageId &&
+                        (addValues.answer === '' || faqAiDraft.feedback === 'noData') && (
+                            <p>
+                                {t(
+                                    'host.properties.editor.aiQuestions.faqAnswerHelp',
+                                    'There is no confirmed answer. Fill it in using information from your listing.'
+                                )}
+                            </p>
+                        )}
                     {addFieldErrors.answer && (
                         <p
                             id="faq-new-a-error"
