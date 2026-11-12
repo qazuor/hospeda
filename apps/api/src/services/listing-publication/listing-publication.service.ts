@@ -11,6 +11,8 @@ import {
     AccommodationService,
     computeTrialEmailPseudonym,
     ExperienceService,
+    FIRST_PUBLISH_PAUSED_REASON,
+    platformPaidSignupsFreeze,
     ServiceError,
     VenueService
 } from '@repo/service-core';
@@ -123,6 +125,7 @@ export class ListingPublicationService {
         );
         const result = await publishListing({
             ...getListingPublicationPorts(),
+            newSignupsFrozen: () => platformPaidSignupsFreeze.isFrozen(),
             userId: ownerId,
             vertical,
             listingId: args.id,
@@ -302,6 +305,13 @@ export function mapListingPublishDenial(
         return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed');
     if (reason === 'LISTING_NOT_FOUND' || reason === 'NOT_OWNER')
         return new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+    if (reason === 'NEW_PAID_SIGNUPS_FROZEN')
+        return new ServiceError(
+            ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
+            'New paid signups are paused',
+            undefined,
+            FIRST_PUBLISH_PAUSED_REASON
+        );
     return new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
 }
 

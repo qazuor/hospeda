@@ -24,4 +24,10 @@ describe('listing publication HTTP mapping', () => {
         expect(mapListingPublishDenial('LISTING_NOT_FOUND').code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(mapListingPublishDenial('NOT_OWNER').code).toBe(ServiceErrorCode.NOT_FOUND);
     });
+
+    it('maps NEW_PAID_SIGNUPS_FROZEN to the 409 code with the FIRST_PUBLISH_PAUSED reason', () => {
+        const error = mapListingPublishDenial('NEW_PAID_SIGNUPS_FROZEN');
+        expect(error.code).toBe(ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN);
+        expect(error.reason).toBe('FIRST_PUBLISH_PAUSED');
+    });
 });
