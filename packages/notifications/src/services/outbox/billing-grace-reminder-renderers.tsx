@@ -2,6 +2,7 @@ import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import { GRACE_REMINDER_SUBJECT, GraceReminder } from '../../templates/billing/grace-reminder.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { parseGraceScheduledChange } from './grace-scheduled-change.js';
 
 function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
     const payload: unknown = row.payload;
@@ -27,6 +28,10 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
     const endDate = new Date(data.graceEndsAt);
     if (!Number.isFinite(endDate.getTime()))
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
+    const scheduledChange = parseGraceScheduledChange({
+        value: data.scheduledChange,
+        errorMessage: 'Faltan datos requeridos del aviso de período de gracia'
+    });
     return {
         subject: GRACE_REMINDER_SUBJECT,
         react: (
@@ -37,6 +42,7 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
                 subscriptionUrl={`${siteUrl}/es/mi-cuenta/suscripcion/`}
                 paymentMethod={paymentMethod}
                 planChangePending={data.planChangePending === true}
+                scheduledChange={scheduledChange}
             />
         )
     };
