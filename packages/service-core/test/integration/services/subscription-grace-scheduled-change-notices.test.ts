@@ -11,7 +11,6 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { resolvePlanDisplayName } from '../../../src/services/billing/plan-display-name.js';
 import { applyGraceReminder } from '../../../src/services/billing/subscription/grace-reminder-notice.js';
 import { enqueueGraceStartedNotice } from '../../../src/services/billing/subscription/grace-started-notice.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -42,7 +41,8 @@ afterAll(closeServiceTestPool);
 async function fixture(
     withScheduledChange: boolean,
     startedAt = instant('2099-03-01'),
-    endsAt = instant('2099-03-20')
+    endsAt = instant('2099-03-20'),
+    effectiveAt = instant('2099-03-10')
 ) {
     const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
     const seeded = await seedPausedCancellation({ fake });
@@ -57,66 +57,33 @@ async function fixture(
         .from(subscriptions)
         .where(eq(subscriptions.id, seeded.subscriptionId));
     if (!subscription?.planVersionId) throw new Error('Seeded subscription plan version missing');
-    const [targetPlan] = await getServiceTestDb()
-        .insert(plans)
-        .values({
-            vertical: subscription.vertical ?? 'accommodation',
-            slug: `hos-1784-${crypto.randomUUID()}`,
-            name: 'HOS-1784 destination'
-        })
-        .returning({ id: plans.id });
-    if (!targetPlan) throw new Error('HOS-1784 destination plan insert failed');
-    const [targetVersion] = await getServiceTestDb()
-        .insert(planVersions)
-        .values({
-            planId: targetPlan.id,
-            vertical: subscription.vertical ?? 'accommodation',
-            rank: Math.floor(Math.random() * 1e9) + 1,
-            sellable: false,
-            current: true,
-            trialDays: 0,
-            allowsPause: false
-        })
-        .returning({ id: planVersions.id });
-    if (!targetVersion) throw new Error('HOS-1784 destination version insert failed');
-    const [targetOption] = await getServiceTestDb()
-        .insert(billingOptions)
-        .values({
-            planVersionId: targetVersion.id,
-            cycle: 'monthly',
-            amount: 10000,
-            currency: 'ARS'
-        })
-        .returning({ id: billingOptions.id });
-    if (!targetOption) throw new Error('HOS-1784 destination billing option insert failed');
     const destination = await getServiceTestDb()
         .select({
             billingOptionId: billingOptions.id,
-            planVersionId: billingOptions.planVersionId,
+            planVersionId: planVersions.id,
             slug: plans.slug,
-            name: plans.name,
-            vertical: plans.vertical
+            name: plans.name
         })
-        .from(billingOptions)
-        .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))
-        .innerJoin(plans, eq(plans.id, planVersions.planId))
+        .from(plans)
+        .innerJoin(planVersions, eq(planVersions.planId, plans.id))
+        .innerJoin(billingOptions, eq(billingOptions.planVersionId, planVersions.id))
         .where(
             and(
                 eq(plans.vertical, subscription.vertical ?? ''),
+                eq(plans.slug, 'owner-pro'),
+                eq(planVersions.current, true),
+                eq(billingOptions.cycle, 'monthly'),
                 ne(planVersions.id, subscription.planVersionId)
             )
-        )
-        .limit(1);
+        );
     const target = destination[0];
     if (!target) throw new Error('No other plan version in the vertical');
-    await getServiceTestDb()
-        .insert(subscriptionScheduledChanges)
-        .values({
-            subscriptionId: seeded.subscriptionId,
-            targetPlanVersionId: target.planVersionId,
-            targetBillingOptionId: target.billingOptionId,
-            effectiveAt: instant('2099-03-10')
-        });
+    await getServiceTestDb().insert(subscriptionScheduledChanges).values({
+        subscriptionId: seeded.subscriptionId,
+        targetPlanVersionId: target.planVersionId,
+        targetBillingOptionId: target.billingOptionId,
+        effectiveAt
+    });
     scheduledIds.push(seeded.subscriptionId);
     return { ...seeded, target };
 }
@@ -153,14 +120,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-started');
             const payload = notice?.payload;
-            const expectedPlanName = await resolvePlanDisplayName({
-                vertical: seeded.target.vertical,
-                plan: { slug: seeded.target.slug, name: seeded.target.name }
-            });
-
             // Assert
+            expect(seeded.target.slug).toBe('owner-pro');
+            expect(seeded.target.name).not.toBe('Profesional');
             expect(payload?.scheduledChange).toEqual({
-                planName: expectedPlanName,
+                planName: 'Profesional',
                 effectiveAt: instant('2099-03-10').toISOString()
             });
         });
@@ -209,15 +173,12 @@ describe.skipIf(!isServiceTestDbAvailable())(
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-reminder');
             const payload = notice?.payload;
-            const expectedPlanName = await resolvePlanDisplayName({
-                vertical: seeded.target.vertical,
-                plan: { slug: seeded.target.slug, name: seeded.target.name }
-            });
-
             // Assert
+            expect(seeded.target.slug).toBe('owner-pro');
+            expect(seeded.target.name).not.toBe('Profesional');
             expect(result.outcome).toBe('ENQUEUED');
             expect(payload?.scheduledChange).toEqual({
-                planName: expectedPlanName,
+                planName: 'Profesional',
                 effectiveAt: instant('2099-03-10').toISOString()
             });
         });
@@ -243,6 +204,36 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
             // Assert
             expect(Object.hasOwn(notice?.payload ?? {}, 'scheduledChange')).toBe(false);
+        });
+
+        it('grace reminder includes a change scheduled after the grace ends', async () => {
+            // Arrange
+            const graceEndsAt = instant('2299-03-20');
+            const effectiveAt = instant('2299-03-21');
+            const seeded = await fixture(true, instant('2200-03-01'), graceEndsAt, effectiveAt);
+            await insertGraceReminderDeadline({
+                version: deadlineVersion,
+                createdAt: instant('2200-02-01'),
+                daysBefore: [3]
+            });
+
+            // Act
+            const result = await getServiceTestDb().transaction((tx) =>
+                applyGraceReminder({
+                    tx,
+                    subscriptionId: seeded.subscriptionId,
+                    now: instant('2299-03-17')
+                })
+            );
+            const notice = await mail(seeded.subscriptionId, 'billing.grace-reminder');
+
+            // Assert
+            expect(result.outcome).toBe('ENQUEUED');
+            expect(effectiveAt.getTime()).toBeGreaterThan(graceEndsAt.getTime());
+            expect(notice?.payload.scheduledChange).toEqual({
+                planName: 'Profesional',
+                effectiveAt: effectiveAt.toISOString()
+            });
         });
     }
 );
