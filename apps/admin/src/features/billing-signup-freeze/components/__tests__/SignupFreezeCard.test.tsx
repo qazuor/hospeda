@@ -23,11 +23,12 @@ function renderCard() {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
     });
-    return render(
+    const result = render(
         <QueryClientProvider client={queryClient}>
             <SignupFreezeCard />
         </QueryClientProvider>
     );
+    return { ...result, queryClient };
 }
 
 describe('HOS-1749 the billing settings card pauses and resumes new paid signups', () => {
@@ -114,9 +115,16 @@ describe('HOS-1749 the billing settings card pauses and resumes new paid signups
 
     it('disables the toggle and explains missing write permission', async () => {
         fetchApi.mockResolvedValue({ data: { data: null } });
-        renderCard();
+        const { queryClient } = renderCard();
+        const toggle = await screen.findByTestId('signup-freeze-toggle');
 
-        expect(await screen.findByTestId('signup-freeze-toggle')).toBeDisabled();
+        await waitFor(() =>
+            expect(
+                queryClient.getQueryState(['platform-settings', 'billing.paidSignupsFreeze'])
+                    ?.status
+            ).toBe('success')
+        );
+        expect(toggle).toBeDisabled();
         expect(screen.getByText(es.settings.signupFreeze.noWritePermission)).toBeInTheDocument();
     });
 
