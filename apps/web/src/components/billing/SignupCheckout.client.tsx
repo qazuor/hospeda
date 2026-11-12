@@ -18,6 +18,7 @@ import {
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PendingAttemptPanel } from './PendingAttemptPanel';
 import styles from './SignupCheckout.module.css';
 
@@ -43,7 +44,8 @@ const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
 type CheckoutView =
     | { readonly state: 'idle' | 'submitting' }
     | { readonly state: 'pending'; readonly data: StartSubscriptionResponse }
-    | { readonly state: 'rejected'; readonly rejection: ReturnType<typeof resolveSignupRejection> };
+    | { readonly state: 'rejected'; readonly rejection: ReturnType<typeof resolveSignupRejection> }
+    | { readonly state: 'paused' };
 
 /** Render and start a signup only after an explicit confirmation click. */
 export function SignupCheckout({
@@ -101,6 +103,14 @@ export function SignupCheckout({
                 payerEmail: resolvedEmail.email
             });
             if (!result.ok) {
+                // HOS-1749: new paid signups are paused by an admin; retrying cannot help.
+                if (
+                    result.error.status === 409 &&
+                    result.error.code === 'NEW_PAID_SIGNUPS_FROZEN'
+                ) {
+                    setView({ state: 'paused' });
+                    return;
+                }
                 if (result.error.status === 409 && result.error.reason === 'COMMITMENT_TAKEN') {
                     try {
                         const notice = await billingSubscriptionApi.signupNotice({
@@ -431,6 +441,13 @@ export function SignupCheckout({
                         </button>
                     )}
                 </div>
+            )}
+            {view.state === 'paused' && (
+                <PaidSignupsPausedNotice
+                    locale={locale}
+                    variant="signup"
+                    testId="signup-checkout-paused-notice"
+                />
             )}
         </section>
     );
