@@ -35,6 +35,7 @@ import {
     useUpdateAiSettingsMutation
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import {
     ALL_FEATURES,
@@ -59,6 +60,7 @@ export const Route = createFileRoute('/_authed/ai/settings')({
 // ---------------------------------------------------------------------------
 
 function AiSettingsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
 
     const { data: settingsResponse, isLoading, error } = useAiSettingsQuery();
@@ -558,7 +560,7 @@ function AiSettingsPage() {
                                     {(field) => (
                                         <div>
                                             <Label htmlFor={`reasoning-${featureId}`}>
-                                                Reasoning effort
+                                                {t('admin-pages.ai.settings.reasoningEffortLabel')}
                                             </Label>
                                             <Select
                                                 value={field.state.value ?? 'provider-default'}
@@ -574,11 +576,17 @@ function AiSettingsPage() {
                                                     id={`reasoning-${featureId}`}
                                                     className="mt-2"
                                                 >
-                                                    <SelectValue placeholder="Provider default" />
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            'admin-pages.ai.settings.providerDefault'
+                                                        )}
+                                                    />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="provider-default">
-                                                        Provider default
+                                                        {t(
+                                                            'admin-pages.ai.settings.providerDefault'
+                                                        )}
                                                     </SelectItem>
                                                     {[
                                                         'none',
