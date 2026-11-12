@@ -42,10 +42,10 @@
         "@faker-js/faker": "^10.5.0",
         "@repo/cache-tags": "workspace:*",
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.6.1",
-        "@vitest/coverage-v8": "^5.0.5",
+        "@types/node": "^26.6.6",
+        "@vitest/coverage-v8": "^5.1.0",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
-        "vitest": "^5.0.5"
+        "vitest": "^5.1.0"
     }
 }
