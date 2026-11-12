@@ -27,16 +27,14 @@ SELECT set_config(
 
 INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enforcement_strategy", "key_class") VALUES
 	('ai_faq_draft', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('max_ai_faq_draft_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL')
-ON CONFLICT ("key") DO NOTHING;
+	('max_ai_faq_draft_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL');
 
 INSERT INTO "plan_version_entitlement" ("id", "plan_version_id", "key", "plan_quota", "trial_quota") VALUES
 	('7664b2a4-a036-5865-967d-cb3524883b24', '8f23bcdd-1abc-5342-bfb4-b7dcca4bbf9d', 'ai_faq_draft', NULL, NULL),
 	('8d1a7a34-d885-5490-b78b-f1d2d481cd4d', '5171d736-8b7d-5840-9262-4ac6cb83bcac', 'ai_faq_draft', NULL, NULL),
 	('36f1659b-0bd4-5d92-8a6c-4272dd1c2a25', '3696b354-122a-528f-9090-41e22a61091f', 'ai_faq_draft', NULL, NULL),
 	('a11ae672-f002-5ae4-947b-b963a71d8507', '8e4b0c4e-702f-5203-85e3-e9c06365eb87', 'ai_faq_draft', NULL, NULL),
-	('8fad0382-880d-5271-a25c-bc60a3b308a1', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'ai_faq_draft', NULL, NULL)
-ON CONFLICT ("plan_version_id", "key") DO NOTHING;
+	('8fad0382-880d-5271-a25c-bc60a3b308a1', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'ai_faq_draft', NULL, NULL);
 
 INSERT INTO "plan_version_limit" ("id", "plan_version_id", "key", "value") VALUES
 	('6662ad6d-bd0d-5d97-9ae1-0665b6d7f667', '8f23bcdd-1abc-5342-bfb4-b7dcca4bbf9d', 'max_ai_faq_draft_per_month', 50),
@@ -47,5 +45,4 @@ INSERT INTO "plan_version_limit" ("id", "plan_version_id", "key", "value") VALUE
 	('9e576931-310e-5795-8266-24ef64be7cac', '8e4b0c4e-702f-5203-85e3-e9c06365eb87', 'max_ai_faq_draft_per_month', 1250),
 	('1721f1b4-71bb-5572-8158-a793b06a1237', 'c42b276a-4382-5f17-b81e-19f6ab4a55f2', 'max_ai_faq_draft_per_month', 0),
 	('7584baff-d302-5486-a9e2-c08ea8594b2f', 'cfbb3e23-b39b-5711-985a-ce20714a05df', 'max_ai_faq_draft_per_month', 0),
-	('2a7e71d3-bd73-5c37-84f7-1eb6b574cb54', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'max_ai_faq_draft_per_month', 1250)
-ON CONFLICT ("plan_version_id", "key") DO NOTHING;
+	('2a7e71d3-bd73-5c37-84f7-1eb6b574cb54', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'max_ai_faq_draft_per_month', 1250);
