@@ -285,7 +285,8 @@
                 "cancelledOnActivation": "Tenés una suscripción a Turista VIP. Este plan ya incluye sus beneficios: cuando se active, esa suscripción se cancela y lo que pagaste no se reembolsa.",
                 "unknownOnActivation": "Si tenés una suscripción a Turista VIP y este plan incluye sus beneficios, esa suscripción se cancela cuando el plan se active, sin reembolso."
             },
-            "retry": "Intentar de nuevo",
+            "retry": "Intentar con otro medio de pago",
+            "attemptPlan": "Plan que intentaste contratar: {{plan}}",
             "vertical": {
                 "accommodation": "alojamiento",
                 "experience": "experiencias",
@@ -312,7 +313,8 @@
             "rejected": {
                 "title": "Mercado Pago no aprobó el pago",
                 "body": "No se cobró nada y el intento anterior quedó cerrado. Podés armar uno nuevo con el mismo plan.",
-                "retry": "Intentar de nuevo",
+                "retry": "Intentar con otro medio de pago",
+                "attemptPlan": "Plan que intentaste contratar: {{plan}}",
                 "retrying": "Preparando el pago…"
             },
             "unknown": {

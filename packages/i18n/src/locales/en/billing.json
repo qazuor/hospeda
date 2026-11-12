@@ -285,7 +285,8 @@
                 "cancelledOnActivation": "You have a Tourist VIP subscription. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
                 "unknownOnActivation": "If you have a Tourist VIP subscription and this plan includes its benefits, that subscription is cancelled once the plan is active, with no refund."
             },
-            "retry": "Try again",
+            "retry": "Try another payment method",
+            "attemptPlan": "Plan you tried to subscribe to: {{plan}}",
             "vertical": {
                 "accommodation": "accommodation",
                 "experience": "experiences",
@@ -312,7 +313,8 @@
             "rejected": {
                 "title": "Mercado Pago did not approve the payment",
                 "body": "You were not charged and the previous attempt is closed. You can start a new one with the same plan.",
-                "retry": "Try again",
+                "retry": "Try another payment method",
+                "attemptPlan": "Plan you tried to subscribe to: {{plan}}",
                 "retrying": "Preparing the payment…"
             },
             "unknown": {
