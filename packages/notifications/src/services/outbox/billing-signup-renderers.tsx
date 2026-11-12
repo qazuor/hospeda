@@ -46,6 +46,7 @@ import { formatCurrency, formatDate } from '../../templates/utils/index.js';
 import { createBillingAddonRenderers } from './billing-addon-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { parseGraceScheduledChange } from './grace-scheduled-change.js';
 import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
@@ -359,6 +360,10 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
     )
         throw new TypeError('Faltan datos requeridos del aviso de inicio del grace');
     const graceEndDate = formatDate({ dateString: getLocalDateString({ instant: graceEndsAt }) });
+    const scheduledChange = parseGraceScheduledChange({
+        value: data.scheduledChange,
+        errorMessage: 'Faltan datos requeridos del aviso de inicio del grace'
+    });
     return {
         subject: GRACE_STARTED_SUBJECT,
         react: (
@@ -367,6 +372,7 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
                 graceEndDate={graceEndDate}
                 subscriptionUrl={subscriptionUrl}
                 planChangePending={data.planChangePending === true}
+                scheduledChange={scheduledChange}
             />
         )
     };

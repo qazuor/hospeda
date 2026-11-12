@@ -4,6 +4,7 @@ import { BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { and, desc, eq, lte } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
+import { readGraceNoticeScheduledChange } from './grace-notice-scheduled-change.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 
 const logger = createLogger('grace-reminder-notice');
@@ -150,6 +151,11 @@ export async function applyGraceReminder(input: {
         )
         .limit(1);
     const planChangePending = successors.length > 0;
+    const scheduledChange = await readGraceNoticeScheduledChange({
+        tx: input.tx,
+        subscriptionId: row.id,
+        vertical: row.vertical
+    });
     const queued = await db.emailOutboxModel.enqueue(
         {
             recipientUserId: row.userId,
@@ -162,7 +168,8 @@ export async function applyGraceReminder(input: {
                 daysBefore: milestone.daysBefore,
                 deadlinesVersion: version.version,
                 paymentMethod: row.paymentMethod,
-                ...(planChangePending ? { planChangePending: true } : {})
+                ...(planChangePending ? { planChangePending: true } : {}),
+                ...(scheduledChange ? { scheduledChange } : {})
             },
             dedupKey: db.buildEmailDedupKey({
                 recipient: row.userId,
