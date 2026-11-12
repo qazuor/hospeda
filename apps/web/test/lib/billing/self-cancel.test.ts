@@ -60,7 +60,10 @@ describe('self-cancel helpers', () => {
                 addons: []
             }
         };
-        expect(parseOwnSubscriptions({ result: valid })).toEqual(valid.data);
+        expect(parseOwnSubscriptions({ result: valid })).toEqual({
+            ...valid.data,
+            declinedSignups: []
+        });
         expect(parseCancellationPreview({ result: validPreview })).toEqual(validPreview.data);
         expect(parseOwnSubscriptions({ result: { ok: false } })).toBeNull();
         expect(parseOwnSubscriptions({ result: { ok: true, data: {} } })).toBeNull();
