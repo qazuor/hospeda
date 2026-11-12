@@ -4,6 +4,7 @@ import {
     type AnnouncementItem,
     AnnouncementsValueSchema,
     MaintenanceModeValueSchema,
+    PaidSignupsFreezeValueSchema,
     PermissionEnum,
     type PlatformSettingsKey,
     PlatformSettingsKeySchema,
@@ -28,6 +29,8 @@ import { ServiceError } from '../../types';
  *   - `seo.defaults` write → `SETTINGS_GENERAL_WRITE`
  *   - `maintenance.mode` and `announcements.global` (read or write) → `MAINTENANCE_MODE_WRITE`
  *     (SUPER_ADMIN-only — V1 collapses read+write into the single critical perm).
+ *   - `billing.paidSignupsFreeze` read → `BILLING_SETTINGS_VIEW`
+ *   - `billing.paidSignupsFreeze` write → `BILLING_SETTINGS_WRITE`
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -52,7 +55,8 @@ const GetInputSchema = z.object({
 const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({ key: z.literal('seo.defaults'), value: SeoDefaultsValueSchema }),
     z.object({ key: z.literal('maintenance.mode'), value: MaintenanceModeValueSchema }),
-    z.object({ key: z.literal('announcements.global'), value: AnnouncementsValueSchema })
+    z.object({ key: z.literal('announcements.global'), value: AnnouncementsValueSchema }),
+    z.object({ key: z.literal('billing.paidSignupsFreeze'), value: PaidSignupsFreezeValueSchema })
 ]);
 
 // ---------------------------------------------------------------------------
@@ -60,15 +64,35 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
 // ---------------------------------------------------------------------------
 
 function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
-    return key === 'seo.defaults'
-        ? PermissionEnum.SETTINGS_GENERAL_VIEW
-        : PermissionEnum.MAINTENANCE_MODE_WRITE;
+    switch (key) {
+        case 'seo.defaults':
+            return PermissionEnum.SETTINGS_GENERAL_VIEW;
+        case 'maintenance.mode':
+        case 'announcements.global':
+            return PermissionEnum.MAINTENANCE_MODE_WRITE;
+        case 'billing.paidSignupsFreeze':
+            return PermissionEnum.BILLING_SETTINGS_VIEW;
+        default: {
+            const exhaustive: never = key;
+            return exhaustive;
+        }
+    }
 }
 
 function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
-    return key === 'seo.defaults'
-        ? PermissionEnum.SETTINGS_GENERAL_WRITE
-        : PermissionEnum.MAINTENANCE_MODE_WRITE;
+    switch (key) {
+        case 'seo.defaults':
+            return PermissionEnum.SETTINGS_GENERAL_WRITE;
+        case 'maintenance.mode':
+        case 'announcements.global':
+            return PermissionEnum.MAINTENANCE_MODE_WRITE;
+        case 'billing.paidSignupsFreeze':
+            return PermissionEnum.BILLING_SETTINGS_WRITE;
+        default: {
+            const exhaustive: never = key;
+            return exhaustive;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +210,38 @@ export class PlatformSettingsService extends BaseService {
             );
             return false;
         }
+    }
+
+    /**
+     * Whether new self-service paid signups are paused (HOS-1749).
+     *
+     * **Why this method instead of `get`**: same reason as {@link isIndexNowEnabled}.
+     * The callers are the checkout (S1) and the first publish (PB1), where there is
+     * no admin actor to gate on: the answer is one platform-wide boolean.
+     *
+     * **Read on every call, never cached**: the switch exists to stop signups
+     * without a deploy or a restart.
+     *
+     * A missing row answers `false` (never frozen by default). A stored value that
+     * fails the schema answers `false` and logs a warning: every write goes through
+     * Zod, so only a hand-edited row can be malformed. A read error is NOT
+     * swallowed: it propagates, so the checkout or the publish fails as it would on
+     * any other database error instead of silently opening or closing signups.
+     *
+     * @returns Whether new paid signups are frozen.
+     */
+    async isNewPaidSignupsFrozen(): Promise<boolean> {
+        const row = await this.model.findByKey('billing.paidSignupsFreeze');
+        if (!row) return false;
+        const parsed = PaidSignupsFreezeValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored billing.paidSignupsFreeze value failed schema validation — signups stay open'
+            );
+            return false;
+        }
+        return parsed.data.frozen;
     }
 
     /**
