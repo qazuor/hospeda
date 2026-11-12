@@ -3,7 +3,7 @@ export function asksAboutMinorWithoutTime(question: string): boolean {
     const minor =
         /\b(?:hij[oa]s?|menor(?:es)?|nen[ea]s?|chic[oa]s?|niñ[oa]s?|adolescentes?|child(?:ren)?|sons?|daughters?|kids?|minors?|teens?|filh[oa]s?|crianças?)\b|\bde\s+\d{1,2}\s+años?\b/i;
     const time =
-        /\b\d{1,2}(?::\d{2})?\s*(?:hs?\b|am\b|pm\b)?|\ba\s+la(?:s)?\s+\d{1,2}\b|\b(?:mediodía|medianoche|almorz\w*|almuerz\w*|cena|noche|tarde|mañana|lunch|dinner|night|almoç\w*|jantar|noite)\b/i;
+        /\b\d{1,2}:\d{2}\b|\b\d{1,2}\s*(?:h|hs|hrs|am|pm)\b|\ba\s+la(?:s)?\s+\d{1,2}\b|\bde\s+\d{1,2}\s+a\s+\d{1,2}\b|\blas\s+\d{1,2}\b|\b(?:mediodía|medianoche|almorz\w*|almuerz\w*|cena|noche|tarde|mañana|lunch|dinner|night|almoç\w*|jantar|noite)\b/i;
     const area = /\b(?:en|al|a\s+la)\s+(?:el\s+|la\s+)?(?:pista|sal[oó]n|sector|terraza|patio)\b/i;
     const underage = [...question.matchAll(/\b(?:de\s+)?(\d{1,2})\s+años?\b/gi)].some(
         ([, age]) => Number(age) < 18
@@ -59,5 +59,12 @@ export async function* guardVenueMinorAnswer(input: {
             yield prefix;
         }
     }
-    if (!decided && prefix) yield prefix;
+    if (!decided && prefix && startsWithAffirmation(prefix)) {
+        input.onTrip();
+        const rest = prefix.replace(
+            /^\s*(?:sí(?=$|[\s,.:!?])|si\s*[, :]|yes\b|sim\b)\s*[,!:.-]?\s*/i,
+            ''
+        );
+        yield `${leads[input.locale] ?? leads.es}${rest ? ` ${rest}` : ''}`;
+    } else if (!decided && prefix) yield prefix;
 }

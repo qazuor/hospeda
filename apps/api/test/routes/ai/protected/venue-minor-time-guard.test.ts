@@ -45,8 +45,12 @@ describe('venue minor time guard', () => {
         ['¿puedo ir con mi hijo?', true],
         ['¿puedo ir con mi hijo de 15 años?', true],
         ['¿puedo ir con mi hijo de 15 el sábado?', true],
+        ['¿puedo ir con mi hijo el sábado?', true],
         ['¿puedo ir con mi hijo a las 22?', false],
         ['¿puedo ir con mi hijo al almuerzo?', false],
+        ['¿puedo ir a almorzar con mi hijo?', false],
+        ['¿con mi hijo de 16 a la 1?', false],
+        ['tengo 2 hijos, ¿pueden entrar?', true],
         ['Can my child come for dinner?', false],
         ['Meu filho pode entrar à noite?', false],
         ['Can my kid attend?', true],
@@ -87,6 +91,74 @@ describe('venue minor time guard', () => {
         }))
             result.push(chunk);
         expect(result.join('')).toBe('La ficha no informa la edad mínima.');
+        expect(onTrip).not.toHaveBeenCalled();
+    });
+
+    it('passes through a conditional “Si es viernes o sábado, no:” unchanged', async () => {
+        const onTrip = vi.fn();
+        const answer = 'Si es viernes o sábado, no: el horario depende del lugar.';
+        const chunks = (async function* () {
+            yield answer;
+        })();
+        const result: string[] = [];
+        for await (const chunk of guardVenueMinorAnswer({
+            chunks,
+            guarded: true,
+            locale: 'es',
+            onTrip
+        }))
+            result.push(chunk);
+        expect(result.join('')).toBe(answer);
+        expect(onTrip).not.toHaveBeenCalled();
+    });
+
+    it('replaces an affirmation split across chunks', async () => {
+        const onTrip = vi.fn();
+        const chunks = (async function* () {
+            yield 'S';
+            yield 'í: el sábado pueden venir.';
+        })();
+        const result: string[] = [];
+        for await (const chunk of guardVenueMinorAnswer({
+            chunks,
+            guarded: true,
+            locale: 'es',
+            onTrip
+        }))
+            result.push(chunk);
+        expect(result.join('')).toBe('Depende del horario: el sábado pueden venir.');
+        expect(onTrip).toHaveBeenCalledOnce();
+    });
+
+    it('replaces a short affirmative answer without punctuation', async () => {
+        const onTrip = vi.fn();
+        const chunks = (async function* () {
+            yield 'Sí';
+        })();
+        const result: string[] = [];
+        for await (const chunk of guardVenueMinorAnswer({
+            chunks,
+            guarded: true,
+            locale: 'es',
+            onTrip
+        }))
+            result.push(chunk);
+        expect(result.join('')).toBe('Depende del horario:');
+        expect(onTrip).toHaveBeenCalledOnce();
+    });
+
+    it('emits nothing for an empty stream', async () => {
+        const onTrip = vi.fn();
+        const chunks = (async function* () {})();
+        const result: string[] = [];
+        for await (const chunk of guardVenueMinorAnswer({
+            chunks,
+            guarded: true,
+            locale: 'es',
+            onTrip
+        }))
+            result.push(chunk);
+        expect(result).toEqual([]);
         expect(onTrip).not.toHaveBeenCalled();
     });
 });
