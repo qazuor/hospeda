@@ -26,6 +26,7 @@ import {
     hasAnythingToShow,
     hasSafeExternalLink,
     hasValidSnippets,
+    orderSummaryItemsGoogleLast,
     resolvePlatformHref,
     selectLinkOnlyReputationItems,
     selectSummaryReputationItems,
@@ -303,6 +304,50 @@ describe('public block layout predicates', () => {
             expect(
                 selectLinkOnlyReputationItems({ items: [withRating, linkOnly, unsafeLink] })
             ).toEqual([linkOnly]);
+        });
+    });
+
+    describe('orderSummaryItemsGoogleLast — the Google score sits right above its review cards', () => {
+        it('moves Google to the end when it comes first', () => {
+            // Arrange: the measured Cheroga shape, Google listed before Airbnb.
+            const google = emptyGoogleItem({ rating: 4.9, reviewsCount: 90 });
+            const airbnb = emptyGoogleItem({
+                platform: 'AIRBNB',
+                rating: 4.9
+            } as Partial<ExternalReputationPlatformItem>);
+
+            // Act
+            const ordered = orderSummaryItemsGoogleLast({ items: [google, airbnb] });
+
+            // Assert
+            expect(ordered).toEqual([airbnb, google]);
+        });
+
+        it('keeps the other platforms in their original order', () => {
+            const booking = emptyGoogleItem({
+                platform: 'BOOKING',
+                rating: 8.8
+            } as Partial<ExternalReputationPlatformItem>);
+            const google = emptyGoogleItem({ rating: 4.5 });
+            const airbnb = emptyGoogleItem({
+                platform: 'AIRBNB',
+                rating: 4.7
+            } as Partial<ExternalReputationPlatformItem>);
+
+            expect(orderSummaryItemsGoogleLast({ items: [booking, google, airbnb] })).toEqual([
+                booking,
+                airbnb,
+                google
+            ]);
+        });
+
+        it('leaves a list without Google untouched', () => {
+            const airbnb = emptyGoogleItem({
+                platform: 'AIRBNB',
+                rating: 4.9
+            } as Partial<ExternalReputationPlatformItem>);
+
+            expect(orderSummaryItemsGoogleLast({ items: [airbnb] })).toEqual([airbnb]);
         });
     });
 });

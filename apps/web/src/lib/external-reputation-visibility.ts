@@ -140,3 +140,25 @@ export function selectLinkOnlyReputationItems(input: {
 }): readonly ExternalReputationPlatformItem[] {
     return input.items.filter((item) => !hasAggregate({ item }) && hasSafeExternalLink({ item }));
 }
+
+/**
+ * Orders the summary rows so Google's row is always the LAST one.
+ *
+ * Google is the only platform whose review cards are rendered, and they are
+ * rendered right after the summary list. Putting Google's score last keeps it
+ * directly above its own cards without the cards ever splitting the list of
+ * scores. With Google listed earlier, another platform's row (e.g. Airbnb)
+ * landed between the Google score and the Google reviews.
+ *
+ * @param input.items - Summary items (see {@link selectSummaryReputationItems}).
+ * @returns Every non-Google item in its original order, followed by the
+ *   Google item when present.
+ */
+export function orderSummaryItemsGoogleLast(input: {
+    items: readonly ExternalReputationPlatformItem[];
+}): readonly ExternalReputationPlatformItem[] {
+    return [
+        ...input.items.filter((item) => item.platform !== 'GOOGLE'),
+        ...input.items.filter((item) => item.platform === 'GOOGLE')
+    ];
+}

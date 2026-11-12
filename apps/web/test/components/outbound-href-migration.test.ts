@@ -144,10 +144,14 @@ describe.each(MIGRATED)('$file — outbound href sanitization (HOS-592)', (link)
 });
 
 describe('components/accommodation/ExternalReputation.astro — platform hrefs go through resolvePlatformHref (HOS-592)', () => {
-    const source = readFileSync(
-        join(SRC_ROOT, 'components/accommodation/ExternalReputation.astro'),
-        'utf8'
-    );
+    // The per-platform score row lives in its own component, so the block is
+    // checked as the two files together.
+    const source = [
+        'components/accommodation/ExternalReputation.astro',
+        'components/accommodation/ExternalReputationSummaryRow.astro'
+    ]
+        .map((file) => readFileSync(join(SRC_ROOT, file), 'utf8'))
+        .join('\n');
 
     it('derives every platform href from the allow-listing helper', () => {
         expect(source).toContain('resolvePlatformHref({ item })');
