@@ -46,6 +46,7 @@ check answers 403 to someone the server never identified.
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
+| New self-service paid signups paused (S1 checkout; first publish that would start a trial: reason FIRST_PUBLISH_PAUSED) | **409** | NEW_PAID_SIGNUPS_FROZEN |
 | Plan change while the next charge date is still being confirmed | **409** | `CONFLICT`, `error.details.reason: CYCLE_END_PENDING` |
 | Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
@@ -506,6 +507,10 @@ Two rules specific to this surface:
 ## S1 rejections (B3)
 
 `PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+
+`NEW_PAID_SIGNUPS_FROZEN` answers 409 at HTTP step 6 (business rules), after
+resource 404s and S1's own 422 rejections. The first-publish PB1 refusal also
+returns `error.reason: FIRST_PUBLISH_PAUSED`; S1 checkout has no reason.
 
 `PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
 
