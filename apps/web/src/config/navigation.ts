@@ -175,65 +175,6 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         ]
     },
     {
-        id: 'turista',
-        i18nKey: 'account.nav.groupTourist',
-        items: [
-            {
-                id: 'favorites',
-                i18nKey: 'account.nav.favorites',
-                href: 'mi-cuenta/favoritos',
-                icon: FavoriteIcon,
-                surfaces: CURATED_SURFACES,
-                tourTarget: 'favorites'
-            },
-            {
-                id: 'searchHistory',
-                i18nKey: 'account.nav.searchHistory',
-                href: 'mi-cuenta/historial-busquedas',
-                icon: SearchIcon,
-                surfaces: FULL_SURFACES
-            },
-            {
-                id: 'alerts',
-                i18nKey: 'account.nav.alerts',
-                href: 'mi-cuenta/alertas',
-                icon: AlertsIcon,
-                surfaces: FULL_SURFACES,
-                tourTarget: 'alerts'
-            },
-            {
-                id: 'exclusiveDeals',
-                i18nKey: 'account.nav.exclusiveDeals',
-                href: 'mi-cuenta/ofertas-exclusivas',
-                icon: OffersIcon,
-                surfaces: FULL_SURFACES
-            },
-            {
-                id: 'recommendations',
-                i18nKey: 'account.pages.dashboard.nav.recommendations',
-                href: 'mi-cuenta/recomendaciones',
-                icon: CompassIcon,
-                surfaces: FULL_SURFACES
-            },
-            {
-                id: 'reviews',
-                i18nKey: 'account.nav.reviews',
-                href: 'mi-cuenta/resenas',
-                icon: StarIcon,
-                surfaces: FULL_SURFACES,
-                tourTarget: 'reviews'
-            },
-            {
-                id: 'inbox',
-                i18nKey: 'conversations.inbox.guestInboxTitle',
-                href: 'mi-cuenta/consultas',
-                icon: ChatIcon,
-                surfaces: FULL_SURFACES,
-                tourTarget: 'inbox'
-            }
-        ]
-    },
-    {
         id: 'anfitrion',
         i18nKey: 'account.nav.groupHost',
         requiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
@@ -338,6 +279,65 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 requiredPermission: PermissionEnum.EVENT_CREATE,
                 surfaces: FULL_SURFACES,
                 tourTarget: 'my-events'
+            }
+        ]
+    },
+    {
+        id: 'turista',
+        i18nKey: 'account.nav.groupTourist',
+        items: [
+            {
+                id: 'favorites',
+                i18nKey: 'account.nav.favorites',
+                href: 'mi-cuenta/favoritos',
+                icon: FavoriteIcon,
+                surfaces: CURATED_SURFACES,
+                tourTarget: 'favorites'
+            },
+            {
+                id: 'searchHistory',
+                i18nKey: 'account.nav.searchHistory',
+                href: 'mi-cuenta/historial-busquedas',
+                icon: SearchIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'alerts',
+                i18nKey: 'account.nav.alerts',
+                href: 'mi-cuenta/alertas',
+                icon: AlertsIcon,
+                surfaces: FULL_SURFACES,
+                tourTarget: 'alerts'
+            },
+            {
+                id: 'exclusiveDeals',
+                i18nKey: 'account.nav.exclusiveDeals',
+                href: 'mi-cuenta/ofertas-exclusivas',
+                icon: OffersIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'recommendations',
+                i18nKey: 'account.pages.dashboard.nav.recommendations',
+                href: 'mi-cuenta/recomendaciones',
+                icon: CompassIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'reviews',
+                i18nKey: 'account.nav.reviews',
+                href: 'mi-cuenta/resenas',
+                icon: StarIcon,
+                surfaces: FULL_SURFACES,
+                tourTarget: 'reviews'
+            },
+            {
+                id: 'inbox',
+                i18nKey: 'conversations.inbox.guestInboxTitle',
+                href: 'mi-cuenta/consultas',
+                icon: ChatIcon,
+                surfaces: FULL_SURFACES,
+                tourTarget: 'inbox'
             }
         ]
     }
