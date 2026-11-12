@@ -18,7 +18,7 @@ import type {
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount.js';
 
 const logger = createLogger('manual-installment-opened-notice');
-const EXPECTED_AMOUNT_TIMEOUT_MS = 5_000;
+const READ_TIMEOUT_MS = 5_000;
 
 async function readExpectedAmount(
     policy: ExpectedAmountPolicy,
@@ -31,7 +31,7 @@ async function readExpectedAmount(
             new Promise<never>((_resolve, reject) => {
                 timeout = setTimeout(
                     () => reject(new Error('Expected installment amount lookup timed out')),
-                    EXPECTED_AMOUNT_TIMEOUT_MS
+                    READ_TIMEOUT_MS
                 );
             })
         ]);
