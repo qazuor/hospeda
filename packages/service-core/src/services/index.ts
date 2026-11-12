@@ -286,6 +286,7 @@ export * from './billing/subscription/grace-started-notice.js';
 export * from './billing/subscription/grant-temporary-courtesy.service.js';
 export * from './billing/subscription/late-payment-conditions.js';
 export * from './billing/subscription/manual-grace-entry.js';
+export * from './billing/subscription/manual-installment-opened-notice.js';
 export * from './billing/subscription/manual-installment-opening.js';
 export * from './billing/subscription/manual-installment-unpaid-notice.js';
 export * from './billing/subscription/open-manual-installment.service.js';
