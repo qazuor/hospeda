@@ -16,7 +16,8 @@
  * 3. **Cross-key rules after the merge** ({@link POST_MERGE_RULES}). A venue
  *    never keeps a minimum-age scope without a minimum age (HOS-2098):
  *    clearing the age clears the scope, and a body that SETS a scope while the
- *    merged result has no age is a 400.
+ *    merged result has no age is a 400. An accommodation never keeps event
+ *    details unless events are allowed (HOS-2122), by the same rule.
  * 4. **Re-validation after the merge.** The merged object is parsed again with
  *    the vertical's schema, because two individually valid halves can combine
  *    into an invalid whole (a new `minNights` above a stored `maxNights`). An
@@ -99,9 +100,50 @@ export function enforceVenueAgeScope({
     return rest;
 }
 
+/**
+ * HOS-2122: event details (guests, sound, hours, surcharge) describe an event
+ * that is allowed; without `eventsAllowed === true` they are an orphan the
+ * public page must never show.
+ *
+ * With events not allowed in the merged result (`false` or absent), details the
+ * body SENT are rejected (400 on `policies.eventsDetails`) and stored details
+ * are dropped — so switching events to "no" or "not informed" clears them in
+ * the same write, whoever sends it (owner editor or admin form).
+ *
+ * @param args.merged - The merged policies.
+ * @param args.patch - The `policies` the body sent (null when it cleared them).
+ * @returns The merged policies, without orphan event details.
+ * @throws {ServiceError} `VALIDATION_ERROR` when the body sets details while
+ *   events are not allowed.
+ */
+export function enforceAccommodationEventsDetails({
+    merged,
+    patch
+}: {
+    readonly merged: Record<string, unknown>;
+    readonly patch: Readonly<Record<string, unknown>> | null;
+}): Record<string, unknown> {
+    if (merged.eventsAllowed === true) return merged;
+    const sentDetails = patch?.eventsDetails;
+    if (sentDetails !== undefined && sentDetails !== null) {
+        throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid policies', {
+            field: 'policies',
+            issues: [
+                {
+                    path: 'policies.eventsDetails',
+                    message: 'zodError.listingPolicies.eventsDetails.requiresEventsAllowed'
+                }
+            ]
+        });
+    }
+    const { eventsDetails: _orphan, ...rest } = merged;
+    return rest;
+}
+
 /** Cross-key rules per vertical, applied to the merged policies before validation. */
 const POST_MERGE_RULES: Readonly<Partial<Record<PoliciesVertical, PostMergeRule>>> = {
-    venue: enforceVenueAgeScope
+    venue: enforceVenueAgeScope,
+    accommodation: enforceAccommodationEventsDetails
 };
 
 /** Applies the vertical's {@link POST_MERGE_RULES}, when it has any. */

@@ -97,6 +97,72 @@ describe('AccommodationPoliciesSchema', () => {
     ])('rejects %s', (_label, input) => {
         expect(AccommodationPoliciesSchema.safeParse(input).success).toBe(false);
     });
+
+    it('accepts the deposit, spoken languages and events details (HOS-2120, HOS-2122)', () => {
+        const input = {
+            eventsAllowed: true,
+            eventsDetails: {
+                maxGuests: 40,
+                amplifiedSound: false,
+                endTime: '00:00',
+                extraCost: true,
+                notes: NOTE
+            },
+            deposit: { required: true, percentage: 30, notes: NOTE },
+            spokenLanguages: ['es', 'en', 'other']
+        };
+        expect(AccommodationPoliciesSchema.parse(input)).toEqual(input);
+    });
+
+    it('accepts a bare "no deposit" and partial event details', () => {
+        const input = { deposit: { required: false }, eventsDetails: { endTime: '23:30' } };
+        expect(AccommodationPoliciesSchema.parse(input)).toEqual(input);
+    });
+
+    it('lets an update clear each new key with null', () => {
+        expect(
+            AccommodationPoliciesSchema.safeParse({
+                deposit: null,
+                spokenLanguages: null,
+                eventsDetails: null
+            }).success
+        ).toBe(true);
+    });
+
+    it('parses a row stored before the new keys existed (backward compatible)', () => {
+        const legacy = { paymentMethods: ['cash'], eventsAllowed: true, minNights: 2 };
+        expect(AccommodationPoliciesSchema.parse(legacy)).toEqual(legacy);
+    });
+
+    it.each([
+        ['a deposit percentage of 0', { deposit: { required: true, percentage: 0 } }],
+        ['a deposit percentage over 100', { deposit: { required: true, percentage: 101 } }],
+        ['a fractional deposit percentage', { deposit: { required: true, percentage: 12.5 } }],
+        ['a percentage on a "no deposit"', { deposit: { required: false, percentage: 20 } }],
+        ['a deposit without the yes/no', { deposit: { percentage: 20 } }],
+        ['an unknown language', { spokenLanguages: ['jp'] }],
+        ['a repeated language', { spokenLanguages: ['es', 'es'] }],
+        ['zero event guests', { eventsDetails: { maxGuests: 0 } }],
+        ['a non HH:mm event end time', { eventsDetails: { endTime: 'medianoche' } }]
+    ])('rejects %s', (_label, input) => {
+        expect(AccommodationPoliciesSchema.safeParse(input).success).toBe(false);
+    });
+
+    it('keeps the new keys out of the shared base (venue and experience never carry them)', () => {
+        expect(Object.hasOwn(ListingPoliciesBaseSchema.shape, 'deposit')).toBe(false);
+        expect(Object.hasOwn(ListingPoliciesBaseSchema.shape, 'spokenLanguages')).toBe(false);
+        expect(Object.hasOwn(ListingPoliciesBaseSchema.shape, 'eventsDetails')).toBe(false);
+    });
+
+    it('keeps the new keys through the public read schema', () => {
+        const policies = {
+            deposit: { required: true, percentage: 50 },
+            spokenLanguages: ['pt'],
+            eventsAllowed: true,
+            eventsDetails: { maxGuests: 10 }
+        };
+        expect(AccommodationPublicSchema.shape.policies.parse(policies)).toEqual(policies);
+    });
 });
 
 describe('VenuePoliciesSchema', () => {
