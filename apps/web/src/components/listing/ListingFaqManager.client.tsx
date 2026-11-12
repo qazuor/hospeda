@@ -876,14 +876,15 @@ export function ListingFaqManager({
                             )}
                         </PlanEntitlementGate>
                     )}
-                    {prefillMessageId && addValues.answer === '' && (
-                        <p>
-                            {t(
-                                'host.properties.editor.aiQuestions.faqAnswerHelp',
-                                'There is no confirmed answer. Fill it in using information from your listing.'
-                            )}
-                        </p>
-                    )}
+                    {prefillMessageId &&
+                        (addValues.answer === '' || faqAiDraft.feedback === 'noData') && (
+                            <p>
+                                {t(
+                                    'host.properties.editor.aiQuestions.faqAnswerHelp',
+                                    'There is no confirmed answer. Fill it in using information from your listing.'
+                                )}
+                            </p>
+                        )}
                     {addErrors.answer && (
                         <p
                             id="faq-new-a-error"
