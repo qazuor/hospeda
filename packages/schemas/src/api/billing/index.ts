@@ -40,6 +40,7 @@ export * from './promo-code-admin.schema.js';
 export * from './promo-redemption.schema.js';
 export * from './protected-effective-set.schema.js';
 export * from './public-plan-catalog.schema.js';
+export * from './reconciliation-mark-vocabulary.js';
 export * from './reconciliation-marks.schema.js';
 export * from './refund-confirmation.schema.js';
 export * from './refund-decline.schema.js';
