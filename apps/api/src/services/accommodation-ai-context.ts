@@ -261,7 +261,7 @@ export function buildMarkdownContext(
     }
 
     // --- House rules (HOS-2060) ---
-    lines.push(...buildListingPoliciesLines({ policies: accommodation.policies }).lines);
+    lines.push(...buildListingPoliciesLines({ policies: accommodation.policies, locale }).lines);
 
     // --- Pets (HOS-2102) ---
     // When nothing in the block informs pets, say so explicitly instead of
