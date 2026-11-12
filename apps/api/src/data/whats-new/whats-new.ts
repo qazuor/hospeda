@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4279, #4283
+    {
+        id: '2026-11-11-external-reputation-on-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fichas de alojamiento muestran sus reseñas de Google',
+            en: 'Stay pages show their Google reviews',
+            pt: 'As páginas de hospedagem mostram suas avaliações do Google'
+        },
+        body: {
+            es: 'En la ficha de un alojamiento ves su calificación en Google y algunas reseñas tal como las escribieron los huéspedes, en su idioma original, con un link para leer todas. Si el alojamiento también está en otras plataformas, como Airbnb, aparece el acceso directo.',
+            en: "On a stay's page you see its Google rating and a few reviews exactly as guests wrote them, in their original language, with a link to read them all. If the stay is also on other platforms, such as Airbnb, a direct link shows up too.",
+            pt: 'Na página de uma hospedagem você vê a nota no Google e algumas avaliações exatamente como os hóspedes escreveram, no idioma original, com um link para ler todas. Se a hospedagem também estiver em outras plataformas, como o Airbnb, aparece o link direto.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4284
+    {
+        id: '2026-11-11-external-reputation-auto-enable',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tus reseñas de Google se publican solas en cuanto cargan',
+            en: 'Your Google reviews go live on their own as soon as they load',
+            pt: 'Suas avaliações do Google são publicadas sozinhas assim que carregam'
+        },
+        body: {
+            es: 'Cuando agregás tu ficha de Google en **Reputación externa** y trae calificación o reseñas, la sección se activa sola en tu página pública. Si la apagás o la prendés a mano, respetamos tu elección y no la volvemos a tocar.',
+            en: 'When you add your Google listing under **External reputation** and it brings a rating or reviews, the section turns on by itself on your public page. If you switch it off or on yourself, we respect your choice and never touch it again.',
+            pt: 'Quando você adiciona sua página do Google em **Reputação externa** e ela traz nota ou avaliações, a seção é ativada sozinha na sua página pública. Se você desligar ou ligar manualmente, respeitamos sua escolha e não mexemos mais.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4287
     {
         id: '2026-11-11-account-emails-plain-text',
