@@ -678,7 +678,7 @@
             "title": "Altas nuevas",
             "description": "Pausá las contrataciones self-service sin hacer un deploy",
             "label": "Pausar altas pagas nuevas",
-            "hint": "Bloquea contratar un plan con tarjeta y la primera publicación de una ficha que iniciaría una prueba gratis (alojamiento, gastronomía y experiencias). No afecta a quien ya tiene una suscripción o una prueba vigente, ni renovaciones, cobros, cancelaciones, cambios de plan, compras de complementos ni las acciones del admin.",
+            "hint": "Bloquea contratar un plan con tarjeta y la primera publicación de una ficha que iniciaría una prueba gratis (alojamiento, comida y experiencias). No afecta a quien ya tiene una suscripción o una prueba vigente, ni renovaciones, cobros, cancelaciones, cambios de plan, compras de complementos ni las acciones del admin.",
             "activeWarning": "Las altas nuevas están pausadas: la API rechaza esas contrataciones y la web le muestra el aviso a quien lo intenta.",
             "statusOn": "Pausadas",
             "statusOff": "Abiertas",

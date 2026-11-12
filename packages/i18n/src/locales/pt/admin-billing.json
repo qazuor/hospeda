@@ -678,7 +678,7 @@
             "title": "Novas contratações",
             "description": "Pause as contratações self-service sem fazer deploy",
             "label": "Pausar novas contratações pagas",
-            "hint": "Bloqueia iniciar uma assinatura com cartão e a primeira publicação de um anúncio que iniciaria um teste grátis (hospedagem, gastronomia e experiências). Não afeta quem já tem uma assinatura ou um teste vigente, nem renovações, cobranças, cancelamentos, mudanças de plano, compras de complementos ou ações do admin.",
+            "hint": "Bloqueia iniciar uma assinatura com cartão e a primeira publicação de um anúncio que iniciaria um teste grátis (hospedagem, alimentação e experiências). Não afeta quem já tem uma assinatura ou um teste vigente, nem renovações, cobranças, cancelamentos, mudanças de plano, compras de complementos ou ações do admin.",
             "activeWarning": "As novas contratações estão pausadas: a API recusa essas assinaturas e o site mostra um aviso para quem tenta.",
             "statusOn": "Pausadas",
             "statusOff": "Abertas",
