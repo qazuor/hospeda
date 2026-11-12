@@ -23,10 +23,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const componentSrc = readFileSync(
-    resolve(__dirname, '../../../src/components/accommodation/ExternalReputation.astro'),
-    'utf8'
-);
+// The per-platform score row lives in ExternalReputationSummaryRow.astro, so
+// the block is checked as the two files together.
+const componentSrc = ['ExternalReputation.astro', 'ExternalReputationSummaryRow.astro']
+    .map((file) =>
+        readFileSync(resolve(__dirname, '../../../src/components/accommodation', file), 'utf8')
+    )
+    .join('\n');
 
 describe('ExternalReputation.astro', () => {
     describe('Outbound links (HOS-592 allow-list)', () => {
@@ -63,6 +66,45 @@ describe('ExternalReputation.astro', () => {
             expect(componentSrc).toContain('selectLinkOnlyReputationItems({ items })');
             expect(componentSrc).toContain('external-reputation.aggregate.reviewsCountOn');
             expect(componentSrc).toContain('external-reputation.alsoOn');
+        });
+
+        it('renders the scores (Google last), then the Google cards, CTA and pills', () => {
+            // Read the block alone: the order is a property of its template.
+            const blockSrc = readFileSync(
+                resolve(
+                    __dirname,
+                    '../../../src/components/accommodation/ExternalReputation.astro'
+                ),
+                'utf8'
+            );
+            const markers = [
+                'summaryItems.map(',
+                '<ExternalReviews',
+                'href={googleHref}',
+                'styles.alsoOn'
+            ];
+            const positions = markers.map((marker) => blockSrc.indexOf(marker));
+
+            expect(positions.every((position) => position >= 0)).toBe(true);
+            expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+            expect(blockSrc).toContain('orderSummaryItemsGoogleLast({');
+            expect(blockSrc).toContain('resolvePlatformHref({ item: googleItem })');
+        });
+
+        it('gives Google a single link while its reviews are shown', () => {
+            const blockSrc = readFileSync(
+                resolve(
+                    __dirname,
+                    '../../../src/components/accommodation/ExternalReputation.astro'
+                ),
+                'utf8'
+            );
+
+            expect(blockSrc).toContain(
+                'const showGoogleCta = showReviewsBlock && googleHref != null;'
+            );
+            expect(blockSrc).toContain("showLink={!(showGoogleCta && item.platform === 'GOOGLE')}");
+            expect(blockSrc).toContain("(item) => !(showGoogleCta && item.platform === 'GOOGLE')");
         });
 
         it('removes the "why only Google" explainer', () => {

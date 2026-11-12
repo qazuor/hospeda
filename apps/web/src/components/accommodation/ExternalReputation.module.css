@@ -3,8 +3,8 @@
  * accommodation detail page.
  * Uses design tokens only — no Tailwind utility classes (web-app convention).
  *
- * Layout: title → summary rows (one per platform with an aggregate) →
- * "También en:" pills → review cards → footer CTA.
+ * Layout: title → summary rows (one per platform with an aggregate, Google
+ * last) → Google review cards → Google CTA → "También en:" pills.
  */
 
 /* ── Section wrapper ─────────────────────────────────────────────────────── */
@@ -32,6 +32,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
+}
+
+.summaryList:not(:last-child) {
     padding-bottom: var(--space-3, 12px);
     border-bottom: 1px solid var(--border, oklch(0.9 0 0));
 }
