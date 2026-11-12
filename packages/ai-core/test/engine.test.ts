@@ -597,6 +597,31 @@ describe('streamText routing', () => {
         expect(events.some((e) => e.type === 'fallback')).toBe(true);
     });
 
+    it('passes configured reasoning effort to an Anthropic fallback request', async () => {
+        mockResolveFeatureConfig.mockResolvedValue({
+            ...FEATURE_CONFIG_ENABLED,
+            params: { reasoningEffort: 'low' }
+        });
+        const primary = makeFailingProvider('openai', retryableError());
+        const stub = new StubProvider();
+        const fallbackGenerateText = vi.fn(stub.generateText.bind(stub));
+        const fallback: AiProvider = {
+            ...stub,
+            id: 'anthropic',
+            generateText: fallbackGenerateText
+        };
+        const engine = makeEngine(
+            new Map<string, AiProvider>([
+                ['openai', primary],
+                ['anthropic', fallback]
+            ])
+        );
+
+        await engine.generateText({ feature: 'chat_venue', locale: 'es', prompt: 'test' });
+
+        expect(fallbackGenerateText.mock.calls[0]?.[0].params).toEqual({ reasoningEffort: 'low' });
+    });
+
     it('should throw AiFeatureDisabledError on kill-switched feature', async () => {
         mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_DISABLED);
         const engine = createAiEngine({ getProvider: () => new StubProvider() });
