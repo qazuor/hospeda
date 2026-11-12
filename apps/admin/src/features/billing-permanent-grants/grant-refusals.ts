@@ -14,6 +14,8 @@ export const GRANT_REFUSAL_KEYS: Readonly<Record<string, TranslationKey>> = {
         'admin-billing.permanentGrants.refusals.PERMANENT_GRANT_REFERENCE_NOT_FOUND',
     PERMANENT_GRANT_FLOOR_NOT_CURRENT:
         'admin-billing.permanentGrants.refusals.PERMANENT_GRANT_FLOOR_NOT_CURRENT',
+    PERMANENT_GRANT_LISTING_SOFT_DELETED:
+        'admin-billing.permanentGrants.refusals.PERMANENT_GRANT_LISTING_SOFT_DELETED',
     INVALID_PERMANENT_GRANT_INPUT:
         'admin-billing.permanentGrants.refusals.INVALID_PERMANENT_GRANT_INPUT'
 };

@@ -26,6 +26,7 @@ describe('AC:B13a:6 — grant refusal copy (support)', () => {
         [409, 'PERMANENT_GRANT_ALREADY_LIVE'],
         [422, 'PERMANENT_GRANT_REFERENCE_NOT_FOUND'],
         [422, 'PERMANENT_GRANT_FLOOR_NOT_CURRENT'],
+        [409, 'PERMANENT_GRANT_LISTING_SOFT_DELETED'],
         [422, 'INVALID_PERMANENT_GRANT_INPUT']
     ];
     it.each(cases)('shows the specific copy for HTTP %i / %s', (status, reason) => {

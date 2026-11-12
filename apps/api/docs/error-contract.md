@@ -634,6 +634,7 @@ The three previews reject for the same reasons, in the same order, as their corr
 | `PERMANENT_GRANT_ALREADY_LIVE` | 409 | `ALREADY_EXISTS` |
 | `PERMANENT_GRANT_REFERENCE_NOT_FOUND` | 422 | `VALIDATION_ERROR` |
 | `PERMANENT_GRANT_FLOOR_NOT_CURRENT` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_LISTING_SOFT_DELETED` | 409 | `ALREADY_EXISTS` |
 | `INVALID_PERMANENT_GRANT_INPUT` | 422 | `VALIDATION_ERROR` |
 
 The floor is validated with `políticaDePlan(v).vigente` before writing.
@@ -646,8 +647,10 @@ Revoking checks its rejections in this order: 401 without a session, 403 from th
 route permission (before reading the grant, so a missing id is still 403), 400 for
 a bad path UUID, a blank reason or an extra body key, 404 for a missing grant, 403
 from the service for the beneficiary or a system actor, then 422
-`PERMANENT_GRANT_NOT_LIVE` for an already revoked grant. No new reason is added:
-the mapping table above is exhaustive.
+`PERMANENT_GRANT_NOT_LIVE` for an already revoked grant, then 409
+`PERMANENT_GRANT_LISTING_SOFT_DELETED` when an addon titled by the grant targets
+a soft-deleted listing (legacy data; nothing is revoked). The mapping table above
+is exhaustive.
 
 ## Actions 3 and 4 manual payment rejections
 

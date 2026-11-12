@@ -127,8 +127,8 @@ function isA5Origin(status: string): status is A5Origin {
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
  *   HOS-1546, HOS-1547, HOS-1570) passes them. The production `ficha` answers for
  *   an existing listing, including `PURGED`. A missing or soft-deleted listing throws
- *   `ListingNotFoundError` and rolls back the caller's act; the revocation route returned
- *   HTTP 500 (`INTERNAL_ERROR`) in the HOS-1630 measurement (notas I-12).
+ *   `ListingNotFoundError` and rolls back the caller's act. `revokePermanentGrant` turns it into
+ *   the typed 409 `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
  * @returns The cancelled addon, or `NOT_APPLICABLE`
  * @throws ServiceError when the instance does not exist or left its state under the lock
  */
