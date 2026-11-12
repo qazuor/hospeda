@@ -47,7 +47,6 @@ export async function runDailyCoverageReconciler(args: {
                                     coverage: (input) => args.ports.billing.coverage(input)
                                 },
                                 reader: args.ports.featured.reader,
-                                trials: args.ports.featured.trials,
                                 unitOfWork: args.ports.featured.unitOfWork,
                                 afterCommit: args.ports.afterCommit
                             },

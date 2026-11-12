@@ -12,7 +12,7 @@
  * Each listing table carries ONE featuring column, `featuredByEntitlement`,
  * written by the listing featured sync (`@repo/verticals` `syncListingFeatured`,
  * HOS-1718) from billing coverage: true while the owner's effective set grants
- * `featured_listing`, or a live LISTING add-on granting it targets the listing. It runs on every coverage-changed
+ * `featured_listing` (trial coverage alone does not feature listings; PM-627), or a live LISTING add-on granting it targets the listing. It runs on every coverage-changed
  * notice and in the daily coverage reconciler. Until HOS-1419 a second,
  * admin-curated `is_featured` column was OR'd with it here; that column was
  * dropped with the old billing, so the public `isFeatured` value is now the

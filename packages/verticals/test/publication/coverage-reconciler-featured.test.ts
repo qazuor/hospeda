@@ -131,8 +131,7 @@ function harness(
                                   ],
                                   setFeatured
                               })
-                      },
-                      trials: { findTrial: async () => null }
+                      }
                   }
               }
             : {})

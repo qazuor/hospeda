@@ -46,7 +46,14 @@ export async function syncListingFeatured(args: {
                         sources: coverage.sources.filter((source) => source.type !== 'TRIAL')
                     })
                 },
-                trials: args.ports.trials,
+                // PM-627 filters TRIAL before resolution; fail loudly if that contract regresses.
+                trials: {
+                    findTrial: async () => {
+                        throw new Error(
+                            'PM-627: TRIAL coverage must be filtered before resolution'
+                        );
+                    }
+                },
                 userId: args.userId,
                 vertical: args.vertical
             });

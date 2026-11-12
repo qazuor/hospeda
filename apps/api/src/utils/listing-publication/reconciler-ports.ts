@@ -11,6 +11,7 @@ import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/pu
 import { getClock } from '../clock';
 import { pingCronMonitor } from '../cron-heartbeat';
 import { invalidateEffectiveSetsForUser, peekEffectiveSetForUser } from '../effective-set-cache';
+import { createBootstrapCoverageReader } from '../listing-access/bootstrap-coverage-reader';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { getListingFeaturedPorts } from '../listing-featured/listing-featured-ports';
 import { getListingPublicationPorts } from './ports';
@@ -19,7 +20,7 @@ import { getListingPublicationPorts } from './ports';
 export function getListingReconcilerPorts(): ReconcilerPorts {
     const access = getListingAccessPorts();
     const featuredPorts = getListingFeaturedPorts();
-    const trials = featuredPorts.trials;
+    const trials = createBootstrapCoverageReader();
     const liveSet = async (userId: string, vertical: VerticalEnum) =>
         rehydrateEffectiveSet({
             version: 1,
@@ -46,7 +47,6 @@ export function getListingReconcilerPorts(): ReconcilerPorts {
         ...publication,
         featured: {
             reader: featuredPorts.reader,
-            trials: featuredPorts.trials,
             unitOfWork: featuredPorts.unitOfWork
         },
         population: {

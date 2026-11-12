@@ -1,5 +1,5 @@
 import { CoverageSourceSchema } from '@repo/billing-verticals-contract';
-import { EntitlementKeyEnum, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
+import { EntitlementKeyEnum, VerticalEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { UnresolvedCoverageSourceError } from '../../src/effective-set/resolve-effective-set';
 import type {
@@ -11,7 +11,6 @@ import type {
     PlanCatalogReader,
     PlanVersionEffectsRow
 } from '../../src/plan-catalog/catalog-reader';
-import type { ReconcilerPorts } from '../../src/publication/coverage-reconciler-types';
 
 const sub = (id: string) =>
     CoverageSourceSchema.parse({
@@ -42,7 +41,6 @@ function setup(
         sources?: ReturnType<typeof sub>[];
         rowSet?: ListingFeaturedRow[];
         unresolved?: boolean;
-        trials?: ListingFeaturedPorts['trials'];
     } = {}
 ) {
     const writes = vi.fn(async () => true);
@@ -69,6 +67,8 @@ function setup(
             return null;
         },
         async findPlanVersionEffects({ id }) {
+            const addonVersionEffects = this.addonEffects.get(id);
+            if (addonVersionEffects) return addonVersionEffects;
             return id === 'trial-v1' || id === 'floor-v1'
                 ? { entitlements: [], limits: [] }
                 : id === 'pro-v1' || id === 'premium-v1'
@@ -140,7 +140,6 @@ function setup(
     const ports: ListingFeaturedPorts = {
         billing: { coverage },
         reader,
-        trials: { findTrial: async () => null },
         unitOfWork: {
             runLocked: async (_args, work) =>
                 work({
@@ -148,7 +147,6 @@ function setup(
                     setFeatured: writes
                 })
         },
-        ...(options.trials ? { trials: options.trials } : {}),
         afterCommit: { revalidate }
     };
     return { ports, writes, revalidate, coverage, reader };
@@ -187,7 +185,7 @@ describe('HOS-1718 a plan that grants featured_listing features every listing of
         expect(h.coverage).toHaveBeenCalledTimes(1);
         expect(h.writes).toHaveBeenCalledTimes(3);
     });
-    it('an active trial without a subscription does not feature listings', async () => {
+    it('an active trial without a subscription does not feature listings (PM-627)', async () => {
         const source = CoverageSourceSchema.parse({
             type: 'TRIAL',
             reference: { kind: 'PLAN_VERSION', planVersionId: 'trial-v1' },
@@ -198,25 +196,10 @@ describe('HOS-1718 a plan that grants featured_listing features every listing of
             charged: null,
             floor: null
         });
-        const trialReader: ListingFeaturedPorts['trials'] = {
-            findTrial: async () => ({
-                userId: 'owner',
-                vertical: VerticalEnum.ACCOMMODATION,
-                status: TrialStatusEnum.TRIAL_ACTIVE,
-                trialPlanId: 'trial-v1',
-                startedAt: new Date('2026-01-01'),
-                endsAt: new Date('2026-12-01'),
-                floor: {
-                    entitlementsVersionId: 'floor-v1',
-                    limitsVersionId: 'floor-v1',
-                    trialPlanVersionId: 'floor-v1'
-                }
-            })
-        };
-        const withTrial = setup({ sources: [source], trials: trialReader });
-        await sync(withTrial.ports);
+        const withTrial = setup({ sources: [source] });
+        await expect(sync(withTrial.ports)).resolves.toEqual({ featuredOn: [], featuredOff: [] });
         expect(withTrial.writes).toHaveBeenCalledTimes(0);
-        const withPro = setup({ sources: [source, sub('pro-v1')], trials: trialReader });
+        const withPro = setup({ sources: [source, sub('pro-v1')] });
         await sync(withPro.ports);
         expect(withPro.writes).toHaveBeenCalledTimes(3);
     });
@@ -225,21 +208,5 @@ describe('HOS-1718 a plan that grants featured_listing features every listing of
         await expect(sync(h.ports)).rejects.toThrow(UnresolvedCoverageSourceError);
         expect(h.writes).toHaveBeenCalledTimes(0);
         expect(h.revalidate).toHaveBeenCalledTimes(0);
-    });
-    it('the plan term is mandatory in the ports', async () => {
-        const h = setup();
-        // @ts-expect-error HOS-1718 c3: ports without `trials` must not compile.
-        const missingTrials: ListingFeaturedPorts = {
-            billing: h.ports.billing,
-            reader: h.reader,
-            unitOfWork: h.ports.unitOfWork,
-            afterCommit: h.ports.afterCommit
-        };
-        // @ts-expect-error HOS-1718 c3: the reconciler's featured port must carry `trials`.
-        const featuredWithoutTrials: NonNullable<ReconcilerPorts['featured']> = {
-            reader: h.reader,
-            unitOfWork: h.ports.unitOfWork
-        };
-        expect(Boolean(missingTrials) || Boolean(featuredWithoutTrials)).toBe(true);
     });
 });

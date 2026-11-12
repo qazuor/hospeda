@@ -20,7 +20,7 @@ export type PartnerPresenceKey = 'partner_public_page' | 'partner_carousel_prese
 /** Ports used by the daily coverage reconciliation; all pages use keyset cursors. */
 export interface ReconcilerPorts {
     /** HOS-1718: run listing featured sync for every pair so lost notices self-heal daily. Optional for existing test harnesses. */
-    readonly featured?: Pick<ListingFeaturedPorts, 'reader' | 'trials' | 'unitOfWork'>;
+    readonly featured?: Pick<ListingFeaturedPorts, 'reader' | 'unitOfWork'>;
     readonly population: {
         listOwnerVerticals(args: {
             readonly after: {

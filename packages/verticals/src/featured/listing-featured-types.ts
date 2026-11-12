@@ -1,5 +1,4 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import type { BootstrapCoverageReader } from '../coverage/trial-and-base-sources';
 import type { PlanCatalogReader } from '../plan-catalog/catalog-reader';
 import type { PublicationAfterCommit, PublicationVertical } from '../publication/publication-types';
 
@@ -38,8 +37,6 @@ export interface ListingFeaturedUnitOfWork {
 export interface ListingFeaturedPorts {
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
     readonly reader: PlanCatalogReader;
-    /** Trial lookup required to resolve the effective set from coverage. */
-    readonly trials: Pick<BootstrapCoverageReader, 'findTrial'>;
     readonly unitOfWork: ListingFeaturedUnitOfWork;
     readonly afterCommit: Pick<PublicationAfterCommit, 'revalidate'>;
 }

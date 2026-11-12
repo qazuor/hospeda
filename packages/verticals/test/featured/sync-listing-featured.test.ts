@@ -108,7 +108,6 @@ function harness(
         },
         reader:
             options.reader === false ? { ...reader, findAddonVersionEffects: undefined } : reader,
-        trials: { findTrial: async () => null },
         unitOfWork: {
             runLocked: async (key, work) => {
                 observed.lock = key;
