@@ -1,6 +1,5 @@
 import {
     and,
-    billingDeadlineVersions,
     billingOptions,
     emailOutbox,
     eq,
@@ -28,7 +27,7 @@ import {
 
 const clock = { now: () => pausedNow };
 const scheduledIds: string[] = [];
-const deadlineVersion = 81704179;
+const deadlineVersion = -1784;
 const instant = (day: string) => new Date(`${day}T15:00:00.000Z`);
 
 afterEach(async () => {
@@ -36,19 +35,16 @@ afterEach(async () => {
         await getServiceTestDb()
             .delete(subscriptionScheduledChanges)
             .where(eq(subscriptionScheduledChanges.subscriptionId, scheduledIds.splice(0)[0]!));
-    await getServiceTestDb()
-        .delete(billingDeadlineVersions)
-        .where(eq(billingDeadlineVersions.version, deadlineVersion));
     await retirePausedCancellationRows();
 });
 afterAll(closeServiceTestPool);
 
-async function fixture(withScheduledChange: boolean) {
+async function fixture(withScheduledChange: boolean, startedAt = instant('2099-03-01')) {
     const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
     const seeded = await seedPausedCancellation({ fake });
     await configureGraceReminderSubscription({
         subscriptionId: seeded.subscriptionId,
-        startedAt: instant('2099-03-01'),
+        startedAt,
         endsAt: instant('2099-03-20')
     });
     if (!withScheduledChange) return seeded;
@@ -89,7 +85,7 @@ async function fixture(withScheduledChange: boolean) {
         })
         .returning({ id: billingOptions.id });
     if (!targetOption) throw new Error('HOS-1784 destination billing option insert failed');
-    const [destination] = await getServiceTestDb()
+    const destination = await getServiceTestDb()
         .select({
             billingOptionId: billingOptions.id,
             planVersionId: billingOptions.planVersionId,
@@ -193,11 +189,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('grace reminder carries the scheduled change with the destination plan name', async () => {
             // Arrange
-            const seeded = await fixture(true);
+            const seeded = await fixture(true, instant('2000-03-01'));
             if (!('target' in seeded)) throw new Error('Scheduled fixture missing');
             await insertGraceReminderDeadline({
                 version: deadlineVersion,
-                createdAt: instant('2099-02-01'),
+                createdAt: instant('2000-02-01'),
                 daysBefore: [3]
             });
 
@@ -226,10 +222,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('grace reminder omits scheduledChange without a queued change', async () => {
             // Arrange
-            const seeded = await fixture(false);
+            const seeded = await fixture(false, instant('2000-03-01'));
             await insertGraceReminderDeadline({
                 version: deadlineVersion,
-                createdAt: instant('2099-02-01'),
+                createdAt: instant('2000-02-01'),
                 daysBefore: [3]
             });
 
