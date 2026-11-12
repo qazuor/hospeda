@@ -27,6 +27,8 @@ const freezeRow = {
     updatedBy: '22222222-2222-4222-8222-222222222222'
 };
 
+const billingFreezeKeys = ['billing.paidSignupsFreeze', 'billing.addonPurchasesFreeze'] as const;
+
 describe('PlatformSettingsService', () => {
     let service: PlatformSettingsService;
     let modelMock: PlatformSettingsModel;
@@ -38,21 +40,21 @@ describe('PlatformSettingsService', () => {
         service = new PlatformSettingsService({ logger: loggerMock }, modelMock);
     });
 
-    describe('HOS-1749 paid signups freeze setting', () => {
+    describe.each(billingFreezeKeys)('HOS-1749 %s setting permissions', (key) => {
         it('reads the freeze setting with BILLING_SETTINGS_VIEW', async () => {
             // Arrange
             const actor: Actor = createActor({
                 permissions: [PermissionEnum.BILLING_SETTINGS_VIEW]
             });
-            asMock(modelMock.findByKey).mockResolvedValue(freezeRow);
+            asMock(modelMock.findByKey).mockResolvedValue({ ...freezeRow, key });
 
             // Act
-            const result = await service.get({ actor, key: 'billing.paidSignupsFreeze' });
+            const result = await service.get({ actor, key });
 
             // Assert
             expectSuccess(result);
             expect(result.data).toMatchObject({
-                key: 'billing.paidSignupsFreeze',
+                key,
                 value: { frozen: true }
             });
         });
@@ -64,7 +66,7 @@ describe('PlatformSettingsService', () => {
             });
 
             // Act
-            const result = await service.get({ actor, key: 'billing.paidSignupsFreeze' });
+            const result = await service.get({ actor, key });
 
             // Assert
             expectForbiddenError(result);
@@ -82,14 +84,14 @@ describe('PlatformSettingsService', () => {
             // Act
             const result = await service.upsert({
                 actor,
-                key: 'billing.paidSignupsFreeze',
+                key,
                 value: { frozen: true }
             });
 
             // Assert
             expectSuccess(result);
             expect(modelMock.upsertByKey).toHaveBeenCalledWith(
-                'billing.paidSignupsFreeze',
+                key,
                 { frozen: true },
                 VALID_UUID,
                 undefined
@@ -105,7 +107,7 @@ describe('PlatformSettingsService', () => {
             // Act
             const result = await service.upsert({
                 actor,
-                key: 'billing.paidSignupsFreeze',
+                key,
                 value: { frozen: true }
             });
 
@@ -113,7 +115,9 @@ describe('PlatformSettingsService', () => {
             expectForbiddenError(result);
             expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
         });
+    });
 
+    describe('HOS-1749 paid signups freeze reader', () => {
         it('rejects an invalid value shape for the freeze setting', async () => {
             // Arrange
             const actor: Actor = createActor({
@@ -186,6 +190,42 @@ describe('PlatformSettingsService', () => {
 
             // Act & Assert
             await expect(service.isNewPaidSignupsFrozen()).rejects.toThrow('database unavailable');
+        });
+    });
+
+    describe('HOS-1749 addon purchases freeze reader', () => {
+        const addonFreezeRow = { ...freezeRow, key: 'billing.addonPurchasesFreeze' as const };
+
+        it('returns false when the freeze setting row is absent', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue(undefined);
+            await expect(service.isAddonPurchasesFrozen()).resolves.toBe(false);
+        });
+
+        it('returns true when the freeze setting is enabled', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue(addonFreezeRow);
+            await expect(service.isAddonPurchasesFrozen()).resolves.toBe(true);
+        });
+
+        it('returns false when the freeze setting is disabled', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue({
+                ...addonFreezeRow,
+                value: { frozen: false }
+            });
+            await expect(service.isAddonPurchasesFrozen()).resolves.toBe(false);
+        });
+
+        it('returns false and warns when the freeze setting is malformed', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue({
+                ...addonFreezeRow,
+                value: { frozen: 'x' }
+            });
+            await expect(service.isAddonPurchasesFrozen()).resolves.toBe(false);
+            expect(loggerMock.warn).toHaveBeenCalledTimes(1);
+        });
+
+        it('propagates freeze setting read errors', async () => {
+            asMock(modelMock.findByKey).mockRejectedValue(new Error('database unavailable'));
+            await expect(service.isAddonPurchasesFrozen()).rejects.toThrow('database unavailable');
         });
     });
 });

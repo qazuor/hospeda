@@ -32,6 +32,8 @@ import { ServiceError } from '../../types';
  *     (SUPER_ADMIN-only — V1 collapses read+write into the single critical perm).
  *   - `billing.paidSignupsFreeze` read → `BILLING_SETTINGS_VIEW`
  *   - `billing.paidSignupsFreeze` write → `BILLING_SETTINGS_WRITE`
+ *   - `billing.addonPurchasesFreeze` read → `BILLING_SETTINGS_VIEW`
+ *   - `billing.addonPurchasesFreeze` write → `BILLING_SETTINGS_WRITE`
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -251,7 +253,13 @@ export class PlatformSettingsService extends BaseService {
         return parsed.data.frozen;
     }
 
-    /** Reads the independent global addon purchase switch on every call. */
+    /**
+     * Whether new addon purchases are paused (HOS-1749).
+     * Reads the independent global switch on every call. Missing or malformed
+     * values leave purchases open; database read errors propagate.
+     *
+     * @returns Whether new addon purchases are frozen.
+     */
     async isAddonPurchasesFrozen(): Promise<boolean> {
         const row = await this.model.findByKey('billing.addonPurchasesFreeze');
         if (!row) return false;

@@ -22,7 +22,7 @@ import { useUserPermissions } from '@/hooks/use-user-permissions';
 
 const COPY_BY_LOCALE = { es, en, pt };
 
-/** Shows and controls the platform-wide addon-purchases freeze. */
+/** Shows and controls the platform-wide addon purchase freeze. */
 export function AddonPurchasesFreezeCard() {
     const { locale } = useTranslations();
     const permissions = useUserPermissions();

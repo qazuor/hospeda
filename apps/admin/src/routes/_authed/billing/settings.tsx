@@ -11,6 +11,7 @@ export const Route = createFileRoute('/_authed/billing/settings')({
     component: BillingSettingsPage
 });
 
+/** Billing settings page for signup and addon purchase controls. */
 export function BillingSettingsPage() {
     return (
         <SidebarPageLayout titleKey="admin-billing.settings.title">

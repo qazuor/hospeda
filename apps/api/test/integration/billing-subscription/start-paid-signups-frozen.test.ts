@@ -79,6 +79,16 @@ async function setFreeze(frozen: boolean, updatedBy: string): Promise<void> {
         });
 }
 
+async function setAddonFreeze(frozen: boolean, updatedBy: string): Promise<void> {
+    await getDb()
+        .insert(platformSettings)
+        .values({ key: 'billing.addonPurchasesFreeze', value: { frozen }, updatedBy })
+        .onConflictDoUpdate({
+            target: platformSettings.key,
+            set: { value: { frozen }, updatedBy }
+        });
+}
+
 function headers(userId: string) {
     return {
         'content-type': 'application/json',
@@ -113,6 +123,9 @@ describe('HOS-1749 POST /protected/billing/subscriptions answers 409 NEW_PAID_SI
         await getDb()
             .delete(platformSettings)
             .where(eq(platformSettings.key, 'billing.paidSignupsFreeze'));
+        await getDb()
+            .delete(platformSettings)
+            .where(eq(platformSettings.key, 'billing.addonPurchasesFreeze'));
     });
     afterAll(async () => testDb.teardown());
 
@@ -138,6 +151,24 @@ describe('HOS-1749 POST /protected/billing/subscriptions answers 409 NEW_PAID_SI
     it('a false freeze row allows checkout to proceed', async () => {
         const { user, option } = await fixture();
         await setFreeze(false, user.id);
+
+        const response = await checkout(user.id, user.email, option.id);
+        const body: unknown = await response.json();
+        const rows = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, user.id));
+
+        expect(response.status).toBe(201);
+        expect(body).toMatchObject({ success: true, data: { checkoutUrl: expect.any(String) } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0]?.status).toBe('PENDING_AUTHORIZATION');
+    });
+
+    it('an addon purchase freeze does not block paid signup checkout', async () => {
+        const { user, option } = await fixture();
+        await setFreeze(false, user.id);
+        await setAddonFreeze(true, user.id);
 
         const response = await checkout(user.id, user.email, option.id);
         const body: unknown = await response.json();

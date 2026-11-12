@@ -157,7 +157,9 @@ export const PaidSignupsFreezeValueSchema = z.object({
 export type PaidSignupsFreezeValue = z.infer<typeof PaidSignupsFreezeValueSchema>;
 
 /** Value shape for the independent addon purchase freeze. */
+/** Stored value for the global addon purchase freeze setting. */
 export const AddonPurchasesFreezeValueSchema = z.object({ frozen: z.boolean() });
+/** Parsed value of the global addon purchase freeze setting. */
 export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValueSchema>;
 
 // ---------------------------------------------------------------------------
