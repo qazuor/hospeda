@@ -2507,18 +2507,6 @@ export const listingAnalyticsApi = {
             cookieHeader
         });
     },
-    /** Read the authenticated user's currently open manual installments. */
-    listManualInstallments({
-        cookieHeader
-    }: {
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<OwnManualInstallmentsResponse>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing-subscription/manual-installments`,
-            cookieHeader
-        });
-    },
-
     /** Read the owner's resolved venue section and trait availability. */
     getVenueSectionStates({
         venueId,
@@ -5750,6 +5738,17 @@ export const billingSubscriptionApi = {
         readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the authenticated user's currently open manual installments. */
+    listManualInstallments({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<OwnManualInstallmentsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/manual-installments`,
+            cookieHeader
+        });
     },
     /** Read one owned subscription (status and anchored billing option); a foreign id answers 404. */
     read({
