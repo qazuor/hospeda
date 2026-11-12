@@ -41,7 +41,11 @@ function settingsValue() {
     };
     return {
         providers: { stub: { enabled: true } },
-        features: Object.fromEntries(AiFeatureSchema.options.map((key) => [key, feature]))
+        features: Object.fromEntries(
+            AiFeatureSchema.options
+                .filter((key) => key !== 'faq_draft')
+                .map((key) => [key, feature])
+        )
     };
 }
 
