@@ -678,8 +678,17 @@
             "title": "Altas nuevas",
             "description": "Pausá las contrataciones self-service sin hacer un deploy",
             "label": "Pausar altas pagas nuevas",
-            "hint": "Bloquea contratar un plan (incluidas las pruebas nuevas desde el checkout), la primera publicación de un anfitrión sin prueba ni suscripción (que es lo que inicia la prueba), las reactivaciones, publicar un comercio que todavía no tiene suscripción y comprar complementos. No afecta renovaciones, cobros, cancelaciones, cambios de tarjeta, upgrades de quien ya paga, publicar o editar con una suscripción o prueba vigente, ni las acciones del admin.",
-            "activeWarning": "Las altas nuevas están pausadas: en la web se muestra un aviso en lugar del botón de contratar, y la API rechaza esas contrataciones."
+            "hint": "Bloquea contratar un plan con tarjeta y la primera publicación de una ficha que iniciaría una prueba gratis (alojamiento, gastronomía y experiencias). No afecta a quien ya tiene una suscripción o una prueba vigente, ni renovaciones, cobros, cancelaciones, cambios de plan, compras de complementos ni las acciones del admin.",
+            "activeWarning": "Las altas nuevas están pausadas: la API rechaza esas contrataciones y la web le muestra el aviso a quien lo intenta.",
+            "statusOn": "Pausadas",
+            "statusOff": "Abiertas",
+            "enable": "Pausar altas",
+            "disable": "Reanudar altas",
+            "confirmEnable": "¿Pausar las altas pagas nuevas? Nadie podrá contratar ni hacer su primera publicación hasta que las reanudes.",
+            "confirmDisable": "¿Reanudar las altas pagas nuevas?",
+            "cancel": "Cancelar",
+            "noWritePermission": "No tenés permiso para cambiar este interruptor.",
+            "saveError": "No se pudo guardar el cambio. Probá de nuevo."
         }
     },
     "sponsorships": {
