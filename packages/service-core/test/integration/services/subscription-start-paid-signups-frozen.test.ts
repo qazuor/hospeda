@@ -93,7 +93,11 @@ describe('HOS-1749 S1 refuses a new card signup while new paid signups are froze
     it('frozen: rejects with NEW_PAID_SIGNUPS_FROZEN before touching the provider or the database', async () => {
         // Arrange
         const choice = await seedChoice();
-        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const fake = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [{ lie: 'M1', why: 'allow a healthy signup fixture' }]
+        });
         const provider = namespaceFake(fake);
         const authorize = vi.spyOn(fake, 'authorize');
         const readAuthorization = vi.spyOn(fake, 'readAuthorization');
@@ -179,7 +183,11 @@ describe('HOS-1749 S1 refuses a new card signup while new paid signups are froze
     it('not frozen: the signup proceeds as before', async () => {
         // Arrange
         const choice = await seedChoice();
-        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const fake = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [{ lie: 'M1', why: 'allow a healthy signup fixture' }]
+        });
         const provider = namespaceFake(fake);
 
         // Act
