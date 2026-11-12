@@ -29,7 +29,8 @@ import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     assertPermanentGrantPermitted,
     assertPermanentGrantSubject,
-    mapPermanentGrantWriteError
+    mapPermanentGrantWriteError,
+    permanentGrantRejection
 } from './permanent-grant-authorization.js';
 import { invalidPermanentGrantInput, revokeSchema } from './permanent-grant-inputs.js';
 import type { PermanentGrantPorts } from './permanent-grant-ports.js';
@@ -69,13 +70,16 @@ async function emitGrantRevokedNotices(input: {
  * Post-commit notices and provider cancellation are best effort. No S13/S20,
  * subscription reactivation, courtesy repair or trial transition runs here.
  * Rejection order is 403 permission, 422 shape, 404 missing row, 403 subject
- * or system actor, then 422 non-live grant.
+ * or system actor, then 422 non-live grant, then 409
+ * `PERMANENT_GRANT_LISTING_SOFT_DELETED` when a titled addon targets a
+ * soft-deleted listing (nothing is revoked).
  *
  * @param input Grant ID, required free-text reason and signing actor.
  * @param ports Clock, A5 policy, coverage notices and provider dependencies.
  * @returns Revocation audit data, retained anchor IDs, cancelled addons and provider calls.
  * @throws {ServiceError} ADMINISTRATIVE_ACTION_FORBIDDEN, INVALID_PERMANENT_GRANT_INPUT,
- * PERMANENT_GRANT_NOT_FOUND, PERMANENT_GRANT_NOT_LIVE, or internal
+ * PERMANENT_GRANT_NOT_FOUND, PERMANENT_GRANT_NOT_LIVE,
+ * PERMANENT_GRANT_LISTING_SOFT_DELETED, or internal
  * PERMANENT_GRANT_ROW_CHANGED when a locked row changes unexpectedly.
  */
 export async function revokePermanentGrant(
@@ -168,16 +172,30 @@ export async function revokePermanentGrant(
                 : [];
             const cancelled: CancelledAddon[] = [];
             for (const instance of instances) {
-                const result = await applyA5(
-                    {
-                        tx,
-                        instanceId: instance.id,
-                        clause: 'GRANT_REVOKED',
-                        now,
-                        s21Cause: 'GRANT_REVOKED'
-                    },
-                    ports.orphanhood
-                );
+                let result: Awaited<ReturnType<typeof applyA5>>;
+                try {
+                    result = await applyA5(
+                        {
+                            tx,
+                            instanceId: instance.id,
+                            clause: 'GRANT_REVOKED',
+                            now,
+                            s21Cause: 'GRANT_REVOKED'
+                        },
+                        ports.orphanhood
+                    );
+                } catch (error) {
+                    // A titled LISTING addon whose listing row is soft-deleted (legacy data:
+                    // the new model has no soft-delete door, AC:V6:25) makes `ficha` refuse.
+                    // Fail closed (owner, HOS-2069): throwing here rolls back the grant, its
+                    // anchors and every addon already cancelled in this loop.
+                    if (error instanceof Error && error.name === 'ListingNotFoundError')
+                        throw permanentGrantRejection({
+                            reason: 'PERMANENT_GRANT_LISTING_SOFT_DELETED',
+                            message: 'A titled addon targets a deleted listing; nothing was revoked'
+                        });
+                    throw error;
+                }
                 if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
             }
             return { beneficiaryUserId: grant.beneficiaryUserId, anchors, cancelled };
