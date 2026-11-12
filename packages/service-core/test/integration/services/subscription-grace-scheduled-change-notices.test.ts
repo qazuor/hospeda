@@ -1,5 +1,6 @@
 import {
     and,
+    billingDeadlineVersions,
     billingOptions,
     emailOutbox,
     eq,
@@ -35,6 +36,9 @@ afterEach(async () => {
         await getServiceTestDb()
             .delete(subscriptionScheduledChanges)
             .where(eq(subscriptionScheduledChanges.subscriptionId, scheduledIds.splice(0)[0]!));
+    await getServiceTestDb()
+        .delete(billingDeadlineVersions)
+        .where(eq(billingDeadlineVersions.version, deadlineVersion));
     await retirePausedCancellationRows();
 });
 afterAll(closeServiceTestPool);
@@ -53,6 +57,38 @@ async function fixture(withScheduledChange: boolean) {
         .from(subscriptions)
         .where(eq(subscriptions.id, seeded.subscriptionId));
     if (!subscription) throw new Error('Seeded subscription missing');
+    const [targetPlan] = await getServiceTestDb()
+        .insert(plans)
+        .values({
+            vertical: subscription.vertical ?? 'accommodation',
+            slug: `hos-1784-${crypto.randomUUID()}`,
+            name: 'HOS-1784 destination'
+        })
+        .returning({ id: plans.id });
+    if (!targetPlan) throw new Error('HOS-1784 destination plan insert failed');
+    const [targetVersion] = await getServiceTestDb()
+        .insert(planVersions)
+        .values({
+            planId: targetPlan.id,
+            vertical: subscription.vertical ?? 'accommodation',
+            rank: Math.floor(Math.random() * 1e9) + 1,
+            sellable: false,
+            current: true,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning({ id: planVersions.id });
+    if (!targetVersion) throw new Error('HOS-1784 destination version insert failed');
+    const [targetOption] = await getServiceTestDb()
+        .insert(billingOptions)
+        .values({
+            planVersionId: targetVersion.id,
+            cycle: 'monthly',
+            amount: 10000,
+            currency: 'ARS'
+        })
+        .returning({ id: billingOptions.id });
+    if (!targetOption) throw new Error('HOS-1784 destination billing option insert failed');
     const [destination] = await getServiceTestDb()
         .select({
             billingOptionId: billingOptions.id,
