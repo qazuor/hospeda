@@ -186,26 +186,30 @@ describe('HOS-2130 manual installment opened integration', () => {
 
     it('keeps one owner mail across a retry and five concurrent starts', async () => {
         // Arrange
-        const { owner, option } = await seed();
+        const fixtures = await Promise.all(Array.from({ length: 5 }, () => seed()));
         // Act
         await Promise.all(
-            Array.from({ length: 5 }, () =>
+            fixtures.map(({ owner, option }) =>
                 startManualSubscription(
                     { userId: owner.id, billingOptionId: option.id },
                     startPorts()
                 )
             )
         );
-        await startManualSubscription(
-            { userId: owner.id, billingOptionId: option.id },
-            startPorts()
+        await Promise.all(
+            fixtures.map(({ owner, option }) =>
+                startManualSubscription(
+                    { userId: owner.id, billingOptionId: option.id },
+                    startPorts()
+                )
+            )
         );
         // Assert
-        expect(await ownerMail(owner.id)).toHaveLength(1);
-        expect((await ownerMail(owner.id))[0]?.payload).toMatchObject({
-            amountMinor: 3_000_000,
-            currency: 'ARS'
-        });
+        for (const { owner } of fixtures) {
+            const mails = await ownerMail(owner.id);
+            expect(mails).toHaveLength(1);
+            expect(mails[0]?.payload).toMatchObject({ amountMinor: 3_000_000, currency: 'ARS' });
+        }
     });
 
     it('mails the owner once when the clock opens a renewal in grace', async () => {
