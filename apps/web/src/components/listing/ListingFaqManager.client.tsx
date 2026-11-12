@@ -844,18 +844,18 @@ export function ListingFaqManager({
                                 {faqAiDraft.isLoading
                                     ? t(
                                           'host.properties.editor.aiQuestions.aiDraftLoading',
-                                          'Gerando uma sugestão…'
+                                          'Generando una sugerencia…'
                                       )
                                     : t(
                                           'host.properties.editor.aiQuestions.suggestAiAnswer',
-                                          'Sugerir resposta com IA'
+                                          'Sugerir respuesta con IA'
                                       )}
                             </button>
                             {isAiDraftContent && (
                                 <p className={styles.aiDraftDisclaimer}>
                                     {t(
                                         'host.properties.editor.aiQuestions.aiDraftDisclaimer',
-                                        'Este é um rascunho editável. Confira as informações do anúncio antes de salvar.'
+                                        'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
                                     )}
                                 </p>
                             )}
@@ -868,7 +868,9 @@ export function ListingFaqManager({
                                         faqAiDraft.feedback === 'notEligible'
                                             ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
                                             : 'host.properties.editor.aiQuestions.aiDraftError',
-                                        'Não foi possível gerar a sugestão. Tente novamente.'
+                                        faqAiDraft.feedback === 'notEligible'
+                                            ? 'Esta pregunta ya tiene una respuesta del asistente.'
+                                            : 'No se pudo generar la sugerencia. Intentá de nuevo.'
                                     )}
                                 </p>
                             )}
