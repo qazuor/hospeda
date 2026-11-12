@@ -14,6 +14,7 @@ import {
     subscriptions,
     users
 } from '@repo/db';
+import { registerHook, unregisterHook } from '@repo/logger';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { enqueueManualInstallmentOpenedNotice } from '../../../src/services/billing/subscription/manual-installment-opened-notice';
@@ -201,6 +202,10 @@ describe('HOS-2130 manual installment opened integration', () => {
         );
         // Assert
         expect(await ownerMail(owner.id)).toHaveLength(1);
+        expect((await ownerMail(owner.id))[0]?.payload).toMatchObject({
+            amountMinor: 3_000_000,
+            currency: 'ARS'
+        });
     });
 
     it('mails the owner once when the clock opens a renewal in grace', async () => {
@@ -345,6 +350,91 @@ describe('HOS-2130 manual installment opened integration', () => {
         // Assert
         expect(results).toEqual([{ enqueued: true }, { enqueued: false }]);
         expect(await ownerMail(owner.id)).toHaveLength(1);
+    });
+
+    it('keeps the installment open and mails a null amount when calculation fails', async () => {
+        const { owner, plan, version, option } = await seed();
+        const [subscription] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: owner.id,
+                vertical: 'partner',
+                class: 'PRINCIPAL',
+                status: 'ACTIVE',
+                paymentMethod: 'MANUAL',
+                planVersionId: version.id,
+                billingOptionId: option.id,
+                nextChargeAt: baseTime
+            })
+            .returning();
+        if (!subscription) throw new Error('Subscription seed failed');
+        const calculationError = new Error('expected amount failed');
+        const logEntries: Array<{
+            level: string;
+            category?: string;
+            message: string;
+            data?: unknown;
+        }> = [];
+        const hookName = 'manual-installment-opened-test';
+        registerHook(hookName, (entry) => {
+            logEntries.push(entry);
+        });
+
+        try {
+            const [manualPayment] = await getDb().transaction(async (tx) => {
+                const [payment] = await tx
+                    .insert(manualPayments)
+                    .values({
+                        subscriptionId: subscription.id,
+                        periodStart: baseTime,
+                        status: 'AWAITING'
+                    })
+                    .returning();
+                if (!payment) throw new Error('Manual installment seed failed');
+                await enqueueManualInstallmentOpenedNotice(
+                    {
+                        tx,
+                        subscription,
+                        manualPaymentId: payment.id,
+                        periodStart: baseTime,
+                        dueAt: new Date(baseTime.getTime() + 9 * 86_400_000),
+                        firstInstallment: false
+                    },
+                    {
+                        expectedAmounts: {
+                            expectedAmount: async () => {
+                                throw calculationError;
+                            }
+                        }
+                    }
+                );
+                return [payment];
+            });
+
+            expect(manualPayment).toBeDefined();
+            expect(await ownerMail(owner.id)).toMatchObject([
+                {
+                    payload: {
+                        manualPaymentId: manualPayment?.id,
+                        planSlug: plan.slug,
+                        amountMinor: null
+                    }
+                }
+            ]);
+            expect(logEntries).toContainEqual(
+                expect.objectContaining({
+                    level: 'ERROR',
+                    category: 'manual-installment-opened-notice',
+                    message: 'Could not calculate installment amount',
+                    data: expect.objectContaining({
+                        error: expect.objectContaining({ message: calculationError.message }),
+                        subscriptionId: subscription.id
+                    })
+                })
+            );
+        } finally {
+            unregisterHook(hookName);
+        }
     });
 
     it('does not mail the owner of a manual renewal outside partner', async () => {

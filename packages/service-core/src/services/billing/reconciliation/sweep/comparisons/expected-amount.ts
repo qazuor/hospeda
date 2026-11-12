@@ -1,6 +1,7 @@
 import {
     and,
     billingOptions,
+    type DrizzleClient,
     desc,
     domainEvent,
     eq,
@@ -49,11 +50,12 @@ export interface ExpectedAmountPolicy {
         readonly purpose:
             | { readonly kind: 'AUTHORIZATION' }
             | { readonly kind: 'PERIOD'; readonly chargeCreatedAt: Date };
+        readonly executor?: DrizzleClient;
     }): Promise<ExpectedAmount>;
 }
 
-async function scheduledChange(subscriptionId: string) {
-    const [change] = await getDb()
+async function scheduledChange(subscriptionId: string, executor: DrizzleClient) {
+    const [change] = await executor
         .select()
         .from(subscriptionScheduledChanges)
         .where(eq(subscriptionScheduledChanges.subscriptionId, subscriptionId))
@@ -61,9 +63,12 @@ async function scheduledChange(subscriptionId: string) {
     return change ?? null;
 }
 
-async function preservesPromo(change: NonNullable<Awaited<ReturnType<typeof scheduledChange>>>) {
+async function preservesPromo(
+    change: NonNullable<Awaited<ReturnType<typeof scheduledChange>>>,
+    executor: DrizzleClient
+) {
     if (!change.planMigrationSubscriptionId) return false;
-    const [migration] = await getDb()
+    const [migration] = await executor
         .select({ reason: planMigrations.reason })
         .from(planMigrationSubscriptions)
         .innerJoin(
@@ -83,8 +88,9 @@ async function preservesPromo(change: NonNullable<Awaited<ReturnType<typeof sche
  */
 async function migrationDecidedDestination(input: {
     readonly subscriptionId: string;
+    readonly executor: DrizzleClient;
 }): Promise<MigrationDecidedDestination | null> {
-    const [decision] = await getDb()
+    const [decision] = await input.executor
         .select({ changes: domainEvent.changes })
         .from(domainEvent)
         .where(
@@ -98,7 +104,7 @@ async function migrationDecidedDestination(input: {
         .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
         .limit(1);
     if (!decision) return null;
-    const pending = await getDb()
+    const pending = await input.executor
         .select({
             scopeId: planMigrationSubscriptions.id,
             targetPlanVersionId: planMigrations.targetPlanVersionId,
@@ -129,6 +135,7 @@ async function migrationDecidedDestination(input: {
 async function readDestinationOption(input: {
     readonly targetPlanVersionId: string;
     readonly cycle: string;
+    readonly executor: DrizzleClient;
 }): Promise<{
     readonly id: string;
     readonly planVersionId: string;
@@ -136,7 +143,7 @@ async function readDestinationOption(input: {
     readonly amount: number;
     readonly currency: string;
 } | null> {
-    const [option] = await getDb()
+    const [option] = await input.executor
         .select({
             id: billingOptions.id,
             planVersionId: billingOptions.planVersionId,
@@ -157,10 +164,35 @@ async function readDestinationOption(input: {
 
 /** Creates the expected-amount policy, including applicable live promo composition. */
 export function createCutExpectedAmountPolicy(
-    ports: { readonly reader?: BillingOptionReader } = {}
+    ports: { readonly reader?: BillingOptionReader; readonly executor?: DrizzleClient } = {}
 ): ExpectedAmountPolicy {
     return {
-        async expectedAmount({ subscription, purpose }) {
+        async expectedAmount({ subscription, purpose, executor: callExecutor }) {
+            const executor = callExecutor ?? ports.executor ?? getDb();
+            const reader =
+                callExecutor || ports.executor
+                    ? ({
+                          async findByVersionAndId({ planVersionId, billingOptionId }) {
+                              const [option] = await executor
+                                  .select({
+                                      id: billingOptions.id,
+                                      planVersionId: billingOptions.planVersionId,
+                                      cycle: billingOptions.cycle,
+                                      amount: billingOptions.amount,
+                                      currency: billingOptions.currency
+                                  })
+                                  .from(billingOptions)
+                                  .where(
+                                      and(
+                                          eq(billingOptions.planVersionId, planVersionId),
+                                          eq(billingOptions.id, billingOptionId)
+                                      )
+                                  )
+                                  .limit(1);
+                              return option ?? null;
+                          }
+                      } satisfies BillingOptionReader)
+                    : ports.reader;
             if (subscription.class !== 'PRINCIPAL')
                 return { kind: 'NOT_COMPARABLE', reason: 'NOT_PRINCIPAL' };
             if (!subscription.planVersionId || !subscription.billingOptionId)
@@ -170,7 +202,7 @@ export function createCutExpectedAmountPolicy(
                 billingOptionId: subscription.billingOptionId
             };
 
-            const change = await scheduledChange(subscription.id);
+            const change = await scheduledChange(subscription.id, executor);
             const startsAt =
                 change !== null &&
                 (purpose.kind === 'AUTHORIZATION' ||
@@ -178,7 +210,10 @@ export function createCutExpectedAmountPolicy(
             const destination = startsAt ? change : null;
             const migration =
                 destination === null && purpose.kind === 'AUTHORIZATION'
-                    ? await migrationDecidedDestination({ subscriptionId: subscription.id })
+                    ? await migrationDecidedDestination({
+                          subscriptionId: subscription.id,
+                          executor
+                      })
                     : null;
 
             let option: AnchoredBillingOption | null;
@@ -188,31 +223,33 @@ export function createCutExpectedAmountPolicy(
                         planVersionId: destination.targetPlanVersionId,
                         billingOptionId: destination.targetBillingOptionId
                     },
-                    ...(ports.reader ? { reader: ports.reader } : {})
+                    ...(reader ? { reader } : {})
                 });
             } else {
                 const anchored = await readAnchoredBillingOption({
                     subscription: anchoredSubscription,
-                    ...(ports.reader ? { reader: ports.reader } : {})
+                    ...(reader ? { reader } : {})
                 });
                 option =
                     anchored && migration
                         ? await readDestinationOption({
                               targetPlanVersionId: migration.targetPlanVersionId,
-                              cycle: anchored.cycle
+                              cycle: anchored.cycle,
+                              executor
                           })
                         : anchored;
             }
             if (!option) return { kind: 'NOT_COMPARABLE', reason: 'NO_ANCHOR' };
 
             const promoApplies = destination
-                ? await preservesPromo(destination)
+                ? await preservesPromo(destination, executor)
                 : migration
                   ? migration.reason === 'PRICE_INCREASE'
                   : true;
             const promos = promoApplies
                 ? await readLivePromos({
                       subscriptionId: subscription.id,
+                      executor,
                       ...(purpose.kind === 'PERIOD' ? { at: purpose.chargeCreatedAt } : {})
                   })
                 : [];

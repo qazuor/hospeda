@@ -18,27 +18,6 @@ import type {
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount.js';
 
 const logger = createLogger('manual-installment-opened-notice');
-const READ_TIMEOUT_MS = 5_000;
-
-async function readExpectedAmount(
-    policy: ExpectedAmountPolicy,
-    args: Parameters<ExpectedAmountPolicy['expectedAmount']>[0]
-): Promise<ExpectedAmount> {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    try {
-        return await Promise.race([
-            policy.expectedAmount(args),
-            new Promise<never>((_resolve, reject) => {
-                timeout = setTimeout(
-                    () => reject(new Error('Expected installment amount lookup timed out')),
-                    READ_TIMEOUT_MS
-                );
-            })
-        ]);
-    } finally {
-        if (timeout) clearTimeout(timeout);
-    }
-}
 
 /** Outbox template mailed to the owner when a manual installment opens (HOS-2130). */
 export const MANUAL_INSTALLMENT_OPENED_TEMPLATE = 'billing.manual-installment-opened';
@@ -110,12 +89,19 @@ export async function enqueueManualInstallmentOpenedNotice(
     if (!isManualInstallmentOwnerNotified({ vertical: subscription.vertical }))
         return { enqueued: false };
     const userId = subscription.userId;
+    if (!userId) {
+        logger.warn(
+            { subscriptionId: subscription.id },
+            'No user email for installment opened notice'
+        );
+        return { enqueued: false };
+    }
     const [user] = await tx
         .select({ email: users.email })
         .from(users)
-        .where(eq(users.id, userId ?? ''))
+        .where(eq(users.id, userId))
         .limit(1);
-    if (!userId || !user?.email) {
+    if (!user?.email) {
         logger.warn(
             { subscriptionId: subscription.id },
             'No user email for installment opened notice'
@@ -140,13 +126,13 @@ export async function enqueueManualInstallmentOpenedNotice(
     }
     let amount: { readonly amountMinor: number; readonly currency: 'ARS' } | null = null;
     try {
-        const expected = await readExpectedAmount(
-            ports.expectedAmounts ?? createCutExpectedAmountPolicy(),
-            {
-                subscription,
-                purpose: { kind: 'PERIOD', chargeCreatedAt: input.periodStart }
-            }
-        );
+        const expected = await (
+            ports.expectedAmounts ?? createCutExpectedAmountPolicy({ executor: tx })
+        ).expectedAmount({
+            subscription,
+            purpose: { kind: 'PERIOD', chargeCreatedAt: input.periodStart },
+            executor: tx
+        });
         amount = resolveInstallmentAmountSnapshot({ expected });
         if (!amount)
             logger.warn(
@@ -154,7 +140,7 @@ export async function enqueueManualInstallmentOpenedNotice(
                 'Installment amount is not comparable in ARS'
             );
     } catch (error) {
-        logger.warn(
+        logger.error(
             { subscriptionId: subscription.id, error },
             'Could not calculate installment amount'
         );
