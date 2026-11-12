@@ -39,7 +39,7 @@ import { addToast } from '@/store/toast-store';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockAdd, mockUpdate, mockRemove, mockReorder } = vi.hoisted(() => ({
+const { mockAdd, mockUpdate, mockRemove, mockReorder, mockSuggest } = vi.hoisted(() => ({
     mockAdd: vi.fn(),
     mockUpdate: vi.fn(),
     mockRemove: vi.fn(),
