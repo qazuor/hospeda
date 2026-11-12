@@ -31,6 +31,7 @@ import { protectedPendingAttemptCancellationRoute } from './pending-attempt-canc
 import { protectedPlanChangeRoute } from './plan-change';
 import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
+import { protectedReadManualInstallmentsRoute } from './read-manual-installments';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
@@ -219,6 +220,7 @@ export const protectedBillingSubscriptionRoutes = router;
 const readRouter = createRouter();
 readRouter.route('/', protectedPricingSituationRoute);
 readRouter.route('/', protectedReadOwnSubscriptionsRoute);
+readRouter.route('/', protectedReadManualInstallmentsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
 readRouter.route('/', protectedCancellationPreviewRoute);
 readRouter.route('/', protectedCancelSubscriptionRoute);

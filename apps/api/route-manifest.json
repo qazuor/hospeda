@@ -2735,6 +2735,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/manual-installments"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
         },
         {
