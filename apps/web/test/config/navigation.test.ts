@@ -22,13 +22,13 @@ function totalItems(groups: readonly NavGroup[]): number {
 }
 
 describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
-    it('defines the five baseline groups: cuenta, turista, anfitrion, comercio, editorial', () => {
+    it('defines the five baseline groups with turista last (HOS-2124): cuenta, anfitrion, comercio, editorial, turista', () => {
         expect(ACCOUNT_NAV_GROUPS.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
             'comercio',
-            'editorial'
+            'editorial',
+            'turista'
         ]);
     });
 
@@ -286,10 +286,10 @@ describe('getNavForSurface (selector)', () => {
         const { groups } = getNavForSurface({ surface: 'sidebar', visibility: ALLOW_ALL });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
             'comercio',
-            'editorial'
+            'editorial',
+            'turista'
         ]);
         expect(totalItems(groups)).toBe(totalItems(ACCOUNT_NAV_GROUPS));
     });
@@ -298,10 +298,10 @@ describe('getNavForSurface (selector)', () => {
         const { groups } = getNavForSurface({ surface: 'mobile', visibility: ALLOW_ALL });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
             'comercio',
-            'editorial'
+            'editorial',
+            'turista'
         ]);
     });
 
@@ -346,7 +346,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             visibility: (node) =>
                 isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'anfitrion']);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'anfitrion', 'turista']);
         const anfitrion = findGroup(groups, 'anfitrion');
         expect(anfitrion?.items.map((item) => item.id)).toEqual([
             'hostDashboard',
@@ -363,7 +363,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
         const comercio = findGroup(groups, 'comercio');
         expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
     });
@@ -387,9 +387,9 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
-            'comercio'
+            'comercio',
+            'turista'
         ]);
     });
 
@@ -438,7 +438,7 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.HOST])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'anfitrion']);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'anfitrion', 'turista']);
         const anfitrion = findGroup(groups, 'anfitrion');
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
@@ -448,7 +448,7 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
         const comercio = findGroup(groups, 'comercio');
         expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
     });
@@ -460,10 +460,10 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
             'comercio',
-            'editorial'
+            'editorial',
+            'turista'
         ]);
     });
 
@@ -490,7 +490,7 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'editorial']);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'editorial', 'turista']);
     });
 
     it('keeps the host group for someone holding BOTH the HOST and EDITOR hats', () => {
@@ -502,9 +502,9 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
-            'turista',
             'anfitrion',
-            'editorial'
+            'editorial',
+            'turista'
         ]);
     });
 

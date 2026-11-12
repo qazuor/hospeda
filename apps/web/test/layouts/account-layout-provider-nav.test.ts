@@ -68,9 +68,8 @@ describe('AccountLayout — provider nav door (H-158)', () => {
     });
 
     it('splices PROVIDER_NAV_GROUP into navGroups only when ownership is confirmed', () => {
-        expect(source).toContain(
-            'isProvider ? [...baseNavGroups, PROVIDER_NAV_GROUP] : baseNavGroups'
-        );
+        // HOS-2124: placed before Tourist via `placeProviderGroup` (null = no door).
+        expect(source).toContain('providerGroup: isProvider ? PROVIDER_NAV_GROUP : null');
     });
 
     it('reads the flag through optional chaining, so a guest never trips it', () => {
