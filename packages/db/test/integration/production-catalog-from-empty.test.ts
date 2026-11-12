@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { projectCatalogAsOf0144 } from '../../../../scripts/production-catalog/as-of-0144.js';
 import { PRODUCTION_PLAN_CATALOG } from '../../../../scripts/production-catalog/catalog.js';
 import { buildPlanCatalogLoads } from '../../../../scripts/production-catalog/loads.js';
 import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
@@ -67,15 +68,7 @@ afterAll(async () => {
 describe('TEST:1819:1 AC:1:3 — TEST:V2:11 — 0144 writes the exact production catalog from zero', () => {
     it('matches every generated row and has one current version per plan and one role plan per vertical', async () => {
         // This scratch DB stops at 0144; FAQ grants arrive additively in migration 0202.
-        const catalogAt0144 = PRODUCTION_PLAN_CATALOG.map((plan) => ({
-            ...plan,
-            version: {
-                ...plan.version,
-                entitlements: plan.version.entitlements.filter(
-                    (entry) => entry.key !== 'ai_faq_draft'
-                )
-            }
-        }));
+        const catalogAt0144 = projectCatalogAsOf0144(PRODUCTION_PLAN_CATALOG);
         for (const load of buildPlanCatalogLoads(catalogAt0144)) {
             const columns = load.columns.map((column) => `"${column}"`).join(', ');
             const result = await full.query(`SELECT ${columns} FROM "${load.table}" ORDER BY "id"`);

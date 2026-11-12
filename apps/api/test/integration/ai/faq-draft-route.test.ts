@@ -4,20 +4,7 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration-tests-32chr';
 
 import { getMonthlyCallCount, invalidateConfigCache } from '@repo/ai-core';
-import {
-    aiConversations,
-    aiMessages,
-    aiSettings,
-    aiUsage,
-    catalogKeys,
-    eq,
-    getDb,
-    planVersionEntitlements,
-    planVersionLimits,
-    planVersions,
-    plans,
-    trials
-} from '@repo/db';
+import { aiConversations, aiMessages, aiSettings, aiUsage, eq, getDb, trials } from '@repo/db';
 import { RoleEnum, TrialStatusEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -59,46 +46,6 @@ describe('HOS-2105 FAQ draft route (real DB)', () => {
         listingId = owned.id;
         touristId = (await createMockActorUser({ label: 'faq-tourist' })).id;
         const db = getDb();
-        await db
-            .insert(catalogKeys)
-            .values({
-                key: 'ai_faq_draft',
-                kind: 'entitlement',
-                scope: 'vertical',
-                aggregationStrategy: 'MAX',
-                enforcementStrategy: 'NONE',
-                keyClass: 'COMMERCIAL'
-            })
-            .onConflictDoNothing();
-        await db
-            .insert(catalogKeys)
-            .values({
-                key: 'max_ai_faq_draft_per_month',
-                kind: 'limit',
-                scope: 'vertical',
-                aggregationStrategy: 'SUM',
-                enforcementStrategy: 'DISABLE',
-                keyClass: 'COMMERCIAL'
-            })
-            .onConflictDoNothing();
-        const [premiumVersion] = await db
-            .select({ id: planVersions.id })
-            .from(planVersions)
-            .innerJoin(plans, eq(planVersions.planId, plans.id))
-            .where(eq(plans.slug, 'owner-premium'));
-        if (!premiumVersion) throw new Error('FAQ draft test requires the premium plan version');
-        await db
-            .insert(planVersionEntitlements)
-            .values({ planVersionId: premiumVersion.id, key: 'ai_faq_draft' })
-            .onConflictDoNothing();
-        await db
-            .insert(planVersionLimits)
-            .values({
-                planVersionId: premiumVersion.id,
-                key: 'max_ai_faq_draft_per_month',
-                value: 1250
-            })
-            .onConflictDoNothing();
         const [conversation] = await db
             .insert(aiConversations)
             .values({
