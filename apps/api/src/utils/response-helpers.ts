@@ -553,7 +553,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 break;
             case ServiceErrorCode.USAGE_PENDING_EXISTS:
             case ServiceErrorCode.REVIEW_ALREADY_EXISTS:
-            // Admin-paused self-service signups (newPaidSignupsFrozen)
+            // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
             case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
                 statusCode = 409;
                 break;
@@ -786,7 +786,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
-                // Admin-paused self-service signups (newPaidSignupsFrozen)
+                // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
             };
 
