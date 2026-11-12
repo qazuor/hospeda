@@ -74,7 +74,12 @@ describe('HOS-2064 selectDeclinedSignupNotices', () => {
     )('hides it when the vertical has a live subscription: %s', (status) => {
         // Arrange
         const declined = row();
-        const live = row({ id: '00000000-0000-4000-8000-000000000003', status, createdAt: NOW });
+        const live = row({
+            id: '00000000-0000-4000-8000-000000000003',
+            status,
+            createdAt: NOW,
+            succeedsId: declined.id
+        });
         // Act
         const result = selectDeclinedSignupNotices({ rows: [declined, live], now: NOW });
         // Assert
