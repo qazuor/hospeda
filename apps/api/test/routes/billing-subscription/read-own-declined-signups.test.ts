@@ -88,11 +88,15 @@ describe('HOS-2064 selectDeclinedSignupNotices', () => {
 
     it('hides it when a newer signup attempt exists, even an abandoned one', () => {
         // Arrange
-        const declined = row();
+        const declined = row({
+            createdAt: new Date(NOW.getTime() - 2 * DAY),
+            updatedAt: new Date(NOW.getTime() - DAY)
+        });
         const abandoned = row({
             id: '00000000-0000-4000-8000-000000000003',
             status: 'ABANDONED',
-            createdAt: NOW
+            createdAt: NOW,
+            updatedAt: new Date(NOW.getTime() - 2 * DAY)
         });
         // Act
         const result = selectDeclinedSignupNotices({ rows: [declined, abandoned], now: NOW });
