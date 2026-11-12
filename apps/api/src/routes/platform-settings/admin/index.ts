@@ -10,6 +10,7 @@
  *       seo.defaults      → SETTINGS_GENERAL_VIEW / SETTINGS_GENERAL_WRITE
  *       maintenance.mode  → MAINTENANCE_MODE_WRITE
  *       announcements.global → MAINTENANCE_MODE_WRITE
+ *       billing.paidSignupsFreeze → BILLING_SETTINGS_VIEW / BILLING_SETTINGS_WRITE
  *     A static `requiredPermissions` array on the route would either be too
  *     permissive (drop the check) or too strict (require the union of all),
  *     so the per-key gate lives in the service layer (T-004) and the
