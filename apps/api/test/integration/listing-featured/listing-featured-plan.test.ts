@@ -145,7 +145,7 @@ async function plan(f: Fixture, grants: boolean): Promise<string> {
         .returning({ id: payments.id });
     if (!payment) throw new Error('Expected payment');
     f.paymentIds.push(payment.id);
-    return version.id;
+    return versionId;
 }
 async function listing(f: Fixture): Promise<string> {
     const id = await createListing({
