@@ -37,7 +37,9 @@
 
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
+import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -234,6 +236,8 @@ export function ListingFaqManager({
     const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const faqAiDraft = useFaqAiDraft({ locale });
+    const [isAiDraftContent, setIsAiDraftContent] = useState(false);
     const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -813,6 +817,63 @@ export function ListingFaqManager({
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
                     />
+                    {prefillMessageId && (
+                        <PlanEntitlementGate
+                            entitlementKey="ai_faq_draft"
+                            locale={locale}
+                            vertical={vertical}
+                            fallback={null}
+                        >
+                            <button
+                                className={styles.aiDraftButton}
+                                type="button"
+                                disabled={faqAiDraft.isLoading}
+                                onClick={() =>
+                                    void faqAiDraft.suggest({
+                                        messageId: prefillMessageId,
+                                        onDraft: (draft) => {
+                                            setAddValues((values) => ({
+                                                ...values,
+                                                answer: draft
+                                            }));
+                                            setIsAiDraftContent(true);
+                                        }
+                                    })
+                                }
+                            >
+                                {faqAiDraft.isLoading
+                                    ? t(
+                                          'host.properties.editor.aiQuestions.aiDraftLoading',
+                                          'Gerando uma sugestão…'
+                                      )
+                                    : t(
+                                          'host.properties.editor.aiQuestions.suggestAiAnswer',
+                                          'Sugerir resposta com IA'
+                                      )}
+                            </button>
+                            {isAiDraftContent && (
+                                <p className={styles.aiDraftDisclaimer}>
+                                    {t(
+                                        'host.properties.editor.aiQuestions.aiDraftDisclaimer',
+                                        'Este é um rascunho editável. Confira as informações do anúncio antes de salvar.'
+                                    )}
+                                </p>
+                            )}
+                            {faqAiDraft.feedback && faqAiDraft.feedback !== 'noData' && (
+                                <p
+                                    className={styles.fieldError}
+                                    role="alert"
+                                >
+                                    {t(
+                                        faqAiDraft.feedback === 'notEligible'
+                                            ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
+                                            : 'host.properties.editor.aiQuestions.aiDraftError',
+                                        'Não foi possível gerar a sugestão. Tente novamente.'
+                                    )}
+                                </p>
+                            )}
+                        </PlanEntitlementGate>
+                    )}
                     {prefillMessageId && addValues.answer === '' && (
                         <p>
                             {t(
