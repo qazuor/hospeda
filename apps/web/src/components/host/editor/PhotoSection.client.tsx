@@ -25,9 +25,12 @@
  *      checked once, up front, against the whole batch — see
  *      `use-photo-section.ts`'s `processGalleryFiles`.
  *   2. Manual reordering via `accommodationMediaApi.reorderMedia` — BUTTON
- *      driven (move up / move down per photo, in `PhotoGalleryItem`), not
- *      drag-and-drop: the editor's audience is largely non-technical hosts,
- *      and plain `<button>`s are keyboard/screen-reader operable for free.
+ *      driven (move up / move down per photo, in `PhotoGalleryItem`): the
+ *      editor's audience is largely non-technical hosts, and plain
+ *      `<button>`s are keyboard/screen-reader operable for free. HOS-2126
+ *      added drag-and-drop (`SortablePhotoGallery`) ON TOP of those buttons,
+ *      with mouse, touch and keyboard sensors; both gestures persist through
+ *      the same optimistic path with rollback.
  *   3. Promoting an existing gallery photo to portada via
  *      `setFeaturedMedia` alone — no re-upload, no second Cloudinary asset.
  *   4. Drag-and-drop FILE upload (dropping an image onto the featured slot
@@ -53,11 +56,11 @@ import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { PhotoGalleryItem } from './PhotoGalleryItem.client';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import { PublishReadyDialog } from './PublishReadyDialog.client';
 import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
+import { SortablePhotoGallery } from './SortablePhotoGallery.client';
 import { usePhotoAltWarningGuard } from './use-photo-alt-warning-guard';
 import { usePhotoSection } from './use-photo-section';
 import { usePublishReadyPrompt } from './use-publish-ready-prompt';
@@ -183,6 +186,7 @@ export function PhotoSection({
         handlePromoteToFeatured,
         handleMoveUp,
         handleMoveDown,
+        handleReorderGallery,
         handleUpdateMediaText
     } = usePhotoSection({
         locale,
@@ -425,22 +429,20 @@ export function PhotoSection({
                 )}
 
                 <div className={styles.gallery}>
-                    {galleryItems.map((item, index) => (
-                        <PhotoGalleryItem
-                            key={item.id || item.url}
-                            locale={locale}
-                            item={item}
-                            position={index + 1}
-                            isFirst={index === 0}
-                            isLast={index === galleryItems.length - 1}
-                            disabled={anyOpInFlight || !opsReady}
-                            onRemove={handleGalleryRemove}
-                            onPromote={handlePromoteToFeatured}
-                            onMoveUp={handleMoveUp}
-                            onMoveDown={handleMoveDown}
-                            onUpdateMetadata={handleUpdateMediaText}
-                        />
-                    ))}
+                    {/* HOS-2126: drag-and-drop reorder, on top of (not instead
+                        of) the per-photo move buttons. The cover above is not
+                        part of this list. */}
+                    <SortablePhotoGallery
+                        locale={locale}
+                        items={galleryItems}
+                        disabled={anyOpInFlight || !opsReady}
+                        onRemove={handleGalleryRemove}
+                        onPromote={handlePromoteToFeatured}
+                        onMoveUp={handleMoveUp}
+                        onMoveDown={handleMoveDown}
+                        onReorder={handleReorderGallery}
+                        onUpdateMetadata={handleUpdateMediaText}
+                    />
 
                     {!isGalleryFull && (
                         <button
