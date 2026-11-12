@@ -14,6 +14,7 @@ import { sql } from 'drizzle-orm';
 import type { DrizzleClient } from '../../../../../packages/db/src/types';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
 import { trialMachineLockKey } from '../../../../../packages/verticals/src/trial/trial-lock-key';
+import { createBootstrapCoverageReader } from '../listing-access/bootstrap-coverage-reader';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { getListingPublicationPorts } from '../listing-publication/ports';
 
@@ -21,9 +22,8 @@ import { getListingPublicationPorts } from '../listing-publication/ports';
 export function getListingFeaturedPorts(): ListingFeaturedPorts {
     return {
         billing: { coverage: (input) => getListingAccessPorts().billing.coverage(input) },
-        reader: {
-            findAddonVersionEffects: (input) => planCatalogModel.findAddonVersionEffects(input)
-        },
+        reader: planCatalogModel,
+        trials: createBootstrapCoverageReader(),
         unitOfWork: {
             runLocked<T>(
                 args: { readonly userId: string; readonly vertical: PublicationVertical },

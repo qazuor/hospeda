@@ -11,7 +11,6 @@ import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/pu
 import { getClock } from '../clock';
 import { pingCronMonitor } from '../cron-heartbeat';
 import { invalidateEffectiveSetsForUser, peekEffectiveSetForUser } from '../effective-set-cache';
-import { createBootstrapCoverageReader } from '../listing-access/bootstrap-coverage-reader';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { getListingFeaturedPorts } from '../listing-featured/listing-featured-ports';
 import { getListingPublicationPorts } from './ports';
@@ -19,7 +18,8 @@ import { getListingPublicationPorts } from './ports';
 /** Builds live DB, billing, cache, and monitor ports for the daily reconciler. */
 export function getListingReconcilerPorts(): ReconcilerPorts {
     const access = getListingAccessPorts();
-    const trials = createBootstrapCoverageReader();
+    const featuredPorts = getListingFeaturedPorts();
+    const trials = featuredPorts.trials;
     const liveSet = async (userId: string, vertical: VerticalEnum) =>
         rehydrateEffectiveSet({
             version: 1,
@@ -45,10 +45,9 @@ export function getListingReconcilerPorts(): ReconcilerPorts {
     return {
         ...publication,
         featured: {
-            reader: {
-                findAddonVersionEffects: (input) => planCatalogModel.findAddonVersionEffects(input)
-            },
-            unitOfWork: getListingFeaturedPorts().unitOfWork
+            reader: featuredPorts.reader,
+            trials: featuredPorts.trials,
+            unitOfWork: featuredPorts.unitOfWork
         },
         population: {
             async listOwnerVerticals(input) {

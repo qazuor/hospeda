@@ -1,5 +1,5 @@
 import { VerticalEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     listener: undefined as
@@ -36,6 +36,13 @@ import {
 } from '../../../src/utils/listing-featured/featured-sync-listener';
 
 describe('HOS-1718 the coverage notice drives the listing featured sync', () => {
+    let stop: (() => void) | undefined;
+
+    afterEach(() => {
+        stop?.();
+        stop = undefined;
+    });
+
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.listener = undefined;
@@ -49,14 +56,13 @@ describe('HOS-1718 the coverage notice drives the listing featured sync', () => 
         VerticalEnum.EXPERIENCE
     ])('syncs on a notice of each listing vertical: %s', async (vertical) => {
         // Arrange
-        const stop = subscribeListingFeaturedSync();
+        stop = subscribeListingFeaturedSync();
         // Act
         mocks.listener?.({ userId: 'u1', vertical });
         await drainListingFeaturedSyncs();
         // Assert
         expect(mocks.sync).toHaveBeenCalledTimes(1);
         expect(mocks.sync).toHaveBeenCalledWith({ ports: {}, userId: 'u1', vertical });
-        stop();
     });
 
     it.each([
@@ -64,30 +70,28 @@ describe('HOS-1718 the coverage notice drives the listing featured sync', () => 
         VerticalEnum.PARTNER
     ])('ignores tourist and partner notices: %s', async (vertical) => {
         // Arrange
-        const stop = subscribeListingFeaturedSync();
+        stop = subscribeListingFeaturedSync();
         // Act
         mocks.listener?.({ userId: 'u1', vertical });
         await drainListingFeaturedSyncs();
         // Assert
         expect(mocks.sync).toHaveBeenCalledTimes(0);
-        stop();
     });
 
     it('a failing sync is logged and does not reject', async () => {
         // Arrange
-        const stop = subscribeListingFeaturedSync();
+        stop = subscribeListingFeaturedSync();
         mocks.sync.mockRejectedValueOnce(new Error('expected test failure'));
         // Act
         mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
         // Assert
         await expect(drainListingFeaturedSyncs()).resolves.toBeUndefined();
         expect(mocks.error).toHaveBeenCalledTimes(1);
-        stop();
     });
 
     it('subscribing twice registers one listener', async () => {
         // Arrange
-        const stop = subscribeListingFeaturedSync();
+        stop = subscribeListingFeaturedSync();
         subscribeListingFeaturedSync();
         // Act
         mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.VENUE });
@@ -95,6 +99,5 @@ describe('HOS-1718 the coverage notice drives the listing featured sync', () => 
         // Assert
         expect(mocks.subscribe).toHaveBeenCalledTimes(1);
         expect(mocks.sync).toHaveBeenCalledTimes(1);
-        stop();
     });
 });
