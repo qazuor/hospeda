@@ -430,7 +430,7 @@
             "title": "Llegaste al límite de galerías privadas activas"
         },
         "max_ai_faq_draft_per_month": {
-            "title": "Límite mensual de borradores con IA alcanzado"
+            "title": "Límite mensual de borradores de respuesta con IA alcanzado"
         }
     },
     "limits": {
@@ -601,6 +601,7 @@
         "ai_support": "Asistente de soporte con IA",
         "ai_translate": "Traducción de contenido con IA",
         "ai_accommodation_import": "Importación de alojamientos con IA",
+        "ai_faq_draft": "Borradores de respuesta para preguntas frecuentes con IA",
         "manage_venue_events": "Eventos del local, con fecha o semanales",
         "multilingual_venue_menu": "Carta en varios idiomas",
         "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
@@ -771,7 +772,8 @@
             "max_ai_accommodation_import_per_month": "Importaciones con IA por mes",
             "max_search_history_entries": "Entradas de historial de búsquedas",
             "max_collections": "Colecciones de favoritos",
-            "max_active_private_galleries": "Galerías privadas activas"
+            "max_active_private_galleries": "Galerías privadas activas",
+            "max_ai_faq_draft_per_month": "Borradores de respuesta con IA por mes"
         },
         "lineMark": "Para locales del rubro {{rubro}}"
     },
@@ -797,6 +799,7 @@
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
         "max_venues": "Cuántos locales podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
-        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
+        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen.",
+        "max_ai_faq_draft_per_month": "Cuántos borradores de respuesta podés generar con IA por mes para las preguntas de tus fichas. La cuota se renueva al empezar cada mes."
     }
 }
