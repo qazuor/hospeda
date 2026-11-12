@@ -1,0 +1,55 @@
+---
+/**
+ * @file preguntas-ia.astro
+ * @description «Preguntas a la IA» section of the accommodation editor (HOS-2101).
+ *
+ * Read-only: what visitors asked the listing's AI chat. The page renders only
+ * the shell; `AiQuestionsPanel` fetches the questions in the browser with the
+ * owner's own session, so nothing per-user is baked into this HTML.
+ */
+
+import { AiQuestionsPanel } from '@/components/listing/ai-questions/AiQuestionsPanel.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import {
+	buildEditorSectionUrl,
+	findEditorSectionBySlug,
+} from '@/lib/editor/accommodation-editor-sections';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'preguntas-ia',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+
+const faqSection = findEditorSectionBySlug({ slug: 'preguntas' });
+const faqUrl = faqSection
+	? buildEditorSectionUrl({ locale, accommodationId, section: faqSection })
+	: '';
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="preguntas-ia"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.aiQuestions', 'Preguntas a la IA')}
+>
+	<AiQuestionsPanel
+		locale={locale}
+		entityType="accommodation"
+		entityId={accommodationId}
+		faqUrl={faqUrl}
+		client:load
+	/>
+</EditorSectionLayout>

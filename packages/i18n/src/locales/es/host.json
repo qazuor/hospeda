@@ -285,7 +285,8 @@
                 "capacityPricing": "Capacidad y precio",
                 "contactSocial": "Contacto y redes",
                 "seo": "Buscadores (Google)",
-                "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Los dos campos son opcionales: si los dejás vacíos, publicamos el nombre y el resumen de tu propiedad."
+                "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Los dos campos son opcionales: si los dejás vacíos, publicamos el nombre y el resumen de tu propiedad.",
+                "aiQuestions": "Preguntas a la IA"
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -715,7 +716,28 @@
                 "description": "la descripción",
                 "mainImage": "la foto principal"
             },
-            "pageDescription": "Editar información de tu propiedad"
+            "pageDescription": "Editar información de tu propiedad",
+            "aiQuestions": {
+                "intro": "Lo que los visitantes le preguntaron al asistente de tu ficha. Las preguntas son anónimas y se guardan 12 meses.",
+                "loading": "Cargando preguntas…",
+                "error": "No pudimos cargar las preguntas. Probá de nuevo en un rato.",
+                "notOwner": "Solo el dueño de la ficha puede ver las preguntas que le hicieron al asistente.",
+                "empty": "Todavía nadie le hizo preguntas al asistente de esta ficha.",
+                "answerLabel": "Respuesta del asistente:",
+                "addAsFaq": "Agregar como pregunta frecuente",
+                "unansweredTitle": "Sin responder",
+                "unansweredHint": "El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.",
+                "othersTitle": "Otras preguntas",
+                "truncated": "Preguntas mostradas: {{shown}} de {{total}}. Las sin responder van primero.",
+                "dismissedTruncated": "Descartadas mostradas: {{shown}} de {{total}}. Ves las más recientes.",
+                "markSeen": "Ya lo vi",
+                "undo": "Deshacer",
+                "dismissedTitle": "Descartadas",
+                "dismissedError": "No se pudo descartar la pregunta.",
+                "undoError": "No se pudo recuperar la pregunta.",
+                "viewMore": "Ver más",
+                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha."
+            }
         },
         "empty": {
             "title": "Aún no publicaste ninguna propiedad",

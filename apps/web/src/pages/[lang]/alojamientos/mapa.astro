@@ -103,9 +103,9 @@ const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.ge
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
 // Same default-ON semantics as the list view: absent param = checked. Only
-// forward the explicit-OFF case to the API (the listing endpoint rejects an
-// unknown `?includeNoPrice=true` with INVALID_PAGINATION_PARAMS, so we keep
-// the param absent when the toggle is at its default-on state).
+// forward the explicit-OFF case to the API: `true` is the API's default
+// (HOS-2017), so the param stays absent when the toggle is at its default-on
+// state and the cache key is not split for a no-op.
 const includeNoPrice =
     url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
 const includeNoReviews =

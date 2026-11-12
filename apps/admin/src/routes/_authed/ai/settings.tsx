@@ -35,6 +35,7 @@ import {
     useUpdateAiSettingsMutation
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import {
     ALL_FEATURES,
@@ -59,6 +60,7 @@ export const Route = createFileRoute('/_authed/ai/settings')({
 // ---------------------------------------------------------------------------
 
 function AiSettingsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
 
     const { data: settingsResponse, isLoading, error } = useAiSettingsQuery();
@@ -470,7 +472,7 @@ function AiSettingsPage() {
                             </div>
 
                             {/* Model parameters */}
-                            <div className="grid gap-6 md:grid-cols-3">
+                            <div className="grid gap-6 md:grid-cols-4">
                                 <form.Field name={`features.${featureId}.params.temperature`}>
                                     {(field) => (
                                         <div>
@@ -550,6 +552,60 @@ function AiSettingsPage() {
                                                 placeholder="1.0"
                                                 className="mt-2"
                                             />
+                                        </div>
+                                    )}
+                                </form.Field>
+
+                                <form.Field name={`features.${featureId}.params.reasoningEffort`}>
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor={`reasoning-${featureId}`}>
+                                                {t('admin-pages.ai.settings.reasoningEffortLabel')}
+                                            </Label>
+                                            <Select
+                                                value={field.state.value ?? 'provider-default'}
+                                                onValueChange={(value) =>
+                                                    field.handleChange(
+                                                        value === 'provider-default'
+                                                            ? undefined
+                                                            : (value as typeof field.state.value)
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id={`reasoning-${featureId}`}
+                                                    className="mt-2"
+                                                >
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            'admin-pages.ai.settings.providerDefault'
+                                                        )}
+                                                    />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="provider-default">
+                                                        {t(
+                                                            'admin-pages.ai.settings.providerDefault'
+                                                        )}
+                                                    </SelectItem>
+                                                    {[
+                                                        'none',
+                                                        'minimal',
+                                                        'low',
+                                                        'medium',
+                                                        'high',
+                                                        'xhigh',
+                                                        'max'
+                                                    ].map((effort) => (
+                                                        <SelectItem
+                                                            key={effort}
+                                                            value={effort}
+                                                        >
+                                                            {effort}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     )}
                                 </form.Field>

@@ -206,7 +206,8 @@
                 }
             ],
             "includeMenu": true,
-            "night": null
+            "night": null,
+            "amenities": ["air_conditioning", "terrace", "wifi"]
         },
         "bar-el-muelle": {
             "kind": "venue",
@@ -1265,7 +1266,8 @@
                 "openingHours": null
             },
             "faqs": [],
-            "includeDirections": true
+            "includeDirections": true,
+            "amenities": ["equipment_included", "guide_included"]
         },
         "cabanas-del-rio": {
             "kind": "accommodation",
@@ -1353,6 +1355,224 @@
                 "beach_chairs_umbrellas"
             ],
             "features": ["family_suitable", "silent_environment"]
+        },
+        "bar-smoke-desde-00": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Bar Smoke 1107",
+                "summary": "Bar con tragos, picadas y música los fines de semana.",
+                "description": "Bar de tragos con picadas y pizzas. Los viernes y sábados hay música en vivo y DJ.",
+                "type": "BAR",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "wed": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "thu": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "from_time",
+                        "from": "00:00"
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": {
+                "available": true,
+                "entryKind": "free",
+                "entryNoteI18n": null,
+                "entryPriceFrom": null
+            }
+        },
+        "bar-smoke-desde-2330": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Bar Smoke 2330",
+                "summary": "Bar con tragos, picadas y música los fines de semana.",
+                "description": "Bar de tragos con picadas y pizzas. Los viernes y sábados hay música en vivo y DJ.",
+                "type": "BAR",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "wed": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "thu": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "from_time",
+                        "from": "23:30"
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": {
+                "available": true,
+                "entryKind": "free",
+                "entryNoteI18n": null,
+                "entryPriceFrom": null
+            }
+        },
+        "bar-smoke-todo-el-dia": {
+            "kind": "venue",
+            "source": "synthetic",
+            "venue": {
+                "name": "Bar Smoke Todo el Dia",
+                "summary": "Bar con tragos, picadas y música los fines de semana.",
+                "description": "Bar de tragos con picadas y pizzas. Los viernes y sábados hay música en vivo y DJ.",
+                "type": "BAR",
+                "priceRange": "MID",
+                "menuUrl": null,
+                "openingHours": {
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "days": {
+                        "mon": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "tue": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "wed": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "thu": {
+                            "closed": true,
+                            "shifts": []
+                        },
+                        "fri": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sat": {
+                            "closed": false,
+                            "shifts": [
+                                {
+                                    "open": "21:00",
+                                    "close": "03:00"
+                                }
+                            ]
+                        },
+                        "sun": {
+                            "closed": true,
+                            "shifts": []
+                        }
+                    }
+                },
+                "averageRating": null,
+                "reviewsCount": 0,
+                "policies": {
+                    "minAge": 18,
+                    "minAgeScope": {
+                        "kind": "all_day"
+                    }
+                }
+            },
+            "faqs": [],
+            "menuItems": [],
+            "includeMenu": false,
+            "night": {
+                "available": true,
+                "entryKind": "free",
+                "entryNoteI18n": null,
+                "entryPriceFrom": null
+            }
         }
     }
 }

@@ -39,6 +39,7 @@ const {
     mockInsert,
     mockValues,
     mockReturning,
+    mockLimit,
     mockGetDb,
     mockAiConversations,
     mockAiMessages,
@@ -50,7 +51,14 @@ const {
     const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
-    const mockGetDb = vi.fn().mockReturnValue({ insert: mockInsert });
+    // HOS-2101 review: the reuse check reads the conversation first:
+    //   db.select({...}).from(table).where(...).limit(1) → rows
+    const mockLimit = vi.fn().mockResolvedValue([]);
+    const mockSelect = vi.fn().mockReturnValue({
+        from: () => ({ where: () => ({ limit: mockLimit }) })
+    });
+
+    const mockGetDb = vi.fn().mockReturnValue({ insert: mockInsert, select: mockSelect });
 
     // Marker objects so the test can assert which table the SUT inserted
     // against by reference identity (call order is also asserted).
@@ -61,6 +69,7 @@ const {
         mockInsert,
         mockValues,
         mockReturning,
+        mockLimit,
         mockGetDb,
         mockAiConversations,
         mockAiMessages,
@@ -83,6 +92,8 @@ vi.mock('@repo/db', () => ({
     aiMessages: mockAiMessages
 }));
 
+vi.mock('drizzle-orm', () => ({ eq: vi.fn() }));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: mockApiLogger
 }));
@@ -91,7 +102,7 @@ vi.mock('../../src/utils/logger', () => ({
 // Import SUT (after mocks)
 // ---------------------------------------------------------------------------
 
-import { persistChatTurn } from '../../src/services/ai-chat-persistence';
+import { persistChatTurn, persistConversationTurn } from '../../src/services/ai-chat-persistence';
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -102,6 +113,15 @@ const ACCOMMODATION_ID = '22222222-2222-4222-8222-222222222222';
 const EXISTING_CONVERSATION_ID = '33333333-3333-4333-8333-333333333333';
 const USER_MESSAGE = '¿La cabaña tiene aire acondicionado?';
 const ASSISTANT_MESSAGE = 'Sí, la cabaña cuenta con aire acondicionado y calefacción.';
+
+/** The stored row of {@link EXISTING_CONVERSATION_ID} when it IS reusable. */
+const OWN_ROW = {
+    userId: USER_ID,
+    feature: 'chat',
+    listingEntityType: 'accommodation',
+    listingEntityId: ACCOMMODATION_ID,
+    deletedAt: null
+};
 
 const META: StreamTextFinalMeta = {
     usage: { promptTokens: 50, completionTokens: 100, totalTokens: 150 },
@@ -139,6 +159,7 @@ describe('persistChatTurn', () => {
         mockReturning.mockResolvedValue([{ id: 'new-conv-uuid-from-mock' }]);
         mockValues.mockReturnValue({ returning: mockReturning });
         mockInsert.mockReturnValue({ values: mockValues });
+        mockLimit.mockResolvedValue([OWN_ROW]);
     });
 
     afterEach(() => {
@@ -190,8 +211,17 @@ describe('persistChatTurn', () => {
         expect(assistantValues.tokens).toBe(100); // meta.usage.completionTokens
         expect(assistantValues.conversationId).toBe('new-conv-uuid-from-mock');
 
-        // Returned conversation id is the newly-created one
-        expect(out).toEqual({ conversationId: 'new-conv-uuid-from-mock' });
+        // HOS-2101: the structured, indexed listing reference.
+        expect(convValues.listingEntityType).toBe('accommodation');
+        expect(convValues.listingEntityId).toBe(ACCOMMODATION_ID);
+
+        // Returned conversation id is the newly-created one, plus the two
+        // message ids (HOS-2101 — the classifier writes onto the assistant row).
+        expect(out).toEqual({
+            conversationId: 'new-conv-uuid-from-mock',
+            userMessageId: 'new-conv-uuid-from-mock',
+            assistantMessageId: 'new-conv-uuid-from-mock'
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -212,7 +242,7 @@ describe('persistChatTurn', () => {
         expect(nthValues(1).role).toBe('assistant');
 
         // Returned conversation id is the input (echoed back)
-        expect(out).toEqual({ conversationId: EXISTING_CONVERSATION_ID });
+        expect(out.conversationId).toBe(EXISTING_CONVERSATION_ID);
     });
 
     // -----------------------------------------------------------------------
@@ -295,5 +325,122 @@ describe('persistChatTurn', () => {
 
         // 2 inserts attempted: user aiMessages + assistant aiMessages.
         expect(mockInsert).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('persistChatTurn — message ids (HOS-2101)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockLimit.mockResolvedValue([OWN_ROW]);
+    });
+
+    it('returns the user and assistant row ids it inserted', async () => {
+        // Arrange: one id per insert, in order.
+        mockReturning
+            .mockResolvedValueOnce([{ id: 'conv-id' }])
+            .mockResolvedValueOnce([{ id: 'user-msg-id' }])
+            .mockResolvedValueOnce([{ id: 'assistant-msg-id' }]);
+
+        // Act
+        const out = await persistChatTurn(makeInput({ conversationId: null }));
+
+        // Assert
+        expect(out).toEqual({
+            conversationId: 'conv-id',
+            userMessageId: 'user-msg-id',
+            assistantMessageId: 'assistant-msg-id'
+        });
+    });
+
+    it('throws when the assistant insert returns no id', async () => {
+        mockReturning.mockResolvedValueOnce([{ id: 'user-msg-id' }]).mockResolvedValueOnce([]);
+
+        await expect(
+            persistChatTurn(makeInput({ conversationId: EXISTING_CONVERSATION_ID }))
+        ).rejects.toThrow('assistant aiMessages insert returned no id');
+    });
+});
+
+describe('persistConversationTurn — untrusted conversationId (HOS-2101 review M1)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockReturning.mockResolvedValue([{ id: 'fresh-id' }]);
+        mockValues.mockReturnValue({ returning: mockReturning });
+        mockInsert.mockReturnValue({ values: mockValues });
+    });
+
+    it.each([
+        ['another user', { ...OWN_ROW, userId: '99999999-9999-4999-8999-999999999999' }],
+        [
+            'another listing',
+            { ...OWN_ROW, listingEntityId: '88888888-8888-4888-8888-888888888888' }
+        ],
+        ['another vertical', { ...OWN_ROW, listingEntityType: 'venue' }],
+        [
+            'a search-chat conversation',
+            { ...OWN_ROW, feature: 'search', listingEntityType: null, listingEntityId: null }
+        ],
+        ['a deleted conversation', { ...OWN_ROW, deletedAt: new Date() }]
+    ])('starts a NEW conversation when the id belongs to %s', async (_label, row) => {
+        // Arrange
+        mockLimit.mockResolvedValue([row]);
+
+        // Act
+        const out = await persistChatTurn(makeInput({ conversationId: EXISTING_CONVERSATION_ID }));
+
+        // Assert: a conversation row was created and the messages went there.
+        expect(mockInsert).toHaveBeenCalledTimes(3);
+        expect(mockInsert.mock.calls[0]?.[0]).toBe(mockAiConversations);
+        expect(out.conversationId).toBe('fresh-id');
+        expect(nthValues(1).conversationId).toBe('fresh-id');
+    });
+
+    it('starts a NEW conversation when the id does not exist', async () => {
+        mockLimit.mockResolvedValue([]);
+
+        const out = await persistChatTurn(makeInput({ conversationId: EXISTING_CONVERSATION_ID }));
+
+        expect(out.conversationId).toBe('fresh-id');
+    });
+
+    it('appends to its own search conversation, with no listing', async () => {
+        mockLimit.mockResolvedValue([
+            {
+                userId: USER_ID,
+                feature: 'search',
+                listingEntityType: null,
+                listingEntityId: null,
+                deletedAt: null
+            }
+        ]);
+
+        const out = await persistConversationTurn({
+            userId: USER_ID,
+            feature: 'search',
+            contextNote: '{}',
+            conversationId: EXISTING_CONVERSATION_ID,
+            userMessage: 'q',
+            assistantMessage: 'a',
+            meta: META
+        });
+
+        expect(mockInsert).toHaveBeenCalledTimes(2);
+        expect(out.conversationId).toBe(EXISTING_CONVERSATION_ID);
+    });
+
+    it('refuses a listing chat id when reused from search-chat', async () => {
+        mockLimit.mockResolvedValue([OWN_ROW]);
+
+        const out = await persistConversationTurn({
+            userId: USER_ID,
+            feature: 'search',
+            contextNote: '{}',
+            conversationId: EXISTING_CONVERSATION_ID,
+            userMessage: 'q',
+            assistantMessage: 'a',
+            meta: META
+        });
+
+        expect(out.conversationId).toBe('fresh-id');
     });
 });

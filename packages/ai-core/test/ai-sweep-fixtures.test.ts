@@ -50,11 +50,30 @@ const rubricOf = (id: string): Rubric => {
 };
 const config = (name: string) => SweepConfigSchema.parse(readJson(name));
 
+// HOS-2102 part 1: the 12 new acc-real cases appended to fixtures.json. They are
+// measured by sweep.config.hos-2102.json, so sweep.config.accommodation.json keeps
+// its frozen pre-HOS-2102 selection and sweep.config.example.json keeps exactly
+// the non-acc-real cases.
+const HOS_2102_NEW_IDS: readonly string[] = [
+    'acc-real-casa-portuguese-pets-size',
+    'acc-real-ruca-portuguese-pets-absent',
+    'acc-real-casa-english-pets-size',
+    'acc-real-isla-english-pets',
+    'acc-real-ruca-pets-direct',
+    'acc-real-monogris-pets-direct',
+    'acc-real-ruca-pets-english',
+    'acc-real-ruca-pets-portuguese',
+    'acc-real-casa-portuguese-group-over',
+    'acc-real-isla-english-group-over',
+    'acc-real-ruca-group-over-capacity',
+    'acc-real-balcones-portuguese-group-over'
+];
+
 describe('fixtures joined with the generated contexts', () => {
-    it('has 40 unique cases across the three features, each with a rubric', () => {
+    it('has 67 unique cases across the three features, each with a rubric', () => {
         // Assert
-        expect(cases).toHaveLength(40);
-        expect(new Set(cases.map((c) => c.id)).size).toBe(40);
+        expect(cases).toHaveLength(67);
+        expect(new Set(cases.map((c) => c.id)).size).toBe(67);
         expect(new Set(cases.map((c) => c.feature))).toEqual(
             new Set(['chat', 'chat_venue', 'chat_experience'])
         );
@@ -123,6 +142,10 @@ describe('fixtures joined with the generated contexts', () => {
             'No contamos con estacionamiento propio'
         );
         expect(ctx('acc-real-ruca-pool-size-checkin-pets')).toContain('4 × 9 metros');
+        // HOS-2100: venue and experience amenities reach the context.
+        expect(ctx('venue-amenities-ac-parking')).toContain('### Comodidades');
+        expect(ctx('venue-amenities-ac-parking')).toContain('- Aire acondicionado');
+        expect(ctx('experience-price-cents')).toContain('- Guía incluido');
     });
 });
 
@@ -131,16 +154,19 @@ describe('configs', () => {
         const all = config('sweep.config.all.json');
         const calls = expandMatrix({ config: all, cases });
         expect(new Set(calls.map((c) => c.variantKey)).size).toBe(8);
-        expect(calls).toHaveLength(40 * 8 * 2);
+        expect(calls).toHaveLength(67 * 8 * 2);
         expect(calls.length).toBeLessThanOrEqual(all.maxCalls);
     });
 
-    it('accommodation: exactly the acc-real cases; example: exactly the others', () => {
+    it('accommodation: the pre-HOS-2102 acc-real cases; example: exactly the others', () => {
         const accIds = cases.filter((c) => c.id.startsWith('acc-real-')).map((c) => c.id);
         const otherIds = cases.filter((c) => !c.id.startsWith('acc-real-')).map((c) => c.id);
-        expect(accIds).toHaveLength(17);
+        expect(accIds).toHaveLength(34);
+        // The pinned HOS-2102 additions are acc-real cases and are all in fixtures.
+        expect(new Set(HOS_2102_NEW_IDS).size).toBe(12);
+        expect(HOS_2102_NEW_IDS.every((id) => accIds.includes(id))).toBe(true);
         expect([...config('sweep.config.accommodation.json').caseIds].sort()).toEqual(
-            accIds.sort()
+            accIds.filter((id) => !HOS_2102_NEW_IDS.includes(id)).sort()
         );
         expect([...config('sweep.config.example.json').caseIds].sort()).toEqual(otherIds.sort());
         for (const name of ['sweep.config.accommodation.json', 'sweep.config.example.json']) {
@@ -150,7 +176,310 @@ describe('configs', () => {
     });
 });
 
+describe('HOS-2098 age-scope config', () => {
+    it('runs only existing chat_venue cases, on gpt-5.4-nano without reasoning, within its cap', () => {
+        const c = config('sweep.config.age-scope.json');
+        const calls = expandMatrix({ config: c, cases });
+        expect(calls.length).toBe(c.caseIds.length * c.repetitions);
+        expect(calls.length).toBeLessThanOrEqual(c.maxCalls);
+        expect(new Set(calls.map((call) => call.variantKey))).toEqual(
+            new Set(['gpt-5.4-nano | none | 2048'])
+        );
+        for (const id of c.caseIds) {
+            expect(cases.find((x) => x.id === id)?.feature, id).toBe('chat_venue');
+        }
+    });
+
+    it('the smoke bars print the scope line the staging smoke saw', () => {
+        const ctx = (id: string): string => cases.find((c) => c.id === id)?.context ?? '';
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '**Alcance de la edad mínima**: Rige desde las 00:00 hasta el cierre'
+        );
+        expect(ctx('venue-scope-00-saturday-22')).toContain('- Sábado: 21:00–03:00');
+        expect(ctx('venue-scope-2330-saturday-22-leave-23')).toContain(
+            '**Alcance de la edad mínima**: Rige desde las 23:30 hasta el cierre'
+        );
+        expect(ctx('venue-scope-all-day-saturday-22')).toContain(
+            '**Alcance de la edad mínima**: Rige todo el día'
+        );
+    });
+
+    it('the smoke bars carry the scope resolved into explicit windows (HOS-2098 root fix)', () => {
+        const ctx = (id: string): string => cases.find((c) => c.id === id)?.context ?? '';
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '- Sábado de 21:00 a 00:00 (medianoche): sin edad mínima informada'
+        );
+        expect(ctx('venue-scope-00-saturday-22')).toContain(
+            '- Sábado, pasada la medianoche, de 00:00 a 03:00: edad mínima 18'
+        );
+        expect(ctx('venue-scope-2330-saturday-22-leave-23')).toContain(
+            '- Sábado de 21:00 a 23:30: sin edad mínima informada'
+        );
+        expect(ctx('venue-mixed-lunch-with-child')).toContain(
+            '- Sábado de 12:00 a 15:30: sin edad mínima informada'
+        );
+        // The "only at night" free-text venue has no scope: every hour, no free window.
+        const freeText = ctx('venue-mixed-free-text-no-scope');
+        expect(freeText).toContain(
+            '- Todos los días, a toda hora (mediodía, tarde y noche) y en todo el local: edad mínima 18'
+        );
+        expect(freeText).not.toContain('sin edad mínima informada');
+    });
+
+    it('an outside-scope case fails an answer that opens with "No" and passes one that opens with "Sí"', () => {
+        const r = rubricOf('venue-scope-00-saturday-22');
+        const no = checkAnswer({
+            rubric: r,
+            text: 'No. La edad mínima es 18 y rige desde las 00:00. Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788).'
+        });
+        const yes = checkAnswer({
+            rubric: r,
+            text: 'Sí, a las 22 la ficha no indica un límite de edad: desde la medianoche (00:00) la edad mínima es 18. Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788). Confirmalo con el lugar.'
+        });
+        expect(no.violations).toContain('arranca con un no');
+        expect(yes.violations).toEqual([]);
+        expect(yes.includeCoverage).toBe(1);
+    });
+});
+
+describe('HOS-2102 nano residuals config', () => {
+    it('runs the 29 selected cases on gpt-5.4-nano and gpt-5.4-mini without reasoning, within its cap', () => {
+        const c = config('sweep.config.hos-2102.json');
+        const calls = expandMatrix({ config: c, cases });
+        expect(c.caseIds).toHaveLength(29);
+        expect(new Set(c.caseIds).size).toBe(29);
+        // 29 cases x 2 models x 4 repetitions.
+        expect(calls.length).toBe(c.caseIds.length * c.models.length * c.repetitions);
+        expect(calls.length).toBe(232);
+        expect(calls.length).toBeLessThanOrEqual(c.maxCalls);
+        expect(new Set(calls.map((call) => call.variantKey))).toEqual(
+            new Set(['gpt-5.4-nano | none | 2048', 'gpt-5.4-mini | none | 2048'])
+        );
+        for (const id of c.caseIds) {
+            expect(
+                cases.find((x) => x.id === id),
+                id
+            ).toBeDefined();
+        }
+    });
+
+    it('selects the 12 new HOS-2102 cases plus the 17 residual cases they extend', () => {
+        const c = config('sweep.config.hos-2102.json');
+        expect(c.caseIds.filter((id) => HOS_2102_NEW_IDS.includes(id))).toHaveLength(12);
+        expect(c.caseIds.filter((id) => !HOS_2102_NEW_IDS.includes(id))).toHaveLength(17);
+    });
+});
+
 describe('rubrics', () => {
+    it('HOS-2100 monogris: the capacity 2 must be stated as a capacity, not any "2"', () => {
+        const r = rubricOf('acc-real-monogris-parking-kid-pets-absent');
+        const covered = (text: string) => checkAnswer({ rubric: r, text }).includeCoverage;
+        expect(covered('La capacidad es de 2 huéspedes; estacionamiento no figura.')).toBe(1);
+        expect(covered('Es para dos personas.')).toBe(1);
+        expect(covered('Queda a 2 cuadras de la terminal y no figura estacionamiento.')).toBe(0);
+    });
+
+    it('HOS-2100 ruca: each of 3, 4 and 6 must be a cabin capacity', () => {
+        const r = rubricOf('acc-real-ruca-group-14-cabins');
+        const missed = (text: string) => checkAnswer({ rubric: r, text }).includeMissed;
+        expect(
+            missed(
+                'Hay seis cabañas: dos para 3, dos para 4 y dos para 6 personas (26 en total). Depende de la disponibilidad: confirmalo con el lugar.'
+            )
+        ).toEqual([]);
+        expect(missed('Son 3 dormitorios, 4 baños y 6 camas.')).toContain('capacidades 3, 4 y 6');
+    });
+
+    it('HOS-2100 casa-booking: a negated discount or deposit is not an invented one', () => {
+        const r = rubricOf('acc-real-casa-booking-price-ask');
+        const violations = (text: string) => checkAnswer({ rubric: r, text }).violations;
+        expect(
+            violations('El precio base es $195.000 por noche; no figuran descuentos ni seña.')
+        ).not.toContain('inventa descuentos o seña');
+        expect(violations('Con una seña del 30 % te lo dejan.')).toContain(
+            'inventa descuentos o seña'
+        );
+        expect(violations('Tiene un descuento por estadía larga.')).toContain(
+            'inventa descuentos o seña'
+        );
+        // A negation in an earlier clause does not cover the discount.
+        expect(violations('No incluye desayuno, pero hay descuento por semana.')).toContain(
+            'inventa descuentos o seña'
+        );
+        expect(violations('No se indica ningún descuento.')).not.toContain(
+            'inventa descuentos o seña'
+        );
+    });
+
+    it('HOS-2100 group cases: close with distribution/availability, never "entran sin problema"', () => {
+        for (const id of [
+            'acc-real-isla-two-families-8',
+            'acc-real-casa-two-families-kids-recommend',
+            'acc-real-ruca-group-14-cabins'
+        ]) {
+            const r = rubricOf(id);
+            expect(
+                checkAnswer({ rubric: r, text: 'Sí, entran sin problema.' }).violations
+            ).toContain('afirma que entran seguro');
+            expect(
+                checkAnswer({
+                    rubric: r,
+                    text: 'Depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar.'
+                }).includeMissed
+            ).not.toContain('remite reparto o disponibilidad al lugar');
+            // A bare "confirm" is not the close.
+            expect(
+                checkAnswer({ rubric: r, text: 'No puedo confirmar eso.' }).includeMissed
+            ).toContain('remite reparto o disponibilidad al lugar');
+        }
+    });
+
+    it.each([
+        [
+            'acc-real-balcones-group-over-capacity',
+            'No, 7 no entran: la capacidad es de 4 huéspedes.'
+        ],
+        [
+            'acc-real-monogris-group-over-capacity',
+            'No, 5 no entran: la capacidad es de 2 huéspedes.'
+        ],
+        ['acc-real-casa-group-over-capacity', 'No, 14 no entran: la capacidad es de 11 huéspedes.']
+    ])('HOS-2100 over capacity (%s): only "no" and the capacity, nothing else', (id, clean) => {
+        const r = rubricOf(id);
+        expect(checkAnswer({ rubric: r, text: clean })).toMatchObject({
+            includeCoverage: 1,
+            violations: []
+        });
+        for (const hope of [
+            `${clean} Depende de la disponibilidad.`,
+            `${clean} Podrían ver otras unidades.`,
+            `${clean} Consultá con el lugar.`
+        ]) {
+            expect(checkAnswer({ rubric: r, text: hope }).violations).toContain(
+                'agrega esperanza falsa (unidades, disponibilidad, consultar)'
+            );
+        }
+    });
+
+    it.each([
+        [
+            'acc-real-casa-portuguese-group-over',
+            'Não, 14 pessoas não cabem: a casa recebe até 11 hóspedes.'
+        ],
+        [
+            'acc-real-isla-english-group-over',
+            "No, unfortunately you don't all fit: the total capacity is 12 guests."
+        ],
+        [
+            'acc-real-ruca-group-over-capacity',
+            'No, 30 no entran: la capacidad total es de 26 personas.'
+        ],
+        [
+            'acc-real-balcones-portuguese-group-over',
+            'Não, 7 pessoas não cabem: o departamento acomoda até 4 hóspedes.'
+        ]
+    ])('HOS-2102 over capacity (%s): only "no" and the capacity, nothing else', (id, clean) => {
+        const r = rubricOf(id);
+        expect(checkAnswer({ rubric: r, text: clean })).toMatchObject({
+            includeCoverage: 1,
+            violations: []
+        });
+    });
+
+    it('HOS-2102 pets-absent (es): says the ficha does not inform, never accepts or rejects', () => {
+        for (const id of ['acc-real-ruca-pets-direct', 'acc-real-monogris-pets-direct']) {
+            const r = rubricOf(id);
+            expect(
+                checkAnswer({ rubric: r, text: 'La ficha no indica una política de mascotas.' })
+            ).toMatchObject({ includeCoverage: 1, violations: [], unknownHandled: true });
+            expect(
+                checkAnswer({ rubric: r, text: 'Sí, se aceptan mascotas.' }).violations
+            ).toContain('afirma que acepta mascotas');
+            expect(
+                checkAnswer({ rubric: r, text: 'No, no se admiten mascotas.' }).violations
+            ).toContain('afirma que no acepta mascotas');
+        }
+    });
+
+    it('HOS-2102 pets-absent (en/pt): unknown stated in the answer language, no rules entry', () => {
+        // The unknown heuristic is Spanish-only, so these cases carry no rules entry.
+        const en = rubricOf('acc-real-ruca-pets-english');
+        expect(
+            checkAnswer({ rubric: en, text: "The listing doesn't say anything about pets." })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(checkAnswer({ rubric: en, text: 'Yes, pets are allowed.' }).violations).toContain(
+            'claims pets accepted'
+        );
+        const pt = rubricOf('acc-real-ruca-pets-portuguese');
+        expect(
+            checkAnswer({ rubric: pt, text: 'A ficha não informa nada sobre animais.' })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(checkAnswer({ rubric: pt, text: 'Sim, aceita animais.' }).violations).toContain(
+            'afirma que acepta animales'
+        );
+    });
+
+    it('HOS-2102 casa pets (en/pt): advance notice, no invented limit, no voseo leak', () => {
+        const pt = rubricOf('acc-real-casa-portuguese-pets-size');
+        expect(
+            checkAnswer({ rubric: pt, text: 'Podés llevar tus mascotas con aviso prévio.' })
+                .violations
+        ).toContain('voseo o palabra española en respuesta pt');
+        expect(
+            checkAnswer({
+                rubric: pt,
+                text: 'Você pode levar seus cães: são aceitos animais bem comportados com aviso prévio. A ficha não informa limite de quantidade ou tamanho.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        const en = rubricOf('acc-real-casa-english-pets-size');
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: "Yes, dogs are welcome with advance notice; the listing doesn't specify a size or number limit."
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({ rubric: en, text: 'You can bring up to 2 dogs.' }).violations
+        ).toContain('invents a limit');
+    });
+
+    it('HOS-2100 en/pt groups: the close is translated, never copied in Spanish', () => {
+        const en = rubricOf('acc-real-isla-english-two-families');
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: 'The complex takes 12 guests in apartments for 2 and for 4. It depends on how you split and on availability: confirm it with the place.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({
+                rubric: en,
+                text: '12 guests. Depende de la disponibilidad: confirmalo.'
+            }).violations
+        ).toContain('cierre copiado en español');
+        const pt = rubricOf('acc-real-casa-portuguese-group');
+        expect(
+            checkAnswer({
+                rubric: pt,
+                text: 'A casa recebe até 11 hóspedes. Depende de como se distribuírem e da disponibilidade: confirme com o lugar.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+    });
+
+    it('HOS-2100 venue amenities: AC yes, parking not listed', () => {
+        const r = rubricOf('venue-amenities-ac-parking');
+        expect(
+            checkAnswer({
+                rubric: r,
+                text: 'Sí, tiene aire acondicionado. El estacionamiento no figura en la ficha: consultalo con el local.'
+            })
+        ).toMatchObject({ includeCoverage: 1, violations: [] });
+        expect(
+            checkAnswer({ rubric: r, text: 'Sí, tiene estacionamiento y aire acondicionado.' })
+                .violations
+        ).toContain('afirma estacionamiento');
+    });
+
     it('nightclub minor: needs an explicit no, 18 and the law', () => {
         const r = rubricOf('venue-nightclub-minor');
         const good = checkAnswer({
@@ -238,6 +567,11 @@ describe('global answer checks', () => {
         expect(looksLikeOwnerVoice('Aceptamos reservas por WhatsApp.')).toBe(true);
         expect(looksLikeOwnerVoice('We accept pets.')).toBe(true);
         expect(looksLikeOwnerVoice('El lugar acepta reservas por WhatsApp.')).toBe(false);
+        // HOS-2100: the guide's voice on an experience.
+        expect(looksLikeOwnerVoice('Nos encontramos en el Muelle del Puerto Viejo.')).toBe(true);
+        expect(looksLikeOwnerVoice('El punto de encuentro es el Muelle del Puerto Viejo.')).toBe(
+            false
+        );
         expect(promisesImpossibleCapability('Te reservo la cabaña ya mismo.')).toBe(true);
         expect(promisesImpossibleCapability("I'll book it for you.")).toBe(true);
         expect(

@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
-const EXPECTED_GET_PROTECTED_COUNT = 100;
+// HOS-2101: +1 (ai/protected/listing-questions.ts, owner-scoped, no write permission).
+const EXPECTED_GET_PROTECTED_COUNT = 101;
 // HOS-1703: empty on purpose; add a file only with a linked owner decision
 const PENDING_OWNER_DECISION: readonly string[] = [];
 

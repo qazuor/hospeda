@@ -100,7 +100,8 @@
                 "menu": "Carta",
                 "dailySpecials": "Menú del día",
                 "venueEvents": "Eventos",
-                "nightInfo": "Info para salir"
+                "nightInfo": "Info para salir",
+                "aiQuestions": "Preguntas a la IA"
             },
             "sections": {
                 "type": "Categoría",

@@ -130,9 +130,12 @@ export function findRawCodes(text: string): string[] {
  * First-person owner voice (HOS-2095): the assistant talks ABOUT the place, so
  * "aceptamos", "tenemos", "nuestro", "te esperamos" mean it copied the owner's
  * voice from a FAQ or description. Spanish, English and Portuguese forms.
+ *
+ * HOS-2100: "Nos encontramos en el muelle" / "nos vemos" (the guide's voice on
+ * an experience) slipped past; they count too.
  */
 export function looksLikeOwnerVoice(text: string): boolean {
-    return /(?<!\p{L})(aceptamos|tenemos|contamos con|ofrecemos|disponemos|brindamos|nuestr[oa]s?|te esperamos|los esperamos|somos un|we accept|we have|we offer|our (place|cabin|house|apartment|restaurant|bar|venue|rooms?|pool)|aceitamos|temos|oferecemos|nosso|nossa)(?!\p{L})/iu.test(
+    return /(?<!\p{L})(aceptamos|tenemos|contamos con|ofrecemos|disponemos|brindamos|nuestr[oa]s?|te esperamos|los esperamos|nos encontramos|nos vemos|somos un|we accept|we have|we offer|our (place|cabin|house|apartment|restaurant|bar|venue|rooms?|pool)|aceitamos|temos|oferecemos|nosso|nossa)(?!\p{L})/iu.test(
         text
     );
 }

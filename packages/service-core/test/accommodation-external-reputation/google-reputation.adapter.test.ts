@@ -354,6 +354,131 @@ describe('GoogleReputationAdapter', () => {
             expect(result.snippets![0]!.author).toBe('Alice');
         });
 
+        it('should prefer originalText over the translated text and record its language', async () => {
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            const reviews = [
+                {
+                    rating: 5,
+                    text: { text: 'Beautiful place, highly recommended.', languageCode: 'en' },
+                    originalText: { text: 'Hermoso lugar, muy recomendado.', languageCode: 'es' },
+                    authorAttribution: { displayName: 'Lucía', uri: null, photoUri: null },
+                    publishTime: '2024-03-15T10:00:00Z'
+                }
+            ];
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse({ reviews })), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.snippets).not.toBeNull();
+            expect(result.snippets!.length).toBe(1);
+            expect(result.snippets![0]!.text).toBe('Hermoso lugar, muy recomendado.');
+            expect(result.snippets![0]!.languageCode).toBe('es');
+        });
+
+        it('should fall back to text and its language when originalText is absent', async () => {
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            const reviews = [
+                {
+                    rating: 4,
+                    text: { text: 'Great location.', languageCode: 'en' },
+                    authorAttribution: { displayName: 'Bob', uri: null, photoUri: null },
+                    publishTime: '2024-02-20T08:00:00Z'
+                }
+            ];
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse({ reviews })), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.snippets).not.toBeNull();
+            expect(result.snippets!.length).toBe(1);
+            expect(result.snippets![0]!.text).toBe('Great location.');
+            expect(result.snippets![0]!.languageCode).toBe('en');
+        });
+
+        it('should fall back to the translation when originalText is an empty string', async () => {
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            const reviews = [
+                {
+                    rating: 5,
+                    text: { text: 'Lovely stay.', languageCode: 'en' },
+                    originalText: { text: '   ', languageCode: 'es' },
+                    authorAttribution: { displayName: 'Ana', uri: null, photoUri: null }
+                }
+            ];
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse({ reviews })), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.snippets![0]!.text).toBe('Lovely stay.');
+            expect(result.snippets![0]!.languageCode).toBe('en');
+        });
+
+        it('should store a null languageCode when Google sends one outside the schema bounds', async () => {
+            // One out-of-bounds code must not invalidate the whole snippets array
+            // that the schema validates downstream.
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            const reviews = [
+                {
+                    rating: 5,
+                    originalText: { text: 'Muy lindo.', languageCode: '' },
+                    authorAttribution: { displayName: 'Eva', uri: null, photoUri: null }
+                },
+                {
+                    rating: 4,
+                    originalText: { text: 'Bonito.', languageCode: 'x'.repeat(40) },
+                    authorAttribution: { displayName: 'Leo', uri: null, photoUri: null }
+                }
+            ];
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse({ reviews })), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.snippets!.map((s) => s.languageCode)).toEqual([null, null]);
+            expect(result.snippets!.map((s) => s.text)).toEqual(['Muy lindo.', 'Bonito.']);
+        });
+
+        it('should drop a review that has neither text nor originalText', async () => {
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            const reviews = [
+                {
+                    rating: 5,
+                    text: undefined,
+                    originalText: undefined,
+                    authorAttribution: { displayName: 'Alice', uri: null, photoUri: null }
+                }
+            ];
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse({ reviews })), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.snippets).toBeNull();
+        });
+
         it('should return snippets:null when reviews array is empty', async () => {
             const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
             const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });

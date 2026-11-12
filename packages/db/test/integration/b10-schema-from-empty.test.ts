@@ -7,8 +7,8 @@ import { closeTestPool, getTestPool } from './helpers.ts';
 // HOS-1596 kit: 0139 and 0151 were already in origin/staging at the cut.
 const cutMigrations = ['0139_serious_vampiro.sql', '0151_b58_payment_schema.sql'] as const;
 const pieceMigrations = [
-    '0211_hos1593_addon_domain_event.sql',
-    '0212_hos1595_addon_version_publication.sql'
+    '0215_hos1593_addon_domain_event.sql',
+    '0216_hos1595_addon_version_publication.sql'
 ] as const;
 
 function migration(name: string): string {

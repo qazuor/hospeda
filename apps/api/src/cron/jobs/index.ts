@@ -13,6 +13,8 @@
  * ```
  */
 
+export { aiListingQuestionsRetentionJob } from './ai-listing-questions-retention.job.js';
+export { aiQuestionsWeeklyDigestJob } from './ai-questions-weekly-digest.job.js';
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';

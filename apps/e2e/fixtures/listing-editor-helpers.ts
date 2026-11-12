@@ -74,6 +74,9 @@ export type ListingEditorSection =
     | 'menu-del-dia'
     | 'eventos'
     | 'preguntas'
+    // HOS-2101 — every vertical: the web-only, read-only «Preguntas a la IA»
+    // page, right after the FAQs.
+    | 'preguntas-ia'
     // HOS-1787 leaf 5.1 — venue only: the night-out info section the catalog
     // adds after faqs. Named here so the route parity guard can address it.
     | 'de-noche'

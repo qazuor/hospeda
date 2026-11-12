@@ -140,6 +140,32 @@ export const EDITOR_SECTION_GROUP_LABEL_KEYS: Readonly<Record<EditorSectionGroup
     management: 'host.properties.editor.group.management'
 };
 
+/**
+ * The «Preguntas a la IA» page (HOS-2101).
+ *
+ * Deliberately NOT in {@link ACCOMMODATION_EDITOR_SECTIONS}: that list is the
+ * frozen mirror of the domain catalog (G-FAC-08, DEC-FAC-033) — what a listing
+ * CONTAINS. This page edits nothing; it only reads the chat log, so it joins
+ * the editor at the registry, right after the FAQs (its main action creates
+ * one). The venue/experience editor does the same in `listing-editor-registry`.
+ */
+export const ACCOMMODATION_AI_QUESTIONS_SECTION: EditorSection = {
+    id: 'aiQuestions',
+    slug: 'preguntas-ia',
+    group: 'content',
+    labelKey: 'host.properties.editor.section.aiQuestions'
+};
+
+/** The editor's sections: the frozen catalog list plus the AI questions page. */
+const ACCOMMODATION_EDITOR_REGISTRY_SECTIONS: readonly EditorSection[] = (() => {
+    const faqIndex = ACCOMMODATION_EDITOR_SECTIONS.findIndex((section) => section.id === 'faqs');
+    return [
+        ...ACCOMMODATION_EDITOR_SECTIONS.slice(0, faqIndex + 1),
+        ACCOMMODATION_AI_QUESTIONS_SECTION,
+        ...ACCOMMODATION_EDITOR_SECTIONS.slice(faqIndex + 1)
+    ];
+})();
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -154,7 +180,7 @@ export const EDITOR_SECTION_GROUP_LABEL_KEYS: Readonly<Record<EditorSectionGroup
  */
 export const ACCOMMODATION_EDITOR_REGISTRY: EditorRegistry = {
     id: 'accommodation',
-    sections: ACCOMMODATION_EDITOR_SECTIONS,
+    sections: ACCOMMODATION_EDITOR_REGISTRY_SECTIONS,
     groups: EDITOR_SECTION_GROUPS,
     groupLabelKeys: EDITOR_SECTION_GROUP_LABEL_KEYS,
     indexPath: 'mi-cuenta/propiedades',

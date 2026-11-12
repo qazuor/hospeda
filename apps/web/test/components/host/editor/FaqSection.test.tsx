@@ -30,7 +30,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 import { FaqSection } from '@/components/host/editor/FaqSection.client';
 import { addToast } from '@/store/toast-store';
@@ -617,5 +617,28 @@ describe('FaqSection', () => {
                 /una pregunta no visible en la ficha pero usable por la IA no es privada/
             )
         ).toBeInTheDocument();
+    });
+});
+
+describe('HOS-2101 — prefill from the AI questions tab', () => {
+    afterEach(() => {
+        window.history.replaceState(null, '', '/');
+    });
+
+    it('opens the add form with ?pregunta= filled in and clears the parameter', async () => {
+        // Arrange
+        window.history.replaceState(
+            null,
+            '',
+            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F'
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
+        expect(question.value).toBe('¿Hay cochera?');
+        expect(window.location.search).toBe('');
     });
 });

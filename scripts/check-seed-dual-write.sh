@@ -240,6 +240,10 @@ EXTERNAL_BASELINE_FILES=(
     # Seeded verbatim into ai_prompt_versions by required/aiPrompts.seed.ts,
     # which inserts ON CONFLICT DO NOTHING so an existing row is never updated.
     'packages/ai-core/src/engine/default-prompts.ts'
+    # HOS-2100 split default-prompts.ts: DEFAULT_RULES/DEFAULT_PROMPTS are now
+    # composed from these two, so their text reaches ai_prompt_versions too.
+    'packages/ai-core/src/engine/listing-chat-rules.ts'
+    'packages/ai-core/src/engine/brand-voice-fragments.ts'
 )
 
 # Matches make.ts / discover.ts's own NNNN-slug.ts convention.

@@ -24,13 +24,14 @@
  */
 
 import type { InsertAccommodationExternalReputation, PendingRunRow } from '@repo/db';
-import { AccommodationExternalReputationModel } from '@repo/db';
+import { AccommodationExternalReputationModel, AccommodationModel } from '@repo/db';
 import type { ExternalPlatformEnum } from '@repo/schemas';
 import {
     emptyReputationResult,
     getApifyDatasetItems,
     getApifyRunStatus,
-    getReputationAdapter
+    getReputationAdapter,
+    isWorkingReputationResult
 } from '@repo/service-core';
 import { getReputationAdapterCredentials } from '../../utils/reputation-credentials.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -121,6 +122,7 @@ export const pollApifyReputationRunsJob: CronJobDefinition = {
         // 1. Discover all rows awaiting resolution.
         // -------------------------------------------------------------------------
         const reputationModel = new AccommodationExternalReputationModel();
+        const accommodationModel = new AccommodationModel();
         let pendingRows: PendingRunRow[];
 
         try {
@@ -222,6 +224,51 @@ export const pollApifyReputationRunsJob: CronJobDefinition = {
                         apifyDatasetId: null,
                         aggregateFetchedAt: new Date()
                     });
+
+                    // One-time opt-in: the first async run that resolves with
+                    // usable data enables the owner's section. Shared predicate
+                    // with the inline refresh path — the rule is defined once.
+                    // A failure here must never break the poll loop: the
+                    // reputation row is already persisted.
+                    if (
+                        isWorkingReputationResult({
+                            fetchStatus: 'ok',
+                            rating: result.rating,
+                            snippets: result.snippets,
+                            listing: {
+                                deletedAt: row.listingDeletedAt,
+                                showLink: row.showLink,
+                                showReviews: row.showReviews
+                            }
+                        })
+                    ) {
+                        try {
+                            const { enabled } =
+                                await accommodationModel.autoEnableExternalReputationIfUndecided({
+                                    id: row.accommodationId
+                                });
+                            if (enabled) {
+                                logger.info(
+                                    'Auto-enabled external reputation after first working provider',
+                                    {
+                                        accommodationId: row.accommodationId,
+                                        platform: row.platform,
+                                        runId
+                                    }
+                                );
+                            }
+                        } catch (autoEnableErr) {
+                            const msg =
+                                autoEnableErr instanceof Error
+                                    ? autoEnableErr.message
+                                    : String(autoEnableErr);
+                            logger.error('Auto-enable of external reputation failed', {
+                                accommodationId: row.accommodationId,
+                                platform: row.platform,
+                                error: msg
+                            });
+                        }
+                    }
 
                     logger.info('Apify run SUCCEEDED — reputation upserted', {
                         runId,

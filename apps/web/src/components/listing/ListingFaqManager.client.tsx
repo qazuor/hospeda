@@ -38,10 +38,12 @@
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
+import { webLogger } from '@/lib/logger';
 import styles from './ListingFaqManager.module.css';
 
 // ---------------------------------------------------------------------------
@@ -232,10 +234,26 @@ export function ListingFaqManager({
     const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [faqPendingDelete, setFaqPendingDelete] = useState<ListingFaq | null>(null);
     const [addErrors, setAddErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
+    // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
+    useFaqPrefill({
+        onPrefill: useCallback(
+            (prefill: { question: string; answer: string; messageId: string | null }) => {
+                setAddValues((values) => ({
+                    ...values,
+                    question: prefill.question,
+                    answer: prefill.answer
+                }));
+                setPrefillMessageId(prefill.messageId);
+                setIsAdding(true);
+            },
+            []
+        )
+    });
     const [editErrors, setEditErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
 
     const basePath = faqBasePath({ vertical, listingId });
@@ -273,12 +291,24 @@ export function ListingFaqManager({
             setAddValues(EMPTY_EDITOR);
             setAddErrors(NO_FIELD_ERRORS);
             setIsAdding(false);
+            if (prefillMessageId) {
+                void apiClient
+                    .postProtected({
+                        path: `/api/v1/protected/ai/listing-questions/${prefillMessageId}/dismiss`
+                    })
+                    .then((dismissResult) => {
+                        if (!dismissResult.ok)
+                            webLogger.warn('[ListingFaqManager] question dismissal failed');
+                    })
+                    .catch(() => webLogger.warn('[ListingFaqManager] question dismissal failed'));
+                setPrefillMessageId(null);
+            }
         } else {
             setActionError(
                 t('listing.owner.editor.faqManager.saveError', 'No se pudo guardar la pregunta.')
             );
         }
-    }, [addValues, basePath, t]);
+    }, [addValues, basePath, t, prefillMessageId]);
 
     // ---------------------------------------------------------------------------
     // Edit
@@ -783,6 +813,14 @@ export function ListingFaqManager({
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
                     />
+                    {prefillMessageId && addValues.answer === '' && (
+                        <p>
+                            {t(
+                                'host.properties.editor.aiQuestions.faqAnswerHelp',
+                                'There is no confirmed answer. Fill it in using information from your listing.'
+                            )}
+                        </p>
+                    )}
                     {addErrors.answer && (
                         <p
                             id="faq-new-a-error"

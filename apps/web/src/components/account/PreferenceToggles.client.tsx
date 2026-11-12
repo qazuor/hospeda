@@ -49,6 +49,8 @@ interface WebSettings {
     languageWeb: LanguageWeb;
     notifications: NotificationSettings;
     newsletter: boolean;
+    /** Weekly email of unanswered AI chat questions (HOS-2101). */
+    aiQuestionsDigest: boolean;
 }
 
 /** Raw user object returned by GET /api/v1/protected/users/:id */
@@ -66,6 +68,7 @@ interface UserApiResponse {
                 readonly allowSms?: boolean;
             };
             readonly newsletter?: boolean;
+            readonly aiQuestionsDigest?: boolean;
         } | null;
     };
     readonly error?: { readonly message: string };
@@ -101,7 +104,9 @@ const DEFAULT_SETTINGS: WebSettings = {
         allowPush: false,
         allowSms: false
     },
-    newsletter: false
+    newsletter: false,
+    // Absent means subscribed: the digest is opt-out (HOS-2101).
+    aiQuestionsDigest: true
 };
 
 // ─── Theme application ────────────────────────────────────────────────────────
@@ -169,7 +174,8 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                     allowSms:
                         raw?.notifications?.allowSms ?? DEFAULT_SETTINGS.notifications.allowSms
                 },
-                newsletter: raw?.newsletter ?? DEFAULT_SETTINGS.newsletter
+                newsletter: raw?.newsletter ?? DEFAULT_SETTINGS.newsletter,
+                aiQuestionsDigest: raw?.aiQuestionsDigest ?? DEFAULT_SETTINGS.aiQuestionsDigest
             });
         } catch (err) {
             const msg = err instanceof Error ? err.message : fetchErrorMsg;
@@ -186,7 +192,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
     // ── Persist settings ───────────────────────────────────────────────────
 
     /**
-     * PATCH the web-scoped settings (only themeWeb/languageWeb/notifications/newsletter).
+     * PATCH the web-scoped settings (themeWeb/languageWeb/notifications/newsletter/aiQuestionsDigest).
      * Called optimistically — caller already updated local state.
      */
     async function persistSettings(
@@ -201,6 +207,9 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
             if (patch.languageWeb !== undefined) body.languageWeb = patch.languageWeb;
             if (patch.notifications !== undefined) body.notifications = patch.notifications;
             if (patch.newsletter !== undefined) body.newsletter = patch.newsletter;
+            if (patch.aiQuestionsDigest !== undefined) {
+                body.aiQuestionsDigest = patch.aiQuestionsDigest;
+            }
 
             const res = await fetch(`${base}/api/v1/protected/users/${userId}`, {
                 method: 'PATCH',
@@ -289,6 +298,17 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         const next = { ...settings, newsletter: !settings.newsletter };
         setSettings(next);
         void persistSettings({ newsletter: next.newsletter }, 'newsletter', prev);
+    }
+
+    function handleAiQuestionsDigestToggle() {
+        const prev = { ...settings };
+        const next = { ...settings, aiQuestionsDigest: !settings.aiQuestionsDigest };
+        setSettings(next);
+        void persistSettings(
+            { aiQuestionsDigest: next.aiQuestionsDigest },
+            'aiQuestionsDigest',
+            prev
+        );
     }
 
     // ── Render ────────────────────────────────────────────────────────────
@@ -468,6 +488,35 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                     id="pref-newsletter"
                     savingLabel={t('common.saving', 'Guardando…')}
                     onToggle={handleNewsletterToggle}
+                />
+            </section>
+
+            {/* ── AI questions digest (HOS-2101) ─────────────────────── */}
+            <section
+                className={styles.section}
+                aria-labelledby="ai-questions-digest-title"
+            >
+                <h3
+                    className={styles.sectionTitle}
+                    id="ai-questions-digest-title"
+                >
+                    {t(
+                        'account.preferences.aiQuestionsDigest.title',
+                        'Resumen semanal de preguntas a la IA'
+                    )}
+                </h3>
+
+                <ToggleRow
+                    label={t(
+                        'account.preferences.aiQuestionsDigest.label',
+                        'Recibir el resumen semanal'
+                    )}
+                    description={t('account.preferences.aiQuestionsDigest.description')}
+                    checked={settings.aiQuestionsDigest}
+                    saving={savingField === 'aiQuestionsDigest'}
+                    id="pref-ai-questions-digest"
+                    savingLabel={t('common.saving', 'Guardando…')}
+                    onToggle={handleAiQuestionsDigestToggle}
                 />
             </section>
         </div>

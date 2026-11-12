@@ -1,8 +1,8 @@
 {
     "section": {
-        "title": "Reputation on other platforms",
-        "subtitle": "Reviews from verified travellers on the main accommodation sites"
+        "title": "What guests say on other platforms"
     },
+    "alsoOn": "Also on:",
     "platform": {
         "google": "Google",
         "booking": "Booking.com",
@@ -11,23 +11,28 @@
     },
     "link": {
         "cta": "See our accommodation on {{platform}} →",
-        "viewOn": "View on {{platform}} →"
+        "viewOn": "View on {{platform}}"
     },
     "reviews": {
-        "title": "Featured reviews",
-        "via": "via {{platform}}"
+        "listLabel": "Google reviews",
+        "readMore": "Read more",
+        "readLess": "Read less",
+        "writtenIn": "Written in {{language}}",
+        "seeAllOn_one": "See the review on {{platform}}",
+        "seeAllOn_other": "See all {{count}} reviews on {{platform}}",
+        "starsLabel": "{{count}} out of 5 stars"
     },
     "aggregate": {
         "rating": "Average score",
         "reviewsCount_one": "{{count}} review",
         "reviewsCount_other": "{{count}} reviews",
+        "reviewsCountOn_one": "{{count}} review on {{platform}}",
+        "reviewsCountOn_other": "{{count}} reviews on {{platform}}",
         "noData": "No data available"
     },
     "snippets": {
-        "googleOnly": "Only Google displays full review text because it provides an official API. Other platforms show the aggregate score and a direct link for legal reasons.",
         "ttlExpired": "Text reviews are temporarily unavailable; showing score only",
-        "byAuthor": "By {{author}}",
-        "on": "on {{platform}}"
+        "byAuthor": "By {{author}}"
     },
     "ownerConfig": {
         "title": "External reputation settings",
@@ -40,6 +45,7 @@
         "rateLimitHit_one": "You can refresh again in {{minutes}} minute",
         "rateLimitHit_other": "You can refresh again in {{minutes}} minutes",
         "googleOnlyExplainer": "Review text is only available for Google. Other platforms display the score and a link.",
+        "autoEnabledNotice": "We turned this section on automatically because we already have data from your platforms. You can turn it off whenever you want.",
         "verifiedHint": "The link has been verified and corresponds to this accommodation",
         "loading": "Loading listings…",
         "urlHint": {
@@ -52,7 +58,8 @@
         "removeConfirm": "Delete this platform? Its reviews will stop showing on your listing.",
         "removeConfirmButton": "Delete platform",
         "removing": "Deleting...",
-        "removeError": "Could not delete the platform."
+        "removeError": "Could not delete the platform.",
+        "allPlatformsAdded": "You've already added every available platform."
     },
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",
@@ -60,7 +67,9 @@
         "blocked": "Access to this platform's data has been temporarily blocked.",
         "statusFailed": "Could not retrieve the update status.",
         "invalidUrl": "Ingresá una URL válida (https://...).",
-        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo."
+        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
+        "duplicatePlatform": "You already have a {{platform}} link saved. To change it, delete the current one and add the new one.",
+        "addFailed": "We couldn't save the link. Try again in a few minutes; if it keeps failing, contact us."
     },
     "status": {
         "pending": "Updating...",
