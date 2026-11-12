@@ -12,12 +12,18 @@
  */
 
 import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
+import type { TrialSummaryResponse } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useState } from 'react';
-import { hostDashboardApi } from '@/lib/api/endpoints-protected';
+import { hostDashboardApi, publishApi } from '@/lib/api/endpoints-protected';
 import { transformHostDashboard } from '@/lib/api/transforms';
 import type { HostDashboardData } from '@/lib/api/types';
+import {
+    resolveDashboardFreeCard,
+    resolveDashboardTrialStat
+} from '@/lib/billing/dashboard-plan-stat';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 import { buildUrl } from '@/lib/urls';
 import { AnalyticsSection } from './AnalyticsSection.client';
 import styles from './HostDashboard.module.css';
@@ -33,8 +39,22 @@ export interface HostDashboardProps {
 
 type DashboardState =
     | { readonly status: 'loading' }
-    | { readonly status: 'ready'; readonly data: HostDashboardData }
+    | {
+          readonly status: 'ready';
+          readonly data: HostDashboardData;
+          readonly trialSummaries: readonly TrialSummaryResponse[];
+      }
     | { readonly status: 'error'; readonly message: string };
+
+/** Read the accommodation trial summary without allowing a failure to reject. */
+async function readTrialSummaries(): Promise<readonly TrialSummaryResponse[]> {
+    try {
+        const result = await publishApi.trialSummary({ vertical: 'accommodation' });
+        return result.ok ? [result.data] : [];
+    } catch {
+        return [];
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Quick action config
@@ -95,7 +115,10 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
     const fetchDashboard = useCallback(async () => {
         setState({ status: 'loading' });
         try {
-            const result = await hostDashboardApi.get();
+            const [result, trialSummaries] = await Promise.all([
+                hostDashboardApi.get(),
+                readTrialSummaries()
+            ]);
             if (!result.ok) {
                 setState({
                     status: 'error',
@@ -109,7 +132,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
             const data = transformHostDashboard({
                 item: result.data as unknown as Record<string, unknown>
             });
-            setState({ status: 'ready', data });
+            setState({ status: 'ready', data, trialSummaries });
         } catch (err) {
             setState({
                 status: 'error',
@@ -164,7 +187,17 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
     }
 
     // ── Render: ready ─────────────────────────────────────────────────────
-    const { data } = state;
+    const { data, trialSummaries } = state;
+    const trialStat = resolveDashboardTrialStat({ summaries: trialSummaries });
+    const freeCard = resolveDashboardFreeCard({
+        trialSummaries,
+        labels: {
+            free: t('host.dashboard.widgets.noPlan', 'Sin suscripción activa'),
+            trial: t('host.dashboard.plan.trial', 'Prueba gratuita'),
+            trialEndsOn: t('account.pages.dashboard.stats.trialEndsOn', 'Hasta el {{date}}')
+        },
+        formatDate: (iso) => formatNoticeInstant({ iso, locale })
+    });
 
     const planBadge = data.planInfo
         ? data.planInfo.isTrial
@@ -231,6 +264,23 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                             >
                                 {planBadge}
                             </span>
+                        </>
+                    ) : trialStat.kind === 'trial' ? (
+                        <>
+                            <p
+                                className={styles.planName}
+                                data-testid="host-dashboard-plan-trial"
+                            >
+                                {freeCard.value}
+                            </p>
+                            {freeCard.statusText ? (
+                                <p
+                                    className={styles.planTrialEnds}
+                                    data-testid="host-dashboard-trial-ends"
+                                >
+                                    {freeCard.statusText}
+                                </p>
+                            ) : null}
                         </>
                     ) : (
                         <p className={styles.planEmpty}>
