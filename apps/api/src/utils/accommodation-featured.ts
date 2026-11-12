@@ -9,9 +9,11 @@
  * structural rather than tied to `Accommodation`, so nothing here had to change
  * for the other two to use it.
  *
- * Each listing table carries ONE featuring column, `featuredByEntitlement`
- * (billing-derived — set by the sync primitives in
- * `accommodation.sync-featured-by-entitlement.ts`). Until HOS-1419 a second,
+ * Each listing table carries ONE featuring column, `featuredByEntitlement`,
+ * written by the listing featured sync (`@repo/verticals` `syncListingFeatured`,
+ * HOS-1718) from billing coverage: true while a live LISTING add-on granting
+ * `featured_listing` targets the listing. It runs on every coverage-changed
+ * notice and in the daily coverage reconciler. Until HOS-1419 a second,
  * admin-curated `is_featured` column was OR'd with it here; that column was
  * dropped with the old billing, so the public `isFeatured` value is now the
  * entitlement flag alone. The 2026-08-29 owner decision still holds: holding
