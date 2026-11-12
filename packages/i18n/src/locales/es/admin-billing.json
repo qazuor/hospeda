@@ -1992,6 +1992,66 @@
         "openedAt": "Abierta desde",
         "subjectStatus": "Estado de la fila",
         "subjectUnresolved": "Sujeto no resuelto",
+        "addonStatuses": {
+            "PENDING_AUTHORIZATION": "Pendiente de autorización",
+            "ACTIVE": "Activo",
+            "ABANDONED": "Abandonado",
+            "EXPIRED": "Vencido",
+            "CANCELLED": "Cancelado"
+        },
+        "paymentStatuses": {
+            "PENDING": "Pendiente",
+            "SUCCEEDED": "Acreditado",
+            "FAILED": "Fallido",
+            "PARTIALLY_REFUNDED": "Devuelto en parte",
+            "REFUNDED": "Devuelto",
+            "CHARGED_BACK": "Con contracargo"
+        },
+        "manualPaymentStatuses": {
+            "AWAITING": "Esperando el pago",
+            "REGISTERED": "Registrado",
+            "DECLARED_UNPAID": "Declarado impago"
+        },
+        "subjectKinds": {
+            "SUBSCRIPTION": "Suscripción",
+            "ADDON_INSTANCE": "Complemento"
+        },
+        "actorTypes": {
+            "owner": "Titular de la cuenta",
+            "admin": "Administración",
+            "job": "Proceso automático",
+            "provider": "Proveedor de pagos"
+        },
+        "outcomes": {
+            "OPENED": "Marca abierta",
+            "ACCUMULATED": "Sumado a una marca abierta"
+        },
+        "reasons": {
+            "REEMBOLSO_POR_CONFIRMAR": "Devolución por confirmar",
+            "COBRO_POSTERIOR_A_LA_BAJA": "Cobro posterior a la baja",
+            "COBRO_POSTERIOR_AL_GRANT": "Cobro posterior a un grant",
+            "PAGO_PENDIENTE_SIN_RAMA": "Pago pendiente sin regla que lo reciba",
+            "DIVERGENCIA_DE_MONTO": "Monto distinto del esperado",
+            "TRANSICION_NO_DECLARADA": "Cambio de estado no previsto",
+            "PAGO_TARDIO_RECHAZADO": "Pago tardío rechazado",
+            "REANUDACION_NO_APLICADA": "Reanudación no aplicada",
+            "SUCESION_ABIERTA_SOBRE_FILA_MUERTA": "Sucesión abierta sobre una suscripción terminada",
+            "FAN_OUT_DE_GRANT_INCOMPLETO": "Grant aplicado de forma incompleta",
+            "ADDON_SIN_APAGAR": "Complemento sin apagar",
+            "COBRO_DURANTE_CORTESIA": "Cobro durante una cortesía",
+            "CORTESIA_SIN_RE_EMITIR": "Cortesía sin volver a emitir",
+            "COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA": "Complemento con el período ya cobrado por otra causa",
+            "COMPLEMENTO_CON_PERIODO_COBRADO_POR_REVOCACION": "Complemento con el período cobrado y después revocado",
+            "CANCELACION_SIN_CONFIRMAR": "Baja sin confirmar en el proveedor",
+            "CONTRACARGO": "Contracargo",
+            "REEMBOLSO_FUERA_DEL_FLUJO": "Devolución hecha por fuera del sistema",
+            "COBRO_SIN_REGISTRAR": "Cobro sin registrar",
+            "COBRO_DUPLICADO": "Cobro duplicado",
+            "COBRO_DEL_PERIODO_SIN_RESOLVER": "Cobro del período sin resolver",
+            "PAUSA_NO_APLICADA": "Pausa no aplicada",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Orden pagada sin complemento activado",
+            "IMPORTE_COBRADO_DE_MAS": "Se cobró de más"
+        },
         "proposal": "Propuesta del sistema",
         "proposals": {
             "refund": "Devolver",
@@ -2064,7 +2124,7 @@
         "outcome": "Resultado",
         "condition": "Condición",
         "conditions": {
-            "one": "La suscripción existe y está en GRACE_PERIOD o SUSPENDED.",
+            "one": "La suscripción existe y está en período de gracia o suspendida.",
             "two": "El monto coincide con el esperado para el período que cubre.",
             "three": "No hay otra fila viva principal del mismo usuario y vertical, ni una sucesora que ya autorizó.",
             "four": "No hay otro pago acreditado para el mismo período."

@@ -23,6 +23,7 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { useLiftReconciliationMarkMutation } from '../hooks/useLiftReconciliationMark';
 import { LIFT_REASON_KEYS, readLiftReason } from '../lift-reasons';
+import { RECONCILIATION_REASON_KEYS, reconciliationLabel } from '../reconciliation-labels';
 
 type Mark = z.infer<typeof ReconciliationMarkListResponseSchema>['items'][number];
 type Proposal = Mark['defaultProposal'];
@@ -112,8 +113,13 @@ export function LiftReconciliationMarkAction({ mark, locale }: LiftReconciliatio
                             {t('admin-billing.reconciliationMarks.lift.description')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <p>
-                        {mark.reasonNumber} · {mark.reason}
+                    <p data-testid="reconciliation-mark-lift-reason">
+                        {mark.reasonNumber} ·{' '}
+                        {reconciliationLabel({
+                            map: RECONCILIATION_REASON_KEYS,
+                            value: mark.reason,
+                            t
+                        })}
                     </p>
                     <p>
                         {t('admin-billing.reconciliationMarks.proposal')}:{' '}

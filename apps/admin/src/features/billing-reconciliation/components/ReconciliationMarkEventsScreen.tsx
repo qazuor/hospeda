@@ -6,6 +6,13 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { useReconciliationMarkEvents } from '../hooks/useReconciliationMarkEvents';
+import {
+    RECONCILIATION_ACTOR_TYPE_KEYS,
+    RECONCILIATION_OUTCOME_KEYS,
+    RECONCILIATION_REASON_KEYS,
+    RECONCILIATION_SUBJECT_KIND_KEYS,
+    reconciliationLabel
+} from '../reconciliation-labels';
 
 type Response = z.infer<typeof ReconciliationMarkEventsResponseSchema>;
 const CONDITIONS: Record<1 | 2 | 3 | 4, TranslationKey> = {
@@ -43,12 +50,14 @@ function EventsBody({ markId }: { markId: string }) {
     const { mark, events } = query.data;
     return (
         <section className="space-y-4">
-            <h1 className="font-semibold text-xl">
-                {t('admin-billing.reconciliationMarks.eventsTitle')}
-            </h1>
             <div className="rounded-md border p-4">
-                <h2>
-                    {mark.reasonNumber} · {mark.reason}
+                <h2 data-testid="reconciliation-mark-reason">
+                    {mark.reasonNumber} ·{' '}
+                    {reconciliationLabel({
+                        map: RECONCILIATION_REASON_KEYS,
+                        value: mark.reason,
+                        t
+                    })}
                 </h2>
                 <p>
                     {t('admin-billing.reconciliationMarks.openedAt')}:{' '}
@@ -59,8 +68,13 @@ function EventsBody({ markId }: { markId: string }) {
                         ? `${t('admin-billing.reconciliationMarks.liftedAt')}: ${formatDateWithTime({ date: mark.liftedAt, locale })}`
                         : t('admin-billing.reconciliationMarks.notLifted')}
                 </p>
-                <p>
-                    {mark.subject.kind}: {mark.subject.id}
+                <p data-testid="reconciliation-mark-subject">
+                    {reconciliationLabel({
+                        map: RECONCILIATION_SUBJECT_KIND_KEYS,
+                        value: mark.subject.kind,
+                        t
+                    })}
+                    : {mark.subject.id}
                 </p>
             </div>
             {events.map((event) => (
@@ -70,15 +84,27 @@ function EventsBody({ markId }: { markId: string }) {
                     className="space-y-2 rounded-md border p-4"
                 >
                     <p>{formatDateWithTime({ date: event.occurredAt, locale })}</p>
-                    <p>
-                        {t('admin-billing.reconciliationMarks.actor')}: {event.actorType}
+                    <p data-testid="reconciliation-mark-event-actor">
+                        {t('admin-billing.reconciliationMarks.actor')}:{' '}
+                        {reconciliationLabel({
+                            map: RECONCILIATION_ACTOR_TYPE_KEYS,
+                            value: event.actorType,
+                            t
+                        })}
                         {event.actorId ? ` · ${event.actorId}` : ''}
                     </p>
                     <p>
                         {t('admin-billing.reconciliationMarks.correlation')}: {event.correlationId}
                     </p>
-                    <p>
-                        {t('admin-billing.reconciliationMarks.outcome')}: {event.outcome ?? '—'}
+                    <p data-testid="reconciliation-mark-event-outcome">
+                        {t('admin-billing.reconciliationMarks.outcome')}:{' '}
+                        {event.outcome === null
+                            ? '—'
+                            : reconciliationLabel({
+                                  map: RECONCILIATION_OUTCOME_KEYS,
+                                  value: event.outcome,
+                                  t
+                              })}
                     </p>
                     <p data-testid="reconciliation-mark-event-condition">
                         {conditionText(event, t)}
