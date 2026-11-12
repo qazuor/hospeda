@@ -36,6 +36,20 @@
             "spec": ".hoja/notas.md:2"
         },
         {
+            "file": "apps/api/src/services/ai-faq-draft.service.ts",
+            "symbol": "readFaqDraftQuestion",
+            "count": 4,
+            "category": "ai-context",
+            "spec": ".specs/HOS-2105-ai-questions-dismiss-and-paging/spec.md:435-455"
+        },
+        {
+            "file": "apps/api/src/routes/ai/protected/listing-question-faq-draft.ts",
+            "symbol": "listingSections",
+            "count": 1,
+            "category": "ai-context",
+            "spec": ".specs/HOS-2105-ai-questions-dismiss-and-paging/spec.md:435-455"
+        },
+        {
             "file": "apps/api/src/routes/experience/protected/sectionStates.ts",
             "symbol": "protectedGetExperienceSectionStatesRoute",
             "count": 1,

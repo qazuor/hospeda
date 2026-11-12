@@ -14,6 +14,7 @@ afterAll(async () => {
 
 /** The transaction-local setting extras 041 records created versions in. */
 const CREATED_VERSIONS_SETTING = 'hospeda.catalog_versions_created_in_xact';
+const ADDITIVE_GRANT_SETTING = 'hospeda.catalog_additive_grant';
 
 /** The database error a statement raised, or `null` when it succeeded. */
 interface DbError {
@@ -113,10 +114,14 @@ const INSERT_PLAN_ENTITLEMENT = `INSERT INTO plan_version_entitlement (plan_vers
     VALUES ($1, 'respond_reviews')`;
 const INSERT_PLAN_LIMIT = `INSERT INTO plan_version_limit (plan_version_id, key, value)
     VALUES ($1, 'max_photos_per_accommodation', 99)`;
+const INSERT_PLAN_LIMIT_NEW_KEY = `INSERT INTO plan_version_limit (plan_version_id, key, value)
+    VALUES ($1, 'max_ai_faq_draft_per_month', 99)`;
 const INSERT_ADDON_ENTITLEMENT = `INSERT INTO addon_version_entitlement (addon_version_id, key)
     VALUES ($1, 'featured_listing')`;
 const INSERT_ADDON_LIMIT = `INSERT INTO addon_version_limit (addon_version_id, key, value)
     VALUES ($1, 'max_photos_per_accommodation', 99)`;
+const INSERT_ADDON_LIMIT_NEW_KEY = `INSERT INTO addon_version_limit (addon_version_id, key, value)
+    VALUES ($1, 'max_ai_faq_draft_per_month', 99)`;
 
 /** The ids the current transaction has recorded as created by it. */
 async function createdVersions(client: PoolClient): Promise<readonly string[]> {
@@ -238,5 +243,162 @@ describe('TEST:V2:2 — a version and its grants written in one transaction, und
         } finally {
             client.release();
         }
+    });
+});
+
+describe('HOS-2105 — bounded additive grants to published versions', () => {
+    it('accepts a new key only when the transaction has an additive-grant reason', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error).toBeNull();
+        });
+    });
+
+    it.each([
+        ['plan_version_limit', INSERT_PLAN_LIMIT, INSERT_PLAN_LIMIT_NEW_KEY, 'plan'],
+        ['addon_version_limit', INSERT_ADDON_LIMIT, INSERT_ADDON_LIMIT_NEW_KEY, 'addon']
+    ])('%s accepts a new key and rejects an existing key with the signal', async (_table, existingInsert, newInsert, kind) => {
+        const client = await getTestPool().connect();
+        let versionId: string;
+        try {
+            await client.query('BEGIN');
+            versionId =
+                kind === 'plan'
+                    ? await insertPlanVersion(client, { current: true })
+                    : await insertAddonVersion(client);
+            await client.query(existingInsert, [versionId]);
+            await client.query('COMMIT');
+        } finally {
+            client.release();
+        }
+
+        await inRolledBackTx(async ({ client: tx, attempt }) => {
+            await tx.query('SELECT set_config($1, $2, true)', [ADDITIVE_GRANT_SETTING, 'HOS-2105']);
+            expect(await attempt(newInsert, [versionId])).toBeNull();
+            const duplicate = await attempt(existingInsert, [versionId]);
+            expect(duplicate?.code).toBe('P0001');
+        });
+    });
+
+    it('does not carry a transaction-local signal into the next transaction', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            await client.query('COMMIT');
+            await client.query('BEGIN');
+            const error = await attemptOn(client)(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
+        } finally {
+            await client.query('ROLLBACK');
+            client.release();
+        }
+    });
+
+    it('closes the additive lane when the signal is reset in the same transaction', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            await client.query('SELECT set_config($1, $2, true)', [ADDITIVE_GRANT_SETTING, '']);
+            const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
+        });
+    });
+
+    it('rejects a duplicate child key even when the additive-grant reason is set', async () => {
+        const client = await getTestPool().connect();
+        let planVersionId: string;
+        try {
+            await client.query('BEGIN');
+            planVersionId = await insertPlanVersion(client, { current: true });
+            await client.query(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            await client.query('COMMIT');
+        } finally {
+            client.release();
+        }
+
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
+            expect(error?.message).toContain('cannot duplicate key');
+        });
+    });
+
+    it('rejects UPDATE and DELETE regardless of the additive-grant reason', async () => {
+        const client = await getTestPool().connect();
+        let planVersionId: string;
+        let entitlementId: string;
+        try {
+            await client.query('BEGIN');
+            planVersionId = await insertPlanVersion(client, { current: true });
+            const inserted = await client.query<{ id: string }>(
+                `INSERT INTO plan_version_entitlement (plan_version_id, key)
+                 VALUES ($1, 'respond_reviews') RETURNING id`,
+                [planVersionId]
+            );
+            entitlementId = (inserted.rows[0] as { id: string }).id;
+            await client.query('COMMIT');
+        } finally {
+            client.release();
+        }
+
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            const update = await attempt(
+                'UPDATE plan_version_entitlement SET plan_quota = 1 WHERE id = $1',
+                [entitlementId]
+            );
+            const deletion = await attempt('DELETE FROM plan_version_entitlement WHERE id = $1', [
+                entitlementId
+            ]);
+            expect(update?.code).toBe('P0001');
+            expect(deletion?.code).toBe('P0001');
+        });
+    });
+
+    it('rejects a new key without an additive-grant reason', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+
+        await inRolledBackTx(async ({ attempt }) => {
+            const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
+            expect(error?.message).toContain('published by another transaction');
+        });
+    });
+
+    it('applies the same additive-only rule to addon child tables', async () => {
+        const { addonVersionId } = await commitPublishedVersions();
+
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            const accepted = await attempt(INSERT_ADDON_ENTITLEMENT, [addonVersionId]);
+            expect(accepted).toBeNull();
+            const duplicate = await attempt(INSERT_ADDON_ENTITLEMENT, [addonVersionId]);
+            expect(duplicate?.code).toBe('P0001');
+            expect(duplicate?.message).toContain('cannot duplicate key');
+        });
     });
 });

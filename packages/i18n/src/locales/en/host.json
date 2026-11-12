@@ -741,7 +741,12 @@
                 "dismissedError": "The question could not be dismissed.",
                 "undoError": "The question could not be restored.",
                 "viewMore": "View more",
-                "faqAnswerHelp": "There is no confirmed answer. Fill it in using information from your listing."
+                "faqAnswerHelp": "There is no confirmed answer. Fill it in using information from your listing.",
+                "suggestAiAnswer": "Suggest an answer with AI",
+                "aiDraftLoading": "Generating a suggestion…",
+                "aiDraftDisclaimer": "This is an editable draft. Check it against your listing before saving.",
+                "aiDraftError": "We could not generate a suggestion. Please try again.",
+                "aiDraftNotEligible": "The assistant has already answered this question."
             }
         },
         "empty": {

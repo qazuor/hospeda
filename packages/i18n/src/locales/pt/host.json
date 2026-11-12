@@ -741,7 +741,12 @@
                 "dismissedError": "Não foi possível descartar a pergunta.",
                 "undoError": "Não foi possível restaurar a pergunta.",
                 "viewMore": "Ver mais",
-                "faqAnswerHelp": "Não há uma resposta confirmada. Preencha com as informações do seu anúncio."
+                "faqAnswerHelp": "Não há uma resposta confirmada. Preencha com as informações do seu anúncio.",
+                "suggestAiAnswer": "Sugerir resposta com IA",
+                "aiDraftLoading": "Gerando uma sugestão…",
+                "aiDraftDisclaimer": "Este é um rascunho editável. Confira as informações do anúncio antes de salvar.",
+                "aiDraftError": "Não foi possível gerar a sugestão. Tente novamente.",
+                "aiDraftNotEligible": "O assistente já respondeu a esta pergunta."
             }
         },
         "empty": {

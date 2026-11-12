@@ -238,7 +238,7 @@ const LEADING_COMMENTS = /^(?:--[^\n]*\n)*/;
 /**
  * Restores the production catalog after these suites truncate it for isolated
  * fixtures, so later integration suites see the catalog seeded by migration 0144
- * and the plan prices seeded by migration 0176. Only the `billing_option`
+ * and the plan prices seeded by migration 0176, plus the FAQ draft grants of 0202. Only the `billing_option`
  * statements of 0176 are replayed: the TRUNCATE below does not touch the
  * add-on tables, so their rows are left as they are.
  * @returns A promise that resolves after every migration statement has run.
@@ -249,6 +249,18 @@ export async function restoreProductionPlanCatalog(): Promise<void> {
         ...readMigrationStatements({ file: '0176_production_catalog_prices_addons.sql' }).filter(
             (statement) =>
                 statement.replace(LEADING_COMMENTS, '').startsWith('INSERT INTO "billing_option"')
+        ),
+        // HOS-2105: 0202 adds the FAQ draft grants to the 0144 versions. Replaying them
+        // here keeps the restored catalog equal to the migrated one; catalog_key is not
+        // truncated, so only the child rows are replayed.
+        ...readMigrationStatements({ file: '0202_hos_2105_faq_draft_catalog.sql' }).filter(
+            (statement) => {
+                const body = statement.replace(LEADING_COMMENTS, '');
+                return (
+                    body.startsWith('INSERT INTO "plan_version_entitlement"') ||
+                    body.startsWith('INSERT INTO "plan_version_limit"')
+                );
+            }
         )
     ];
 

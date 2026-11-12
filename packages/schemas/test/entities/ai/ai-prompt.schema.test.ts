@@ -15,6 +15,7 @@ import {
     AiPromptVersionSchema,
     CreateAiPromptVersionSchema
 } from '../../../src/entities/ai/ai-prompt.schema';
+import { AiFeatureSchema } from '../../../src/entities/ai/ai-provider.schema';
 
 const VALID_UUID = '11111111-1111-4111-a111-111111111111';
 const VALID_ACTOR_UUID = '22222222-2222-4222-a222-222222222222';
@@ -49,8 +50,8 @@ describe('AiPromptVersionSchema', () => {
         }
     });
 
-    it('accepts all four features', () => {
-        for (const feature of ['text_improve', 'chat', 'search', 'support'] as const) {
+    it('accepts every valid AI feature', () => {
+        for (const feature of AiFeatureSchema.options) {
             const result = AiPromptVersionSchema.safeParse({ ...validPrompt, feature });
             expect(result.success, `expected feature '${feature}' to be valid`).toBe(true);
         }

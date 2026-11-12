@@ -13,10 +13,22 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockIsOwned, mockList, mockSetDismissed } = vi.hoisted(() => ({
+const {
+    mockIsOwned,
+    mockList,
+    mockSetDismissed,
+    mockReadDraft,
+    mockGenerateDraft,
+    mockEnforceQuota,
+    mockMeter
+} = vi.hoisted(() => ({
     mockIsOwned: vi.fn(),
     mockList: vi.fn(),
-    mockSetDismissed: vi.fn()
+    mockSetDismissed: vi.fn(),
+    mockReadDraft: vi.fn(),
+    mockGenerateDraft: vi.fn(),
+    mockEnforceQuota: vi.fn(),
+    mockMeter: vi.fn()
 }));
 
 // The global setup swaps `ServiceError` for a test double the error handler
@@ -29,6 +41,17 @@ vi.mock('../../src/services/ai-listing-questions.service.js', () => ({
     listListingQuestions: mockList,
     setQuestionDismissed: mockSetDismissed
 }));
+vi.mock('../../src/services/ai-faq-draft.service.js', () => ({
+    readFaqDraftQuestion: mockReadDraft,
+    generateFaqDraft: mockGenerateDraft
+}));
+vi.mock('../../src/utils/listing-access/ai-quota-gate.js', () => ({
+    enforceAiQuota: mockEnforceQuota
+}));
+vi.mock('../../src/utils/ai-usage-metering.js', () => ({ meterAiUsage: mockMeter }));
+vi.mock('../../src/utils/listing-access/ports.js', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: vi.fn().mockResolvedValue({}) })
+}));
 
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
@@ -36,6 +59,7 @@ import type { AppOpenAPI } from '../../src/types.js';
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const LISTING_ID = '11111111-1111-4111-8111-111111111111';
 const BASE = '/api/v1/protected/ai/listing-questions';
+const MESSAGE_ID = '22222222-2222-4222-8222-222222222222';
 
 /** The app's route-test actor convention (see add-featured-media test). */
 const AUTH_HEADERS = {
@@ -70,6 +94,26 @@ describe('GET /protected/ai/listing-questions', () => {
             dismissedCount: 0
         });
         mockSetDismissed.mockResolvedValue({ ownerDismissedAt: new Date('2026-11-10T12:00:00Z') });
+        mockReadDraft.mockResolvedValue({
+            messageId: MESSAGE_ID,
+            ownerId: ACTOR_ID,
+            businessLines: [],
+            entityType: 'accommodation',
+            entityId: LISTING_ID,
+            question: '¿Hay Wi-Fi?',
+            answerStatus: 'unanswered'
+        });
+        mockEnforceQuota.mockResolvedValue(undefined);
+        mockGenerateDraft.mockResolvedValue({
+            response: { messageId: MESSAGE_ID, hasData: true, draft: 'Sí, hay Wi-Fi.' },
+            usage: {
+                provider: 'stub',
+                model: 'test',
+                promptTokens: 8,
+                completionTokens: 4,
+                latencyMs: 2
+            }
+        });
     });
 
     it('answers 401 without a session and never reads', async () => {
@@ -79,6 +123,97 @@ describe('GET /protected/ai/listing-questions', () => {
 
         expect(res.status).toBe(401);
         expect(mockIsOwned).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for a foreign listing before checking quota', async () => {
+        mockReadDraft.mockResolvedValueOnce({
+            messageId: MESSAGE_ID,
+            ownerId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            businessLines: [],
+            entityType: 'accommodation',
+            entityId: LISTING_ID,
+            question: 'question',
+            answerStatus: null
+        });
+        const foreign = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        mockReadDraft.mockResolvedValueOnce(null);
+        const missing = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        const normalize = async (response: Response) => {
+            const body = (await response.json()) as {
+                metadata: { requestId: string; timestamp: string };
+            } & Record<string, unknown>;
+            const { metadata, ...rest } = body;
+            const { requestId: _requestId, timestamp: _timestamp, ...stableMetadata } = metadata;
+            return { ...rest, metadata: stableMetadata };
+        };
+        expect(foreign.status).toBe(404);
+        expect(missing.status).toBe(404);
+        expect(await normalize(foreign)).toEqual(await normalize(missing));
+        expect(mockEnforceQuota).not.toHaveBeenCalled();
+    });
+
+    it('rejects answered questions with FAQ_DRAFT_NOT_ELIGIBLE', async () => {
+        mockReadDraft.mockResolvedValueOnce({
+            messageId: MESSAGE_ID,
+            ownerId: ACTOR_ID,
+            businessLines: [],
+            entityType: 'accommodation',
+            entityId: LISTING_ID,
+            question: 'question',
+            answerStatus: 'answered'
+        });
+        const res = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(res.status, await res.clone().text()).toBe(409);
+        expect((await res.json()).error.code).toBe('FAQ_DRAFT_NOT_ELIGIBLE');
+        expect(mockGenerateDraft).not.toHaveBeenCalled();
+    });
+
+    it('returns quota exhaustion and never calls generation', async () => {
+        const { ServiceError } = await import('@repo/service-core');
+        const { ServiceErrorCode } = await import('@repo/schemas');
+        mockEnforceQuota.mockRejectedValueOnce(
+            new ServiceError(ServiceErrorCode.LIMIT_REACHED, 'quota', {
+                limitKey: 'max_ai_faq_draft_per_month',
+                currentCount: 50,
+                maxAllowed: 50
+            })
+        );
+        const res = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(res.status).toBe(403);
+        expect(mockGenerateDraft).not.toHaveBeenCalled();
+    });
+
+    it('meters drafts to the owner under faq_draft without visitor attribution', async () => {
+        const res = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        expect(res.status).toBe(200);
+        expect(mockEnforceQuota).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: ACTOR_ID,
+                feature: 'faq_draft',
+                entitlementKey: 'ai_faq_draft',
+                limitKey: 'max_ai_faq_draft_per_month'
+            })
+        );
+        expect(mockEnforceQuota.mock.calls[0]?.[0]).not.toHaveProperty('usageAttribution');
+        expect(mockMeter).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: ACTOR_ID, feature: 'faq_draft', status: 'success' })
+        );
+        expect(mockMeter.mock.calls[0]?.[0]).not.toHaveProperty('consumerUserId');
     });
 
     it.each([

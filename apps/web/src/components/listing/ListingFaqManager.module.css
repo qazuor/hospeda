@@ -336,3 +336,24 @@
 .addBtn:hover {
     background: oklch(0.96 0.02 240 / 0.15);
 }
+
+.aiDraftButton {
+    margin-block: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-warm);
+    color: var(--brand-primary, var(--core-foreground));
+    font: inherit;
+    cursor: pointer;
+}
+
+.aiDraftButton:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+.aiDraftDisclaimer {
+    margin-block: 0 var(--space-2);
+    color: var(--core-muted-foreground);
+    font-size: 0.875rem;
+}

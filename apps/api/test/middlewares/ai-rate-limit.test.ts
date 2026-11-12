@@ -79,6 +79,7 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+import { AiFeatureSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAiRateLimitMiddlewares } from '../../src/middlewares/ai-rate-limit';
@@ -398,9 +399,9 @@ describe('createAiRateLimitMiddlewares', () => {
             expect(chatBlocked.status).toBe(429);
         });
 
-        it('all four AiFeature values produce isolated counters', async () => {
+        it('all AiFeature values produce isolated counters', async () => {
             // Arrange: each feature with maxPerUser = 1
-            const features = ['text_improve', 'chat', 'search', 'support'] as const;
+            const features = AiFeatureSchema.options;
             const apps = features.map((f) =>
                 buildApp({
                     feature: f,

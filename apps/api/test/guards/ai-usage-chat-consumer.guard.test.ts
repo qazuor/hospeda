@@ -141,6 +141,20 @@ const INVENTORY: readonly Site[] = [
         writer: 'meterAiUsage',
         count: 2,
         kind: 'not-chat'
+    },
+    {
+        // HOS-2105: FAQ draft quota and usage belong to the listing owner;
+        // these writes have no visitor consumer attribution.
+        file: 'apps/api/src/routes/ai/protected/listing-question-faq-draft.ts',
+        writer: 'enforceAiQuota',
+        count: 1,
+        kind: 'not-chat'
+    },
+    {
+        file: 'apps/api/src/routes/ai/protected/listing-question-faq-draft.ts',
+        writer: 'meterAiUsage',
+        count: 2,
+        kind: 'not-chat'
     }
 ];
 
