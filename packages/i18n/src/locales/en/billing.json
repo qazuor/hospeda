@@ -312,7 +312,8 @@
             "rejected": {
                 "title": "Mercado Pago did not approve the payment",
                 "body": "You were not charged and the previous attempt is closed. You can start a new one with the same plan.",
-                "retry": "Try again",
+                "retry": "Try another payment method",
+                "attemptPlan": "Plan you tried to subscribe to: {{plan}}",
                 "retrying": "Preparing the payment…"
             },
             "unknown": {

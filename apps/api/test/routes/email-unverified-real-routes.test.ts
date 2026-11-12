@@ -28,6 +28,9 @@ vi.mock('../../src/routes/billing-subscription/read-own-subscriptions', () => ({
     readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions,
     readOwnDeferredCourtesies: cancellationRouteMocks.readOwnDeferredCourtesies
 }));
+vi.mock('../../src/routes/billing-subscription/read-own-declined-signups', () => ({
+    readOwnDeclinedSignups: vi.fn(async () => [])
+}));
 vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
     readSubscription: cancellationRouteMocks.readSubscription
 }));

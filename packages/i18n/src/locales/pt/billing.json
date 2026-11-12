@@ -312,7 +312,8 @@
             "rejected": {
                 "title": "O Mercado Pago não aprovou o pagamento",
                 "body": "Nada foi cobrado e a tentativa anterior foi encerrada. Você pode iniciar uma nova com o mesmo plano.",
-                "retry": "Tentar de novo",
+                "retry": "Tentar com outro meio de pagamento",
+                "attemptPlan": "Plano que você tentou assinar: {{plan}}",
                 "retrying": "Preparando o pagamento…"
             },
             "unknown": {

@@ -65,7 +65,20 @@ export const OwnSubscriptionsResponseSchema = z.object({
             vertical: z.string(),
             balanceMonths: z.number().int().nonnegative()
         })
-    )
+    ),
+    /** Recent declined signups with no live subscription in their vertical (HOS-2064). */
+    declinedSignups: z
+        .array(
+            z.object({
+                subscriptionId: z.string().uuid(),
+                vertical: z.string(),
+                billingOptionId: z.string().uuid(),
+                declaredPayerEmail: z.string().nullable(),
+                declinedAt: z.string().datetime(),
+                plan: z.object({ slug: z.string(), name: z.string() })
+            })
+        )
+        .default([])
 });
 
 /** Recurrent addon effects disclosed before confirming cancellation. */
