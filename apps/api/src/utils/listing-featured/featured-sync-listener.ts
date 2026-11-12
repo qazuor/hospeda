@@ -25,17 +25,18 @@ export async function drainListingFeaturedSyncs(): Promise<void> {
 export function subscribeListingFeaturedSync(): () => void {
     if (unsubscribe) return () => unsubscribe?.();
     unsubscribe = getListingAccessPorts().billing.onCoverageChanged((event) => {
-        if (!isPublicationVertical(event.vertical)) return;
+        const vertical = event.vertical;
+        if (!isPublicationVertical(vertical)) return;
         const sync = (async () => {
             try {
                 await syncListingFeatured({
                     ports: getListingFeaturedPorts(),
                     userId: event.userId,
-                    vertical: event.vertical
+                    vertical
                 });
             } catch (error) {
                 apiLogger.error(
-                    { error, userId: event.userId, vertical: event.vertical },
+                    { error, userId: event.userId, vertical },
                     'Listing featured sync failed'
                 );
             }
