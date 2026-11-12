@@ -168,6 +168,11 @@ export function createCutExpectedAmountPolicy(
 ): ExpectedAmountPolicy {
     return {
         async expectedAmount({ subscription, purpose, executor: callExecutor }) {
+            if (subscription.class !== 'PRINCIPAL')
+                return { kind: 'NOT_COMPARABLE', reason: 'NOT_PRINCIPAL' };
+            if (!subscription.planVersionId || !subscription.billingOptionId)
+                return { kind: 'NOT_COMPARABLE', reason: 'NO_ANCHOR' };
+            // Resolve the executor after the guards: a non-comparable row never touches the database.
             const executor = callExecutor ?? ports.executor ?? getDb();
             const reader =
                 callExecutor || ports.executor
@@ -193,10 +198,6 @@ export function createCutExpectedAmountPolicy(
                           }
                       } satisfies BillingOptionReader)
                     : ports.reader;
-            if (subscription.class !== 'PRINCIPAL')
-                return { kind: 'NOT_COMPARABLE', reason: 'NOT_PRINCIPAL' };
-            if (!subscription.planVersionId || !subscription.billingOptionId)
-                return { kind: 'NOT_COMPARABLE', reason: 'NO_ANCHOR' };
             const anchoredSubscription = {
                 planVersionId: subscription.planVersionId,
                 billingOptionId: subscription.billingOptionId
