@@ -694,6 +694,10 @@ export interface AccommodationDetailData {
      * accommodation name.
      */
     readonly featuredImageAlt?: string;
+    /** Caption of the cover photo (HOS-2132). Shown in the lightbox figcaption. */
+    readonly featuredImageCaption?: string;
+    /** Description of the cover photo (HOS-2132). Shown in the lightbox figcaption. */
+    readonly featuredImageDescription?: string;
     /**
      * Photo credit for the cover image (H-125). Absent when the photo needs
      * none — most hosts photograph their own place.

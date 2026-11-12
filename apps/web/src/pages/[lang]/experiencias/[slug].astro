@@ -151,7 +151,9 @@ const galleryImages = (() => {
         return [
             {
                 url: experience.featuredImage.url,
-                alt: experience.featuredImage.caption ?? experience.name
+                alt: experience.featuredImage.caption ?? experience.name,
+                caption: experience.featuredImage.caption,
+                description: experience.featuredImage.description
             }
         ];
     }

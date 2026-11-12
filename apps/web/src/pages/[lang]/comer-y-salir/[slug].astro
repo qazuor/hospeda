@@ -170,7 +170,9 @@ const galleryImages = (() => {
         return [
             {
                 url: venue.featuredImage.url,
-                alt: venue.featuredImage.caption ?? venue.name
+                alt: venue.featuredImage.caption ?? venue.name,
+                caption: venue.featuredImage.caption,
+                description: venue.featuredImage.description
             }
         ];
     }

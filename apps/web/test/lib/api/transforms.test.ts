@@ -2220,3 +2220,40 @@ describe('transformViewsDailySeries', () => {
         expect(result.items).toHaveLength(30);
     });
 });
+
+describe('toAccommodationDetailPageProps — cover caption and description (HOS-2132)', () => {
+    it('exposes the cover caption and description so the lightbox first slide can render them', () => {
+        const item = {
+            id: 'a1',
+            slug: 'casa',
+            name: 'Casa',
+            media: {
+                featuredImage: {
+                    url: 'https://cdn.example.com/cover.jpg',
+                    caption: 'Living integrado con cocina',
+                    description: 'Ambiente amplio y luminoso'
+                },
+                gallery: []
+            }
+        };
+
+        const result = toAccommodationDetailPageProps({ item });
+
+        expect(result.featuredImageCaption).toBe('Living integrado con cocina');
+        expect(result.featuredImageDescription).toBe('Ambiente amplio y luminoso');
+    });
+
+    it('omits both fields when the cover carries neither', () => {
+        const item = {
+            id: 'a1',
+            slug: 'casa',
+            name: 'Casa',
+            media: { featuredImage: { url: 'https://cdn.example.com/cover.jpg' }, gallery: [] }
+        };
+
+        const result = toAccommodationDetailPageProps({ item });
+
+        expect(result.featuredImageCaption).toBeUndefined();
+        expect(result.featuredImageDescription).toBeUndefined();
+    });
+});
