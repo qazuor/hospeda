@@ -19,6 +19,7 @@ import {
     AnnouncementItemSchema,
     AnnouncementsValueSchema,
     MaintenanceModeValueSchema,
+    PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
     SeoDefaultsValueSchema
@@ -29,14 +30,43 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 3 supported keys', () => {
-        for (const key of ['seo.defaults', 'maintenance.mode', 'announcements.global']) {
+    it('accepts each of the 4 supported keys', () => {
+        for (const key of [
+            'seo.defaults',
+            'maintenance.mode',
+            'announcements.global',
+            'billing.paidSignupsFreeze'
+        ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
     });
 
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1749 PaidSignupsFreezeValueSchema', () => {
+    it('accepts a boolean frozen value', () => {
+        // Arrange
+        const value = { frozen: true };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it("rejects 'yes' instead of coercing it to a boolean", () => {
+        // Arrange
+        const value = { frozen: 'yes' };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
         expect(result.success).toBe(false);
     });
 });
@@ -266,6 +296,24 @@ describe('PlatformSettingsResponseSchema (discriminated union)', () => {
         if (result.success) {
             expect(result.data.key).toBe('announcements.global');
             expect(Array.isArray(result.data.value)).toBe(true);
+        }
+    });
+
+    it('routes billing.paidSignupsFreeze to the freeze branch', () => {
+        // Arrange
+        const value = { frozen: true };
+
+        // Act
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.paidSignupsFreeze',
+            value,
+            ...baseEnvelope
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success && result.data.key === 'billing.paidSignupsFreeze') {
+            expect(result.data.value.frozen).toBe(true);
         }
     });
 

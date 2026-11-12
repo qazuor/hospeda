@@ -28,7 +28,8 @@ import { z } from 'zod';
 export const PlatformSettingsKeySchema = z.enum([
     'seo.defaults',
     'maintenance.mode',
-    'announcements.global'
+    'announcements.global',
+    'billing.paidSignupsFreeze'
 ]);
 
 /** TypeScript type for the supported key set. */
@@ -140,6 +141,20 @@ export const AnnouncementsValueSchema = z.array(AnnouncementItemSchema);
 /** Inferred type for the `announcements.global` value. */
 export type AnnouncementsValue = z.infer<typeof AnnouncementsValueSchema>;
 
+/**
+ * Value shape for `billing.paidSignupsFreeze` (HOS-1749). While `frozen` is
+ * true, new self-service paid signups are refused with 409
+ * `NEW_PAID_SIGNUPS_FROZEN`: the card checkout (S1) and the first publish that
+ * would start a trial (PB1/T1). An absent row means "not frozen".
+ */
+export const PaidSignupsFreezeValueSchema = z.object({
+    /** Whether new self-service paid signups are paused. */
+    frozen: z.boolean()
+});
+
+/** Inferred type for the `billing.paidSignupsFreeze` value. */
+export type PaidSignupsFreezeValue = z.infer<typeof PaidSignupsFreezeValueSchema>;
+
 // ---------------------------------------------------------------------------
 // Discriminated union response
 // ---------------------------------------------------------------------------
@@ -166,6 +181,12 @@ export const PlatformSettingsResponseSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('announcements.global'),
         value: AnnouncementsValueSchema,
+        updatedAt: z.string().datetime({ offset: true }),
+        updatedBy: z.string().uuid()
+    }),
+    z.object({
+        key: z.literal('billing.paidSignupsFreeze'),
+        value: PaidSignupsFreezeValueSchema,
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     })
