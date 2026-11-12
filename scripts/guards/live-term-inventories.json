@@ -279,6 +279,13 @@
             "row": null,
             "subject": "subscription",
             "why": "AC:B12:10 (HOS-1615): the retired-version list counts the subscriptions still anchored to each version over LIVE_SUBSCRIPTION_STATUSES; it only reads, never writes status."
+        },
+        {
+            "file": "apps/api/src/routes/billing-subscription/read-own-declined-signups.ts",
+            "symbol": "selectDeclinedSignupNotices",
+            "row": null,
+            "subject": "subscription",
+            "why": "HOS-2064: hides the declined signup notice when the vertical already has a live principal subscription."
         }
     ],
     "grant_vivo_ancla_viva": [
