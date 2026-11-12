@@ -83,34 +83,37 @@ async function plan(f: Fixture, grants: boolean): Promise<string> {
         .returning({ id: plans.id });
     if (!catalogPlan) throw new Error('Expected plan');
     f.planId = catalogPlan.id;
-    const [version] = await db
-        .insert(planVersions)
-        .values({
-            planId: catalogPlan.id,
-            vertical: VerticalEnum.ACCOMMODATION,
-            rank: Math.floor(Math.random() * 100000000) + 1000,
-            sellable: false,
-            current: false,
-            trialDays: 0,
-            allowsPause: false
-        })
-        .returning({ id: planVersions.id });
-    if (!version) throw new Error('Expected plan version');
-    f.versionIds.push(version.id);
     const entitlements = grants
         ? ['featured_listing', 'publish_accommodations', 'edit_accommodation_info', 'write_reviews']
         : ['publish_accommodations', 'edit_accommodation_info', 'write_reviews'];
-    await db.insert(planVersionEntitlements).values(
-        entitlements.map((key) => ({
-            planVersionId: version.id,
-            key,
-            planQuota: null,
-            trialQuota: null
-        }))
-    );
+    const versionId = await db.transaction(async (tx) => {
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: catalogPlan.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: false,
+                current: false,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning({ id: planVersions.id });
+        if (!version) throw new Error('Expected plan version');
+        await tx.insert(planVersionEntitlements).values(
+            entitlements.map((key) => ({
+                planVersionId: version.id,
+                key,
+                planQuota: null,
+                trialQuota: null
+            }))
+        );
+        return version.id;
+    });
+    f.versionIds.push(versionId);
     const [option] = await db
         .insert(billingOptions)
-        .values({ planVersionId: version.id, cycle: 'monthly', amount: 250000, currency: 'ARS' })
+        .values({ planVersionId: versionId, cycle: 'monthly', amount: 250000, currency: 'ARS' })
         .returning({ id: billingOptions.id });
     if (!option) throw new Error('Expected billing option');
     f.optionIds.push(option.id);
@@ -119,7 +122,7 @@ async function plan(f: Fixture, grants: boolean): Promise<string> {
         .values({
             userId: f.ownerId,
             vertical: VerticalEnum.ACCOMMODATION,
-            planVersionId: version.id,
+            planVersionId: versionId,
             billingOptionId: option.id,
             paymentMethod: 'CARD',
             status: 'ACTIVE',
@@ -194,11 +197,6 @@ afterEach(async () => {
             await getDb()
                 .delete(billingOptions)
                 .where(eq(billingOptions.id, f.optionIds[0] ?? ''));
-        if (f.versionIds.length)
-            await getDb()
-                .delete(planVersions)
-                .where(eq(planVersions.id, f.versionIds[0] ?? ''));
-        if (f.planId) await getDb().delete(plans).where(eq(plans.id, f.planId));
         for (const id of f.listingIds) {
             await getDb()
                 .delete(accommodationMedia)
