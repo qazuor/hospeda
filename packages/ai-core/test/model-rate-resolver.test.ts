@@ -49,8 +49,25 @@ describe('resolveModelRate', () => {
         expect(result.source).toBe('db');
     });
 
+    it('includes the official GPT-5.4 nano and mini default rates', () => {
+        expect(resolveModelRate({ model: 'gpt-5.4-nano' })).toEqual({
+            rate: {
+                inputMicroUsdPerMillionTokens: 200_000,
+                outputMicroUsdPerMillionTokens: 1_250_000
+            },
+            source: 'code'
+        });
+        expect(resolveModelRate({ model: 'gpt-5.4-mini' })).toEqual({
+            rate: {
+                inputMicroUsdPerMillionTokens: 750_000,
+                outputMicroUsdPerMillionTokens: 4_500_000
+            },
+            source: 'code'
+        });
+    });
+
     it('reports "missing" for an unrated model', () => {
-        const result = resolveModelRate({ model: 'gpt-5.4-nano', overrides: {} });
+        const result = resolveModelRate({ model: 'unknown-model', overrides: {} });
         expect(result).toEqual({ rate: undefined, source: 'missing' });
     });
 });
@@ -58,7 +75,8 @@ describe('resolveModelRate', () => {
 describe('hasModelRate', () => {
     it('is true for rated and false for unrated models', () => {
         expect(hasModelRate({ model: 'gpt-4o' })).toBe(true);
-        expect(hasModelRate({ model: 'gpt-5.4-nano' })).toBe(false);
+        expect(hasModelRate({ model: 'gpt-5.4-nano' })).toBe(true);
+        expect(hasModelRate({ model: 'gpt-5.4-mini' })).toBe(true);
     });
 });
 
@@ -116,8 +134,8 @@ describe('recordAiUsage missing-rate hook', () => {
         // Arrange
         const hook = vi.fn();
         // Act
-        await recordAiUsage({ ...base, model: 'gpt-5.4-nano', onMissingRate: hook });
-        await recordAiUsage({ ...base, model: 'gpt-5.4-nano', onMissingRate: hook });
+        await recordAiUsage({ ...base, model: 'unlisted-model', onMissingRate: hook });
+        await recordAiUsage({ ...base, model: 'unlisted-model', onMissingRate: hook });
         // Assert
         expect(hook).toHaveBeenCalledTimes(1);
         expect(storageModule.insertAiUsage).toHaveBeenCalledTimes(2);
