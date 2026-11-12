@@ -18,6 +18,27 @@ import type {
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount.js';
 
 const logger = createLogger('manual-installment-opened-notice');
+const EXPECTED_AMOUNT_TIMEOUT_MS = 5_000;
+
+async function readExpectedAmount(
+    policy: ExpectedAmountPolicy,
+    args: Parameters<ExpectedAmountPolicy['expectedAmount']>[0]
+): Promise<ExpectedAmount> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+        return await Promise.race([
+            policy.expectedAmount(args),
+            new Promise<never>((_resolve, reject) => {
+                timeout = setTimeout(
+                    () => reject(new Error('Expected installment amount lookup timed out')),
+                    EXPECTED_AMOUNT_TIMEOUT_MS
+                );
+            })
+        ]);
+    } finally {
+        if (timeout) clearTimeout(timeout);
+    }
+}
 
 /** Outbox template mailed to the owner when a manual installment opens (HOS-2130). */
 export const MANUAL_INSTALLMENT_OPENED_TEMPLATE = 'billing.manual-installment-opened';
@@ -119,12 +140,13 @@ export async function enqueueManualInstallmentOpenedNotice(
     }
     let amount: { readonly amountMinor: number; readonly currency: 'ARS' } | null = null;
     try {
-        const expected = await (
-            ports.expectedAmounts ?? createCutExpectedAmountPolicy()
-        ).expectedAmount({
-            subscription,
-            purpose: { kind: 'PERIOD', chargeCreatedAt: input.periodStart }
-        });
+        const expected = await readExpectedAmount(
+            ports.expectedAmounts ?? createCutExpectedAmountPolicy(),
+            {
+                subscription,
+                purpose: { kind: 'PERIOD', chargeCreatedAt: input.periodStart }
+            }
+        );
         amount = resolveInstallmentAmountSnapshot({ expected });
         if (!amount)
             logger.warn(
