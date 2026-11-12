@@ -50,7 +50,7 @@ function harness(
         { id: 'B', featured: false }
     ];
     const revalidate = vi.fn(
-        async (args: {
+        async (_args: {
             vertical: typeof VerticalEnum.ACCOMMODATION;
             listingIds: readonly string[];
         }) => {
