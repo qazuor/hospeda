@@ -27,6 +27,7 @@ vi.mock('../../src/services/ai-context/index.js', () => ({
 
 import type { AiChatEntityType } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import type { AssembleChatContextInput } from '../../src/services/ai-context/types.js';
 import { generateFaqDraft } from '../../src/services/ai-faq-draft.service.js';
 
@@ -121,5 +122,23 @@ describe('FAQ answer draft generation', () => {
                 listingSections
             })
         ).rejects.toThrow('provider unavailable');
+    });
+
+    it('maps malformed structured model output to a provider failure', async () => {
+        mockGenerateObject.mockResolvedValueOnce({
+            object: {},
+            provider: 'stub',
+            model: 'gpt-5.4-mini',
+            usage: { promptTokens: 1, completionTokens: 1 }
+        });
+
+        const generation = generateFaqDraft({
+            context: context('Is there Wi-Fi?'),
+            actor,
+            locale: 'en',
+            listingSections
+        });
+        await expect(generation).rejects.toMatchObject({ code: 'PROVIDER_ERROR' });
+        await expect(generation).rejects.toBeInstanceOf(ServiceError);
     });
 });

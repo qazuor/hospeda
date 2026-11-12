@@ -1,9 +1,15 @@
 import { appendReplyLanguageInstruction, guardPromptInjection } from '@repo/ai-core';
 import { accommodations, aiConversations, aiMessages, experiences, getDb, venues } from '@repo/db';
-import type { AiChatEntityType, AiFaqDraftResponse, LanguageEnum } from '@repo/schemas';
-import { AiFaqDraftOutputSchema } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
+import {
+    type AiChatEntityType,
+    AiFaqDraftOutputSchema,
+    type AiFaqDraftResponse,
+    type LanguageEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { type Actor, ServiceError } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
+import { ZodError } from 'zod';
 import { stripMarkdown } from '../utils/entitlement-filter.js';
 import { CHAT_CONTEXT_ASSEMBLERS, truncateAtWord } from './ai-context/index.js';
 import { readPairedQuestionAnswer } from './ai-listing-questions.service.js';
@@ -127,18 +133,30 @@ export async function generateFaqDraft(input: {
     const systemPrompt = `${language.system}\n\nCreate an editable answer using only the listing context above. If it lacks the requested fact, return hasData=false and an empty draft. Return plain text without markdown, no more than 2000 characters, and include contact details only when verbatim in the context.`;
     const startedAt = Date.now();
     const service = await createConfiguredAiService();
-    const result = await service.generateObject(
-        {
-            feature: 'faq_draft',
-            locale: input.locale,
-            systemPrompt,
-            prompt: `Visitor question: ${injection.sanitizedText}`,
-            params: { maxTokens: 1024, temperature: 0 }
-        },
-        AiFaqDraftOutputSchema
-    );
-    const clean = truncateAtWord(stripMarkdown(result.object.draft), 2000);
-    const hasData = result.object.hasData && clean.length > 0;
+    let result: Awaited<ReturnType<typeof service.generateObject>>;
+    let output: ReturnType<typeof AiFaqDraftOutputSchema.parse>;
+    try {
+        result = await service.generateObject(
+            {
+                feature: 'faq_draft',
+                locale: input.locale,
+                systemPrompt,
+                prompt: `Visitor question: ${injection.sanitizedText}`,
+                params: { maxTokens: 1024, temperature: 0 }
+            },
+            AiFaqDraftOutputSchema
+        );
+        output = AiFaqDraftOutputSchema.parse(result.object);
+    } catch (error) {
+        if (error instanceof ZodError)
+            throw new ServiceError(
+                ServiceErrorCode.PROVIDER_ERROR,
+                'The AI provider returned an invalid FAQ draft.'
+            );
+        throw error;
+    }
+    const clean = truncateAtWord(stripMarkdown(output.draft), 2000);
+    const hasData = output.hasData && clean.length > 0;
     return {
         response: { messageId: context.messageId, hasData, draft: hasData ? clean : null },
         usage: {
