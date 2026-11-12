@@ -131,8 +131,8 @@ importers:
         specifier: ^2.10.0
         version: 2.10.0
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
       fuse.js:
         specifier: ^7.5.0
         version: 7.5.0
@@ -409,7 +409,7 @@ importers:
         version: 2.15.0(@types/node@26.6.2)(typescript@6.0.3)
       nitro:
         specifier: ^3.0.260610-beta
-        version: 3.0.260610-beta(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(ioredis@5.11.1(supports-color@5.5.0))(jiti@2.7.0)(lru-cache@11.5.2)(rollup@4.62.0)(vite@8.3.4(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
+        version: 3.0.260610-beta(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(chokidar@5.0.0)(dotenv@18.0.9)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(ioredis@5.11.1(supports-color@5.5.0))(jiti@2.7.0)(lru-cache@11.5.2)(rollup@4.62.0)(vite@8.3.4(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
       nodemon:
         specifier: 3.1.14
         version: 3.1.14
@@ -528,8 +528,8 @@ importers:
         specifier: ^3.21.0
         version: 3.24.0
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)
@@ -1219,8 +1219,8 @@ importers:
   packages/config:
     dependencies:
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
       zod:
         specifier: 4.6.6
         version: 4.6.6
@@ -1312,8 +1312,8 @@ importers:
         specifier: ^12.0.0
         version: 12.0.0
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
       drizzle-kit:
         specifier: 0.31.10
         version: 0.31.10
@@ -1574,8 +1574,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -1789,8 +1789,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^18.0.9
+        version: 18.0.9
       drizzle-orm:
         specifier: '>=0.45.2'
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)
@@ -8040,6 +8040,11 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
+  dotenv@18.0.9:
+    resolution: {integrity: sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==}
+    engines: {node: '>=12'}
+    hasBin: true
+
   driver.js@1.8.0:
     resolution: {integrity: sha512-+8/IO7h1v14IzWh2GP60N7T3PFZweXwdn5e5POuxRSBoCYUojsBxzqawPeXh3YZIibRy7EehYNEyxe7slwwtdg==}
 
@@ -10200,6 +10205,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-cron@4.6.0:
     resolution: {integrity: sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==}
@@ -19937,6 +19943,8 @@ snapshots:
 
   dotenv@17.4.2: {}
 
+  dotenv@18.0.9: {}
+
   driver.js@1.8.0: {}
 
   drizzle-kit@0.31.10:
@@ -22361,7 +22369,7 @@ snapshots:
 
   nf3@0.3.19: {}
 
-  nitro@3.0.260610-beta(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(ioredis@5.11.1(supports-color@5.5.0))(jiti@2.7.0)(lru-cache@11.5.2)(rollup@4.62.0)(vite@8.3.4(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0)):
+  nitro@3.0.260610-beta(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(chokidar@5.0.0)(dotenv@18.0.9)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(ioredis@5.11.1(supports-color@5.5.0))(jiti@2.7.0)(lru-cache@11.5.2)(rollup@4.62.0)(vite@8.3.4(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0)):
     dependencies:
       consola: 3.4.2
       crossws: 0.4.9(srvx@0.11.22)
@@ -22378,7 +22386,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       unstorage: 2.0.0-alpha.7(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)))(ioredis@5.11.1(supports-color@5.5.0))(lru-cache@11.5.2)(ofetch@2.0.0-alpha.3)
     optionalDependencies:
-      dotenv: 17.4.2
+      dotenv: 18.0.9
       jiti: 2.7.0
       rollup: 4.62.0
       vite: 8.3.4(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0)
