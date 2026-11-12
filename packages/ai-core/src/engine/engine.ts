@@ -848,8 +848,12 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 : await resolveSystemPrompt({ feature: req.feature }).then(({ content, rules }) =>
                       composeSystemPrompt({ content, rules })
                   );
+            // The resolved system content travels ONCE, prepended to the prompt.
+            // `systemPrompt` is stripped so adapters never also send it as the
+            // native `system` channel (that would bill it twice on every call).
+            const { systemPrompt: _callerSystemPrompt, ...reqWithoutSystemPrompt } = req;
             const injectedObjectReq: GenerateObjectRequest = {
-                ...req,
+                ...reqWithoutSystemPrompt,
                 ...(req.params || featureConfig.params.reasoningEffort
                     ? {
                           params: {
