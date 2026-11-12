@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { syncListingFeatured } from '../featured/sync-listing-featured';
 import { recalculateCoverage } from './coverage-recalculation';
 import type { ReconcilerPorts, ReconcilerSummary } from './coverage-reconciler-types';
 
@@ -15,6 +16,7 @@ export async function runDailyCoverageReconciler(args: {
     let ran = 0;
     let lowered = 0;
     let restored = 0;
+    let featuredChanged = 0;
     let partnerChecked = 0;
     let partnerInvalidated = 0;
     const failures: {
@@ -36,6 +38,19 @@ export async function runDailyCoverageReconciler(args: {
             try {
                 const summary = await args.ports.reader.summarize(pair);
                 const coverage = await args.ports.billing.coverage(pair);
+                // HOS-1718: a boost changes no publication status, so sync every pair.
+                if (args.ports.featured) {
+                    const featured = await syncListingFeatured({
+                        ports: {
+                            billing: { coverage: (input) => args.ports.billing.coverage(input) },
+                            reader: args.ports.featured.reader,
+                            unitOfWork: args.ports.featured.unitOfWork,
+                            afterCommit: args.ports.afterCommit
+                        },
+                        ...pair
+                    });
+                    featuredChanged += featured.featuredOn.length + featured.featuredOff.length;
+                }
                 const limit = await args.ports.liveLimit(pair);
                 const shouldRun =
                     (!coverage.covered && summary.published > 0) ||
@@ -101,6 +116,7 @@ export async function runDailyCoverageReconciler(args: {
         ran,
         lowered,
         restored,
+        ...(args.ports.featured ? { featuredChanged } : {}),
         partnerChecked,
         partnerInvalidated,
         failures,

@@ -1,0 +1,130 @@
+import { CoverageSourceSchema } from '@repo/billing-verticals-contract';
+import { EntitlementKeyEnum, VerticalEnum } from '@repo/schemas';
+import { describe, expect, it, vi } from 'vitest';
+import { runDailyCoverageReconciler } from '../../src/publication/coverage-reconciler';
+import type { ReconcilerPorts } from '../../src/publication/coverage-reconciler-types';
+
+const source = CoverageSourceSchema.parse({
+    type: 'ADDON',
+    reference: { kind: 'ADDON_VERSION', addonVersionId: 'boost-v1' },
+    scope: 'LISTING',
+    target: 'A',
+    since: new Date('2026-01-01T00:00:00Z'),
+    until: new Date('2026-12-31T00:00:00Z'),
+    charged: null,
+    floor: null
+});
+
+function harness(featured = false, failSet = false) {
+    const ping = vi.fn(async () => {});
+    const setFeatured = vi.fn(async () => {
+        if (failSet) throw new Error('featured write failed');
+        return true;
+    });
+    const ports: ReconcilerPorts = {
+        population: {
+            listOwnerVerticals: async () => ({
+                items: [{ userId: 'owner', vertical: VerticalEnum.ACCOMMODATION }],
+                next: null
+            }),
+            listPartnerUsers: async () => ({ items: [], next: null })
+        },
+        reader: {
+            summarize: async () => ({
+                published: 0,
+                unpublishedByBilling: 0,
+                archived: 0,
+                archivedReturnable: 0
+            })
+        },
+        liveLimit: async () => 2,
+        billing: { coverage: async () => ({ covered: true, sources: [source] }) },
+        presence: {
+            liveKeys: async () => [],
+            cachedKeys: async () => null,
+            invalidate: async () => {}
+        },
+        unitOfWork: {
+            runLocked: async () => {
+                throw new Error('publication reconciliation was not expected');
+            }
+        },
+        afterCommit: {
+            emitCoverageChanged: async () => {},
+            invalidateUser: async () => {},
+            revalidate: async () => {}
+        },
+        clock: { now: () => new Date('2026-10-11T00:00:00Z') },
+        monitor: { ping },
+        ...(featured
+            ? {
+                  featured: {
+                      reader: {
+                          findAddonVersionEffects: async () => ({
+                              entitlements: [
+                                  {
+                                      key: EntitlementKeyEnum.FEATURED_LISTING,
+                                      aggregationStrategy: 'MAX' as const
+                                  }
+                              ],
+                              limits: []
+                          })
+                      },
+                      unitOfWork: {
+                          runLocked: async (_key, work) =>
+                              work({
+                                  listOwnerListings: async () => [{ id: 'A', featured: false }],
+                                  setFeatured
+                              })
+                      }
+                  }
+              }
+            : {})
+    };
+    return { ports, ping, setFeatured };
+}
+
+describe('HOS-1718 the daily reconciler is the net for the listing featured flag', () => {
+    it('runs the featured sync for a pair whose publication needs nothing', async () => {
+        // Arrange
+        const h = harness(true);
+        // Act
+        const result = await runDailyCoverageReconciler({ ports: h.ports });
+        // Assert
+        expect(h.setFeatured).toHaveBeenCalledTimes(1);
+        expect(result.featuredChanged).toBe(1);
+        expect(result.ran).toBe(0);
+    });
+
+    it('a featured sync failure is a reconciler failure and skips the ping', async () => {
+        // Arrange
+        const h = harness(true, true);
+        // Act
+        const result = await runDailyCoverageReconciler({ ports: h.ports });
+        // Assert
+        expect(result.failures).toMatchObject([
+            { userId: 'owner', vertical: VerticalEnum.ACCOMMODATION }
+        ]);
+        expect(result.complete).toBe(false);
+        expect(h.ping).toHaveBeenCalledTimes(0);
+    });
+
+    it('without the featured port the summary keeps its old shape', async () => {
+        // Arrange
+        const h = harness();
+        // Act
+        const result = await runDailyCoverageReconciler({ ports: h.ports });
+        // Assert
+        expect(result).toEqual({
+            pairsRead: 1,
+            ran: 0,
+            lowered: 0,
+            restored: 0,
+            partnerChecked: 0,
+            partnerInvalidated: 0,
+            failures: [],
+            complete: true,
+            pinged: true
+        });
+    });
+});
