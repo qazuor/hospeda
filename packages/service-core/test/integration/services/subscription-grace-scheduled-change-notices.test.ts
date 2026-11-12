@@ -126,9 +126,7 @@ async function mail(subscriptionId: string, template: string) {
         .select()
         .from(emailOutbox)
         .where(eq(emailOutbox.template, template));
-    return rows.find(
-        (row) => (row.payload as { subscriptionId?: string }).subscriptionId === subscriptionId
-    );
+    return rows.find((row) => row.payload.subscriptionId === subscriptionId);
 }
 
 describe.skipIf(!isServiceTestDbAvailable())(
@@ -154,7 +152,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 })
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-started');
-            const payload = notice?.payload as Record<string, unknown> | undefined;
+            const payload = notice?.payload;
             const expectedPlanName = await resolvePlanDisplayName({
                 vertical: seeded.target.vertical,
                 plan: { slug: seeded.target.slug, name: seeded.target.name }
@@ -210,7 +208,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 })
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-reminder');
-            const payload = notice?.payload as Record<string, unknown> | undefined;
+            const payload = notice?.payload;
             const expectedPlanName = await resolvePlanDisplayName({
                 vertical: seeded.target.vertical,
                 plan: { slug: seeded.target.slug, name: seeded.target.name }
