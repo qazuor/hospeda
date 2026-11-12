@@ -145,9 +145,12 @@ describe('GET /protected/ai/listing-questions', () => {
             headers: AUTH_HEADERS
         });
         const normalize = async (response: Response) => {
-            const body = (await response.json()) as { metadata: object } & Record<string, unknown>;
+            const body = (await response.json()) as {
+                metadata: { requestId: string; timestamp: string };
+            } & Record<string, unknown>;
             const { metadata, ...rest } = body;
-            return { ...rest, metadataKeys: Object.keys(metadata).sort() };
+            const { requestId: _requestId, timestamp: _timestamp, ...stableMetadata } = metadata;
+            return { ...rest, metadata: stableMetadata };
         };
         expect(foreign.status).toBe(404);
         expect(missing.status).toBe(404);

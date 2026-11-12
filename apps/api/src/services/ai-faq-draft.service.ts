@@ -3,9 +3,10 @@ import { accommodations, aiConversations, aiMessages, experiences, getDb, venues
 import type { AiChatEntityType, AiFaqDraftResponse, LanguageEnum } from '@repo/schemas';
 import { AiFaqDraftOutputSchema } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { and, asc, eq, gte, isNull } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { stripMarkdown } from '../utils/entitlement-filter.js';
 import { CHAT_CONTEXT_ASSEMBLERS, truncateAtWord } from './ai-context/index.js';
+import { readPairedQuestionAnswer } from './ai-listing-questions.service.js';
 import { createConfiguredAiService } from './ai-service.factory.js';
 
 /** Listing and question data needed to create one owner FAQ draft. */
@@ -27,8 +28,6 @@ export async function readFaqDraftQuestion(input: {
     const rows = await db
         .select({
             question: aiMessages.content,
-            createdAt: aiMessages.createdAt,
-            conversationId: aiConversations.id,
             entityType: aiConversations.listingEntityType,
             entityId: aiConversations.listingEntityId
         })
@@ -79,20 +78,7 @@ export async function readFaqDraftQuestion(input: {
             .limit(1);
         businessLines = experience?.businessLines ?? [];
     }
-    const answers = await db
-        .select({ answerStatus: aiMessages.answerStatus })
-        .from(aiMessages)
-        .where(
-            and(
-                eq(aiMessages.conversationId, row.conversationId),
-                eq(aiMessages.role, 'assistant'),
-                gte(aiMessages.createdAt, row.createdAt),
-                isNull(aiMessages.deletedAt)
-            )
-        )
-        .orderBy(asc(aiMessages.createdAt))
-        .limit(1);
-    const answer = answers[0];
+    const answer = await readPairedQuestionAnswer({ messageId: input.messageId });
     if (!answer) return null;
     return {
         messageId: input.messageId,
