@@ -365,6 +365,18 @@ which handles this automatically.
 
 See ADR-035 for the `product_domain` rationale.
 
+### Bounded additive grants for published catalog versions (HOS-2105)
+
+The `hospeda.catalog_additive_grant` transaction-local setting allows a migration
+to add previously absent child keys to published plan or addon versions. Keep the
+grant lifecycle in one file: **set it, insert, reset it in the same file**. Drizzle
+may apply several pending migrations in one transaction, so a local setting remains
+visible to later migrations until it is reset or the transaction ends. The guard
+`pnpm check:catalog-additive-grant` checks the reset after the file's last child
+INSERT. It cannot resolve dynamically generated SQL or prove the signal's business
+reason; its child-insert scan of TypeScript seed migrations is best effort, and a
+same-file version INSERT is accepted as an exemption.
+
 ---
 
 ## Reference
