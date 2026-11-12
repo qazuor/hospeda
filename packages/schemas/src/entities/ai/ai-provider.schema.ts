@@ -84,7 +84,8 @@ export const AiFeatureSchema = z.enum([
     'support',
     'translate',
     'accommodation_import',
-    'post_generate'
+    'post_generate',
+    'faq_draft'
 ]);
 
 /** TypeScript type for a supported AI feature. */
