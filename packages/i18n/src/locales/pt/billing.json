@@ -428,6 +428,9 @@
         },
         "max_active_private_galleries": {
             "title": "Você atingiu o limite de galerias privadas ativas"
+        },
+        "max_ai_faq_draft_per_month": {
+            "title": "Limite mensal de rascunhos de FAQ com IA atingido"
         }
     },
     "limits": {
