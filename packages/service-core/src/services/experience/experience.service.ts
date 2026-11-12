@@ -496,6 +496,7 @@ export class ExperienceService extends BaseListingService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst,
             q,
             amenities,
             features,
@@ -530,7 +531,8 @@ export class ExperienceService extends BaseListingService<
                 page: ctx?.pagination?.page,
                 pageSize: ctx?.pagination?.pageSize,
                 sortBy: ctx?.pagination?.sortBy,
-                sortOrder: ctx?.pagination?.sortOrder
+                sortOrder: ctx?.pagination?.sortOrder,
+                featuredFirst
             },
             additionalConditions.length > 0 ? additionalConditions : undefined,
             ctx?.tx
@@ -556,6 +558,7 @@ export class ExperienceService extends BaseListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst: _featuredFirst,
             q,
             amenities,
             features,
