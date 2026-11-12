@@ -379,6 +379,7 @@ const galleryImages = (() => {
                   url: item.url,
                   alt: item.alt ?? item.caption ?? accommodation.name,
                   caption: item.caption,
+                  description: item.description,
                   credit: formatPhotoCredit(item.attribution, t)
               }))
             : accommodation.media.images.map((url) => ({
