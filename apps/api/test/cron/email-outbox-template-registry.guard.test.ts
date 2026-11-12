@@ -133,6 +133,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/manual-installment-unpaid-notice.ts': [
         'billing.manual-installment-unpaid'
     ],
+    'packages/service-core/src/services/billing/subscription/manual-installment-opened-notice.ts': [
+        'billing.manual-installment-opened'
+    ],
     'packages/service-core/src/services/billing/reconciliation/revocation-refund-failed-notice.ts':
         ['billing.revocation-refund-failed'],
     'packages/service-core/src/services/billing/subscription/signup-confirmed-notice.ts': [

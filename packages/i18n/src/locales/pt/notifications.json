@@ -33,5 +33,12 @@
             "body": "Desta vez, não foi possível aprová-la.",
             "reapply": "Você poderá se candidatar novamente a partir de {{date}}."
         }
+    },
+    "manualInstallmentOpened": {
+        "subject": "Você tem uma parcela para pagar na Hospeda",
+        "heading": "Sua parcela está pronta para pagar",
+        "introFirst": "Já configuramos sua assinatura de Partner. Este é o detalhe da sua primeira parcela.",
+        "introRenewal": "Foi aberta a parcela de um novo período da sua assinatura de Partner.",
+        "cta": "Ver minha parcela"
     }
 }
