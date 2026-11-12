@@ -409,7 +409,7 @@ describe('HOS-1718 a live LISTING boost features its listing on every public rea
             ].sort((a, b) => a.id.localeCompare(b.id))
         );
         expect(summary.featuredChanged).toBe(1);
-        // The published row makes shouldRun true (current publication count exceeds the uncovered limit); the featured assertion is independent of publication status.
+        // shouldRun is true because coverage is uncovered and one listing is PUBLISHED; featured reconciliation precedes and does not depend on publication changes.
         const inverseOwnerId = await owner();
         const inverseListingId = await createListing({
             ownerId: inverseOwnerId,
