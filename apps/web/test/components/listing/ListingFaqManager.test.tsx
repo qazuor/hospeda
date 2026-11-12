@@ -31,6 +31,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingFaq } from '../../../src/components/listing/ListingFaqManager.client';
 import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
 
+const { mockSuggest } = vi.hoisted(() => ({ mockSuggest: vi.fn() }));
+
+vi.mock('@/hooks/use-faq-ai-draft', () => ({
+    useFaqAiDraft: () => ({ isLoading: false, feedback: null, suggest: mockSuggest })
+}));
+
+vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
+    PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -442,5 +452,23 @@ describe('HOS-2101 — prefill from the AI questions tab', () => {
         const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
         expect(question.value).toBe('¿Hay cochera?');
         expect(window.location.search).toBe('');
+    });
+
+    it('fills the response with a suggested draft and keeps the review notice visible', async () => {
+        window.history.replaceState(
+            null,
+            '',
+            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F&mensaje=22222222-2222-4222-8222-222222222222'
+        );
+        mockSuggest.mockReset();
+        mockSuggest.mockImplementationOnce(
+            async ({ onDraft }: { onDraft: (draft: string) => void }) => onDraft('Hay cochera.')
+        );
+
+        renderManager();
+        fireEvent.click(await screen.findByRole('button', { name: 'Sugerir respuesta con IA' }));
+
+        expect(await screen.findByLabelText('Respuesta')).toHaveValue('Hay cochera.');
+        expect(screen.getByText(/borrador editable/i)).toBeInTheDocument();
     });
 });
