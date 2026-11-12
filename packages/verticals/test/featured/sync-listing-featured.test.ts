@@ -39,6 +39,12 @@ function harness(
     } = {}
 ) {
     const calls: string[] = [];
+    const observed: {
+        lock?: unknown;
+        coverage?: unknown;
+        list?: unknown;
+        set?: unknown;
+    } = {};
     const rows = options.rows ?? [
         { id: 'A', featured: false },
         { id: 'B', featured: false }
@@ -49,7 +55,6 @@ function harness(
             listingIds: readonly string[];
         }) => {
             calls.push('revalidate');
-            expect(args.listingIds).toEqual(args.listingIds);
         }
     );
     const findAddonVersionEffects = vi.fn(async ({ id }: { id: string }) => ({
@@ -71,21 +76,26 @@ function harness(
     }));
     const ports: ListingFeaturedPorts = {
         billing: {
-            coverage: vi.fn(async () => {
+            coverage: vi.fn(async (args) => {
+                observed.coverage = args;
                 calls.push('coverage');
                 return { covered: true, sources: [...(options.sources ?? [])] };
             })
         },
         reader: options.reader === false ? {} : { findAddonVersionEffects },
         unitOfWork: {
-            runLocked: async (_key, work) => {
+            runLocked: async (key, work) => {
+                observed.lock = key;
                 calls.push('lock');
                 const result = await work({
-                    listOwnerListings: async () => {
+                    listOwnerListings: async (args) => {
+                        observed.list = args;
                         calls.push('list');
                         return rows;
                     },
-                    setFeatured: async ({ listingId, to }) => {
+                    setFeatured: async (args) => {
+                        observed.set = args;
+                        const { listingId, to } = args;
                         calls.push(`set:${listingId}:${to}`);
                         return options.cas ?? true;
                     }
@@ -96,7 +106,7 @@ function harness(
         },
         afterCommit: { revalidate }
     };
-    return { ports, calls, revalidate, findAddonVersionEffects };
+    return { ports, calls, revalidate, findAddonVersionEffects, observed };
 }
 
 describe('HOS-1718 a live LISTING boost features its listing and nothing else', () => {
@@ -112,6 +122,18 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
         // Assert
         expect(result.featuredOn).toEqual(['A']);
         expect(result.featuredOff).toEqual([]);
+        expect(h.observed.lock).toEqual({ userId: 'owner', vertical: VerticalEnum.ACCOMMODATION });
+        expect(h.observed.coverage).toEqual({
+            userId: 'owner',
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+        expect(h.observed.list).toEqual({ vertical: VerticalEnum.ACCOMMODATION, ownerId: 'owner' });
+        expect(h.observed.set).toEqual({
+            vertical: VerticalEnum.ACCOMMODATION,
+            listingId: 'A',
+            from: false,
+            to: true
+        });
         expect(h.calls).toContain('set:A:true');
         expect(h.revalidate).toHaveBeenCalledWith({
             vertical: VerticalEnum.ACCOMMODATION,
@@ -231,14 +253,11 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
         expect(h.revalidate).toHaveBeenCalledTimes(0);
     });
 
-    it('two boosts on one listing and one boost on two calls read the version once', async () => {
+    it('two boosts with different versions on one listing read each version once', async () => {
         // Arrange
         const h = harness({
-            rows: [
-                { id: 'A', featured: false },
-                { id: 'B', featured: false }
-            ],
-            sources: [listingSource('A'), listingSource('B')]
+            rows: [{ id: 'A', featured: false }],
+            sources: [listingSource('A'), listingSource('A', 'boost-30-v1')]
         });
         // Act
         const result = await syncListingFeatured({
@@ -247,8 +266,26 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
             vertical: VerticalEnum.ACCOMMODATION
         });
         // Assert
-        expect(h.findAddonVersionEffects).toHaveBeenCalledTimes(1);
-        expect(result.featuredOn).toEqual(['A', 'B']);
+        expect(h.findAddonVersionEffects).toHaveBeenCalledTimes(2);
+        expect(result.featuredOn).toEqual(['A']);
+        expect(h.calls.filter((call) => call.startsWith('set:'))).toEqual(['set:A:true']);
+    });
+
+    it('a boost and a limit source on one listing keep it featured', async () => {
+        // Arrange
+        const h = harness({
+            rows: [{ id: 'A', featured: false }],
+            sources: [listingSource('A'), listingSource('A', 'limit-v1')]
+        });
+        // Act
+        const result = await syncListingFeatured({
+            ports: h.ports,
+            userId: 'owner',
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+        // Assert
+        expect(result.featuredOn).toEqual(['A']);
+        expect(h.calls.filter((call) => call.startsWith('set:'))).toEqual(['set:A:true']);
     });
 
     it('a reader without findAddonVersionEffects fails loudly', async () => {
@@ -266,5 +303,6 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
                 vertical: VerticalEnum.ACCOMMODATION
             })
         ).rejects.toThrow(/findAddonVersionEffects/);
+        expect(h.calls.filter((call) => call.startsWith('set:'))).toEqual([]);
     });
 });

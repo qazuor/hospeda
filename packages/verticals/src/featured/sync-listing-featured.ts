@@ -2,6 +2,10 @@ import { EntitlementKeyEnum } from '@repo/schemas';
 import type { PublicationVertical } from '../publication/publication-types';
 import type { ListingFeaturedPorts, ListingFeaturedSyncResult } from './listing-featured-types';
 
+type AddonVersionEffects = Awaited<
+    ReturnType<NonNullable<ListingFeaturedPorts['reader']['findAddonVersionEffects']>>
+>;
+
 /**
  * Writes the featured flag of an owner's listings in one vertical from billing's
  * coverage (HOS-1718; owner PM-609 and CL).
@@ -12,7 +16,9 @@ import type { ListingFeaturedPorts, ListingFeaturedSyncResult } from './listing-
  * cancelled, expired or orphaned one, so this function never reads a clock.
  *
  * Coverage is read inside the `(user, vertical)` lock. Writes use compare-and-set,
- * and only changed rows are revalidated after the transaction commits.
+ * and only changed rows are revalidated after the transaction commits. If
+ * revalidation fails, it is not retried because the compare-and-set sees no
+ * change on the next sync; the cache stays stale until its TTL expires.
  *
  * @repo/verticals never reads addon instances; it receives coverage by contract
  * and the version's effects through the catalog reader port.
@@ -30,14 +36,7 @@ export async function syncListingFeatured(args: {
                 vertical: args.vertical
             });
             const boosted = new Set<string>();
-            const effectsByVersion = new Map<
-                string,
-                Awaited<
-                    ReturnType<
-                        NonNullable<ListingFeaturedPorts['reader']['findAddonVersionEffects']>
-                    >
-                >
-            >();
+            const effectsByVersion = new Map<string, AddonVersionEffects>();
             for (const source of coverage.sources) {
                 if (
                     source.type !== 'ADDON' ||

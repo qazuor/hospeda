@@ -40,16 +40,22 @@ export async function runDailyCoverageReconciler(args: {
                 const coverage = await args.ports.billing.coverage(pair);
                 // HOS-1718: a boost changes no publication status, so sync every pair.
                 if (args.ports.featured) {
-                    const featured = await syncListingFeatured({
-                        ports: {
-                            billing: { coverage: (input) => args.ports.billing.coverage(input) },
-                            reader: args.ports.featured.reader,
-                            unitOfWork: args.ports.featured.unitOfWork,
-                            afterCommit: args.ports.afterCommit
-                        },
-                        ...pair
-                    });
-                    featuredChanged += featured.featuredOn.length + featured.featuredOff.length;
+                    try {
+                        const featured = await syncListingFeatured({
+                            ports: {
+                                billing: {
+                                    coverage: (input) => args.ports.billing.coverage(input)
+                                },
+                                reader: args.ports.featured.reader,
+                                unitOfWork: args.ports.featured.unitOfWork,
+                                afterCommit: args.ports.afterCommit
+                            },
+                            ...pair
+                        });
+                        featuredChanged += featured.featuredOn.length + featured.featuredOff.length;
+                    } catch (error) {
+                        failures.push({ ...pair, error });
+                    }
                 }
                 const limit = await args.ports.liveLimit(pair);
                 const shouldRun =

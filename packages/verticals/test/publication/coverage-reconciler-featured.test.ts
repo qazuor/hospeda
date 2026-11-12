@@ -15,8 +15,9 @@ const source = CoverageSourceSchema.parse({
     floor: null
 });
 
-function harness(featured = false, failSet = false) {
+function harness(featured = false, failSet = false, published = 0, failPublication = false) {
     const ping = vi.fn(async () => {});
+    const revalidate = vi.fn(async () => {});
     const setFeatured = vi.fn(async () => {
         if (failSet) throw new Error('featured write failed');
         return true;
@@ -31,7 +32,7 @@ function harness(featured = false, failSet = false) {
         },
         reader: {
             summarize: async () => ({
-                published: 0,
+                published,
                 unpublishedByBilling: 0,
                 archived: 0,
                 archivedReturnable: 0
@@ -45,14 +46,15 @@ function harness(featured = false, failSet = false) {
             invalidate: async () => {}
         },
         unitOfWork: {
-            runLocked: async () => {
+            runLocked: vi.fn(async () => {
+                if (failPublication) throw new Error('publication recalculation reached');
                 throw new Error('publication reconciliation was not expected');
-            }
+            })
         },
         afterCommit: {
             emitCoverageChanged: async () => {},
             invalidateUser: async () => {},
-            revalidate: async () => {}
+            revalidate
         },
         clock: { now: () => new Date('2026-10-11T00:00:00Z') },
         monitor: { ping },
@@ -81,7 +83,7 @@ function harness(featured = false, failSet = false) {
               }
             : {})
     };
-    return { ports, ping, setFeatured };
+    return { ports, ping, setFeatured, revalidate };
 }
 
 describe('HOS-1718 the daily reconciler is the net for the listing featured flag', () => {
@@ -92,6 +94,10 @@ describe('HOS-1718 the daily reconciler is the net for the listing featured flag
         const result = await runDailyCoverageReconciler({ ports: h.ports });
         // Assert
         expect(h.setFeatured).toHaveBeenCalledTimes(1);
+        expect(h.revalidate).toHaveBeenCalledWith({
+            vertical: VerticalEnum.ACCOMMODATION,
+            listingIds: ['A']
+        });
         expect(result.featuredChanged).toBe(1);
         expect(result.ran).toBe(0);
     });
@@ -107,6 +113,20 @@ describe('HOS-1718 the daily reconciler is the net for the listing featured flag
         ]);
         expect(result.complete).toBe(false);
         expect(h.ping).toHaveBeenCalledTimes(0);
+    });
+
+    it('a featured sync failure still starts publication recalculation for the pair', async () => {
+        // Arrange
+        const h = harness(true, true, 3, true);
+        // Act
+        const result = await runDailyCoverageReconciler({ ports: h.ports });
+        // Assert
+        expect(h.ports.unitOfWork.runLocked).toHaveBeenCalledTimes(1);
+        expect(result.failures).toMatchObject([
+            { userId: 'owner', vertical: VerticalEnum.ACCOMMODATION },
+            { userId: 'owner', vertical: VerticalEnum.ACCOMMODATION }
+        ]);
+        expect(result.complete).toBe(false);
     });
 
     it('without the featured port the summary keeps its old shape', async () => {
