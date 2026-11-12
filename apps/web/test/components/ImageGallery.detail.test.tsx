@@ -823,3 +823,71 @@ describe('photo credit in the lightbox', () => {
         expect(screen.queryByText('Foto por')).not.toBeInTheDocument();
     });
 });
+
+// ─── Caption + description bar in the lightbox (HOS-2125) ─────────────────────
+
+describe('caption and description in the lightbox', () => {
+    const LONG = 'D'.repeat(200);
+
+    function openFirst(images: GalleryImage[]): void {
+        const { container } = renderDetail(images);
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+    }
+
+    it('renders caption and description inside the figcaption', () => {
+        openFirst([{ url: '/a.jpg', alt: 'A', caption: 'Vista', description: 'Atardecer corto' }]);
+
+        const figcaption = document.querySelector('figcaption') as HTMLElement;
+        expect(within(figcaption).getByText('Vista')).toBeInTheDocument();
+        expect(within(figcaption).getByText('Atardecer corto')).toBeInTheDocument();
+    });
+
+    it('renders a description-only photo (no caption, no credit)', () => {
+        openFirst([{ url: '/a.jpg', alt: 'A', description: 'Solo descripcion' }]);
+
+        expect(screen.getByText('Solo descripcion')).toBeInTheDocument();
+    });
+
+    it('renders no figcaption when caption, description and credit are all absent', () => {
+        openFirst(makeImages(1));
+
+        expect(document.querySelector('figcaption')).toBeNull();
+    });
+
+    it('offers no toggle for a short description', () => {
+        openFirst([{ url: '/a.jpg', alt: 'A', description: 'Corta' }]);
+
+        expect(screen.queryByRole('button', { name: 'Ver más' })).not.toBeInTheDocument();
+    });
+
+    it('toggles a long description with aria-expanded', () => {
+        openFirst([{ url: '/a.jpg', alt: 'A', description: LONG }]);
+
+        const toggle = screen.getByRole('button', { name: 'Ver más' });
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        expect(document.querySelector('[data-expanded="false"]')).not.toBeNull();
+
+        fireEvent.click(toggle);
+
+        const less = screen.getByRole('button', { name: 'Ver menos' });
+        expect(less).toHaveAttribute('aria-expanded', 'true');
+        expect(document.querySelector('[data-expanded="true"]')).not.toBeNull();
+    });
+
+    it('still navigates with the arrow keys and collapses on the next photo', () => {
+        openFirst([
+            { url: '/a.jpg', alt: 'A', caption: 'Uno', description: LONG },
+            { url: '/b.jpg', alt: 'B', caption: 'Dos', description: LONG }
+        ]);
+        fireEvent.click(screen.getByRole('button', { name: 'Ver más' }));
+
+        fireEvent.keyDown(document, { key: 'ArrowRight' });
+
+        const figcaption = document.querySelector('figcaption') as HTMLElement;
+        expect(within(figcaption).getByText('Dos')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Ver más' })).toHaveAttribute(
+            'aria-expanded',
+            'false'
+        );
+    });
+});
