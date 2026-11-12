@@ -1240,48 +1240,7 @@
                 "invalidType": "El trial enabled tiene un tipo de dato inválido"
             }
         },
-        "startPaid": {
-            "appliedEffect": {
-                "invalid": "El efecto aplicado no es válido"
-            },
-            "billingInterval": {
-                "invalid": "El intervalo de facturación no es válido"
-            },
-            "checkoutUrl": {
-                "invalid": "La URL de pago no es válida",
-                "invalidType": "La URL de pago tiene un tipo de dato inválido"
-            },
-            "expiresAt": {
-                "invalid": "La fecha de expiración no es válida",
-                "invalidType": "La fecha de expiración tiene un tipo de dato inválido"
-            },
-            "localSubscriptionId": {
-                "invalid": "El ID de suscripción local no es válido",
-                "invalidType": "El ID de suscripción local tiene un tipo de dato inválido"
-            },
-            "payerEmail": {
-                "invalid": "El email de pago no es válido",
-                "invalidType": "El email de pago tiene un tipo de dato inválido",
-                "max": "El email de pago no puede superar los {{max}} caracteres"
-            },
-            "planSlug": {
-                "invalid": "El slug del plan no tiene un formato válido",
-                "invalidType": "El slug del plan tiene un tipo de dato inválido",
-                "max": "El slug del plan no puede superar los {{max}} caracteres",
-                "min": "El slug del plan debe tener al menos {{min}} caracteres"
-            },
-            "promoCode": {
-                "invalidType": "El código promocional tiene un tipo de dato inválido",
-                "max": "El código promocional no puede superar los {{max}} caracteres",
-                "min": "El código promocional debe tener al menos {{min}} caracteres"
-            },
-            "promoCodeIgnored": {
-                "invalid": "El indicador de código promocional ignorado no es válido"
-            },
-            "trialGranted": {
-                "invalid": "El indicador de prueba gratuita otorgada no es válido"
-            }
-        },
+
         "subscriptionEvent": {
             "createdAt": {
                 "invalid": "La fecha de creación no es válida",
