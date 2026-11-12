@@ -826,15 +826,14 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // content to the prompt string.  Caller-wins: if the caller already
             // embedded a system instruction in their prompt, this prepend is still
             // safe because the model treats the system block as higher-priority context.
-            const { content: objectBody, rules: objectRules } = await resolveSystemPrompt({
-                feature: req.feature
-            });
-            const objectSystemContent = composeSystemPrompt({
-                content: objectBody,
-                rules: objectRules
-            });
+            const objectSystemContent = req.systemPrompt
+                ? req.systemPrompt
+                : await resolveSystemPrompt({ feature: req.feature }).then(({ content, rules }) =>
+                      composeSystemPrompt({ content, rules })
+                  );
             const injectedObjectReq: GenerateObjectRequest = {
                 ...req,
+                systemPrompt: objectSystemContent,
                 prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
             };
 
