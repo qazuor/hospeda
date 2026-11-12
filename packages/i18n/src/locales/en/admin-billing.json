@@ -2383,6 +2383,7 @@
             "PERMANENT_GRANT_ALREADY_LIVE": "The beneficiary already has a live grant.",
             "PERMANENT_GRANT_REFERENCE_NOT_FOUND": "The plan or its version was not found.",
             "PERMANENT_GRANT_FLOOR_NOT_CURRENT": "The selected version is no longer current.",
+            "PERMANENT_GRANT_LISTING_SOFT_DELETED": "An add-on of this grant points to a deleted listing. Nothing was revoked: ask the technical team to review that listing.",
             "INVALID_PERMANENT_GRANT_INPUT": "The grant details are invalid."
         },
         "invalidForm": "Check the vertical, current plan, and reason."

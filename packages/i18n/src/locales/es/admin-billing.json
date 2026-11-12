@@ -2383,6 +2383,7 @@
             "PERMANENT_GRANT_ALREADY_LIVE": "El beneficiario ya tiene un grant vivo.",
             "PERMANENT_GRANT_REFERENCE_NOT_FOUND": "No se encontró el plan o su versión.",
             "PERMANENT_GRANT_FLOOR_NOT_CURRENT": "La versión elegida ya no es la vigente.",
+            "PERMANENT_GRANT_LISTING_SOFT_DELETED": "Un complemento de este grant apunta a una ficha borrada. No se revocó nada: pedile al equipo técnico que revise esa ficha.",
             "INVALID_PERMANENT_GRANT_INPUT": "Los datos del grant no son válidos."
         },
         "invalidForm": "Revisá la vertical, el plan vigente y el motivo."
