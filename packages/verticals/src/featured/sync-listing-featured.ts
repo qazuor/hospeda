@@ -1,4 +1,5 @@
 import { EntitlementKeyEnum } from '@repo/schemas';
+import { resolveEffectiveSet } from '../effective-set/resolve-effective-set';
 import type { PublicationVertical } from '../publication/publication-types';
 import type { ListingFeaturedPorts, ListingFeaturedSyncResult } from './listing-featured-types';
 
@@ -10,8 +11,8 @@ type AddonVersionEffects = Awaited<
  * Writes the featured flag of an owner's listings in one vertical from billing's
  * coverage (HOS-1718; owner PM-609 and CL).
  *
- * A listing is featured while billing emits a live `ADDON` source with scope
- * `LISTING` targeting it whose anchored addon version grants `featured_listing`.
+ * A listing is featured when the owner's effective set grants `featured_listing`,
+ * or a live `LISTING` add-on with that effect targets it.
  * Billing already drops an expired `FIXED_DAYS` instance and stops emitting a
  * cancelled, expired or orphaned one, so this function never reads a clock.
  *
@@ -21,7 +22,7 @@ type AddonVersionEffects = Awaited<
  * change on the next sync; the cache stays stale until its TTL expires.
  *
  * @repo/verticals never reads addon instances; it receives coverage by contract
- * and the version's effects through the catalog reader port.
+ * and plan/add-on effects through the catalog reader port.
  */
 export async function syncListingFeatured(args: {
     readonly ports: ListingFeaturedPorts;
@@ -35,6 +36,16 @@ export async function syncListingFeatured(args: {
                 userId: args.userId,
                 vertical: args.vertical
             });
+            const effective = await resolveEffectiveSet({
+                reader: args.ports.reader,
+                billing: { coverage: async () => coverage },
+                trials: args.ports.trials,
+                userId: args.userId,
+                vertical: args.vertical
+            });
+            const planFeatured = effective.entries.some(
+                (entry) => entry.key === EntitlementKeyEnum.FEATURED_LISTING && entry.value > 0
+            );
             const boosted = new Set<string>();
             const effectsByVersion = new Map<string, AddonVersionEffects>();
             for (const source of coverage.sources) {
@@ -45,13 +56,12 @@ export async function syncListingFeatured(args: {
                     source.reference.kind !== 'ADDON_VERSION'
                 )
                     continue;
-                const readEffects = args.ports.reader.findAddonVersionEffects;
-                if (!readEffects)
+                if (!args.ports.reader.findAddonVersionEffects)
                     throw new Error('syncListingFeatured needs findAddonVersionEffects');
                 const id = source.reference.addonVersionId;
                 let effects = effectsByVersion.get(id);
                 if (!effects) {
-                    effects = await readEffects({ id });
+                    effects = await args.ports.reader.findAddonVersionEffects({ id });
                     effectsByVersion.set(id, effects);
                 }
                 if (
@@ -68,7 +78,7 @@ export async function syncListingFeatured(args: {
             const featuredOn: string[] = [];
             const featuredOff: string[] = [];
             for (const row of rows) {
-                const want = boosted.has(row.id);
+                const want = planFeatured || boosted.has(row.id);
                 if (want === row.featured) continue;
                 const didChange = await tx.setFeatured({
                     vertical: args.vertical,

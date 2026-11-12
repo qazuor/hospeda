@@ -6,6 +6,7 @@ import type {
     ListingFeaturedRow
 } from '../../src/featured/listing-featured-types';
 import { syncListingFeatured } from '../../src/featured/sync-listing-featured';
+import type { PlanCatalogReader } from '../../src/plan-catalog/catalog-reader';
 
 const listingSource = (target: string, version = 'boost-v1') =>
     CoverageSourceSchema.parse({
@@ -74,6 +75,29 @@ function harness(
                 ? [{ key: 'photos', value: 5, aggregationStrategy: 'MAX' as const }]
                 : []
     }));
+    const reader: PlanCatalogReader = {
+        async findPlanVersion() {
+            return null;
+        },
+        async findPlanVersionEffects() {
+            return { entitlements: [], limits: [] };
+        },
+        async findPlanVersionSummary() {
+            return null;
+        },
+        async findSellableCurrentVersions() {
+            return [];
+        },
+        async findCurrentPlanVersion() {
+            return null;
+        },
+        async findAddonVersion({ id }) {
+            return { addonId: id, validity: 'FIXED_DAYS', validityDays: 30, scopeType: 'LISTING' };
+        },
+        async findAddonVersionEffects(input) {
+            return findAddonVersionEffects(input);
+        }
+    };
     const ports: ListingFeaturedPorts = {
         billing: {
             coverage: vi.fn(async (args) => {
@@ -82,7 +106,9 @@ function harness(
                 return { covered: true, sources: [...(options.sources ?? [])] };
             })
         },
-        reader: options.reader === false ? {} : { findAddonVersionEffects },
+        reader:
+            options.reader === false ? { ...reader, findAddonVersionEffects: undefined } : reader,
+        trials: { findTrial: async () => null },
         unitOfWork: {
             runLocked: async (key, work) => {
                 observed.lock = key;
@@ -174,7 +200,7 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
         'VERTICAL',
         'USER',
         'GLOBAL'
-    ] as const)('a featured_listing grant with %s scope features no listing', async (scope) => {
+    ] as const)('a featured_listing grant with %s scope features no listing without a live title', async (scope) => {
         // Arrange
         const h = harness({ sources: [scopedSource(scope)] });
         // Act
@@ -185,7 +211,7 @@ describe('HOS-1718 a live LISTING boost features its listing and nothing else', 
         });
         // Assert
         expect(result.featuredOn).toEqual([]);
-        expect(h.findAddonVersionEffects).toHaveBeenCalledTimes(0);
+        expect(h.findAddonVersionEffects).toHaveBeenCalledTimes(1);
     });
 
     it('a target outside the owner listings is never written', async () => {

@@ -14,8 +14,25 @@ const source = CoverageSourceSchema.parse({
     charged: null,
     floor: null
 });
+const planSource = CoverageSourceSchema.parse({
+    type: 'SUBSCRIPTION',
+    reference: { kind: 'PLAN_VERSION', planVersionId: 'pro-v1' },
+    scope: 'VERTICAL',
+    target: null,
+    since: new Date('2026-01-01'),
+    until: new Date('2027-01-01'),
+    charged: true,
+    floor: null
+});
 
-function harness(featured = false, failSet = false, published = 0, failPublication = false) {
+function harness(
+    featured = false,
+    failSet = false,
+    published = 0,
+    failPublication = false,
+    coverageSource = source,
+    listingFeatured = false
+) {
     const ping = vi.fn(async () => {});
     const revalidate = vi.fn(async () => {});
     const setFeatured = vi.fn(async () => {
@@ -39,7 +56,7 @@ function harness(featured = false, failSet = false, published = 0, failPublicati
             })
         },
         liveLimit: async () => 2,
-        billing: { coverage: async () => ({ covered: true, sources: [source] }) },
+        billing: { coverage: async () => ({ covered: true, sources: [coverageSource] }) },
         presence: {
             liveKeys: async () => [],
             cachedKeys: async () => null,
@@ -62,6 +79,40 @@ function harness(featured = false, failSet = false, published = 0, failPublicati
             ? {
                   featured: {
                       reader: {
+                          async findPlanVersion() {
+                              return null;
+                          },
+                          async findPlanVersionEffects() {
+                              return {
+                                  entitlements: [
+                                      {
+                                          key: EntitlementKeyEnum.FEATURED_LISTING,
+                                          planQuota: null,
+                                          aggregationStrategy: 'MAX' as const
+                                      }
+                                  ],
+                                  limits: []
+                              };
+                          },
+                          async findPlanVersionSummary() {
+                              return {
+                                  id: 'pro-v1',
+                                  planId: 'pro',
+                                  vertical: VerticalEnum.ACCOMMODATION,
+                                  rank: 1,
+                                  sellable: true,
+                                  current: true
+                              };
+                          },
+                          async findSellableCurrentVersions() {
+                              return [];
+                          },
+                          async findCurrentPlanVersion() {
+                              return null;
+                          },
+                          async findAddonVersion() {
+                              return null;
+                          },
                           findAddonVersionEffects: async () => ({
                               entitlements: [
                                   {
@@ -75,10 +126,13 @@ function harness(featured = false, failSet = false, published = 0, failPublicati
                       unitOfWork: {
                           runLocked: async (_key, work) =>
                               work({
-                                  listOwnerListings: async () => [{ id: 'A', featured: false }],
+                                  listOwnerListings: async () => [
+                                      { id: 'A', featured: listingFeatured }
+                                  ],
                                   setFeatured
                               })
-                      }
+                      },
+                      trials: { findTrial: async () => null }
                   }
               }
             : {})
@@ -146,5 +200,15 @@ describe('HOS-1718 the daily reconciler is the net for the listing featured flag
             complete: true,
             pinged: true
         });
+    });
+
+    it('the nightly pass keeps a plan-featured listing on', async () => {
+        // Arrange
+        const h = harness(true, false, 0, false, planSource, true);
+        // Act
+        const result = await runDailyCoverageReconciler({ ports: h.ports });
+        // Assert
+        expect(h.setFeatured).toHaveBeenCalledTimes(0);
+        expect(result.featuredChanged).toBe(0);
     });
 });
