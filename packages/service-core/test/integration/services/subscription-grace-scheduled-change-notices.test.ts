@@ -56,7 +56,7 @@ async function fixture(
         .select()
         .from(subscriptions)
         .where(eq(subscriptions.id, seeded.subscriptionId));
-    if (!subscription) throw new Error('Seeded subscription missing');
+    if (!subscription?.planVersionId) throw new Error('Seeded subscription plan version missing');
     const [targetPlan] = await getServiceTestDb()
         .insert(plans)
         .values({
