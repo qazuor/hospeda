@@ -3,9 +3,10 @@ import { VerticalEnum } from '../../enums/vertical.enum.js';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 
 /**
- * Partner plans are paid manually by the team under US:B3:2 and DEC-SUB-016.
- * The team payment link does not exist yet (HOS-1739); when it does, this is
- * the point where an invited checkout can be accepted.
+ * Partner plans are paid manually (US:B3:2, DEC-SUB-016): an admin creates the manual subscription
+ * with administrative action 6 (HOS-1489, `partner.configureBilling`) and records each bank transfer
+ * (HOS-1541). There is no card checkout for Partner (PM-617, HOS-1782); a recurring card option would
+ * be a new issue.
  */
 export const MANUAL_PAYMENT_ONLY_VERTICALS = [VerticalEnum.PARTNER] as const;
 
