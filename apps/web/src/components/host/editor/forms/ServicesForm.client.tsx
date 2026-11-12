@@ -24,8 +24,9 @@
  * HOS-2060: the page also carries the house-rules panel, because the catalog
  * puts `policies` in the amenities section. Its keys travel as a `policies`
  * PATCH object through the same `extendPayload` — every key except
- * `minNights`, which the capacity/pricing page owns (it is a publish
- * requirement and its hub status points there).
+ * `minNights` and `maxNights`, which the capacity/pricing page owns (the
+ * minimum is a publish requirement and its hub status points there; the
+ * maximum moved next to it in HOS-2121).
  */
 
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
@@ -55,13 +56,20 @@ const OWN_FIELDS = ['amenityIds', 'featureIds'] as const;
 
 /**
  * The house-rule keys this page's Policies panel owns (HOS-2060): the shared
- * base plus the accommodation's check-in/out and maximum stay.
+ * base plus the accommodation's check-in/out, the private-events details
+ * (HOS-2122, right after `eventsAllowed`, the base's last key, so they render
+ * under it), the booking deposit and the spoken languages (HOS-2120).
+ *
+ * The stay length is NOT here: `minNights` and `maxNights` both live on the
+ * capacity/pricing page (HOS-2121).
  */
 const ACCOMMODATION_SERVICES_POLICY_KEYS: readonly ListingPolicyKey[] = [
     'checkIn',
     'checkOut',
-    'maxNights',
-    ...LISTING_BASE_POLICY_KEYS
+    ...LISTING_BASE_POLICY_KEYS,
+    'eventsDetails',
+    'deposit',
+    'spokenLanguages'
 ];
 
 /** Module-level so the hook's payload memo does not recompute on every render. */

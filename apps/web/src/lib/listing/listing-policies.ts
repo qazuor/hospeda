@@ -25,6 +25,8 @@
  */
 
 import {
+    ACCOMMODATION_SPOKEN_LANGUAGES,
+    type AccommodationSpokenLanguage,
     LISTING_PAYMENT_METHODS,
     LISTING_PET_ADMISSION_VALUES,
     LISTING_SMOKING_VALUES,
@@ -58,6 +60,27 @@ export interface ListingPetsPolicyValue {
     readonly notes?: ListingPolicyNote;
 }
 
+/** The booking deposit as the web reads it (accommodation only, HOS-2120). */
+export interface ListingDepositPolicyValue {
+    readonly required: boolean;
+    /** Percentage of the stay total, 1–100; only when `required`. */
+    readonly percentage?: number;
+    readonly notes?: ListingPolicyNote;
+}
+
+/**
+ * The private-events details as the web reads them (accommodation only,
+ * HOS-2122). Meaningful only when `eventsAllowed` is true.
+ */
+export interface ListingEventsDetailsValue {
+    readonly maxGuests?: number;
+    readonly amplifiedSound?: boolean;
+    /** Latest hour an event may run, `HH:mm`. */
+    readonly endTime?: string;
+    readonly extraCost?: boolean;
+    readonly notes?: ListingPolicyNote;
+}
+
 /**
  * Every policy key any vertical declares, all optional.
  *
@@ -78,6 +101,12 @@ export interface ListingPolicyValues {
     readonly minNights?: number;
     /** Accommodation only. */
     readonly maxNights?: number;
+    /** Accommodation only: booking deposit (HOS-2120). */
+    readonly deposit?: ListingDepositPolicyValue;
+    /** Accommodation only: languages the host attends guests in (HOS-2120). */
+    readonly spokenLanguages?: readonly AccommodationSpokenLanguage[];
+    /** Accommodation only: private-events details (HOS-2122). */
+    readonly eventsDetails?: ListingEventsDetailsValue;
     /** Experience only. */
     readonly privateGroups?: boolean;
     /** Experience only: free-text cancellation policy. */
@@ -142,6 +171,41 @@ function readPositiveInt(value: unknown): number | undefined {
     return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
 }
 
+function readPercentage(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 100
+        ? value
+        : undefined;
+}
+
+function readDeposit(value: unknown): ListingDepositPolicyValue | undefined {
+    if (!isRecord(value) || typeof value.required !== 'boolean') return undefined;
+    const percentage = value.required ? readPercentage(value.percentage) : undefined;
+    const notes = readNote(value.notes);
+    return {
+        required: value.required,
+        ...(percentage === undefined ? {} : { percentage }),
+        ...(notes ? { notes } : {})
+    };
+}
+
+function readEventsDetails(value: unknown): ListingEventsDetailsValue | undefined {
+    if (!isRecord(value)) return undefined;
+    const maxGuests = readPositiveInt(value.maxGuests);
+    const endTime =
+        typeof value.endTime === 'string' && HHMM.test(value.endTime) ? value.endTime : undefined;
+    const notes = readNote(value.notes);
+    const details: ListingEventsDetailsValue = {
+        ...(maxGuests === undefined ? {} : { maxGuests }),
+        ...(typeof value.amplifiedSound === 'boolean'
+            ? { amplifiedSound: value.amplifiedSound }
+            : {}),
+        ...(endTime ? { endTime } : {}),
+        ...(typeof value.extraCost === 'boolean' ? { extraCost: value.extraCost } : {}),
+        ...(notes ? { notes } : {})
+    };
+    return Object.keys(details).length > 0 ? details : undefined;
+}
+
 function readEnum<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
     return typeof value === 'string' && (allowed as readonly string[]).includes(value)
         ? (value as T)
@@ -188,6 +252,12 @@ export function parseListingPolicyValues({ raw }: { readonly raw: unknown }): Li
               ...(petsNotes ? { notes: petsNotes } : {})
           }
         : undefined;
+    const spokenLanguages = Array.isArray(raw.spokenLanguages)
+        ? ACCOMMODATION_SPOKEN_LANGUAGES.filter((language) =>
+              (raw.spokenLanguages as unknown[]).includes(language)
+          )
+        : [];
+    const eventsAllowed = typeof raw.eventsAllowed === 'boolean' ? raw.eventsAllowed : undefined;
     const cancellation =
         typeof raw.cancellation === 'string' && raw.cancellation.trim() !== ''
             ? raw.cancellation
@@ -197,11 +267,15 @@ export function parseListingPolicyValues({ raw }: { readonly raw: unknown }): Li
         paymentMethods: paymentMethods.length > 0 ? paymentMethods : undefined,
         pets,
         smokingAllowed: readEnum(raw.smokingAllowed, LISTING_SMOKING_VALUES),
-        eventsAllowed: typeof raw.eventsAllowed === 'boolean' ? raw.eventsAllowed : undefined,
+        eventsAllowed,
+        // Details of an event that is not allowed are an orphan: never read them.
+        eventsDetails: eventsAllowed === true ? readEventsDetails(raw.eventsDetails) : undefined,
         checkIn: readWindow(raw.checkIn),
         checkOut: readWindow(raw.checkOut),
         minNights: readPositiveInt(raw.minNights),
         maxNights: readPositiveInt(raw.maxNights),
+        deposit: readDeposit(raw.deposit),
+        spokenLanguages: spokenLanguages.length > 0 ? spokenLanguages : undefined,
         privateGroups: typeof raw.privateGroups === 'boolean' ? raw.privateGroups : undefined,
         cancellation,
         reservations: readEnum(raw.reservations, VENUE_RESERVATION_POLICY_VALUES),
@@ -221,6 +295,10 @@ export function parseListingPolicyValues({ raw }: { readonly raw: unknown }): Li
  * Returns a copy of `policies` with one key set, or removed when `value` is
  * `undefined`.
  *
+ * One cross-key rule lives here (HOS-2122): setting `eventsAllowed` to
+ * anything but `true` also removes `eventsDetails`, so a panel that owns both
+ * sends `eventsDetails: null` in the same PATCH and no orphan details survive.
+ *
  * @param params.policies - The current policies.
  * @param params.key - The key to change.
  * @param params.value - The new value; `undefined` removes the key.
@@ -238,6 +316,7 @@ export function setListingPolicy<K extends ListingPolicyKey>({
     const next: Record<string, unknown> = { ...policies };
     if (value === undefined) delete next[key];
     else next[key] = value;
+    if (key === 'eventsAllowed' && value !== true) delete next.eventsDetails;
     return next as ListingPolicyValues;
 }
 
@@ -299,4 +378,35 @@ export function paymentMethodLabel({
     readonly method: ListingPaymentMethod;
 }): string {
     return t(`listing.policies.paymentMethods.${method}`, PAYMENT_METHOD_FALLBACKS[method]);
+}
+
+/** Spanish fallbacks for the spoken-language labels (HOS-2120). */
+const SPOKEN_LANGUAGE_FALLBACKS: Readonly<Record<AccommodationSpokenLanguage, string>> = {
+    es: 'Español',
+    en: 'Inglés',
+    pt: 'Portugués',
+    it: 'Italiano',
+    fr: 'Francés',
+    de: 'Alemán',
+    other: 'Otros idiomas'
+};
+
+/**
+ * Localized label of one spoken language (HOS-2120).
+ *
+ * @param params.t - Locale-bound translator.
+ * @param params.language - The language code.
+ * @returns The human label.
+ */
+export function spokenLanguageLabel({
+    t,
+    language
+}: {
+    readonly t: Translate;
+    readonly language: AccommodationSpokenLanguage;
+}): string {
+    return t(
+        `listing.policies.spokenLanguages.language.${language}`,
+        SPOKEN_LANGUAGE_FALLBACKS[language]
+    );
 }

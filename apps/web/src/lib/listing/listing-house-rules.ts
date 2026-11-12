@@ -12,12 +12,20 @@
  * sidebar, and a third copy would only add noise. The experience cancellation
  * text and private-groups CTA keep their own components for the same reason.
  *
+ * HOS-2120/HOS-2122 add the accommodation's deposit, spoken languages and the
+ * private-events details. Each detail renders only when informed, and event
+ * details only when events are allowed.
+ *
  * @module lib/listing/listing-house-rules
  */
 
 import { resolveI18nText } from '../resolve-i18n-text';
-import type { ListingPolicyTimeWindow, ListingPolicyValues } from './listing-policies';
-import { paymentMethodLabel } from './listing-policies';
+import type {
+    ListingPolicyNote,
+    ListingPolicyTimeWindow,
+    ListingPolicyValues
+} from './listing-policies';
+import { paymentMethodLabel, spokenLanguageLabel } from './listing-policies';
 
 /** Translator shape compatible with `createTranslations().t`. */
 type Translate = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
@@ -30,7 +38,9 @@ export type HouseRuleRowId =
     | 'pets'
     | 'smokingAllowed'
     | 'eventsAllowed'
-    | 'reservations';
+    | 'reservations'
+    | 'deposit'
+    | 'spokenLanguages';
 
 /** One rendered house-rule row. */
 export interface HouseRuleRow {
@@ -83,6 +93,65 @@ const RESERVATIONS_FALLBACK = {
     recommended: 'Reserva recomendada',
     not_accepted: 'No toma reservas'
 } as const;
+
+/** Resolves an optional owner note to the page locale; `''` when absent. */
+function noteText({
+    notes,
+    locale
+}: {
+    readonly notes: ListingPolicyNote | undefined;
+    readonly locale: string;
+}): string {
+    return notes ? resolveI18nText(notes, locale).trim() : '';
+}
+
+/** The events row: the yes/no, plus the informed details when allowed (HOS-2122). */
+function eventsRow({
+    policies,
+    t,
+    locale
+}: {
+    readonly policies: ListingPolicyValues;
+    readonly t: Translate;
+    readonly locale: string;
+}): HouseRuleRow {
+    const label = t('listing.policies.eventsAllowed.label', 'Eventos');
+    if (policies.eventsAllowed !== true) {
+        return {
+            id: 'eventsAllowed',
+            label,
+            value: t('listing.policies.eventsAllowed.no', 'No se permiten eventos')
+        };
+    }
+    const details = policies.eventsDetails ?? {};
+    const parts = [t('listing.policies.eventsAllowed.yes', 'Se permiten eventos privados')];
+    if (details.maxGuests !== undefined) {
+        parts.push(
+            t('listing.policies.eventsDetails.maxGuests', 'hasta {{count}} invitados', {
+                count: details.maxGuests
+            })
+        );
+    }
+    if (details.endTime) {
+        parts.push(
+            t('listing.policies.eventsDetails.endTime', 'hasta las {{time}}', {
+                time: details.endTime
+            })
+        );
+    }
+    if (details.amplifiedSound !== undefined) {
+        parts.push(
+            details.amplifiedSound
+                ? t('listing.policies.eventsDetails.amplifiedSound.yes', 'con música amplificada')
+                : t('listing.policies.eventsDetails.amplifiedSound.no', 'sin música amplificada')
+        );
+    }
+    if (details.extraCost === true) {
+        parts.push(t('listing.policies.eventsDetails.extraCost', 'con cargo extra'));
+    }
+    const note = noteText({ notes: details.notes, locale });
+    return { id: 'eventsAllowed', label, value: parts.join(' · '), ...(note ? { note } : {}) };
+}
 
 /**
  * Builds the house-rule rows for a listing.
@@ -143,7 +212,7 @@ export function buildHouseRuleRows({
             admission !== 'no' && extraCost === true
                 ? `${admissionText} · ${t('listing.policies.pets.extraCost', 'con cargo extra')}`
                 : admissionText;
-        const note = notes ? resolveI18nText(notes, locale).trim() : '';
+        const note = noteText({ notes, locale });
         rows.push({
             id: 'pets',
             label: t('listing.policies.pets.label', 'Mascotas'),
@@ -164,12 +233,38 @@ export function buildHouseRuleRows({
     }
 
     if (policies.eventsAllowed !== undefined) {
+        rows.push(eventsRow({ policies, t, locale }));
+    }
+
+    if (policies.deposit) {
+        const { required, percentage, notes } = policies.deposit;
+        const value = required
+            ? percentage === undefined
+                ? t('listing.policies.deposit.yes', 'Se pide seña')
+                : t(
+                      'listing.policies.deposit.yesWithPercentage',
+                      'Se pide seña del {{percentage}}%',
+                      {
+                          percentage
+                      }
+                  )
+            : t('listing.policies.deposit.no', 'No se pide seña');
+        const note = required ? noteText({ notes, locale }) : '';
         rows.push({
-            id: 'eventsAllowed',
-            label: t('listing.policies.eventsAllowed.label', 'Eventos'),
-            value: policies.eventsAllowed
-                ? t('listing.policies.eventsAllowed.yes', 'Se permiten eventos privados')
-                : t('listing.policies.eventsAllowed.no', 'No se permiten eventos')
+            id: 'deposit',
+            label: t('listing.policies.deposit.label', 'Seña para reservar'),
+            value,
+            ...(note ? { note } : {})
+        });
+    }
+
+    if (policies.spokenLanguages && policies.spokenLanguages.length > 0) {
+        rows.push({
+            id: 'spokenLanguages',
+            label: t('listing.policies.spokenLanguages.label', 'Idiomas en que te atendemos'),
+            value: policies.spokenLanguages
+                .map((language) => spokenLanguageLabel({ t, language }))
+                .join(', ')
         });
     }
 

@@ -5229,6 +5229,30 @@
         },
         "maxNights": {
             "belowMinNights": "The maximum nights cannot be lower than the minimum"
+        },
+        "deposit": {
+            "required": {
+                "invalid": "Say whether you ask for a deposit"
+            },
+            "percentage": {
+                "integer": "The deposit percentage must be a whole number",
+                "min": "The deposit percentage must be at least 1",
+                "max": "The deposit percentage cannot exceed 100",
+                "requiresDeposit": "The percentage only applies if you ask for a deposit"
+            }
+        },
+        "spokenLanguages": {
+            "invalid": "The language is not valid",
+            "invalidType": "Languages must be a list",
+            "duplicate": "Each language can be listed only once"
+        },
+        "eventsDetails": {
+            "maxGuests": {
+                "integer": "The maximum guests must be a whole number",
+                "min": "The maximum guests must be at least 1",
+                "max": "The maximum guests cannot exceed 1000"
+            },
+            "requiresEventsAllowed": "Event details only apply when events are allowed"
         }
     }
 }
