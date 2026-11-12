@@ -57,11 +57,12 @@ const mock = vi.hoisted(() => ({ revalidations: [] as unknown[] }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
+    const revalidationService = {
+        scheduleRevalidation: (input: unknown) => mock.revalidations.push(input)
+    };
     return {
         ...actual,
-        getRevalidationService: () => ({
-            scheduleRevalidation: (input: unknown) => mock.revalidations.push(input)
-        })
+        getRevalidationService: () => revalidationService
     };
 });
 
