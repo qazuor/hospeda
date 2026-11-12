@@ -92,6 +92,12 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'share intents composed in this file from literal provider bases (wa.me, facebook.com/sharer, t.me)',
     'components/accommodation/ExternalReviews.client.tsx#{GOOGLE_ATTRIBUTION_HREF}':
         "module constant 'https://www.google.com/maps', required by the Google Places display policy",
+    'components/accommodation/ExternalReputationSummaryRow.astro#{deepLinkHref}':
+        '`resolvePlatformHref` (lib/external-reputation-visibility.ts) runs the sanitizer on the deep link, then on the listing URL',
+    'components/accommodation/ExternalReputation.astro#{pillHref}':
+        'the same `resolvePlatformHref` output, for the link-only "También en" pills',
+    'components/accommodation/ExternalReputation.astro#{googleHref}':
+        'the same `resolvePlatformHref` output, for the "Ver las N reseñas en Google" CTA',
     'components/accommodation/WhatsAppContact.client.tsx#{waUrl}':
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
     'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':

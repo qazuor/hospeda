@@ -1,6 +1,6 @@
 {
-  "id": "30523827-45cf-4167-9739-5660d048eba7",
-  "prevId": "bfbcd419-73f8-4698-941a-4e0868d01b48",
+  "id": "fb19b032-ad64-4f20-8276-c59527ec11e9",
+  "prevId": "6969ad6d-111a-4f71-b73a-6eb7d088945d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -275,6 +275,18 @@
         "rating": {
           "name": "rating",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_reputation_toggle_decided_at": {
+          "name": "external_reputation_toggle_decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_reputation_auto_enabled_at": {
+          "name": "external_reputation_auto_enabled_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -2595,7 +2607,8 @@
           "isUnique": true,
           "concurrently": false,
           "method": "btree",
-          "with": {}
+          "with": {},
+          "where": "\"accommodation_external_listings\".\"deleted_at\" is null"
         }
       },
       "foreignKeys": {
@@ -2956,6 +2969,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "listing_entity_type": {
+          "name": "listing_entity_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "listing_entity_id": {
+          "name": "listing_entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2972,6 +2997,27 @@
               "expression": "created_at",
               "isExpression": false,
               "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiConversations_listing_idx": {
+          "name": "aiConversations_listing_idx",
+          "columns": [
+            {
+              "expression": "listing_entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "listing_entity_id",
+              "isExpression": false,
+              "asc": true,
               "nulls": "last"
             }
           ],
@@ -3183,6 +3229,18 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "owner_dismissed_at": {
+          "name": "owner_dismissed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "answer_status": {
+          "name": "answer_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3218,6 +3276,27 @@
             },
             {
               "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiMessages_answerStatus_created_idx": {
+          "name": "aiMessages_answerStatus_created_idx",
+          "columns": [
+            {
+              "expression": "answer_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8144,7 +8223,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set', 'addon_instance.status_changed', 'addon_product.version_published')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -27542,34 +27621,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "uq_addon_instance_free_choice": {
-          "name": "uq_addon_instance_free_choice",
-          "columns": [
-            {
-              "expression": "owner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "product_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "coalesce(\"target_id\", '00000000-0000-0000-0000-000000000000'::uuid)",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"addon_instance\".\"status\" = 'ACTIVE' AND \"addon_instance\".\"complement_subscription_id\" IS NULL AND \"addon_instance\".\"title_anchor_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -27724,12 +27775,6 @@
           "type": "varchar(32)[]",
           "primaryKey": false,
           "notNull": true
-        },
-        "retired_at": {
-          "name": "retired_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -33786,8 +33831,6 @@
         "billing.grantComplimentary",
         "billing.managePromoCodes",
         "billing.setCyclePrice",
-        "billing.publishAddonVersion",
-        "billing.migratePlan",
         "billing.pauseSubscription",
         "billing.changeSubscriptionPlan",
         "user.update.self",
@@ -34320,5 +34363,6 @@
     "columns": {},
     "schemas": {},
     "tables": {}
-  }
+  },
+  "checkConstraints": {}
 }

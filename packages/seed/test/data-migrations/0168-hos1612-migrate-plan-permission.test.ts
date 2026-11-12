@@ -1,7 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0163-hos1612-migrate-plan-permission.js';
+import * as migration from '../../src/data-migrations/0168-hos1612-migrate-plan-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -26,7 +26,7 @@ function buildCtx(inserted: unknown[]): { ctx: SeedMigrationCtx; values: () => u
 describe('AC:B12:2 action 17 is separate from publishing a plan version seed migration', () => {
     it('pairs the required additive grant with the SUPER_ADMIN baseline', () => {
         expect(migration.meta).toEqual({
-            name: '0163-hos1612-migrate-plan-permission',
+            name: '0168-hos1612-migrate-plan-permission',
             group: 'required',
             destructive: false
         });

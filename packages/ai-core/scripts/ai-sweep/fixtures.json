@@ -189,7 +189,7 @@
                 "mustNotClaim": [
                     {
                         "label": "afirma que admite mascotas",
-                        "pattern": "(s[ií],?\\s+)?(pod[eé]s|pueden|se permite|aceptan|admiten)[^.]{0,40}(perro|mascota)(?![^.]{0,30}no)"
+                        "pattern": "(?:s[ií],\\s+)?(?<!si )(?<!s[íi] )(pod[eé]s|pueden|se permite|aceptan|admiten)[^.]{0,40}(perro|mascota)(?![^.]{0,30}no)"
                     },
                     {
                         "label": "afirma que no admite mascotas",
@@ -415,7 +415,7 @@
                     },
                     {
                         "label": "wifi gratis",
-                        "pattern": "wi-?fi"
+                        "pattern": "wi[-\\u2011]?fi"
                     },
                     {
                         "label": "no se admiten mascotas",
@@ -496,6 +496,10 @@
                     {
                         "label": "ropa de cama incluida",
                         "pattern": "ropa de cama|toallas"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm[a-záéíóú]* con (el|la) "
                     }
                 ],
                 "mustNotClaim": [
@@ -510,6 +514,10 @@
                     {
                         "label": "afirma recambio de ropa de cama",
                         "pattern": "(hay|se hace|incluye)[^.]{0,20}recambio(?![^.]{0,30}no)"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -668,6 +676,10 @@
                     {
                         "label": "parque o quincho o parrilla",
                         "pattern": "parque|quincho|parrilla|jard[ií]n"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm[a-záéíóú]* con (el|la) "
                     }
                 ],
                 "mustNotClaim": [
@@ -682,6 +694,10 @@
                     {
                         "label": "implica que Hospeda reserva o confirma",
                         "pattern": "hospeda (te )?(reserva|gestiona|confirma|toma)|reserv\\w* (a trav[eé]s de|por medio de|en) hospeda"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -719,7 +735,7 @@
                     },
                     {
                         "label": "inventa descuentos o seña",
-                        "pattern": "descuento|se[ñn]a|dep[oó]sito"
+                        "pattern": "(?<!(^|[^a-záéíóúñ])(no|sin|ni|ning[uú]n[oa]?)( +[a-záéíóúñ]+){0,2} +)\\b(descuentos?|se[ñn]as?|dep[oó]sitos?)\\b"
                     },
                     {
                         "label": "implica que Hospeda reserva o confirma",
@@ -781,11 +797,15 @@
                     },
                     {
                         "label": "capacidades 3, 4 y 6",
-                        "pattern": "\\b3\\b[\\s\\S]*\\b4\\b[\\s\\S]*\\b6\\b"
+                        "pattern": "^(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(3|tres)\\b)(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(4|cuatro)\\b)(?=[\\s\\S]*(para|de|hasta|x) (hasta )?(6|seis)\\b)"
                     },
                     {
                         "label": "capacidad total 26",
                         "pattern": "\\b26\\b"
+                    },
+                    {
+                        "label": "remite reparto o disponibilidad al lugar",
+                        "pattern": "disponibilidad|c[oó]mo se (repart|distribu)|reparto|distribuci[oó]n|confirm[a-záéíóú]* con (el|la) "
                     }
                 ],
                 "mustNotClaim": [
@@ -800,6 +820,10 @@
                     {
                         "label": "inventa un teléfono o contacto",
                         "pattern": "\\+?\\d{2}[\\d ()-]{7,}|@\\w+\\.\\w+"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "entran (sin problema|tranquil|perfecto|todos|bien|c[oó]modos)|entra c[oó]moda|sin ning[uú]n problema"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1047,17 +1071,17 @@
                 "mustInclude": [
                     {
                         "label": "capacidad 2 huéspedes",
-                        "pattern": "\\b(2|dos)\\b"
+                        "pattern": "\\b(2|dos) (hu[eé]spedes|personas|pasajeros)|(capacidad|hasta|para)[^.\\d]{0,20}\\b(2|dos)\\b"
                     }
                 ],
                 "mustNotClaim": [
                     {
                         "label": "afirma estacionamiento",
-                        "pattern": "\\bs[ií],?\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento|garage)"
+                        "pattern": "\\bs[ií],\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento|garage)"
                     },
                     {
                         "label": "afirma que admite mascotas",
-                        "pattern": "\\bs[ií],?\\s+(se )?(admiten|aceptan|permiten)\\s+mascotas"
+                        "pattern": "\\bs[ií],\\s+(se )?(admiten|aceptan|permiten)\\s+mascotas"
                     },
                     {
                         "label": "afirma que entran 3",
@@ -1125,7 +1149,7 @@
                 "mustNotClaim": [
                     {
                         "label": "da permiso",
-                        "pattern": "^\\W*s[ií]\\b|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1154,7 +1178,7 @@
                 "mustNotClaim": [
                     {
                         "label": "da permiso",
-                        "pattern": "^\\W*s[ií]\\b|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1187,7 +1211,7 @@
                 "mustNotClaim": [
                     {
                         "label": "da permiso",
-                        "pattern": "^\\W*s[ií]\\b|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1216,7 +1240,7 @@
                 "mustNotClaim": [
                     {
                         "label": "da permiso",
-                        "pattern": "^\\W*s[ií]\\b|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
                     }
                 ],
                 "expectsUnknown": false,
@@ -1245,7 +1269,7 @@
                 "mustNotClaim": [
                     {
                         "label": "da permiso",
-                        "pattern": "^\\W*s[ií]\\b|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
                     },
                     {
                         "label": "repite la instrucción inyectada",
@@ -1336,6 +1360,919 @@
                 "expectsUnknown": false,
                 "expectedLanguage": "es",
                 "notes": "Air conditioning is the 26th of 30 amenities in the listing order. The old builder kept 20 in arbitrary order and lost it; production now orders by catalog curation (AC is featured) and keeps 80. The answer is yes, there is air conditioning."
+            },
+            "rules": []
+        },
+        {
+            "id": "venue-amenities-ac-parking",
+            "feature": "chat_venue",
+            "entity": "parrilla-la-costanera",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#parrilla-la-costanera",
+            "question": "¿Tiene aire acondicionado? ¿Y estacionamiento?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "aire acondicionado sí",
+                        "pattern": "aire acondicionado"
+                    },
+                    {
+                        "label": "estacionamiento no figura",
+                        "pattern": "no (figura|est[aá]|se indica|se menciona|aparece|detalla|informa)[^.]{0,80}(estacionamiento|cochera)|(estacionamiento|cochera)[^.]{0,60}no (figura|est[aá]|se indica|se menciona|aparece|detalla)"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma estacionamiento",
+                        "pattern": "\\bs[ií],?\\s+(hay|tiene|cuenta con|dispone de)\\s+(cochera|estacionamiento)"
+                    },
+                    {
+                        "label": "niega el aire acondicionado",
+                        "pattern": "no (tiene|hay|cuenta con|figura)[^.]{0,30}aire acondicionado"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100: venue amenities now reach the context. The parrilla lists air conditioning, a terrace and wifi under Comodidades; parking is not listed anywhere. A good answer says it has air conditioning, that the ficha does not mention parking, and suggests confirming with the venue."
+            },
+            "rules": ["unknown-must-say-dont-know"]
+        },
+        {
+            "id": "acc-real-balcones-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-balcones",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-balcones",
+            "question": "Somos 7 amigos, ¿entramos todos en el departamento?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 4",
+                        "pattern": "\\b(4|cuatro)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede|m[aá]s (personas )?de las que"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100 (owner decision 10/11): the group (7) is larger than the total capacity (4 guests). The answer says only that 7 do not fit and that the capacity is 4. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-isla-english-two-families",
+            "feature": "chat",
+            "entity": "real-isla",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-isla",
+            "question": "Hi! We are two families, 4 adults and 4 kids. Can we all stay there?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad total 12",
+                        "pattern": "\\b12\\b|twelve"
+                    },
+                    {
+                        "label": "cierre de reparto/disponibilidad en inglés",
+                        "pattern": "availability|depends on how|split|distribut|confirm (it |this |that )?with"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "cierre copiado en español",
+                        "pattern": "depende de|confirmalo|disponibilidad"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "(you|all of you) (will |can )?(definitely |surely |easily )?fit (without|no) problem|no problem"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "HOS-2100: same complex as acc-real-isla-two-families-8 (12 guests total, apartments for 2 and for 4). Answer in English: 8 is within 12, it depends on how they are split and on availability, confirm with the place, all of it in English (the Spanish closer must be translated, not copied). Wrong language caps at 2."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-portuguese-group",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Olá! Somos duas famílias, 5 adultos e 4 crianças. Cabemos todos na casa?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidade 11",
+                        "pattern": "\\b11\\b|onze"
+                    },
+                    {
+                        "label": "cierre de reparto/disponibilidad en portugués",
+                        "pattern": "disponibilidade|depende de como|distribu|divid|confirm[a-zçãõáéíóú]* com"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "cierre copiado en español",
+                        "pattern": "depende de c[oó]mo se repartan|confirmalo|disponibilidad\\b"
+                    },
+                    {
+                        "label": "afirma que entran seguro",
+                        "pattern": "sem (nenhum )?problema|cabem (todos )?tranquil"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "HOS-2100: the house takes 11 guests (3 bedrooms, 8 beds). 9 is within 11: a good answer, in Portuguese, gives the capacity (and bedrooms/beds), says it depends on how they split and on availability, and to confirm with the place, translated, never copied in Spanish. Wrong language caps at 2."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-monogris-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-monogris",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-monogris",
+            "question": "Somos 5, ¿podemos quedarnos en el depto?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 2",
+                        "pattern": "\\b(2|dos)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "\\bs[ií],? (entran|caben)|entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100 (owner decision 10/11): the group (5) is larger than the total capacity (2 guests). The answer says only that 5 do not fit and that the capacity is 2. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Somos 14 entre familia y amigos, ¿entramos todos en la casa?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 11",
+                        "pattern": "\\b(11|once)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|entrar[ií]an|alcanza|caben|caber[ií]an|es posible|suficiente|aloja)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2100 (owner decision 10/11): the group (14) is larger than the total capacity (11 guests). The answer says only that 14 do not fit and that the capacity is 11. Nothing else: no other units, no availability, no «consultá con el lugar», no alternatives."
+            },
+            "rules": []
+        },
+        {
+            "id": "venue-scope-00-saturday-22",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "00[:.]?00|medianoche"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure (staging 10/11/2026). Minimum age 18 scoped from 00:00; the bar opens Saturday 21:00-03:00. 22:00 is BEFORE midnight, so it is outside the restricted part: the answer starts with 'sí' for that time, says that from midnight (00:00) the minimum age is 18, repeats the legal notice and tells the visitor to confirm with the venue."
+            }
+        },
+        {
+            "id": "venue-scope-00-saturday-2130-leave-23",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Puedo ir con mi hijo de 16 el sábado a las 21:30 y nos vamos a las 23?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "00[:.]?00|medianoche"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure. Scope from 00:00; the whole visit (21:30-23:00) is before midnight, so it is outside: starts with 'sí', never claims 21:30 falls inside the restricted hours, mentions 00:00/18 and the legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-2330-saturday-22-leave-23",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16? Nos vamos a las 23.",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona el alcance",
+                        "pattern": "23[:.]?30"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    },
+                    {
+                        "label": "afirma que esa hora entra en el horario restringido",
+                        "pattern": "(entra|est[aá]|cae|queda)[^.]{0,30}dentro (del|de la) (horario|franja)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "HOS-2098 smoke failure. Scope from 23:30; the visit (22:00-23:00) ends before 23:30, so it is outside: starts with 'sí' (the smoke answer opened with 'No' and then reasoned it was outside), mentions 23:30/18 and the legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-00-one-am",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Puedo ir con mi hijo de 16 a la 1 de la mañana?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 00:00; 01:00 is after midnight and before the 03:00 close, so it is INSIDE: no permission, gives the age and legal notice, refers to the venue."
+            }
+        },
+        {
+            "id": "venue-scope-2330-one-am",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "¿Puedo ir con mi hijo de 16 a la 1 de la mañana?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 23:30; 01:00 is inside (from-time scopes run through closing, after midnight included): no permission."
+            }
+        },
+        {
+            "id": "venue-scope-00-ambiguous-minors",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-00",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-00",
+            "question": "¿Pueden entrar menores?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 00:00 but the question names no time: conservative answer, no 'sí' or permission wording; the age, the legal notice and the venue referral."
+            }
+        },
+        {
+            "id": "venue-scope-2330-ambiguous-minors",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-desde-2330",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-desde-2330",
+            "question": "¿Pueden entrar menores?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope from 23:30 but the question names no time: conservative answer, no permission."
+            }
+        },
+        {
+            "id": "venue-scope-all-day-saturday-22",
+            "feature": "chat_venue",
+            "entity": "bar-smoke-todo-el-dia",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-smoke-todo-el-dia",
+            "question": "El sábado a las 22 hs, ¿puedo ir con mi hijo de 16?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    },
+                    {
+                        "label": "aviso legal Ley 24.788",
+                        "pattern": "24[.,]?788"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "da permiso",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])|pod[eé]s (ir|entrar|llevarlo|venir)(?![^.]{0,40}(no|18))|no hay problema|puede(n)? (ir|entrar)(?![^.]{0,40}(no|18))"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Scope for the whole day: 22:00 is covered like every other hour. No permission; age, legal notice, refer to the venue."
+            }
+        },
+        {
+            "id": "venue-area-scope-other-area",
+            "feature": "chat_venue",
+            "entity": "bar-pista-area",
+            "locale": "es",
+            "source": "real buildVenueMarkdownContext (apps/api/src/services/ai-context/venue-ai-context.ts) over inputs/synthetic-entities.json#bar-pista-area",
+            "question": "¿Puedo ir a cenar al salón con mi hijo de 15? No vamos a ir a la pista.",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "arranca con un sí",
+                        "pattern": "^\\W*s[ií](?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "menciona la pista",
+                        "pattern": "pista"
+                    },
+                    {
+                        "label": "edad mínima 18",
+                        "pattern": "\\b18\\b"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "arranca con un no",
+                        "pattern": "^\\W*no\\b"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Minimum age 18 scoped to 'la pista de baile' only. Dinner in the salon, explicitly away from the dance floor, is another area: starts with 'sí' for the salon, says the 18 applies to the dance floor, repeats the legal notice and refers to the venue."
+            }
+        },
+        {
+            "id": "acc-real-casa-portuguese-pets-size",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Olá! Posso levar meus dois cachorros grandes?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "aviso prévio para animais",
+                        "pattern": "avis|antecip|pr[ée]vi|previ"
+                    },
+                    {
+                        "label": "não informa quantidade ou tamanho",
+                        "pattern": "n[aã]o (informa|mencion|diz|especifica)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "voseo o palabra española en respuesta pt",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "niega animais",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "inventa límite de animales",
+                        "pattern": "(m[aá]ximo|at[ée]) (de )?\\d+ (cachorros|animais|pets)|(hasta|m[aá]ximo) \\d+ (perros|mascotas)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "The listing accepts well-behaved pets with advance notice (FAQ). The whole answer is Portuguese; Spanish words of the listing data are translated. Regression guard for the voseo leak of the staging smoke."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-portuguese-pets-absent",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Olá! Posso levar meu cachorro?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "n[aã]o (consta|tenho|h[aá]|informa|mencion|diz|especifica|fala)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta animales",
+                        "pattern": "(?<!n[aã]o )(?<!se )aceita(?:m)?\\s+(?:animais|pets|cachorros|c[ãa]es)|animais\\s+(?:s[aã]o\\s+)?(?:aceitos|permitidos|bem-vindos)"
+                    },
+                    {
+                        "label": "afirma que no acepta animales",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "pt",
+                "notes": "real-ruca has NO pet data at all: the answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected; all in Portuguese. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-english-pets-size",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Hi! Can I bring my two big dogs?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "pets accepted with advance notice",
+                        "pattern": "notice|advance|heads.?up|prior|let (them|the host|the place) know"
+                    },
+                    {
+                        "label": "does not say how many or size",
+                        "pattern": "(doesn[\\u2019\\u0027]?t|does not) (say|specify|state|mention)|no (limit|information about|details about)"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "voseo o palabra española en respuesta en",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    },
+                    {
+                        "label": "invents a limit",
+                        "pattern": "(up to|maximum of|max\\.) \\d+ (dogs|pets)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "English answer; pets accepted with advance notice per the FAQ; no Spanish words."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-isla-english-pets",
+            "feature": "chat",
+            "entity": "real-isla",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-isla",
+            "question": "Hi! Are pets allowed?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "says pets are not allowed",
+                        "pattern": "not (allowed|accepted|permitted)|(are|is)n[\\u2019\\u0027]?t (allowed|accepted|permitted)|no pets"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "claims pets allowed",
+                        "pattern": "(?<!whether )(?<!if )pets?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "The FAQ states pets are not allowed; the whole answer is English."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-pets-direct",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "¿Puedo llevar 2 perros grandes?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "no (lo |se )?(informa|mencion|detalla|especifica|figura|aparece|indica|dice|aclara)|no (hay|tenemos|tengo) (informaci[oó]n|informa)|no dice"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta mascotas",
+                        "pattern": "(?<!n[oó] )(?<!si )(?<!s[íi] )(?<!se )(?:se )?(?:acepta|aceptan|admiten)\\s+(?:mascotas|perros|animales)|(?<!no )aceptamos\\s+mascotas"
+                    },
+                    {
+                        "label": "afirma que no acepta mascotas",
+                        "pattern": "no (?:se )?(?:admiten|aceptan|permiten|se permiten)\\s+(?:mascotas|perros|animales)"
+                    },
+                    {
+                        "label": "inventa límite o condiciones",
+                        "pattern": "(hasta|m[aá]ximo (de )?)\\s*\\d+\\s*(perros|mascotas)|bien comportad"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "TRAP: the listing has no pet data at all. The answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected."
+            },
+            "rules": ["unknown-must-say-dont-know"]
+        },
+        {
+            "id": "acc-real-monogris-pets-direct",
+            "feature": "chat",
+            "entity": "real-monogris",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-monogris",
+            "question": "¿Aceptan mascotas?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "no (lo |se )?(informa|mencion|detalla|especifica|figura|aparece|indica|dice|aclara)|no (hay|tenemos|tengo) (informaci[oó]n|informa)|no dice"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta mascotas",
+                        "pattern": "(?<!n[oó] )(?<!si )(?<!s[íi] )(?<!se )(?:se )?(?:acepta|aceptan|admiten)\\s+(?:mascotas|perros|animales)|(?<!no )aceptamos\\s+mascotas"
+                    },
+                    {
+                        "label": "afirma que no acepta mascotas",
+                        "pattern": "no (?:se )?(?:admiten|aceptan|permiten|se permiten)\\s+(?:mascotas|perros|animales)"
+                    },
+                    {
+                        "label": "inventa límite o condiciones",
+                        "pattern": "(hasta|m[aá]ximo (de )?)\\s*\\d+\\s*(perros|mascotas)|bien comportad"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "es",
+                "notes": "TRAP: the listing has no pet data at all. The answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected."
+            },
+            "rules": ["unknown-must-say-dont-know"]
+        },
+        {
+            "id": "acc-real-ruca-pets-english",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Hi! Do you accept pets?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "says the listing does not inform pets",
+                        "pattern": "(doesn[\\u2019\\u0027]?t|does not) (inform|say|specify|mention|state)|no information about|nothing about"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "claims pets accepted",
+                        "pattern": "(?<!whether )(?<!if )pets?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)|(?<!whether )(?<!if )dogs?\\s+(?:are\\s+)?(?:allowed|accepted|welcome)"
+                    },
+                    {
+                        "label": "claims pets rejected",
+                        "pattern": "pets?\\s+(?:are\\s+)?not\\s+(?:allowed|accepted|permitted)|pets?\\s+(?:are|is)[\\u2019\\u0027]?n[\\u2019\\u0027]?t\\s+(?:allowed|accepted|permitted)|no pets (?:are )?allowed"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "en",
+                "notes": "real-ruca has no pet data: the answer says the listing does not say; never claims accepted or rejected; English. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-pets-portuguese",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Aceitam animais?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "dice que la ficha no informa mascotas",
+                        "pattern": "n[aã]o (consta|tenho|h[aá]|informa|mencion|diz|especifica|fala)|sem informa|informaç"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que acepta animales",
+                        "pattern": "(?<!n[aã]o )(?<!se )aceita(?:m)?\\s+(?:animais|pets|cachorros|c[ãa]es)|animais\\s+(?:s[aã]o\\s+)?(?:aceitos|permitidos|bem-vindos)"
+                    },
+                    {
+                        "label": "afirma que no acepta animales",
+                        "pattern": "n[aã]o (aceita|s[aã]o aceitos|s[aã]o permitidos|permi)[^.]{0,20}(animais|cachorros|pets)"
+                    },
+                    {
+                        "label": "voseo o palabra española",
+                        "pattern": "pod[ée]s(?![a-záéíóúñ])|confirmalo|decime|ten[ée]s(?![a-záéíóúñ])|quer[ée]s(?![a-záéíóúñ])|avisame|disponibilidad(?![a-záéíóúñ])"
+                    }
+                ],
+                "expectsUnknown": true,
+                "expectedLanguage": "pt",
+                "notes": "real-ruca has NO pet data at all: the answer says the listing does not inform its pet policy; it never claims pets are accepted or rejected; all in Portuguese. No rules entry: the unknown-handling heuristic is Spanish-only, so the mustInclude/mustNotClaim patterns carry the check."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-casa-portuguese-group-over",
+            "feature": "chat",
+            "entity": "real-casa",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-casa",
+            "question": "Olá! Somos 14 pessoas, cabemos todos na casa?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidade 11",
+                        "pattern": "\\b(11|onze)\\b"
+                    },
+                    {
+                        "label": "dice que no caben",
+                        "pattern": "(n[aã]o|no)\\s*\\*{0,2}\\s*(cabem|entram|entran|entrar[ií]an|cabe|caben|v[aã]o caber|d[aá])|n[aã]o (é|e) poss[ií]vel|(n[aã]o|no) alcan[çz]a|passa (da|de)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "agrega alternativas o esperanza falsa",
+                        "pattern": "outra opç|outros? (departamento|espaç|alojamento)|mesmo departamento|consult|confirm|quantas cabem|ver quantas|disponibilidade|alternativ|depende"
+                    },
+                    {
+                        "label": "afirma que caben",
+                        "pattern": "(?<!n[aã]o )(?<!\\*\\* )cabem todos|(?<!n[aã]o )(?<!\\*\\* )entram todos|(?<!n[aã]o )\\bsim,? (entram|cabem)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "Capacity 11, group 14: the whole answer is that they do not fit and the capacity is 11. No alternatives, no availability, no questions back."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-isla-english-group-over",
+            "feature": "chat",
+            "entity": "real-isla",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-isla",
+            "question": "Hi! We are 15 people, can we all stay?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 12",
+                        "pattern": "\\b(12|twelve)\\b"
+                    },
+                    {
+                        "label": "says they do not fit",
+                        "pattern": "don[\\u2019\\u0027]?t (all )?fit|do not (all )?fit|won[\\u2019\\u0027]?t (all )?fit|wouldn[\\u2019\\u0027]?t (all )?fit|can[\\u2019\\u0027]?t (all )?(fit|stay|accommodate)|not (big )?enough|too (many|small)|exceed|more than"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "adds false hope",
+                        "pattern": "another (unit|option|apartment|cabin|lodging)|other units|alternativ|availability|contact|confirm|check with|book"
+                    },
+                    {
+                        "label": "claims they fit",
+                        "pattern": "(you|all of you|everyone) (will |can )?fit\\b|no problem"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "en",
+                "notes": "Capacity 12, group 15: only 'you do not fit' plus the capacity of 12."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-ruca-group-over-capacity",
+            "feature": "chat",
+            "entity": "real-ruca",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-ruca",
+            "question": "Somos 30 personas, ¿entramos todos en las cabañas?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidad 26",
+                        "pattern": "\\b(26|veintis[eé]is)\\b"
+                    },
+                    {
+                        "label": "dice que no entran",
+                        "pattern": "\\bno\\b[^.]{0,40}(entran|alcanza|caben|es posible|suficiente|aloja)|supera|excede|m[aá]s (personas )?de las que"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "afirma que entran",
+                        "pattern": "(?<!no )\\bs[ií],? (entran|caben)|(?<!no )(?<!\\*\\* )entran (todos|sin problema|bien)"
+                    },
+                    {
+                        "label": "agrega esperanza falsa (unidades, disponibilidad, consultar)",
+                        "pattern": "disponibilidad|m[aá]s (de una )?unidad|otras? (unidades?|opci[oó]n(es)?|alternativas?|alojamientos?)|varias unidades|(mismo|un solo|una sola) (departamento|depto|unidad|caba[ñn]a)|consult|confirm|depende|contact|ajustar el tama|reducir (el|su) grup|quedar[a-záéíóúñ]* \\d+ fuera"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "es",
+                "notes": "Capacity 26, group 30: the answer says only that 30 do not fit and the capacity is 26. Nothing else."
+            },
+            "rules": []
+        },
+        {
+            "id": "acc-real-balcones-portuguese-group-over",
+            "feature": "chat",
+            "entity": "real-balcones",
+            "locale": "es",
+            "source": "real buildMarkdownContext (apps/api/src/services/accommodation-ai-context.ts) over the public snapshot inputs/accommodation-snapshots.json#real-balcones",
+            "question": "Olá! Somos 7 amigos, entramos todos no departamento?",
+            "rubric": {
+                "mustInclude": [
+                    {
+                        "label": "capacidade 4",
+                        "pattern": "\\b(4|quatro)\\b"
+                    },
+                    {
+                        "label": "dice que no caben",
+                        "pattern": "(n[aã]o|no)\\s*\\*{0,2}\\s*(cabem|entram|entran|entrar[ií]an|cabe|caben|v[aã]o caber|d[aá])|n[aã]o (é|e) poss[ií]vel|(n[aã]o|no) alcan[çz]a|passa (da|de)|supera|excede"
+                    }
+                ],
+                "mustNotClaim": [
+                    {
+                        "label": "agrega alternativas o esperanza falsa",
+                        "pattern": "outra opç|outros? (departamento|espaç|alojamento)|mesmo departamento|consult|confirm|quantas cabem|ver quantas|disponibilidade|alternativ|depende"
+                    },
+                    {
+                        "label": "afirma que caben",
+                        "pattern": "(?<!n[aã]o )(?<!\\*\\* )cabem todos|(?<!n[aã]o )(?<!\\*\\* )entram todos|(?<!n[aã]o )\\bsim,? (entram|cabem)"
+                    }
+                ],
+                "expectsUnknown": false,
+                "expectedLanguage": "pt",
+                "notes": "Capacity 4, group 7: only 'they do not fit' plus capacity 4, in Portuguese."
             },
             "rules": []
         }

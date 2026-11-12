@@ -1,39 +1,46 @@
 ---
 /**
  * @file ExternalReputation.astro
- * @description "Reputación en otras plataformas" block rendered on the
+ * @description "Lo que dicen en otras plataformas" block rendered on the
  * accommodation detail page. Sibling to ReviewPreview, placed after it.
  *
- * Accepts an {@link ExternalReputationBlock} from the public API and renders:
+ * Accepts an {@link ExternalReputationBlock} from the public API and renders,
+ * in this order:
  *
- * Block 1 — Score chips row: compact chip per platform showing rating,
- *   review count, and a deep-link. Chips do NOT contain snippets so they
- *   stay naturally short and even.
+ * 1. A summary row per platform that has an aggregate score (platform label,
+ *    numeric rating, five-star visual, review count, allow-listed "Ver en …"
+ *    link). Google's row is always the LAST one, so it sits directly above its
+ *    own review cards without the cards splitting the list of scores.
+ * 2. Up to three Google review cards (ExternalReviews island) showing the
+ *    guest's original text. When the cached snippets are TTL-expired, a muted
+ *    note replaces the cards.
+ * 3. The Google CTA, only when the review block is shown. Google gets exactly
+ *    ONE link: with the review block visible it is this CTA (the Google score
+ *    row drops its own "Ver en Google"); without it, the score row's link, or
+ *    the "También en" pill when Google has no score.
+ * 4. A "También en:" pill row for platforms that have no aggregate but do have
+ *    a safe outbound link.
  *
- * Block 2 — Featured reviews (Google only): sub-heading + ExternalReviews
- *   island when at least one item has valid TTL snippets.
- *
- * Footer — AC-5.1 "why only Google" explainer always rendered.
- *
- * Renders NOTHING when the block is empty (items array empty) OR when every
- * configured platform came back with no score, no count, no link and no
- * snippets — see `lib/external-reputation-visibility.ts` and H-133.
- *
- * AC-4.5: each chip header (platformLabel) labels the source platform.
- * AC-5.1: googleOnly note always rendered below.
+ * Renders NOTHING when the block is empty OR when every configured platform
+ * came back with no score, no safe link and no snippets — see
+ * `lib/external-reputation-visibility.ts` and H-133.
  */
 
-import { ExternalLinkIcon, StarIcon } from '@repo/icons';
+import { ExternalLinkIcon } from '@repo/icons';
+import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
 import { ExternalReviews } from './ExternalReviews.client';
+import ExternalReputationSummaryRow from './ExternalReputationSummaryRow.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import {
     hasAggregate,
     hasValidSnippets,
+    orderSummaryItemsGoogleLast,
+    resolvePlatformHref,
+    selectLinkOnlyReputationItems,
+    selectSummaryReputationItems,
     selectVisibleReputationItems
 } from '@/lib/external-reputation-visibility';
-import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
 import styles from './ExternalReputation.module.css';
 
 interface Props {
@@ -49,7 +56,7 @@ interface Props {
 const { reputationData, locale } = Astro.props;
 const { t, tPlural } = createTranslations(locale as SupportedLocale);
 
-// Nothing to render when all platforms are hidden.
+// Nothing to render when no platform is configured.
 const { items: configuredItems } = reputationData;
 if (configuredItems.length === 0) {
     return;
@@ -82,92 +89,54 @@ if (items.length === 0) {
     return;
 }
 
-// Derive Block 2 state once so the template stays clean.
+// Google-only review block state.
 const googleItemWithSnippets = items.find((item) => hasValidSnippets({ item }));
-// The TTL note reads "…mostrando solo el puntaje", so it may only appear when
-// there IS a score to show. Without this guard it rendered two lines below
-// "Sin datos disponibles", contradicting it (H-133).
 const googleItemTtlExpired = items.find(
     (item) =>
         item.platform === 'GOOGLE' && isGoogleTtlExpired(item) && hasAggregate({ item })
 );
 const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired != null;
+
+// The Google CTA targets the Google listing's safe link, and is the one Google
+// link only while the review block is shown.
+const googleItem = items.find((item) => item.platform === 'GOOGLE');
+const googleHref = googleItem != null ? resolvePlatformHref({ item: googleItem }) : undefined;
+const showGoogleCta = showReviewsBlock && googleHref != null;
+const googleReviewsCount = googleItem?.reviewsCount ?? null;
+const googlePlatformName = t('external-reputation.platform.google', 'Google');
+
+// Summary rows: one per platform with an aggregate, Google last.
+const summaryItems = orderSummaryItemsGoogleLast({
+    items: selectSummaryReputationItems({ items })
+});
+// Pill row: platforms with a safe link but no aggregate. Google is left out
+// while its CTA is shown, so it never gets two links.
+const linkOnlyItems = selectLinkOnlyReputationItems({ items }).filter(
+    (item) => !(showGoogleCta && item.platform === 'GOOGLE')
+);
 ---
 
 <section class={styles.section}>
-    <h2 class={styles.title}>{t('external-reputation.section.title', 'Reputación en otras plataformas')}</h2>
-    <p class={styles.subtitle}>{t('external-reputation.section.subtitle', 'Opiniones de viajeros verificados en los principales sitios de alojamiento')}</p>
+    <h2 class={styles.title}>
+        {t('external-reputation.section.title', 'Lo que dicen en otras plataformas')}
+    </h2>
 
-    {/* ── Block 1: Score chips row ── */}
-    <div class={styles.chips}>
-        {items.map((item) => {
-            /*
-             * The deep link arrives from an outside platform through the API
-             * and is stored, never re-validated for scheme — so it goes through
-             * the allow-list like every other third-party URL the site links to
-             * (HOS-592 / F-02). A refused value drops the link and leaves the
-             * chip's score intact.
-             */
-            const deepLinkHref = resolveSafeExternalUrl(item.deepLink);
-            return (
-            <div class={styles.chip}>
-                {/* AC-4.5: platform name as chip heading labels the source */}
-                <span class={styles.chipPlatformName}>{platformLabel(item.platform)}</span>
+    {/* ── Summary rows: one per platform with an aggregate, Google last ── */}
+    {summaryItems.length > 0 && (
+        <div class={styles.summaryList}>
+            {summaryItems.map((item) => (
+                <ExternalReputationSummaryRow
+                    item={item}
+                    locale={locale}
+                    showLink={!(showGoogleCta && item.platform === 'GOOGLE')}
+                />
+            ))}
+        </div>
+    )}
 
-                {/* Rating + review count — or "no data" */}
-                {(item.rating != null || item.reviewsCount != null) ? (
-                    <div class={styles.chipRating}>
-                        {item.rating != null && (
-                            <span class={styles.chipRatingValue}>
-                                <StarIcon size="sm" weight="fill" color="var(--brand-accent)" aria-hidden="true" />
-                                <strong class={styles.chipRatingNumber}>{item.rating.toFixed(1)}</strong>
-                            </span>
-                        )}
-                        {item.reviewsCount != null && (
-                            <span class={styles.chipReviewCount}>
-                                {tPlural('external-reputation.aggregate.reviewsCount', item.reviewsCount)}
-                            </span>
-                        )}
-                    </div>
-                ) : (
-                    <p class={styles.chipNoData}>{t('external-reputation.aggregate.noData', 'Sin datos disponibles')}</p>
-                )}
-
-                {/* Deep link at the bottom of the chip */}
-                {deepLinkHref && (
-                    <a
-                        href={deepLinkHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class={styles.chipDeepLink}
-                    >
-                        <ExternalLinkIcon size="sm" aria-hidden="true" />
-                        <span>
-                            {t('external-reputation.link.viewOn', 'Ver en {{platform}} →', {
-                                platform: platformLabel(item.platform)
-                            })}
-                        </span>
-                    </a>
-                )}
-            </div>
-            );
-        })}
-    </div>
-
-    {/* ── Block 2: Featured reviews (Google snippets) ── */}
+    {/* ── Google reviews (original text, up to three cards) ── */}
     {showReviewsBlock && (
         <div class={styles.reviewsBlock}>
-            <div class={styles.reviewsBlockHeader}>
-                <h3 class={styles.reviewsBlockTitle}>
-                    {t('external-reputation.reviews.title', 'Reseñas destacadas')}
-                </h3>
-                <span class={styles.reviewsBlockVia}>
-                    {t('external-reputation.reviews.via', 'vía {{platform}}', {
-                        platform: t('external-reputation.platform.google', 'Google')
-                    })}
-                </span>
-            </div>
-
             {googleItemWithSnippets != null ? (
                 <ExternalReviews
                     client:visible
@@ -176,14 +145,59 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
                 />
             ) : googleItemTtlExpired != null ? (
                 <p class={styles.ttlNote}>
-                    {t('external-reputation.snippets.ttlExpired', 'Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje')}
+                    {t(
+                        'external-reputation.snippets.ttlExpired',
+                        'Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje'
+                    )}
                 </p>
             ) : null}
         </div>
     )}
 
-    {/* AC-5.1: "why only Google" explainer — always shown */}
-    <p class={styles.googleOnlyNote}>
-        {t('external-reputation.snippets.googleOnly', 'Solo Google muestra el texto completo de las reseñas porque ofrece una API oficial. Las demás plataformas muestran el puntaje agregado y un enlace directo por razones legales.')}
-    </p>
+    {/* ── Google CTA (the one Google link while the reviews are shown) ── */}
+    {showGoogleCta && (
+        <div class={styles.reviewsFooter}>
+            <a
+                href={googleHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={styles.seeAllLink}
+            >
+                <span>
+                    {googleReviewsCount != null
+                        ? tPlural('external-reputation.reviews.seeAllOn', googleReviewsCount, {
+                              platform: googlePlatformName
+                          })
+                        : t('external-reputation.link.viewOn', 'Ver en {{platform}}', {
+                              platform: googlePlatformName
+                          })}
+                </span>
+                <ExternalLinkIcon size="sm" aria-hidden="true" />
+            </a>
+        </div>
+    )}
+
+    {/* ── "También en:" pill row ── */}
+    {linkOnlyItems.length > 0 && (
+        <div class={styles.alsoOn}>
+            <span class={styles.alsoOnLabel}>{t('external-reputation.alsoOn', 'También en:')}</span>
+            {linkOnlyItems.map((item) => {
+                const pillHref = resolvePlatformHref({ item });
+                if (!pillHref) {
+                    return null;
+                }
+                return (
+                    <a
+                        href={pillHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class={styles.pill}
+                    >
+                        <span>{platformLabel(item.platform)}</span>
+                        <ExternalLinkIcon size="xs" aria-hidden="true" />
+                    </a>
+                );
+            })}
+        </div>
+    )}
 </section>

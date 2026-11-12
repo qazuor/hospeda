@@ -91,17 +91,20 @@ describe('toVenueNightAgeScope — same label as the public ficha', () => {
         expect(toVenueNightAgeScope({ kind: 'all_day' }, locale)).toEqual({
             kind: 'all_day',
             label: allDay,
-            area: null
+            area: null,
+            from: null
         });
         expect(toVenueNightAgeScope({ kind: 'from_time', from: '00:00' }, locale)).toEqual({
             kind: 'from_time',
             label: fromTime,
-            area: null
+            area: null,
+            from: '00:00'
         });
         expect(toVenueNightAgeScope({ kind: 'area', area: AREA }, locale)).toEqual({
             kind: 'area',
             label: areaLabel,
-            area
+            area,
+            from: null
         });
     });
 
@@ -170,6 +173,50 @@ describe('buildVenueMarkdownContext — the scope line', () => {
         expect(legal).toBeGreaterThan(scope);
     });
 
+    it('adds the resolved windows next to the ficha scope line, before the legal notice', () => {
+        // Arrange — a bar open Saturday 21:00–03:00 with the age from midnight
+        const venue: VenueContextRow = {
+            ...VENUE,
+            openingHours: {
+                timezone: 'America/Argentina/Buenos_Aires',
+                days: { sat: { closed: false, shifts: [{ open: '21:00', close: '03:00' }] } }
+            }
+        };
+        const night = toVenueNightContext({
+            row: nightRow({ minAge: 18, minAgeScope: { kind: 'from_time', from: '00:00' } }),
+            available: true,
+            locale: 'es'
+        });
+
+        // Act
+        const block = buildVenueMarkdownContext(venue, [], [], false, night, 'es');
+
+        // Assert — the ficha label is untouched and the windows come after it
+        const scope = block.indexOf(
+            '**Alcance de la edad mínima**: Rige desde las 00:00 hasta el cierre'
+        );
+        const free = block.indexOf(
+            '- Sábado de 21:00 a 00:00 (medianoche): sin edad mínima informada'
+        );
+        const covered = block.indexOf(
+            '- Sábado, pasada la medianoche, de 00:00 a 03:00: edad mínima 18'
+        );
+        const legal = block.indexOf(`**Aviso legal**: ${LEGAL_ES}`);
+        expect(scope).toBeGreaterThan(-1);
+        expect(free).toBeGreaterThan(scope);
+        expect(covered).toBeGreaterThan(free);
+        expect(legal).toBeGreaterThan(covered);
+    });
+
+    it('prints no resolved windows without a minimum age', () => {
+        expect(
+            contextFor({
+                minAgeScope: { kind: 'from_time', from: '00:00' },
+                dressCode: VenueDressCodeEnum.CASUAL
+            })
+        ).not.toContain('Edad mínima por horario y sector');
+    });
+
     it('fences the owner area, including an injection inside it', () => {
         const block = contextFor({
             minAge: 18,
@@ -220,13 +267,27 @@ describe('regression: "all day" or unset never yields permission (HOS-2098)', ()
         }
     });
 
-    it('the rules keep the conservative answer for an all-day scope or no scope line', () => {
+    it('the context resolves an unset or all-day scope to "every hour" (HOS-2098 root fix)', () => {
+        for (const policies of [
+            { minAge: 18 },
+            { minAge: 18, minAgeScope: { kind: 'all_day' as const } }
+        ]) {
+            const block = contextFor(policies);
+            expect(block).toContain('**Edad mínima por horario y sector**');
+            expect(block).toContain(
+                '- Todos los días, a toda hora (mediodía, tarde y noche) y en todo el local: edad mínima 18'
+            );
+            expect(block).not.toContain('sin edad mínima informada');
+        }
+    });
+
+    it('the rules keep the conservative answer for an all-day scope or no resolved lines', () => {
         const rules = DEFAULT_RULES.chat_venue;
         expect(rules).toContain(
-            'a scope for the whole day, or no such line at all, means the minimum age covers the whole venue at every hour'
+            'If there are no such lines, the minimum age covers the whole venue at every hour.'
         );
         expect(rules).toContain(
-            'a scope for the whole day, no scope line, or a question that does not say clearly which time, area or activity it is about — do NOT answer "yes" or use permission wording'
+            'the lines say the minimum age applies at every hour, there are no such lines, a sector text is not only a name, or the visitor names no time, meal, area or activity (only a day, or nothing, for example "¿pueden entrar menores?" or "el sábado", even when that day also has a line without minimum age) — never start with "sí" and do NOT answer "yes" or use permission wording'
         );
     });
 });

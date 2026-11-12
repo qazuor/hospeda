@@ -134,6 +134,17 @@ export const UserSettingsSchema = z.object({
     publicProfileShowSocialNetworks: z.boolean().default(false).optional(),
 
     /**
+     * Whether the listing owner receives the weekly email digest of the AI chat
+     * questions their listings could not answer (HOS-2101). Opt-out: a stored
+     * settings object without the key reads as "send" (`undefined !== false`),
+     * which is why the digest cron compares against `false` explicitly.
+     *
+     * Stored additively in the existing `settings` JSONB column — no DB
+     * migration needed.
+     */
+    aiQuestionsDigest: z.boolean().optional(),
+
+    /**
      * Onboarding progress namespace. Shared by SPEC-174 (welcome tour) and
      * SPEC-175 (What's New). Added additively — no DB migration required.
      *
@@ -269,7 +280,12 @@ export const UserSettingsWebPatchSchema = z
          * this schema is `.strict()`, so a key it does not declare makes the web
          * PATCH fail with a 400 whose cause is not obvious from the UI.
          */
-        publicProfileShowSocialNetworks: z.boolean().optional()
+        publicProfileShowSocialNetworks: z.boolean().optional(),
+        /**
+         * The weekly AI-questions digest opt-out (HOS-2101). Listed here for the
+         * same reason as the key above: this schema is `.strict()`.
+         */
+        aiQuestionsDigest: z.boolean().optional()
     })
     .strict();
 

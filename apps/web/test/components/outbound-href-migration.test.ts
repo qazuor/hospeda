@@ -95,9 +95,15 @@ const MIGRATED: readonly MigratedLink[] = [
         neverRenders: ['href={mention.url}']
     },
     {
-        file: 'components/accommodation/ExternalReputation.astro',
-        renders: ['resolveSafeExternalUrl(item.deepLink)', 'href={deepLinkHref}'],
-        neverRenders: ['href={item.deepLink}']
+        // The reputation block resolves every platform href through ONE helper,
+        // which applies the allow-list to the deep link and then to the plain
+        // listing URL. The component itself is pinned to that helper below.
+        file: 'lib/external-reputation-visibility.ts',
+        renders: [
+            'resolveSafeExternalUrl(input.item.deepLink)',
+            'resolveSafeExternalUrl(input.item.url)'
+        ],
+        neverRenders: []
     },
     {
         file: 'components/accommodation/ExternalReviews.client.tsx',
@@ -133,6 +139,38 @@ describe.each(MIGRATED)('$file — outbound href sanitization (HOS-592)', (link)
     it.each(link.neverRenders)('never renders %j again', (snippet) => {
         // The exact text that shipped the bug. `z.string().url()` accepts
         // `javascript:`, so this attribute WAS the sink.
+        expect(source).not.toContain(snippet);
+    });
+});
+
+describe('components/accommodation/ExternalReputation.astro — platform hrefs go through resolvePlatformHref (HOS-592)', () => {
+    // The per-platform score row lives in its own component, so the block is
+    // checked as the two files together.
+    const source = [
+        'components/accommodation/ExternalReputation.astro',
+        'components/accommodation/ExternalReputationSummaryRow.astro'
+    ]
+        .map((file) => readFileSync(join(SRC_ROOT, file), 'utf8'))
+        .join('\n');
+
+    it('derives every platform href from the allow-listing helper', () => {
+        expect(source).toContain('resolvePlatformHref({ item })');
+        expect(source).toContain('resolvePlatformHref({ item: googleItem })');
+    });
+
+    it.each([
+        'href={deepLinkHref}',
+        'href={pillHref}',
+        'href={googleHref}'
+    ])('renders %j', (snippet) => {
+        expect(source).toContain(snippet);
+    });
+
+    it.each([
+        'href={item.deepLink}',
+        'href={item.url}',
+        'href={googleItem.url}'
+    ])('never renders the raw stored URL %j', (snippet) => {
         expect(source).not.toContain(snippet);
     });
 });

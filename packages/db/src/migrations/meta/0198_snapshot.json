@@ -1,5 +1,5 @@
 {
-  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "id": "af92c961-938f-407f-bd06-18625dce79e2",
   "prevId": "10a12866-a844-45d4-8ffe-fa1bcf2a5a23",
   "version": "7",
   "dialect": "postgresql",
@@ -2956,6 +2956,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "listing_entity_type": {
+          "name": "listing_entity_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "listing_entity_id": {
+          "name": "listing_entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2972,6 +2984,27 @@
               "expression": "created_at",
               "isExpression": false,
               "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiConversations_listing_idx": {
+          "name": "aiConversations_listing_idx",
+          "columns": [
+            {
+              "expression": "listing_entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "listing_entity_id",
+              "isExpression": false,
+              "asc": true,
               "nulls": "last"
             }
           ],
@@ -3158,6 +3191,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "answer_status": {
+          "name": "answer_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3218,6 +3257,27 @@
             },
             {
               "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aiMessages_answerStatus_created_idx": {
+          "name": "aiMessages_answerStatus_created_idx",
+          "columns": [
+            {
+              "expression": "answer_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8144,7 +8204,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -33767,7 +33827,6 @@
         "partner.delete",
         "partner.viewAll",
         "partner.manage",
-        "partner.resolveApplication",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

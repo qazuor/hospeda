@@ -5,7 +5,7 @@
  * Regression (SPEC-259 Chrome smoke): the moderation UI calls
  *   GET /api/v1/admin/venues/reviews?status=PENDING&page=1&pageSize=20
  * but the route did not whitelist `status`, so the admin-list factory rejected
- * it as an unknown query param with HTTP 400 / INVALID_PAGINATION_PARAMS. The
+ * it as an unknown query param with HTTP 400 (then INVALID_PAGINATION_PARAMS, now VALIDATION_ERROR). The
  * admin "Reseñas" tab then silently showed "no pending reviews" even when a
  * PENDING review existed. The route now declares `status` in `requestQuery`
  * (whitelisted + validated + forwarded) and maps it to a `moderationState`
@@ -144,7 +144,7 @@ describe('Admin VenueReview List — moderation status filter (SPEC-259 regressi
             headers: makeHeaders(adminActor)
         });
 
-        // Regression: this used to be 400 INVALID_PAGINATION_PARAMS.
+        // Regression: this used to be 400 (unknown query param).
         expect(res.status).toBe(200);
         expect(mockRef.listForModeration).toHaveBeenCalledOnce();
         const [, params] = mockRef.listForModeration.mock.calls[0] as [

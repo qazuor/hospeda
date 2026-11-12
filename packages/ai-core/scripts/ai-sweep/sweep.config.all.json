@@ -51,6 +51,6 @@
     "repetitions": 2,
     "caseIds": [],
     "concurrency": 2,
-    "maxCalls": 700,
+    "maxCalls": 1100,
     "monthlyQuotas": [20, 50, 100, 250, 1250]
 }

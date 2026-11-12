@@ -43,7 +43,7 @@ export type ListingSectionStates = Readonly<Record<string, ListingSectionStateEn
  *
  * @param params - The vertical and the resolved state map.
  * @returns The non-absent catalog sections, in the order and group the
- * catalog declares.
+ * catalog declares, followed by the web-only AI questions page (HOS-2101).
  */
 export function buildListingEditorSections({
     vertical,
@@ -52,11 +52,11 @@ export function buildListingEditorSections({
     readonly vertical: VenueOrExperience;
     readonly sectionStates: ListingSectionStates;
 }): readonly EditorSection[] {
-    return LISTING_SECTIONS[vertical]
+    const sections = LISTING_SECTIONS[vertical]
         .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
         .slice()
         .sort((a, b) => a.order - b.order)
-        .map((definition) => {
+        .map((definition): EditorSection => {
             const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
 
             return {
@@ -66,7 +66,24 @@ export function buildListingEditorSections({
                 labelKey: presentation.labelKey
             };
         });
+    // Appended, not placed by section id: this file is under G-FAC-05 (no
+    // dispatch by section id). The nav groups by `group`, so it renders as the
+    // last «content» page.
+    return [...sections, LISTING_AI_QUESTIONS_SECTION];
 }
+
+/**
+ * The «Preguntas a la IA» page (HOS-2101). Web-only: it edits nothing, so it is
+ * not a section of the domain catalog (`@repo/schemas` `LISTING_SECTIONS`),
+ * which describes what a listing CONTAINS and drives completeness and the
+ * section PATCH. Every vertical with a chat gets it, whatever its plan.
+ */
+export const LISTING_AI_QUESTIONS_SECTION: EditorSection = {
+    id: 'aiQuestions',
+    slug: 'preguntas-ia',
+    group: 'content',
+    labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+};
 
 /**
  * Builds the editor registry for one listing's vertical.

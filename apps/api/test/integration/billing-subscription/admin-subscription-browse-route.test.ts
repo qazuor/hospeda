@@ -185,7 +185,7 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
         expect([unknownParam.status, oversize.status, unknownStatus.status]).toEqual([
             400, 400, 400
         ]);
-        expect((await unknownParam.json()).error.code).toBe('INVALID_PAGINATION_PARAMS');
+        expect((await unknownParam.json()).error.code).toBe('VALIDATION_ERROR');
         expect((await oversize.json()).error.code).toBe('VALIDATION_ERROR');
         expect((await unknownStatus.json()).error.code).toBe('VALIDATION_ERROR');
     });

@@ -16,7 +16,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ACCOMMODATION_EDITOR_SECTIONS } from '@/lib/editor/accommodation-editor-sections';
+import {
+    ACCOMMODATION_EDITOR_REGISTRY,
+    ACCOMMODATION_EDITOR_SECTIONS
+} from '@/lib/editor/accommodation-editor-sections';
 
 const ROUTES_DIR = resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/propiedades/[id]/editar');
 
@@ -46,7 +49,9 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
 
 describe('editor routes — one file per section', () => {
     it('should have a route file for every registry section, plus the hub', () => {
-        const expected = ACCOMMODATION_EDITOR_SECTIONS.map((section) => `${section.slug}.astro`);
+        const expected = ACCOMMODATION_EDITOR_REGISTRY.sections.map(
+            (section) => `${section.slug}.astro`
+        );
 
         for (const file of expected) {
             expect(ROUTE_FILES, `missing route file ${file}`).toContain(file);
@@ -56,7 +61,7 @@ describe('editor routes — one file per section', () => {
 
     it('should have no route file without a matching registry section', () => {
         const known = new Set([
-            ...ACCOMMODATION_EDITOR_SECTIONS.map((section) => `${section.slug}.astro`),
+            ...ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => `${section.slug}.astro`),
             'index.astro'
         ]);
 
@@ -112,7 +117,7 @@ describe('editor routes — the hub never redirects (D-8)', () => {
         const hub = readRoute('index.astro');
         const code = hub.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 
-        for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
+        for (const section of ACCOMMODATION_EDITOR_REGISTRY.sections) {
             expect(code, `hub redirects to ${section.slug}`).not.toContain(
                 `Astro.redirect('${section.slug}`
             );

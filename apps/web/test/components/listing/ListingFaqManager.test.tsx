@@ -27,7 +27,7 @@
  * cannot catch either. Each now also asserts the WRONG verb was not used.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingFaq } from '../../../src/components/listing/ListingFaqManager.client';
 import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
 
@@ -419,5 +419,28 @@ describe('channel intro (HOS-1763)', () => {
 
         const position = shortIntro.compareDocumentPosition(emptyState);
         expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+});
+
+describe('HOS-2101 — prefill from the AI questions tab', () => {
+    afterEach(() => {
+        window.history.replaceState(null, '', '/');
+    });
+
+    it('opens the add form with ?pregunta= filled in and clears the parameter', async () => {
+        // Arrange
+        window.history.replaceState(
+            null,
+            '',
+            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F'
+        );
+
+        // Act
+        renderManager();
+
+        // Assert
+        const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
+        expect(question.value).toBe('¿Hay cochera?');
+        expect(window.location.search).toBe('');
     });
 });

@@ -101,11 +101,23 @@ export const protectedListExternalListingsRoute = createProtectedRoute({
             actorId: actor.id
         });
 
+        // `AccommodationModel` is typed with the entity read schema, which does
+        // not surface these two internal audit columns. They are deliberately
+        // NOT part of `AccommodationSchema` (the editor consumes them here,
+        // not through the entity contract), so the route narrows the loaded
+        // row locally instead of widening a shared schema for one consumer.
+        const audit = accommodation as typeof accommodation & {
+            readonly externalReputationAutoEnabledAt?: Date | null;
+            readonly externalReputationToggleDecidedAt?: Date | null;
+        };
+
         return {
             listings: rows,
             reputation: {
                 showExternalReputation: accommodation.showExternalReputation ?? false,
-                aggregateFetchedAt
+                aggregateFetchedAt,
+                autoEnabledAt: audit.externalReputationAutoEnabledAt ?? null,
+                toggleDecidedAt: audit.externalReputationToggleDecidedAt ?? null
             }
         };
     }

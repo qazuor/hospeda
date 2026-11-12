@@ -223,7 +223,7 @@ describe('feeds.ts — events RSS helpers', () => {
             expect(events.map((e) => e.slug)).toEqual(['fiesta-playa', 'novembeer']);
         });
 
-        it('does not send a `status` param — the API answers 400 INVALID_PAGINATION_PARAMS', async () => {
+        it('does not send a `status` param — the API answers 400 VALIDATION_ERROR', async () => {
             const fetchSpy = vi
                 .fn()
                 .mockResolvedValue(makeEventsApiResponse([{ slug: 'fiesta-playa' }]));

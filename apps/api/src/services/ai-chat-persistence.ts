@@ -40,6 +40,7 @@
 
 import { aiConversations, aiMessages, getDb } from '@repo/db';
 import type { AiChatEntityType, AiFeature, StreamTextFinalMeta } from '@repo/schemas';
+import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,15 @@ export interface PersistConversationTurnInput {
      * (e.g. `'{"accommodationId":"..."}'` for chat, or `'{}'` for search).
      */
     readonly contextNote: string;
+    /**
+     * Structured listing reference written to the new conversation row
+     * (HOS-2101). Omitted for features not scoped to a listing. Only read on
+     * the first turn: a subsequent turn appends to a row that already has it.
+     */
+    readonly listing?: {
+        readonly entityType: AiChatEntityType;
+        readonly entityId: string;
+    };
     /**
      * Existing conversation id, or `null` for the first turn. When `null`,
      * a new `aiConversations` row is created; when a UUID, the helper
@@ -80,6 +90,78 @@ export interface PersistConversationTurnOutput {
      * the SSE `done` frame on win of the 1500 ms race (D-3).
      */
     readonly conversationId: string;
+    /** Id of the inserted user message row (HOS-2101). */
+    readonly userMessageId: string;
+    /**
+     * Id of the inserted assistant message row (HOS-2101) — the row the
+     * chat-answer classifier writes its verdict onto.
+     */
+    readonly assistantMessageId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Conversation reuse check (HOS-2101 review, M1)
+// ---------------------------------------------------------------------------
+
+/** Input of {@link resolveReusableConversationId}. */
+export interface ResolveReusableConversationIdInput {
+    /** The id the client sent, or `null`. */
+    readonly conversationId: string | null;
+    readonly userId: string;
+    readonly feature: AiFeature;
+    readonly listing?: {
+        readonly entityType: AiChatEntityType;
+        readonly entityId: string;
+    };
+}
+
+/**
+ * Decides whether a client-sent `conversationId` may be appended to.
+ *
+ * The id comes from the browser, so it is untrusted: appending to someone
+ * else's conversation, to another feature's, or to the conversation of a
+ * DIFFERENT listing would put a question into the wrong host's «Preguntas a
+ * la IA» tab, counters and weekly digest. A conversation is reused only when
+ * it exists, is not deleted, belongs to the same user, has the same feature
+ * and the same listing reference (both absent for listing-less features).
+ * Anything else yields `null` — the caller starts a new conversation instead
+ * of failing the chat.
+ *
+ * @param input - The client id and the turn's owner, feature and listing.
+ * @returns `{ conversationId }` — the reusable id, or `null` for a new one.
+ */
+export async function resolveReusableConversationId(
+    input: ResolveReusableConversationIdInput
+): Promise<{ readonly conversationId: string | null }> {
+    if (input.conversationId === null) {
+        return { conversationId: null };
+    }
+    const rows = await getDb()
+        .select({
+            userId: aiConversations.userId,
+            feature: aiConversations.feature,
+            listingEntityType: aiConversations.listingEntityType,
+            listingEntityId: aiConversations.listingEntityId,
+            deletedAt: aiConversations.deletedAt
+        })
+        .from(aiConversations)
+        .where(eq(aiConversations.id, input.conversationId))
+        .limit(1);
+    const row = rows[0];
+    const reusable =
+        row !== undefined &&
+        row.deletedAt === null &&
+        row.userId === input.userId &&
+        row.feature === input.feature &&
+        row.listingEntityType === (input.listing?.entityType ?? null) &&
+        row.listingEntityId === (input.listing?.entityId ?? null);
+    if (!reusable) {
+        apiLogger.warn(
+            { userId: input.userId, feature: input.feature, conversationId: input.conversationId },
+            'ai-chat-persistence: client conversationId not reusable for this turn, starting a new conversation'
+        );
+    }
+    return { conversationId: reusable ? input.conversationId : null };
 }
 
 // ---------------------------------------------------------------------------
@@ -103,16 +185,32 @@ export interface PersistConversationTurnOutput {
 export async function persistConversationTurn(
     input: PersistConversationTurnInput
 ): Promise<PersistConversationTurnOutput> {
-    const { userId, feature, contextNote, conversationId, userMessage, assistantMessage, meta } =
-        input;
+    const {
+        userId,
+        feature,
+        contextNote,
+        listing,
+        conversationId,
+        userMessage,
+        assistantMessage,
+        meta
+    } = input;
 
     const db = getDb();
-    let resolvedConversationId = conversationId;
+    // HOS-2101 review (M1): never append to a conversation the client cannot
+    // prove is this turn's — an untrusted id falls back to a new row.
+    const { conversationId: reusableId } = await resolveReusableConversationId({
+        conversationId,
+        userId,
+        feature,
+        ...(listing === undefined ? {} : { listing })
+    });
+    let resolvedConversationId = reusableId;
 
     // -----------------------------------------------------------------------
-    // Step 1 — First turn: create the aiConversations row.
+    // Step 1 — First turn (or untrusted id): create the aiConversations row.
     // -----------------------------------------------------------------------
-    if (conversationId === null) {
+    if (reusableId === null) {
         try {
             const rows = await db
                 .insert(aiConversations)
@@ -124,7 +222,10 @@ export async function persistConversationTurn(
                     title: null,
                     // Use the schema's `contextNote` JSON column to attach
                     // feature-specific context without a new FK migration (D-4).
-                    contextNote
+                    contextNote,
+                    // HOS-2101: indexed listing reference for the host panel.
+                    listingEntityType: listing?.entityType ?? null,
+                    listingEntityId: listing?.entityId ?? null
                 })
                 .returning({ id: aiConversations.id });
             const newId = rows[0]?.id;
@@ -157,8 +258,9 @@ export async function persistConversationTurn(
     // -----------------------------------------------------------------------
     // Step 2 — User message row.
     // -----------------------------------------------------------------------
+    let userMessageId: string | undefined;
     try {
-        await db
+        const rows = await db
             .insert(aiMessages)
             .values({
                 conversationId: resolvedConversationId,
@@ -168,6 +270,10 @@ export async function persistConversationTurn(
                 tokens: 0
             })
             .returning({ id: aiMessages.id });
+        userMessageId = rows[0]?.id;
+        if (!userMessageId) {
+            throw new Error('persistConversationTurn: user aiMessages insert returned no id');
+        }
     } catch (error) {
         apiLogger.error(
             {
@@ -183,8 +289,9 @@ export async function persistConversationTurn(
     // -----------------------------------------------------------------------
     // Step 3 — Assistant message row.
     // -----------------------------------------------------------------------
+    let assistantMessageId: string | undefined;
     try {
-        await db
+        const rows = await db
             .insert(aiMessages)
             .values({
                 conversationId: resolvedConversationId,
@@ -194,6 +301,10 @@ export async function persistConversationTurn(
                 tokens: meta.usage.completionTokens
             })
             .returning({ id: aiMessages.id });
+        assistantMessageId = rows[0]?.id;
+        if (!assistantMessageId) {
+            throw new Error('persistConversationTurn: assistant aiMessages insert returned no id');
+        }
     } catch (error) {
         apiLogger.error(
             {
@@ -206,7 +317,7 @@ export async function persistConversationTurn(
         throw error;
     }
 
-    return { conversationId: resolvedConversationId };
+    return { conversationId: resolvedConversationId, userMessageId, assistantMessageId };
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +395,7 @@ export async function persistChatTurn(input: PersistChatTurnInput): Promise<Pers
             // Compatibility echo — see PersistChatTurnInput.entityType.
             ...(input.entityType === 'accommodation' ? { accommodationId: input.entityId } : {})
         }),
+        listing: { entityType: input.entityType, entityId: input.entityId },
         conversationId: input.conversationId,
         userMessage: input.userMessage,
         assistantMessage: input.assistantMessage,

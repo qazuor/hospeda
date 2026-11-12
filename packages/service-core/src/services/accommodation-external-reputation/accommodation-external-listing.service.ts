@@ -7,7 +7,11 @@
  * (unique (accommodationId, platform) in the DB). The service:
  * - Validates ownership via {@link PermissionEnum.ACCOMMODATION_UPDATE_OWN}.
  * - Validates the actor owns the accommodation before any mutation.
- * - Maps `ALREADY_EXISTS`-style DB errors to a typed `VALIDATION_ERROR`.
+ * - Maps a Postgres unique-violation (`23505`) on `add` to a typed
+ *   `VALIDATION_ERROR` with reason `DUPLICATE_PLATFORM`, using the canonical
+ *   {@link extractPostgresErrorCause} helper to walk the wrapped error chain.
+ * - Logs unexpected failures server-side and returns a generic
+ *   `INTERNAL_ERROR` (never the raw SQL or driver message).
  * - Exposes `setMasterToggle` to flip `accommodations.showExternalReputation`.
  *
  * This service deliberately does NOT extend {@link BaseCrudService}.  It is
@@ -36,7 +40,9 @@ import {
 import { z } from 'zod';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { logError } from '../../utils/logging.js';
 import { hasPermission } from '../../utils/permission.js';
+import { extractPostgresErrorCause } from '../../utils/postgres-error-cause.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -188,13 +194,11 @@ export class AccommodationExternalListingService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
-            // Map DB unique-constraint violation to typed VALIDATION_ERROR
-            const message = err instanceof Error ? err.message : String(err);
-            if (
-                message.toLowerCase().includes('unique') ||
-                message.toLowerCase().includes('duplicate') ||
-                message.toLowerCase().includes('conflict')
-            ) {
+
+            // Map a DB unique-constraint violation to a typed VALIDATION_ERROR.
+            // Drizzle wraps the driver error, so the SQLSTATE must be read from
+            // the cause chain — never from the message text.
+            if (extractPostgresErrorCause(err)?.code === '23505') {
                 return {
                     error: {
                         code: ServiceErrorCode.VALIDATION_ERROR,
@@ -203,10 +207,19 @@ export class AccommodationExternalListingService {
                     }
                 };
             }
+
+            // Unexpected failure: log the full error server-side and return a
+            // generic message with no SQL, params, or raw driver text.
+            logError(
+                'accommodationExternalListing.add',
+                err instanceof Error ? err : new Error(String(err)),
+                parsed.data,
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${message}`
+                    message: 'Could not save the external listing. Please try again later.'
                 }
             };
         }
@@ -287,10 +300,17 @@ export class AccommodationExternalListingService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+
+            logError(
+                'accommodationExternalListing.update',
+                err instanceof Error ? err : new Error(String(err)),
+                { id, data: parsed.data },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not update the external listing. Please try again later.'
                 }
             };
         }
@@ -339,10 +359,17 @@ export class AccommodationExternalListingService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+
+            logError(
+                'accommodationExternalListing.remove',
+                err instanceof Error ? err : new Error(String(err)),
+                { id },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not remove the external listing. Please try again later.'
                 }
             };
         }
@@ -390,14 +417,22 @@ export class AccommodationExternalListingService {
             );
             assertCanUpdateAccommodation(actor, ownerId);
 
-            // TYPE-WORKAROUND: the additive `showExternalReputation` column and the audit
-            // field `updatedById` are not surfaced by the accommodation model's inferred
+            // TYPE-WORKAROUND: the additive `showExternalReputation` /
+            // `externalReputationToggleDecidedAt` columns and the audit field
+            // `updatedById` are not surfaced by the accommodation model's inferred
             // update-input type, so the master-toggle payload needs a cast.
+            //
+            // Every manual toggle records the owner's decision. That timestamp is
+            // what permanently disables the one-time automatic enable, so it must
+            // be written for BOTH `true` and `false`.
             await this.accommodationModel.update(
                 { id: accommodationId },
-                { showExternalReputation: value, updatedById: actor.id } as unknown as Parameters<
-                    typeof this.accommodationModel.update
-                >[1],
+                {
+                    showExternalReputation: value,
+                    externalReputationToggleDecidedAt: new Date(),
+                    updatedById: actor.id
+                    // TYPE-WORKAROUND: additive audit columns are absent from the entity update input type.
+                } as unknown as Parameters<typeof this.accommodationModel.update>[1],
                 ctx?.tx
             );
 
@@ -406,10 +441,17 @@ export class AccommodationExternalListingService {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
             }
+
+            logError(
+                'accommodationExternalListing.setMasterToggle',
+                err instanceof Error ? err : new Error(String(err)),
+                { accommodationId, value },
+                actor
+            );
             return {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                    message: 'Could not change the external listing. Please try again later.'
                 }
             };
         }

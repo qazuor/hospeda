@@ -521,6 +521,40 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 
             expect(countArgs[1]?.keyedBy).toBe('consumer');
         });
 
+        it.each([
+            ['owner', [100, 0]],
+            ['visitor', [0, 20]]
+        ] as const)('HOS-2100: a %s-quota rejection records quota_exceeded owner-keyed with the visitor as consumer', async (_gate, [
+            ownerCount,
+            visitorCount
+        ]) => {
+            // Arrange: owner and visitor limits are both 20 in this suite's effective set.
+            mockGetMonthlyCallCount
+                .mockResolvedValueOnce(ownerCount)
+                .mockResolvedValueOnce(visitorCount);
+
+            // Act
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: TOURIST_ID }),
+                body: JSON.stringify({
+                    accommodationId: ACCOMMODATION_ID,
+                    messages: [{ role: 'user', content: '¿Tiene cochera?' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(403);
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const [onlyCall] = mockRecordAiUsage.mock.calls as unknown[][];
+            expect(onlyCall?.[0]).toMatchObject({
+                userId: OWNER_ID,
+                consumerUserId: TOURIST_ID,
+                status: 'quota_exceeded'
+            });
+        });
+
         it('writes ONE row for a self-chat (owner asking about their own listing)', async () => {
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',

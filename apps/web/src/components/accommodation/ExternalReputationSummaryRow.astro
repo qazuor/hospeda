@@ -1,0 +1,98 @@
+---
+/**
+ * @file ExternalReputationSummaryRow.astro
+ * @description One platform's score row inside the "Lo que dicen en otras
+ * plataformas" block: platform label, numeric rating, five-star visual,
+ * locale-aware review count and an allow-listed "Ver en …" link.
+ *
+ * Extracted from ExternalReputation.astro so the row's "Ver en …" link can be
+ * suppressed per row: when the Google review cards are shown, their own CTA is
+ * the one Google link, and a second one on the score row would point to the
+ * same URL.
+ */
+
+import { ExternalLinkIcon, StarIcon } from '@repo/icons';
+import type { ExternalReputationPlatformItem } from '@repo/schemas';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolvePlatformHref } from '@/lib/external-reputation-visibility';
+import styles from './ExternalReputation.module.css';
+
+interface Props {
+    /** Platform item with an aggregate score or review count. */
+    readonly item: ExternalReputationPlatformItem;
+    /** Active locale for i18n. */
+    readonly locale: string;
+    /**
+     * Whether to render the row's "Ver en …" link. Defaults to true; set to
+     * false when another link on the block already points to the same URL.
+     */
+    readonly showLink?: boolean;
+}
+
+const { item, locale, showLink = true } = Astro.props;
+const { t, tPlural } = createTranslations(locale as SupportedLocale);
+
+const platformKey = `external-reputation.platform.${item.platform.toLowerCase()}` as const;
+const platformName = t(platformKey as Parameters<typeof t>[0], item.platform);
+
+/*
+ * The deep link (or, when absent, the plain listing URL) arrives from an
+ * outside platform through the API and is stored, never re-validated for
+ * scheme — so it goes through the allow-list like every other third-party URL
+ * the site links to (HOS-592 / F-02). A refused value drops the link and
+ * leaves the row's score intact.
+ */
+const deepLinkHref = showLink ? resolvePlatformHref({ item }) : undefined;
+const rounded =
+    item.rating != null ? Math.min(5, Math.max(0, Math.round(item.rating))) : null;
+---
+
+<div class={styles.summaryRow}>
+    <span class={styles.summaryPlatform}>{platformName}</span>
+
+    {item.rating != null && (
+        <span class={styles.summaryRating}>
+            <StarIcon size="sm" weight="fill" color="var(--brand-accent)" aria-hidden="true" />
+            <strong class={styles.summaryRatingNumber}>{item.rating.toFixed(1)}</strong>
+        </span>
+    )}
+
+    {rounded != null && (
+        <span
+            class={styles.stars}
+            role="img"
+            aria-label={t('external-reputation.reviews.starsLabel', '{{count}} de 5 estrellas', {
+                count: rounded
+            })}
+        >
+            {Array.from({ length: 5 }, (_, i) => (
+                <StarIcon
+                    size="xs"
+                    weight={i < rounded ? 'fill' : 'regular'}
+                    color={i < rounded ? 'var(--brand-accent)' : 'var(--border)'}
+                    aria-hidden="true"
+                />
+            ))}
+        </span>
+    )}
+
+    {item.reviewsCount != null && (
+        <span class={styles.summaryCount}>
+            {tPlural('external-reputation.aggregate.reviewsCountOn', item.reviewsCount, {
+                platform: platformName
+            })}
+        </span>
+    )}
+
+    {deepLinkHref && (
+        <a href={deepLinkHref} target="_blank" rel="noopener noreferrer" class={styles.summaryLink}>
+            <span>
+                {t('external-reputation.link.viewOn', 'Ver en {{platform}}', {
+                    platform: platformName
+                })}
+            </span>
+            <ExternalLinkIcon size="sm" aria-hidden="true" />
+        </a>
+    )}
+</div>

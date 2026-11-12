@@ -125,6 +125,6 @@ describe('what this guard cannot see', () => {
         expect(
             dynamic,
             "the number of unresolvable `weight={…}` call sites changed — re-read them and update this guard's docstring, which currently claims they are all fill/regular ternaries"
-        ).toBe(15);
+        ).toBe(16); // +1: the summary-row stars in ExternalReputationSummaryRow.astro (fill/regular ternary)
     });
 });

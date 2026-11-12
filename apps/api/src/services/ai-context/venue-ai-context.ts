@@ -31,7 +31,14 @@ import { ServiceErrorCode, type VenuePolicies } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
+import {
+    buildListingAmenityLines,
+    capListingAmenities,
+    type ListingContextAmenity,
+    safeLoadListingAmenities
+} from './listing-amenities-context.js';
 import { formatContextMoney, priceRangeLabel, venueTypeLabel } from './listing-labels.js';
+import { buildListingPetsLines } from './listing-pets-context.js';
 import { buildListingPoliciesLines } from './listing-policies-context.js';
 import { buildOpeningHoursLines } from './opening-hours-context.js';
 import {
@@ -45,6 +52,7 @@ import {
     truncateAtWord
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
+import { buildVenueAgeWindowLines } from './venue-age-windows-context.js';
 import {
     AGE_SCOPE_AREA_SLOT,
     toVenueNightContext,
@@ -138,6 +146,7 @@ export interface VenueContextMenuItem {
  * @param includeMenu - Whether the menu section is available.
  * @param night - The resolved `nightInfo` section, or `null`/omitted when absent.
  * @param locale - Page locale for the closed-value labels and money (HOS-2095).
+ * @param amenities - The venue's amenities (HOS-2100); omitted means none.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
@@ -146,7 +155,8 @@ export function buildVenueMarkdownContext(
     menuItems: ReadonlyArray<VenueContextMenuItem>,
     includeMenu: boolean,
     night?: VenueNightContext | null,
-    locale: Locale = 'es'
+    locale: Locale = 'es',
+    amenities: ReadonlyArray<ListingContextAmenity> = []
 ): string {
     const cappedFaqs = faqs.slice(0, VENUE_CONTEXT_FAQ_MAX);
     const cappedItems = includeMenu ? menuItems.slice(0, VENUE_CONTEXT_MENU_ITEM_MAX) : [];
@@ -154,6 +164,10 @@ export function buildVenueMarkdownContext(
         sanitizeOwnerDelimiters(venue.description),
         VENUE_DESCRIPTION_MAX_CHARS
     );
+    // The rendered Resumen text, computed once: fenceOwnerValue only wraps it
+    // in markers, so this is what the model reads (HOS-2102 scans this, not the
+    // raw field — a truncation cut can hide a word).
+    const truncatedSummary = truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS);
 
     // The directive is line 1 so it precedes every fence below it. `type` and
     // `priceRange` stay unfenced: both are closed enums, not owner free text.
@@ -163,7 +177,7 @@ export function buildVenueMarkdownContext(
         '',
         `## Local: ${fenceOwnerValue(truncateAtWord(venue.name, VENUE_SHORT_TEXT_MAX_CHARS))}`,
         `**Tipo de local**: ${venueTypeLabel({ type: venue.type, locale }).label}`,
-        `**Resumen**: ${fenceOwnerValue(truncateAtWord(venue.summary, VENUE_SHORT_TEXT_MAX_CHARS))}`
+        `**Resumen**: ${fenceOwnerValue(truncatedSummary)}`
     ];
 
     if (venue.priceRange) {
@@ -272,6 +286,19 @@ export function buildVenueMarkdownContext(
                     : label.split(AGE_SCOPE_AREA_SLOT).join(fenceOwnerValue(area));
             lines.push(`**Alcance de la edad mínima**: ${value}`);
         }
+        // HOS-2098 root fix: the scope resolved against the opening hours into
+        // explicit windows, so the model never computes hours itself. Printed
+        // whenever there is an age; an unset scope reads as "every hour".
+        if (night.minAge !== null) {
+            lines.push(
+                ...buildVenueAgeWindowLines({
+                    minAge: night.minAge,
+                    scope: night.minAgeScope ?? { kind: 'all_day', from: null, area: null },
+                    openingHours: venue.openingHours,
+                    locale
+                }).lines
+            );
+        }
         if (night.legalNotice) {
             lines.push(`**Aviso legal**: ${night.legalNotice}`);
         }
@@ -302,8 +329,31 @@ export function buildVenueMarkdownContext(
         }
     }
 
+    // --- Amenities (closed catalog values, localized; HOS-2100) ---
+    lines.push(...buildListingAmenityLines({ amenities, locale }).lines);
+
     // --- House rules (closed values only; night keys render with nightInfo) ---
     lines.push(...buildListingPoliciesLines({ policies: venue.policies }).lines);
+
+    // --- Pets (HOS-2102) ---
+    // Same contract as the accommodation block: the line appears only when
+    // nothing informs pets, and the scan reads exactly what renders — the
+    // capped amenity list, the capped FAQs, the truncated summary and
+    // description. A venue has no features and no iaData; the carta text is
+    // deliberately out of the scan (HOS-2102 scope), so a pet word buried in a
+    // dish description does not suppress the line.
+    lines.push(
+        ...buildListingPetsLines({
+            policies: venue.policies,
+            amenitySlugs: capListingAmenities(amenities).map((amenity) => amenity.slug),
+            featureSlugs: [],
+            texts: [
+                truncatedSummary,
+                truncatedDescription,
+                ...cappedFaqs.map((faq) => `${faq.question} ${faq.answer}`)
+            ]
+        }).lines
+    );
 
     // --- FAQs (owner free text — fenced; answers cut and section budgeted, HOS-2095) ---
     lines.push(
@@ -365,9 +415,10 @@ export async function assembleVenueContext(
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Venue '${entityId}' not found.`);
     }
 
-    const [faqs, menuItems] = await Promise.all([
+    const [faqs, menuItems, amenities] = await Promise.all([
         safeLoadFaqs(entityId),
-        safeLoadMenuItems(entityId)
+        safeLoadMenuItems(entityId),
+        safeLoadListingAmenities({ vertical: 'venue', listingId: entityId })
     ]);
 
     // Availability comes from the section map, never from the venue type or the
@@ -385,7 +436,8 @@ export async function assembleVenueContext(
         menuItems,
         input.listingSections.get('menu')?.state === 'available',
         night,
-        locale
+        locale,
+        amenities
     );
 
     return {

@@ -1,0 +1,140 @@
+/* AiQuestionsPanel.module.css — HOS-2101 */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.5rem);
+}
+
+.intro,
+.status,
+.blockHint {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.error {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--destructive, var(--core-foreground));
+    margin: 0;
+}
+
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.blockTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.counter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    padding: 0 var(--space-2, 0.5rem);
+    border-radius: 999px;
+    background: var(--brand-primary, var(--core-foreground));
+    color: var(--core-background, #fff);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    padding: var(--space-3, 1rem);
+}
+
+.itemUnanswered {
+    border-left: 4px solid var(--brand-primary, var(--border));
+}
+
+.question {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.answer {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* The assistant answer is sanitized markdown (renderChatMarkdown). */
+.answerBody p,
+.answerBody ul,
+.answerBody ol {
+    margin: var(--space-1, 0.25rem) 0 0;
+}
+
+.answerBody ul,
+.answerBody ol {
+    padding-inline-start: 1.25rem;
+}
+
+.answerBody strong {
+    font-weight: 600;
+}
+
+.answerLabel {
+    color: var(--core-muted-foreground);
+}
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.addFaq {
+    padding: var(--space-1, 0.25rem) var(--space-3, 1rem);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    color: var(--brand-primary, var(--core-foreground));
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.addFaq:hover,
+.addFaq:focus-visible {
+    background: oklch(0.96 0.02 240 / 0.15);
+}

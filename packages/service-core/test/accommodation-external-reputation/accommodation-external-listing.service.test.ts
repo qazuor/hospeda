@@ -10,6 +10,7 @@
  * - setMasterToggle: happy path, admin, FORBIDDEN, VALIDATION_ERROR, INTERNAL_ERROR
  */
 
+import { DbError } from '@repo/db';
 import type { AccommodationExternalListing } from '@repo/schemas';
 import {
     ExternalPlatformEnum,
@@ -190,10 +191,33 @@ describe('AccommodationExternalListingService', () => {
         });
 
         it('should return VALIDATION_ERROR on duplicate platform (unique constraint violation)', async () => {
+            // Build the REAL production error shape: DbError -> DrizzleQueryError
+            // -> pg DatabaseError (code 23505). A flat `new Error(...)` would hide
+            // the bug because the check must walk the cause chain.
+            const pgError = Object.assign(
+                new Error(
+                    'duplicate key value violates unique constraint "accommodation_external_listings_accommodation_platform_uniq"'
+                ),
+                {
+                    code: '23505',
+                    constraint: 'accommodation_external_listings_accommodation_platform_uniq',
+                    table: 'accommodation_external_listings',
+                    schema: 'public'
+                }
+            );
+            const drizzleError = new Error(
+                'Failed query: insert into "accommodation_external_listings" (...) values (...) params: ...',
+                { cause: pgError }
+            );
+            const dbError = new DbError(
+                'accommodationExternalListings',
+                'create',
+                { accommodationId: ACC_ID },
+                drizzleError.message,
+                drizzleError
+            );
             const listingModel = makeListingModel({
-                create: vi
-                    .fn()
-                    .mockRejectedValue(new Error('duplicate key value violates unique constraint'))
+                create: vi.fn().mockRejectedValue(dbError)
             });
             const accommodationModel = makeAccommodationModel();
             const svc = new AccommodationExternalListingService(
@@ -289,9 +313,7 @@ describe('AccommodationExternalListingService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         });
 
-        it('should return INTERNAL_ERROR when create throws an unrecognized (non-unique) error', async () => {
-            // Exercises the final fallthrough (non-ServiceError, non-unique/duplicate/conflict)
-            // — lines 205-211.
+        it('should return a generic INTERNAL_ERROR when create throws an unrecognized error', async () => {
             const listingModel = makeListingModel({
                 create: vi.fn().mockRejectedValue(new Error('disk full'))
             });
@@ -312,7 +334,74 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('disk full');
+            expect(result.error?.message).not.toContain('disk full');
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('params:');
+        });
+
+        it('should never leak SQL or params in a generic add failure', async () => {
+            // Mirrors the wrapped Drizzle message WITHOUT a 23505 code: the
+            // response must be generic and must not surface "Failed query".
+            const listingModel = makeListingModel({
+                create: vi
+                    .fn()
+                    .mockRejectedValue(
+                        new Error('Failed query: insert into "x" (...) values (...) params: ...')
+                    )
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.add(makeOwnerActor(), {
+                accommodationId: ACC_ID,
+                platform: ExternalPlatformEnum.GOOGLE,
+                url: 'https://maps.google.com/?cid=12345',
+                showLink: false,
+                showReviews: false
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('params:');
+            expect(result.error?.message).not.toContain('insert into');
+        });
+
+        it('should allow re-adding the same platform after remove (mock-level)', async () => {
+            // remove() soft-deletes the listing; add() then creates a fresh row for
+            // the same (accommodation, platform) pair. At the DB level the partial
+            // unique index ignores the soft-deleted row, so this must succeed.
+            const listingModel = makeListingModel({
+                findById: vi.fn().mockResolvedValue(makeListing()),
+                softDelete: vi.fn().mockResolvedValue(1),
+                create: vi.fn().mockResolvedValue(makeListing())
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const removeResult = await svc.remove(makeOwnerActor(), LIST_ID);
+            expect(removeResult.error).toBeUndefined();
+            expect(removeResult.data).toBe(true);
+
+            const addResult = await svc.add(makeOwnerActor(), {
+                accommodationId: ACC_ID,
+                platform: ExternalPlatformEnum.GOOGLE,
+                url: 'https://maps.google.com/?cid=12345',
+                showLink: false,
+                showReviews: false
+            });
+
+            expect(addResult.error).toBeUndefined();
+            expect(addResult.data).toBeDefined();
+            expect(listingModel.create).toHaveBeenCalledOnce();
         });
     });
 
@@ -391,7 +480,9 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('Connection pool exhausted');
+            expect(result.error?.message).not.toContain('Connection pool exhausted');
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('params:');
         });
 
         it('should return VALIDATION_ERROR when update input fails the schema', async () => {
@@ -498,7 +589,9 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('DB connection lost');
+            expect(result.error?.message).not.toContain('DB connection lost');
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('params:');
         });
 
         it('should return INTERNAL_ERROR when softDelete throws a non-Error value (String branch)', async () => {
@@ -519,7 +612,7 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('plain string error');
+            expect(result.error?.message).not.toContain('plain string error');
         });
     });
 
@@ -542,6 +635,48 @@ describe('AccommodationExternalListingService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data).toBe(true);
             expect(accommodationModel.update).toHaveBeenCalledOnce();
+        });
+
+        it('records the manual decision timestamp when enabling', async () => {
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            await svc.setMasterToggle(makeOwnerActor(), ACC_ID, true);
+
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: ACC_ID },
+                expect.objectContaining({
+                    showExternalReputation: true,
+                    externalReputationToggleDecidedAt: expect.any(Date)
+                }),
+                undefined
+            );
+        });
+
+        it('records the manual decision timestamp when disabling', async () => {
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            await svc.setMasterToggle(makeOwnerActor(), ACC_ID, false);
+
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: ACC_ID },
+                expect.objectContaining({
+                    showExternalReputation: false,
+                    externalReputationToggleDecidedAt: expect.any(Date)
+                }),
+                undefined
+            );
         });
 
         it('should allow admin to flip the toggle', async () => {
@@ -604,7 +739,9 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('Unexpected DB error');
+            expect(result.error?.message).not.toContain('Unexpected DB error');
+            expect(result.error?.message).not.toContain('Failed query');
+            expect(result.error?.message).not.toContain('params:');
         });
 
         it('should return INTERNAL_ERROR when the accommodationModel.update throws a non-Error value (String branch)', async () => {
@@ -625,7 +762,7 @@ describe('AccommodationExternalListingService', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('toggle string error');
+            expect(result.error?.message).not.toContain('toggle string error');
         });
     });
 });

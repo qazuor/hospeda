@@ -734,6 +734,63 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         });
     });
 
+    it('persists the guarded venue answer and leaves an accommodation answer unchanged', async () => {
+        const { persistChatTurn } = await import('../../../src/services/ai-chat-persistence');
+        vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, 'venue').mockResolvedValue({
+            contextBlock: 'venue context',
+            systemMessage: 'venue system',
+            entityName: 'Test Venue'
+        });
+        const venueMessage = '¿tengo 2 hijos, pueden entrar?';
+        nextStreamDeltas.current = ['Sí, pueden venir.'];
+        mockOwnerLimits.current = new Map([['max_ai_chat_venue_per_month', 20]]);
+
+        const venueResponse = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType: 'venue',
+                entityId: ACCOMMODATION_ID,
+                messages: [{ role: 'user', content: venueMessage }],
+                locale: 'es'
+            })
+        });
+        expect(venueResponse.status).toBe(200);
+        const venueFrames = await readSseFrames(venueResponse);
+        const venueText = venueFrames
+            .filter((frame) => frame.event === 'token')
+            .map((frame) => JSON.parse(frame.data) as { delta: string })
+            .map(({ delta }) => delta)
+            .join('');
+        expect(venueText).toBe('Depende del horario: pueden venir.');
+        expect(vi.mocked(persistChatTurn)).toHaveBeenLastCalledWith(
+            expect.objectContaining({ assistantMessage: venueText, userMessage: venueMessage })
+        );
+
+        nextStreamDeltas.current = ['Sí, tiene desayuno.'];
+        mockOwnerLimits.current = new Map([['max_ai_chat_per_month', 20]]);
+        const accommodationResponse = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: [{ role: 'user', content: '¿Puedo ir con mi hijo?' }],
+                locale: 'es'
+            })
+        });
+        expect(accommodationResponse.status).toBe(200);
+        const accommodationFrames = await readSseFrames(accommodationResponse);
+        const accommodationText = accommodationFrames
+            .filter((frame) => frame.event === 'token')
+            .map((frame) => JSON.parse(frame.data) as { delta: string })
+            .map(({ delta }) => delta)
+            .join('');
+        expect(accommodationText).toBe('Sí, tiene desayuno.');
+        expect(vi.mocked(persistChatTurn)).toHaveBeenLastCalledWith(
+            expect.objectContaining({ assistantMessage: accommodationText })
+        );
+    });
+
     it('does NOT emit any debug SSE event to a tourist caller (no system-prompt / context leak — FIX 1)', async () => {
         // Tourist actor: RoleEnum.USER, empty permissions array — no AI_SETTINGS_MANAGE.
         const res = await app.request(STREAM_PATH, {
