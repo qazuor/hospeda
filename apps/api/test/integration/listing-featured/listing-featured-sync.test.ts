@@ -25,7 +25,6 @@ import {
     drainListingFeaturedSyncs,
     subscribeListingFeaturedSync
 } from '../../../src/utils/listing-featured/featured-sync-listener';
-import { getListingFeaturedPorts } from '../../../src/utils/listing-featured/listing-featured-ports';
 import { createApiListingInverse } from '../../../src/utils/listing-publication/listing-inverse';
 import { getListingReconcilerPorts } from '../../../src/utils/listing-publication/reconciler-ports';
 import { testDb } from '../../e2e/setup/test-database';
@@ -173,83 +172,6 @@ afterAll(async () => {
 });
 
 describe('HOS-1718 a live LISTING boost features its listing on every public read', () => {
-    it('the compare-and-set does not overwrite a flag changed after the listing snapshot', async () => {
-        // Arrange
-        const userId = await owner();
-        const destinationId = await destination();
-        const id = await createListing({
-            ownerId: userId,
-            destinationId,
-            status: PublicationStatusEnum.PUBLISHED
-        });
-        created.accommodations.push(id);
-        let changed = false;
-        // Act: model a writer that wins after listOwnerListings and before the CAS.
-        await getListingFeaturedPorts().unitOfWork.runLocked(
-            { userId, vertical: VerticalEnum.ACCOMMODATION },
-            async (tx) => {
-                const snapshot = await tx.listOwnerListings({
-                    vertical: VerticalEnum.ACCOMMODATION,
-                    ownerId: userId
-                });
-                expect(snapshot).toMatchObject([{ id, featured: false }]);
-                await getDb()
-                    .update(accommodations)
-                    .set({ featuredByEntitlement: true })
-                    .where(eq(accommodations.id, id));
-                changed = await tx.setFeatured({
-                    vertical: VerticalEnum.ACCOMMODATION,
-                    listingId: id,
-                    from: false,
-                    to: true
-                });
-            }
-        );
-        // Assert
-        expect(changed).toBe(false);
-        expect(await featured(VerticalEnum.ACCOMMODATION, id)).toBe(true);
-    });
-
-    it('a logically deleted listing is absent from the snapshot and is never written', async () => {
-        // Arrange
-        const userId = await owner();
-        const destinationId = await destination();
-        const id = await createListing({
-            ownerId: userId,
-            destinationId,
-            status: PublicationStatusEnum.PUBLISHED
-        });
-        created.accommodations.push(id);
-        await getDb()
-            .update(accommodations)
-            .set({ deletedAt: fixedNow })
-            .where(eq(accommodations.id, id));
-        const writes: boolean[] = [];
-        // Act
-        await getListingFeaturedPorts().unitOfWork.runLocked(
-            { userId, vertical: VerticalEnum.ACCOMMODATION },
-            async (tx) => {
-                const snapshot = await tx.listOwnerListings({
-                    vertical: VerticalEnum.ACCOMMODATION,
-                    ownerId: userId
-                });
-                for (const row of snapshot)
-                    writes.push(
-                        await tx.setFeatured({
-                            vertical: VerticalEnum.ACCOMMODATION,
-                            listingId: row.id,
-                            from: row.featured,
-                            to: true
-                        })
-                    );
-                expect(snapshot.map(({ id: listingId }) => listingId)).toEqual([]);
-            }
-        );
-        // Assert
-        expect(writes).toEqual([]);
-        expect(await featured(VerticalEnum.ACCOMMODATION, id)).toBe(false);
-    });
-
     it('an ADDED notice features the boosted accommodation and schedules its revalidation', async () => {
         // Arrange
         const userId = await owner();
