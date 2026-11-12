@@ -88,9 +88,9 @@ async function plan(f: Fixture, grants: boolean): Promise<string> {
         .values({
             planId: catalogPlan.id,
             vertical: VerticalEnum.ACCOMMODATION,
-            rank: 1,
-            sellable: true,
-            current: true,
+            rank: Math.floor(Math.random() * 100000000) + 1000,
+            sellable: false,
+            current: false,
             trialDays: 0,
             allowsPause: false
         })
