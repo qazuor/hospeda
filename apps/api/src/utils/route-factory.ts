@@ -613,8 +613,8 @@ export const createListRoute = (
                     {
                         success: false,
                         error: {
-                            code: ServiceErrorCode.INVALID_PAGINATION_PARAMS,
-                            message: 'Invalid pagination parameters provided'
+                            code: ServiceErrorCode.VALIDATION_ERROR,
+                            message: `Unknown query parameters: ${invalidParams.join(', ')}`
                         }
                     },
                     400

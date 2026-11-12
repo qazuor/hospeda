@@ -251,6 +251,22 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Sync occupancy dates from every active Airbnb/Booking/other iCal feed (HOS-162 Phase 3).'
     },
     {
+        name: 'ai-listing-questions-retention',
+        displayName: 'Purga de preguntas al chat de IA',
+        category: 'system',
+        schedule: '45 3 * * *',
+        description:
+            'Hard-delete AI chat questions and answers older than 12 months, then the chat conversations left empty (HOS-2101 owner retention decision).'
+    },
+    {
+        name: 'ai-questions-weekly-digest',
+        displayName: 'Resumen semanal de preguntas sin responder',
+        category: 'notifications',
+        schedule: '0 9 * * 1',
+        description:
+            "Email each listing owner the week's AI chat questions their listings could not answer, with a link to the listing's AI questions tab; skips empty weeks and opted-out owners (HOS-2101)."
+    },
+    {
         name: 'entity-views-purge',
         displayName: 'Purga de vistas de entidades',
         category: 'system',

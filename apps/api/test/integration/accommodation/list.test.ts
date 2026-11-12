@@ -84,12 +84,23 @@ describe('GET /accommodations (list)', () => {
         expect(body.data.pagination).toMatchObject({ page: 2, pageSize: 5, total: 1 });
     });
 
-    it('rejects a query param the route does not declare with 400 INVALID_PAGINATION_PARAMS', async () => {
+    it('accepts includeNoPrice=false and includeNoReviews=false (HOS-2017)', async () => {
+        const res = await app.request(`${base}?includeNoPrice=false&includeNoReviews=false`, {
+            headers: { 'user-agent': 'vitest' }
+        });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data).toHaveProperty('items');
+    });
+
+    it('rejects a query param the route does not declare with 400 VALIDATION_ERROR', async () => {
         const res = await app.request(`${base}?city=Miami`, {
             headers: { 'user-agent': 'vitest' }
         });
         expect(res.status).toBe(400);
         const body = await res.json();
-        expect(body.error.code).toBe('INVALID_PAGINATION_PARAMS');
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.message).toBe('Unknown query parameters: city');
     });
 });

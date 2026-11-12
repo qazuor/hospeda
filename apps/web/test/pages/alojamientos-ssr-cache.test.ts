@@ -137,7 +137,7 @@ describe('HOS-299 — cacheTtlMs never reaches the API', () => {
      * `cacheTtlMs` is a client-side directive, not a query param. If it were not
      * destructured out it would be serialised into the querystring, which both
      * fragments the cache key and makes the listing endpoint reject the request
-     * with INVALID_PAGINATION_PARAMS — the page frontmatter already documents
+     * with 400 VALIDATION_ERROR — the page frontmatter already documents
      * that unknown params are rejected there.
      */
     it.each([

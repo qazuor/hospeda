@@ -31,7 +31,7 @@ const VENUE_ID = '33333333-3333-4333-8333-333333333333';
 const NIGHT_FIELDS = ['entryKind', 'entryNoteI18n', 'entryPriceFrom'] as const;
 
 /** The nightInfo policy keys (`policyKeys` of the section, HOS-2060). */
-const NIGHT_POLICY_KEYS = ['minAge', 'dressCode', 'dressCodeNote'] as const;
+const NIGHT_POLICY_KEYS = ['minAge', 'minAgeScope', 'dressCode', 'dressCodeNote'] as const;
 
 /** The all-null nightInfo body: every column and every policy key in null. */
 const NIGHT_NULLS = {

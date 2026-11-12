@@ -284,7 +284,8 @@
                 "capacityPricing": "Capacity and price",
                 "contactSocial": "Contact and social",
                 "seo": "Search engines (Google)",
-                "seoDescription": "Choose how your property appears when someone finds it on Google. Both fields are optional: leave them empty and we publish your property's name and summary."
+                "seoDescription": "Choose how your property appears when someone finds it on Google. Both fields are optional: leave them empty and we publish your property's name and summary.",
+                "aiQuestions": "AI questions"
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -714,7 +715,28 @@
                 "description": "the description",
                 "mainImage": "the main photo"
             },
-            "pageDescription": "Editar información de tu propiedad"
+            "pageDescription": "Editar información de tu propiedad",
+            "aiQuestions": {
+                "intro": "What visitors asked your listing's assistant. Questions are anonymous and kept for 12 months.",
+                "loading": "Loading questions…",
+                "error": "We could not load the questions. Please try again later.",
+                "notOwner": "Only the listing's owner can see the questions asked to its assistant.",
+                "empty": "Nobody has asked this listing's assistant anything yet.",
+                "answerLabel": "Assistant's answer:",
+                "addAsFaq": "Add as a FAQ",
+                "unansweredTitle": "Unanswered",
+                "unansweredHint": "The assistant could not find the answer in your listing. Adding them as FAQs helps it answer next time.",
+                "othersTitle": "Other questions",
+                "truncated": "Questions shown: {{shown}} of {{total}}. Unanswered ones come first.",
+                "dismissedTruncated": "Dismissed shown: {{shown}} of {{total}}. You see the most recent ones.",
+                "markSeen": "I've seen this",
+                "undo": "Undo",
+                "dismissedTitle": "Dismissed",
+                "dismissedError": "The question could not be dismissed.",
+                "undoError": "The question could not be restored.",
+                "viewMore": "View more",
+                "faqAnswerHelp": "There is no confirmed answer. Fill it in using information from your listing."
+            }
         },
         "empty": {
             "title": "You haven't published any property yet",

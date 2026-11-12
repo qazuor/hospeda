@@ -1,8 +1,8 @@
 {
     "section": {
-        "title": "Reputación en otras plataformas",
-        "subtitle": "Opiniones de viajeros verificados en los principales sitios de alojamiento"
+        "title": "Lo que dicen en otras plataformas"
     },
+    "alsoOn": "También en:",
     "platform": {
         "google": "Google",
         "booking": "Booking.com",
@@ -11,23 +11,28 @@
     },
     "link": {
         "cta": "Mirá nuestro alojamiento en {{platform}} →",
-        "viewOn": "Ver en {{platform}} →"
+        "viewOn": "Ver en {{platform}}"
     },
     "reviews": {
-        "title": "Reseñas destacadas",
-        "via": "vía {{platform}}"
+        "listLabel": "Reseñas de Google",
+        "readMore": "Leer más",
+        "readLess": "Leer menos",
+        "writtenIn": "Escrita en {{language}}",
+        "seeAllOn_one": "Ver la reseña en {{platform}}",
+        "seeAllOn_other": "Ver las {{count}} reseñas en {{platform}}",
+        "starsLabel": "{{count}} de 5 estrellas"
     },
     "aggregate": {
         "rating": "Puntuación promedio",
         "reviewsCount_one": "{{count}} reseña",
         "reviewsCount_other": "{{count}} reseñas",
+        "reviewsCountOn_one": "{{count}} reseña en {{platform}}",
+        "reviewsCountOn_other": "{{count}} reseñas en {{platform}}",
         "noData": "Sin datos disponibles"
     },
     "snippets": {
-        "googleOnly": "Solo Google muestra el texto completo de las reseñas porque ofrece una API oficial. Las demás plataformas muestran el puntaje agregado y un enlace directo por razones legales.",
         "ttlExpired": "Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje",
-        "byAuthor": "Por {{author}}",
-        "on": "en {{platform}}"
+        "byAuthor": "Por {{author}}"
     },
     "ownerConfig": {
         "title": "Configuración de reputación externa",
@@ -40,6 +45,7 @@
         "rateLimitHit_one": "Podés actualizar nuevamente en {{minutes}} minuto",
         "rateLimitHit_other": "Podés actualizar nuevamente en {{minutes}} minutos",
         "googleOnlyExplainer": "El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.",
+        "autoEnabledNotice": "Activamos esta sección automáticamente porque ya tenemos datos de tus plataformas. Podés desactivarla cuando quieras.",
         "verifiedHint": "El enlace fue verificado y corresponde a este alojamiento",
         "loading": "Cargando listados…",
         "urlHint": {
@@ -52,7 +58,8 @@
         "removeConfirm": "¿Eliminás esta plataforma? Se dejan de mostrar sus reseñas en tu ficha.",
         "removeConfirmButton": "Eliminar plataforma",
         "removing": "Eliminando...",
-        "removeError": "No se pudo eliminar la plataforma."
+        "removeError": "No se pudo eliminar la plataforma.",
+        "allPlatformsAdded": "Ya agregaste todas las plataformas disponibles."
     },
     "errors": {
         "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",
@@ -60,7 +67,9 @@
         "blocked": "El acceso a los datos de esta plataforma fue bloqueado temporalmente.",
         "statusFailed": "No se pudo obtener el estado de actualización.",
         "invalidUrl": "Ingresá una URL válida (https://...).",
-        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo."
+        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
+        "duplicatePlatform": "Ya tenés un enlace de {{platform}} cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.",
+        "addFailed": "No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos."
     },
     "status": {
         "pending": "Actualizando...",

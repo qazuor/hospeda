@@ -24,7 +24,11 @@ import { describe, expect, it } from 'vitest';
 import {
     hasAggregate,
     hasAnythingToShow,
+    hasSafeExternalLink,
     hasValidSnippets,
+    resolvePlatformHref,
+    selectLinkOnlyReputationItems,
+    selectSummaryReputationItems,
     selectVisibleReputationItems
 } from '../../src/lib/external-reputation-visibility';
 
@@ -37,6 +41,7 @@ function emptyGoogleItem(
 ): ExternalReputationPlatformItem {
     return {
         platform: 'GOOGLE',
+        url: null,
         rating: null,
         reviewsCount: null,
         deepLink: null,
@@ -93,6 +98,29 @@ describe('H-133 — the reputation block must not publish itself with nothing to
             });
 
             expect(visible).toHaveLength(1);
+        });
+
+        it('keeps a platform that has only a url — a link alone is real content (F)', () => {
+            // The real production case: an Airbnb listing with showLink=true and
+            // no reputation row yet. The chip must still render "Ver en Airbnb →".
+            const visible = selectVisibleReputationItems({
+                items: [
+                    emptyGoogleItem({
+                        platform: 'AIRBNB' as ExternalReputationPlatformItem['platform'],
+                        url: 'https://www.airbnb.com.ar/rooms/817515602448448452'
+                    })
+                ]
+            });
+
+            expect(visible).toHaveLength(1);
+        });
+
+        it('drops a platform whose url is an empty string and has nothing else', () => {
+            const visible = selectVisibleReputationItems({
+                items: [emptyGoogleItem({ url: '' })]
+            });
+
+            expect(visible).toHaveLength(0);
         });
 
         it('keeps a platform that has only snippets', () => {
@@ -172,6 +200,109 @@ describe('H-133 — the reputation block must not publish itself with nothing to
     describe('hasAnythingToShow', () => {
         it('is false for the exact production row that produced H-133', () => {
             expect(hasAnythingToShow({ item: emptyGoogleItem() })).toBe(false);
+        });
+
+        it('is true when the item has only a url', () => {
+            expect(
+                hasAnythingToShow({
+                    item: emptyGoogleItem({ url: 'https://share.google/IUko8vyFORxaIjDM1' })
+                })
+            ).toBe(true);
+        });
+
+        it('is false when the url is an empty string and there is nothing else', () => {
+            expect(hasAnythingToShow({ item: emptyGoogleItem({ url: '' }) })).toBe(false);
+        });
+
+        it('is false when the only link is an unsafe scheme', () => {
+            expect(
+                hasAnythingToShow({ item: emptyGoogleItem({ url: 'javascript:alert(1)' }) })
+            ).toBe(false);
+        });
+    });
+});
+
+describe('public block layout predicates', () => {
+    describe('resolvePlatformHref', () => {
+        it('prefers the deep link when it is safe', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({
+                        deepLink: 'https://maps.google.com/?cid=1',
+                        url: 'https://example.com/listing'
+                    })
+                })
+            ).toBe('https://maps.google.com/?cid=1');
+        });
+
+        it('falls back to the listing url when the deep link is absent', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({ url: 'https://example.com/listing' })
+                })
+            ).toBe('https://example.com/listing');
+        });
+
+        it('returns undefined when neither link is safe', () => {
+            expect(
+                resolvePlatformHref({
+                    item: emptyGoogleItem({
+                        deepLink: 'javascript:alert(1)',
+                        url: 'data:text/html,<script></script>'
+                    })
+                })
+            ).toBeUndefined();
+        });
+    });
+
+    describe('hasSafeExternalLink', () => {
+        it('is true for a safe listing url', () => {
+            expect(
+                hasSafeExternalLink({
+                    item: emptyGoogleItem({ url: 'https://airbnb.com/rooms/1' })
+                })
+            ).toBe(true);
+        });
+
+        it('is false for an unsafe deep link and no safe url', () => {
+            expect(
+                hasSafeExternalLink({
+                    item: emptyGoogleItem({ deepLink: 'javascript:alert(1)' })
+                })
+            ).toBe(false);
+        });
+    });
+
+    describe('selectSummaryReputationItems', () => {
+        it('keeps only platforms with a rating or review count', () => {
+            const withRating = emptyGoogleItem({ rating: 4.8 });
+            const withCount = emptyGoogleItem({
+                platform: 'BOOKING',
+                reviewsCount: 12
+            } as Partial<ExternalReputationPlatformItem>);
+            const linkOnly = emptyGoogleItem({ url: 'https://airbnb.com/rooms/1' });
+
+            expect(
+                selectSummaryReputationItems({ items: [withRating, withCount, linkOnly] })
+            ).toEqual([withRating, withCount]);
+        });
+    });
+
+    describe('selectLinkOnlyReputationItems', () => {
+        it('keeps platforms with no aggregate but a safe link', () => {
+            const withRating = emptyGoogleItem({ rating: 4.8 });
+            const linkOnly = emptyGoogleItem({
+                platform: 'AIRBNB',
+                url: 'https://airbnb.com/rooms/1'
+            } as Partial<ExternalReputationPlatformItem>);
+            const unsafeLink = emptyGoogleItem({
+                platform: 'BOOKING',
+                url: 'javascript:alert(1)'
+            } as Partial<ExternalReputationPlatformItem>);
+
+            expect(
+                selectLinkOnlyReputationItems({ items: [withRating, linkOnly, unsafeLink] })
+            ).toEqual([linkOnly]);
         });
     });
 });

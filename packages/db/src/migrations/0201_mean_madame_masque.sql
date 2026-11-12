@@ -1,0 +1,1 @@
+ALTER TABLE "ai_messages" ADD COLUMN "owner_dismissed_at" timestamp with time zone;

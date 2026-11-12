@@ -1,0 +1,43 @@
+{
+    "providers": [
+        {
+            "id": "openai",
+            "apiKeyEnv": "OPENAI_API_KEY"
+        }
+    ],
+    "models": [
+        {
+            "id": "gpt-5.4-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "rates": {
+                "inputUsdPerMillion": 0.2,
+                "outputUsdPerMillion": 1.25
+            },
+            "reasoningEfforts": ["none"]
+        }
+    ],
+    "maxOutputTokens": [2048],
+    "repetitions": 3,
+    "caseIds": [
+        "venue-scope-00-saturday-22",
+        "venue-scope-00-saturday-2130-leave-23",
+        "venue-scope-2330-saturday-22-leave-23",
+        "venue-scope-00-one-am",
+        "venue-scope-2330-one-am",
+        "venue-scope-00-ambiguous-minors",
+        "venue-scope-2330-ambiguous-minors",
+        "venue-scope-all-day-saturday-22",
+        "venue-area-scope-other-area",
+        "venue-mixed-lunch-with-child",
+        "venue-from-time-after-midnight",
+        "venue-from-time-ambiguous-question",
+        "venue-area-scope-same-area",
+        "venue-area-scope-injection",
+        "venue-mixed-free-text-no-scope",
+        "venue-nightclub-minor"
+    ],
+    "concurrency": 2,
+    "maxCalls": 60,
+    "monthlyQuotas": [20, 50, 100, 250, 1250]
+}

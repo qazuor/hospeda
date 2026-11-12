@@ -15,6 +15,7 @@
  * - Rate-limit (429): shows rate-limit message with computed minutes
  */
 
+import type { AccommodationExternalListingsResponse } from '@repo/schemas';
 import { AccommodationExternalListingsResponseSchema } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,7 +26,19 @@ import { getApiUrl } from '@/lib/env';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        // Mirrors the real signature: `(key, fallback?, params?)`. Placeholders
+        // are interpolated from `params` so assertions can name the platform a
+        // message is about (`{{platform}}`) instead of matching the raw key.
+        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const template = fallback ?? _key;
+            if (!params) {
+                return template;
+            }
+            return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) => {
+                const value = params[name];
+                return value === undefined ? match : String(value);
+            });
+        },
         tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
             key === 'external-reputation.ownerConfig.rateLimitHit'
                 ? `Podés actualizar nuevamente en ${(params?.minutes as number) ?? count} minutos`
@@ -105,14 +118,49 @@ const LISTING_BOOKING = {
     verified: false
 };
 
+const LISTING_AIRBNB = {
+    ...LISTING_BASE,
+    id: '66666666-6666-4666-8666-666666666666',
+    platform: 'AIRBNB' as const,
+    url: 'https://airbnb.com/rooms/example',
+    showLink: true,
+    showReviews: false,
+    verified: false
+};
+
+const LISTING_OTHER = {
+    ...LISTING_BASE,
+    id: '77777777-7777-4777-8777-777777777777',
+    platform: 'OTHER' as const,
+    url: 'https://example.com/my-listing',
+    showLink: true,
+    showReviews: false,
+    verified: false
+};
+
 const REPUTATION_META = {
     showExternalReputation: true,
-    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+    autoEnabledAt: null,
+    toggleDecidedAt: null
 };
 
 const EMPTY_REPUTATION_META = {
     showExternalReputation: false,
-    aggregateFetchedAt: null
+    aggregateFetchedAt: null,
+    autoEnabledAt: null,
+    toggleDecidedAt: null
+};
+
+/**
+ * Reputation metadata for the auto-enabled-untouched case: the automation set
+ * the toggle and both audit timestamps are identical (no manual decision since).
+ */
+const AUTO_ENABLED_REPUTATION_META = {
+    showExternalReputation: true,
+    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
 };
 
 /**
@@ -124,9 +172,17 @@ const EMPTY_REPUTATION_META = {
  * now built THROUGH the shared response schema, so a fixture that does not
  * match the real contract fails here instead of shipping.
  */
+/** Wire-shaped reputation metadata (dates arrive as ISO strings over HTTP). */
+interface ReputationMetaFixture {
+    showExternalReputation: boolean;
+    aggregateFetchedAt: string | null;
+    autoEnabledAt: string | null;
+    toggleDecidedAt: string | null;
+}
+
 function makeListingsOkResponse(
-    listings: (typeof LISTING_GOOGLE)[] = [LISTING_GOOGLE],
-    reputation = REPUTATION_META
+    listings: AccommodationExternalListingsResponse['listings'] = [LISTING_GOOGLE],
+    reputation: ReputationMetaFixture = REPUTATION_META
 ): Response {
     const data = AccommodationExternalListingsResponseSchema.parse({ listings, reputation });
     return {
@@ -228,7 +284,9 @@ describe('ExternalReputationSection', () => {
             vi.mocked(global.fetch).mockResolvedValue(
                 makeListingsOkResponse([LISTING_GOOGLE], {
                     showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: null,
+                    toggleDecidedAt: null
                 })
             );
             renderSection();
@@ -298,7 +356,9 @@ describe('ExternalReputationSection', () => {
             vi.mocked(global.fetch).mockResolvedValue(
                 makeListingsOkResponse([LISTING_GOOGLE], {
                     showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: null,
+                    toggleDecidedAt: null
                 })
             );
             renderSection();
@@ -324,6 +384,76 @@ describe('ExternalReputationSection', () => {
                 expect(
                     screen.getByText(/No se pudieron cargar las reseñas externas/)
                 ).toBeInTheDocument();
+            });
+        });
+    });
+
+    // ── 2c. One-time automatic-enable notice ────────────────────────────────
+
+    describe('Auto-enabled notice', () => {
+        const NOTICE = /Activamos esta sección automáticamente/;
+
+        it('shows the notice when the automation enabled it and the owner has not decided since', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByText(NOTICE)).toBeInTheDocument();
+            });
+        });
+
+        it('hides the notice when the owner decided after the automatic enable', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: true,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+                    toggleDecidedAt: '2026-06-02T09:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).toBeChecked();
+            });
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        });
+
+        it('hides the notice when the toggle is off', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: false,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
+                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
+                    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).not.toBeChecked();
+            });
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+        });
+
+        it('hides the notice after the owner clicks the toggle', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByText(NOTICE)).toBeInTheDocument();
+            });
+
+            const toggle = document.querySelector('#ext-rep-master-toggle');
+            if (!toggle) throw new Error('toggle not rendered');
+            fireEvent.click(toggle);
+
+            await waitFor(() => {
+                expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
             });
         });
     });
@@ -468,12 +598,12 @@ describe('ExternalReputationSection', () => {
             expect(postCall).toBeUndefined();
         });
 
-        it('surfaces a server ServiceError message (DUPLICATE_PLATFORM shape) instead of the generic fallback (HOS-190)', async () => {
-            // Regression guard for the ORIGINAL bug: a handler-thrown ServiceError
-            // 400 serializes as { error: { code, message, details } } (no
-            // userFriendlyMessage/summary). The old code read only `.message`
-            // then the fix briefly read only userFriendlyMessage/summary — both
-            // half-right. The fallback chain must surface this `message`.
+        it('maps a DUPLICATE_PLATFORM ServiceError to the friendly duplicate message (HOS-190)', async () => {
+            // Regression guard for the ORIGINAL bug AND the leak that followed:
+            // a handler-thrown ServiceError 400 serializes as
+            // { error: { code, message, details } }. `message` is internal
+            // server text and must never be rendered; the user gets the
+            // platform-specific duplicate copy instead.
             const duplicateMessage = 'A listing for platform GOOGLE already exists';
             vi.mocked(global.fetch).mockImplementation((_url, opts) => {
                 if ((opts as RequestInit)?.method === 'POST') {
@@ -497,7 +627,117 @@ describe('ExternalReputationSection', () => {
             fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
             fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
 
-            expect(await screen.findByText(duplicateMessage)).toBeInTheDocument();
+            expect(
+                await screen.findByText(
+                    'Ya tenés un enlace de Google cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.'
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByText(duplicateMessage)).not.toBeInTheDocument();
+        });
+    });
+
+    // ── 4b. Only platforms without a listing are offered ───────────────────
+
+    describe('Available platforms', () => {
+        it('offers only the platforms that have no listing yet', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE, LISTING_BOOKING])
+            );
+            renderSection();
+
+            await waitFor(() => {
+                const options = Array.from(
+                    (screen.getByLabelText('Plataforma') as HTMLSelectElement).options
+                ).map((option) => option.value);
+                expect(options).toEqual(['AIRBNB', 'OTHER']);
+            });
+        });
+
+        it('hides the add form and explains when every platform is already added', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([
+                    LISTING_GOOGLE,
+                    LISTING_BOOKING,
+                    LISTING_AIRBNB,
+                    LISTING_OTHER
+                ])
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-all-platforms')).toHaveTextContent(
+                    'Ya agregaste todas las plataformas disponibles.'
+                );
+            });
+            expect(screen.queryByPlaceholderText('https://...')).not.toBeInTheDocument();
+        });
+
+        it('maps details.reason DUPLICATE_PLATFORM to the friendly message, not the raw server message', async () => {
+            const rawMessage = 'duplicate key value violates unique constraint';
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'POST') {
+                    return Promise.resolve({
+                        ok: false,
+                        status: 400,
+                        json: async () => ({
+                            error: {
+                                code: 'VALIDATION_ERROR',
+                                message: rawMessage,
+                                details: { reason: 'DUPLICATE_PLATFORM' }
+                            }
+                        })
+                    } as unknown as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse([]));
+            });
+
+            renderSection();
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
+            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
+            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
+
+            expect(
+                await screen.findByText(
+                    'Ya tenés un enlace de Google cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.'
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByText(rawMessage)).not.toBeInTheDocument();
+        });
+
+        it('shows the generic add-failure message and never leaks a raw 500 message', async () => {
+            const rawMessage = 'Failed query: insert into "x" ... params: ...';
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'POST') {
+                    return Promise.resolve({
+                        ok: false,
+                        status: 500,
+                        json: async () => ({
+                            error: { code: 'INTERNAL_ERROR', message: rawMessage }
+                        })
+                    } as unknown as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse([]));
+            });
+
+            renderSection();
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+
+            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
+            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
+            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
+
+            expect(
+                await screen.findByText(
+                    'No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos.'
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByText(/Failed query/)).not.toBeInTheDocument();
         });
     });
 

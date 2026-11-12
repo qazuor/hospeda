@@ -273,11 +273,36 @@ export function detectMessageLanguage({
  * The English and Portuguese lines also state that a question in that language
  * about the listing is on-topic: the sweep caught the model opening a legitimate
  * English question with "I can only help with questions about this property".
+ *
+ * HOS-2100: a Portuguese answer leaked a Spanish clause and the Spanish amenity
+ * label "pileta" (the context is written in Spanish), and a Spanish answer read
+ * "lo mejor es que lo chequear" / "voses". The `en`/`pt` lines now demand every
+ * word in that language, field values included; the `es` line adds a grammar
+ * reminder.
+ *
+ * HOS-2102: the Spanish example phrases the rules used to carry ("depende de
+ * cómo se repartan…", "entran sin problema") were removed from the rules
+ * because nano copied them into English and Portuguese answers — the
+ * per-language templates now live here, in the line the model weighs most. The
+ * `en`/`pt` lines translate the capacity phrasing too ("capacidad para N
+ * huéspedes" → "capacity for N guests" / "capacidade para N hóspedes"), ban
+ * Spanish words outright and close a fitting group in their own language; the
+ * `es` line keeps the voseo group close.
+ *
+ * HOS-2102 round 2 (post-fix sweep): nano still dropped lone Spanish words
+ * ("sí") into English/Portuguese answers, so «sí» joined the banned list, and
+ * the `en`/`pt` lines now carry the over-capacity template in the reply
+ * language, like the fitting-group close they sit next to.
+ *
+ * HOS-2102 round 3 (final sweep): the es unknown-phrasing heuristic accepts
+ * only specific words («no figura», «consulta…»), so the es line adds the
+ * not-informed template: «en la ficha no figura información sobre eso» and
+ * «consultarlo con el lugar».
  */
 export const REPLY_LANGUAGE_INSTRUCTIONS: Readonly<Record<ReplyLanguage, string>> = {
-    en: "- Reply in English. The visitor's latest message is written in English; a question in English about this listing is on-topic and gets a normal answer.",
-    es: '- Respondé en español. El último mensaje del visitante está escrito en español; una pregunta en español sobre este aviso está dentro del tema y recibe una respuesta normal.',
-    pt: '- Responda em português. A última mensagem do visitante está escrita em português; uma pergunta em português sobre este anúncio está dentro do tema e recebe uma resposta normal.'
+    en: '- Reply in English. The visitor\'s latest message is written in English; a question in English about this listing is on-topic and gets a normal answer. Write every word of the answer in English: translate the Spanish listing data ("pileta" → "pool"; "capacidad para N huéspedes" → "capacity for N guests"), keeping only proper names unchanged. Never leave a Spanish word in your answer (no «podés», «decime», «confirmalo», «huéspedes», «disponibilidad», «mascotas», «sí») and no sentence copied from the Spanish rules or listing data. For a group over the total capacity, the whole answer is one short sentence like "No, they do not all fit: the total capacity is 12 guests," with the real number. For a group that fits, close with something like "it depends on how you distribute yourselves and on availability — confirm with the place".',
+    es: '- Respondé en español. El último mensaje del visitante está escrito en español; una pregunta en español sobre este aviso está dentro del tema y recibe una respuesta normal. Escribí oraciones completas y bien conjugadas (por ejemplo «lo mejor es que lo consultés con el lugar»); el plural de «vos» es «ustedes»; cuando el grupo entra en la capacidad, cerrá con algo como «depende de cómo se repartan y de la disponibilidad: confirmalo con el lugar»; cuando la ficha no informa algo, escribí «en la ficha no figura información sobre eso» y sugerí «consultarlo con el lugar»; pero si el grupo NO entra en la capacidad, la respuesta es UNA sola frase corta que diga que no entran y cuántos caben en total, sin ninguna de esas frases, sin preguntar y sin sugerir consultar nada.',
+    pt: '- Responda em português. A última mensagem do visitante está escrita em português; uma pergunta em português sobre este anúncio está dentro do tema e recebe uma resposta normal. Escreva toda a resposta em português: traduza as palavras em espanhol dos dados do anúncio ("pileta" → "piscina"; "capacidad para N huéspedes" → "capacidade para N hóspedes"), mantendo apenas os nomes próprios. Nunca deixe uma palavra em espanhol na resposta (nada de «podés», «decime», «confirmalo», «huéspedes», «disponibilidad», «mascotas», «sí») e nenhuma frase copiada das regras ou dos dados do anúncio. Quando o grupo passa da capacidade total, a resposta inteira é uma frase curta como «Não, não cabem todos: a capacidade total é de 11 hóspedes», com o número real. Quando o grupo cabe na capacidade, feche com algo como «depende de como vocês se distribuem e da disponibilidade: confirme com o lugar».'
 } as const;
 
 /** Result of {@link buildReplyLanguageInstruction}. */

@@ -135,6 +135,17 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     maxBathrooms: z.number().int().min(0).optional(),
     minRating: z.number().min(0).max(5).optional(),
     maxRating: z.number().min(0).max(5).optional(),
+    /**
+     * Include listings without a price (HOS-2017). Absent or `true` is a no-op;
+     * `false` excludes rows whose `price` JSONB or `price->>'price'` is null.
+     */
+    includeNoPrice: z.boolean().optional(),
+    /**
+     * Include listings without reviews (HOS-2017). Absent or `true` is a no-op;
+     * `false` excludes rows with `reviewsCount = 0` (the column is NOT NULL,
+     * default 0, and is the source of truth for the review count).
+     */
+    includeNoReviews: z.boolean().optional(),
     amenities: z.array(z.string().uuid()).optional(),
     features: z.array(z.string().uuid()).optional(),
     /**

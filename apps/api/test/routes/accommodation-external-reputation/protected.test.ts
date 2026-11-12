@@ -358,6 +358,31 @@ describe('GET /:id/external-listings', () => {
         expect(body.data.reputation.showExternalReputation).toBe(true);
     });
 
+    it('reports the auto-enable audit timestamps as null when absent', async () => {
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        expect(body.data.reputation.autoEnabledAt).toBeNull();
+        expect(body.data.reputation.toggleDecidedAt).toBeNull();
+    });
+
+    it('reports the auto-enable audit timestamps when the accommodation has them', async () => {
+        const stamp = new Date('2026-06-01T12:00:00.000Z');
+        mockFindById.mockResolvedValue({
+            ...MOCK_ACCOMMODATION,
+            showExternalReputation: true,
+            externalReputationAutoEnabledAt: stamp,
+            externalReputationToggleDecidedAt: stamp
+        });
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        expect(body.data.reputation.autoEnabledAt).toBe(stamp.toISOString());
+        expect(body.data.reputation.toggleDecidedAt).toBe(stamp.toISOString());
+    });
+
     it('reports the MOST RECENT aggregate fetch across platforms', async () => {
         // One reputation row per (accommodation, platform); the editor shows a
         // single "last updated", so the newest wins.

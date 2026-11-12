@@ -132,5 +132,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Plan price-increase advance notice (HOS-176) — TRANSACTIONAL: legally
     // mandated advance notice (Disp. 954/2025), always sent, never opted out of
-    [NotificationType.PLAN_PRICE_CHANGE_NOTICE]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.PLAN_PRICE_CHANGE_NOTICE]: NotificationCategory.TRANSACTIONAL,
+
+    // AI questions weekly digest (HOS-2101) — REMINDER: a nudge the owner can
+    // switch off from their preferences.
+    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: NotificationCategory.REMINDER
 };

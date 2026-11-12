@@ -13,11 +13,16 @@
  * `+16` matinée carries the same notice (DEC-FAC-036). It appears only when a
  * minimum age exists, exactly like the web `ageNotice` helper.
  *
+ * The minimum-age scope (HOS-2098) is resolved with the SAME translation keys
+ * the public ficha uses (`venue.detail.nightInfo.minAgeScope.*`), so the page
+ * and the chat say the same thing. An unset or malformed scope reads as "all
+ * day" — the conservative default the chat rules keep for it.
+ *
  * @module apps/api/services/ai-context/venue-night-context
  */
 
 import { type Locale, trans } from '@repo/i18n';
-import type { I18nText, VenuePolicies } from '@repo/schemas';
+import { type I18nText, resolveVenueMinAgeScope, type VenuePolicies } from '@repo/schemas';
 
 /**
  * One `nightInfo` row, already read from the venues table. The minimum age and
@@ -35,6 +40,11 @@ export interface VenueNightContextRow {
 export interface VenueNightContext {
     /** Lowest age that applies to entry, or `null` when not informed. */
     readonly minAge: number | null;
+    /**
+     * Where or when the minimum age applies, as the ficha prints it (HOS-2098);
+     * `null` exactly when there is no minimum age.
+     */
+    readonly minAgeScope: VenueNightAgeScopeContext | null;
     /** Fixed legal text of the alcohol-sale law; `null` without a minimum age. */
     readonly legalNotice: string | null;
     /** Localized `entryKind` label, or `null`. */
@@ -48,6 +58,30 @@ export interface VenueNightContext {
     /** Owner note about the dress code, resolved to the locale, or `null`. */
     readonly dressCodeNote: string | null;
 }
+
+/**
+ * The minimum-age scope as the context block renders it (HOS-2098).
+ *
+ * `label` is the localized ficha text with the owner's area replaced by
+ * {@link AGE_SCOPE_AREA_SLOT}; `area` is that owner text (to be fenced), or
+ * `null` for the two kinds that carry none.
+ */
+export interface VenueNightAgeScopeContext {
+    /** `all_day` also covers an unset scope. */
+    readonly kind: 'all_day' | 'from_time' | 'area';
+    /** Localized label, e.g. "Rige desde las 00:00". */
+    readonly label: string;
+    /** Owner-authored sector or activity, resolved to the locale, or `null`. */
+    readonly area: string | null;
+    /**
+     * `HH:mm` start of a `from_time` scope, otherwise `null`. The chat context
+     * resolves it against the opening hours into explicit windows (HOS-2098).
+     */
+    readonly from: string | null;
+}
+
+/** Placeholder left in an `area` label where the fenced owner text goes. */
+export const AGE_SCOPE_AREA_SLOT = '{{area}}';
 
 /** Translation key prefix of the section. */
 const NIGHT_INFO_KEY_PREFIX = 'venue.detail.nightInfo';
@@ -86,6 +120,47 @@ function resolveNote(value: I18nText | null | undefined, locale: Locale): string
 }
 
 /**
+ * Resolves the minimum-age scope to the visitor's locale (HOS-2098).
+ *
+ * Resolution is `resolveVenueMinAgeScope` from `@repo/schemas`, the same
+ * function the web ficha calls, and the labels are the same i18n keys: the
+ * chat line can never be more permissive than the page.
+ *
+ * @param value - The stored `policies.minAgeScope`, of unknown shape.
+ * @param locale - Visitor locale.
+ * @returns The scope as the context block renders it.
+ */
+export function toVenueNightAgeScope(value: unknown, locale: Locale): VenueNightAgeScopeContext {
+    const prefix = `${NIGHT_INFO_KEY_PREFIX}.minAgeScope`;
+    // The SAME reader the public ficha uses: trim + locale → es → en → pt.
+    const scope = resolveVenueMinAgeScope({ value, locale });
+    if (scope.kind === 'from_time') {
+        return {
+            kind: 'from_time',
+            label: translateNightKey(`${prefix}.fromTime`, locale)
+                .split('{{time}}')
+                .join(scope.from),
+            area: null,
+            from: scope.from
+        };
+    }
+    if (scope.kind === 'area') {
+        return {
+            kind: 'area',
+            label: translateNightKey(`${prefix}.area`, locale),
+            area: scope.area,
+            from: null
+        };
+    }
+    return {
+        kind: 'all_day',
+        label: translateNightKey(`${prefix}.allDay`, locale),
+        area: null,
+        from: null
+    };
+}
+
+/**
  * Maps the raw `nightInfo` columns into the context block's values.
  *
  * PURE and RO-RO. Returns `null` when the section is not `available`, or when
@@ -113,6 +188,8 @@ export function toVenueNightContext(args: {
     const dressCode = policies.dressCode ?? null;
     const legalNotice =
         minAge === null ? null : translateNightKey(`${NIGHT_INFO_KEY_PREFIX}.legalAge`, locale);
+    // HOS-2098: a scope means nothing without an age.
+    const minAgeScope = minAge === null ? null : toVenueNightAgeScope(policies.minAgeScope, locale);
     const entryLabel =
         row.entryKind === null
             ? null
@@ -144,6 +221,7 @@ export function toVenueNightContext(args: {
 
     return {
         minAge,
+        minAgeScope,
         legalNotice,
         entryLabel,
         entryNote,

@@ -47,7 +47,7 @@ const LEGAL_PT =
 
 /** The age clause the rules must carry and the prompt must not (DEC-FAC-053). */
 const AGE_CLAUSE =
-    // HOS-2095 review A1: the sentence now continues with the explicit-text exception.
+    // The sentence continues with the scope exception (HOS-2098: the stored scope line only).
     'You MUST NOT state or imply that anyone below the minimum age in your context may enter this venue';
 
 /** A payload that reads as an instruction if the model ever sees it unfenced. */

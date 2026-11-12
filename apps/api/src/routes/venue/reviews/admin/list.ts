@@ -21,7 +21,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  *
  * The moderation UI sends `status` as the *moderation* state (e.g. PENDING).
  * It is declared in `requestQuery` so the admin-list factory (a) whitelists it
- * — otherwise it is rejected as an unknown param with INVALID_PAGINATION_PARAMS
+ * — otherwise it is rejected as an unknown param with VALIDATION_ERROR
  * — and (b) validates and forwards it to the handler. It is then mapped to a
  * `moderationState` filter via the dedicated `listForModeration` service
  * method, NOT the base `adminList` `status` param (which means `lifecycleState`).

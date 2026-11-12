@@ -355,6 +355,11 @@
         "whatsNew": {
             "title": "What's New",
             "desc": "Platform updates and announcements"
+        },
+        "aiQuestionsDigest": {
+            "title": "Weekly AI questions digest",
+            "label": "Receive the weekly digest",
+            "description": "An email on Mondays with the questions your listings' assistant could not answer. If there were none, we do not write."
         }
     },
     "subscription": {
