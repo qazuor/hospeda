@@ -470,7 +470,7 @@ function AiSettingsPage() {
                             </div>
 
                             {/* Model parameters */}
-                            <div className="grid gap-6 md:grid-cols-3">
+                            <div className="grid gap-6 md:grid-cols-4">
                                 <form.Field name={`features.${featureId}.params.temperature`}>
                                     {(field) => (
                                         <div>
@@ -550,6 +550,54 @@ function AiSettingsPage() {
                                                 placeholder="1.0"
                                                 className="mt-2"
                                             />
+                                        </div>
+                                    )}
+                                </form.Field>
+
+                                <form.Field name={`features.${featureId}.params.reasoningEffort`}>
+                                    {(field) => (
+                                        <div>
+                                            <Label htmlFor={`reasoning-${featureId}`}>
+                                                Reasoning effort
+                                            </Label>
+                                            <Select
+                                                value={field.state.value ?? 'provider-default'}
+                                                onValueChange={(value) =>
+                                                    field.handleChange(
+                                                        value === 'provider-default'
+                                                            ? undefined
+                                                            : (value as typeof field.state.value)
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id={`reasoning-${featureId}`}
+                                                    className="mt-2"
+                                                >
+                                                    <SelectValue placeholder="Provider default" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="provider-default">
+                                                        Provider default
+                                                    </SelectItem>
+                                                    {[
+                                                        'none',
+                                                        'minimal',
+                                                        'low',
+                                                        'medium',
+                                                        'high',
+                                                        'xhigh',
+                                                        'max'
+                                                    ].map((effort) => (
+                                                        <SelectItem
+                                                            key={effort}
+                                                            value={effort}
+                                                        >
+                                                            {effort}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     )}
                                 </form.Field>

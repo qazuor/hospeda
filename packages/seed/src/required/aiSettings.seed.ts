@@ -52,6 +52,31 @@ export async function seedAiSettings(): Promise<void> {
 
     const existing = await readAiSettings();
 
+    // Keep the baseline aligned with HOS-2106 while preserving all unrelated
+    // feature fields. The conditional protects a model already chosen by an operator.
+    const venueChat = existing?.features.chat_venue;
+    const missingFeatures = existing ? findUnconfiguredFeatures({ settings: existing }) : [];
+    if (existing && venueChat?.model === 'gpt-5.4-nano' && missingFeatures.length === 0) {
+        await writeAiSettings({
+            value: {
+                ...(existing as AiSettingsValue),
+                features: {
+                    ...(existing as AiSettingsValue).features,
+                    chat_venue: {
+                        ...venueChat,
+                        model: 'gpt-5.4-mini',
+                        params: { ...venueChat.params, reasoningEffort: 'low' }
+                    }
+                }
+            },
+            actorId: SYSTEM_USER_ID
+        });
+    } else if (venueChat?.model === 'gpt-5.4-nano' && missingFeatures.length > 0) {
+        logger.info(
+            `  → AI settings: chat_venue model migration skipped because the settings blob does not configure ${missingFeatures.join(', ')}`
+        );
+    }
+
     if (existing !== null && existing.costCeilings !== undefined) {
         // Operator has already set cost ceilings — respect their configuration.
         logger.debug('    · ai_settings.costCeilings already set — skipped');

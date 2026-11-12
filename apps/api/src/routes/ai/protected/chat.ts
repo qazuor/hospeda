@@ -46,6 +46,7 @@
 
 import { composeSystemPrompt, resolveSystemPrompt } from '@repo/ai-core';
 import { accommodations, experiences, getDb, venues } from '@repo/db';
+import { logger } from '@repo/logger';
 import {
     AI_CHAT_MAX_MESSAGES,
     type AiChatRequest,
@@ -81,6 +82,7 @@ import {
     resolveChatMaxOutputTokens,
     toEngineMessages
 } from './chat.helpers.js';
+import { asksAboutMinorWithoutTime, guardVenueMinorAnswer } from './venue-minor-time-guard.js';
 
 const DEFAULT_LOCALE: LanguageEnum = 'es';
 
@@ -284,11 +286,26 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             params: { maxTokens }
         });
 
+        const guardVenueAnswer =
+            entityType === 'venue' && asksAboutMinorWithoutTime(getLastUserTurn(body.messages));
+
         let accumulatedAssistantText = '';
 
         const stream: AsyncIterable<StreamTextChunk> = (async function* () {
             try {
-                for await (const chunk of rawStream) {
+                const guardedDeltas = guardVenueMinorAnswer({
+                    chunks: (async function* () {
+                        for await (const chunk of rawStream) yield chunk.delta;
+                    })(),
+                    guarded: guardVenueAnswer,
+                    locale,
+                    onTrip: () =>
+                        logger.warn(
+                            '[HOS-2106] Replaced affirmative opening for an untimed minor venue question'
+                        )
+                });
+                for await (const delta of guardedDeltas) {
+                    const chunk = { delta };
                     accumulatedAssistantText += chunk.delta;
                     yield chunk;
                 }
