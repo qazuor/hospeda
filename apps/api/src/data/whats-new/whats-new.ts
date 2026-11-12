@@ -152,6 +152,112 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4321
+    {
+        id: '2026-11-12-listing-chat-knows-deposit-languages-events',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El chat de cada alojamiento sabe de seña, idiomas y eventos',
+            en: "Each stay's chat knows about deposits, languages and events",
+            pt: 'O chat de cada hospedagem sabe sobre sinal, idiomas e eventos'
+        },
+        body: {
+            es: 'Si le preguntás al chat con IA de un alojamiento si piden seña, en qué idiomas te atienden o si podés hacer un cumpleaños, te responde con lo que cargó el anfitrión: el porcentaje de la seña, los idiomas y las condiciones del evento, notas incluidas.',
+            en: "If you ask a stay's AI chat whether they take a deposit, which languages they speak or whether you can throw a birthday party, it answers with what the host filled in: the deposit percentage, the languages and the event conditions, notes included.",
+            pt: 'Se você perguntar ao chat com IA de uma hospedagem se pedem sinal, em quais idiomas atendem ou se dá para fazer um aniversário, ele responde com o que o anfitrião preencheu: a porcentagem do sinal, os idiomas e as condições do evento, com as observações.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4322
+    {
+        id: '2026-11-12-amenities-editor-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Elegir servicios y comodidades ahora es más simple',
+            en: 'Picking services and amenities is now simpler',
+            pt: 'Escolher serviços e comodidades agora é mais simples'
+        },
+        body: {
+            es: 'En **Servicios y comodidades** el catálogo se recorre por categorías, cada una con cuántas elegiste, y el buscador encuentra en todo el catálogo. Los detalles de cada ítem (privado o compartido, temporada, cargo extra) se editan en una ventana aparte, y las **Políticas** tienen ahora su propia página en el editor.',
+            en: "In **Services and amenities** you browse the catalog by category, each showing how many you picked, and the search box looks through the whole catalog. Each item's details (private or shared, season, extra charge) are edited in a separate window, and **Policies** now have their own page in the editor.",
+            pt: 'Em **Serviços e comodidades** o catálogo é percorrido por categorias, cada uma mostrando quantas você escolheu, e a busca procura no catálogo inteiro. Os detalhes de cada item (privado ou compartilhado, temporada, custo extra) são editados em uma janela à parte, e as **Políticas** agora têm sua própria página no editor.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4312
+    {
+        id: '2026-11-12-policies-deposit-languages-event-details',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Contá si pedís seña, en qué idiomas atendés y cómo son los eventos',
+            en: 'Say whether you take a deposit, which languages you speak and how events work',
+            pt: 'Informe se você pede sinal, em quais idiomas atende e como funcionam os eventos'
+        },
+        body: {
+            es: 'En **Políticas** podés indicar si pedís seña para reservar, con su porcentaje y una nota, y los idiomas en que atendés. Si permitís eventos privados, sumá la cantidad máxima de invitados, el horario límite, si se puede poner música y si tiene costo extra. Todo aparece en las normas de tu ficha.',
+            en: "Under **Policies** you can say whether you take a deposit to book, with its percentage and a note, and which languages you speak. If you allow private events, add the maximum number of guests, the end time, whether music is allowed and whether there is an extra charge. All of it shows in your listing's house rules.",
+            pt: 'Em **Políticas** você pode indicar se pede sinal para reservar, com a porcentagem e uma observação, e os idiomas em que atende. Se você permite eventos privados, acrescente o número máximo de convidados, o horário limite, se pode ter música e se há custo extra. Tudo aparece nas regras da sua página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4312
+    {
+        id: '2026-11-12-capacity-max-nights-and-clearable-fields',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Estadía mínima y máxima, una al lado de la otra',
+            en: 'Minimum and maximum stay, side by side',
+            pt: 'Estadia mínima e máxima, lado a lado'
+        },
+        body: {
+            es: 'En **Capacidad y precio** la estadía máxima quedó junto a la mínima. Además, ahora podés vaciar la estadía mínima y partes de la dirección, como el piso, el departamento o el número, y el cambio se guarda.',
+            en: 'In **Capacity and price** the maximum stay now sits next to the minimum. You can also clear the minimum stay and parts of the address, such as floor, apartment or number, and the change is saved.',
+            pt: 'Em **Capacidade e preço** a estadia máxima ficou ao lado da mínima. Além disso, agora você pode apagar a estadia mínima e partes do endereço, como andar, apartamento ou número, e a mudança é salva.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4311
+    {
+        id: '2026-11-12-reorder-photos-by-dragging',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ordená tus fotos arrastrándolas',
+            en: 'Reorder your photos by dragging them',
+            pt: 'Organize suas fotos arrastando-as'
+        },
+        body: {
+            es: 'En **Fotos** podés agarrar una foto y soltarla donde quieras, y el orden se guarda solo. Los botones para subir y bajar siguen estando. Y cuando cambiás la portada, la galería muestra el mismo orden que queda guardado.',
+            en: 'In **Photos** you can grab a photo and drop it wherever you want, and the order saves itself. The up and down buttons are still there. And when you change the cover, the gallery shows the same order that gets saved.',
+            pt: 'Em **Fotos** você pode pegar uma foto e soltá-la onde quiser, e a ordem é salva sozinha. Os botões de subir e descer continuam lá. E quando você troca a capa, a galeria mostra a mesma ordem que fica salva.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4309
+    {
+        id: '2026-11-12-account-menu-collapsible-groups',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El menú de tu cuenta se pliega por secciones',
+            en: 'Your account menu folds by section',
+            pt: 'O menu da sua conta se recolhe por seções'
+        },
+        body: {
+            es: 'En **Mi cuenta** cada grupo del menú se abre y se cierra, y la próxima vez lo encontrás como lo dejaste. El área de turista quedó al final y empieza cerrada, así tenés a mano lo que más usás.',
+            en: 'In **My account** each menu group opens and closes, and next time you find it the way you left it. The traveller area moved to the bottom and starts closed, so what you use most stays at hand.',
+            pt: 'Em **Minha conta** cada grupo do menu abre e fecha, e na próxima vez você o encontra como deixou. A área de turista ficou no final e começa fechada, para deixar à mão o que você mais usa.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4279, #4283
     {
         id: '2026-11-11-external-reputation-on-listings',
