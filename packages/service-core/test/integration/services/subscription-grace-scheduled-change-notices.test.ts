@@ -27,7 +27,7 @@ import {
 
 const clock = { now: () => pausedNow };
 const scheduledIds: string[] = [];
-const deadlineVersion = -1784;
+const deadlineVersion = 81704179;
 const instant = (day: string) => new Date(`${day}T15:00:00.000Z`);
 
 afterEach(async () => {
@@ -39,13 +39,17 @@ afterEach(async () => {
 });
 afterAll(closeServiceTestPool);
 
-async function fixture(withScheduledChange: boolean, startedAt = instant('2099-03-01')) {
+async function fixture(
+    withScheduledChange: boolean,
+    startedAt = instant('2099-03-01'),
+    endsAt = instant('2099-03-20')
+) {
     const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
     const seeded = await seedPausedCancellation({ fake });
     await configureGraceReminderSubscription({
         subscriptionId: seeded.subscriptionId,
         startedAt,
-        endsAt: instant('2099-03-20')
+        endsAt
     });
     if (!withScheduledChange) return seeded;
     const [subscription] = await getServiceTestDb()
@@ -189,11 +193,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('grace reminder carries the scheduled change with the destination plan name', async () => {
             // Arrange
-            const seeded = await fixture(true, instant('2000-03-01'));
+            const seeded = await fixture(true, instant('2200-03-01'), instant('2299-03-20'));
             if (!('target' in seeded)) throw new Error('Scheduled fixture missing');
             await insertGraceReminderDeadline({
                 version: deadlineVersion,
-                createdAt: instant('2000-02-01'),
+                createdAt: instant('2200-02-01'),
                 daysBefore: [3]
             });
 
@@ -202,7 +206,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 applyGraceReminder({
                     tx,
                     subscriptionId: seeded.subscriptionId,
-                    now: instant('2099-03-17')
+                    now: instant('2299-03-17')
                 })
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-reminder');
@@ -222,10 +226,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('grace reminder omits scheduledChange without a queued change', async () => {
             // Arrange
-            const seeded = await fixture(false, instant('2000-03-01'));
+            const seeded = await fixture(false, instant('2200-03-01'), instant('2299-03-20'));
             await insertGraceReminderDeadline({
                 version: deadlineVersion,
-                createdAt: instant('2000-02-01'),
+                createdAt: instant('2200-02-01'),
                 daysBefore: [3]
             });
 
@@ -234,7 +238,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 applyGraceReminder({
                     tx,
                     subscriptionId: seeded.subscriptionId,
-                    now: instant('2099-03-17')
+                    now: instant('2299-03-17')
                 })
             );
             const notice = await mail(seeded.subscriptionId, 'billing.grace-reminder');
