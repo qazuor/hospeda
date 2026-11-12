@@ -151,7 +151,14 @@ const sync = (ports: ListingFeaturedPorts) =>
 describe('HOS-1718 a plan that grants featured_listing features every listing of the owner', () => {
     it("a live subscription to a plan with featured_listing features all the owner's listings", async () => {
         const h = setup({ sources: [sub('pro-v1')] });
-        const result = await sync(h.ports);
+        // @ts-expect-error HOS-1718 c3: plan featuring cannot run without required trial resolution.
+        const portsWithoutTrials: ListingFeaturedPorts = {
+            billing: h.ports.billing,
+            reader: h.reader,
+            unitOfWork: h.ports.unitOfWork,
+            afterCommit: h.ports.afterCommit
+        };
+        const result = await sync(portsWithoutTrials);
         expect(result.featuredOn).toEqual(['A', 'B', 'C']);
         expect(h.revalidate).toHaveBeenCalledWith({
             vertical: VerticalEnum.ACCOMMODATION,
