@@ -9,6 +9,12 @@ import {
     retirePauseRows,
     seedPausePrincipal
 } from './support/pause-fixtures.js';
+import { registerPlanMigrationNoticeSerial } from './support/plan-migration-notice-serial.js';
+
+// S10 is a GLOBAL batch: it resumes every due pause in the shared database, not
+// just this file's row. Serialize with the other batch-driving files and assert
+// only on this file's subscription.
+registerPlanMigrationNoticeSerial();
 
 const complements = {
     addonPolicy: async () => {
@@ -48,9 +54,17 @@ const status = async (subscriptionId: string) => {
         .where(eq(subscriptionPauses.subscriptionId, subscriptionId));
     return { row, pause };
 };
+/** Counts the pauses of `subscriptionId` that this batch actually ended. */
+const ownResumed = async (subscriptionId: string) => {
+    const [pause] = await db()
+        .select({ actualEndAt: subscriptionPauses.actualEndAt })
+        .from(subscriptionPauses)
+        .where(eq(subscriptionPauses.subscriptionId, subscriptionId));
+    return pause?.actualEndAt ? 1 : 0;
+};
 const end = async (input: Awaited<ReturnType<typeof setup>>) => {
     input.harness.clock.set({ at: input.paused.expectedEndAt });
-    return endDuePauses(
+    const result = await endDuePauses(
         { limit: 100 },
         {
             provider: input.harness.provider,
@@ -58,6 +72,8 @@ const end = async (input: Awaited<ReturnType<typeof setup>>) => {
             complements
         }
     );
+    // `result.resumed` counts every file's rows; only this subscription is ours.
+    return { result, ownResumed: await ownResumed(input.principal.subscriptionId) };
 };
 
 afterEach(retirePauseRows);
@@ -75,14 +91,14 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B8b:28 and TEST:B8b:27 M12/RP10
         const chargesBefore = await input.harness.fake.listCharges({
             authorizationId: input.principal.authorizationId
         });
-        const result = await end(input);
+        const run = await end(input);
         const after = await input.harness.fake.readAuthorization({
             authorizationId: input.principal.authorizationId
         });
         const chargesAfter = await input.harness.fake.listCharges({
             authorizationId: input.principal.authorizationId
         });
-        expect(result.resumed).toBe(1);
+        expect(run.ownResumed).toBe(1);
         expect(after.snapshot.status).toBe('active');
         expect(
             (await status(input.principal.subscriptionId)).row?.nextChargeAt?.toISOString()
@@ -104,8 +120,8 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B8b:28 and TEST:B8b:27 M12/RP10
                 })
             ).snapshot.status
         ).toBe('active');
-        const result = await end(input);
-        expect(result.resumed).toBe(1);
+        const run = await end(input);
+        expect(run.ownResumed).toBe(1);
         expect(input.harness.calls).toEqual([
             `pause:${input.principal.authorizationId}`,
             `read:${input.principal.authorizationId}`,
@@ -116,11 +132,11 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B8b:28 and TEST:B8b:27 M12/RP10
 
     it('writes the unchanged reread date when RP10 is disabled by name', async () => {
         const input = await setup({ withoutRP10: true });
-        const result = await end(input);
+        const run = await end(input);
         const provider = await input.harness.fake.readAuthorization({
             authorizationId: input.principal.authorizationId
         });
-        expect(result.resumed).toBe(1);
+        expect(run.ownResumed).toBe(1);
         expect(provider.snapshot.nextChargeAt).toBe(input.firstCharge.toISOString());
         expect(
             (await status(input.principal.subscriptionId)).row?.nextChargeAt?.toISOString()
