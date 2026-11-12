@@ -735,7 +735,12 @@
                 "dismissedError": "No se pudo descartar la pregunta.",
                 "undoError": "No se pudo recuperar la pregunta.",
                 "viewMore": "Ver más",
-                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha."
+                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha.",
+                "suggestAiAnswer": "Sugerir respuesta con IA",
+                "aiDraftLoading": "Generando una sugerencia…",
+                "aiDraftDisclaimer": "Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.",
+                "aiDraftError": "No se pudo generar la sugerencia. Intentá de nuevo.",
+                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente."
             }
         },
         "empty": {
