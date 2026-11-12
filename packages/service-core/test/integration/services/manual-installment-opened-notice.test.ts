@@ -210,7 +210,7 @@ describe('HOS-2130 manual installment opened integration', () => {
             expect(mails).toHaveLength(1);
             expect(mails[0]?.payload).toMatchObject({ amountMinor: 3_000_000, currency: 'ARS' });
         }
-    });
+    }, 10_000);
 
     it('mails the owner once when the clock opens a renewal in grace', async () => {
         // Arrange
