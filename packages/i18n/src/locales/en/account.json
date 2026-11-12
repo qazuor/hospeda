@@ -1546,7 +1546,7 @@
             "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
             "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
             "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
-            "approved": "Your content is approved. Our team will send you the payment link to activate your subscription.",
+            "approved": "Your content is approved. The Hospeda team sets up your subscription and will write to you to arrange payment by bank transfer.",
             "revoked": "Your partner listing was taken down and no longer appears on the site.",
             "revokedContact": "If you'd like more details, reach out and we'll explain."
         },
@@ -1594,6 +1594,14 @@
             "notDeleted": "Nothing was deleted: your listing and data are still saved.",
             "returnsAlone": "Your presence returns on its own when you regain the plan that grants it.",
             "moderated": "An administrator moderated your presence. Even with the plan, it will not appear until moderation is lifted."
+        },
+        "installment": {
+            "title": "Your installment to pay",
+            "plan": "Plan: {{plan}}",
+            "amount": "Amount: {{amount}}",
+            "amountPending": "The team will confirm the amount along with the transfer details.",
+            "dueOn": "Due on {{date}}",
+            "howToPay": "You pay by bank transfer. The Hospeda team will email you the transfer details. Once we record the payment, your subscription is up to date."
         }
     },
     "partnerStats": {

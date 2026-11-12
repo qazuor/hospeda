@@ -29,14 +29,8 @@
  * so the page and the endpoint can never disagree about whether payment is
  * open.
  *
- * HOS-862: the approved state has NO in-app payment link. Partner payment is
- * admin-mediated by design (`planes/aliados` says it outright: "a partnership
- * is agreed in a conversation, not bought") — an admin assigns the partner's
- * plan and sends a MercadoPago payment link out of band
- * (`POST /admin/partners/{id}/send-link`). There is no self-service checkout
- * endpoint for partners to link to, so the approved banner states the fact
- * (the team will send the payment link) instead of offering a CTA that goes
- * nowhere.
+ * HOS-862: Partner payment uses a manual subscription created by administrative
+ * action 6; the partner pays by bank transfer. The page shows any open installment.
  *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -46,7 +40,8 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
-import { partnersApi } from '@/lib/api/endpoints-protected';
+import { billingSubscriptionApi, partnersApi } from '@/lib/api/endpoints-protected';
+import { resolveManualInstallmentView } from '@/lib/billing/manual-installment';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -87,6 +82,19 @@ const showPresenceNotice = presence !== null && (presence.moderated || (isConten
 const isRevoked = partner !== null && partner.revokedAt != null;
 const hasSubmitted = partner !== null && partner.contentReviewState != null;
 const isUnderReview = partner !== null && partner.contentReviewState === 'pending';
+let installmentView = null;
+try {
+    installmentView = resolveManualInstallmentView({
+        result: await billingSubscriptionApi.listManualInstallments({
+            cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+        }),
+        vertical: 'partner',
+        locale,
+        t
+    });
+} catch {
+    installmentView = null;
+}
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner">
@@ -152,7 +160,7 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                             <p>
                                 {t(
                                     'account.partner.status.approved',
-                                    'Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.'
+                                    'Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.'
                                 )}
                             </p>
                         ) : isUnderReview ? (
@@ -179,6 +187,16 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                         )
                     }
                 </AccountSectionCard>
+
+                {!isRevoked && installmentView && (
+                    <AccountSectionCard data-testid="partner-installment">
+                        <h2>{t('account.partner.installment.title', 'Tu cuota a pagar')}</h2>
+                        <p>{installmentView.planLine}</p>
+                        <p data-testid="partner-installment-amount">{installmentView.amountLine}</p>
+                        <p data-testid="partner-installment-due">{installmentView.dueLine}</p>
+                        <p>{t('account.partner.installment.howToPay', 'Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día.')}</p>
+                    </AccountSectionCard>
+                )}
 
                 {!isRevoked && (
                     <AccountSectionCard>
