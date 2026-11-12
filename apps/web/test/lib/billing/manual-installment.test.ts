@@ -26,9 +26,9 @@ describe('resolveManualInstallmentView (HOS-1782)', () => {
         });
         // Assert
         expect(result).toMatchObject({
-            planLine: expect.any(String),
-            amountLine: expect.any(String),
-            dueLine: expect.any(String)
+            planLine: expect.stringContaining('account.partner.installment.plan'),
+            amountLine: expect.stringContaining('account.partner.installment.amount'),
+            dueLine: expect.stringContaining('account.partner.installment.dueOn')
         });
     });
 

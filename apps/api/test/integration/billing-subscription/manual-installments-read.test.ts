@@ -1,4 +1,4 @@
-import { eq, getDb, manualPayments, subscriptions } from '@repo/db';
+import { eq, getDb, manualPayments, plans, planVersions, subscriptions } from '@repo/db';
 import { OwnManualInstallmentsResponseSchema, PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -81,6 +81,13 @@ describe('manual installment read route (HOS-1782)', () => {
     it('lists the first manual installment with amount, period and due date', async () => {
         // Arrange
         const row = await seedOpen({});
+        const [plan] = await getDb()
+            .select({ slug: plans.slug, name: plans.name })
+            .from(subscriptions)
+            .innerJoin(planVersions, eq(planVersions.id, subscriptions.planVersionId))
+            .innerJoin(plans, eq(plans.id, planVersions.planId))
+            .where(eq(subscriptions.id, row.subscriptionId));
+        if (!plan) throw new Error('Expected seeded plan');
         // Act
         const result = await read(row.ownerId);
         // Assert
@@ -89,7 +96,7 @@ describe('manual installment read route (HOS-1782)', () => {
                 subscriptionId: row.subscriptionId,
                 manualPaymentId: row.manualPaymentId,
                 vertical: 'accommodation',
-                plan: { slug: expect.any(String), name: 'B5.5 route' },
+                plan,
                 amount: { amountMinor: 10000, currency: 'ARS' },
                 periodStart: '2026-10-01T03:00:00.000Z',
                 dueAt: row.dueAt.toISOString()

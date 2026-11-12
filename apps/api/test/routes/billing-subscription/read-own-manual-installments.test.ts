@@ -37,7 +37,7 @@ describe('manual installment due date (HOS-1782)', () => {
         'CANCEL_SCHEDULED',
         'PAUSED',
         'CANCELLED'
-    ])('no other subscription state has a due date (%s)', (status) => {
+    ])('no other subscription state has a due date', (status) => {
         // Arrange
         // Act
         const result = resolveManualInstallmentDueAt({
