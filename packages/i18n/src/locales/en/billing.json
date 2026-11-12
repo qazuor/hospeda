@@ -442,6 +442,9 @@
         },
         "max_active_private_galleries": {
             "title": "You've reached your active private galleries limit"
+        },
+        "max_ai_faq_draft_per_month": {
+            "title": "Monthly AI FAQ draft limit reached"
         }
     },
     "limits": {
@@ -620,7 +623,8 @@
         "partner_carousel_presence": "Logo in the partner carousel",
         "recover_own_listing": "View, export, reactivate or delete your listings",
         "subscribe_to_plan": "Subscribe to a plan",
-        "activate_trial": "Start the trial period"
+        "activate_trial": "Start the trial period",
+        "ai_faq_draft": "AI FAQ answer drafts"
     },
     "entitlementByAudience": {
         "venue": {
@@ -782,7 +786,8 @@
             "max_ai_accommodation_import_per_month": "AI imports per month",
             "max_search_history_entries": "Search history entries",
             "max_collections": "Favorites collections",
-            "max_active_private_galleries": "Active private galleries"
+            "max_active_private_galleries": "Active private galleries",
+            "max_ai_faq_draft_per_month": "AI FAQ answer drafts per month"
         },
         "lineMark": "For listings in the {{rubro}} category"
     },

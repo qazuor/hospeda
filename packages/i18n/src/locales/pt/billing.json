@@ -442,6 +442,9 @@
         },
         "max_active_private_galleries": {
             "title": "Você atingiu o limite de galerias privadas ativas"
+        },
+        "max_ai_faq_draft_per_month": {
+            "title": "Limite mensal de rascunhos de FAQ com IA atingido"
         }
     },
     "limits": {
@@ -620,7 +623,8 @@
         "partner_carousel_presence": "Logo no carrossel de aliados",
         "recover_own_listing": "Ver, exportar, reativar ou excluir suas fichas",
         "subscribe_to_plan": "Assinar um plano",
-        "activate_trial": "Ativar o período de teste"
+        "activate_trial": "Ativar o período de teste",
+        "ai_faq_draft": "Rascunhos de respostas para perguntas frequentes com IA"
     },
     "entitlementByAudience": {
         "venue": {
@@ -782,7 +786,8 @@
             "max_ai_accommodation_import_per_month": "Importações com IA por mês",
             "max_search_history_entries": "Entradas do histórico de buscas",
             "max_collections": "Coleções de favoritos",
-            "max_active_private_galleries": "Galerias privadas ativas"
+            "max_active_private_galleries": "Galerias privadas ativas",
+            "max_ai_faq_draft_per_month": "Rascunhos de respostas com IA por mês"
         },
         "lineMark": "Para estabelecimentos do segmento {{rubro}}"
     },
