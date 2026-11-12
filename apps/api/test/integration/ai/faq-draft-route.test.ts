@@ -4,7 +4,19 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration-tests-32chr';
 
 import { getMonthlyCallCount, invalidateConfigCache } from '@repo/ai-core';
-import { aiConversations, aiMessages, aiSettings, aiUsage, eq, getDb, trials } from '@repo/db';
+import {
+    aiConversations,
+    aiMessages,
+    aiSettings,
+    aiUsage,
+    and,
+    eq,
+    getDb,
+    plans,
+    planVersionEntitlements,
+    planVersions,
+    trials
+} from '@repo/db';
 import { RoleEnum, TrialStatusEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -44,6 +56,26 @@ describe('HOS-2105 FAQ draft route (real DB)', () => {
         const owned = await seedOwnedAccommodation({});
         ownerId = owned.ownerId;
         listingId = owned.id;
+        // Other suites in the same shard may publish a newer `owner-premium` version
+        // (the catalog survives testDb.clean()), so pin the trial floor to the version
+        // that carries the FAQ draft grant instead of trusting `current`.
+        const [granted] = await getDb()
+            .select({ versionId: planVersions.id })
+            .from(planVersionEntitlements)
+            .innerJoin(planVersions, eq(planVersions.id, planVersionEntitlements.planVersionId))
+            .innerJoin(plans, eq(plans.id, planVersions.planId))
+            .where(
+                and(
+                    eq(plans.slug, 'owner-premium'),
+                    eq(planVersionEntitlements.key, 'ai_faq_draft')
+                )
+            )
+            .limit(1);
+        if (!granted) throw new Error('owner-premium has no ai_faq_draft grant (migration 0202)');
+        await getDb()
+            .update(trials)
+            .set({ floorEntitlementsVersionId: granted.versionId })
+            .where(eq(trials.userId, ownerId));
         touristId = (await createMockActorUser({ label: 'faq-tourist' })).id;
         const db = getDb();
         const [conversation] = await db

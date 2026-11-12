@@ -29,6 +29,7 @@ INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enfo
 	('ai_faq_draft', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('max_ai_faq_draft_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL');
 
+--> statement-breakpoint
 INSERT INTO "plan_version_entitlement" ("id", "plan_version_id", "key", "plan_quota", "trial_quota") VALUES
 	('7664b2a4-a036-5865-967d-cb3524883b24', '8f23bcdd-1abc-5342-bfb4-b7dcca4bbf9d', 'ai_faq_draft', NULL, NULL),
 	('8d1a7a34-d885-5490-b78b-f1d2d481cd4d', '5171d736-8b7d-5840-9262-4ac6cb83bcac', 'ai_faq_draft', NULL, NULL),
@@ -36,6 +37,7 @@ INSERT INTO "plan_version_entitlement" ("id", "plan_version_id", "key", "plan_qu
 	('a11ae672-f002-5ae4-947b-b963a71d8507', '8e4b0c4e-702f-5203-85e3-e9c06365eb87', 'ai_faq_draft', NULL, NULL),
 	('8fad0382-880d-5271-a25c-bc60a3b308a1', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'ai_faq_draft', NULL, NULL);
 
+--> statement-breakpoint
 INSERT INTO "plan_version_limit" ("id", "plan_version_id", "key", "value") VALUES
 	('6662ad6d-bd0d-5d97-9ae1-0665b6d7f667', '8f23bcdd-1abc-5342-bfb4-b7dcca4bbf9d', 'max_ai_faq_draft_per_month', 50),
 	('218e76dd-df8f-5f34-9c96-db1ca9d1c0a7', '5171d736-8b7d-5840-9262-4ac6cb83bcac', 'max_ai_faq_draft_per_month', 250),
