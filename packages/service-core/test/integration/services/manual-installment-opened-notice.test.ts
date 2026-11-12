@@ -11,6 +11,7 @@ import {
     plans,
     planVersions,
     sql,
+    subscriptionScheduledChanges,
     subscriptions,
     users
 } from '@repo/db';
@@ -21,6 +22,7 @@ import { enqueueManualInstallmentOpenedNotice } from '../../../src/services/bill
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { seedScheduledChange } from './support/scheduled-change-fixtures';
 import { noTouristVip } from './support/tourist-vip';
 
 const baseTime = new Date('2026-10-08T20:00:00.000Z');
@@ -265,6 +267,100 @@ describe('HOS-2130 manual installment opened integration', () => {
             currency: 'ARS',
             dueAt: new Date(baseTime.getTime() + 9 * 86_400_000).toISOString(),
             firstInstallment: false
+        });
+    });
+
+    it('mails the scheduled destination amount after S38 consumes the change in the transaction', async () => {
+        const { owner, version, option } = await seed();
+        const [destinationPlan] = await getServiceTestDb()
+            .insert(plans)
+            .values({
+                vertical: 'partner',
+                slug: `opened-destination-${crypto.randomUUID()}`,
+                name: 'Destination plan'
+            })
+            .returning();
+        if (!destinationPlan) throw new Error('Destination plan seed failed');
+        const [destinationVersion] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: destinationPlan.id,
+                vertical: 'partner',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        if (!destinationVersion) throw new Error('Destination version seed failed');
+        versionIds.push(destinationVersion.id);
+        const [destinationOption] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: destinationVersion.id,
+                cycle: 'monthly',
+                amount: 4_000_000,
+                currency: 'ARS'
+            })
+            .returning();
+        if (!destinationOption) throw new Error('Destination option seed failed');
+        const [subscription] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: owner.id,
+                vertical: 'partner',
+                class: 'PRINCIPAL',
+                status: 'ACTIVE',
+                paymentMethod: 'MANUAL',
+                planVersionId: version.id,
+                billingOptionId: option.id,
+                nextChargeAt: baseTime
+            })
+            .returning();
+        if (!subscription) throw new Error('Subscription seed failed');
+        await getServiceTestDb()
+            .insert(manualPayments)
+            .values({
+                subscriptionId: subscription.id,
+                periodStart: new Date(baseTime.getTime() - 30 * 86_400_000),
+                status: 'REGISTERED',
+                registeredBy: owner.id,
+                registeredAt: baseTime
+            });
+        await seedScheduledChange({
+            subscriptionId: subscription.id,
+            effectiveAt: baseTime,
+            targetPlanVersionId: destinationVersion.id,
+            targetBillingOptionId: destinationOption.id
+        });
+
+        await openDueManualInstallments(
+            { pageSize: 1000 },
+            {
+                ...startPorts(),
+                clock: { now: () => baseTime },
+                scheduledChangeApplier: {
+                    async applyScheduledChange({ subscriptionId, tx }) {
+                        await tx
+                            .update(subscriptions)
+                            .set({
+                                planVersionId: destinationVersion.id,
+                                billingOptionId: destinationOption.id
+                            })
+                            .where(eq(subscriptions.id, subscriptionId));
+                        await tx
+                            .delete(subscriptionScheduledChanges)
+                            .where(eq(subscriptionScheduledChanges.subscriptionId, subscriptionId));
+                    }
+                }
+            }
+        );
+
+        expect((await ownerMail(owner.id))[0]?.payload).toMatchObject({
+            subscriptionId: subscription.id,
+            amountMinor: 4_000_000,
+            currency: 'ARS'
         });
     });
 
