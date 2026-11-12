@@ -152,5 +152,7 @@ export enum ServiceErrorCode {
      * the client can tell "signups are paused" from "you already subscribed",
      * which have opposite next steps.
      */
-    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN'
+    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN',
+    /** FAQ draft generation is only available for unanswered or unclassified questions. */
+    FAQ_DRAFT_NOT_ELIGIBLE = 'FAQ_DRAFT_NOT_ELIGIBLE'
 }
