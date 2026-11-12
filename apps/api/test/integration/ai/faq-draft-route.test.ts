@@ -12,6 +12,7 @@ import {
     eq,
     getDb,
     planVersionLimits,
+    planVersions,
     trials
 } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
@@ -244,17 +245,37 @@ describe('HOS-2105 FAQ draft route (real DB)', () => {
             .limit(1);
         if (!trial?.limitsVersionId)
             throw new Error('seedOwnedAccommodation did not create an owner trial limit version');
-        await db
-            .insert(planVersionLimits)
-            .values({
-                planVersionId: trial.limitsVersionId,
+        const [floor] = await db
+            .select({ planId: planVersions.planId, vertical: planVersions.vertical })
+            .from(planVersions)
+            .where(eq(planVersions.id, trial.limitsVersionId))
+            .limit(1);
+        if (!floor) throw new Error('Trial floor limit version was not found');
+        const limitsVersionId = await db.transaction(async (tx) => {
+            const [version] = await tx
+                .insert(planVersions)
+                .values({
+                    planId: floor.planId,
+                    vertical: floor.vertical,
+                    rank: 1,
+                    sellable: false,
+                    current: false,
+                    trialDays: 0,
+                    allowsPause: false
+                })
+                .returning({ id: planVersions.id });
+            if (!version) throw new Error('Could not create FAQ limit version');
+            await tx.insert(planVersionLimits).values({
+                planVersionId: version.id,
                 key: 'max_ai_faq_draft_per_month',
                 value: 0
-            })
-            .onConflictDoUpdate({
-                target: [planVersionLimits.planVersionId, planVersionLimits.key],
-                set: { value: 0 }
             });
+            return version.id;
+        });
+        await db
+            .update(trials)
+            .set({ floorLimitsVersionId: limitsVersionId })
+            .where(eq(trials.userId, ownerId));
 
         const response = await app.request(`${BASE}/${unansweredId}/faq-draft`, {
             method: 'POST',
