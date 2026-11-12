@@ -507,6 +507,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 statusCode = 400;
                 break;
             case ServiceErrorCode.ALREADY_EXISTS:
+            case ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.UNAUTHORIZED:
