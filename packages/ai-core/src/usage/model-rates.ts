@@ -110,9 +110,9 @@ export const DEFAULT_COST_CEILINGS: Readonly<AiCostCeilings> = {
      * Total of per-feature values equals the global ceiling (USD 100).
      */
     perFeatureMonthlyMicroUsd: {
-        /** USD 45 / month for the AI chat feature. */
+        /** USD 40 / month for the AI chat feature. */
         chat: 40_000_000,
-        /** USD 5 / month for on-demand FAQ answer drafts. */
+        /** USD 5 came from the chat budget to keep the per-feature sum at the global ceiling. */
         faq_draft: 5_000_000,
         /** USD 30 / month for the AI search feature. */
         search: 30_000_000,
