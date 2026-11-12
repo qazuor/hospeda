@@ -16,18 +16,20 @@ import {
     AccommodationContactSchema,
     AccommodationEditFormSchema,
     AccommodationLocationSchema,
+    AccommodationPoliciesSchema,
     AccommodationSeoSchema,
     AccommodationServicesSchema
 } from '@/components/host/editor/accommodation-edit-form.schema';
 
 describe('slice composition', () => {
-    it('should cover every field of the merged schema across the six slices', () => {
+    it('should cover every field of the merged schema across the seven slices', () => {
         const merged = Object.keys(AccommodationEditFormSchema.shape).sort();
         const fromSlices = [
             ...Object.keys(AccommodationBasicsSchema.shape),
             ...Object.keys(AccommodationCapacityPricingSchema.shape),
             ...Object.keys(AccommodationLocationSchema.shape),
             ...Object.keys(AccommodationServicesSchema.shape),
+            ...Object.keys(AccommodationPoliciesSchema.shape),
             ...Object.keys(AccommodationContactSchema.shape),
             ...Object.keys(AccommodationSeoSchema.shape)
         ].sort();
@@ -38,21 +40,25 @@ describe('slice composition', () => {
 
     it('should not repeat a field across two slices, except the per-key policies PATCH', () => {
         // HOS-2060: `policies` is a PATCH object the API merges per key, so the
-        // capacity page (`{ minNights }`) and the services page (every other
-        // house rule) can both send it without clobbering each other.
+        // capacity page (`{ minNights }`) and the policies page (every other
+        // house rule, on the services page until HOS-2123) can both send it
+        // without clobbering each other.
         const SHARED = new Set(['policies']);
         const fromSlices = [
             ...Object.keys(AccommodationBasicsSchema.shape),
             ...Object.keys(AccommodationCapacityPricingSchema.shape),
             ...Object.keys(AccommodationLocationSchema.shape),
             ...Object.keys(AccommodationServicesSchema.shape),
+            ...Object.keys(AccommodationPoliciesSchema.shape),
             ...Object.keys(AccommodationContactSchema.shape),
             ...Object.keys(AccommodationSeoSchema.shape)
         ].filter((key) => !SHARED.has(key));
 
         expect(new Set(fromSlices).size).toBe(fromSlices.length);
         expect(Object.keys(AccommodationCapacityPricingSchema.shape)).toContain('policies');
-        expect(Object.keys(AccommodationServicesSchema.shape)).toContain('policies');
+        expect(Object.keys(AccommodationPoliciesSchema.shape)).toContain('policies');
+        // HOS-2123: the services page no longer carries the house rules.
+        expect(Object.keys(AccommodationServicesSchema.shape)).not.toContain('policies');
     });
 
     it('should validate the exact field set the pre-split editor did, plus the G7 smoke additions', () => {
@@ -103,7 +109,15 @@ describe('slice composition', () => {
 
     it('should expose a slice for every form-owning section id', () => {
         expect(Object.keys(ACCOMMODATION_SECTION_SCHEMAS).sort()).toEqual(
-            ['amenities', 'basicInfo', 'capacityPricing', 'contact', 'location', 'seo'].sort()
+            [
+                'amenities',
+                'basicInfo',
+                'capacityPricing',
+                'contact',
+                'location',
+                'policies',
+                'seo'
+            ].sort()
         );
     });
 });
@@ -190,8 +204,8 @@ describe('AccommodationCapacityPricingSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should reject a maximum stay below the minimum on the services slice', () => {
-        const result = AccommodationServicesSchema.safeParse({
+    it('should reject a maximum stay below the minimum on the policies slice', () => {
+        const result = AccommodationPoliciesSchema.safeParse({
             policies: { minNights: 3, maxNights: 2 }
         });
         expect(result.success).toBe(false);

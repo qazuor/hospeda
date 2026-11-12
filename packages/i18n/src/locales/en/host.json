@@ -285,7 +285,8 @@
                 "contactSocial": "Contact and social",
                 "seo": "Search engines (Google)",
                 "seoDescription": "Choose how your property appears when someone finds it on Google. Both fields are optional: leave them empty and we publish your property's name and summary.",
-                "aiQuestions": "AI questions"
+                "aiQuestions": "AI questions",
+                "policies": "Policies"
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -749,6 +750,26 @@
                 "aiDraftDisclaimer": "This is an editable draft. Check it against your listing before saving.",
                 "aiDraftError": "We could not generate a suggestion. Please try again.",
                 "aiDraftNotEligible": "The assistant has already answered this question."
+            },
+            "catalog": {
+                "searchLabel": "Search the whole catalog",
+                "searchPlaceholder": "E.g.: pool, wifi, grill",
+                "categoriesLabel": "Categories",
+                "selectedCount_one": "{{count}} selected",
+                "selectedCount_other": "{{count}} selected",
+                "resultCount_one": "{{count}} result",
+                "resultCount_other": "{{count}} results",
+                "categoryProgress": "{{selected}} of {{total}}",
+                "addDetails": "Add details",
+                "addDetailsFor": "Add details to {{name}}",
+                "editDetails": "Details",
+                "editDetailsFor": "Details of {{name}}",
+                "details": {
+                    "title": "Details of {{name}}",
+                    "apply": "Apply",
+                    "cancel": "Cancel",
+                    "close": "Close"
+                }
             }
         },
         "empty": {

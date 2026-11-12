@@ -230,11 +230,15 @@ export const AccommodationSeoSchema = z.object({
 export const AccommodationServicesSchema = z.object({
     amenityIds: inherited.amenityIds,
     amenityAttributes: inherited.amenityAttributes,
-    featureIds: inherited.featureIds,
-    /**
-     * HOS-2060: the Policies panel's house rules, sent as a PATCH object of
-     * the keys this page owns (everything except `minNights`).
-     */
+    featureIds: inherited.featureIds
+});
+
+/**
+ * `…/editar/politicas/` — the house rules (HOS-2060), on their own page since
+ * HOS-2123. Sent as a PATCH object of the keys this page owns (everything
+ * except `minNights`/`maxNights`, which the capacity/pricing page owns).
+ */
+export const AccommodationPoliciesSchema = z.object({
     policies: inherited.policies
 });
 
@@ -263,6 +267,7 @@ export const AccommodationEditFormSchema = AccommodationBasicsSchema.extend(
 )
     .extend(AccommodationLocationSchema.shape)
     .extend(AccommodationServicesSchema.shape)
+    .extend(AccommodationPoliciesSchema.shape)
     .extend(AccommodationContactSchema.shape)
     .extend(AccommodationSeoSchema.shape);
 
@@ -275,9 +280,10 @@ export const ACCOMMODATION_SECTION_SCHEMAS = {
     capacityPricing: AccommodationCapacityPricingSchema,
     location: AccommodationLocationSchema,
     amenities: AccommodationServicesSchema,
+    policies: AccommodationPoliciesSchema,
     contact: AccommodationContactSchema,
     seo: AccommodationSeoSchema
 } as const;
 
-/** Section ids that own a form. The other five sections save on their own. */
+/** Section ids that own a form. The other sections save on their own. */
 export type AccommodationFormSectionId = keyof typeof ACCOMMODATION_SECTION_SCHEMAS;
