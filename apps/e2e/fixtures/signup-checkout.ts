@@ -55,10 +55,12 @@ export async function readCurrentPlanLimit(options: {
 }
 
 /**
- * The monthly billing option of the current catalog version of `slug`,
- * inserted when the 0144 catalog has none (it seeds no billing options).
+ * The monthly billing option of the current catalog version of `slug`.
+ * Migration `0176` loads the real options, but the E2E seed empties that catalog
+ * on purpose (HOS-1827), so the helper inserts the monthly option when it is
+ * missing and reuses it otherwise.
  *
- * @param slug - The 0144 catalog plan
+ * @param slug - Catalog plan slug
  * @returns The billing option id
  */
 export async function monthlyOptionForSlug(slug: CatalogSlug): Promise<string> {

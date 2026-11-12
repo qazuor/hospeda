@@ -5,6 +5,9 @@
  * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
  * (V6.9b, HOS-1641). The VenueService._executeSearch already applies deletedAt=null;
  * the route relies on the service's public-tier contract for the remaining gates.
+ *
+ * Sorting: `featuredFirst` is FORCED to `true` server-side. The client cannot
+ * opt out; featured venues stay ahead of non-featured venues within any sort.
  */
 import {
     httpToDomainVenueSearch,
@@ -49,7 +52,9 @@ export const publicListVenuesRoute = createPublicListRoute({
         const result = await venueService.search(actor, {
             ...domainParams,
             page,
-            pageSize
+            pageSize,
+            // Forced server-side: featured venues always appear first on the public listing.
+            featuredFirst: true
         });
 
         if (result.error) {

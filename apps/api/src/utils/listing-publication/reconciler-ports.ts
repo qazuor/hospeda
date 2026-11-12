@@ -13,11 +13,13 @@ import { pingCronMonitor } from '../cron-heartbeat';
 import { invalidateEffectiveSetsForUser, peekEffectiveSetForUser } from '../effective-set-cache';
 import { createBootstrapCoverageReader } from '../listing-access/bootstrap-coverage-reader';
 import { getListingAccessPorts } from '../listing-access/ports';
+import { getListingFeaturedPorts } from '../listing-featured/listing-featured-ports';
 import { getListingPublicationPorts } from './ports';
 
 /** Builds live DB, billing, cache, and monitor ports for the daily reconciler. */
 export function getListingReconcilerPorts(): ReconcilerPorts {
     const access = getListingAccessPorts();
+    const featuredPorts = getListingFeaturedPorts();
     const trials = createBootstrapCoverageReader();
     const liveSet = async (userId: string, vertical: VerticalEnum) =>
         rehydrateEffectiveSet({
@@ -43,6 +45,10 @@ export function getListingReconcilerPorts(): ReconcilerPorts {
     const publication = getListingPublicationPorts({ liveLimit });
     return {
         ...publication,
+        featured: {
+            reader: featuredPorts.reader,
+            unitOfWork: featuredPorts.unitOfWork
+        },
         population: {
             async listOwnerVerticals(input) {
                 return getDb().transaction((tx) =>

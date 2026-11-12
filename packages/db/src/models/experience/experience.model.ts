@@ -34,6 +34,7 @@ interface ExperienceSearchInput {
 export class ExperienceModel extends BaseModelImpl<Experience> {
     protected table = experiences;
     public entityName = 'experiences';
+    protected override readonly featuredFirstColumn = 'featuredByEntitlement';
 
     /** Creates an experience with its initial publication clock. */
     override async create(data: Partial<Experience>, tx?: DrizzleClient): Promise<Experience> {
