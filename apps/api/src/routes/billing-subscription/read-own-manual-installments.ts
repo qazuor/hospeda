@@ -76,7 +76,7 @@ export async function readOwnManualInstallments(userId: string) {
             authorizationWindowEndsAt: row.subscription.authorizationWindowEndsAt,
             graceEndsAt: row.subscription.graceEndsAt
         });
-        if (!isManualInstallmentShown({ dueAt, now })) continue;
+        if (dueAt === null || !isManualInstallmentShown({ dueAt, now })) continue;
         const expected = await policy.expectedAmount({
             subscription: row.subscription,
             purpose: { kind: 'PERIOD', chargeCreatedAt: row.periodStart }
