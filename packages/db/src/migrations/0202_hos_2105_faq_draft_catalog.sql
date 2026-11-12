@@ -68,3 +68,8 @@ INSERT INTO "plan_version_limit" ("id", "plan_version_id", "key", "value") VALUE
 	('1721f1b4-71bb-5572-8158-a793b06a1237', 'c42b276a-4382-5f17-b81e-19f6ab4a55f2', 'max_ai_faq_draft_per_month', 0),
 	('7584baff-d302-5486-a9e2-c08ea8594b2f', 'cfbb3e23-b39b-5711-985a-ce20714a05df', 'max_ai_faq_draft_per_month', 0),
 	('2a7e71d3-bd73-5c37-84f7-1eb6b574cb54', 'e06ceb6a-7caa-5794-879a-1f1bb4e81ad9', 'max_ai_faq_draft_per_month', 1250);
+--> statement-breakpoint
+
+-- Drizzle applies pending migrations in one transaction, so clear the local
+-- grant before later migrations in the same batch can inherit it.
+SELECT set_config('hospeda.catalog_additive_grant', '', true);

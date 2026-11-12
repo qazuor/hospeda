@@ -25,7 +25,9 @@
 -- version from another transaction only for a key absent from that same child
 -- table. This gives a new feature to existing subscribers without re-anchoring
 -- subscriptions or billing options tied to MercadoPago. It never permits
--- overwrite, UPDATE, DELETE, or a lower value; use is for a named additive grant.
+-- overwrite, UPDATE, DELETE, or a lower value; use is for a named additive grant:
+-- set it, insert, reset it in the same file so later migrations in Drizzle's
+-- shared transaction cannot inherit the signal.
 --
 -- How "created by this transaction" is decided: an AFTER INSERT trigger on
 -- `plan_version` and on `addon_version` appends the new id to the
