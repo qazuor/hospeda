@@ -126,6 +126,7 @@ export type {
     EffectiveSetCodec,
     RedisLike
 } from './effective-set-cache/types';
+export * from './featured/index';
 export { resolveBusinessLinesChange } from './listing-sections/business-lines-change';
 export {
     type ResolvedListingSection,
