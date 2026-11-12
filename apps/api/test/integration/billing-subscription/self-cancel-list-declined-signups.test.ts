@@ -1,4 +1,4 @@
-import { eq, getDb, subscriptions } from '@repo/db';
+import { eq, getDb, inArray, subscriptions } from '@repo/db';
 import { OwnSubscriptionsResponseSchema, PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ import {
 const clock = routeClock();
 const fake = routeFake(clock);
 const path = '/api/v1/protected/billing-subscription/';
+const directSubscriptionIds: string[] = [];
 let app: ReturnType<typeof initApp>;
 const headers = (id: string) =>
     actorHeaders({ id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
@@ -34,6 +35,8 @@ beforeEach(() => {
     injectPaymentProvider({ provider: fake });
 });
 afterEach(async () => {
+    const ids = directSubscriptionIds.splice(0);
+    if (ids.length) await getDb().delete(subscriptions).where(inArray(subscriptions.id, ids));
     await retireSelfCancelRows();
 });
 afterAll(async () => {
@@ -54,22 +57,39 @@ async function seedDeclined(
     ownerId: string,
     overrides: { readonly createdAt?: Date; readonly updatedAt?: Date } = {}
 ) {
-    const subscriptionId = await seedPrincipal({ ownerId, status: 'CHARGE_DECLINED' });
+    const temporaryId = await seedPrincipal({ ownerId, status: 'CHARGE_DECLINED' });
+    const [temporary] = await getDb()
+        .select({
+            vertical: subscriptions.vertical,
+            planVersionId: subscriptions.planVersionId,
+            billingOptionId: subscriptions.billingOptionId,
+            paymentMethod: subscriptions.paymentMethod
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, temporaryId));
+    if (!temporary?.planVersionId || !temporary.billingOptionId || !temporary.paymentMethod)
+        throw new Error('Expected declined signup anchors');
     const declinedAt = overrides.updatedAt ?? new Date(NOW.getTime() - 2 * 86_400_000);
-    await getDb()
-        .update(subscriptions)
-        .set({
+    const [row] = await getDb()
+        .insert(subscriptions)
+        .values({
+            userId: ownerId,
+            vertical: temporary.vertical,
+            planVersionId: temporary.planVersionId,
+            billingOptionId: temporary.billingOptionId,
+            paymentMethod: temporary.paymentMethod,
+            status: 'CHARGE_DECLINED',
+            class: 'PRINCIPAL',
             createdAt: overrides.createdAt ?? declinedAt,
             updatedAt: declinedAt,
             declaredPayerEmail: 'payer@example.test'
         })
-        .where(eq(subscriptions.id, subscriptionId));
-    const [row] = await getDb()
-        .select({ billingOptionId: subscriptions.billingOptionId })
-        .from(subscriptions)
-        .where(eq(subscriptions.id, subscriptionId));
-    if (!row?.billingOptionId) throw new Error('Expected declined signup option');
-    return { subscriptionId, billingOptionId: row.billingOptionId, declinedAt };
+        .returning({ id: subscriptions.id });
+    if (!row) throw new Error('Expected direct declined signup fixture');
+    directSubscriptionIds.push(row.id);
+    await getDb().delete(subscriptions).where(eq(subscriptions.id, temporaryId));
+    const billingOptionId = temporary.billingOptionId;
+    return { subscriptionId: row.id, billingOptionId, declinedAt };
 }
 
 describe('HOS-2064 own declined signup list', () => {
@@ -112,7 +132,7 @@ describe('HOS-2064 own declined signup list', () => {
         expect(notices).toEqual([]);
     });
 
-    it('never lists another owner’s declined signup', async () => {
+    it("never lists another owner's declined signup", async () => {
         // Arrange
         const ownerA = await seedUser('declined-owner-a');
         const ownerB = await seedUser('declined-owner-b');
