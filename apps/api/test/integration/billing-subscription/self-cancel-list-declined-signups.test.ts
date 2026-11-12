@@ -6,13 +6,13 @@ import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
+import { seedPrincipal } from './revocation-route-fixtures';
 import {
     actorHeaders,
     NOW,
     retireSelfCancelRows,
     routeClock,
     routeFake,
-    seedPrincipal,
     seedUser
 } from './self-cancel-fixtures';
 
