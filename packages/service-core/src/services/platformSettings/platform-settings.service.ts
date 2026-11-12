@@ -1,6 +1,7 @@
 import { CACHE_TAG_HOME, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { type PlatformSettingRecord, PlatformSettingsModel } from '@repo/db';
 import {
+    AddonPurchasesFreezeValueSchema,
     type AnnouncementItem,
     AnnouncementsValueSchema,
     MaintenanceModeValueSchema,
@@ -56,7 +57,11 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({ key: z.literal('seo.defaults'), value: SeoDefaultsValueSchema }),
     z.object({ key: z.literal('maintenance.mode'), value: MaintenanceModeValueSchema }),
     z.object({ key: z.literal('announcements.global'), value: AnnouncementsValueSchema }),
-    z.object({ key: z.literal('billing.paidSignupsFreeze'), value: PaidSignupsFreezeValueSchema })
+    z.object({ key: z.literal('billing.paidSignupsFreeze'), value: PaidSignupsFreezeValueSchema }),
+    z.object({
+        key: z.literal('billing.addonPurchasesFreeze'),
+        value: AddonPurchasesFreezeValueSchema
+    })
 ]);
 
 // ---------------------------------------------------------------------------
@@ -71,6 +76,7 @@ function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
         case 'announcements.global':
             return PermissionEnum.MAINTENANCE_MODE_WRITE;
         case 'billing.paidSignupsFreeze':
+        case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_VIEW;
         default: {
             const exhaustive: never = key;
@@ -87,6 +93,7 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
         case 'announcements.global':
             return PermissionEnum.MAINTENANCE_MODE_WRITE;
         case 'billing.paidSignupsFreeze':
+        case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_WRITE;
         default: {
             const exhaustive: never = key;
@@ -238,6 +245,21 @@ export class PlatformSettingsService extends BaseService {
             this.logger.warn(
                 { issues: parsed.error.issues },
                 'Stored billing.paidSignupsFreeze value failed schema validation — signups stay open'
+            );
+            return false;
+        }
+        return parsed.data.frozen;
+    }
+
+    /** Reads the independent global addon purchase switch on every call. */
+    async isAddonPurchasesFrozen(): Promise<boolean> {
+        const row = await this.model.findByKey('billing.addonPurchasesFreeze');
+        if (!row) return false;
+        const parsed = AddonPurchasesFreezeValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Invalid addon purchase freeze; purchases stay open'
             );
             return false;
         }

@@ -29,7 +29,8 @@ export const PlatformSettingsKeySchema = z.enum([
     'seo.defaults',
     'maintenance.mode',
     'announcements.global',
-    'billing.paidSignupsFreeze'
+    'billing.paidSignupsFreeze',
+    'billing.addonPurchasesFreeze'
 ]);
 
 /** TypeScript type for the supported key set. */
@@ -155,6 +156,10 @@ export const PaidSignupsFreezeValueSchema = z.object({
 /** Inferred type for the `billing.paidSignupsFreeze` value. */
 export type PaidSignupsFreezeValue = z.infer<typeof PaidSignupsFreezeValueSchema>;
 
+/** Value shape for the independent addon purchase freeze. */
+export const AddonPurchasesFreezeValueSchema = z.object({ frozen: z.boolean() });
+export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValueSchema>;
+
 // ---------------------------------------------------------------------------
 // Discriminated union response
 // ---------------------------------------------------------------------------
@@ -187,6 +192,12 @@ export const PlatformSettingsResponseSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.paidSignupsFreeze'),
         value: PaidSignupsFreezeValueSchema,
+        updatedAt: z.string().datetime({ offset: true }),
+        updatedBy: z.string().uuid()
+    }),
+    z.object({
+        key: z.literal('billing.addonPurchasesFreeze'),
+        value: AddonPurchasesFreezeValueSchema,
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     })

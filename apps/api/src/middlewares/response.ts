@@ -60,7 +60,8 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
     [ServiceErrorCode.PROVIDER_REVOKED]: 422,
     // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
-    [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
+    [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
+    [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
 };
 
 /**

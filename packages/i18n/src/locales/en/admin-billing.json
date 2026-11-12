@@ -689,6 +689,22 @@
             "cancel": "Cancel",
             "noWritePermission": "You do not have permission to change this switch.",
             "saveError": "Could not save the change. Please try again."
+        },
+        "addonPurchasesFreeze": {
+            "title": "Addon purchases",
+            "description": "Pause addon purchases without a deploy",
+            "label": "Pause addon purchases",
+            "hint": "Blocks new addon purchases. It does not affect paid sign-ups or purchases already started.",
+            "activeWarning": "Addon purchases are paused: the API refuses new attempts.",
+            "statusOn": "Paused",
+            "statusOff": "Open",
+            "enable": "Pause purchases",
+            "disable": "Resume purchases",
+            "confirmEnable": "Pause new addon purchases?",
+            "confirmDisable": "Resume addon purchases?",
+            "cancel": "Cancel",
+            "noWritePermission": "You do not have permission to change this switch.",
+            "saveError": "Could not save the change. Please try again."
         }
     },
     "sponsorships": {

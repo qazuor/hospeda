@@ -831,6 +831,10 @@
         "processing": "Your purchase is being processed.",
         "active": "Active",
         "closed": "The purchase ended without activation.",
+        "paused": {
+            "title": "Purchases paused",
+            "body": "Addon purchases are temporarily paused. Please try again later."
+        },
         "status": {
             "DRAFT": "Draft",
             "PUBLISHED": "Published",

@@ -689,6 +689,22 @@
             "cancel": "Cancelar",
             "noWritePermission": "No tenés permiso para cambiar este interruptor.",
             "saveError": "No se pudo guardar el cambio. Probá de nuevo."
+        },
+        "addonPurchasesFreeze": {
+            "title": "Compras de complementos",
+            "description": "Pausá las compras de complementos sin hacer un deploy",
+            "label": "Pausar compras de complementos",
+            "hint": "Bloquea las compras nuevas de complementos. No afecta las altas pagas ni compras ya iniciadas.",
+            "activeWarning": "Las compras de complementos están pausadas: la API rechaza los intentos nuevos.",
+            "statusOn": "Pausadas",
+            "statusOff": "Abiertas",
+            "enable": "Pausar compras",
+            "disable": "Reanudar compras",
+            "confirmEnable": "¿Pausar las compras nuevas de complementos?",
+            "confirmDisable": "¿Reanudar las compras de complementos?",
+            "cancel": "Cancelar",
+            "noWritePermission": "No tenés permiso para cambiar este interruptor.",
+            "saveError": "No se pudo guardar el cambio. Probá de nuevo."
         }
     },
     "sponsorships": {

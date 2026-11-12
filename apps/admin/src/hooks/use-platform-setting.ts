@@ -22,6 +22,7 @@
  */
 
 import type {
+    AddonPurchasesFreezeValue,
     AnnouncementsValue,
     MaintenanceModeValue,
     PaidSignupsFreezeValue,
@@ -49,7 +50,9 @@ export type PlatformSettingValue<K extends PlatformSettingsKey> = K extends 'seo
         ? AnnouncementsValue
         : K extends 'billing.paidSignupsFreeze'
           ? PaidSignupsFreezeValue
-          : never;
+          : K extends 'billing.addonPurchasesFreeze'
+            ? AddonPurchasesFreezeValue
+            : never;
 
 /**
  * Shape of a single row returned by `GET /api/v1/admin/platform-settings/{key}`.

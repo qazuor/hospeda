@@ -16,6 +16,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    AddonPurchasesFreezeValueSchema,
     AnnouncementItemSchema,
     AnnouncementsValueSchema,
     MaintenanceModeValueSchema,
@@ -35,7 +36,8 @@ describe('PlatformSettingsKeySchema', () => {
             'seo.defaults',
             'maintenance.mode',
             'announcements.global',
-            'billing.paidSignupsFreeze'
+            'billing.paidSignupsFreeze',
+            'billing.addonPurchasesFreeze'
         ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
@@ -44,6 +46,12 @@ describe('PlatformSettingsKeySchema', () => {
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
         expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1749 AddonPurchasesFreezeValueSchema', () => {
+    it('accepts a boolean frozen value', () => {
+        expect(AddonPurchasesFreezeValueSchema.safeParse({ frozen: true }).success).toBe(true);
     });
 });
 

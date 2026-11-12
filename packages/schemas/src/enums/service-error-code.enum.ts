@@ -152,5 +152,6 @@ export enum ServiceErrorCode {
      * the client can tell "signups are paused" from "you already subscribed",
      * which have opposite next steps.
      */
-    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN'
+    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN',
+    ADDON_PURCHASES_FROZEN = 'ADDON_PURCHASES_FROZEN'
 }

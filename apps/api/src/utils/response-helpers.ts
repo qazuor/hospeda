@@ -555,6 +555,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.REVIEW_ALREADY_EXISTS:
             // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
             case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
+            case ServiceErrorCode.ADDON_PURCHASES_FROZEN:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.DECLARATION_BLOCKED:
@@ -787,7 +788,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
                 // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
-                [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
+                [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
+                [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

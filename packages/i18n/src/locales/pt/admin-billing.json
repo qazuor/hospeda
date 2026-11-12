@@ -689,6 +689,22 @@
             "cancel": "Cancelar",
             "noWritePermission": "Você não tem permissão para alterar esta opção.",
             "saveError": "Não foi possível salvar a alteração. Tente novamente."
+        },
+        "addonPurchasesFreeze": {
+            "title": "Compras de complementos",
+            "description": "Pause as compras de complementos sem fazer deploy",
+            "label": "Pausar compras de complementos",
+            "hint": "Bloqueia novas compras de complementos. Não afeta contratações pagas nem compras já iniciadas.",
+            "activeWarning": "As compras de complementos estão pausadas: a API recusa novas tentativas.",
+            "statusOn": "Pausadas",
+            "statusOff": "Abertas",
+            "enable": "Pausar compras",
+            "disable": "Retomar compras",
+            "confirmEnable": "Pausar as novas compras de complementos?",
+            "confirmDisable": "Retomar as compras de complementos?",
+            "cancel": "Cancelar",
+            "noWritePermission": "Você não tem permissão para alterar esta opção.",
+            "saveError": "Não foi possível salvar a alteração. Tente novamente."
         }
     },
     "sponsorships": {

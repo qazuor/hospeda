@@ -2,6 +2,7 @@ import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contrac
 import type { PaymentProvider } from '@repo/payments';
 import type { SubscriptionPayments } from '../subscription/subscription-billing-ports';
 import type { LiveAnchorReader } from './addon-orphanhood-ports';
+import type { AddonPurchasesFreezePort } from './addon-purchases-freeze';
 
 /** External readers and provider for A1; optional readers use the production defaults. */
 export interface PurchaseAddonPorts {
@@ -11,4 +12,5 @@ export interface PurchaseAddonPorts {
     readonly listing: VerticalsForBilling['listing'];
     readonly liveAnchors?: LiveAnchorReader;
     readonly payments?: SubscriptionPayments;
+    readonly addonPurchasesFreeze?: AddonPurchasesFreezePort;
 }
