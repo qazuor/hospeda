@@ -787,6 +787,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
+                [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
                 // Admin-paused self-service signups (newPaidSignupsFrozen)
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
             };
