@@ -28,6 +28,10 @@
         "alreadyClaimed": "Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte",
         "accountAlreadyOwns": "Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.",
         "verifyEmailFirst": "Para reclamar este Partner con esta cuenta, primero verificá tu correo.",
+        "resendVerification": "Reenviar verificación",
+        "resendingVerification": "Reenviando…",
+        "verificationResent": "Listo: te reenviamos el correo de verificación. Cuando lo verifiques, volvé a abrir el link del correo de reclamo.",
+        "resendVerificationError": "No pudimos reenviar la verificación. Probá de nuevo en unos minutos.",
         "supportCta": "Escribir a soporte",
         "genericError": "No pudimos completar el reclamo. Probá de nuevo en unos minutos."
     }

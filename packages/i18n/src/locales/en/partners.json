@@ -28,6 +28,10 @@
         "alreadyClaimed": "This Partner already has an owner; if it wasn't you, contact support",
         "accountAlreadyOwns": "Your account already owns a Partner. Each account can manage one Partner: claim a second business with another account. If you need help, contact support.",
         "verifyEmailFirst": "To claim this Partner with this account, verify your email first.",
+        "resendVerification": "Resend verification",
+        "resendingVerification": "Resending…",
+        "verificationResent": "Done: we sent the verification email again. Once you verify it, open the link in the claim email again.",
+        "resendVerificationError": "We couldn't resend the verification. Try again in a few minutes.",
         "supportCta": "Contact support",
         "genericError": "We couldn't complete the claim. Please try again in a few minutes."
     }
