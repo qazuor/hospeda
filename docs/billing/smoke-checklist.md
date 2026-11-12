@@ -32,6 +32,32 @@ Each part is executed in its own environment and signed off separately.
 Sign off each part by filling the table at the end of that part. Leave fields blank if not yet
 available.
 
+## Smoke scope rule (HOS-2134)
+
+A billing change does **not** re-run this whole checklist. Smoke only:
+
+1. **What the change touched**: the steps whose area the diff modifies.
+2. **The `sólo MP real` and `sólo entorno real` steps that run through that area**: no e2e can
+   see them.
+
+A step marked `e2e:` is **not** repeated by hand when the PR's `E2E P0 Suite` check is green. A
+`(nocturno)` mark only counts once the nightly run after the merge is green; until then, smoke
+that step if the change touched it. `en curso` and `hueco` steps are smoked by hand whenever the
+change touches their area, exactly as before.
+
+Each step carries one **Coverage** line with one of these marks:
+
+| Mark | Meaning |
+| --- | --- |
+| `e2e: <file>:<test> (PR\|nocturno)` | A Playwright spec under `apps/e2e/tests/` asserts the step against the fake provider. `PR` = the test or its `describe` carries `@p0` or `@clock` (`e2e-pr.yml` runs `e2e:test:p0`); `nocturno` = only `e2e-nightly.yml` runs it. |
+| `sólo MP real` | Only real Mercado Pago shows it: the real checkout and its redirect, the real signature, the provider's own emails, real provider reads, or the measured quirks M1–M13 (`packages/payments/src/fake/fake-lists.json`). |
+| `sólo entorno real (<service>)` | Only a live environment shows it, and the service is not Mercado Pago: Cloudflare edge, Sentry, the real cron scheduler, Resend delivery, Cloudinary, Google sign-in. |
+| `en curso: HOS-NNNN` | A child of HOS-2133 will add the e2e. Smoke it until that child closes. |
+| `hueco` | No e2e asserts it and no child covers it yet. |
+
+The marks come from reading each spec in full, not from test names. A spec that only covers part
+of a step is listed with what it misses.
+
 ## Part 1 — Staging (cutover rehearsal)
 
 Executed inside the cutover rehearsal on `staging`, with MP sandbox, before merging any billing
