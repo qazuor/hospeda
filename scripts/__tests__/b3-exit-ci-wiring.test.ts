@@ -18,7 +18,9 @@ import { describe, expect, it } from 'vitest';
  *   tests (run there through `pnpm test:scripts`); the three B3 e2e specs run
  *   in the `e2e-p0` job; and the UNKNOWN row PA-6 has its test.
  * - Point 10 includes the manual payer's first installment (AC:B3:4) from
- *   HOS-1629. Point 12 (AC:B3:40) remains deferred to HOS-1628 (phase 2).
+ *   HOS-1629. Point 12 (AC:B3:40) was pulled into the cut before it closed by
+ *   PM-587, tracked in HOS-1628; TEST:B3:41 is not in the cut map because it
+ *   does not cover AC:B3:35.
  * - The manual smokes TEST:B3:23 and TEST:B3:36 belong to the owner; a test
  *   title may only name them as support, never as if it automated them.
  *
@@ -43,13 +45,11 @@ interface CorteEntry {
     readonly tests: readonly string[];
 }
 
-interface DeferredEntry {
+interface PulledInEntry {
     readonly point: number;
     readonly ac: string;
     readonly test: string;
     readonly issue: string;
-    readonly phase: string;
-    readonly letter: string;
 }
 
 interface GuardContract {
@@ -65,7 +65,7 @@ interface E2eContract {
     readonly testId: string;
 }
 
-// LISTA:B3, B3.md:163-197, including point 10; point 12 remains deferred.
+// LISTA:B3, B3.md:163-197, including point 10; point 12 stays outside the cut map.
 const CORTE_MAP: readonly CorteEntry[] = [
     { point: 1, acs: ['AC:B3:6'], tests: ['TEST:B3:6'] },
     { point: 2, acs: ['AC:B3:10'], tests: ['TEST:B3:11'] },
@@ -85,15 +85,14 @@ const CORTE_MAP: readonly CorteEntry[] = [
     { point: 13, acs: ['AC:B3:41'], tests: ['TEST:B3:42'] }
 ];
 
-// B3.md:204 and :744: point 12 remains deferred by the owner's MVP cut (CW).
-const DEFERRED: readonly DeferredEntry[] = [
+// Point 12 (AC:B3:40) entered before the cut by PM-587, tracked in HOS-1628.
+// It is outside CORTE_MAP because TEST:B3:41 does not cover AC:B3:35.
+const PULLED_IN: readonly PulledInEntry[] = [
     {
         point: 12,
         ac: 'AC:B3:40',
         test: 'TEST:B3:41',
-        issue: 'HOS-1628',
-        phase: 'fase-2',
-        letter: 'CW'
+        issue: 'HOS-1628'
     }
 ];
 
@@ -299,13 +298,24 @@ describe('AC:B3:35 the B3 exit: LISTA:B3 evidence, guards wired, e2e in P0 (HOS-
         expect(missing, `TEST ids without a title: ${missing.join(', ')}`).toEqual([]);
     });
 
-    it('(c) the cut map is the spec exit list, and with the deferred point covers 1 to 13', () => {
+    it('(b2) every pulled-in TEST is named by at least one test title', () => {
+        // Arrange
+        const ids = [...new Set(PULLED_IN.map((entry) => entry.test))];
+
+        // Act
+        const missing = ids.filter((id) => !allTitles.some((title) => namesId({ title, id })));
+
+        // Assert
+        expect(missing, `pulled-in TEST ids without a title: ${missing.join(', ')}`).toEqual([]);
+    });
+
+    it('(c) the cut map is the spec exit list, and with the pulled-in point covers 1 to 13', () => {
         // Arrange
         // Act
         const union = [...new Set(CORTE_MAP.flatMap((entry) => entry.tests))].sort();
         const points = new Set([
             ...CORTE_MAP.map((entry) => entry.point),
-            ...DEFERRED.map((entry) => entry.point)
+            ...PULLED_IN.map((entry) => entry.point)
         ]);
         const pointTen = CORTE_MAP.some((entry) => entry.point === 10);
 
@@ -315,7 +325,7 @@ describe('AC:B3:35 the B3 exit: LISTA:B3 evidence, guards wired, e2e in P0 (HOS-
             Array.from({ length: 13 }, (_, index) => index + 1)
         );
         expect(pointTen).toBe(true);
-        expect(DEFERRED.map((entry) => entry.issue)).toEqual(['HOS-1628']);
+        expect(PULLED_IN.map((entry) => entry.issue)).toEqual(['HOS-1628']);
     });
 
     describe('(d) no title names a manual smoke as if it were automated', () => {
