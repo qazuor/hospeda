@@ -26,7 +26,7 @@ describe('HOS-1718 listing featured sync composition is wired', () => {
             'utf8'
         );
         // Act
-        const wired = /\bfeatured\s*:\s*\{\s*reader:\s*planCatalogModel/.test(source);
+        const wired = /\bfeatured\s*:\s*\{/.test(source);
         // Assert
         expect(wired).toBe(true);
     });

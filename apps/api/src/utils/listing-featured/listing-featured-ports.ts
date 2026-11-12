@@ -21,7 +21,9 @@ import { getListingPublicationPorts } from '../listing-publication/ports';
 export function getListingFeaturedPorts(): ListingFeaturedPorts {
     return {
         billing: { coverage: (input) => getListingAccessPorts().billing.coverage(input) },
-        reader: planCatalogModel,
+        reader: {
+            findAddonVersionEffects: (input) => planCatalogModel.findAddonVersionEffects(input)
+        },
         unitOfWork: {
             runLocked<T>(
                 args: { readonly userId: string; readonly vertical: PublicationVertical },

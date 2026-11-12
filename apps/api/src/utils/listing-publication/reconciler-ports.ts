@@ -44,7 +44,12 @@ export function getListingReconcilerPorts(): ReconcilerPorts {
     const publication = getListingPublicationPorts({ liveLimit });
     return {
         ...publication,
-        featured: { reader: planCatalogModel, unitOfWork: getListingFeaturedPorts().unitOfWork },
+        featured: {
+            reader: {
+                findAddonVersionEffects: (input) => planCatalogModel.findAddonVersionEffects(input)
+            },
+            unitOfWork: getListingFeaturedPorts().unitOfWork
+        },
         population: {
             async listOwnerVerticals(input) {
                 return getDb().transaction((tx) =>
