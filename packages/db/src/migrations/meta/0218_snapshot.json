@@ -1,6 +1,6 @@
 {
-  "id": "30523827-45cf-4167-9739-5660d048eba7",
-  "prevId": "bfbcd419-73f8-4698-941a-4e0868d01b48",
+  "id": "bfbcd419-73f8-4698-941a-4e0868d01b48",
+  "prevId": "2ffcaf67-a51d-496a-8c79-8ff6534bc73d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33866,7 +33866,6 @@
         "billing.managePromoCodes",
         "billing.setCyclePrice",
         "billing.publishAddonVersion",
-        "billing.migratePlan",
         "billing.pauseSubscription",
         "billing.changeSubscriptionPlan",
         "user.update.self",

@@ -1,6 +1,6 @@
 {
-  "id": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
-  "prevId": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "prevId": "622cad7d-80ef-4338-ab72-3ab91118c55d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33806,7 +33806,6 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
-        "billing.refund",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",

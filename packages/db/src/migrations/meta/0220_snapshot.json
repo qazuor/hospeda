@@ -1,6 +1,6 @@
 {
-  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
-  "prevId": "622cad7d-80ef-4338-ab72-3ab91118c55d",
+  "id": "46281e4d-a87f-433a-b3c5-ad3dbe08f4bc",
+  "prevId": "30523827-45cf-4167-9739-5660d048eba7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -8223,7 +8223,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set', 'addon_instance.status_changed', 'addon_product.version_published')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -23527,6 +23527,12 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
+        },
+        "auth_method": {
+          "name": "auth_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -27615,6 +27621,34 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "uq_addon_instance_free_choice": {
+          "name": "uq_addon_instance_free_choice",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"target_id\", '00000000-0000-0000-0000-000000000000'::uuid)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"addon_instance\".\"status\" = 'ACTIVE' AND \"addon_instance\".\"complement_subscription_id\" IS NULL AND \"addon_instance\".\"title_anchor_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -27769,6 +27803,12 @@
           "type": "varchar(32)[]",
           "primaryKey": false,
           "notNull": true
+        },
+        "retired_at": {
+          "name": "retired_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -28575,6 +28615,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "entry": {
+          "name": "entry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INSTALLMENT'"
+        },
         "registered_by": {
           "name": "registered_by",
           "type": "uuid",
@@ -28644,6 +28691,10 @@
         "ck_manual_payment_status": {
           "name": "ck_manual_payment_status",
           "value": "\"manual_payment\".\"status\" IN ('AWAITING', 'REGISTERED', 'DECLARED_UNPAID')"
+        },
+        "ck_manual_payment_entry": {
+          "name": "ck_manual_payment_entry",
+          "value": "\"manual_payment\".\"entry\" IN ('INSTALLMENT', 'UNALLOCATED')"
         },
         "ck_manual_payment_registration": {
           "name": "ck_manual_payment_registration",
@@ -31775,6 +31826,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_error_at": {
+          "name": "last_error_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -31848,7 +31918,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "ck_subscription_scheduled_change_attempt_count_nonnegative": {
+          "name": "ck_subscription_scheduled_change_attempt_count_nonnegative",
+          "value": "\"subscription_scheduled_change\".\"attempt_count\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.subscription": {
@@ -33806,10 +33881,18 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
+        "billing.refund",
+        "billing.registerManualPayment",
+        "billing.declareManualUnpaid",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
         "billing.managePromoCodes",
+        "billing.setCyclePrice",
+        "billing.publishAddonVersion",
+        "billing.migratePlan",
+        "billing.pauseSubscription",
+        "billing.changeSubscriptionPlan",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
@@ -33847,6 +33930,9 @@
         "partner.viewAll",
         "partner.manage",
         "partner.resolveApplication",
+        "partner.configureBilling",
+        "partner.emptyPresence",
+        "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

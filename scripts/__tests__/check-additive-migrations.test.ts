@@ -184,14 +184,14 @@ describe('TEST:V8b:8 AC:V8b:7 check-additive-migrations destructive SQL guard', 
 
     it('accepts the ten real phase migrations, including all five widened CHECK constraints', () => {
         const files = readdirSync(path.join(root, migrations)).filter((name) =>
-            /^(020[2-9]|021[01])_.*\.sql$/.test(name)
+            /^(020[3-9]|021[0-2])_.*\.sql$/.test(name)
         );
         expect(files.length).toBeGreaterThanOrEqual(10);
         for (const file of files) {
             const sql = readFileSync(path.join(root, migrations, file), 'utf8');
             expect(findDestructiveStatements({ file, sql }), file).toEqual([]);
         }
-        for (const prefix of ['0202', '0204', '0208', '0209', '0210']) {
+        for (const prefix of ['0203', '0205', '0209', '0210', '0211']) {
             const file = files.find((name) => name.startsWith(`${prefix}_`));
             expect(file, `${prefix} is in the real migration set`).toBeDefined();
             expect(readFileSync(path.join(root, migrations, file ?? ''), 'utf8')).toContain(

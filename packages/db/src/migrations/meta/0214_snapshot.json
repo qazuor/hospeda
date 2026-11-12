@@ -1,6 +1,6 @@
 {
-  "id": "fb19b032-ad64-4f20-8276-c59527ec11e9",
-  "prevId": "6969ad6d-111a-4f71-b73a-6eb7d088945d",
+  "id": "6969ad6d-111a-4f71-b73a-6eb7d088945d",
+  "prevId": "45159387-fe2e-4464-842f-1f076b5b8a66",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33831,8 +33831,6 @@
         "billing.grantComplimentary",
         "billing.managePromoCodes",
         "billing.setCyclePrice",
-        "billing.pauseSubscription",
-        "billing.changeSubscriptionPlan",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",

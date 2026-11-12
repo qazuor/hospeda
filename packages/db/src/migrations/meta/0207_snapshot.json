@@ -1,6 +1,6 @@
 {
-  "id": "3123a95a-8790-4be9-ab2c-52c4964e05d1",
-  "prevId": "cfb140e1-3be8-4b70-bb91-296267753e44",
+  "id": "cfb140e1-3be8-4b70-bb91-296267753e44",
+  "prevId": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33856,7 +33856,6 @@
         "partner.viewAll",
         "partner.manage",
         "partner.resolveApplication",
-        "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

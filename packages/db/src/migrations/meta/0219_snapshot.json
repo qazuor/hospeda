@@ -1,6 +1,6 @@
 {
-  "id": "46281e4d-a87f-433a-b3c5-ad3dbe08f4bc",
-  "prevId": "30523827-45cf-4167-9739-5660d048eba7",
+  "id": "30523827-45cf-4167-9739-5660d048eba7",
+  "prevId": "bfbcd419-73f8-4698-941a-4e0868d01b48",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -31826,25 +31826,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "attempt_count": {
-          "name": "attempt_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "last_error_at": {
-          "name": "last_error_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -31918,12 +31899,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "ck_subscription_scheduled_change_attempt_count_nonnegative": {
-          "name": "ck_subscription_scheduled_change_attempt_count_nonnegative",
-          "value": "\"subscription_scheduled_change\".\"attempt_count\" >= 0"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.subscription": {

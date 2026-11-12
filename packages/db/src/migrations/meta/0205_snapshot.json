@@ -1,6 +1,6 @@
 {
-  "id": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
-  "prevId": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "id": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "prevId": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -23525,12 +23525,6 @@
         "two_factor_verified": {
           "name": "two_factor_verified",
           "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

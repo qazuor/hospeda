@@ -1,6 +1,6 @@
 {
-  "id": "1aebded8-d6f5-462b-80a9-f867e10fe68d",
-  "prevId": "fb19b032-ad64-4f20-8276-c59527ec11e9",
+  "id": "fb19b032-ad64-4f20-8276-c59527ec11e9",
+  "prevId": "6969ad6d-111a-4f71-b73a-6eb7d088945d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -8223,7 +8223,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set', 'addon_instance.status_changed')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'partner.presence_moderation_changed', 'partner.billing_configured', 'partner.presence_emptied', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'subscription.scheduled_change_applied', 'manual_payment.reimputed', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected', 'billing_option.price_set')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
