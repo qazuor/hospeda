@@ -1,0 +1,52 @@
+/**
+ * AmenityDetailsDialog.module.css — the per-amenity details dialog of the
+ * accommodation catalog browser (HOS-2123).
+ *
+ * Desktop: the shared `Dialog`, centered, `sm`. Narrow screens: the SAME
+ * element docked to the bottom edge as a drawer. Only the overlay alignment,
+ * the panel width and its corners change; the height cap stays with the shared
+ * `.dialog-panel` class (HOS-958), retuned through `--dialog-max-height`.
+ */
+
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.primary {
+    composes: actionsPrimary from "../ActionBar.module.css";
+}
+
+.secondary {
+    composes: actionsSecondary from "../ActionBar.module.css";
+}
+
+/* Present on both layouts so the media query below has a hook. */
+.overlay {
+    box-sizing: border-box;
+}
+
+.panel {
+    box-sizing: border-box;
+}
+
+/*
+ * Specificity, not stylesheet order, decides the drawer: the shared
+ * `Dialog.module.css` styles the overlay with `.overlay` (0,1,0) and caps the
+ * panel with `.panel[data-size="sm"]` (0,2,0). The rules below sit strictly
+ * above both — `.overlay.overlay` (0,2,0) and `.panel.panel.panel` (0,3,0) —
+ * so they win whichever CSS chunk the bundler emits last.
+ */
+@media (max-width: 640px) {
+    .overlay.overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .panel.panel.panel {
+        --dialog-max-height: 85dvh;
+        max-width: 100%;
+        border-radius: var(--radius-card, 24px) var(--radius-card, 24px) 0 0;
+    }
+}

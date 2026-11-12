@@ -285,7 +285,8 @@
                 "contactSocial": "Contato e redes",
                 "seo": "Buscadores (Google)",
                 "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Os dois campos são opcionais: se ficarem vazios, publicamos o nome e o resumo da sua propriedade.",
-                "aiQuestions": "Perguntas à IA"
+                "aiQuestions": "Perguntas à IA",
+                "policies": "Políticas"
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -749,6 +750,26 @@
                 "aiDraftDisclaimer": "Este é um rascunho editável. Confira as informações do anúncio antes de salvar.",
                 "aiDraftError": "Não foi possível gerar a sugestão. Tente novamente.",
                 "aiDraftNotEligible": "O assistente já respondeu a esta pergunta."
+            },
+            "catalog": {
+                "searchLabel": "Buscar em todo o catálogo",
+                "searchPlaceholder": "Ex.: piscina, wifi, churrasqueira",
+                "categoriesLabel": "Categorias",
+                "selectedCount_one": "{{count}} selecionada",
+                "selectedCount_other": "{{count}} selecionadas",
+                "resultCount_one": "{{count}} resultado",
+                "resultCount_other": "{{count}} resultados",
+                "categoryProgress": "{{selected}} de {{total}}",
+                "addDetails": "Adicionar detalhes",
+                "addDetailsFor": "Adicionar detalhes a {{name}}",
+                "editDetails": "Detalhes",
+                "editDetailsFor": "Detalhes de {{name}}",
+                "details": {
+                    "title": "Detalhes de {{name}}",
+                    "apply": "Aplicar",
+                    "cancel": "Cancelar",
+                    "close": "Fechar"
+                }
             }
         },
         "empty": {

@@ -14,6 +14,7 @@ import {
     ACCOMMODATION_AI_QUESTIONS_SECTION,
     ACCOMMODATION_EDITOR_REGISTRY,
     ACCOMMODATION_EDITOR_SECTIONS,
+    ACCOMMODATION_POLICIES_SECTION,
     buildEditorHubUrl,
     buildEditorSectionUrl,
     EDITOR_SECTION_GROUP_LABEL_KEYS,
@@ -242,14 +243,14 @@ describe('getVisibleEditorSections', () => {
     it('should include translations when translation data exists', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
-        expect(visible).toHaveLength(12);
+        expect(visible).toHaveLength(13);
         expect(visible.map((section) => section.id)).toContain('translations');
     });
 
     it('should drop translations when there is no translation data', () => {
         const visible = getVisibleEditorSections({ hasTranslations: false });
 
-        expect(visible).toHaveLength(11);
+        expect(visible).toHaveLength(12);
         expect(visible.map((section) => section.id)).not.toContain('translations');
     });
 
@@ -270,8 +271,9 @@ describe('HOS-2101 — the AI questions section', () => {
         expect(ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)).not.toContain(
             'aiQuestions'
         );
+        // +2: the AI questions page and the policies page (HOS-2123).
         expect(ACCOMMODATION_EDITOR_REGISTRY.sections).toHaveLength(
-            ACCOMMODATION_EDITOR_SECTIONS.length + 1
+            ACCOMMODATION_EDITOR_SECTIONS.length + 2
         );
     });
 
@@ -283,5 +285,33 @@ describe('HOS-2101 — the AI questions section', () => {
             labelKey: 'host.properties.editor.section.aiQuestions'
         });
         expect(findEditorSectionBySlug({ slug: 'preguntas-ia' })?.id).toBe('aiQuestions');
+    });
+});
+
+describe('HOS-2123 — the policies section', () => {
+    it('should join the registry right after the services page, but not the frozen catalog list', () => {
+        const ids = ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => section.id);
+
+        expect(ids.indexOf('policies')).toBe(ids.indexOf('amenities') + 1);
+        expect(ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)).not.toContain(
+            'policies'
+        );
+    });
+
+    it('should be a property page at politicas, always visible', () => {
+        expect(ACCOMMODATION_POLICIES_SECTION).toEqual({
+            id: 'policies',
+            slug: 'politicas',
+            group: 'property',
+            labelKey: 'host.properties.editor.section.policies'
+        });
+        expect(findEditorSectionBySlug({ slug: 'politicas' })?.id).toBe('policies');
+        expect(getVisibleEditorSections({ hasTranslations: false }).map((s) => s.id)).toContain(
+            'policies'
+        );
+    });
+
+    it('should resolve its label against the real es dictionary', () => {
+        expect(resolveHostKey(ACCOMMODATION_POLICIES_SECTION.labelKey)).toBe('Políticas');
     });
 });

@@ -9,6 +9,11 @@
  * the three owner editors adopted one picker (HOS-2061). "Not specified" is
  * NULL on the relation row: the public page shows no badge for it and nothing
  * is inferred.
+ *
+ * HOS-2123: the controls themselves are exported bare as
+ * `AmenityAttributeFields`, so the accommodation catalog browser can render them
+ * inside its details dialog; `AmenityAttributeControls` is that same content in
+ * the collapsed disclosure the shared picker keeps.
  */
 
 import type { JSX } from 'react';
@@ -20,22 +25,24 @@ import type {
 import styles from './CatalogPicker.module.css';
 
 /** Translator shape used by the controls. */
-type Translate = (key: string, fallback?: string) => string;
+export type AmenityAttributeTranslate = (key: string, fallback?: string) => string;
 
 /** One radio option; `value: null` is "not specified". */
-interface AttributeOption<V extends string> {
+export interface AttributeOption<V extends string> {
     readonly value: V | null;
     readonly i18nKey: string;
     readonly fallback: string;
 }
 
-const SCOPE_OPTIONS: readonly AttributeOption<AmenityScopeValue>[] = [
+/** Scope options, in render order. */
+export const SCOPE_OPTIONS: readonly AttributeOption<AmenityScopeValue>[] = [
     { value: 'private', i18nKey: 'private', fallback: 'Privado' },
     { value: 'shared', i18nKey: 'shared', fallback: 'Compartido' },
     { value: null, i18nKey: 'unset', fallback: 'Sin indicar' }
 ];
 
-const AVAILABILITY_OPTIONS: readonly AttributeOption<AmenityAvailabilityValue>[] = [
+/** Availability options, in render order. */
+export const AVAILABILITY_OPTIONS: readonly AttributeOption<AmenityAvailabilityValue>[] = [
     { value: 'year_round', i18nKey: 'yearRound', fallback: 'Todo el año' },
     { value: 'seasonal', i18nKey: 'seasonal', fallback: 'De temporada' },
     { value: null, i18nKey: 'unset', fallback: 'Sin indicar' }
@@ -69,7 +76,7 @@ function AttributeRadioGroup<V extends string>({
     readonly legendFallback: string;
     readonly options: readonly AttributeOption<V>[];
     readonly current: V | null;
-    readonly t: Translate;
+    readonly t: AmenityAttributeTranslate;
     readonly onChange: (value: V | null) => void;
 }): JSX.Element {
     return (
@@ -100,34 +107,34 @@ function AttributeRadioGroup<V extends string>({
     );
 }
 
-/** Props for {@link AmenityAttributeControls}. */
-export interface AmenityAttributeControlsProps {
+/** Props for {@link AmenityAttributeFields}. */
+export interface AmenityAttributeFieldsProps {
     /** Scopes the radio `name`s so two pickers on one page never collide. */
     readonly idPrefix: string;
     readonly amenityId: string;
     readonly declared: AmenityAttributeValue;
-    readonly t: Translate;
+    readonly t: AmenityAttributeTranslate;
     readonly onChange: AmenityAttributeChange;
 }
 
 /**
- * Collapsed scope/availability controls for one checked amenity.
+ * The bare scope/availability/extra-charge controls for one amenity, without
+ * any disclosure around them. The catalog picker wraps them in a `<details>`
+ * ({@link AmenityAttributeControls}); the accommodation catalog browser
+ * (HOS-2123) renders them inside its details dialog.
  *
- * @param props - {@link AmenityAttributeControlsProps}
- * @returns The disclosure element
+ * @param props - {@link AmenityAttributeFieldsProps}
+ * @returns The hint plus the three controls
  */
-export function AmenityAttributeControls({
+export function AmenityAttributeFields({
     idPrefix,
     amenityId,
     declared,
     t,
     onChange
-}: AmenityAttributeControlsProps): JSX.Element {
+}: AmenityAttributeFieldsProps): JSX.Element {
     return (
-        <details className={styles.attributes}>
-            <summary className={styles.attributesSummary}>
-                {t('host.properties.editor.field.amenityDetails', 'Detalles')}
-            </summary>
+        <>
             <p className={styles.attributesHint}>
                 {t(
                     'host.properties.editor.field.amenityDetailsHint',
@@ -163,6 +170,26 @@ export function AmenityAttributeControls({
                     {t('accommodations.amenityAttributes.extraCharge.label', 'Con cargo extra')}
                 </span>
             </label>
+        </>
+    );
+}
+
+/** Props for {@link AmenityAttributeControls}. */
+export type AmenityAttributeControlsProps = AmenityAttributeFieldsProps;
+
+/**
+ * Collapsed scope/availability controls for one checked amenity.
+ *
+ * @param props - {@link AmenityAttributeControlsProps}
+ * @returns The disclosure element
+ */
+export function AmenityAttributeControls(props: AmenityAttributeControlsProps): JSX.Element {
+    return (
+        <details className={styles.attributes}>
+            <summary className={styles.attributesSummary}>
+                {props.t('host.properties.editor.field.amenityDetails', 'Detalles')}
+            </summary>
+            <AmenityAttributeFields {...props} />
         </details>
     );
 }
