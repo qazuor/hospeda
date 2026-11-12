@@ -221,7 +221,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #4266, #4269
+    // origin: #4266, #4269, #4294
     {
         id: '2026-11-10-ai-questions-tab',
         publishedAt: 'on-promotion',
@@ -233,9 +233,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Veja o que os turistas perguntam ao assistente da sua página'
         },
         body: {
-            es: 'En el editor de tu ficha hay una pestaña nueva, **Preguntas a la IA**, con lo que los visitantes le preguntaron al asistente, sin datos de quién preguntó. Arriba aparecen las que **quedaron sin responder** porque el dato no estaba en tu ficha, con un botón para **agregarlas como pregunta frecuente** en un clic. Además, si en la semana quedó alguna sin responder, te llega un **resumen por mail** (lo podés desactivar desde Preferencias).',
-            en: 'Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences).',
-            pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências).'
+            es: 'En el editor de tu ficha hay una pestaña nueva, **Preguntas a la IA**, con lo que los visitantes le preguntaron al asistente, sin datos de quién preguntó. Arriba aparecen las que **quedaron sin responder** porque el dato no estaba en tu ficha, con un botón para **agregarlas como pregunta frecuente** en un clic. Además, si en la semana quedó alguna sin responder, te llega un **resumen por mail** (lo podés desactivar desde Preferencias). Las que ya viste las podés marcar con **Ya lo vi** para que no te tapen las nuevas (se pueden recuperar con **Deshacer**), con **Ver más** llegás a las más viejas, y si el asistente había respondido, la pregunta frecuente se abre **con su respuesta ya cargada** para que solo la revises.',
+            en: "Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences). Mark the ones you have already seen with **I've seen this** so they do not bury the new ones (bring them back with **Undo**), use **View more** to reach older ones, and when the assistant had answered, the FAQ opens **with its answer already filled in** so you only need to review it.",
+            pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências). As que você já viu podem ser marcadas com **Já vi** para não esconderem as novas (dá para recuperá-las com **Desfazer**), com **Ver mais** você chega às mais antigas e, se o assistente tinha respondido, a pergunta frequente abre **com a resposta já preenchida** para você só revisar.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
