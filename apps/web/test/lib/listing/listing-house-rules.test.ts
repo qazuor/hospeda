@@ -136,7 +136,7 @@ describe('buildHouseRuleRows — deposit, languages and event details (HOS-2120,
             {
                 id: 'eventsAllowed',
                 label: 'Eventos',
-                value: 'Se permiten eventos privados · hasta 40 invitados · hasta las 00:00 · sin música amplificada · con cargo extra',
+                value: 'Se permiten eventos privados · máximo de invitados: 40 · hasta las 00:00 · sin música amplificada · con cargo extra',
                 note: 'Avisar con una semana'
             }
         ]);

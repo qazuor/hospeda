@@ -127,7 +127,7 @@ function eventsRow({
     const parts = [t('listing.policies.eventsAllowed.yes', 'Se permiten eventos privados')];
     if (details.maxGuests !== undefined) {
         parts.push(
-            t('listing.policies.eventsDetails.maxGuests', 'hasta {{count}} invitados', {
+            t('listing.policies.eventsDetails.maxGuests', 'máximo de invitados: {{count}}', {
                 count: details.maxGuests
             })
         );

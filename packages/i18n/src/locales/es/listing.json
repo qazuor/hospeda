@@ -532,7 +532,7 @@
         "eventsDetails": {
             "title": "Detalles de los eventos",
             "maxGuestsLabel": "Máximo de invitados",
-            "maxGuests": "hasta {{count}} invitados",
+            "maxGuests": "máximo de invitados: {{count}}",
             "amplifiedSoundLabel": "Se permite música o sonido amplificado",
             "amplifiedSound": {
                 "yes": "con música amplificada",
