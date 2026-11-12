@@ -9,6 +9,7 @@ import {
     users
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import { readGraceNoticeScheduledChange } from './grace-notice-scheduled-change.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 
 const logger = createLogger('grace-started-notice');
@@ -53,6 +54,11 @@ export async function enqueueGraceStartedNotice(
         )
         .limit(1);
     const planChangePending = successors.length > 0;
+    const scheduledChange = await readGraceNoticeScheduledChange({
+        tx,
+        subscriptionId: subscription.id,
+        vertical: subscription.vertical
+    });
     const dedupKey = buildEmailDedupKey({
         recipient: userId,
         template,
@@ -67,7 +73,8 @@ export async function enqueueGraceStartedNotice(
                 subscriptionId: subscription.id,
                 vertical: subscription.vertical,
                 graceEndsAt: graceEndsAt.toISOString(),
-                ...(planChangePending ? { planChangePending: true } : {})
+                ...(planChangePending ? { planChangePending: true } : {}),
+                ...(scheduledChange ? { scheduledChange } : {})
             },
             dedupKey
         },
