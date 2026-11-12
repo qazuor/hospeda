@@ -127,6 +127,7 @@ export class ListingPublicationService {
             ...getListingPublicationPorts(),
             newSignupsFrozen: () => platformPaidSignupsFreeze.isFrozen(),
             userId: ownerId,
+            actorId: args.actor.id,
             vertical,
             listingId: args.id,
             event: 'listing_published',
