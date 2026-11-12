@@ -39,6 +39,14 @@ export const MODEL_RATES: Readonly<Record<string, AiModelRate>> = {
         inputMicroUsdPerMillionTokens: 150_000,
         outputMicroUsdPerMillionTokens: 600_000
     },
+    'gpt-5.4-nano': {
+        inputMicroUsdPerMillionTokens: 200_000,
+        outputMicroUsdPerMillionTokens: 1_250_000
+    },
+    'gpt-5.4-mini': {
+        inputMicroUsdPerMillionTokens: 750_000,
+        outputMicroUsdPerMillionTokens: 4_500_000
+    },
     'claude-3-5-sonnet-20241022': {
         inputMicroUsdPerMillionTokens: 3_000_000,
         outputMicroUsdPerMillionTokens: 15_000_000
@@ -103,7 +111,9 @@ export const DEFAULT_COST_CEILINGS: Readonly<AiCostCeilings> = {
      */
     perFeatureMonthlyMicroUsd: {
         /** USD 45 / month for the AI chat feature. */
-        chat: 45_000_000,
+        chat: 40_000_000,
+        /** USD 5 / month for on-demand FAQ answer drafts. */
+        faq_draft: 5_000_000,
         /** USD 30 / month for the AI search feature. */
         search: 30_000_000,
         /** USD 15 / month for the AI text-improve feature. */
