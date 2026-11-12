@@ -261,6 +261,9 @@ export class OpenAiAdapter implements AiProvider {
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
             topP: input.params?.topP,
+            ...(input.params?.reasoningEffort
+                ? { providerOptions: { openai: { reasoningEffort: input.params.reasoningEffort } } }
+                : {}),
             // Disable SDK-level retries so the engine's withRetry is the sole
             // retry authority. Without this the SDK defaults to maxRetries:2 (3
             // attempts) stacked on top of the engine's MAX_ATTEMPTS_PER_PROVIDER=2,
@@ -315,6 +318,9 @@ export class OpenAiAdapter implements AiProvider {
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
             topP: input.params?.topP,
+            ...(input.params?.reasoningEffort
+                ? { providerOptions: { openai: { reasoningEffort: input.params.reasoningEffort } } }
+                : {}),
             // Disable SDK-level retries — engine's withRetry is the sole authority.
             // See generateText for the full rationale (6-call stacking prevention).
             maxRetries: 0 as const
@@ -400,8 +406,23 @@ export class OpenAiAdapter implements AiProvider {
             // produces up to 6 provider calls per request.
             maxRetries: 0,
             ...(relaxStrictJsonSchema
-                ? { providerOptions: { openai: { strictJsonSchema: false } } }
-                : {})
+                ? {
+                      providerOptions: {
+                          openai: {
+                              strictJsonSchema: false,
+                              ...(input.params?.reasoningEffort
+                                  ? { reasoningEffort: input.params.reasoningEffort }
+                                  : {})
+                          }
+                      }
+                  }
+                : input.params?.reasoningEffort
+                  ? {
+                        providerOptions: {
+                            openai: { reasoningEffort: input.params.reasoningEffort }
+                        }
+                    }
+                  : {})
         });
 
         // The SDK's generateObject().object can be undefined (e.g. when the

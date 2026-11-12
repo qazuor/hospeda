@@ -521,6 +521,46 @@ describe('unconfigured feature → AiFeatureNotConfiguredError', () => {
 // ---------------------------------------------------------------------------
 
 describe('streamText routing', () => {
+    it('merges configured reasoning effort with request parameters', async () => {
+        mockResolveFeatureConfig.mockResolvedValue({
+            ...FEATURE_CONFIG_ENABLED,
+            params: { reasoningEffort: 'low' }
+        });
+        const providerStream = vi.fn().mockResolvedValue({
+            stream: (async function* () {
+                yield { delta: 'ok' };
+            })(),
+            meta: Promise.resolve({
+                usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
+                provider: 'openai',
+                model: 'gpt-4o-mini',
+                finishReason: 'stop'
+            })
+        });
+        const provider = {
+            id: 'openai',
+            generateText: vi.fn(),
+            streamText: providerStream,
+            generateObject: vi.fn(),
+            extractIntent: vi.fn(),
+            moderate: vi.fn(),
+            embed: vi.fn()
+        } as unknown as AiProvider;
+        const engine = makeEngine(new Map([['openai', provider]]));
+
+        await engine.streamText({
+            feature: 'chat_venue',
+            locale: 'es',
+            prompt: 'test',
+            params: { maxTokens: 512 }
+        });
+
+        expect(providerStream.mock.calls[0]?.[0].params).toEqual({
+            reasoningEffort: 'low',
+            maxTokens: 512
+        });
+    });
+
     it('should fall back to secondary provider on retryable primary failure', async () => {
         // Arrange
         const failOpenAi = makeFailingProvider('openai', retryableError());
@@ -555,6 +595,31 @@ describe('streamText routing', () => {
 
         // Fallback event emitted
         expect(events.some((e) => e.type === 'fallback')).toBe(true);
+    });
+
+    it('passes configured reasoning effort to an Anthropic fallback request', async () => {
+        mockResolveFeatureConfig.mockResolvedValue({
+            ...FEATURE_CONFIG_ENABLED,
+            params: { reasoningEffort: 'low' }
+        });
+        const primary = makeFailingProvider('openai', retryableError());
+        const stub = new StubProvider();
+        const fallbackGenerateText = vi.fn(stub.generateText.bind(stub));
+        const fallback: AiProvider = {
+            ...stub,
+            id: 'anthropic',
+            generateText: fallbackGenerateText
+        };
+        const engine = makeEngine(
+            new Map<string, AiProvider>([
+                ['openai', primary],
+                ['anthropic', fallback]
+            ])
+        );
+
+        await engine.generateText({ feature: 'chat_venue', locale: 'es', prompt: 'test' });
+
+        expect(fallbackGenerateText.mock.calls[0]?.[0].params).toEqual({ reasoningEffort: 'low' });
     });
 
     it('should throw AiFeatureDisabledError on kill-switched feature', async () => {

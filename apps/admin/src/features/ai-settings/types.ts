@@ -47,6 +47,7 @@ export interface AiModelParams {
     readonly temperature?: number;
     readonly maxTokens?: number;
     readonly topP?: number;
+    readonly reasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 }
 
 /** Per-feature routing + model + kill-switch configuration. */

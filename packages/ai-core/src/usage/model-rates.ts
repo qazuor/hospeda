@@ -39,6 +39,10 @@ export const MODEL_RATES: Readonly<Record<string, AiModelRate>> = {
         inputMicroUsdPerMillionTokens: 150_000,
         outputMicroUsdPerMillionTokens: 600_000
     },
+    'gpt-5.4-mini': {
+        inputMicroUsdPerMillionTokens: 750_000,
+        outputMicroUsdPerMillionTokens: 4_500_000
+    },
     'claude-3-5-sonnet-20241022': {
         inputMicroUsdPerMillionTokens: 3_000_000,
         outputMicroUsdPerMillionTokens: 15_000_000

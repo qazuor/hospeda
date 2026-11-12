@@ -182,6 +182,33 @@ describe('AnthropicAdapter', () => {
             );
         });
 
+        it('ignores configured reasoning effort on an Anthropic fallback call', async () => {
+            // Arrange
+            const adapter = new AnthropicAdapter({ apiKey: TEST_API_KEY });
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'Generated text',
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateText({
+                feature: 'chat_venue',
+                locale: 'es',
+                model: MOCK_MODEL_ID,
+                prompt: 'hello',
+                params: { reasoningEffort: 'low' }
+            });
+
+            // Assert
+            expect(mockGenerateText).toHaveBeenCalledWith(
+                expect.not.objectContaining({
+                    reasoningEffort: 'low',
+                    providerOptions: expect.anything()
+                })
+            );
+        });
+
         it('should use the default model when no model override is provided', async () => {
             // Arrange
             const adapter = new AnthropicAdapter({ apiKey: TEST_API_KEY });
