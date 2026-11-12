@@ -654,6 +654,15 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'billing-settings',
+            label: { es: 'Configuración', en: 'Settings', pt: 'Configuração' },
+            icon: 'SettingsIcon',
+            route: '/billing/settings',
+            permissions: ['BILLING_SETTINGS_VIEW'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'plan-catalog',
             label: { es: 'Planes y claves', en: 'Plans and keys', pt: 'Planos e chaves' },
             icon: 'SettingsIcon',

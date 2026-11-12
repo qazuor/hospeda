@@ -831,6 +831,10 @@
         "processing": "Se está procesando tu compra.",
         "active": "Activo",
         "closed": "La compra terminó sin activarse.",
+        "paused": {
+            "title": "Compras pausadas",
+            "body": "Por el momento pausamos las compras de complementos. Probá más tarde."
+        },
         "status": {
             "DRAFT": "Borrador",
             "PUBLISHED": "Publicada",

@@ -10,6 +10,7 @@ import {
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
@@ -37,6 +38,7 @@ export function AddonPurchase(input: {
     const [view, setView] = useState<View>(input.returnOrderRequestId ? 'PROCESSING' : 'LOADING');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
     const [pollAttempt, setPollAttempt] = useState(0);
     const free =
@@ -113,6 +115,7 @@ export function AddonPurchase(input: {
         setTarget(null);
         setOrderRequestId(null);
         setError(null);
+        setPurchasesPaused(false);
         if (selected.scopeType !== 'LISTING') {
             setOrderRequestId(mintOrderRequestId());
             setView('SUMMARY');
@@ -154,6 +157,7 @@ export function AddonPurchase(input: {
         if (!offer || !orderRequestId || busy) return;
         setBusy(true);
         setError(null);
+        setPurchasesPaused(false);
         const body = {
             productId: offer.productId,
             addonVersionId: offer.addonVersionId,
@@ -184,7 +188,8 @@ export function AddonPurchase(input: {
                     else if (state === 'ACTIVE') setView('ACTIVE');
                     else if (state === 'PROCESSING') setView('PROCESSING');
                     else setView('CLOSED');
-                } else setError(result.error.message);
+                } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
+                else setError(result.error.message);
             }
         } catch (cause) {
             setError(cause instanceof Error ? cause.message : t('billing.addonPurchase.loadError'));
@@ -195,6 +200,16 @@ export function AddonPurchase(input: {
 
     return (
         <div className={styles.root}>
+            {purchasesPaused && (
+                <div
+                    role="status"
+                    className={stylesNotice.notice}
+                    data-testid="addon-purchases-paused-notice"
+                >
+                    <p className={stylesNotice.title}>{t('billing.addonPurchase.paused.title')}</p>
+                    <p className={stylesNotice.body}>{t('billing.addonPurchase.paused.body')}</p>
+                </div>
+            )}
             {error && (
                 <p
                     role="alert"

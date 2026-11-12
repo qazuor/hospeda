@@ -678,8 +678,33 @@
             "title": "Novas contratações",
             "description": "Pause as contratações self-service sem fazer deploy",
             "label": "Pausar novas contratações pagas",
-            "hint": "Bloqueia assinar um plano (incluindo novos testes iniciados no checkout), a primeira publicação de um anfitrião sem teste nem assinatura (que é o que inicia o teste), as reativações, publicar um comércio que ainda não tem assinatura e comprar complementos. Não afeta renovações, cobranças, cancelamentos, trocas de cartão, upgrades de quem já paga, publicar ou editar com uma assinatura ou teste vigente, nem as ações do admin.",
-            "activeWarning": "As novas contratações estão pausadas: o site mostra um aviso no lugar do botão de assinar, e a API recusa essas contratações."
+            "hint": "Bloqueia iniciar uma assinatura com cartão e a primeira publicação de um anúncio que iniciaria um teste grátis (hospedagem, alimentação e experiências). Não afeta quem já tem uma assinatura ou um teste vigente, nem renovações, cobranças, cancelamentos, mudanças de plano, compras de complementos ou ações do admin.",
+            "activeWarning": "As novas contratações estão pausadas: a API recusa essas assinaturas e o site mostra um aviso para quem tenta.",
+            "statusOn": "Pausadas",
+            "statusOff": "Abertas",
+            "enable": "Pausar contratações",
+            "disable": "Retomar contratações",
+            "confirmEnable": "Pausar as novas contratações pagas? Ninguém poderá assinar nem publicar pela primeira vez até você retomar as contratações.",
+            "confirmDisable": "Retomar as novas contratações pagas?",
+            "cancel": "Cancelar",
+            "noWritePermission": "Você não tem permissão para alterar esta opção.",
+            "saveError": "Não foi possível salvar a alteração. Tente novamente."
+        },
+        "addonPurchasesFreeze": {
+            "title": "Compras de complementos",
+            "description": "Pause as compras de complementos sem fazer deploy",
+            "label": "Pausar compras de complementos",
+            "hint": "Bloqueia novas compras de complementos. Não afeta contratações pagas nem compras já iniciadas.",
+            "activeWarning": "As compras de complementos estão pausadas: a API recusa novas tentativas.",
+            "statusOn": "Pausadas",
+            "statusOff": "Abertas",
+            "enable": "Pausar compras",
+            "disable": "Retomar compras",
+            "confirmEnable": "Pausar as novas compras de complementos?",
+            "confirmDisable": "Retomar as compras de complementos?",
+            "cancel": "Cancelar",
+            "noWritePermission": "Você não tem permissão para alterar esta opção.",
+            "saveError": "Não foi possível salvar a alteração. Tente novamente."
         }
     },
     "sponsorships": {

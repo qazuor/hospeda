@@ -678,8 +678,33 @@
             "title": "New sign-ups",
             "description": "Pause self-service sign-ups without a deploy",
             "label": "Pause new paid sign-ups",
-            "hint": "Blocks subscribing to a plan (including new trials started from checkout), the first publish of a host with no trial or subscription (which is what starts the trial), reactivations, publishing a business listing that has no subscription yet, and buying add-ons. Does not affect renewals, charges, cancellations, card changes, upgrades by paying customers, publishing or editing under a live subscription or trial, or admin actions.",
-            "activeWarning": "New sign-ups are paused: the website shows a notice instead of the subscribe button, and the API refuses those sign-ups."
+            "hint": "Blocks starting a card subscription and the first publish of a listing that would start a free trial (accommodation, food, and experiences). It does not affect anyone with an active subscription or trial, renewals, charges, cancellations, plan changes, add-on purchases, or admin actions.",
+            "activeWarning": "New sign-ups are paused: the API refuses those subscriptions and the website shows a notice to anyone who tries.",
+            "statusOn": "Paused",
+            "statusOff": "Open",
+            "enable": "Pause sign-ups",
+            "disable": "Resume sign-ups",
+            "confirmEnable": "Pause new paid sign-ups? No one will be able to subscribe or publish for the first time until you resume sign-ups.",
+            "confirmDisable": "Resume new paid sign-ups?",
+            "cancel": "Cancel",
+            "noWritePermission": "You do not have permission to change this switch.",
+            "saveError": "Could not save the change. Please try again."
+        },
+        "addonPurchasesFreeze": {
+            "title": "Addon purchases",
+            "description": "Pause addon purchases without a deploy",
+            "label": "Pause addon purchases",
+            "hint": "Blocks new addon purchases. It does not affect paid sign-ups or purchases already started.",
+            "activeWarning": "Addon purchases are paused: the API refuses new attempts.",
+            "statusOn": "Paused",
+            "statusOff": "Open",
+            "enable": "Pause purchases",
+            "disable": "Resume purchases",
+            "confirmEnable": "Pause new addon purchases?",
+            "confirmDisable": "Resume addon purchases?",
+            "cancel": "Cancel",
+            "noWritePermission": "You do not have permission to change this switch.",
+            "saveError": "Could not save the change. Please try again."
         }
     },
     "sponsorships": {

@@ -290,6 +290,7 @@ export * from './billing/subscription/manual-installment-opening.js';
 export * from './billing/subscription/manual-installment-unpaid-notice.js';
 export * from './billing/subscription/open-manual-installment.service.js';
 export * from './billing/subscription/paid-after-cancellation-notice.js';
+export * from './billing/subscription/paid-signups-freeze.js';
 export * from './billing/subscription/pause-policy.js';
 export * from './billing/subscription/pause-preview.js';
 export * from './billing/subscription/pause-quota.js';

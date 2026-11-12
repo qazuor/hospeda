@@ -145,12 +145,13 @@ export enum ServiceErrorCode {
 
     /**
      * New self-service paid signups are paused platform-wide by an admin
-     * (`billing_settings.newPaidSignupsFrozen`). Maps to HTTP 409 — the request
+     * (`platform_settings['billing.paidSignupsFreeze']`, HOS-1749). Maps to HTTP 409 — the request
      * is well-formed and the caller is allowed to make it; it conflicts with
      * the platform's current state, and the same request succeeds once the
      * freeze is lifted. A domain code rather than a reuse of ALREADY_EXISTS so
      * the client can tell "signups are paused" from "you already subscribed",
      * which have opposite next steps.
      */
-    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN'
+    NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN',
+    ADDON_PURCHASES_FROZEN = 'ADDON_PURCHASES_FROZEN'
 }

@@ -17,6 +17,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import { assertAddonPurchasesOpen, platformAddonPurchasesFreeze } from './addon-purchases-freeze';
 import { findIncludesAddonsAnchor } from './includes-addons-anchor';
 import { authorizePendingComplement, insertPendingComplement } from './purchase-addon-complement';
 import { resolvePurchaseTitle } from './purchase-addon-eligibility';
@@ -163,6 +164,9 @@ export async function purchaseAddon(
                     checkoutUrl
                 };
             }
+            await assertAddonPurchasesOpen({
+                freeze: ports.addonPurchasesFreeze ?? platformAddonPurchasesFreeze
+            });
             const [instance] = await tx
                 .insert(addonInstances)
                 .values({

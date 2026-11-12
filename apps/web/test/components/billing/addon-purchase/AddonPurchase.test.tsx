@@ -84,6 +84,15 @@ async function selectListing(status: string) {
 }
 
 describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
+    it('shows the paused notice when A1 returns ADDON_PURCHASES_FROZEN', async () => {
+        await selectListing('PUBLISHED');
+        purchase.mockResolvedValue({
+            ok: false,
+            error: { status: 409, code: 'ADDON_PURCHASES_FROZEN', message: 'paused' }
+        });
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        expect(await screen.findByTestId('addon-purchases-paused-notice')).toBeInTheDocument();
+    });
     it.each([
         'DRAFT',
         'ARCHIVED',
