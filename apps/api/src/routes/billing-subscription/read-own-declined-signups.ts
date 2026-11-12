@@ -11,7 +11,6 @@ import {
 import { getClock } from '../../utils/clock';
 
 const DAY_MS = 86_400_000;
-const LIVE_STATUSES = new Set<string>(LIVE_SUBSCRIPTION_STATUSES);
 
 /** How long "Mi suscripción" keeps showing a declined signup (owner default, HOS-2064). */
 export const DECLINED_SIGNUP_NOTICE_DAYS = 7;
@@ -54,7 +53,8 @@ export function selectDeclinedSignupNotices(input: {
 
     const notices: DeclinedSignupNotice[] = [];
     for (const [vertical, rows] of byVertical) {
-        if (rows.some((row) => LIVE_STATUSES.has(row.status))) continue;
+        if (rows.some((row) => LIVE_SUBSCRIPTION_STATUSES.some((status) => status === row.status)))
+            continue;
         const attempts = rows
             .filter((row) => row.succeedsId === null)
             .sort(
