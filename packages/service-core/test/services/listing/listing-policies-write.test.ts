@@ -159,3 +159,111 @@ describe('resolveUpdatePolicies', () => {
         }
     });
 });
+
+describe('venue minimum-age scope needs a minimum age (HOS-2098)', () => {
+    const FROM_MIDNIGHT = { kind: 'from_time', from: '00:00' } as const;
+
+    /** Runs `act`, expecting a 400 on `policies.minAgeScope`. */
+    function expectScopeRejected(act: () => unknown): void {
+        expect(act).toThrow(ServiceError);
+        try {
+            act();
+        } catch (error) {
+            const serviceError = error as ServiceError;
+            expect(serviceError.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(JSON.stringify(serviceError.details)).toContain('policies.minAgeScope');
+            expect(JSON.stringify(serviceError.details)).toContain(
+                'zodError.venue.minAgeScope.requiresMinAge'
+            );
+        }
+    }
+
+    it('keeps a scope sent together with an age', () => {
+        // Act
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: { policies: { minAge: 18, minAgeScope: FROM_MIDNIGHT } },
+            current: null
+        });
+
+        // Assert
+        expect(result.policies).toEqual({ minAge: 18, minAgeScope: FROM_MIDNIGHT });
+    });
+
+    it('keeps a scope sent alone when the stored row already has an age', () => {
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: { policies: { minAgeScope: FROM_MIDNIGHT } },
+            current: { minAge: 18 }
+        });
+
+        expect(result.policies).toEqual({ minAge: 18, minAgeScope: FROM_MIDNIGHT });
+    });
+
+    it('clears the stored scope when the age is cleared', () => {
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: { policies: { minAge: null } },
+            current: { paymentMethods: ['cash'], minAge: 18, minAgeScope: FROM_MIDNIGHT }
+        });
+
+        expect(result.policies).toEqual({ paymentMethods: ['cash'] });
+    });
+
+    it('clears the whole column when the age and its scope were the only rules', () => {
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: { policies: { minAge: null } },
+            current: { minAge: 18, minAgeScope: FROM_MIDNIGHT }
+        });
+
+        expect(result.policies).toBeNull();
+    });
+
+    it('rejects a scope sent while the result has no age (update)', () => {
+        expectScopeRejected(() =>
+            resolveUpdatePolicies({
+                vertical: 'venue',
+                payload: { policies: { minAgeScope: FROM_MIDNIGHT } },
+                current: { paymentMethods: ['cash'] }
+            })
+        );
+    });
+
+    it('rejects a scope sent together with clearing the age', () => {
+        expectScopeRejected(() =>
+            resolveUpdatePolicies({
+                vertical: 'venue',
+                payload: { policies: { minAge: null, minAgeScope: FROM_MIDNIGHT } },
+                current: { minAge: 18 }
+            })
+        );
+    });
+
+    it('rejects a scope without an age on create', () => {
+        expectScopeRejected(() =>
+            resolveCreatePolicies({
+                vertical: 'venue',
+                payload: { policies: { minAgeScope: FROM_MIDNIGHT } }
+            })
+        );
+    });
+
+    it('stores the area trimmed: whitespace never reaches a reader', () => {
+        const result = resolveUpdatePolicies({
+            vertical: 'venue',
+            payload: {
+                policies: {
+                    minAge: 18,
+                    minAgeScope: { kind: 'area', area: { es: '  la pista ', en: '   ', pt: '' } }
+                }
+            },
+            current: null
+        });
+
+        expect(result.policies?.minAgeScope).toEqual({
+            kind: 'area',
+            area: { es: 'la pista', en: '', pt: '' }
+        });
+    });
+});

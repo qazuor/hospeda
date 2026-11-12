@@ -4,11 +4,13 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+// `usageFile`: where the route's metering call lives. HOS-2100 moved the chat's
+// post-stream metering into `chat.finalize.ts`, which only `chat.ts` imports.
 const routes = [
-    { name: 'chat', usage: 'recordAiUsage' },
-    { name: 'search-chat', usage: 'meterAiUsage' },
-    { name: 'text-improve', usage: 'meterAiUsage' },
-    { name: 'translate', usage: 'meterAiUsage' }
+    { name: 'chat', usage: 'recordAiUsage', usageFile: 'chat.finalize' },
+    { name: 'search-chat', usage: 'meterAiUsage', usageFile: 'search-chat' },
+    { name: 'text-improve', usage: 'meterAiUsage', usageFile: 'text-improve' },
+    { name: 'translate', usage: 'meterAiUsage', usageFile: 'translate' }
 ] as const;
 
 function routeSource(name: string): string {
@@ -19,7 +21,7 @@ function routeSource(name: string): string {
 }
 
 describe('temporary AI access policy', () => {
-    for (const { name, usage } of routes) {
+    for (const { name, usage, usageFile } of routes) {
         it(`${name} enforces monthly quota outside middleware`, () => {
             expect(routeSource(name)).not.toMatch(/\bcreateAiQuotaMiddleware\s*\(/);
         });
@@ -27,7 +29,8 @@ describe('temporary AI access policy', () => {
         it(`${name} retains burst rate limits and usage metering`, () => {
             const source = routeSource(name);
             expect(source).toMatch(/\bcreateAiRateLimitMiddlewares\s*\(/);
-            expect(source).toContain(`${usage}(`);
+            expect(routeSource(usageFile)).toContain(`${usage}(`);
+            if (usageFile !== name) expect(source).toContain(`from './${usageFile}.js'`);
         });
     }
 });

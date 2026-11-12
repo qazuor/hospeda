@@ -18,18 +18,12 @@ import {
     numeric,
     pgEnum,
     pgTable,
-    smallint,
     text,
     timestamp,
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import {
-    PriceRangePgEnum,
-    VenueDressCodePgEnum,
-    VenueEntryKindPgEnum,
-    VenueTypePgEnum
-} from '../enums.dbschema.ts';
+import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { quotedList } from '../vertical/quoted-list.ts';
@@ -105,12 +99,6 @@ export const venues = pgTable(
          * catalog rows it replaced; those columns are dropped in release N+1.
          */
         policies: jsonb('policies').$type<VenuePolicies>(),
-        /** LEGACY (HOS-2060): copied into `policies.minAge`; dropped in release N+1. No code may read or write it. */
-        legacyMinAge: smallint('min_age'),
-        /** LEGACY (HOS-2060): copied into `policies.dressCode`; dropped in release N+1. No code may read or write it. */
-        legacyDressCode: VenueDressCodePgEnum('dress_code'),
-        /** LEGACY (HOS-2060): copied into `policies.dressCodeNote`; dropped in release N+1. No code may read or write it. */
-        legacyDressCodeNoteI18n: jsonb('dress_code_note_i18n').$type<I18nText>(),
         /**
          * Optional URL to the venue's online menu — the link the owner already
          * publishes somewhere else.

@@ -1,37 +1,69 @@
 /* ExternalReviews.module.css
  * Styles for the Google review snippets island.
  * Uses design tokens only — no Tailwind utility classes (web-app convention).
+ *
+ * Layout:
+ *   < 640px  — horizontal scroll-snap carousel (reviews are cards, one at a time)
+ *   640px+   — two-column grid
+ *   900px+   — three-column grid
  */
 
 .container {
     display: flex;
     flex-direction: column;
     gap: var(--space-4, 16px);
+    min-width: 0;
 }
 
 .list {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
     gap: var(--space-3, 12px);
-}
-
-@media (min-width: 640px) {
-    .list {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    min-width: 0;
 }
 
 .card {
+    flex: 0 0 85%;
+    scroll-snap-align: start;
+    min-width: 0;
     padding: var(--space-4, 16px);
     border: 1px solid var(--border, oklch(0.9 0 0));
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-md, 10px);
     background-color: var(--surface-warm, var(--card));
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
+}
+
+@media (min-width: 640px) {
+    .list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow-x: visible;
+        scroll-snap-type: none;
+    }
+
+    .card {
+        flex: none;
+    }
+}
+
+@media (min-width: 900px) {
+    .list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .list {
+        scroll-behavior: auto;
+    }
 }
 
 .cardHeader {
@@ -102,12 +134,18 @@
     color: var(--core-muted-foreground);
 }
 
+.subline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+}
+
 .starRating {
     display: flex;
     align-items: center;
     gap: 1px;
     flex-shrink: 0;
-    margin-left: auto;
 }
 
 .text {
@@ -116,17 +154,47 @@
     line-height: 1.6;
     color: var(--core-foreground);
     margin: 0;
+    overflow-wrap: anywhere;
 }
 
-.sourceLabel {
+.textClamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    overflow: hidden;
+}
+
+.readToggle {
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
     font-family: var(--font-sans);
-    font-size: 0.7rem;
-    color: var(--core-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    cursor: pointer;
 }
 
-/* Google attribution — ToS requirement */
+.readToggle:hover {
+    text-decoration: underline;
+}
+
+.readToggle:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-button, 8px);
+}
+
+.languageLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    font-style: italic;
+}
+
+/* Google attribution — ToS requirement. */
 .attribution {
     display: flex;
     justify-content: flex-end;
@@ -142,6 +210,12 @@
     color: var(--core-muted-foreground);
     text-decoration: none;
     transition: color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .attributionLink {
+        transition: none;
+    }
 }
 
 .attributionLink:hover {

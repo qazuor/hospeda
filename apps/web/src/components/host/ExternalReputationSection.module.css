@@ -28,6 +28,18 @@
     margin-bottom: var(--space-4, 1.5rem);
 }
 
+/* One-time automatic-enable notice */
+.autoEnabledNotice {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+    background-color: oklch(0.97 0.03 145);
+    border-left: 3px solid oklch(0.55 0.12 145);
+    padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+    border-radius: var(--radius-sm, 6px);
+    margin-bottom: var(--space-3, 1rem);
+}
+
 /* Master toggle row */
 .masterToggleRow {
     display: flex;

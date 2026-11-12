@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+    ACCOMMODATION_AI_QUESTIONS_SECTION,
+    ACCOMMODATION_EDITOR_REGISTRY,
     ACCOMMODATION_EDITOR_SECTIONS,
     buildEditorHubUrl,
     buildEditorSectionUrl,
@@ -240,14 +242,14 @@ describe('getVisibleEditorSections', () => {
     it('should include translations when translation data exists', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
-        expect(visible).toHaveLength(11);
+        expect(visible).toHaveLength(12);
         expect(visible.map((section) => section.id)).toContain('translations');
     });
 
     it('should drop translations when there is no translation data', () => {
         const visible = getVisibleEditorSections({ hasTranslations: false });
 
-        expect(visible).toHaveLength(10);
+        expect(visible).toHaveLength(11);
         expect(visible.map((section) => section.id)).not.toContain('translations');
     });
 
@@ -255,7 +257,31 @@ describe('getVisibleEditorSections', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
         expect(visible.map((section) => section.id)).toEqual(
-            ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)
+            ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => section.id)
         );
+    });
+});
+
+describe('HOS-2101 — the AI questions section', () => {
+    it('should join the registry right after the FAQs, but not the frozen catalog list', () => {
+        const ids = ACCOMMODATION_EDITOR_REGISTRY.sections.map((section) => section.id);
+
+        expect(ids.indexOf('aiQuestions')).toBe(ids.indexOf('faqs') + 1);
+        expect(ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)).not.toContain(
+            'aiQuestions'
+        );
+        expect(ACCOMMODATION_EDITOR_REGISTRY.sections).toHaveLength(
+            ACCOMMODATION_EDITOR_SECTIONS.length + 1
+        );
+    });
+
+    it('should be a content page at preguntas-ia, always visible', () => {
+        expect(ACCOMMODATION_AI_QUESTIONS_SECTION).toEqual({
+            id: 'aiQuestions',
+            slug: 'preguntas-ia',
+            group: 'content',
+            labelKey: 'host.properties.editor.section.aiQuestions'
+        });
+        expect(findEditorSectionBySlug({ slug: 'preguntas-ia' })?.id).toBe('aiQuestions');
     });
 });

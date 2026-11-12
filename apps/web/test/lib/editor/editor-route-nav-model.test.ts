@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import {
     ACCOMMODATION_EDITOR_REGISTRY,
-    ACCOMMODATION_EDITOR_SECTIONS,
     buildAccommodationEditorVisibility
 } from '@/lib/editor/accommodation-editor-sections';
 import {
@@ -47,7 +46,7 @@ describe('buildEditorNavModel — structure', () => {
     });
 
     it('should render one link per visible section', () => {
-        expect(allLinks(build())).toHaveLength(ACCOMMODATION_EDITOR_SECTIONS.length);
+        expect(allLinks(build())).toHaveLength(ACCOMMODATION_EDITOR_REGISTRY.sections.length);
     });
 
     it('should give every group a heading key', () => {
@@ -99,7 +98,7 @@ describe('buildEditorNavModel — active state (AC-9)', () => {
     });
 
     it('should never mark more than one link active, for any section', () => {
-        for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
+        for (const section of ACCOMMODATION_EDITOR_REGISTRY.sections) {
             const groups = build({ currentSectionId: section.id });
 
             expect(countActiveLinks({ groups }), `section ${section.id}`).toBe(1);
@@ -116,7 +115,7 @@ describe('buildEditorNavModel — conditional sections', () => {
 
     it('should keep every other link when translations are absent', () => {
         expect(allLinks(build({ hasTranslations: false }))).toHaveLength(
-            ACCOMMODATION_EDITOR_SECTIONS.length - 1
+            ACCOMMODATION_EDITOR_REGISTRY.sections.length - 1
         );
     });
 

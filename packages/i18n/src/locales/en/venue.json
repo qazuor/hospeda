@@ -120,6 +120,11 @@
                 "no_restrictions": "No dress code"
             },
             "minAgeLabel": "Minimum age",
+            "minAgeScope": {
+                "allDay": "Applies all day",
+                "fromTime": "Applies from {{time}} until closing",
+                "area": "Applies only to: {{area}}"
+            },
             "legalAge": "Sale of alcoholic beverages to persons under 18 is prohibited (Argentine Law 24.788)."
         }
     },

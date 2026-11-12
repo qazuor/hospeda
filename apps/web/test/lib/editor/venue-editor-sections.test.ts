@@ -141,3 +141,18 @@ describe('buildVenueEditorRegistry: paths', () => {
         );
     });
 });
+
+describe('HOS-2101 — the AI questions page', () => {
+    it('should close the list as a content page on both verticals', () => {
+        for (const vertical of ['venue', 'experience'] as const) {
+            const sections = buildListingEditorSections({ vertical, sectionStates });
+
+            expect(sections.at(-1)).toEqual({
+                id: 'aiQuestions',
+                slug: 'preguntas-ia',
+                group: 'content',
+                labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+            });
+        }
+    });
+});

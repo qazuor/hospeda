@@ -266,7 +266,7 @@ export async function fetchLatestEvents({
 }): Promise<FeedFetchResult<EventFeedItem>> {
     // HOS-560: same two defects as the posts feed — the events feed was empty in
     // production too, which the original report had not measured. `status` makes
-    // the endpoint answer 400 (`INVALID_PAGINATION_PARAMS`) and the payload key
+    // the endpoint answer 400 (`VALIDATION_ERROR`, unknown query param) and the payload key
     // is `items`.
     const searchParams = new URLSearchParams({
         page: '1',

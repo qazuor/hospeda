@@ -100,7 +100,8 @@
                 "menu": "Carta",
                 "dailySpecials": "Menú del día",
                 "venueEvents": "Eventos",
-                "nightInfo": "Info para salir"
+                "nightInfo": "Info para salir",
+                "aiQuestions": "Preguntas a la IA"
             },
             "sections": {
                 "type": "Categoría",
@@ -306,7 +307,17 @@
                 "priceUpdatedAt": "Actualizado {{month}}",
                 "localeEs": "Español",
                 "localeEn": "Inglés",
-                "localePt": "Portugués"
+                "localePt": "Portugués",
+                "minAgeScopeLabel": "Alcance de la edad mínima",
+                "minAgeScopeOption": {
+                    "all_day": "Rige todo el día",
+                    "from_time": "Rige desde una hora",
+                    "area": "Rige solo en un sector o actividad"
+                },
+                "minAgeScopeFromLabel": "Rige desde las",
+                "minAgeScopeFromHint": "Rige desde esa hora hasta el cierre, incluida la madrugada después de la medianoche. Solo las horas del mismo día antes de esa hora quedan afuera.",
+                "minAgeScopeAreaLabel": "Sector o actividad, por ejemplo «pista» o «show» (es/en/pt)",
+                "minAgeScopeHint": "Se muestra junto a la edad mínima en tu ficha y el asistente lo usa para responder."
             },
             "errorPage": {
                 "title": "No pudimos cargar el editor",

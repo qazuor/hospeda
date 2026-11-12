@@ -25,7 +25,7 @@ import {
     PriceCurrencyEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationOccupancy } from '../../schemas/accommodation/accommodationOccupancy.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
@@ -299,6 +299,15 @@ export function buildAccommodationSearchConditions({
     if (params.maxRating !== undefined) {
         clauses.push(lte(accommodations.averageRating, params.maxRating));
     }
+    // HOS-2017: only an explicit `false` filters. A listing "has a price" when
+    // the JSONB base price is present; "has reviews" when `reviews_count > 0`
+    // (NOT NULL, default 0, kept in sync with the review aggregates).
+    if (params.includeNoPrice === false) {
+        clauses.push(sql`(${accommodations.price}->>'price') IS NOT NULL`);
+    }
+    if (params.includeNoReviews === false) {
+        clauses.push(gt(accommodations.reviewsCount, 0));
+    }
     if (params.amenities && params.amenities.length > 0) {
         // Intersection semantics: accommodation must have ALL provided amenity IDs.
         clauses.push(buildAmenityIntersectionClause(params.amenities));
@@ -463,6 +472,8 @@ export const ACCOMMODATION_SEARCH_FILTER_HANDLING: Readonly<
     maxBathrooms: { kind: 'builder', sample: { maxBathrooms: 1 } },
     minRating: { kind: 'builder', sample: { minRating: 3 } },
     maxRating: { kind: 'builder', sample: { maxRating: 3 } },
+    includeNoPrice: { kind: 'builder', sample: { includeNoPrice: false } },
+    includeNoReviews: { kind: 'builder', sample: { includeNoReviews: false } },
     amenities: { kind: 'builder', sample: { amenities: ['11111111-1111-4111-8111-111111111111'] } },
     features: { kind: 'builder', sample: { features: ['11111111-1111-4111-8111-111111111111'] } },
     anyAmenityGroups: {

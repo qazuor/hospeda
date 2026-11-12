@@ -25,6 +25,8 @@
 
 import { createRouter } from '../../../utils/create-app';
 import { protectedAiChatRoute } from './chat';
+import { createListingQuestionDismissRoute } from './listing-question-dismiss';
+import { protectedAiListingQuestionsRoute } from './listing-questions';
 import { protectedAiSearchChatRoute } from './search-chat';
 import { protectedAiTextImproveRoute } from './text-improve';
 import { protectedAiTranslateRoute } from './translate';
@@ -39,6 +41,17 @@ app.route('/text-improve', protectedAiTextImproveRoute);
 
 // SPEC-200 — chat AI (POST /chat)
 app.route('/chat', protectedAiChatRoute);
+
+// HOS-2101 — host panel: AI chat questions about one owned listing (GET /listing-questions)
+app.route('/listing-questions', protectedAiListingQuestionsRoute);
+app.route(
+    '/listing-questions/:messageId/dismiss',
+    createListingQuestionDismissRoute({ dismissed: true })
+);
+app.route(
+    '/listing-questions/:messageId/undismiss',
+    createListingQuestionDismissRoute({ dismissed: false })
+);
 
 // SPEC-212 — conversational search AI (POST /search-chat)
 app.route('/search-chat', protectedAiSearchChatRoute);

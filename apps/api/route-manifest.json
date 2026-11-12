@@ -2430,6 +2430,18 @@
             "path": "/api/v1/protected/ai/chat"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/ai/listing-questions"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/ai/listing-questions/:messageId/dismiss"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/ai/listing-questions/:messageId/undismiss"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/ai/search-chat"
         },

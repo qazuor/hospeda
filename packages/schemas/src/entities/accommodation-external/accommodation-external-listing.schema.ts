@@ -31,7 +31,13 @@ export const ExternalReviewSnippetSchema = z.object({
     /** URL to the reviewer's profile photo. */
     profilePhoto: z.string().url().nullish(),
     /** Human-readable relative time string (e.g. "hace 2 semanas"). */
-    relativeTime: z.string().nullish()
+    relativeTime: z.string().nullish(),
+    /**
+     * BCP-47 language of `text`, as reported by the platform. The text is
+     * always the author's original wording, never a machine translation.
+     * Nullish so rows stored before this field existed remain valid.
+     */
+    languageCode: z.string().min(2).max(16).nullish()
 });
 export type ExternalReviewSnippet = z.infer<typeof ExternalReviewSnippetSchema>;
 
@@ -170,7 +176,23 @@ export const AccommodationExternalReputationMetaSchema = z.object({
      * Most recent `aggregate_fetched_at` across all platforms for this
      * accommodation, or `null` when nothing has ever been fetched.
      */
-    aggregateFetchedAt: z.coerce.date().nullable()
+    aggregateFetchedAt: z.coerce.date().nullable(),
+    /**
+     * `accommodations.external_reputation_auto_enabled_at` — set ONLY by the
+     * one-time automatic enable, `null` when the owner enabled the section
+     * themselves (or it has never been enabled).
+     *
+     * The editor uses it together with {@link toggleDecidedAt} to show a
+     * one-time notice explaining the section was turned on automatically.
+     */
+    autoEnabledAt: z.coerce.date().nullable().optional(),
+    /**
+     * `accommodations.external_reputation_toggle_decided_at` — the owner's last
+     * explicit master-toggle decision, `null` while the automation may still
+     * act. When it equals {@link autoEnabledAt}, the owner has not touched the
+     * toggle since the automatic enable and the notice is still relevant.
+     */
+    toggleDecidedAt: z.coerce.date().nullable().optional()
 });
 export type AccommodationExternalReputationMeta = z.infer<
     typeof AccommodationExternalReputationMetaSchema

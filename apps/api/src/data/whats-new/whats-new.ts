@@ -152,6 +152,128 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4279, #4283
+    {
+        id: '2026-11-11-external-reputation-on-listings',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fichas de alojamiento muestran sus reseñas de Google',
+            en: 'Stay pages show their Google reviews',
+            pt: 'As páginas de hospedagem mostram suas avaliações do Google'
+        },
+        body: {
+            es: 'En la ficha de un alojamiento ves su calificación en Google y algunas reseñas tal como las escribieron los huéspedes, en su idioma original, con un link para leer todas. Si el alojamiento también está en otras plataformas, como Airbnb, aparece el acceso directo.',
+            en: "On a stay's page you see its Google rating and a few reviews exactly as guests wrote them, in their original language, with a link to read them all. If the stay is also on other platforms, such as Airbnb, a direct link shows up too.",
+            pt: 'Na página de uma hospedagem você vê a nota no Google e algumas avaliações exatamente como os hóspedes escreveram, no idioma original, com um link para ler todas. Se a hospedagem também estiver em outras plataformas, como o Airbnb, aparece o link direto.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4284
+    {
+        id: '2026-11-11-external-reputation-auto-enable',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tus reseñas de Google se publican solas en cuanto cargan',
+            en: 'Your Google reviews go live on their own as soon as they load',
+            pt: 'Suas avaliações do Google são publicadas sozinhas assim que carregam'
+        },
+        body: {
+            es: 'Cuando agregás tu ficha de Google en **Reputación externa** y trae calificación o reseñas, la sección se activa sola en tu página pública. Si la apagás o la prendés a mano, respetamos tu elección y no la volvemos a tocar.',
+            en: 'When you add your Google listing under **External reputation** and it brings a rating or reviews, the section turns on by itself on your public page. If you switch it off or on yourself, we respect your choice and never touch it again.',
+            pt: 'Quando você adiciona sua página do Google em **Reputação externa** e ela traz nota ou avaliações, a seção é ativada sozinha na sua página pública. Se você desligar ou ligar manualmente, respeitamos sua escolha e não mexemos mais.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4287
+    {
+        id: '2026-11-11-account-emails-plain-text',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los mails de tu cuenta llegan mejor a tu bandeja',
+            en: 'Your account emails reach your inbox more reliably',
+            pt: 'Os e-mails da sua conta chegam melhor à sua caixa de entrada'
+        },
+        body: {
+            es: 'Los mails para restablecer la contraseña, verificar tu cuenta y avisarte de mensajes nuevos ahora incluyen también una versión en texto. Así es menos probable que terminen en spam, y se leen bien en cualquier programa de correo.',
+            en: 'Emails to reset your password, verify your account and tell you about new messages now also include a plain-text version. That makes them less likely to land in spam, and they read well in any email app.',
+            pt: 'Os e-mails para redefinir a senha, verificar sua conta e avisar sobre novas mensagens agora incluem também uma versão em texto. Assim é menos provável que caiam no spam, e eles ficam legíveis em qualquer programa de e-mail.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4288
+    {
+        id: '2026-11-11-listing-only-priced-filter',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El filtro de alojamientos con precio definido ya funciona',
+            en: 'The filter for stays with a set price now works',
+            pt: 'O filtro de hospedagens com preço definido agora funciona'
+        },
+        body: {
+            es: 'Si destildás «Incluir sin precio» en el listado de alojamientos, ves solo los que tienen precio publicado, en lugar de una lista vacía. Lo mismo con «Incluir sin calificación».',
+            en: 'Untick "Include without price" on the stays listing and you see only the ones with a published price, instead of an empty list. The same goes for "Include without rating".',
+            pt: 'Se você desmarcar «Incluir sem preço» na lista de hospedagens, vê só as que têm preço publicado, em vez de uma lista vazia. O mesmo vale para «Incluir sem avaliação».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4282
+    {
+        id: '2026-11-11-listing-chat-honest-answers',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El asistente de cada ficha responde en tu idioma y no inventa',
+            en: 'Each listing assistant answers in your language and never makes things up',
+            pt: 'O assistente de cada página responde no seu idioma e não inventa'
+        },
+        body: {
+            es: 'Si preguntás en portugués o en inglés, la respuesta llega entera en ese idioma. Cuando la ficha no informa algo, como si se aceptan mascotas, el asistente te lo dice en lugar de suponerlo, y si tu grupo supera la capacidad te dice cuántos entran.',
+            en: 'Ask in Portuguese or English and the whole answer comes back in that language. When the listing does not say something, such as whether pets are allowed, the assistant tells you so instead of guessing, and if your group is too big it tells you how many people fit.',
+            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceita animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4263, #4270, #4274
+    {
+        id: '2026-11-10-venue-min-age-scope',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Indicá desde cuándo rige la edad mínima de tu local',
+            en: 'Say when your venue minimum age applies',
+            pt: 'Informe quando vale a idade mínima do seu local'
+        },
+        body: {
+            es: 'En **Info para salir** ahora elegís si la edad mínima rige **todo el día**, **desde una hora** (por ejemplo, desde la medianoche) o **solo en un sector o actividad**, como la pista o el show. Tu ficha lo muestra junto a la edad mínima y el aviso legal, para que las familias sepan cuándo pueden ir.',
+            en: 'In **Night out info** you now choose whether the minimum age applies **all day**, **from a given time** (for example, from midnight) or **only in one area or activity**, such as the dance floor or the show. Your listing shows it next to the minimum age and the legal notice, so families know when they can come.',
+            pt: 'Em **Info para sair** agora você escolhe se a idade mínima vale **o dia todo**, **a partir de um horário** (por exemplo, a partir da meia-noite) ou **só em um setor ou atividade**, como a pista ou o show. Sua página mostra isso junto da idade mínima e do aviso legal, para que as famílias saibam quando podem ir.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4266, #4269, #4294
+    {
+        id: '2026-11-10-ai-questions-tab',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mirá qué le preguntan los turistas al asistente de tu ficha',
+            en: 'See what travellers ask your listing assistant',
+            pt: 'Veja o que os turistas perguntam ao assistente da sua página'
+        },
+        body: {
+            es: 'En el editor de tu ficha hay una pestaña nueva, **Preguntas a la IA**, con lo que los visitantes le preguntaron al asistente, sin datos de quién preguntó. Arriba aparecen las que **quedaron sin responder** porque el dato no estaba en tu ficha, con un botón para **agregarlas como pregunta frecuente** en un clic. Además, si en la semana quedó alguna sin responder, te llega un **resumen por mail** (lo podés desactivar desde Preferencias). Las que ya viste las podés marcar con **Ya lo vi** para que no te tapen las nuevas (se pueden recuperar con **Deshacer**), con **Ver más** llegás a las más viejas, y si el asistente había respondido, la pregunta frecuente se abre **con su respuesta ya cargada** para que solo la revises.',
+            en: "Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences). Mark the ones you have already seen with **I've seen this** so they do not bury the new ones (bring them back with **Undo**), use **View more** to reach older ones, and when the assistant had answered, the FAQ opens **with its answer already filled in** so you only need to review it.",
+            pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências). As que você já viu podem ser marcadas com **Já vi** para não esconderem as novas (dá para recuperá-las com **Desfazer**), com **Ver mais** você chega às mais antigas e, se o assistente tinha respondido, a pergunta frequente abre **com a resposta já preenchida** para você só revisar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4221
     {
         id: '2026-11-08-venue-experience-services-editor',

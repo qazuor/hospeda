@@ -15,11 +15,22 @@
  * text only with a badge) are unit-testable without rendering Astro.
  */
 
-import { LISTING_SECTIONS } from '@repo/schemas';
+import {
+    LISTING_SECTIONS,
+    type ResolvedVenueMinAgeScope,
+    resolveVenueMinAgeScope
+} from '@repo/schemas';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
 /** How a venue charges for entry (`VenueEntryKindEnum`). */
 export type VenueNightEntryKind = 'free' | 'paid' | 'varies';
+
+/**
+ * Where or when the minimum age applies (HOS-2098), with the area already
+ * resolved to the page locale. `all_day` also stands for "the owner never set
+ * a scope": that is the default of every venue saved before HOS-2098.
+ */
+export type VenueNightAgeScope = ResolvedVenueMinAgeScope;
 
 /** Closed dress-code list (`VenueDressCodeEnum`). */
 export type VenueNightDressCode = 'casual' | 'smart_casual' | 'elegant' | 'no_restrictions';
@@ -42,6 +53,11 @@ export interface VenueNightInfoData {
     readonly entryPriceUpdatedAt: string | null;
     /** Lowest age that applies to entry, or `null` when not informed. */
     readonly minAge: number | null;
+    /**
+     * Where or when {@link minAge} applies, or `null` exactly when there is no
+     * age: a scope means nothing on its own (HOS-2098).
+     */
+    readonly minAgeScope: VenueNightAgeScope | null;
     /** Dress code label source, or `null` when not informed. */
     readonly dressCode: VenueNightDressCode | null;
     /** Short localized note about the dress code, resolved to the page locale. */
@@ -62,6 +78,9 @@ const NIGHT_INFO_KEY_SEGMENTS = ['venue', 'detail', 'nightInfo'] as const;
 
 /** The fixed legal text every `minAge` badge must carry (DEC-FAC-068). */
 export const NIGHT_INFO_LEGAL_TEXT_KEY = [...NIGHT_INFO_KEY_SEGMENTS, 'legalAge'].join('.');
+
+/** Prefix of the three minimum-age scope labels (HOS-2098). */
+const NIGHT_INFO_AGE_SCOPE_KEY_PREFIX = [...NIGHT_INFO_KEY_SEGMENTS, 'minAgeScope'].join('.');
 
 /** Heading used when the section is the only one of its lines (`multiLine: false`). */
 export const NIGHT_INFO_DEFAULT_HEADING_KEY = [...NIGHT_INFO_KEY_SEGMENTS, 'heading'].join('.');
@@ -168,12 +187,19 @@ export function toVenueNightInfo({
     const entryPriceUpdatedAt =
         entryPriceFromCents === null ? null : readTimestamp(item.entryPriceUpdatedAt);
 
+    const minAge = readNumber(policies.minAge);
+
     return {
         entryKind,
         entryNote: readNote(item.entryNoteI18n, locale),
         entryPriceFromCents,
         entryPriceUpdatedAt,
-        minAge: readNumber(policies.minAge),
+        minAge,
+        // HOS-2098: the shared reader the chat context uses too, so both agree.
+        minAgeScope:
+            minAge === null
+                ? null
+                : resolveVenueMinAgeScope({ value: policies.minAgeScope, locale }),
         dressCode: readDressCode(policies.dressCode),
         dressCodeNote: readNote(policies.dressCodeNote, locale),
         multiLine: item.multiLine === true
@@ -208,6 +234,50 @@ export interface VenueAgeNotice {
     readonly badge: string;
     /** Translation key of the fixed legal text; never interpolated with the age. */
     readonly legalTextKey: string;
+    /** Translation key of the scope label shown next to the badge (HOS-2098). */
+    readonly scopeTextKey: string;
+    /** Placeholder values of {@link scopeTextKey} (`time` or `area`). */
+    readonly scopeParams: Readonly<Record<string, string>>;
+}
+
+/**
+ * Translation key and placeholder values of a scope label (HOS-2098). The API
+ * chat context resolves the SAME keys, so the ficha and the chat say the same.
+ *
+ * @param args.scope - The scope, or `null`/absent for "not set" (all day).
+ * @returns The key and its placeholder values.
+ */
+export function ageScopeLabel({ scope }: { readonly scope?: VenueNightAgeScope | null }): {
+    readonly key: string;
+    readonly params: Readonly<Record<string, string>>;
+} {
+    if (scope?.kind === 'from_time') {
+        return { key: `${NIGHT_INFO_AGE_SCOPE_KEY_PREFIX}.fromTime`, params: { time: scope.from } };
+    }
+    if (scope?.kind === 'area') {
+        return { key: `${NIGHT_INFO_AGE_SCOPE_KEY_PREFIX}.area`, params: { area: scope.area } };
+    }
+    return { key: `${NIGHT_INFO_AGE_SCOPE_KEY_PREFIX}.allDay`, params: {} };
+}
+
+/**
+ * Replaces each `{{name}}` placeholder of a translated label.
+ *
+ * @param args.text - The translated label.
+ * @param args.params - Placeholder values.
+ * @returns The label with every known placeholder filled.
+ */
+export function fillLabel({
+    text,
+    params
+}: {
+    readonly text: string;
+    readonly params: Readonly<Record<string, string>>;
+}): string {
+    return Object.entries(params).reduce(
+        (label, [name, value]) => label.split(`{{${name}}}`).join(value),
+        text
+    );
 }
 
 /**
@@ -218,12 +288,29 @@ export interface VenueAgeNotice {
  * (DEC-FAC-036). `null` means "not informed" and renders neither the badge nor
  * the notice.
  *
+ * The scope label (HOS-2098) rides with the badge and never replaces the legal
+ * text: an unset scope reads "applies all day".
+ *
  * @param args.minAge - The lowest age that applies, or `null`.
- * @returns The badge and its legal-text key, or `null` when no age is set.
+ * @param args.scope - Where or when it applies; `null`/absent means all day.
+ * @returns The badge, its scope label and its legal-text key, or `null` when
+ *   no age is set.
  */
-export function ageNotice({ minAge }: { readonly minAge: number | null }): VenueAgeNotice | null {
+export function ageNotice({
+    minAge,
+    scope
+}: {
+    readonly minAge: number | null;
+    readonly scope?: VenueNightAgeScope | null;
+}): VenueAgeNotice | null {
     if (minAge === null || !Number.isFinite(minAge)) return null;
-    return { badge: `+${minAge}`, legalTextKey: NIGHT_INFO_LEGAL_TEXT_KEY };
+    const label = ageScopeLabel({ scope });
+    return {
+        badge: `+${minAge}`,
+        legalTextKey: NIGHT_INFO_LEGAL_TEXT_KEY,
+        scopeTextKey: label.key,
+        scopeParams: label.params
+    };
 }
 
 /**

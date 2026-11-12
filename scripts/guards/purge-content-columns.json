@@ -1,7 +1,7 @@
 {
     "systemColumns": {
         "counts": {
-            "accommodations": 27,
+            "accommodations": 29,
             "venues": 22,
             "experiences": 22
         },
@@ -33,6 +33,14 @@
             {
                 "key": "accommodations.show_external_reputation",
                 "reason": "Owner display preference for external reputation blocks; a setting that survives the purge, not one of the content categories (NUCLEO/08 §1.2)."
+            },
+            {
+                "key": "accommodations.external_reputation_toggle_decided_at",
+                "reason": "Audit timestamp of the owner's last master-toggle decision; system, survives the purge."
+            },
+            {
+                "key": "accommodations.external_reputation_auto_enabled_at",
+                "reason": "Audit timestamp of the one-time automatic enable; system, survives the purge."
             },
             {
                 "key": "accommodations.is_verified",
@@ -322,28 +330,7 @@
         ]
     },
     "purgeOnlyLegacyColumns": {
-        "count": 5,
-        "rows": [
-            {
-                "key": "venues.min_age",
-                "reason": "Legacy column copied into `policies.minAge` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
-            },
-            {
-                "key": "venues.dress_code",
-                "reason": "Legacy column copied into `policies.dressCode` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
-            },
-            {
-                "key": "venues.dress_code_note_i18n",
-                "reason": "Legacy column copied into `policies.dressCodeNote` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
-            },
-            {
-                "key": "experiences.cancellation_policy",
-                "reason": "Legacy column copied into `policies.cancellation` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
-            },
-            {
-                "key": "experiences.accepts_private_groups",
-                "reason": "Legacy column copied into `policies.privateGroups` by migration 0194 (HOS-2060). No code reads or writes it; the purge still blanks it so no owner content survives, and release N+1 drops it."
-            }
-        ]
+        "count": 0,
+        "rows": []
     }
 }

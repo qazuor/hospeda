@@ -1380,6 +1380,41 @@
       "when": 1794264300530,
       "tag": "0196_hos_2095_ai_usage_consumer_user",
       "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1794274812894,
+      "tag": "0197_hos_2060_drop_legacy_policy_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1794278250317,
+      "tag": "0198_hos_2101_ai_listing_questions",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1794349762665,
+      "tag": "0199_external_listings_partial_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 200,
+      "version": "7",
+      "when": 1794366737487,
+      "tag": "0200_accommodation_reputation_auto_enable",
+      "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1794420374704,
+      "tag": "0201_mean_madame_masque",
+      "breakpoints": true
     }
   ]
 }

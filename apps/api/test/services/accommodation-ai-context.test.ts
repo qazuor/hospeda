@@ -661,6 +661,28 @@ describe('buildMarkdownContext', () => {
         expect(ctx).not.toContain('### Normas de la casa');
     });
 
+    it('HOS-2102: states pets are not informed when no pet signal reaches the context', () => {
+        // Arrange: no policies, no pet slug, no pet word in any rendered text.
+        const ctx = buildMarkdownContext(
+            makeAccommodation({ policies: null }) as never,
+            [],
+            [{ name: 'WiFi' }],
+            [{ name: 'river_front' }],
+            []
+        );
+
+        // Act + Assert
+        expect(ctx).toContain('**Mascotas**: no figura información en la ficha');
+    });
+
+    it('HOS-2102: omits the not-informed line when a pet signal exists', () => {
+        // Arrange: the FAQ mentions pets, so the listing DOES inform it.
+        const ctx = buildMarkdownContext(makeAccommodation() as never, makeFaqs(), [], []);
+
+        // Act + Assert
+        expect(ctx).not.toContain('**Mascotas**: no figura información en la ficha');
+    });
+
     it('should omit Capacidad section when extraInfo is null', () => {
         const ctx = buildMarkdownContext(
             makeAccommodation({ extraInfo: null }) as never,
