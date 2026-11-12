@@ -20,7 +20,7 @@ type JsonObject = { [key: string]: JsonValue };
 type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
 
 // ---------------------------------------------------------------------------
-// Missing keys (128 total — exact list from --verify output)
+// Missing keys (115 total — exact list from --verify output)
 // ---------------------------------------------------------------------------
 
 /**
@@ -598,88 +598,6 @@ const MISSING_KEYS: Array<{ path: string; es: string; en: string; pt: string }> 
         es: 'El ID del usuario no es válido',
         en: 'User ID is not valid',
         pt: 'O ID do usuário não é válido'
-    },
-
-    // -----------------------------------------------------------------------
-    // billing.startPaid
-    // -----------------------------------------------------------------------
-    {
-        path: 'billing.startPaid.billingInterval.invalid',
-        es: 'El intervalo de facturación no es válido',
-        en: 'Billing interval is not valid',
-        pt: 'O intervalo de faturamento não é válido'
-    },
-    {
-        path: 'billing.startPaid.checkoutUrl.invalid',
-        es: 'La URL de pago no es válida',
-        en: 'Checkout URL is not valid',
-        pt: 'A URL de pagamento não é válida'
-    },
-    {
-        path: 'billing.startPaid.checkoutUrl.invalidType',
-        es: 'La URL de pago tiene un tipo de dato inválido',
-        en: 'Checkout URL has an invalid data type',
-        pt: 'A URL de pagamento tem um tipo de dado inválido'
-    },
-    {
-        path: 'billing.startPaid.expiresAt.invalid',
-        es: 'La fecha de expiración no es válida',
-        en: 'Expiry date is not valid',
-        pt: 'A data de expiração não é válida'
-    },
-    {
-        path: 'billing.startPaid.expiresAt.invalidType',
-        es: 'La fecha de expiración tiene un tipo de dato inválido',
-        en: 'Expiry date has an invalid data type',
-        pt: 'A data de expiração tem um tipo de dado inválido'
-    },
-    {
-        path: 'billing.startPaid.localSubscriptionId.invalid',
-        es: 'El ID de suscripción local no es válido',
-        en: 'Local subscription ID is not valid',
-        pt: 'O ID de assinatura local não é válido'
-    },
-    {
-        path: 'billing.startPaid.localSubscriptionId.invalidType',
-        es: 'El ID de suscripción local tiene un tipo de dato inválido',
-        en: 'Local subscription ID has an invalid data type',
-        pt: 'O ID de assinatura local tem um tipo de dado inválido'
-    },
-    {
-        path: 'billing.startPaid.planSlug.invalidType',
-        es: 'El slug del plan tiene un tipo de dato inválido',
-        en: 'Plan slug has an invalid data type',
-        pt: 'O slug do plano tem um tipo de dado inválido'
-    },
-    {
-        path: 'billing.startPaid.planSlug.max',
-        es: 'El slug del plan no puede superar los {{max}} caracteres',
-        en: 'Plan slug cannot exceed {{max}} characters',
-        pt: 'O slug do plano não pode ultrapassar {{max}} caracteres'
-    },
-    {
-        path: 'billing.startPaid.planSlug.min',
-        es: 'El slug del plan debe tener al menos {{min}} caracteres',
-        en: 'Plan slug must be at least {{min}} characters',
-        pt: 'O slug do plano deve ter pelo menos {{min}} caracteres'
-    },
-    {
-        path: 'billing.startPaid.promoCode.invalidType',
-        es: 'El código promocional tiene un tipo de dato inválido',
-        en: 'Promo code has an invalid data type',
-        pt: 'O código promocional tem um tipo de dado inválido'
-    },
-    {
-        path: 'billing.startPaid.promoCode.max',
-        es: 'El código promocional no puede superar los {{max}} caracteres',
-        en: 'Promo code cannot exceed {{max}} characters',
-        pt: 'O código promocional não pode ultrapassar {{max}} caracteres'
-    },
-    {
-        path: 'billing.startPaid.promoCode.min',
-        es: 'El código promocional debe tener al menos {{min}} caracteres',
-        en: 'Promo code must be at least {{min}} characters',
-        pt: 'O código promocional deve ter pelo menos {{min}} caracteres'
     },
 
     // -----------------------------------------------------------------------
