@@ -204,3 +204,20 @@ describe('TEST:B4:10 GUARD:G5 a turn-off notified by its caller (via caller, not
         );
     });
 });
+
+describe('HOS-2091 turn-on notified by its caller', () => {
+    it('the repository inventory notifies writeCutoverTrials through runStep3', () => {
+        const inventory = JSON.parse(
+            readFileSync(
+                path.join(
+                    path.dirname(fileURLToPath(import.meta.url)),
+                    '../guards/source-off-writers.json'
+                ),
+                'utf8'
+            )
+        ) as { symbol: string; via: string | null; notifiedBy?: string }[];
+        const entry = inventory.find((item) => item.symbol === 'writeCutoverTrials');
+        expect(entry?.via).toBe('caller');
+        expect(entry?.notifiedBy).toBe('apps/api/src/services/cutover-v6/step-3.service.ts');
+    });
+});
