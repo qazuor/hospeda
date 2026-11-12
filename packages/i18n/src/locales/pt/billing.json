@@ -286,6 +286,7 @@
                 "unknownOnActivation": "Se você tem uma assinatura de Turista VIP e este plano inclui esses benefícios, essa assinatura é cancelada quando o plano for ativado, sem reembolso."
             },
             "retry": "Tentar novamente",
+            "attemptPlan": "Plano que você tentou assinar: {{plan}}",
             "vertical": {
                 "accommodation": "hospedagem",
                 "experience": "experiências",
