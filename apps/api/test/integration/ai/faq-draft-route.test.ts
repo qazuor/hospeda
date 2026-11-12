@@ -4,18 +4,8 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration-tests-32chr';
 
 import { getMonthlyCallCount, invalidateConfigCache } from '@repo/ai-core';
-import {
-    aiConversations,
-    aiMessages,
-    aiSettings,
-    aiUsage,
-    eq,
-    getDb,
-    planVersionLimits,
-    planVersions,
-    trials
-} from '@repo/db';
-import { RoleEnum } from '@repo/schemas';
+import { aiConversations, aiMessages, aiSettings, aiUsage, eq, getDb, trials } from '@repo/db';
+import { RoleEnum, TrialStatusEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -236,45 +226,14 @@ describe('HOS-2105 FAQ draft route (real DB)', () => {
         expect(malformed.status).toBe(400);
     });
 
-    it('returns the plan quota error when the owner has a zero FAQ draft limit', async () => {
-        const db = getDb();
-        const [trial] = await db
-            .select({ limitsVersionId: trials.floorLimitsVersionId })
-            .from(trials)
-            .where(eq(trials.userId, ownerId))
-            .limit(1);
-        if (!trial?.limitsVersionId)
-            throw new Error('seedOwnedAccommodation did not create an owner trial limit version');
-        const [floor] = await db
-            .select({ planId: planVersions.planId, vertical: planVersions.vertical })
-            .from(planVersions)
-            .where(eq(planVersions.id, trial.limitsVersionId))
-            .limit(1);
-        if (!floor) throw new Error('Trial floor limit version was not found');
-        const limitsVersionId = await db.transaction(async (tx) => {
-            const [version] = await tx
-                .insert(planVersions)
-                .values({
-                    planId: floor.planId,
-                    vertical: floor.vertical,
-                    rank: 1,
-                    sellable: false,
-                    current: false,
-                    trialDays: 0,
-                    allowsPause: false
-                })
-                .returning({ id: planVersions.id });
-            if (!version) throw new Error('Could not create FAQ limit version');
-            await tx.insert(planVersionLimits).values({
-                planVersionId: version.id,
-                key: 'max_ai_faq_draft_per_month',
-                value: 0
-            });
-            return version.id;
-        });
-        await db
+    it('refuses with ENTITLEMENT_REQUIRED when the owner plan grants no FAQ drafts', async () => {
+        // An active trial ratchets limits to the better of the current catalog and its
+        // floor, so lowering the floor cannot produce a zero. An expired trial leaves
+        // the owner on the floor plan, whose zero limit means the entitlement is absent,
+        // so the entitlement step refuses before the limit step runs.
+        await getDb()
             .update(trials)
-            .set({ floorLimitsVersionId: limitsVersionId })
+            .set({ status: TrialStatusEnum.TRIAL_EXPIRED })
             .where(eq(trials.userId, ownerId));
 
         const response = await app.request(`${BASE}/${unansweredId}/faq-draft`, {
@@ -283,6 +242,6 @@ describe('HOS-2105 FAQ draft route (real DB)', () => {
         });
 
         expect(response.status).toBe(403);
-        expect((await response.json()).error.code).toBe('LIMIT_REACHED');
+        expect((await response.json()).error.code).toBe('ENTITLEMENT_REQUIRED');
     });
 });
