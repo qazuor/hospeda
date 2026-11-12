@@ -332,6 +332,8 @@
                 "youtube": "YouTube",
                 "minNights": "Mínimo de noites",
                 "minNightsHint": "A quantidade mínima de noites que um hóspede deve reservar. Aparece na página pública.",
+                "maxNights": "Máximo de noites",
+                "maxNightsHint": "Opcional. A quantidade máxima de noites por reserva; não pode ser menor que o mínimo.",
                 "street": "Rua",
                 "number": "Número",
                 "floor": "Andar",
@@ -363,6 +365,12 @@
                 "descriptionTooLong": "A descrição não pode ter mais de {{max}} caracteres",
                 "descriptionTooShort": "A descrição deve ter pelo menos {{min}} caracteres, ou deixe vazia",
                 "dropOrClick": "Arraste uma imagem ou clique para selecionar",
+                "dragCancel": "Reordenação cancelada. A foto {{index}} voltou ao seu lugar.",
+                "dragEnd": "Você soltou a foto {{index}} na posição {{position}} de {{total}}.",
+                "dragHandleAria": "Arrastar a foto {{index}} para mudar a ordem",
+                "dragInstructions": "Para mudar a ordem, pressione espaço ou enter para pegar a foto, use as setas para movê-la e pressione espaço ou enter de novo para soltá-la. Pressione escape para cancelar.",
+                "dragOver": "A foto {{index}} está na posição {{position}} de {{total}}.",
+                "dragStart": "Você pegou a foto {{index}}. Ela está na posição {{position}} de {{total}}.",
                 "editDetailsAria": "Editar textos da foto {{index}}",
                 "editDetailsLabel": "Editar textos",
                 "editFeaturedDetailsAria": "Editar textos da capa",
@@ -736,7 +744,12 @@
                 "dismissedError": "Não foi possível descartar a pergunta.",
                 "undoError": "Não foi possível restaurar a pergunta.",
                 "viewMore": "Ver mais",
-                "faqAnswerHelp": "Não há uma resposta confirmada. Preencha com as informações do seu anúncio."
+                "faqAnswerHelp": "Não há uma resposta confirmada. Preencha com as informações do seu anúncio.",
+                "suggestAiAnswer": "Sugerir resposta com IA",
+                "aiDraftLoading": "Gerando uma sugestão…",
+                "aiDraftDisclaimer": "Este é um rascunho editável. Confira as informações do anúncio antes de salvar.",
+                "aiDraftError": "Não foi possível gerar a sugestão. Tente novamente.",
+                "aiDraftNotEligible": "O assistente já respondeu a esta pergunta."
             }
         },
         "empty": {

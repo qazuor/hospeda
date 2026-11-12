@@ -5195,6 +5195,30 @@
         },
         "maxNights": {
             "belowMinNights": "El máximo de noches no puede ser menor que el mínimo"
+        },
+        "deposit": {
+            "required": {
+                "invalid": "Indicá si pedís seña"
+            },
+            "percentage": {
+                "integer": "El porcentaje de la seña debe ser un número entero",
+                "min": "El porcentaje de la seña debe ser al menos 1",
+                "max": "El porcentaje de la seña no puede superar 100",
+                "requiresDeposit": "El porcentaje solo aplica si pedís seña"
+            }
+        },
+        "spokenLanguages": {
+            "invalid": "El idioma no es válido",
+            "invalidType": "Los idiomas deben ser una lista",
+            "duplicate": "Cada idioma puede figurar una sola vez"
+        },
+        "eventsDetails": {
+            "maxGuests": {
+                "integer": "El máximo de invitados debe ser un número entero",
+                "min": "El máximo de invitados debe ser al menos 1",
+                "max": "El máximo de invitados no puede superar 1000"
+            },
+            "requiresEventsAllowed": "Los detalles de eventos solo aplican si se permiten eventos"
         }
     },
     "partnerApplication": {

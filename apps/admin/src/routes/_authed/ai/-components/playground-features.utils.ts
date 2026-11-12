@@ -33,7 +33,8 @@ export const PLAYGROUND_UNSUPPORTED_REASON: Readonly<Partial<Record<AiFeatureId,
     support: 'sin endpoint',
     translate: 'usá su propia página',
     accommodation_import: 'usá importar por URL',
-    post_generate: 'usá generar post'
+    post_generate: 'usá generar post',
+    faq_draft: 'requiere una pregunta de una ficha'
 };
 
 /**

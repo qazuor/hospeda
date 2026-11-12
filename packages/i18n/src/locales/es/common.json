@@ -98,6 +98,7 @@
         "CONFIGURATION_ERROR": "Hay un problema de configuración. Probá de nuevo en unos minutos.",
         "QUOTA_EXCEEDED": "Alcanzaste el límite permitido para esta acción.",
         "ENTITLEMENT_REQUIRED": "Tu plan no incluye esta función. Actualizalo para continuar.",
+        "FAQ_DRAFT_NOT_ELIGIBLE": "Esta pregunta no se puede usar para generar un borrador de respuesta.",
         "TRIAL_EXPIRED": "Se te venció la prueba gratuita. Elegí un plan para seguir publicando.",
         "GRACE_PERIOD_EXPIRED": "Tu pago está vencido. Actualizá tu medio de pago para seguir usando tu cuenta.",
         "NO_ACTIVE_SUBSCRIPTION": "Necesitás un plan activo para usar esta función.",

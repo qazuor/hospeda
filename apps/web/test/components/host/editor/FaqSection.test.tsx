@@ -39,11 +39,20 @@ import { addToast } from '@/store/toast-store';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockAdd, mockUpdate, mockRemove, mockReorder } = vi.hoisted(() => ({
+const { mockAdd, mockUpdate, mockRemove, mockReorder, mockSuggest } = vi.hoisted(() => ({
     mockAdd: vi.fn(),
     mockUpdate: vi.fn(),
     mockRemove: vi.fn(),
-    mockReorder: vi.fn()
+    mockReorder: vi.fn(),
+    mockSuggest: vi.fn()
+}));
+
+vi.mock('@/hooks/use-faq-ai-draft', () => ({
+    useFaqAiDraft: () => ({ isLoading: false, feedback: null, suggest: mockSuggest })
+}));
+
+vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
+    PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 // ---------------------------------------------------------------------------
@@ -141,6 +150,7 @@ describe('FaqSection', () => {
         mockUpdate.mockReset();
         mockRemove.mockReset();
         mockReorder.mockReset();
+        mockSuggest.mockReset();
         vi.mocked(addToast).mockClear();
     });
 
@@ -640,5 +650,22 @@ describe('HOS-2101 — prefill from the AI questions tab', () => {
         const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
         expect(question.value).toBe('¿Hay cochera?');
         expect(window.location.search).toBe('');
+    });
+
+    it('fills the response with a suggested draft and keeps the review notice visible', async () => {
+        window.history.replaceState(
+            null,
+            '',
+            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F&mensaje=22222222-2222-4222-8222-222222222222'
+        );
+        mockSuggest.mockImplementationOnce(
+            async ({ onDraft }: { onDraft: (draft: string) => void }) => onDraft('Hay cochera.')
+        );
+
+        renderSection();
+        fireEvent.click(await screen.findByText('Sugerir respuesta con IA'));
+
+        expect(await screen.findByLabelText('Respuesta')).toHaveValue('Hay cochera.');
+        expect(screen.getByText(/borrador editable/i)).toBeInTheDocument();
     });
 });

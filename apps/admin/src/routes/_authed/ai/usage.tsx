@@ -64,7 +64,8 @@ const AI_FEATURE_VALUES = [
     'support',
     'translate',
     'accommodation_import',
-    'post_generate'
+    'post_generate',
+    'faq_draft'
 ] as const;
 
 /** Well-known AI provider filter options — values are identifiers, labels via t(). */

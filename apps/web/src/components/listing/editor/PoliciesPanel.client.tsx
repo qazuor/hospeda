@@ -5,9 +5,12 @@
  *
  * It edits keys of the `policies` JSONB. Which keys it renders is the caller's
  * decision (`keys`): every vertical gets the shared base (payment methods,
- * pets, smoking, events), plus its own — accommodation adds check-in/out and
- * the maximum stay, experience the cancellation text and private groups, venue
- * the reservation policy. The night-only venue keys (`minAge`, `dressCode`,
+ * pets, smoking, events), plus its own — accommodation adds check-in/out, the
+ * booking deposit, spoken languages and the private-events details (HOS-2120,
+ * HOS-2122; see `AccommodationPolicyFields.client.tsx`), experience the
+ * cancellation text and private groups, venue the reservation policy. The
+ * accommodation's maximum stay is edited next to the minimum on the capacity
+ * page (HOS-2121), not here. The night-only venue keys (`minAge`, `dressCode`,
  * `dressCodeNote`) are NOT here: the catalog assigns them to the `nightInfo`
  * section, whose own form edits them.
  *
@@ -39,6 +42,11 @@ import {
     type ListingPolicyValues,
     paymentMethodLabel
 } from '@/lib/listing/listing-policies';
+import {
+    DepositPolicyField,
+    EventsDetailsField,
+    SpokenLanguagesField
+} from './AccommodationPolicyFields.client';
 import fieldStyles from './editor-fields.module.css';
 import styles from './PoliciesPanel.module.css';
 
@@ -75,14 +83,6 @@ function writeTriState(value: boolean | undefined): string {
     if (value === true) return 'yes';
     if (value === false) return 'no';
     return '';
-}
-
-/** Parses a positive integer input, `undefined` when empty or invalid. */
-function readNights(raw: string): number | undefined {
-    const trimmed = raw.trim();
-    if (trimmed === '') return undefined;
-    const parsed = Number(trimmed);
-    return Number.isInteger(parsed) ? parsed : undefined;
 }
 
 /** Drops empty ends of a time window; `undefined` when nothing is left. */
@@ -367,21 +367,37 @@ export function PoliciesPanel({
             ),
         checkIn: () => renderWindow('checkIn', t('listing.policies.checkIn.label', 'Check-in')),
         checkOut: () => renderWindow('checkOut', t('listing.policies.checkOut.label', 'Check-out')),
-        maxNights: () => (
-            <TextField
-                key="maxNights"
-                prefix={idPrefix}
-                name="policies.maxNights"
-                label={t('listing.policies.maxNights.label', 'Máximo de noches')}
-                labelClassName={styles.groupTitle}
-                className={fieldStyles.input}
-                error={errors['policies.maxNights']}
-                type="number"
-                min={policies.minNights ?? 1}
-                max={365}
-                step={1}
-                value={policies.maxNights ?? ''}
-                onChange={(event) => onChange('maxNights', readNights(event.target.value))}
+        deposit: () => (
+            <DepositPolicyField
+                key="deposit"
+                t={t}
+                idPrefix={idPrefix}
+                errors={errors}
+                deposit={policies.deposit}
+                onChange={(value) => onChange('deposit', value)}
+            />
+        ),
+        spokenLanguages: () => (
+            <SpokenLanguagesField
+                key="spokenLanguages"
+                t={t}
+                idPrefix={idPrefix}
+                errors={errors}
+                languages={policies.spokenLanguages}
+                onChange={(value) => onChange('spokenLanguages', value)}
+            />
+        ),
+        // Renders only while `eventsAllowed` is true; the caller lists it right
+        // after `eventsAllowed` so the details sit under the yes/no.
+        eventsDetails: () => (
+            <EventsDetailsField
+                key="eventsDetails"
+                t={t}
+                idPrefix={idPrefix}
+                errors={errors}
+                eventsAllowed={policies.eventsAllowed}
+                details={policies.eventsDetails}
+                onChange={(value) => onChange('eventsDetails', value)}
             />
         ),
         reservations: () => (

@@ -48,16 +48,35 @@
  * A `title` mirrors the button's own `aria-label` text, so a mouse user
  * gets the same information on hover that a screen reader announces —
  * necessary now that there's no visible label at all.
+ *
+ * HOS-2126 ADDED drag-and-drop on top of the buttons, it did not replace
+ * them: the reasoning above still holds, so `↑`/`↓` remain the always-there
+ * path and the drag handle is an extra, faster one. The sortable wiring lives
+ * in `SortablePhotoGallery.client.tsx`; this component only renders the
+ * handle (a fourth 44x44 toolbar button) when that wiring hands it
+ * `dragHandle`, and applies the sortable ref/transform to its wrapper. Without
+ * those props it renders exactly as before.
  */
 
-import { StarIcon } from '@repo/icons';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
+import { GripVerticalIcon, StarIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
+import type { CSSProperties } from 'react';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import type { PhotoMetadataUpdateBody } from './photo-section-helpers';
+
+/** Props the sortable wrapper hands to the drag handle button (HOS-2126). */
+export interface PhotoDragHandleProps {
+    /** Activator ref: dnd-kit returns focus here after a keyboard drag. */
+    readonly ref: (element: HTMLElement | null) => void;
+    readonly attributes: DraggableAttributes;
+    readonly listeners: DraggableSyntheticListeners;
+    readonly disabled: boolean;
+}
 
 export interface PhotoGalleryItemProps {
     readonly locale: SupportedLocale;
@@ -77,6 +96,16 @@ export interface PhotoGalleryItemProps {
         item: AccommodationMediaItem,
         body: PhotoMetadataUpdateBody
     ) => Promise<boolean>;
+    /** Sortable node ref for the wrapper (HOS-2126). Omitted outside a sortable list. */
+    readonly sortableRef?: (element: HTMLElement | null) => void;
+    /** Sortable id, exposed as `data-sortable-id` on the wrapper. */
+    readonly sortableId?: string;
+    /** Transform/transition applied while the item is being dragged or displaced. */
+    readonly sortableStyle?: CSSProperties;
+    /** True while this item is the one being dragged. */
+    readonly isDragging?: boolean;
+    /** Drag handle wiring; when omitted no handle is rendered. */
+    readonly dragHandle?: PhotoDragHandleProps;
 }
 
 /**
@@ -94,7 +123,12 @@ export function PhotoGalleryItem({
     onPromote,
     onMoveUp,
     onMoveDown,
-    onUpdateMetadata
+    onUpdateMetadata,
+    sortableRef,
+    sortableId,
+    sortableStyle,
+    isDragging = false,
+    dragHandle
 }: PhotoGalleryItemProps) {
     const { t } = createTranslations(locale);
     const canOperate = !disabled && Boolean(item.id);
@@ -114,8 +148,19 @@ export function PhotoGalleryItem({
         { index: position }
     );
 
+    const dragHandleAriaLabel = t(
+        'host.properties.editor.photo.dragHandleAria',
+        'Arrastrar foto {{index}} para cambiar su orden',
+        { index: position }
+    );
+
     return (
-        <div className={styles.galleryItemWrapper}>
+        <div
+            ref={sortableRef}
+            data-sortable-id={sortableId}
+            style={sortableStyle}
+            className={`${styles.galleryItemWrapper} ${isDragging ? styles.galleryItemDragging : ''}`}
+        >
             <div className={styles.galleryItem}>
                 <img
                     src={thumbnailUrl}
@@ -140,6 +185,26 @@ export function PhotoGalleryItem({
                 </div>
             </div>
             <div className={styles.galleryItemToolbar}>
+                {dragHandle && (
+                    <button
+                        type="button"
+                        ref={dragHandle.ref}
+                        className={`${styles.toolbarButton} ${styles.dragHandle}`}
+                        {...dragHandle.attributes}
+                        {...dragHandle.listeners}
+                        // After the dnd-kit spreads on purpose: their
+                        // `aria-roledescription` stays, but the accessible
+                        // name must say WHICH photo this handle moves.
+                        disabled={dragHandle.disabled}
+                        aria-label={dragHandleAriaLabel}
+                        title={dragHandleAriaLabel}
+                    >
+                        <GripVerticalIcon
+                            size="sm"
+                            color="#ffffff"
+                        />
+                    </button>
+                )}
                 <button
                     type="button"
                     className={styles.toolbarButton}

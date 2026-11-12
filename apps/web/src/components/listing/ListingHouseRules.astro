@@ -5,7 +5,8 @@
  * venue and experience detail pages (HOS-2060).
  *
  * Renders the declared policies — check-in/out, payment methods, pets, smoking,
- * events, reservations — as an icon list. The row decisions live in the pure
+ * events, reservations, and the accommodation's deposit and spoken languages
+ * (HOS-2120) — as an icon list. The row decisions live in the pure
  * `buildHouseRuleRows`; this component only maps a row id to its icon. Renders
  * nothing when no rule is declared.
  */
@@ -20,7 +21,9 @@ import {
   PetFriendlyIcon,
   SmokingAllowedIcon,
   ConfettiIcon,
-  CalendarIcon
+  CalendarIcon,
+  PriceIcon,
+  LanguageIcon
 } from '@repo/icons';
 
 interface Props {
@@ -41,7 +44,9 @@ const ICONS: Readonly<Record<HouseRuleRowId, typeof CheckInIcon>> = {
   pets: PetFriendlyIcon,
   smokingAllowed: SmokingAllowedIcon,
   eventsAllowed: ConfettiIcon,
-  reservations: CalendarIcon
+  reservations: CalendarIcon,
+  deposit: PriceIcon,
+  spokenLanguages: LanguageIcon
 };
 ---
 

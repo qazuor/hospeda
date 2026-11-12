@@ -2655,6 +2655,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/ai/listing-questions/:messageId/faq-draft"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/ai/listing-questions/:messageId/undismiss"
         },
         {

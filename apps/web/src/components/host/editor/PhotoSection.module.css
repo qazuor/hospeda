@@ -552,3 +552,31 @@
         box-shadow: none;
     }
 }
+
+/* HOS-2126: drag-and-drop reorder handle. Same 44x44 box as the other
+ * toolbar buttons; `touch-action: none` lets the touch sensor own the gesture
+ * once the press-and-hold activates, while the page still scrolls normally
+ * everywhere else on the card. */
+.dragHandle {
+    cursor: grab;
+    touch-action: none;
+}
+
+.dragHandle:active:not(:disabled) {
+    cursor: grabbing;
+}
+
+.dragHandle:focus-visible {
+    outline: 2px solid var(--brand-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
+/* The photo being dragged: lifted above its neighbours and dimmed, so the
+ * gap it leaves and the spot it is heading to both read at a glance. */
+.galleryItemDragging {
+    position: relative;
+    z-index: 2;
+    opacity: 0.85;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+    border-radius: var(--radius-md, 10px);
+}

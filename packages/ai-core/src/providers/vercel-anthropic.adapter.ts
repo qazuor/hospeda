@@ -290,6 +290,7 @@ export class AnthropicAdapter implements AiProvider {
             model: languageModel,
             // biome-ignore lint/suspicious/noExplicitAny: intentional cross-zod-version boundary cast
             schema: zodSchema(outputSchema as unknown as any),
+            system: input.systemPrompt,
             prompt: input.prompt,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,

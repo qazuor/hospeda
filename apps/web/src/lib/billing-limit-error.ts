@@ -99,6 +99,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
     'max_ai_support_per_month',
     'max_ai_translate_per_month',
     'max_ai_accommodation_import_per_month',
+    'max_ai_faq_draft_per_month',
     'max_search_history_entries',
     'max_collections',
     // HOS-1060 — the private-gallery cap. Title-only entry, the same honest

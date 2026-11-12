@@ -332,6 +332,8 @@
                 "youtube": "YouTube",
                 "minNights": "Mínimo de noches",
                 "minNightsHint": "La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.",
+                "maxNights": "Máximo de noches",
+                "maxNightsHint": "Opcional. La cantidad máxima de noches por reserva; no puede ser menor que el mínimo.",
                 "street": "Calle",
                 "number": "Número",
                 "floor": "Piso",
@@ -363,6 +365,12 @@
                 "descriptionTooLong": "La descripción no puede superar {{max}} caracteres",
                 "descriptionTooShort": "La descripción debe tener al menos {{min}} caracteres, o dejala vacía",
                 "dropOrClick": "Arrastrá una imagen o hacé clic para seleccionar",
+                "dragCancel": "Reordenamiento cancelado. La foto {{index}} volvió a su lugar.",
+                "dragEnd": "Soltaste la foto {{index}} en la posición {{position}} de {{total}}.",
+                "dragHandleAria": "Arrastrar foto {{index}} para cambiar su orden",
+                "dragInstructions": "Para cambiar el orden, presioná espacio o enter para tomar la foto, usá las flechas para moverla y presioná espacio o enter otra vez para soltarla. Presioná escape para cancelar.",
+                "dragOver": "La foto {{index}} está en la posición {{position}} de {{total}}.",
+                "dragStart": "Tomaste la foto {{index}}. Está en la posición {{position}} de {{total}}.",
                 "editDetailsAria": "Editar textos de la foto {{index}}",
                 "editDetailsLabel": "Editar textos",
                 "editFeaturedDetailsAria": "Editar textos de la portada",
@@ -736,7 +744,12 @@
                 "dismissedError": "No se pudo descartar la pregunta.",
                 "undoError": "No se pudo recuperar la pregunta.",
                 "viewMore": "Ver más",
-                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha."
+                "faqAnswerHelp": "No hay una respuesta confirmada. Completala con la información de tu ficha.",
+                "suggestAiAnswer": "Sugerir respuesta con IA",
+                "aiDraftLoading": "Generando una sugerencia…",
+                "aiDraftDisclaimer": "Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.",
+                "aiDraftError": "No se pudo generar la sugerencia. Intentá de nuevo.",
+                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente."
             }
         },
         "empty": {

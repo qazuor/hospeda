@@ -507,6 +507,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 statusCode = 400;
                 break;
             case ServiceErrorCode.ALREADY_EXISTS:
+            case ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.UNAUTHORIZED:
@@ -787,6 +788,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
+                [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
                 // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
                 [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409

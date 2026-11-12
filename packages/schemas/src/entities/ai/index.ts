@@ -6,6 +6,7 @@ export * from './ai-capability.schema.js';
 export * from './ai-chat.schema.js';
 // Admin credential vault schemas (masked view + create/rotate inputs)
 export * from './ai-credential.schema.js';
+export * from './ai-faq-draft.schema.js';
 // Generic intent envelope for extractIntent (§5.11)
 export * from './ai-intent.schema.js';
 // Host-facing AI questions panel: listing-scoped, anonymous (HOS-2101)

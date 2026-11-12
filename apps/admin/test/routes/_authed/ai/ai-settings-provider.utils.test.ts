@@ -10,6 +10,7 @@
  *   with the correct field path and provider id, and nothing else.
  */
 
+import { AiFeatureSchema } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import type { AiFeatureId, AiProviderId, AiProvidersMap } from '@/features/ai-settings';
 import {
@@ -152,15 +153,7 @@ describe('filterRenderableModels', () => {
 });
 
 describe('applyProviderToAllFeatures', () => {
-    const ALL_FEATURES: AiFeatureId[] = [
-        'text_improve',
-        'chat',
-        'search',
-        'support',
-        'translate',
-        'accommodation_import',
-        'post_generate'
-    ];
+    const ALL_FEATURES: AiFeatureId[] = [...AiFeatureSchema.options];
 
     it('sets primaryProvider on every feature via setFieldValue', () => {
         const setFieldValue = vi.fn();

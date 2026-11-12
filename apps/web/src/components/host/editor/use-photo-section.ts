@@ -140,6 +140,8 @@ export interface UsePhotoSectionResult {
     readonly handlePromoteToFeatured: (item: AccommodationMediaItem) => void;
     readonly handleMoveUp: (item: AccommodationMediaItem) => void;
     readonly handleMoveDown: (item: AccommodationMediaItem) => void;
+    /** Drag-and-drop gallery reorder (HOS-2126). */
+    readonly handleReorderGallery: (fromIndex: number, toIndex: number) => void;
     readonly handleUpdateMediaText: (
         item: AccommodationMediaItem,
         body: PhotoMetadataUpdateBody
@@ -593,6 +595,7 @@ export function usePhotoSection({
         handlePromoteToFeatured,
         handleMoveUp,
         handleMoveDown,
+        handleReorderGallery,
         handleUpdateMediaText
     } = usePhotoGalleryMutations({
         accommodationId,
@@ -640,6 +643,7 @@ export function usePhotoSection({
         handlePromoteToFeatured,
         handleMoveUp,
         handleMoveDown,
+        handleReorderGallery,
         handleUpdateMediaText
     };
 }

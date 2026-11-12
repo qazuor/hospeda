@@ -808,7 +808,8 @@
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
         "max_venues": "Cuántos locales podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
-        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
+        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen.",
+        "max_ai_faq_draft_per_month": "Cuántos borradores de respuesta podés generar con IA por mes para las preguntas de tus fichas. La cuota se renueva al empezar cada mes."
     },
     "addonPurchase": {
         "title": "Comprar complementos",

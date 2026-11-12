@@ -47,8 +47,8 @@ const minimalSettingsValue = {
         anthropic: { enabled: false },
         stub: { enabled: false }
     },
-    // Must list every `AiFeature` member (nine as of HOS-400, which added
-    // `chat_venue` and `chat_experience`) — `AiFeaturesMapSchema` is a
+    // Must list every `AiFeature` member (ten after HOS-2105 added FAQ drafts),
+    // including `chat_venue` and `chat_experience` — `AiFeaturesMapSchema` is a
     // full `z.record` over the enum, so this fixture stops being "minimal
     // but complete" and starts failing every test that reuses it the moment
     // a new feature ships without being added here.
@@ -91,6 +91,12 @@ const minimalSettingsValue = {
             ...validFeatureConfig,
             model: 'gpt-4o-mini',
             primaryProvider: 'openai' as const
+        },
+        faq_draft: {
+            ...validFeatureConfig,
+            model: 'gpt-4o-mini',
+            primaryProvider: 'openai' as const,
+            fallbackChain: []
         }
     }
 };

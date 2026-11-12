@@ -157,7 +157,8 @@ async function seedAiSettings(actorId: string): Promise<void> {
             support: stubFeatureConfig,
             translate: stubFeatureConfig,
             accommodation_import: stubFeatureConfig,
-            post_generate: stubFeatureConfig
+            post_generate: stubFeatureConfig,
+            faq_draft: stubFeatureConfig
         },
         costCeilings: {
             globalMonthlyMicroUsd: LOW_CEILING_MICRO_USD
@@ -355,7 +356,8 @@ describe('AI cost-ceiling hard stop (SPEC-173 T-037 AC-8 + AC-13)', () => {
                     support: stubFeatureConfig,
                     translate: stubFeatureConfig,
                     accommodation_import: stubFeatureConfig,
-                    post_generate: stubFeatureConfig
+                    post_generate: stubFeatureConfig,
+                    faq_draft: stubFeatureConfig
                 }
                 // costCeilings: omitted → no ceiling, call should succeed
             };

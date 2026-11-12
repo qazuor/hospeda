@@ -808,7 +808,8 @@
         "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
         "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
-        "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
+        "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse.",
+        "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month."
     },
     "addonPurchase": {
         "title": "Buy add-ons",

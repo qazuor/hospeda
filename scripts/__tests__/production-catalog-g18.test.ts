@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { parseValues, run } from '../check-catalog-sql.js';
+import { projectCatalogAsOf0144 } from '../production-catalog/as-of-0144.js';
 import { PLACEHOLDER_CATALOG, PRODUCTION_PLAN_CATALOG } from '../production-catalog/catalog.js';
 import { buildPlanCatalogLoads, generatePlanCatalogSql } from '../production-catalog/loads.js';
 
@@ -57,7 +58,9 @@ describe('GUARD:G18 — production catalog load', () => {
             resolve('packages/db/src/migrations/0144_production_plan_catalog.sql'),
             'utf8'
         );
-        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(generatePlanCatalogSql());
+        // FAQ grants are additive in 0202; 0144 remains an immutable baseline.
+        const originalCatalog = projectCatalogAsOf0144(PRODUCTION_PLAN_CATALOG);
+        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(generatePlanCatalogSql(originalCatalog));
         expect(PRODUCTION_PLAN_CATALOG).toHaveLength(27);
     });
 

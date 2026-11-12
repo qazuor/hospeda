@@ -20,6 +20,14 @@
 --     added later would change what a subscription anchored to it receives.
 --   Changing anything with an effect is publishing a NEW version, never
 --   editing the one somebody anchored to.
+-- Bounded additive exception (owner decision 2026-11-12, HOS-2105): an explicit
+-- transaction-local `hospeda.catalog_additive_grant` reason permits INSERT into a
+-- version from another transaction only for a key absent from that same child
+-- table. This gives a new feature to existing subscribers without re-anchoring
+-- subscriptions or billing options tied to MercadoPago. It never permits
+-- overwrite, UPDATE, DELETE, or a lower value; use is for a named additive grant:
+-- set it, insert, reset it in the same file so later migrations in Drizzle's
+-- shared transaction cannot inherit the signal.
 --
 -- How "created by this transaction" is decided: an AFTER INSERT trigger on
 -- `plan_version` and on `addon_version` appends the new id to the
@@ -85,15 +93,26 @@ DECLARE
   parent_id uuid;
   parent_exists boolean;
   created text := coalesce(current_setting('hospeda.catalog_versions_created_in_xact', true), '');
+  additive_grant text := coalesce(current_setting('hospeda.catalog_additive_grant', true), '');
+  key_exists boolean;
 BEGIN
   parent_id := (to_jsonb(NEW) ->> TG_ARGV[1])::uuid;
   EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I WHERE id = $1)', TG_ARGV[0])
     INTO parent_exists USING parent_id;
   -- A missing parent is left to the foreign key, which names it.
   IF parent_exists AND NOT (parent_id::text = ANY (string_to_array(created, ','))) THEN
-    RAISE EXCEPTION '% is immutable: % % was published by another transaction; publish a new version instead',
-      TG_TABLE_NAME, TG_ARGV[0], parent_id
-      USING ERRCODE = 'P0001';
+    IF additive_grant = '' THEN
+      RAISE EXCEPTION '% is immutable: % % was published by another transaction; publish a new version instead',
+        TG_TABLE_NAME, TG_ARGV[0], parent_id
+        USING ERRCODE = 'P0001';
+    END IF;
+    EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I WHERE %I = $1 AND key = $2)', TG_TABLE_NAME, TG_ARGV[1])
+      INTO key_exists USING parent_id, to_jsonb(NEW) ->> 'key';
+    IF key_exists THEN
+      RAISE EXCEPTION '% is immutable: additive grant % cannot duplicate key % for version %',
+        TG_TABLE_NAME, additive_grant, to_jsonb(NEW) ->> 'key', parent_id
+        USING ERRCODE = 'P0001';
+    END IF;
   END IF;
   RETURN NEW;
 END;

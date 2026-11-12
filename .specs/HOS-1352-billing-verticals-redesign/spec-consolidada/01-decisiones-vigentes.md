@@ -4917,6 +4917,13 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
      contra un registro, no una afirmación.
   6. `OD-ARCH-01` (retiro de un plan del catálogo) se apoya en esto, pero **no queda
      resuelto**: sigue abierto.
+  7. **Excepción aditiva acotada (decisión del owner, 2026-11-12; HOS-2105):** se puede
+     agregar un entitlement o límite con una clave ausente a una versión ya publicada,
+     bajo señal transaccional explícita. La clave existente no se sobrescribe y UPDATE y
+     DELETE siguen rechazados. Esto permite dar una función nueva a suscriptores actuales
+     sin reanclar suscripciones ni las opciones de billing ligadas a MercadoPago. El
+     contrato operativo está en
+     [`extras/041-plan-catalog-immutability.trigger.sql`](../../../packages/db/src/migrations/extras/041-plan-catalog-immutability.trigger.sql).
 - **Origen**: `BD-ARCH-01` (BLOCKING).
 
 <a id="dec-arch-002"></a>

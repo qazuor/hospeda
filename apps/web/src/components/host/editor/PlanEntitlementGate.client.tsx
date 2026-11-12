@@ -33,6 +33,8 @@ export interface PlanEntitlementGateProps {
     readonly upgradeUrl?: string;
     /** Locale for i18n translations. */
     readonly locale?: SupportedLocale;
+    /** Listing vertical used to resolve the owner's plan. */
+    readonly vertical?: 'accommodation' | 'venue' | 'experience';
 }
 
 // ---------------------------------------------------------------------------
@@ -62,9 +64,10 @@ export function PlanEntitlementGate({
     children,
     fallback,
     upgradeUrl,
-    locale = 'es'
+    locale = 'es',
+    vertical = 'accommodation'
 }: PlanEntitlementGateProps): React.ReactNode {
-    const { has, isLoading, error } = useMyEntitlements({ vertical: 'accommodation' });
+    const { has, isLoading, error } = useMyEntitlements({ vertical });
     const { t } = createTranslations(locale);
 
     // While loading — show children to avoid layout flash.
