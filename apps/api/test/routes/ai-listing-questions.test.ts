@@ -135,11 +135,23 @@ describe('GET /protected/ai/listing-questions', () => {
             question: 'question',
             answerStatus: null
         });
-        const res = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+        const foreign = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
             method: 'POST',
             headers: AUTH_HEADERS
         });
-        expect(res.status).toBe(404);
+        mockReadDraft.mockResolvedValueOnce(null);
+        const missing = await app.request(`${BASE}/${MESSAGE_ID}/faq-draft`, {
+            method: 'POST',
+            headers: AUTH_HEADERS
+        });
+        const normalize = async (response: Response) => {
+            const body = (await response.json()) as { metadata: object } & Record<string, unknown>;
+            const { metadata, ...rest } = body;
+            return { ...rest, metadataKeys: Object.keys(metadata).sort() };
+        };
+        expect(foreign.status).toBe(404);
+        expect(missing.status).toBe(404);
+        expect(await normalize(foreign)).toEqual(await normalize(missing));
         expect(mockEnforceQuota).not.toHaveBeenCalled();
     });
 
