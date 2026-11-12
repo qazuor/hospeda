@@ -7,7 +7,7 @@ import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { partnersApi } from '@/lib/api/endpoints-protected';
-import { refreshBetterAuthSession } from '@/lib/auth-client';
+import { refreshBetterAuthSession, resendVerificationEmail } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { savePendingAction, takePendingAction } from '@/lib/pending-action';
@@ -31,6 +31,7 @@ type ClaimState =
     | 'account-already-owns'
     | 'verify-email-first'
     | 'error';
+type ResendState = 'idle' | 'sending' | 'sent' | 'error';
 
 interface ClaimLink {
     readonly partnerId: string;
@@ -51,7 +52,10 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
     const { user, permissions } = useAccountPermissions();
     const [claimLink, setClaimLink] = useState<ClaimLink | null>(null);
     const [state, setState] = useState<ClaimState>('loading');
+    const [resendState, setResendState] = useState<ResendState>('idle');
     const claimStartedRef = useRef<boolean>(false);
+    const resendInFlightRef = useRef<boolean>(false);
+    const accountEmail = user?.email ? user.email : null;
 
     useEffect(() => {
         const fragment = window.location.hash;
@@ -126,6 +130,27 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
             saveClaimAction();
             setState('sign-in');
         } else setState('error');
+    };
+
+    const resendVerification = async (): Promise<void> => {
+        if (!accountEmail || resendInFlightRef.current) return;
+        resendInFlightRef.current = true;
+        setResendState('sending');
+        // Same-tab return within the pending-action TTL resumes the claim on its own;
+        // from another tab the person reopens the emailed claim link (D-2).
+        saveClaimAction();
+        try {
+            const callbackURL = new URL(
+                buildUrl({ locale, path: 'partners/reclamar' }),
+                window.location.origin
+            ).href;
+            const result = await resendVerificationEmail({ email: accountEmail, callbackURL });
+            setResendState(result.error ? 'error' : 'sent');
+        } catch {
+            setResendState('error');
+        } finally {
+            resendInFlightRef.current = false;
+        }
     };
 
     const promptByState: Partial<Record<ClaimState, string>> = {
@@ -206,6 +231,41 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                 >
                     {t('partners.claim.successCta')}
                 </a>
+            )}
+            {state === 'verify-email-first' && (
+                <>
+                    {resendState === 'sent' ? (
+                        <p
+                            className={styles.message}
+                            role="status"
+                        >
+                            {t('partners.claim.verificationResent')}
+                        </p>
+                    ) : (
+                        <>
+                            {resendState === 'error' && (
+                                <p
+                                    className={styles.error}
+                                    role="alert"
+                                >
+                                    {t('partners.claim.resendVerificationError')}
+                                </p>
+                            )}
+                            {accountEmail !== null && (
+                                <button
+                                    type="button"
+                                    className={styles.button}
+                                    disabled={resendState === 'sending'}
+                                    onClick={resendVerification}
+                                >
+                                    {resendState === 'sending'
+                                        ? t('partners.claim.resendingVerification')
+                                        : t('partners.claim.resendVerification')}
+                                </button>
+                            )}
+                        </>
+                    )}
+                </>
             )}
             {supportState && (
                 <a
