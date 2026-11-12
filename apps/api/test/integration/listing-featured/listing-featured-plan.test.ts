@@ -30,6 +30,7 @@ import { testDb } from '../../e2e/setup/test-database';
 import {
     createListing,
     createOwner,
+    createTrial,
     createVerticalDestination
 } from '../listing-publication/publication-routes.helpers';
 import { deleteListingBoosts, seedListingBoost } from './support/featured-addon-fixtures';
@@ -52,6 +53,7 @@ interface Fixture {
     optionIds: string[];
     subscriptionIds: string[];
     paymentIds: string[];
+    hasTrial?: boolean;
 }
 const fixtures: Fixture[] = [];
 let stop: (() => void) | undefined;
@@ -208,7 +210,7 @@ afterEach(async () => {
         await getDb().execute(
             sql`DELETE FROM email_outbox WHERE recipient_user_id = ${f.ownerId}::uuid`
         );
-        await getDb().delete(users).where(eq(users.id, f.ownerId));
+        if (!f.hasTrial) await getDb().delete(users).where(eq(users.id, f.ownerId));
     }
 });
 afterAll(async () => {
@@ -322,6 +324,22 @@ describe('HOS-1718 a plan with featured_listing features the owner listings on e
         const summary = await runDailyCoverageReconciler({ ports: getListingReconcilerPorts() });
         expect(await featured(id)).toBe(true);
         expect(summary.featuredChanged).toBe(0);
+        expect(summary.failures).not.toContainEqual(
+            expect.objectContaining({ userId: f.ownerId, vertical: VerticalEnum.ACCOMMODATION })
+        );
+    });
+    it('an active trial without a subscription does not feature a published listing', async () => {
+        const f = await fixture();
+        await createTrial({ userId: f.ownerId, status: 'TRIAL_ACTIVE', now });
+        f.hasTrial = true;
+        const id = await listing(f);
+        await notice(f);
+        expect(await featured(id)).toBe(false);
+        const summary = await runDailyCoverageReconciler({ ports: getListingReconcilerPorts() });
+        expect(await featured(id)).toBe(false);
+        expect(summary.failures).not.toContainEqual(
+            expect.objectContaining({ userId: f.ownerId, vertical: VerticalEnum.ACCOMMODATION })
+        );
     });
     it('a plan without featured_listing features nothing', async () => {
         const f = await fixture();

@@ -409,6 +409,9 @@ describe('HOS-1718 a live LISTING boost features its listing on every public rea
             ].sort((a, b) => a.id.localeCompare(b.id))
         );
         expect(summary.featuredChanged).toBe(1);
+        expect(summary.failures).not.toContainEqual(
+            expect.objectContaining({ userId, vertical: VerticalEnum.ACCOMMODATION })
+        );
         // shouldRun is true because coverage is uncovered and one listing is PUBLISHED; featured reconciliation precedes and does not depend on publication changes.
         const inverseOwnerId = await owner();
         const inverseListingId = await createListing({
@@ -426,6 +429,12 @@ describe('HOS-1718 a live LISTING boost features its listing on every public rea
         const inverse = await runDailyCoverageReconciler({ ports: getListingReconcilerPorts() });
         // Assert
         expect(inverse.featuredChanged).toBe(1);
+        expect(inverse.failures).not.toContainEqual(
+            expect.objectContaining({
+                userId: inverseOwnerId,
+                vertical: VerticalEnum.ACCOMMODATION
+            })
+        );
         const inverseRows = await getDb()
             .select({ id: accommodations.id, featured: accommodations.featuredByEntitlement })
             .from(accommodations)

@@ -71,7 +71,7 @@ function setup(
         async findPlanVersionEffects({ id }) {
             return id === 'trial-v1' || id === 'floor-v1'
                 ? { entitlements: [], limits: [] }
-                : id === 'pro-v1'
+                : id === 'pro-v1' || id === 'premium-v1'
                   ? {
                         entitlements: [
                             {
@@ -107,7 +107,16 @@ function setup(
                   };
         },
         async findSellableCurrentVersions() {
-            return [];
+            return [
+                {
+                    id: 'premium-v1',
+                    planId: 'premium',
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    rank: 3,
+                    sellable: true,
+                    current: true
+                }
+            ];
         },
         async findCurrentPlanVersion({ planId }) {
             return planId === 'trial-v1'
@@ -151,14 +160,7 @@ const sync = (ports: ListingFeaturedPorts) =>
 describe('HOS-1718 a plan that grants featured_listing features every listing of the owner', () => {
     it("a live subscription to a plan with featured_listing features all the owner's listings", async () => {
         const h = setup({ sources: [sub('pro-v1')] });
-        // @ts-expect-error HOS-1718 c3: plan featuring cannot run without required trial resolution.
-        const portsWithoutTrials: ListingFeaturedPorts = {
-            billing: h.ports.billing,
-            reader: h.reader,
-            unitOfWork: h.ports.unitOfWork,
-            afterCommit: h.ports.afterCommit
-        };
-        const result = await sync(portsWithoutTrials);
+        const result = await sync(h.ports);
         expect(result.featuredOn).toEqual(['A', 'B', 'C']);
         expect(h.revalidate).toHaveBeenCalledWith({
             vertical: VerticalEnum.ACCOMMODATION,
@@ -185,7 +187,7 @@ describe('HOS-1718 a plan that grants featured_listing features every listing of
         expect(h.coverage).toHaveBeenCalledTimes(1);
         expect(h.writes).toHaveBeenCalledTimes(3);
     });
-    it('a trial whose plan lacks featured_listing features nothing', async () => {
+    it('an active trial without a subscription does not feature listings', async () => {
         const source = CoverageSourceSchema.parse({
             type: 'TRIAL',
             reference: { kind: 'PLAN_VERSION', planVersionId: 'trial-v1' },
@@ -214,6 +216,9 @@ describe('HOS-1718 a plan that grants featured_listing features every listing of
         const withTrial = setup({ sources: [source], trials: trialReader });
         await sync(withTrial.ports);
         expect(withTrial.writes).toHaveBeenCalledTimes(0);
+        const withPro = setup({ sources: [source, sub('pro-v1')], trials: trialReader });
+        await sync(withPro.ports);
+        expect(withPro.writes).toHaveBeenCalledTimes(3);
     });
     it('a plan that cannot be resolved fails the sync and writes nothing', async () => {
         const h = setup({ sources: [sub('broken-v1')], unresolved: true });

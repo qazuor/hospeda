@@ -11,7 +11,7 @@ type AddonVersionEffects = Awaited<
  * Writes the featured flag of an owner's listings in one vertical from billing's
  * coverage (HOS-1718; owner PM-609 and CL).
  *
- * A listing is featured when the owner's effective set grants `featured_listing`,
+ * A listing is featured when a non-TRIAL source in the owner's effective set grants `featured_listing`,
  * or a live `LISTING` add-on with that effect targets it.
  * Billing already drops an expired `FIXED_DAYS` instance and stops emitting a
  * cancelled, expired or orphaned one, so this function never reads a clock.
@@ -21,6 +21,7 @@ type AddonVersionEffects = Awaited<
  * revalidation fails, it is not retried because the compare-and-set sees no
  * change on the next sync; the cache stays stale until its TTL expires.
  *
+ * PM-627: trial entitlements still apply generally, but TRIAL alone never features listings.
  * @repo/verticals never reads addon instances; it receives coverage by contract
  * and plan/add-on effects through the catalog reader port.
  */
@@ -38,7 +39,13 @@ export async function syncListingFeatured(args: {
             });
             const effective = await resolveEffectiveSet({
                 reader: args.ports.reader,
-                billing: { coverage: async () => coverage },
+                // PM-627 excludes TRIAL as a source only for listing featuring.
+                billing: {
+                    coverage: async () => ({
+                        ...coverage,
+                        sources: coverage.sources.filter((source) => source.type !== 'TRIAL')
+                    })
+                },
                 trials: args.ports.trials,
                 userId: args.userId,
                 vertical: args.vertical
