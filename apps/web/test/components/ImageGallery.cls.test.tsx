@@ -277,13 +277,20 @@ describe('ImageGallery.module.css — max-height absence on .grid (T-008 regress
          * is the "no constraint" value and does not re-introduce the ratio conflict.
          * A positive max-height value (e.g. `max-height: 480px`) would be dangerous.
          */
-        const mobileBlockMatch = css.match(/@media\s*\(max-width:\s*640px\)\s*\{([\s\S]*?)\n\}/);
-        if (mobileBlockMatch) {
-            const mobileBlock = mobileBlockMatch[1] ?? '';
+        // Several 640px blocks exist (e.g. the lightbox caption clamp, HOS-2125,
+        // which legitimately caps its own height). The regression is about the
+        // detail GRID, so check every 640px block's `.grid` rules only.
+        const mobileBlocks = [
+            ...css.matchAll(/@media\s*\(max-width:\s*640px\)\s*\{([\s\S]*?)\n\}/g)
+        ].map((match) => match[1] ?? '');
+        const gridRules = mobileBlocks.flatMap((block) =>
+            [...block.matchAll(/([^{}]*\.grid[^{}]*)\{([^}]*)\}/g)].map((rule) => rule[2] ?? '')
+        );
+        for (const declarations of gridRules) {
             // Must NOT contain a positive max-height value (px/rem/em/%)
-            expect(normalise(mobileBlock)).not.toMatch(/max-height\s*:\s*\d/);
+            expect(normalise(declarations)).not.toMatch(/max-height\s*:\s*\d/);
         }
-        // If the block has no max-height at all, this test is trivially satisfied.
+        // If no grid rule sets max-height at all, this test is trivially satisfied.
     });
 });
 
