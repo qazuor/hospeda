@@ -27,7 +27,7 @@ import {
 
 const clock = { now: () => pausedNow };
 const scheduledIds: string[] = [];
-const deadlineVersion = 81704179;
+const deadlineVersion = 3;
 const instant = (day: string) => new Date(`${day}T15:00:00.000Z`);
 
 afterEach(async () => {
