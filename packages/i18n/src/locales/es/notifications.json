@@ -33,5 +33,12 @@
             "body": "Esta vez no la aprobamos.",
             "reapply": "Podés volver a postularte a partir del {{date}}."
         }
+    },
+    "manualInstallmentOpened": {
+        "subject": "Tenés una cuota para pagar en Hospeda",
+        "heading": "Tu cuota está lista para pagar",
+        "introFirst": "Ya configuramos tu suscripción de Partner. Este es el detalle de tu primera cuota.",
+        "introRenewal": "Se abrió la cuota de un nuevo período de tu suscripción de Partner.",
+        "cta": "Ver mi cuota"
     }
 }

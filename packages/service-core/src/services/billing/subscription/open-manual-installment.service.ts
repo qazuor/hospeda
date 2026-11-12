@@ -8,6 +8,7 @@ import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger';
 import { enterManualGraceInTx } from './manual-grace-entry';
+import { enqueueManualInstallmentOpenedNotice } from './manual-installment-opened-notice';
 import {
     enqueueManualInstallmentUnpaidNotice,
     type ManualInstallmentNoticeRecipients
@@ -138,6 +139,15 @@ export async function openDueManualInstallments(
                     },
                     { recipients: ports.recipients }
                 );
+                if (enteredGrace)
+                    await enqueueManualInstallmentOpenedNotice({
+                        tx,
+                        subscription: current,
+                        manualPaymentId: manualPayment.id,
+                        periodStart,
+                        dueAt: new Date(now.getTime() + graceDays * DAY_MS),
+                        firstInstallment: false
+                    });
                 return { outcome: 'OPENED' as const, row, enteredGrace };
             });
             if (result.outcome === 'SKIPPED') summary.skipped++;

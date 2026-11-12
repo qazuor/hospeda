@@ -1551,7 +1551,7 @@
             "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
-            "approved": "Seu conteúdo está aprovado. Nossa equipe vai te enviar o link de pagamento para ativar sua assinatura.",
+            "approved": "Seu conteúdo está aprovado. A equipe da Hospeda configura sua assinatura e vai te escrever para combinar o pagamento por transferência bancária.",
             "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
             "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },
@@ -1599,6 +1599,14 @@
             "notDeleted": "Nada foi apagado: seu perfil e seus dados continuam salvos.",
             "returnsAlone": "Sua presença volta sozinha quando você recuperar o plano que a concede.",
             "moderated": "Um administrador moderou sua presença. Mesmo com o plano, ela não aparecerá até que a moderação seja suspensa."
+        },
+        "installment": {
+            "title": "Sua parcela a pagar",
+            "plan": "Plano: {{plan}}",
+            "amount": "Valor: {{amount}}",
+            "amountPending": "A equipe vai confirmar o valor junto com os dados para a transferência.",
+            "dueOn": "Vence em {{date}}",
+            "howToPay": "O pagamento é por transferência bancária. A equipe da Hospeda vai te enviar por e-mail os dados para a transferência. Quando registrarmos o pagamento, sua assinatura fica em dia."
         }
     },
     "partnerStats": {

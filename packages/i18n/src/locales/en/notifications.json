@@ -33,5 +33,12 @@
             "body": "We are unable to approve it this time.",
             "reapply": "You can apply again starting {{date}}."
         }
+    },
+    "manualInstallmentOpened": {
+        "subject": "You have an installment to pay on Hospeda",
+        "heading": "Your installment is ready to pay",
+        "introFirst": "We set up your Partner subscription. Here are the details of your first installment.",
+        "introRenewal": "The installment for a new period of your Partner subscription is open.",
+        "cta": "View my installment"
     }
 }

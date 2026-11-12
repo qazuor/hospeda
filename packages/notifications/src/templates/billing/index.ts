@@ -15,6 +15,7 @@ export * from './direct-cancellation.js';
 export * from './duplicate-charge-detected.js';
 export * from './first-charge-declined-cancel.js';
 export * from './grace-started.js';
+export * from './manual-installment-opened.js';
 export * from './manual-installment-unpaid.js';
 export * from './mark-escalated.js';
 export * from './paid-after-cancellation.js';

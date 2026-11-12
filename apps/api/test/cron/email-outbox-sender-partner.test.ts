@@ -1,6 +1,8 @@
 import type { EmailOutboxRow } from '@repo/db';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import esAccount from '../../../../packages/i18n/src/locales/es/account.json';
+import es from '../../../../packages/i18n/src/locales/es/notifications.json';
 import { buildOutboxSenderRender } from '../../src/cron/jobs/email-outbox-sender.job.js';
 
 function row(template: string, payload: Record<string, unknown>): EmailOutboxRow {
@@ -56,5 +58,29 @@ describe('partner application sender renderers', () => {
         await expect(render({ row: row('verticals.partner-claim-notice', {}) })).rejects.toThrow(
             TypeError
         );
+    });
+
+    it('renders the manual installment opened mail through the production sender', async () => {
+        // Arrange
+        const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+        // Act
+        const result = await render({
+            row: row('billing.manual-installment-opened', {
+                manualPaymentId: 'manual-payment',
+                subscriptionId: 'subscription',
+                locale: 'es',
+                planSlug: 'partner-gold',
+                planName: 'Gold',
+                amountMinor: 3_000_000,
+                currency: 'ARS',
+                dueAt: '2026-10-16T02:00:00.000Z',
+                firstInstallment: true
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        // Assert
+        expect(html).toContain('href="https://hospeda.test/es/mi-cuenta/partner/"');
+        expect(html).toContain(esAccount.partner.installment.howToPay);
+        expect(result.subject).toBe(es.manualInstallmentOpened.subject);
     });
 });

@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import { enqueueManualInstallmentOpenedNotice } from './manual-installment-opened-notice';
 import { openManualInstallmentInTx } from './manual-installment-opening';
 import { enqueueManualInstallmentUnpaidNotice } from './manual-installment-unpaid-notice';
 import { commitmentTaken } from './resolve-live-commitment';
@@ -137,6 +138,14 @@ export async function startManualSubscription(
                 vertical: choice.vertical,
                 periodStart,
                 openedAt: periodStart,
+                firstInstallment: true
+            });
+            await enqueueManualInstallmentOpenedNotice({
+                tx,
+                subscription,
+                manualPaymentId: manualPayment.id,
+                periodStart,
+                dueAt: subscription.authorizationWindowEndsAt ?? authorizationWindowEndsAt,
                 firstInstallment: true
             });
             return manualSubscriptionResult(

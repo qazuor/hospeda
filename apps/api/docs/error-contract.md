@@ -507,7 +507,7 @@ Two rules specific to this surface:
 
 ## S1 rejections (B3)
 
-`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner never starts a card checkout: the official path is the manual subscription created by administrative action 6 (HOS-1489) and paid by bank transfer (PM-617, HOS-1782). `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
 `NEW_PAID_SIGNUPS_FROZEN` answers 409 at HTTP step 6 (business rules), after
 resource 404s and S1's own 422 rejections. The first-publish PB1 refusal also

@@ -5,17 +5,8 @@
  * lean on string-level assertions on the .astro source — same pattern used
  * by `mi-cuenta-proveedor.astro.test.ts`.
  *
- * HOS-862 regression: an approved partner has no in-app payment CTA. Partner
- * payment is admin-mediated by design — an admin assigns the partner's plan
- * and sends a MercadoPago payment link out of band
- * (`POST /admin/partners/{id}/send-link`); there is no self-service checkout
- * endpoint a link on this page could ever reach. The approved banner must
- * therefore state the fact (the team will send the payment link) instead of
- * offering a link/CTA to `mi-cuenta/suscripcion`, a subscription dashboard
- * that never lists a partner plan (`SUBSCRIPTION_DASHBOARD_DOMAINS` has no
- * `'partner'` entry, and even it did, an approved partner has no
- * subscription yet, so the dashboard would only offer the owner/tourist
- * plans anyway).
+ * HOS-862 regression: Partner payment follows the manual subscription path
+ * created by administrative action 6 and paid by bank transfer.
  */
 
 import { readFileSync } from 'node:fs';
@@ -50,6 +41,46 @@ function getApprovedBranch(): string {
 }
 
 describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () => {
+    describe('HOS-1782', () => {
+        it('no locale promises a payment link to an approved partner', () => {
+            // Arrange
+            const approved = [
+                es.partner.status.approved,
+                en.partner.status.approved,
+                pt.partner.status.approved
+            ];
+            // Act
+            const positions = approved.map((copy) =>
+                Math.max(
+                    copy.indexOf('link de pago'),
+                    copy.indexOf('payment link'),
+                    copy.indexOf('link de pagamento')
+                )
+            );
+            // Assert
+            expect(positions).toEqual([-1, -1, -1]);
+        });
+
+        it('renders the open installment card outside the revoked state', () => {
+            // Arrange
+            // Act
+            const hasFetch = source.includes('billingSubscriptionApi.listManualInstallments');
+            // Assert
+            expect(hasFetch).toBe(true);
+            expect(source).toContain('data-testid="partner-installment"');
+            expect(source).toContain('!isRevoked && installmentView');
+        });
+
+        it('the installment card has no link', () => {
+            // Arrange
+            const start = source.indexOf('data-testid="partner-installment"');
+            const end = source.indexOf('</AccountSectionCard>', start);
+            // Act
+            const card = source.slice(start, end);
+            // Assert
+            expect(card.search(/<a\s/)).toBe(-1);
+        });
+    });
     it('renders row 22 outside the revoked status branch and guards moderation reason', () => {
         const card = source.indexOf('data-testid="partner-presence-notice"');
         const revoked = source.indexOf('isRevoked ? (');
@@ -89,7 +120,9 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
     });
 
     it('fetches the caller own partner listing, forwarding the session cookie', () => {
-        expect(source).toContain("import { partnersApi } from '@/lib/api/endpoints-protected';");
+        expect(source).toContain(
+            "import { billingSubscriptionApi, partnersApi } from '@/lib/api/endpoints-protected';"
+        );
         expect(source).toContain('partnersApi.mine({');
         expect(source).toContain("Astro.request.headers.get('cookie')");
     });

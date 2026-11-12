@@ -1551,7 +1551,7 @@
             "empty": "Tu postulación fue aprobada. Completá tu logo y tus textos para que un admin los revise. Todavía no estás publicado.",
             "underReview": "Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.",
             "rejected": "Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.",
-            "approved": "Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.",
+            "approved": "Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.",
             "revoked": "Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.",
             "revokedContact": "Si querés más información, escribinos y te contamos los detalles."
         },
@@ -1599,6 +1599,14 @@
             "notDeleted": "No se borró nada: tu ficha y tus datos siguen guardados.",
             "returnsAlone": "Tu presencia vuelve sola cuando recuperes el plan que la otorga.",
             "moderated": "Un administrador moderó tu presencia. Aunque tengas el plan, no se verá hasta que se levante la moderación."
+        },
+        "installment": {
+            "title": "Tu cuota a pagar",
+            "plan": "Plan: {{plan}}",
+            "amount": "Monto: {{amount}}",
+            "amountPending": "El equipo te confirma el monto junto con los datos para transferir.",
+            "dueOn": "Vence el {{date}}",
+            "howToPay": "Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día."
         }
     },
     "partnerStats": {
