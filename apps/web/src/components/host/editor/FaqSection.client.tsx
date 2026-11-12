@@ -43,6 +43,7 @@ import {
 } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
@@ -52,6 +53,7 @@ import { webLogger } from '@/lib/logger';
 import { addToast } from '@/store/toast-store';
 import styles from './FaqSection.module.css';
 import { clearFaqFieldError, type FaqFieldErrors, validateFaqEditorValues } from './faq-validation';
+import { PlanEntitlementGate } from './PlanEntitlementGate.client';
 
 // Re-export for consumers (the SSR page needs the type for `initialFaqs`).
 export type { AccommodationFaqItem };
@@ -148,6 +150,8 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
     const [editFieldErrors, setEditFieldErrors] = useState<FaqFieldErrors>({});
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const faqAiDraft = useFaqAiDraft({ locale });
+    const [isAiDraftContent, setIsAiDraftContent] = useState(false);
     const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
     const [addFieldErrors, setAddFieldErrors] = useState<FaqFieldErrors>({});
     // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
@@ -798,6 +802,62 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                             setAddFieldErrors((prev) => clearFaqFieldError(prev, 'answer'));
                         }}
                     />
+                    {prefillMessageId && (
+                        <PlanEntitlementGate
+                            entitlementKey="ai_faq_draft"
+                            locale={locale}
+                            fallback={null}
+                        >
+                            <button
+                                className={styles.aiDraftButton}
+                                type="button"
+                                disabled={faqAiDraft.isLoading}
+                                onClick={() =>
+                                    void faqAiDraft.suggest({
+                                        messageId: prefillMessageId,
+                                        onDraft: (draft) => {
+                                            setAddValues((values) => ({
+                                                ...values,
+                                                answer: draft
+                                            }));
+                                            setIsAiDraftContent(true);
+                                        }
+                                    })
+                                }
+                            >
+                                {faqAiDraft.isLoading
+                                    ? t(
+                                          'host.properties.editor.aiQuestions.aiDraftLoading',
+                                          'Generando una sugerencia…'
+                                      )
+                                    : t(
+                                          'host.properties.editor.aiQuestions.suggestAiAnswer',
+                                          'Sugerir respuesta con IA'
+                                      )}
+                            </button>
+                            {isAiDraftContent && (
+                                <p className={styles.aiDraftDisclaimer}>
+                                    {t(
+                                        'host.properties.editor.aiQuestions.aiDraftDisclaimer',
+                                        'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
+                                    )}
+                                </p>
+                            )}
+                            {faqAiDraft.feedback && faqAiDraft.feedback !== 'noData' && (
+                                <p
+                                    className={styles.fieldError}
+                                    role="alert"
+                                >
+                                    {t(
+                                        faqAiDraft.feedback === 'notEligible'
+                                            ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
+                                            : 'host.properties.editor.aiQuestions.aiDraftError',
+                                        'No se pudo generar la sugerencia. Intentá de nuevo.'
+                                    )}
+                                </p>
+                            )}
+                        </PlanEntitlementGate>
+                    )}
                     {prefillMessageId && addValues.answer === '' && (
                         <p>
                             {t(
