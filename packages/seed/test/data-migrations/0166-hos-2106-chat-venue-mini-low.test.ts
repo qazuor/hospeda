@@ -28,6 +28,53 @@ function context(value: unknown) {
 }
 
 describe('0166 chat venue model migration', () => {
+    it('migrates the production shape with empty params and preserves unrelated fields', async () => {
+        const initial = {
+            providers: { openai: { enabled: true, credentialConfigured: true } },
+            features: {
+                chat_venue: { model: 'gpt-5.4-nano', params: {}, enabled: true },
+                chat: { model: 'keep', params: { temperature: 0.2 } }
+            },
+            costCeilings: { monthlyUsd: 12 }
+        };
+        const { ctx, updateSet } = context(initial);
+        const result = await up(ctx);
+        const saved = updateSet.mock.calls[0]?.[0]?.value;
+        expect(result.counts).toEqual({ updated: 1, skipped: 0 });
+        expect(saved).toEqual({
+            ...initial,
+            features: {
+                ...initial.features,
+                chat_venue: {
+                    model: 'gpt-5.4-mini',
+                    params: { reasoningEffort: 'low' },
+                    enabled: true
+                }
+            }
+        });
+    });
+
+    it('does not change anything on re-run after a successful migration', async () => {
+        const migrated = {
+            features: {
+                chat_venue: { model: 'gpt-5.4-mini', params: { reasoningEffort: 'low' } },
+                chat: { model: 'keep' }
+            },
+            other: true
+        };
+        const { ctx, update } = context(migrated);
+        const result = await up(ctx);
+        expect(result.counts).toEqual({ updated: 0, skipped: 1 });
+        expect(update).not.toHaveBeenCalled();
+        expect(migrated).toEqual({
+            features: {
+                chat_venue: { model: 'gpt-5.4-mini', params: { reasoningEffort: 'low' } },
+                chat: { model: 'keep' }
+            },
+            other: true
+        });
+    });
+
     it('updates only chat_venue and keeps sibling fields', async () => {
         const { ctx, update, updateSet } = context({
             features: {
