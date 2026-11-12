@@ -3,7 +3,7 @@
  * @description Covers resending verification from the Partner claim flow (HOS-2045).
  */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PartnerClaim } from '../../../src/components/partner/PartnerClaim.client';
@@ -151,7 +151,10 @@ describe('HOS-2045 the Partner claim offers to resend the verification email', (
         const button = screen.getByRole('button', { name: 'Reenviar verificación' });
 
         // Act
-        await userEvent.dblClick(button);
+        act(() => {
+            button.click();
+            button.click();
+        });
 
         // Assert
         expect(mocks.resend).toHaveBeenCalledTimes(1);
