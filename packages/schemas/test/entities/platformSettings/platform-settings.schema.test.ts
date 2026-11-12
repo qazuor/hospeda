@@ -59,6 +59,28 @@ describe('HOS-1749 PaidSignupsFreezeValueSchema', () => {
         expect(result.success).toBe(true);
     });
 
+    it('accepts an explicitly open setting', () => {
+        // Arrange
+        const value = { frozen: false };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a missing frozen field', () => {
+        // Arrange
+        const value = {};
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
     it("rejects 'yes' instead of coercing it to a boolean", () => {
         // Arrange
         const value = { frozen: 'yes' };
@@ -315,6 +337,21 @@ describe('PlatformSettingsResponseSchema (discriminated union)', () => {
         if (result.success && result.data.key === 'billing.paidSignupsFreeze') {
             expect(result.data.value.frozen).toBe(true);
         }
+    });
+
+    it('rejects a maintenance value under billing.paidSignupsFreeze', () => {
+        // Arrange
+        const value = { enabled: true };
+
+        // Act
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.paidSignupsFreeze',
+            value,
+            ...baseEnvelope
+        });
+
+        // Assert
+        expect(result.success).toBe(false);
     });
 
     it('rejects a key/value mismatch (seo.defaults shape under maintenance.mode key)', () => {
