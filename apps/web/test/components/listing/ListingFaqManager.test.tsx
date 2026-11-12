@@ -466,7 +466,7 @@ describe('HOS-2101 — prefill from the AI questions tab', () => {
         );
 
         renderManager();
-        fireEvent.click(await screen.findByRole('button', { name: 'Sugerir respuesta con IA' }));
+        fireEvent.click(await screen.findByText('Sugerir respuesta con IA'));
 
         expect(await screen.findByLabelText('Respuesta')).toHaveValue('Hay cochera.');
         expect(screen.getByText(/borrador editable/i)).toBeInTheDocument();
