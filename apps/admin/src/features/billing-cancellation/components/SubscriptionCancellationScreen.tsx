@@ -266,6 +266,7 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
                                 </Select>
                             </div>
                             <Button
+                                className="h-auto min-h-10 w-full whitespace-normal py-2 text-center sm:w-auto"
                                 type="button"
                                 variant="destructive"
                                 disabled={mutation.isPending}

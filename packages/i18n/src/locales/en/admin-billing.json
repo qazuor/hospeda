@@ -1992,6 +1992,66 @@
         "openedAt": "Open since",
         "subjectStatus": "Row status",
         "subjectUnresolved": "Subject could not be resolved",
+        "addonStatuses": {
+            "PENDING_AUTHORIZATION": "Pending authorization",
+            "ACTIVE": "Active",
+            "ABANDONED": "Abandoned",
+            "EXPIRED": "Expired",
+            "CANCELLED": "Cancelled"
+        },
+        "paymentStatuses": {
+            "PENDING": "Pending",
+            "SUCCEEDED": "Credited",
+            "FAILED": "Failed",
+            "PARTIALLY_REFUNDED": "Partially refunded",
+            "REFUNDED": "Refunded",
+            "CHARGED_BACK": "Charged back"
+        },
+        "manualPaymentStatuses": {
+            "AWAITING": "Awaiting payment",
+            "REGISTERED": "Recorded",
+            "DECLARED_UNPAID": "Declared unpaid"
+        },
+        "subjectKinds": {
+            "SUBSCRIPTION": "Subscription",
+            "ADDON_INSTANCE": "Add-on"
+        },
+        "actorTypes": {
+            "owner": "Account owner",
+            "admin": "Administrator",
+            "job": "Automated job",
+            "provider": "Payment provider"
+        },
+        "outcomes": {
+            "OPENED": "Mark opened",
+            "ACCUMULATED": "Added to an open mark"
+        },
+        "reasons": {
+            "REEMBOLSO_POR_CONFIRMAR": "Refund awaiting confirmation",
+            "COBRO_POSTERIOR_A_LA_BAJA": "Charge after cancellation",
+            "COBRO_POSTERIOR_AL_GRANT": "Charge after a grant",
+            "PAGO_PENDIENTE_SIN_RAMA": "Pending payment with no rule to receive it",
+            "DIVERGENCIA_DE_MONTO": "Amount differs from the expected one",
+            "TRANSICION_NO_DECLARADA": "Undeclared state change",
+            "PAGO_TARDIO_RECHAZADO": "Late payment rejected",
+            "REANUDACION_NO_APLICADA": "Resume not applied",
+            "SUCESION_ABIERTA_SOBRE_FILA_MUERTA": "Succession open on an ended subscription",
+            "FAN_OUT_DE_GRANT_INCOMPLETO": "Grant only partially applied",
+            "ADDON_SIN_APAGAR": "Add-on not switched off",
+            "COBRO_DURANTE_CORTESIA": "Charge during a courtesy period",
+            "CORTESIA_SIN_RE_EMITIR": "Courtesy not reissued",
+            "COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA": "Add-on period already charged for another reason",
+            "COMPLEMENTO_CON_PERIODO_COBRADO_POR_REVOCACION": "Add-on period charged and then revoked",
+            "CANCELACION_SIN_CONFIRMAR": "Cancellation not confirmed by the provider",
+            "CONTRACARGO": "Chargeback",
+            "REEMBOLSO_FUERA_DEL_FLUJO": "Refund made outside the system",
+            "COBRO_SIN_REGISTRAR": "Unrecorded charge",
+            "COBRO_DUPLICADO": "Duplicate charge",
+            "COBRO_DEL_PERIODO_SIN_RESOLVER": "Period charge unresolved",
+            "PAUSA_NO_APLICADA": "Pause not applied",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Paid order with no add-on activated",
+            "IMPORTE_COBRADO_DE_MAS": "Overcharged amount"
+        },
         "proposal": "System proposal",
         "proposals": {
             "refund": "Refund",
@@ -2064,7 +2124,7 @@
         "outcome": "Outcome",
         "condition": "Condition",
         "conditions": {
-            "one": "The subscription exists and is in GRACE_PERIOD or SUSPENDED.",
+            "one": "The subscription exists and is in its grace period or suspended.",
             "two": "The amount matches what is expected for the covered period.",
             "three": "There is no other live principal row for the same user and vertical, nor a successor that has already authorized.",
             "four": "There is no other credited payment for the same period."

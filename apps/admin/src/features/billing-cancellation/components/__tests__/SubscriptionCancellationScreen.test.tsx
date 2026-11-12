@@ -343,3 +343,18 @@ describe('TEST:1696:3 AC:1696:3 cancellation screen', () => {
         noConfirm();
     });
 });
+
+describe('HOS-1761 cancellation confirm button wraps on mobile', () => {
+    it('the long confirm button wraps instead of overflowing on mobile', () => {
+        // Arrange
+        renderScreen();
+        const button = card().getByTestId('subscription-cancellation-confirm');
+        // Act
+        const classes = button.classList;
+        // Assert
+        expect(classes.contains('whitespace-normal')).toBe(true);
+        expect(classes.contains('h-auto')).toBe(true);
+        expect(classes.contains('w-full')).toBe(true);
+        expect(classes.contains('whitespace-nowrap')).toBe(false);
+    });
+});
