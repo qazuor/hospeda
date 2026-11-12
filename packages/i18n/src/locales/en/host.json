@@ -331,6 +331,8 @@
                 "youtube": "YouTube",
                 "minNights": "Minimum nights",
                 "minNightsHint": "The minimum number of nights a guest must book. Shown on the public listing.",
+                "maxNights": "Maximum nights",
+                "maxNightsHint": "Optional. The maximum nights per booking; it cannot be lower than the minimum.",
                 "street": "Street",
                 "number": "Number",
                 "floor": "Floor",

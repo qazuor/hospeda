@@ -529,6 +529,21 @@
             "yes": "Se permiten eventos privados",
             "no": "No se permiten eventos"
         },
+        "eventsDetails": {
+            "title": "Detalles de los eventos",
+            "maxGuestsLabel": "Máximo de invitados",
+            "maxGuests": "máximo de invitados: {{count}}",
+            "amplifiedSoundLabel": "Se permite música o sonido amplificado",
+            "amplifiedSound": {
+                "yes": "con música amplificada",
+                "no": "sin música amplificada"
+            },
+            "endTimeLabel": "Horario límite",
+            "endTime": "hasta las {{time}}",
+            "extraCostLabel": "Cobro un cargo extra por evento",
+            "extraCost": "con cargo extra",
+            "notesLabel": "Nota"
+        },
         "checkIn": {
             "label": "Check-in"
         },
@@ -544,6 +559,28 @@
         },
         "maxNights": {
             "label": "Máximo de noches"
+        },
+        "deposit": {
+            "label": "Seña para reservar",
+            "editorLabel": "¿Pedís seña para reservar?",
+            "yes": "Se pide seña",
+            "yesWithPercentage": "Se pide seña del {{percentage}}%",
+            "no": "No se pide seña",
+            "percentageLabel": "Porcentaje de la seña (%)",
+            "notesLabel": "Nota"
+        },
+        "spokenLanguages": {
+            "label": "Idiomas en que te atendemos",
+            "editorHint": "Marcá los idiomas en los que podés atender a los huéspedes.",
+            "language": {
+                "es": "Español",
+                "en": "Inglés",
+                "pt": "Portugués",
+                "it": "Italiano",
+                "fr": "Francés",
+                "de": "Alemán",
+                "other": "Otros idiomas"
+            }
         },
         "reservations": {
             "label": "Reservas",

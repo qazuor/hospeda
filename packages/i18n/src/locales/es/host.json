@@ -331,6 +331,8 @@
                 "youtube": "YouTube",
                 "minNights": "Mínimo de noches",
                 "minNightsHint": "La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.",
+                "maxNights": "Máximo de noches",
+                "maxNightsHint": "Opcional. La cantidad máxima de noches por reserva; no puede ser menor que el mínimo.",
                 "street": "Calle",
                 "number": "Número",
                 "floor": "Piso",

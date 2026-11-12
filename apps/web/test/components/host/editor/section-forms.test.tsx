@@ -630,7 +630,7 @@ describe('Policies panel on the services page (HOS-2060)', () => {
         expect(firstPatchBody()).toEqual({ policies: { paymentMethods: null } });
     });
 
-    it('should not render a minNights control on the services page', () => {
+    it('should render neither stay bound on the services page (HOS-2121)', () => {
         render(
             <ServicesForm
                 {...COMMON}
@@ -640,7 +640,162 @@ describe('Policies panel on the services page (HOS-2060)', () => {
         );
 
         expect(document.getElementById('acc-policies-minNights')).toBeNull();
+        expect(document.getElementById('acc-policies-maxNights')).toBeNull();
+    });
+
+    it('should send eventsDetails: null with the switch when events go from yes to no (HOS-2122)', async () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                initialData={{
+                    ...INITIAL,
+                    policies: {
+                        ...INITIAL.policies,
+                        eventsAllowed: true,
+                        eventsDetails: { maxGuests: 30 }
+                    }
+                }}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        expect(screen.getByTestId('events-details')).toBeInTheDocument();
+        const events = document.getElementById('acc-policies-eventsAllowed') as HTMLSelectElement;
+        fireEvent.change(events, { target: { value: 'no' } });
+        expect(screen.queryByTestId('events-details')).toBeNull();
+        submitFrom(events);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({
+            policies: { eventsAllowed: false, eventsDetails: null }
+        });
+    });
+
+    it('should send the deposit and spoken languages the host set (HOS-2120)', async () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        const deposit = document.getElementById(
+            'acc-policies-deposit-required'
+        ) as HTMLSelectElement;
+        fireEvent.change(deposit, { target: { value: 'yes' } });
+        fireEvent.change(screen.getByLabelText(/porcentaje de la seña/i), {
+            target: { value: '25' }
+        });
+        fireEvent.click(screen.getByLabelText('Inglés'));
+        submitFrom(deposit);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({
+            policies: { deposit: { required: true, percentage: 25 }, spokenLanguages: ['en'] }
+        });
+    });
+});
+
+describe('stay length on the capacity page (HOS-2121, HOS-910)', () => {
+    it('should render the maximum next to the minimum', () => {
+        render(<CapacityPricingForm {...COMMON} />);
+
+        expect(document.getElementById('acc-policies-minNights')).not.toBeNull();
         expect(document.getElementById('acc-policies-maxNights')).not.toBeNull();
+    });
+
+    it('should send the max together with the stored min, so the pair is checked', async () => {
+        const user = userEvent.setup();
+        render(<CapacityPricingForm {...COMMON} />);
+
+        const maxNights = screen.getByLabelText(/máximo de noches/i) as HTMLInputElement;
+        await user.type(maxNights, '14');
+        submitFrom(maxNights);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ policies: { minNights: 1, maxNights: 14 } });
+    });
+
+    it('should block a max below the min and show the error next to the field', async () => {
+        const user = userEvent.setup();
+        render(
+            <CapacityPricingForm
+                {...COMMON}
+                initialData={{ ...INITIAL, policies: { minNights: 5, paymentMethods: ['cash'] } }}
+            />
+        );
+
+        const maxNights = screen.getByLabelText(/máximo de noches/i) as HTMLInputElement;
+        await user.type(maxNights, '2');
+        submitFrom(maxNights);
+
+        await waitFor(() => expect(maxNights).toHaveAttribute('aria-invalid', 'true'));
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should send null for a max the host cleared', async () => {
+        const user = userEvent.setup();
+        render(
+            <CapacityPricingForm
+                {...COMMON}
+                initialData={{
+                    ...INITIAL,
+                    policies: { minNights: 2, maxNights: 10, paymentMethods: ['cash'] }
+                }}
+            />
+        );
+
+        const maxNights = screen.getByLabelText(/máximo de noches/i) as HTMLInputElement;
+        await user.clear(maxNights);
+        submitFrom(maxNights);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ policies: { minNights: 2, maxNights: null } });
+    });
+
+    // HOS-910: a saved minimum could not be emptied from the editor.
+    it('should send minNights: null when the host empties a saved minimum', async () => {
+        const user = userEvent.setup();
+        render(
+            <CapacityPricingForm
+                {...COMMON}
+                initialData={{ ...INITIAL, policies: { minNights: 3, paymentMethods: ['cash'] } }}
+            />
+        );
+
+        const minNights = screen.getByLabelText(/mínimo de noches/i) as HTMLInputElement;
+        await user.clear(minNights);
+        submitFrom(minNights);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ policies: { minNights: null } });
+    });
+});
+
+describe('HOS-910: a saved address can be emptied', () => {
+    it('should send an empty street and pass client-side validation', async () => {
+        const user = userEvent.setup();
+        render(
+            <LocationForm
+                {...COMMON}
+                initialData={{ ...INITIAL, street: 'Av. Mitre' }}
+            />
+        );
+
+        const street = screen.getByLabelText(/^calle$/i) as HTMLInputElement;
+        await user.clear(street);
+        submitFrom(street);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ street: '' });
     });
 });
 
