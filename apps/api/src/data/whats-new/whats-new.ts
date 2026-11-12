@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4279, #4283
     {
         id: '2026-11-11-external-reputation-on-listings',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T03:47:08Z',
         highlight: false,
         title: {
             es: 'Las fichas de alojamiento muestran sus reseñas de Google',
@@ -172,7 +172,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4284
     {
         id: '2026-11-11-external-reputation-auto-enable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T02:47:08Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -190,7 +190,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4287
     {
         id: '2026-11-11-account-emails-plain-text',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T01:47:08Z',
         highlight: false,
         title: {
             es: 'Los mails de tu cuenta llegan mejor a tu bandeja',
@@ -207,7 +207,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4288
     {
         id: '2026-11-11-listing-only-priced-filter',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T00:47:08Z',
         highlight: false,
         title: {
             es: 'El filtro de alojamientos con precio definido ya funciona',
@@ -224,7 +224,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4282
     {
         id: '2026-11-11-listing-chat-honest-answers',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T23:47:08Z',
         highlight: false,
         title: {
             es: 'El asistente de cada ficha responde en tu idioma y no inventa',
@@ -241,7 +241,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4263, #4270, #4274
     {
         id: '2026-11-10-venue-min-age-scope',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T22:47:08Z',
         highlight: false,
         roles: ['VENUE_OWNER'],
         title: {
@@ -259,7 +259,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4266, #4269, #4294
     {
         id: '2026-11-10-ai-questions-tab',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T21:47:08Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -277,7 +277,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4221
     {
         id: '2026-11-08-venue-experience-services-editor',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T01:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -295,7 +295,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4217, #4228
     {
         id: '2026-11-08-listing-policies',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T00:05:30Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -313,7 +313,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4200
     {
         id: '2026-11-07-publish-bars-and-boliches-in-comer-y-salir',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-09T23:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER'],
         title: {

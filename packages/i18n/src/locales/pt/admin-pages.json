@@ -410,6 +410,10 @@
         }
     },
     "ai": {
+        "settings": {
+            "reasoningEffortLabel": "Esforço de raciocínio",
+            "providerDefault": "Padrão do provedor"
+        },
         "usage": {
             "title": "Painel de Consumo de IA",
             "subtitle": "Monitore o uso de IA por função, modelo e provedor. Todos os custos em µUSD (1 USD = 1.000.000 µUSD).",

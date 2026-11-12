@@ -26,6 +26,13 @@ const OVERRIDE = {
 };
 
 describe('resolveModelRate', () => {
+    it('uses the HOS-2106 gpt-5.4-mini rate', () => {
+        expect(MODEL_RATES['gpt-5.4-mini']).toEqual({
+            inputMicroUsdPerMillionTokens: 750_000,
+            outputMicroUsdPerMillionTokens: 4_500_000
+        });
+    });
+
     it('returns the in-code rate with source "code"', () => {
         // Arrange / Act
         const result = resolveModelRate({ model: 'gpt-4o-mini' });

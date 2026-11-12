@@ -119,6 +119,24 @@ describe('AI settings feature coverage', () => {
             expect(result.features.chat?.primaryProvider).toBe('openai');
         });
 
+        it('round-trips reasoning effort for the venue feature', () => {
+            const settings = {
+                ...DEFAULT_SETTINGS,
+                features: {
+                    ...DEFAULT_SETTINGS.features,
+                    chat_venue: {
+                        enabled: true,
+                        primaryProvider: 'openai',
+                        fallbackChain: [],
+                        model: 'gpt-5.4-mini',
+                        params: { reasoningEffort: 'low' as const }
+                    }
+                }
+            };
+
+            expect(toFormValues(settings).features.chat_venue?.params.reasoningEffort).toBe('low');
+        });
+
         it('fills a feature the server omitted from the defaults', () => {
             const partial = {
                 providers: { stub: { enabled: true } },

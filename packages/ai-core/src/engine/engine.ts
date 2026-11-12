@@ -686,6 +686,15 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             const systemContent = composeSystemPrompt({ content: systemBody, rules: systemRules });
             const injectedReq = injectSystemPrompt({ req, systemContent });
 
+            if (req.params || featureConfig.params.reasoningEffort) {
+                injectedReq.params = {
+                    ...(featureConfig.params.reasoningEffort
+                        ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                        : {}),
+                    ...req.params
+                };
+            }
+
             // Inject the model from feature config if not already set by the caller.
             if (!injectedReq.model && featureConfig.model) {
                 (injectedReq as Record<string, unknown>).model = featureConfig.model;
@@ -758,6 +767,14 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 req,
                 systemContent: streamSystemContent
             });
+            if (req.params || featureConfig.params.reasoningEffort) {
+                injectedStreamReq.params = {
+                    ...(featureConfig.params.reasoningEffort
+                        ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                        : {}),
+                    ...req.params
+                };
+            }
 
             // Inject the model from feature config if not already set by the caller.
             if (!injectedStreamReq.model && featureConfig.model) {
@@ -833,7 +850,16 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                   );
             const injectedObjectReq: GenerateObjectRequest = {
                 ...req,
-                systemPrompt: objectSystemContent,
+                ...(req.params || featureConfig.params.reasoningEffort
+                    ? {
+                          params: {
+                              ...(featureConfig.params.reasoningEffort
+                                  ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                                  : {}),
+                              ...req.params
+                          }
+                      }
+                    : {}),
                 prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
             };
 
