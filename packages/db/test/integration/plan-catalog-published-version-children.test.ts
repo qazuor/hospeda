@@ -114,10 +114,14 @@ const INSERT_PLAN_ENTITLEMENT = `INSERT INTO plan_version_entitlement (plan_vers
     VALUES ($1, 'respond_reviews')`;
 const INSERT_PLAN_LIMIT = `INSERT INTO plan_version_limit (plan_version_id, key, value)
     VALUES ($1, 'max_photos_per_accommodation', 99)`;
+const INSERT_PLAN_LIMIT_NEW_KEY = `INSERT INTO plan_version_limit (plan_version_id, key, value)
+    VALUES ($1, 'max_ai_faq_draft_per_month', 99)`;
 const INSERT_ADDON_ENTITLEMENT = `INSERT INTO addon_version_entitlement (addon_version_id, key)
     VALUES ($1, 'featured_listing')`;
 const INSERT_ADDON_LIMIT = `INSERT INTO addon_version_limit (addon_version_id, key, value)
     VALUES ($1, 'max_photos_per_accommodation', 99)`;
+const INSERT_ADDON_LIMIT_NEW_KEY = `INSERT INTO addon_version_limit (addon_version_id, key, value)
+    VALUES ($1, 'max_ai_faq_draft_per_month', 99)`;
 
 /** The ids the current transaction has recorded as created by it. */
 async function createdVersions(client: PoolClient): Promise<readonly string[]> {
@@ -253,6 +257,64 @@ describe('HOS-2105 — bounded additive grants to published versions', () => {
             ]);
             const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
             expect(error).toBeNull();
+        });
+    });
+
+    it.each([
+        ['plan_version_limit', INSERT_PLAN_LIMIT, INSERT_PLAN_LIMIT_NEW_KEY, 'plan'],
+        ['addon_version_limit', INSERT_ADDON_LIMIT, INSERT_ADDON_LIMIT_NEW_KEY, 'addon']
+    ])('%s accepts a new key and rejects an existing key with the signal', async (_table, existingInsert, newInsert, kind) => {
+        const client = await getTestPool().connect();
+        let versionId: string;
+        try {
+            await client.query('BEGIN');
+            versionId =
+                kind === 'plan'
+                    ? await insertPlanVersion(client, { current: true })
+                    : await insertAddonVersion(client);
+            await client.query(existingInsert, [versionId]);
+            await client.query('COMMIT');
+        } finally {
+            client.release();
+        }
+
+        await inRolledBackTx(async ({ client: tx, attempt }) => {
+            await tx.query('SELECT set_config($1, $2, true)', [ADDITIVE_GRANT_SETTING, 'HOS-2105']);
+            expect(await attempt(newInsert, [versionId])).toBeNull();
+            const duplicate = await attempt(existingInsert, [versionId]);
+            expect(duplicate?.code).toBe('P0001');
+        });
+    });
+
+    it('does not carry a transaction-local signal into the next transaction', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            await client.query('COMMIT');
+            await client.query('BEGIN');
+            const error = await attemptOn(client)(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
+        } finally {
+            await client.query('ROLLBACK');
+            client.release();
+        }
+    });
+
+    it('closes the additive lane when the signal is reset in the same transaction', async () => {
+        const { planVersionId } = await commitPublishedVersions();
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await client.query('SELECT set_config($1, $2, true)', [
+                ADDITIVE_GRANT_SETTING,
+                'HOS-2105'
+            ]);
+            await client.query('SELECT set_config($1, $2, true)', [ADDITIVE_GRANT_SETTING, '']);
+            const error = await attempt(INSERT_PLAN_ENTITLEMENT, [planVersionId]);
+            expect(error?.code).toBe('P0001');
         });
     });
 
