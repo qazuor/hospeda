@@ -309,7 +309,7 @@ describe('G-FAC-R1 retired venue word', () => {
         );
         expect(history.length).toBe(113);
         expect(history).toContain(
-            'packages/seed/test/data-migrations/0166-hos-2105-faq-draft-ai-settings.test.ts'
+            'packages/seed/test/data-migrations/0167-hos-2105-faq-draft-ai-settings.test.ts'
         );
         expect(historyWord.length).toBe(14);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');

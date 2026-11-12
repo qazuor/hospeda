@@ -12,7 +12,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 import { AiFeatureSchema } from '@repo/schemas';
-import { up } from '../../src/data-migrations/0166-hos-2105-faq-draft-ai-settings.js';
+import { up } from '../../src/data-migrations/0167-hos-2105-faq-draft-ai-settings.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 function fakeContext(): SeedMigrationCtx {
@@ -49,7 +49,7 @@ function settingsValue() {
     };
 }
 
-describe('0166 HOS-2105 FAQ draft settings migration', () => {
+describe('0167 HOS-2105 FAQ draft settings migration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });

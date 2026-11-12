@@ -7,7 +7,7 @@ import { AiSettingsKeySchema, AiSettingsValueSchema } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0166-hos-2105-faq-draft-ai-settings',
+    name: '0167-hos-2105-faq-draft-ai-settings',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
