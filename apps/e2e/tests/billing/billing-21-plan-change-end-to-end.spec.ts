@@ -337,7 +337,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
         });
     });
 
-    test('downgrade: scheduled date applies lower plan and amount; sin correo propio: no existe plantilla', async ({
+    test('downgrade: amount changes at request and the scheduled date applies the lower plan; sin correo propio: no existe plantilla', async ({
         page
     }) => {
         if (!world) throw new Error('TEST:B8b:26 downgrade: fake world missing.');
@@ -395,6 +395,32 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             current.article.getByTestId('plan-change-result'),
             'TEST:B8b:26 downgrade: full effective date message.'
         ).toHaveText(`Tu plan cambia el ${formatMarketDate(scheduled.effective_at)}.`);
+        const [target] = await execSQL<{ amount: string }>(
+            'SELECT amount FROM billing_option WHERE id = $1',
+            [targetOptionId]
+        );
+        if (!target) throw new Error('TEST:B8b:26 downgrade: missing target billing option.');
+        const authorization = await world.fakeServer.provider.readAuthorization({
+            authorizationId: current.authorizationId
+        });
+        expect(
+            authorization.snapshot.amount?.amountMinor,
+            'TEST:B8b:26 downgrade: provider amount changes at request (DEC-SUB-008).'
+        ).toBe(Number(target.amount));
+        const amountMutations = world.fakeServer
+            .requests()
+            .filter(
+                (request) =>
+                    request.method === 'PUT' &&
+                    request.path === `/preapproval/${current.authorizationId}` &&
+                    typeof request.body === 'object' &&
+                    request.body !== null &&
+                    'auto_recurring' in request.body
+            );
+        expect(
+            amountMutations,
+            'TEST:B8b:26 downgrade: amount mutation is sent at request, before the scheduled date.'
+        ).toHaveLength(1);
         await world.fakeServer.setClock({
             at: new Date(scheduled.effective_at.getTime() + 60_000)
         });
@@ -411,17 +437,13 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
             status: 'ACTIVE',
             billing_option_id: targetOptionId
         });
-        const [target] = await execSQL<{ amount: string }>(
-            'SELECT amount FROM billing_option WHERE id = $1',
-            [targetOptionId]
-        );
-        const authorization = await world.fakeServer.provider.readAuthorization({
+        const authorizationAfter = await world.fakeServer.provider.readAuthorization({
             authorizationId: current.authorizationId
         });
         expect(
-            authorization.snapshot.amount?.amountMinor,
-            'TEST:B8b:26 downgrade: provider amount matches lower option.'
-        ).toBe(Number(target?.amount));
+            authorizationAfter.snapshot.amount?.amountMinor,
+            'TEST:B8b:26 downgrade: S38 leaves the provider amount as mutated at request.'
+        ).toBe(Number(target.amount));
         expect(
             world.fakeServer
                 .requests()
@@ -433,7 +455,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
                         request.body !== null &&
                         'auto_recurring' in request.body
                 ),
-            'TEST:B8b:26 downgrade: provider received amount mutation.'
+            'TEST:B8b:26 downgrade: S38 sends no second amount mutation.'
         ).toHaveLength(1);
     });
 
