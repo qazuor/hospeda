@@ -112,6 +112,8 @@ test.describe('TEST:2149:1 TEST:2149:2 TEST:2149:3 declined signup notice on my 
 
         const accountResponse = await page.goto(`${WEB_URL}/es/mi-cuenta/`);
         expect(accountResponse?.status()).toBe(200);
+        // A redirect (e.g. to sign-in) would also answer 200 with zero notices.
+        expect(new URL(page.url()).pathname).toBe('/es/mi-cuenta/');
         await expect(page.getByTestId('subscription-return')).toHaveCount(0);
     });
 
@@ -162,6 +164,12 @@ test.describe('TEST:2149:1 TEST:2149:2 TEST:2149:3 declined signup notice on my 
                 `[data-testid="subscription-return"][data-subscription-id="${declined.subscriptionId}"]`
             );
             await expect(notice).toHaveCount(1);
+            // The retry button is server-rendered: a click before React attaches its
+            // handler does nothing (HOS-1890). Astro drops `ssr` once the island hydrates.
+            await expect(page.locator('astro-island').filter({ has: notice })).toHaveCount(1);
+            await expect(page.locator('astro-island[ssr]').filter({ has: notice })).toHaveCount(0, {
+                timeout: 15_000
+            });
             await notice.getByTestId('subscription-return-retry').click();
             await page.waitForURL((url) => url.hostname === FAKE_APPROVAL_HOST);
 
