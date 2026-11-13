@@ -50,16 +50,10 @@ export async function ensureFeaturedBoostCatalog(args: {
         await client.query(
             `INSERT INTO addon_product
              (id, addon_id, version_id, price, currency, charge_kind, cycle, compatible_verticals)
-             VALUES ($1, $2, $3, 300000, 'ARS', $4, $5, ARRAY[$6]::varchar[])
+             VALUES ($1, $2, $3, 300000, 'ARS', $4, $5,
+                     ARRAY['accommodation', 'venue', 'experience']::varchar[])
              ON CONFLICT DO NOTHING`,
-            [
-                item.productId,
-                item.addonId,
-                item.versionId,
-                item.chargeKind,
-                item.cycle,
-                args.vertical
-            ]
+            [item.productId, item.addonId, item.versionId, item.chargeKind, item.cycle]
         );
         const check = await client.query(
             `SELECT ap.id FROM addon_product ap JOIN addon_version av ON av.id = ap.version_id
