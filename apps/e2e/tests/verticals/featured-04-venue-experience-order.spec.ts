@@ -30,6 +30,7 @@ import {
 } from '../../fixtures/arrears-cycle.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
 import {
+    cleanupFeaturedAddonPayments,
     createFeaturedDestination,
     deleteFeaturedDestination,
     deleteVerticalListings,
@@ -70,6 +71,7 @@ test.describe('TEST:HOS-2138:6-7 venue and experience lists pin boosted listings
             providerIds = namespace ? await addonProviderIds({ namespace }) : [];
         } finally {
             try {
+                await cleanupFeaturedAddonPayments({ userIds });
                 await cleanupAddonEndToEnd({ userIds, providerIds });
                 await cleanupArrearsRows({ userIds });
                 await deleteVerticalListings({ venueIds, experienceIds });

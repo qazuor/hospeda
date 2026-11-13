@@ -29,6 +29,7 @@ import {
 import { signUpCardSubscriber } from '../../fixtures/cancellation-flow.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import {
+    cleanupFeaturedAddonPayments,
     createFeaturedDestination,
     deleteFeaturedDestination,
     ensureFeaturedBoostCatalog,
@@ -86,6 +87,7 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
                 : [];
         } finally {
             try {
+                await cleanupFeaturedAddonPayments({ userIds });
                 await cleanupAddonEndToEnd({
                     userIds,
                     providerIds: providerRows.map(({ provider_id }) => provider_id)
