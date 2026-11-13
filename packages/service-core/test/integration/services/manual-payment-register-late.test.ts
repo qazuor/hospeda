@@ -173,6 +173,36 @@ async function seedLiveSuccessor(fixture: Awaited<ReturnType<typeof seed>>) {
 }
 
 describe('MP4 preview', () => {
+    it('TEST:HOS-2173 previews with the injected clock, not the system time', async () => {
+        // Arrange
+        const fixture = await seed();
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2027-03-15T12:00:00.000Z'));
+        let preview: Awaited<ReturnType<typeof previewLateManualPaymentRegistration>>;
+        try {
+            // Act
+            preview = await previewLateManualPaymentRegistration(fixture.request, { clock });
+            // Assert
+            expect(preview).toEqual({
+                subscriptionId: fixture.subscription.id,
+                manualPaymentId: fixture.installment.id,
+                periodStart: runningPeriod,
+                reimputedPeriodStart: null,
+                nextChargeAt: new Date('2026-10-03T12:00:00.000Z'),
+                effect: 'S7'
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+
+        // Act
+        const result = await registerLateManualPayment(fixture.request, { clock });
+        // Assert
+        expect(result.reimputedFrom).toBeNull();
+        expect(result.periodStart).toEqual(preview.periodStart);
+        expect(result.nextChargeAt).toEqual(preview.nextChargeAt);
+    });
+
     it('rejects an S19 C5 conflict just as registration does, without writing', async () => {
         const fixture = await seed();
         await seedLiveSuccessor(fixture);
@@ -197,9 +227,9 @@ describe('MP4 preview', () => {
             creditedAt: now
         });
 
-        await expect(previewLateManualPaymentRegistration(fixture.request)).rejects.toMatchObject({
-            reason: 'MANUAL_PAYMENT_COVERAGE_CONFLICT'
-        });
+        await expect(
+            previewLateManualPaymentRegistration(fixture.request, { clock })
+        ).rejects.toMatchObject({ reason: 'MANUAL_PAYMENT_COVERAGE_CONFLICT' });
         await rejected(fixture.request, 'MANUAL_PAYMENT_COVERAGE_CONFLICT');
         const rows = await state(fixture);
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');
@@ -212,7 +242,7 @@ describe('MP4 preview', () => {
         const fixture = await seed({ periodStart: expiredPeriod });
         await seedLiveSuccessor(fixture);
 
-        const preview = await previewLateManualPaymentRegistration(fixture.request);
+        const preview = await previewLateManualPaymentRegistration(fixture.request, { clock });
         expect(preview).toEqual({
             subscriptionId: fixture.subscription.id,
             manualPaymentId: fixture.installment.id,
@@ -229,25 +259,19 @@ describe('MP4 preview', () => {
 
     it('returns the reimputed period and exact next charge for S7 without writing', async () => {
         const fixture = await seed({ periodStart: new Date('2026-07-03T12:00:00.000Z') });
-        vi.useFakeTimers({ toFake: ['Date'] });
-        vi.setSystemTime(now);
-        try {
-            const preview = await previewLateManualPaymentRegistration(fixture.request);
-            expect(preview).toEqual({
-                subscriptionId: fixture.subscription.id,
-                manualPaymentId: fixture.installment.id,
-                periodStart: fixture.installment.periodStart,
-                reimputedPeriodStart: now,
-                nextChargeAt: new Date('2026-10-04T12:00:00.000Z'),
-                effect: 'S7'
-            });
-            const rows = await state(fixture);
-            expect(rows.installment?.status).toBe('DECLARED_UNPAID');
-            expect(rows.coverage).toHaveLength(0);
-            expect(rows.receipt).toHaveLength(0);
-        } finally {
-            vi.useRealTimers();
-        }
+        const preview = await previewLateManualPaymentRegistration(fixture.request, { clock });
+        expect(preview).toEqual({
+            subscriptionId: fixture.subscription.id,
+            manualPaymentId: fixture.installment.id,
+            periodStart: fixture.installment.periodStart,
+            reimputedPeriodStart: now,
+            nextChargeAt: new Date('2026-10-04T12:00:00.000Z'),
+            effect: 'S7'
+        });
+        const rows = await state(fixture);
+        expect(rows.installment?.status).toBe('DECLARED_UNPAID');
+        expect(rows.coverage).toHaveLength(0);
+        expect(rows.receipt).toHaveLength(0);
     });
 });
 
