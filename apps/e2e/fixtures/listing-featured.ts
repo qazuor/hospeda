@@ -214,6 +214,13 @@ export async function monthlyOptionForAnySlug(args: { readonly slug: string }): 
     return id;
 }
 
+/**
+ * Description for SQL-seeded venues and experiences. It must satisfy the public
+ * response schema (`listing-identity.schema.ts:66`, min 20): the public list strips
+ * every item through it and answers 500 for the whole page on one short row.
+ */
+const LISTING_DESCRIPTION = 'E2E HOS-2138 listing used to check the featured order.';
+
 /** Insert a published venue for a case-local featured-listing scenario. */
 export async function insertVenue(args: {
     readonly ownerId: string;
@@ -224,10 +231,16 @@ export async function insertVenue(args: {
         `INSERT INTO venues (
              slug, name, summary, description, type, owner_id, destination_id,
              business_lines, publication_status, inactive_since, deadlines_version
-         ) VALUES ($1, $2, 'E2E summary', 'E2E description', 'RESTAURANT', $3, $4,
+         ) VALUES ($1, $2, 'E2E summary', $5, 'RESTAURANT', $3, $4,
                    ARRAY['food']::text[], 'PUBLISHED', NOW(), 1)
          RETURNING id`,
-        [`hos2138-${randomUUID()}`, args.name, args.ownerId, args.destinationId]
+        [
+            `hos2138-${randomUUID()}`,
+            args.name,
+            args.ownerId,
+            args.destinationId,
+            LISTING_DESCRIPTION
+        ]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('insertVenue: insert returned no id.');
@@ -244,10 +257,16 @@ export async function insertExperience(args: {
         `INSERT INTO experiences (
              slug, name, summary, description, type, owner_id, destination_id,
              publication_status, inactive_since, deadlines_version
-         ) VALUES ($1, $2, 'E2E summary', 'E2E description', 'EXCURSION', $3, $4,
+         ) VALUES ($1, $2, 'E2E summary', $5, 'EXCURSION', $3, $4,
                    'PUBLISHED', NOW(), 1)
          RETURNING id`,
-        [`hos2138-${randomUUID()}`, args.name, args.ownerId, args.destinationId]
+        [
+            `hos2138-${randomUUID()}`,
+            args.name,
+            args.ownerId,
+            args.destinationId,
+            LISTING_DESCRIPTION
+        ]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('insertExperience: insert returned no id.');
@@ -263,6 +282,37 @@ export async function deleteVerticalListings(args: {
         await execSQL('DELETE FROM venues WHERE id = ANY($1::uuid[])', [args.venueIds]);
     if (args.experienceIds.length > 0)
         await execSQL('DELETE FROM experiences WHERE id = ANY($1::uuid[])', [args.experienceIds]);
+}
+
+/**
+ * Delete the payments a one-time boost order leaves on its addon instances, and every
+ * row that references those payments, so the shared addon cleanup can then delete the
+ * instances. `cleanupPermanentGrantE2eRows` only removes payments hanging from
+ * tombstone subscriptions; an `UNA_VEZ` order writes `payment.addon_instance_id`
+ * instead (`payment_addon_instance_id_addon_instance_id_fk`), which blocks it.
+ * Dependents per `packages/db/src/schemas/vertical`: reconciliation_mark_payment
+ * (payment_id, refund_id), succession_retained_payment, receipt, refund_call
+ * (refund_id, addon_instance_id), refund and covered_period.
+ */
+export async function cleanupFeaturedAddonPayments(args: {
+    readonly userIds: readonly string[];
+}): Promise<void> {
+    if (args.userIds.length === 0) return;
+    const instances = 'SELECT id FROM addon_instance WHERE owner_id = ANY($1::uuid[])';
+    const payments = `SELECT id FROM payment WHERE addon_instance_id IN (${instances})`;
+    const refunds = `SELECT id FROM refund WHERE payment_id IN (${payments})`;
+    const statements = [
+        `DELETE FROM reconciliation_mark_payment
+          WHERE payment_id IN (${payments}) OR refund_id IN (${refunds})`,
+        `DELETE FROM succession_retained_payment WHERE payment_id IN (${payments})`,
+        `DELETE FROM receipt WHERE payment_id IN (${payments})`,
+        `DELETE FROM refund_call
+          WHERE refund_id IN (${refunds}) OR addon_instance_id IN (${instances})`,
+        `DELETE FROM refund WHERE payment_id IN (${payments})`,
+        `DELETE FROM covered_period WHERE payment_id IN (${payments})`,
+        `DELETE FROM payment WHERE addon_instance_id IN (${instances})`
+    ] as const;
+    for (const statement of statements) await execSQL(statement, [args.userIds]);
 }
 
 /** Read the current plan and version ids for a catalog slug and vertical. */
