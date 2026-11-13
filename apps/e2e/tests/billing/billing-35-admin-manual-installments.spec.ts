@@ -475,7 +475,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             });
             const result = m.ManualPaymentDataSchema.parse(response.body);
             const receiptId = await m.assertLateManualPaymentPersisted({
-                subscriptionId: late.subscriptionId,
+                subscriptionId,
                 userId: payer.id,
                 previousId,
                 manualPaymentId: lateId,
@@ -494,7 +494,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 reimputedFrom: latePeriod.toISOString(),
                 receiptId
             });
-            expect(world.fakeServer.requests()).toHaveLength(0);
+            expect(world?.fakeServer.requests()).toHaveLength(0);
         });
     });
 });
