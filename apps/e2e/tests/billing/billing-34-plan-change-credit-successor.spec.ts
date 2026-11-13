@@ -6,154 +6,54 @@
  * Run through the PR e2e:p0 gate; this spec moves the shared API clock and runs serially.
  */
 import { randomUUID } from 'node:crypto';
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
 import { createAdjustableClock } from '@repo/test-clock';
-import { addCalendarMonths } from '@repo/utils';
-import { z } from 'zod';
 import {
-    API_URL,
     activateCardSubscription,
-    cancelRequestsFor,
     cleanupArrearsRows,
-    createSubscriber,
     DAY_MS,
     deliverNotices,
     ensureDeadlineVersion,
-    type FakeWorld,
-    runCron
+    type FakeWorld
 } from '../../fixtures/arrears-cycle.ts';
-import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import { seedTwoComplements } from '../../fixtures/permanent-grant-flow.ts';
-import { cleanupPlanChangeCase, openActivePlanCase } from '../../fixtures/plan-change-e2e.ts';
+import { cleanupPlanChangeCase } from '../../fixtures/plan-change-e2e.ts';
 import { annualOptionForSlug, monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
-
-const EFFECTIVE_SET_URL = `${API_URL}/api/v1/protected/users/me/effective-set?vertical=accommodation`;
-const PlanChangeSchema = z.object({
-    data: z.discriminatedUnion('outcome', [
-        z.object({
-            outcome: z.literal('SUCCESSION'),
-            subscriptionId: z.string(),
-            checkoutUrl: z.string(),
-            firstChargeAt: z.string(),
-            creditDays: z.number()
-        }),
-        z.object({
-            outcome: z.literal('DOWNGRADE'),
-            effectiveAt: z.string(),
-            amountMinor: z.number()
-        }),
-        z.object({ outcome: z.literal('REGRET'), amountMinor: z.number() })
-    ])
-});
-const EffectiveSetSchema = z.object({
-    data: z.object({
-        entitlements: z.record(z.string(), z.union([z.number(), z.literal('Infinity')])),
-        limits: z.record(z.string(), z.union([z.number(), z.literal('Infinity')]))
-    })
-});
-const CheckoutBodySchema = z.object({
-    auto_recurring: z.object({
-        transaction_amount: z.number(),
-        start_date: z.string(),
-        frequency: z.number(),
-        frequency_type: z.string()
-    })
-});
-type WorldCase = Awaited<ReturnType<typeof openActivePlanCase>> &
-    Awaited<ReturnType<typeof createSubscriber>> & {
-        readonly article: ReturnType<Page['locator']>;
-    };
-
-function equal(actual: unknown, expected: unknown, message: string): void {
-    expect(actual, message).toEqual(expected);
-}
-
-function length(actual: readonly unknown[], expected: number, message: string): void {
-    expect(actual, message).toHaveLength(expected);
-}
-
-function differs(actual: unknown, expected: unknown, message: string): void {
-    expect(actual, message).not.toEqual(expected);
-}
-
-function ceilRatio(numerator: bigint, denominator: bigint): bigint {
-    return (numerator + denominator - 1n) / denominator;
-}
-
-function valueCreditDays(args: {
-    paidMinor: number;
-    periodStart: Date;
-    now: Date;
-    targetMinor: number;
-    targetMonths: number;
-}): number {
-    const periodEnd = addCalendarMonths({
-        from: args.periodStart,
-        months: 1,
-        dayOverflow: 'clamp'
-    });
-    const periodMs = periodEnd.getTime() - args.periodStart.getTime();
-    const remainingMs = Math.max(0, Math.min(periodMs, periodEnd.getTime() - args.now.getTime()));
-    const targetEnd = addCalendarMonths({
-        from: args.now,
-        months: args.targetMonths,
-        dayOverflow: 'clamp'
-    });
-    const targetMs = targetEnd.getTime() - args.now.getTime();
-    return Number(
-        ceilRatio(
-            BigInt(args.paidMinor) * BigInt(remainingMs) * BigInt(targetMs),
-            BigInt(periodMs) * BigInt(args.targetMinor) * BigInt(DAY_MS)
-        )
-    );
-}
-
-async function requestPlanChange(args: {
-    user: { sessionCookie: string };
-    subscriptionId: string;
-    billingOptionId: string;
-}) {
-    const response = await fetch(
-        `${API_URL}/api/v1/protected/billing-subscription/${args.subscriptionId}/plan-change`,
-        {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
-            body: JSON.stringify({ billingOptionId: args.billingOptionId })
-        }
-    );
-    equal(response.status, 200, 'TEST:2159 plan-change route returns HTTP 200.');
-    return PlanChangeSchema.parse(await response.json()).data;
-}
-
-async function readEffectiveSet(user: { sessionCookie: string }) {
-    const response = await fetch(EFFECTIVE_SET_URL, { headers: { cookie: user.sessionCookie } });
-    equal(response.status, 200, 'TEST:2159 effective-set route returns HTTP 200.');
-    return EffectiveSetSchema.parse(await response.json()).data;
-}
-
-function preapprovalPosts(world: FakeWorld) {
-    return world.fakeServer
-        .requests()
-        .filter((request) => request.method === 'POST' && request.path === '/preapproval');
-}
-
-function putsTo(world: FakeWorld, authorizationId: string) {
-    return world.fakeServer
-        .requests()
-        .filter(
-            (request) =>
-                request.method === 'PUT' && request.path === `/preapproval/${authorizationId}`
-        );
-}
-
-function pick(values: Record<string, number | 'Infinity'>, keys: readonly string[]) {
-    return Object.fromEntries(keys.filter((key) => key in values).map((key) => [key, values[key]]));
-}
+import {
+    cancelsTo,
+    capabilitiesOf,
+    checkoutTermsOf,
+    countRetainedPayments,
+    countScheduledChanges,
+    countSucceededPayments,
+    dayCreditDays,
+    expectCronSucceeds,
+    expectDiffers,
+    expectEqual,
+    expectLength,
+    openPlanChangeCase,
+    preapprovalPosts,
+    putsTo,
+    readAddonInstances,
+    readBillingOption,
+    readCapabilityDiff,
+    readEffectiveSet,
+    readOpenCoveredPeriodStarts,
+    readPayments,
+    readPlanColumns,
+    readSubscriptionAnchor,
+    readSubscriptionStatus,
+    readSubscriptionStatuses,
+    readSucceededById,
+    readSuccessorRow,
+    readUpgradeBaseline,
+    requestPlanChange,
+    valueCreditDays
+} from './helpers/plan-change-successor.ts';
 
 test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credit, abandonment, complements and capabilities @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
@@ -171,10 +71,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [
-                    {
-                        lie: 'M1',
-                        why: 'TEST:2159 asserts plan-change checkout and amount mutation.'
-                    },
+                    { lie: 'M1', why: 'TEST:2159 asserts plan-change checkout and amounts.' },
                     { lie: 'M6', why: 'TEST:2159 delivers authorization and payment webhooks.' },
                     { lie: 'M8', why: 'TEST:2159 needs an accurately credited starting cycle.' }
                 ]
@@ -194,7 +91,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             await world?.fakeServer.close();
             const providerIds = await cleanupPlanChangeCase({ userIds, providerNamespace });
             await cleanupArrearsRows({ userIds });
-            equal(
+            expectEqual(
                 await describeSweepCandidates({
                     includeUserIds: userIds,
                     includeProviderIds: providerIds
@@ -210,55 +107,17 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         }
     });
 
-    async function startCase(args: {
-        page: Page;
-        slug: 'owner-basico' | 'owner-premium';
-    }): Promise<WorldCase> {
-        if (!world) throw new Error('TEST:2159 setup: fake world missing.');
-        const subscriber = await createSubscriber();
-        userIds.push(subscriber.user.id, subscriber.admin.id);
-        await seedCookieConsent(args.page);
-        const current = await openActivePlanCase({
-            page: args.page,
-            world,
-            user: subscriber.user,
-            admin: subscriber.admin,
-            slug: args.slug
-        });
-        return {
-            ...subscriber,
-            ...current,
-            article: args.page.locator(`[data-subscription-id="${current.subscriptionId}"]`)
-        };
-    }
-
     test('upgrade checkout asks the target price with the value credit as first charge date; abandoning it keeps the old plan charging', async ({
         page
     }) => {
         if (!world) throw new Error('TEST:2159:1 setup: fake world missing.');
         const targetOptionId = await annualOptionForSlug('owner-premium');
-        const current = await startCase({ page, slug: 'owner-basico' });
-        const [basic] = await execSQL<{
-            amount: string;
-            billing_option_id: string;
-            next_charge_at: Date;
-        }>(
-            'SELECT bo.amount, s.billing_option_id, s.next_charge_at FROM subscription s JOIN billing_option bo ON bo.id = s.billing_option_id WHERE s.id = $1',
-            [current.subscriptionId]
-        );
-        const [target] = await execSQL<{ amount: string }>(
-            'SELECT amount FROM billing_option WHERE id = $1',
-            [targetOptionId]
-        );
-        const [period] = await execSQL<{ period_start: Date; amount: string }>(
-            'SELECT cp.period_start, p.amount FROM covered_period cp JOIN payment p ON p.id = cp.payment_id WHERE cp.subscription_id = $1 AND cp.released_at IS NULL ORDER BY cp.period_start DESC LIMIT 1',
-            [current.subscriptionId]
-        );
-        if (!basic || !target || !period)
-            throw new Error(
-                'TEST:2159:1 setup: old option, target option or open covered period missing.'
-            );
-        differs(
+        const current = await openPlanChangeCase({ page, world, userIds, slug: 'owner-basico' });
+        const { anchor, basic, target, period } = await readUpgradeBaseline({
+            subscriptionId: current.subscriptionId,
+            targetOptionId
+        });
+        expectDiffers(
             Number(target.amount),
             Number(basic.amount),
             'TEST:2159:1 precondition: the annual Premium price differs from the monthly Basico price.'
@@ -270,7 +129,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(
+        expectEqual(
             change.outcome,
             'SUCCESSION',
             'TEST:2159:1 upgrade to annual Premium opens a succession.'
@@ -284,37 +143,19 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             targetMinor: Number(target.amount),
             targetMonths: 12
         });
-        const remainingDays = Math.ceil(
-            (addCalendarMonths({
-                from: period.period_start,
-                months: 1,
-                dayOverflow: 'clamp'
-            }).getTime() -
-                bornAt.getTime()) /
-                DAY_MS
-        );
-        differs(
+        expectDiffers(
             expectedCredit,
-            remainingDays,
+            dayCreditDays({ periodStart: period.period_start, now: bornAt }),
             'TEST:2159:1 precondition: the value credit differs from the day credit with these prices.'
         );
-        equal(
+        expectEqual(
             change.creditDays,
             expectedCredit,
             'TEST:2159:1 response credit days follow the value formula (DEC-SUB-006 c).'
         );
-        const [successor] = await execSQL<{
-            status: string;
-            succeeds_id: string;
-            billing_option_id: string;
-            first_charge_at: Date;
-            authorization_window_ends_at: Date;
-        }>(
-            'SELECT status, succeeds_id, billing_option_id, first_charge_at, authorization_window_ends_at FROM subscription WHERE id = $1',
-            [change.subscriptionId]
-        );
+        const successor = await readSuccessorRow(change.subscriptionId);
         if (!successor) throw new Error('TEST:2159:1 successor row missing.');
-        equal(
+        expectEqual(
             {
                 status: successor.status,
                 succeeds_id: successor.succeeds_id,
@@ -334,30 +175,24 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'TEST:2159:1 precondition: the credit term outweighs the window term.'
         ).toBeGreaterThan(windowFirst);
         const expectedFirst = new Date(Math.max(windowFirst, creditFirst));
-        equal(
+        expectEqual(
             successor.first_charge_at.toISOString(),
             new Date(change.firstChargeAt).toISOString(),
             'TEST:2159:1 persisted first charge equals the response first charge.'
         );
-        equal(
+        expectEqual(
             new Date(change.firstChargeAt).toISOString(),
             expectedFirst.toISOString(),
             'TEST:2159:1 first charge date is bornAt plus the value credit days.'
         );
         const posts = preapprovalPosts(world);
-        equal(
+        expectEqual(
             posts.length,
             postsBefore + 1,
             'TEST:2159:1 exactly one checkout preapproval is created.'
         );
-        const body = CheckoutBodySchema.parse(posts.at(-1)?.body);
-        equal(
-            {
-                amountMinor: Math.round(body.auto_recurring.transaction_amount * 100),
-                startDate: new Date(body.auto_recurring.start_date).toISOString(),
-                frequency: body.auto_recurring.frequency,
-                frequencyType: body.auto_recurring.frequency_type
-            },
+        expectEqual(
+            checkoutTermsOf(posts.at(-1)?.body),
             {
                 amountMinor: Number(target.amount),
                 startDate: expectedFirst.toISOString(),
@@ -370,30 +205,21 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         await world.fakeServer.setClock({
             at: new Date(successor.authorization_window_ends_at.getTime() + 60_000)
         });
-        const expired = await runCron({
+        await expectCronSucceeds({
             jobName: 'subscription-window-expiry',
-            adminCookie: current.admin.sessionCookie
+            adminCookie: current.admin.sessionCookie,
+            message: 'TEST:2159:2 subscription-window-expiry succeeds.'
         });
-        equal(expired.success, true, 'TEST:2159:2 subscription-window-expiry succeeds.');
         await expect
-            .poll(
-                async () =>
-                    (
-                        await execSQL<{ status: string }>(
-                            'SELECT status FROM subscription WHERE id = $1',
-                            [change.subscriptionId]
-                        )
-                    )[0]?.status,
-                {
-                    message: 'TEST:2159:2 the abandoned successor reaches ABANDONED.',
-                    timeout: 30_000
-                }
-            )
+            .poll(() => readSubscriptionStatus(change.subscriptionId), {
+                message: 'TEST:2159:2 the abandoned successor reaches ABANDONED.',
+                timeout: 30_000
+            })
             .toBe('ABANDONED');
         const oldAuthorization = await world.fakeServer.provider.readAuthorization({
             authorizationId: current.authorizationId
         });
-        equal(
+        expectEqual(
             {
                 status: oldAuthorization.snapshot.status,
                 amountMinor: oldAuthorization.snapshot.amount?.amountMinor
@@ -401,7 +227,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             { status: 'active', amountMinor: Number(basic.amount) },
             'TEST:2159:2 old authorization stays active at the old amount after the abandonment.'
         );
-        await world.fakeServer.setClock({ at: new Date(basic.next_charge_at.getTime() + 60_000) });
+        await world.fakeServer.setClock({ at: new Date(anchor.next_charge_at.getTime() + 60_000) });
         const chargeAt = world.fakeServer.now();
         await world.fakeServer.provider.charge({
             authorizationId: current.authorizationId,
@@ -410,64 +236,37 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         });
         await deliverNotices({ fakeServer: world.fakeServer, advanceMs: FAKE_NOTICE_DELAY_MS });
         await expect
-            .poll(
-                async () =>
-                    (
-                        await execSQL<{ count: string }>(
-                            "SELECT count(*) FROM payment WHERE subscription_id = $1 AND status = 'SUCCEEDED'",
-                            [current.subscriptionId]
-                        )
-                    )[0]?.count,
-                {
-                    message: 'TEST:2159:2 the old plan records its second successful charge.',
-                    timeout: 30_000
-                }
-            )
+            .poll(() => countSucceededPayments(current.subscriptionId), {
+                message: 'TEST:2159:2 the old plan records its second successful charge.',
+                timeout: 30_000
+            })
             .toBe('2');
-        const payments = await execSQL<{ amount: string; status: string }>(
-            'SELECT amount, status FROM payment WHERE subscription_id = $1 ORDER BY created_at, id',
-            [current.subscriptionId]
-        );
-        equal(
-            payments.map((row) => ({ amount: Number(row.amount), status: row.status })),
+        expectEqual(
+            await readPayments(current.subscriptionId),
             [
                 { amount: Number(basic.amount), status: 'SUCCEEDED' },
                 { amount: Number(basic.amount), status: 'SUCCEEDED' }
             ],
             'TEST:2159:2 old plan payments are two successful charges at the old amount.'
         );
-        const periods = await execSQL<{ period_start: Date }>(
-            'SELECT period_start FROM covered_period WHERE subscription_id = $1 AND released_at IS NULL ORDER BY period_start',
-            [current.subscriptionId]
-        );
-        length(periods, 2, 'TEST:2159:2 the old plan has two open covered periods.');
-        equal(
+        const periods = await readOpenCoveredPeriodStarts(current.subscriptionId);
+        expectLength(periods, 2, 'TEST:2159:2 the old plan has two open covered periods.');
+        expectEqual(
             periods[1]?.period_start.toISOString(),
             chargeAt.toISOString(),
             'TEST:2159:2 the second covered period starts at the charge instant.'
         );
-        equal(
-            (
-                await execSQL<{ status: string }>('SELECT status FROM subscription WHERE id = $1', [
-                    current.subscriptionId
-                ])
-            )[0]?.status,
+        expectEqual(
+            await readSubscriptionStatus(current.subscriptionId),
             'ACTIVE',
             'TEST:2159:2 the old subscription stays ACTIVE.'
         );
-        equal(
-            Number(
-                (
-                    await execSQL<{ count: string }>(
-                        'SELECT count(*) FROM succession_retained_payment WHERE subscription_id = $1',
-                        [current.subscriptionId]
-                    )
-                )[0]?.count
-            ),
+        expectEqual(
+            await countRetainedPayments(current.subscriptionId),
             0,
             'TEST:2159:2 no old plan payment is retained for the abandoned succession.'
         );
-        length(
+        expectLength(
             putsTo(world, current.authorizationId),
             0,
             'TEST:2159:2 the old authorization is never cancelled nor mutated.'
@@ -479,13 +278,13 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
     }) => {
         if (!world) throw new Error('TEST:2159:3 setup: fake world missing.');
         const targetOptionId = await monthlyOptionForSlug('owner-premium');
-        const current = await startCase({ page, slug: 'owner-basico' });
+        const current = await openPlanChangeCase({ page, world, userIds, slug: 'owner-basico' });
         const complements = await seedTwoComplements({
             userId: current.user.id,
             vertical: 'accommodation',
             fakeServer: world.fakeServer
         });
-        length(
+        expectLength(
             complements,
             2,
             'TEST:2159:3 precondition: two vertical subscription complements are seeded.'
@@ -495,7 +294,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(
+        expectEqual(
             change.outcome,
             'SUCCESSION',
             'TEST:2159:3 monthly upgrade to Premium opens a succession.'
@@ -503,16 +302,8 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         if (change.outcome !== 'SUCCESSION')
             throw new Error('TEST:2159:3 plan change did not open a succession.');
         const ids = complements.map((item) => item.instanceId);
-        const before = await execSQL<{
-            id: string;
-            target_id: string;
-            status: string;
-            complement_subscription_id: string;
-        }>(
-            'SELECT id, target_id, status, complement_subscription_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
-            [ids]
-        );
-        equal(
+        const before = await readAddonInstances(ids);
+        expectEqual(
             before.map((row) => ({ target_id: row.target_id, status: row.status })),
             ids.map(() => ({ target_id: current.subscriptionId, status: 'ACTIVE' })),
             'TEST:2159:3 opening the succession leaves both complements ACTIVE on the old subscription.'
@@ -522,67 +313,39 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             fakeServer: world.fakeServer,
             subscriptionId: change.subscriptionId
         });
-        const activated = await execSQL<{ target_id: string }>(
-            'SELECT target_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
-            [ids]
-        );
-        equal(
-            activated.map((row) => row.target_id),
+        expectEqual(
+            (await readAddonInstances(ids)).map((row) => row.target_id),
             ids.map(() => current.subscriptionId),
             'TEST:2159:3 authorizing the successor does not move the complements before the close.'
         );
-        length(
-            cancelRequestsFor({
-                requests: world.fakeServer.requests(),
-                authorizationId: current.authorizationId
-            }),
+        expectLength(
+            cancelsTo(world, current.authorizationId),
             0,
             'TEST:2159:3 the old authorization is not cancelled before our mail goes out.'
         );
-        const sent = await runCron({
+        await expectCronSucceeds({
             jobName: 'email-outbox-sender',
-            adminCookie: current.admin.sessionCookie
+            adminCookie: current.admin.sessionCookie,
+            message: 'TEST:2159:3 email-outbox-sender succeeds.'
         });
-        equal(sent.success, true, 'TEST:2159:3 email-outbox-sender succeeds.');
-        const closed = await runCron({
+        await expectCronSucceeds({
             jobName: 'subscription-succession-reevaluation',
-            adminCookie: current.admin.sessionCookie
+            adminCookie: current.admin.sessionCookie,
+            message: 'TEST:2159:3 subscription-succession-reevaluation succeeds.'
         });
-        equal(closed.success, true, 'TEST:2159:3 subscription-succession-reevaluation succeeds.');
         await expect
-            .poll(
-                async () =>
-                    (
-                        await execSQL<{ status: string }>(
-                            'SELECT status FROM subscription WHERE id = $1',
-                            [current.subscriptionId]
-                        )
-                    )[0]?.status,
-                { message: 'TEST:2159:3 the close cancels the old subscription.', timeout: 30_000 }
-            )
+            .poll(() => readSubscriptionStatus(current.subscriptionId), {
+                message: 'TEST:2159:3 the close cancels the old subscription.',
+                timeout: 30_000
+            })
             .toBe('CANCELLED');
-        const successorStatus = (
-            await execSQL<{ status: string }>('SELECT status FROM subscription WHERE id = $1', [
-                change.subscriptionId
-            ])
-        )[0]?.status;
-        equal(successorStatus, 'ACTIVE', 'TEST:2159:3 the successor is ACTIVE after the close.');
-        const after = await execSQL<{
-            id: string;
-            target_id: string;
-            status: string;
-            complement_subscription_id: string;
-        }>(
-            'SELECT id, target_id, status, complement_subscription_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
-            [ids]
+        expectEqual(
+            await readSubscriptionStatus(change.subscriptionId),
+            'ACTIVE',
+            'TEST:2159:3 the successor is ACTIVE after the close.'
         );
-        equal(
-            after.map((row) => ({
-                id: row.id,
-                target_id: row.target_id,
-                status: row.status,
-                complement_subscription_id: row.complement_subscription_id
-            })),
+        expectEqual(
+            await readAddonInstances(ids),
             before.map((row) => ({
                 id: row.id,
                 target_id: change.subscriptionId,
@@ -591,32 +354,19 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             })),
             'TEST:2159:3 both complements point at the successor, ACTIVE, with their own complement subscription.'
         );
-        equal(
-            (
-                await execSQL<{ status: string }>(
-                    'SELECT status FROM subscription WHERE id = ANY($1::uuid[]) ORDER BY id',
-                    [complementSubscriptionIds]
-                )
-            ).map((row) => row.status),
+        expectEqual(
+            await readSubscriptionStatuses(complementSubscriptionIds),
             ['ACTIVE', 'ACTIVE'],
             'TEST:2159:3 both complement subscriptions stay ACTIVE.'
         );
         for (const complement of complements)
-            length(
-                cancelRequestsFor({
-                    requests: world.fakeServer.requests(),
-                    authorizationId: complement.authorizationId
-                }),
+            expectLength(
+                cancelsTo(world, complement.authorizationId),
                 0,
                 'TEST:2159:3 no complement authorization is cancelled.'
             );
-        equal(
-            (
-                await execSQL<{ succeeded_by_id: string }>(
-                    'SELECT succeeded_by_id FROM subscription WHERE id = $1',
-                    [current.subscriptionId]
-                )
-            )[0]?.succeeded_by_id,
+        expectEqual(
+            await readSucceededById(current.subscriptionId),
             change.subscriptionId,
             'TEST:2159:3 the old subscription records its successor.'
         );
@@ -627,69 +377,28 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
     }) => {
         if (!world) throw new Error('TEST:2159:4 setup: fake world missing.');
         const targetOptionId = await monthlyOptionForSlug('owner-basico');
-        const current = await startCase({ page, slug: 'owner-premium' });
-        const [old] = await execSQL<{
-            plan_version_id: string;
-            billing_option_id: string;
-            next_charge_at: Date;
-        }>(
-            'SELECT plan_version_id, billing_option_id, next_charge_at FROM subscription WHERE id = $1',
-            [current.subscriptionId]
-        );
-        const [target] = await execSQL<{ plan_version_id: string }>(
-            'SELECT plan_version_id FROM billing_option WHERE id = $1',
-            [targetOptionId]
-        );
+        const current = await openPlanChangeCase({ page, world, userIds, slug: 'owner-premium' });
+        const old = await readSubscriptionAnchor(current.subscriptionId);
+        const target = await readBillingOption(targetOptionId);
         if (!old || !target)
             throw new Error('TEST:2159:4 setup: old subscription or target option missing.');
-        const premiumLimits = await execSQL<{ key: string; value: number | 'Infinity' }>(
-            'SELECT key, value FROM plan_version_limit WHERE plan_version_id = $1',
-            [old.plan_version_id]
-        );
-        const basicLimits = await execSQL<{ key: string; value: number | 'Infinity' }>(
-            'SELECT key, value FROM plan_version_limit WHERE plan_version_id = $1',
-            [target.plan_version_id]
-        );
-        const premiumEntitlements = await execSQL<{ key: string; plan_quota: number | 'Infinity' }>(
-            'SELECT key, plan_quota FROM plan_version_entitlement WHERE plan_version_id = $1',
-            [old.plan_version_id]
-        );
-        const basicEntitlements = await execSQL<{ key: string; plan_quota: number | 'Infinity' }>(
-            'SELECT key, plan_quota FROM plan_version_entitlement WHERE plan_version_id = $1',
-            [target.plan_version_id]
-        );
-        const basicLimitMap = Object.fromEntries(basicLimits.map((row) => [row.key, row.value]));
-        const premiumLimitMap = Object.fromEntries(
-            premiumLimits.map((row) => [row.key, row.value])
-        );
-        const limitDiff = [
-            ...new Set([...Object.keys(premiumLimitMap), ...Object.keys(basicLimitMap)])
-        ].filter((key) => premiumLimitMap[key] !== basicLimitMap[key]);
-        const basicEntitlementKeys = new Set(basicEntitlements.map((row) => row.key));
-        const premiumOnly = premiumEntitlements
-            .filter((row) => !basicEntitlementKeys.has(row.key))
-            .map((row) => row.key);
+        const diff = await readCapabilityDiff({
+            fromPlanVersionId: old.plan_version_id,
+            toPlanVersionId: target.plan_version_id
+        });
         expect(
-            limitDiff.length + premiumOnly.length,
+            diff.limitKeys.length + diff.fromOnlyEntitlements.length,
             'TEST:2159:4 precondition: Premium and Basico differ in at least one capability.'
         ).toBeGreaterThan(0);
-        const premiumExpected = Object.fromEntries(
-            limitDiff
-                .filter((key) => key in premiumLimitMap)
-                .map((key) => [key, premiumLimitMap[key]])
-        );
-        const basicExpected = Object.fromEntries(
-            limitDiff.filter((key) => key in basicLimitMap).map((key) => [key, basicLimitMap[key]])
-        );
-        const before = await readEffectiveSet(current.user);
-        equal(
-            pick(before.limits, limitDiff),
-            premiumExpected,
+        const before = capabilitiesOf(await readEffectiveSet(current.user), diff);
+        expectEqual(
+            before.limits,
+            diff.fromLimits,
             'TEST:2159:4 before the request the differing limits hold the Premium values.'
         );
-        equal(
-            premiumOnly.filter((key) => key in before.entitlements),
-            premiumOnly,
+        expectEqual(
+            before.fromOnlyEntitlements,
+            diff.fromOnlyEntitlements,
             'TEST:2159:4 before the request every Premium-only entitlement is present.'
         );
         const change = await requestPlanChange({
@@ -697,106 +406,75 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(
+        expectEqual(
             change.outcome,
             'DOWNGRADE',
             'TEST:2159:4 monthly Premium to monthly Basico is a scheduled downgrade.'
         );
         if (change.outcome !== 'DOWNGRADE')
             throw new Error('TEST:2159:4 plan change was not a downgrade.');
-        equal(
+        expectEqual(
             new Date(change.effectiveAt).toISOString(),
             old.next_charge_at.toISOString(),
             'TEST:2159:4 the downgrade takes effect at next_charge_at.'
         );
-        const [queued] = await execSQL<{ plan_version_id: string; billing_option_id: string }>(
-            'SELECT plan_version_id, billing_option_id FROM subscription WHERE id = $1',
-            [current.subscriptionId]
-        );
-        equal(
-            queued,
+        const queued = await readPlanColumns(current.subscriptionId);
+        expectEqual(
             {
-                plan_version_id: old.plan_version_id,
-                billing_option_id: old.billing_option_id
+                plan_version_id: queued?.plan_version_id,
+                billing_option_id: queued?.billing_option_id
             },
+            { plan_version_id: old.plan_version_id, billing_option_id: old.billing_option_id },
             'TEST:2159:4 the request leaves the old plan version and option on the row.'
         );
-        const afterRequest = await readEffectiveSet(current.user);
-        equal(
-            pick(afterRequest.limits, limitDiff),
-            premiumExpected,
+        const afterRequest = capabilitiesOf(await readEffectiveSet(current.user), diff);
+        expectEqual(
+            afterRequest.limits,
+            diff.fromLimits,
             'TEST:2159:4 right after the request the differing limits keep the Premium values.'
         );
-        equal(
-            premiumOnly.filter((key) => key in afterRequest.entitlements),
-            premiumOnly,
+        expectEqual(
+            afterRequest.fromOnlyEntitlements,
+            diff.fromOnlyEntitlements,
             'TEST:2159:4 right after the request every Premium-only entitlement is kept.'
         );
         const effectiveAt = new Date(change.effectiveAt);
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() - 60_000) });
-        const beforeDue = await runCron({
+        await expectCronSucceeds({
             jobName: 'subscription-scheduled-change',
-            adminCookie: current.admin.sessionCookie
+            adminCookie: current.admin.sessionCookie,
+            message:
+                'TEST:2159:4 subscription-scheduled-change succeeds one minute before the date.'
         });
-        equal(
-            beforeDue.success,
-            true,
-            'TEST:2159:4 subscription-scheduled-change succeeds one minute before the date.'
-        );
-        equal(
-            Number(
-                (
-                    await execSQL<{ count: string }>(
-                        'SELECT count(*) FROM subscription_scheduled_change WHERE subscription_id = $1',
-                        [current.subscriptionId]
-                    )
-                )[0]?.count
-            ),
+        expectEqual(
+            await countScheduledChanges(current.subscriptionId),
             1,
             'TEST:2159:4 one minute before the date the change is still queued.'
         );
-        const justBefore = await readEffectiveSet(current.user);
-        equal(
-            pick(justBefore.limits, limitDiff),
-            premiumExpected,
+        const justBefore = capabilitiesOf(await readEffectiveSet(current.user), diff);
+        expectEqual(
+            justBefore.limits,
+            diff.fromLimits,
             'TEST:2159:4 one minute before the date the differing limits keep the Premium values.'
         );
-        equal(
-            premiumOnly.filter((key) => key in justBefore.entitlements),
-            premiumOnly,
+        expectEqual(
+            justBefore.fromOnlyEntitlements,
+            diff.fromOnlyEntitlements,
             'TEST:2159:4 one minute before the date every Premium-only entitlement is kept.'
         );
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() + 60_000) });
-        const due = await runCron({
+        await expectCronSucceeds({
             jobName: 'subscription-scheduled-change',
-            adminCookie: current.admin.sessionCookie
+            adminCookie: current.admin.sessionCookie,
+            message: 'TEST:2159:4 subscription-scheduled-change succeeds one minute after the date.'
         });
-        equal(
-            due.success,
-            true,
-            'TEST:2159:4 subscription-scheduled-change succeeds one minute after the date.'
-        );
-        equal(
-            Number(
-                (
-                    await execSQL<{ count: string }>(
-                        'SELECT count(*) FROM subscription_scheduled_change WHERE subscription_id = $1',
-                        [current.subscriptionId]
-                    )
-                )[0]?.count
-            ),
+        expectEqual(
+            await countScheduledChanges(current.subscriptionId),
             0,
             'TEST:2159:4 the applied change empties the queue.'
         );
-        const applied = await execSQL<{
-            status: string;
-            plan_version_id: string;
-            billing_option_id: string;
-        }>('SELECT status, plan_version_id, billing_option_id FROM subscription WHERE id = $1', [
-            current.subscriptionId
-        ]);
-        equal(
-            applied[0],
+        expectEqual(
+            await readPlanColumns(current.subscriptionId),
             {
                 status: 'ACTIVE',
                 plan_version_id: target.plan_version_id,
@@ -804,14 +482,14 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             },
             'TEST:2159:4 the row moves to the Basico version and option and stays ACTIVE.'
         );
-        const after = await readEffectiveSet(current.user);
-        equal(
-            pick(after.limits, limitDiff),
-            basicExpected,
+        const after = capabilitiesOf(await readEffectiveSet(current.user), diff);
+        expectEqual(
+            after.limits,
+            diff.toLimits,
             'TEST:2159:4 after the date the differing limits hold the Basico values.'
         );
-        equal(
-            premiumOnly.filter((key) => key in after.entitlements),
+        expectEqual(
+            after.fromOnlyEntitlements,
             [],
             'TEST:2159:4 after the date no Premium-only entitlement remains.'
         );
