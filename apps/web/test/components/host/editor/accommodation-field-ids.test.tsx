@@ -26,6 +26,7 @@ import { BasicsForm } from '@/components/host/editor/forms/BasicsForm.client';
 import { CapacityPricingForm } from '@/components/host/editor/forms/CapacityPricingForm.client';
 import { ContactForm } from '@/components/host/editor/forms/ContactForm.client';
 import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import { PoliciesForm } from '@/components/host/editor/forms/PoliciesForm.client';
 import { SeoForm } from '@/components/host/editor/forms/SeoForm.client';
 import { ServicesForm } from '@/components/host/editor/forms/ServicesForm.client';
 import { buildFieldId } from '@/lib/forms/build-field-id';
@@ -125,6 +126,8 @@ function renderSection(section: string) {
                     features={CATALOG}
                 />
             );
+        case 'policies':
+            return render(<PoliciesForm {...COMMON} />);
         case 'contact':
             return render(<ContactForm {...COMMON} />);
         case 'seo':
@@ -186,15 +189,16 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // Rendered as a static read-only `<p>` (BETA-137 hid the ARS/USD select
     // until multi-currency ships), so there is no control to focus.
     currency: 'static read-only indicator, not an editable control',
-    // Checkbox GROUPS — many controls, one key, no single focus target.
-    amenityIds: 'checkbox group in CatalogPicker',
+    // Toggle-tile GROUPS — many controls, one key, no single focus target.
+    amenityIds: 'toggle tiles in AmenityCatalogBrowser',
     // HOS-2058: per-amenity radio GROUPS (scope + availability for every
-    // checked amenity), one key, no single focus target.
-    amenityAttributes: 'per-amenity radio groups in CatalogPicker',
-    featureIds: 'checkbox group in CatalogPicker',
+    // checked amenity, in a details dialog since HOS-2123), one key, no single
+    // focus target.
+    amenityAttributes: 'per-amenity radio groups in the details dialog',
+    featureIds: 'toggle tiles in AmenityCatalogBrowser',
     // HOS-2060: a per-key PATCH object split across two pages. Its leaves
     // render under dotted ids (`acc-policies-minNights` on capacity/pricing,
-    // `acc-policies-smokingAllowed`, ... on services).
+    // `acc-policies-smokingAllowed`, ... on the policies page, HOS-2123).
     policies: 'JSONB block; leaf controls carry dotted ids'
 };
 
@@ -291,7 +295,12 @@ describe('accommodation editor — derived field ids (HOS-385 AC-5, split per pa
         for (const [key, reason] of Object.entries(NO_SINGLE_CONTROL)) {
             it(`should render no control for "${key}" (${reason})`, () => {
                 // Rendered on the page that would own it, if any did.
-                const section = key === 'currency' ? 'capacityPricing' : 'services';
+                const section =
+                    key === 'currency'
+                        ? 'capacityPricing'
+                        : key === 'policies'
+                          ? 'policies'
+                          : 'services';
                 renderSection(section);
 
                 const element = document.getElementById(idFor(key));

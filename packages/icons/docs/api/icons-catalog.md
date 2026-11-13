@@ -912,7 +912,7 @@ import {
     <FacebookIcon size="lg" className="hover:text-blue-600" />
   </a>
   <a
-    href="https://instagram.com/hospeda"
+    href="https://instagram.com/hospeda.com.ar"
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Instagram"

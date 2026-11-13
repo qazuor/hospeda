@@ -195,10 +195,12 @@ describe('0165-hos-2102-chat-residual-rules', () => {
         expect(before.rules.chat_experience).toBe(previous.after.rules.chat_experience);
     });
 
-    it('AC-5: the frozen "after" rules equal DEFAULT_RULES read from source (no drift)', () => {
-        expect(after.rules.chat).toBe(DEFAULT_RULES.chat);
-        expect(after.rules.chat_venue).toBe(DEFAULT_RULES.chat_venue);
-        expect(after.rules.chat_experience).toBe(DEFAULT_RULES.chat_experience);
+    it('AC-5: HOS-2113 chains from this frozen after and now matches source', () => {
+        const next = readFrozen('0169-hos-2113-chat-rules-no-quoted-spanish.data.json');
+        for (const feature of migration.CHAT_FEATURES) {
+            expect(next.before.rules[feature]).toBe(after.rules[feature]);
+            expect(next.after.rules[feature]).toBe(DEFAULT_RULES[feature]);
+        }
     });
 
     it('is declared non-destructive and belongs to the required group', () => {

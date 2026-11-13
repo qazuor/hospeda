@@ -16,10 +16,15 @@
  * - **Inline attributes.** A checked amenity carries the scope/availability
  *   disclosure when the caller passes `onChangeAmenityAttribute`.
  *
+ * HOS-2123: the accommodation editor no longer uses this picker; its services
+ * page renders `host/editor/amenity-catalog/AmenityCatalogBrowser` (categories
+ * + tiles + a details dialog). The venue/experience editors still do.
+ *
  * Labels come from `@repo/i18n` by slug (SPEC-266): amenities through
  * `translateAmenityName`, features through `accommodations.featureNames.<slug>`.
- * The section wrapper (title, anchor id, sibling `PoliciesPanel`) stays with
- * each caller.
+ * The section wrapper (title, anchor id, and the venue/experience editors'
+ * sibling `PoliciesPanel`) stays with each caller. The accommodation editor
+ * moved its `PoliciesPanel` to its own page (HOS-2123).
  */
 
 import { type JSX, useId, useState } from 'react';

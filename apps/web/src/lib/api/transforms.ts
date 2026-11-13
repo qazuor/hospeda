@@ -1021,6 +1021,12 @@ export function toAccommodationDetailPageProps({
         // H-125: `extractFeaturedImageUrl` discards everything but the URL, which
         // is what left the cover photo with a synthetic alt. Read the rich shape.
         ...(featuredImage.alt ? { featuredImageAlt: featuredImage.alt } : {}),
+        // HOS-2132: caption + description of the cover feed the lightbox's first
+        // slide figcaption, exactly like the gallery items' do.
+        ...(featuredImage.caption ? { featuredImageCaption: featuredImage.caption } : {}),
+        ...(featuredImage.description
+            ? { featuredImageDescription: featuredImage.description }
+            : {}),
         // Same reason as the alt above: the cover photo can be somebody else's
         // work, and the credit only reaches the page if it is read out here.
         ...(featuredImage.attribution

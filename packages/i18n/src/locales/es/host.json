@@ -286,7 +286,8 @@
                 "contactSocial": "Contacto y redes",
                 "seo": "Buscadores (Google)",
                 "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Los dos campos son opcionales: si los dejás vacíos, publicamos el nombre y el resumen de tu propiedad.",
-                "aiQuestions": "Preguntas a la IA"
+                "aiQuestions": "Preguntas a la IA",
+                "policies": "Políticas"
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -750,6 +751,26 @@
                 "aiDraftDisclaimer": "Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.",
                 "aiDraftError": "No se pudo generar la sugerencia. Intentá de nuevo.",
                 "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente."
+            },
+            "catalog": {
+                "searchLabel": "Buscar en todo el catálogo",
+                "searchPlaceholder": "Ej.: pileta, wifi, parrilla",
+                "categoriesLabel": "Categorías",
+                "selectedCount_one": "{{count}} elegida",
+                "selectedCount_other": "{{count}} elegidas",
+                "resultCount_one": "{{count}} resultado",
+                "resultCount_other": "{{count}} resultados",
+                "categoryProgress": "{{selected}} de {{total}}",
+                "addDetails": "Agregar detalles",
+                "addDetailsFor": "Agregar detalles a {{name}}",
+                "editDetails": "Detalles",
+                "editDetailsFor": "Detalles de {{name}}",
+                "details": {
+                    "title": "Detalles de {{name}}",
+                    "apply": "Aplicar",
+                    "cancel": "Cancelar",
+                    "close": "Cerrar"
+                }
             }
         },
         "empty": {

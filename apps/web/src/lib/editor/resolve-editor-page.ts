@@ -2,8 +2,9 @@
  * @file resolve-editor-page.ts
  * @description Front-door for every accommodation editor page (HOS-318 T-010).
  *
- * Eleven pages (the hub plus ten sections) need the same four things before they
- * can render: a logged-in user, an id in the route, the accommodation loaded,
+ * Every editor page (the hub plus one per section of
+ * `ACCOMMODATION_EDITOR_REGISTRY`; no fixed count, so this line cannot go
+ * stale when a page is added) needs the same four things before it can render: a logged-in user, an id in the route, the accommodation loaded,
  * and a clean redirect when any of those fails. Written once here so a new
  * section page cannot forget one of them.
  */

@@ -1,13 +1,14 @@
 /**
  * @file services-form-attributes.test.tsx
  * @description Round trip of the HOS-2058 per-amenity scope/availability
- * declarations through the services page: what the host picks in the
- * "Detalles" disclosure must reach the PATCH body as the write-only
- * `amenityAttributes` list the API applies to the final linked set, and
- * nothing must be sent when the declarations did not change.
+ * declarations through the services page: what the host picks in the details
+ * dialog (HOS-2123; an inline "Detalles" disclosure before it) must reach the
+ * PATCH body as the write-only `amenityAttributes` list the API applies to the
+ * final linked set, and nothing must be sent when the declarations did not
+ * change — including when the host cancels the dialog.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,7 +32,6 @@ const INITIAL = {
     amenityIds: [POOL],
     amenityAttributes: { [POOL]: { scope: 'shared', availability: null } },
     featureIds: [],
-    // HOS-2060: the services page also carries the Policies panel.
     policies: {},
     videos: []
 } as any;
@@ -57,6 +57,12 @@ function submit() {
     fireEvent.submit(document.querySelector('form') as HTMLFormElement);
 }
 
+/** Opens the details dialog of the pool, the one amenity that already has details. */
+async function openPoolDetails(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('button', { name: /^Detalles de / }));
+    return screen.getByRole('dialog');
+}
+
 beforeEach(() => {
     mockUpdate.mockResolvedValue({ ok: true, data: {} });
 });
@@ -65,21 +71,31 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe('ServicesForm amenityAttributes (HOS-2058)', () => {
-    it('loads the declared values into the radios', () => {
+describe('ServicesForm amenityAttributes (HOS-2058, dialog since HOS-2123)', () => {
+    it('summarizes the declared values next to the selected tile', () => {
         renderForm();
 
-        const shared = document.querySelector<HTMLInputElement>(
-            `input[name$="-amenity-${POOL}-scope"]:checked`
-        );
-        expect(shared?.parentElement?.textContent).toBe('Compartido');
+        expect(screen.getByText('Compartido')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).toBeNull();
     });
 
-    it('sends only amenityAttributes when the host declares availability', async () => {
+    it('loads the declared values into the dialog radios', async () => {
         const user = userEvent.setup();
         renderForm();
 
-        await user.click(screen.getByRole('radio', { name: 'De temporada' }));
+        const dialog = await openPoolDetails(user);
+
+        expect(within(dialog).getByRole('radio', { name: 'Compartido' })).toBeChecked();
+    });
+
+    it('sends only amenityAttributes when the host declares availability and applies', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        const dialog = await openPoolDetails(user);
+        await user.click(within(dialog).getByRole('radio', { name: 'De temporada' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
         submit();
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
@@ -88,18 +104,16 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         });
     });
 
-    it('sends amenityIds plus the attributes of a newly checked amenity', async () => {
+    it('sends amenityIds plus the attributes of a newly selected amenity', async () => {
         const user = userEvent.setup();
         renderForm();
 
-        const grill = document.querySelectorAll<HTMLInputElement>(
-            'input[type="checkbox"]:not([name$="-extra-charge"])'
-        )[1];
-        await user.click(grill as HTMLInputElement);
-        const grillPrivate = document.querySelector(
-            `input[name$="-amenity-${GRILL}-scope"]`
-        ) as HTMLInputElement;
-        await user.click(grillPrivate);
+        const [grillTile] = screen.getAllByRole('button', { pressed: false });
+        await user.click(grillTile as HTMLButtonElement);
+        await user.click(screen.getByRole('button', { name: /^Agregar detalles a / }));
+        const dialog = screen.getByRole('dialog');
+        await user.click(within(dialog).getByRole('radio', { name: 'Privado' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
         submit();
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
@@ -115,7 +129,9 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         const user = userEvent.setup();
         renderForm();
 
-        await user.click(screen.getByRole('checkbox', { name: 'Con cargo extra' }));
+        const dialog = await openPoolDetails(user);
+        await user.click(within(dialog).getByRole('checkbox', { name: 'Con cargo extra' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
         submit();
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
@@ -126,15 +142,70 @@ describe('ServicesForm amenityAttributes (HOS-2058)', () => {
         });
     });
 
-    it('treats a change put back to its saved value as no change', async () => {
+    it('discards the draft when the host cancels the dialog', async () => {
         const user = userEvent.setup();
         renderForm();
 
-        await user.click(screen.getByRole('radio', { name: 'Privado' }));
-        await user.click(screen.getByRole('radio', { name: 'Compartido' }));
+        const dialog = await openPoolDetails(user);
+        await user.click(within(dialog).getByRole('radio', { name: 'Privado' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
         submit();
 
         await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
         expect(mockUpdate).not.toHaveBeenCalled();
+        expect(screen.getByText('Compartido')).toBeInTheDocument();
+    });
+
+    it('treats a change put back to its saved value as no change', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        const dialog = await openPoolDetails(user);
+        await user.click(within(dialog).getByRole('radio', { name: 'Privado' }));
+        await user.click(within(dialog).getByRole('radio', { name: 'Compartido' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
+        submit();
+
+        await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+    it('drops the attributes of an amenity the host deselects (regression)', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        // Declare something new on the pool so its entry would differ...
+        const dialog = await openPoolDetails(user);
+        await user.click(within(dialog).getByRole('radio', { name: 'De temporada' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
+        // ...then untoggle its tile.
+        const [poolTile] = screen.getAllByRole('button', { pressed: true });
+        await user.click(poolTile as HTMLButtonElement);
+        submit();
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        const body = mockUpdate.mock.calls[0][0].data as Record<string, unknown>;
+        expect(body.amenityIds).toEqual([]);
+        const entries = (body.amenityAttributes ?? []) as ReadonlyArray<{ amenityId: string }>;
+        expect(entries.some((entry) => entry.amenityId === POOL)).toBe(false);
+    });
+
+    it('never sends policies from the services page (HOS-2123)', async () => {
+        const user = userEvent.setup();
+        render(
+            <ServicesForm
+                locale="es"
+                accommodationId="acc-123"
+                initialData={{ ...INITIAL, policies: { smokingAllowed: 'no', checkIn: '14:00' } }}
+                amenities={AMENITIES}
+                features={[]}
+            />
+        );
+
+        const [grillTile] = screen.getAllByRole('button', { pressed: false });
+        await user.click(grillTile as HTMLButtonElement);
+        submit();
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(mockUpdate.mock.calls[0][0].data).not.toHaveProperty('policies');
     });
 });
