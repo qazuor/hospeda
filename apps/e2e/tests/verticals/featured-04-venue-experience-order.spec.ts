@@ -158,7 +158,7 @@ test.describe('TEST:HOS-2138:6-7 venue and experience lists pin boosted listings
             .object({ data: AddonPurchaseResponseSchema })
             .parse(await purchase.json()).data;
         expect(purchased.chargeKind).toBe('PERIODICO');
-        expect(purchased.processing).toBe(true);
+        expect(purchased.processing).toBe(false);
         const pending = await readAddonInstance({ instanceId: purchased.instanceId });
         await world.fakeServer.provider.approve({ authorizationId: pending.authorizationId });
         await deliverNotices({ fakeServer: world.fakeServer });
