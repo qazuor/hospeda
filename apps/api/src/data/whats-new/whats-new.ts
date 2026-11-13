@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4306, #4327
+    {
+        id: '2026-11-12-ai-faq-draft',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'La IA te sugiere la respuesta de tus preguntas frecuentes',
+            en: 'AI suggests answers for your FAQs',
+            pt: 'A IA sugere a resposta das suas perguntas frequentes'
+        },
+        body: {
+            es: 'Cuando pasás a pregunta frecuente algo que te preguntaron en **Preguntas a la IA**, el formulario tiene un botón nuevo: **Sugerir respuesta con IA**. Arma un borrador con los datos de tu ficha, en el idioma de la pregunta, para que lo revises y lo guardes vos. Si tu ficha todavía no tiene ese dato, te avisa en lugar de inventar: completalo y volvé a pedirlo. Está incluido en tu plan, con un tope mensual de sugerencias.',
+            en: 'When you turn something visitors asked in **AI questions** into a FAQ, the form has a new button: **Suggest an answer with AI**. It drafts an answer from your listing details, in the language of the question, for you to review and save. If your listing does not have that information yet, it tells you instead of making it up: add it and ask again. It is included in your plan, with a monthly limit of suggestions.',
+            pt: 'Quando você transforma em pergunta frequente algo que perguntaram em **Perguntas à IA**, o formulário tem um botão novo: **Sugerir resposta com IA**. Ele monta um rascunho com os dados da sua página, no idioma da pergunta, para você revisar e salvar. Se a sua página ainda não tem essa informação, ele avisa em vez de inventar: complete e peça de novo. Está incluído no seu plano, com um limite mensal de sugestões.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4321
     {
         id: '2026-11-12-listing-chat-knows-deposit-languages-events',
