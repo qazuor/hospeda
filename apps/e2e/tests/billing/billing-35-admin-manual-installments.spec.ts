@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { z } from 'zod';
 import { type CreatedUser, createUser } from '../../fixtures/api-helpers.ts';
 import {
     createSubscriber,
@@ -15,50 +14,20 @@ import {
     addUtcMonths,
     adminJson,
     cleanupManualAdminRows,
+    createManualPartnerSetup,
     mailText,
+    RegisterPreviewSchema,
+    RegisterResultSchema,
+    RejectionSchema,
     snapshotSubscription,
     superAdminRecipients,
+    UnpaidPreviewSchema,
+    UnpaidResultSchema,
     unpaidNoticeRows
 } from './helpers/manual-installment-admin.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const MAIL_TIMEOUT_MS = 30_000;
-const Action6PreviewSchema = z.object({
-    data: z.object({
-        options: z.array(z.object({ billingOptionId: z.string(), planSlug: z.string() }))
-    })
-});
-const Action6ResultSchema = z.object({
-    data: z.object({ subscriptionId: z.string(), manualPaymentId: z.string() })
-});
-const RegisterPreviewSchema = z.object({
-    data: z.strictObject({
-        subscriptionId: z.string(),
-        manualPaymentId: z.string(),
-        periodStart: z.string(),
-        effect: z.string(),
-        nextChargeAt: z.string()
-    })
-});
-const RegisterResultSchema = z.object({
-    data: z.object({
-        outcome: z.string(),
-        effect: z.string(),
-        nextChargeAt: z.string()
-    })
-});
-const UnpaidPreviewSchema = z.object({
-    data: z.strictObject({
-        subscriptionId: z.string(),
-        manualPaymentId: z.string(),
-        periodStart: z.string(),
-        effect: z.string()
-    })
-});
-const UnpaidResultSchema = z.object({
-    data: z.strictObject({ outcome: z.string(), notice: z.string() })
-});
-const RejectionSchema = z.object({ error: z.object({ reason: z.string() }) });
 
 /** Exercises the live admin billing routes against the E2E database and local fake services. */
 test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimputation, unallocated and reruns @p0 @billing @clock', () => {
@@ -118,35 +87,14 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             if (!partnerId) throw new Error('Expected the test Partner row.');
             partnerIds.push(partnerId);
 
-            const action6Path = `/api/v1/admin/partners/${partnerId}/billing-setup`;
-            const previewResponse = await adminJson({
-                method: 'GET',
-                path: action6Path,
-                cookie: actors.admin.sessionCookie
-            });
-            const preview = Action6PreviewSchema.parse(previewResponse.body);
-            expect(previewResponse.status).toBe(200);
-            expect(
-                preview.data.options.map(({ billingOptionId, planSlug }) => ({
-                    billingOptionId,
-                    planSlug
-                }))
-            ).toContainEqual({ billingOptionId: optionId, planSlug: 'partner-silver' });
-
-            const setupResponse = await adminJson({
-                method: 'POST',
-                path: action6Path,
+            const setup = await createManualPartnerSetup({
+                partnerId,
+                optionId,
                 cookie: actors.admin.sessionCookie,
-                body: {
-                    billingOptionId: optionId,
-                    reason: `HOS-2160 ${nonce}`,
-                    confirm: true
-                }
+                nonce
             });
-            const setup = Action6ResultSchema.parse(setupResponse.body);
-            expect(setupResponse.status).toBe(200);
-            subscriptionId = setup.data.subscriptionId;
-            firstId = setup.data.manualPaymentId;
+            subscriptionId = setup.subscriptionId;
+            firstId = setup.manualPaymentId;
             const initial = await execSQL<{ period_start: Date }>(
                 'SELECT period_start FROM manual_payment WHERE id = $1',
                 [firstId]

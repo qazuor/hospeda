@@ -1,9 +1,125 @@
+import { z } from 'zod';
 import { decodeHtmlEntities } from '../../../fixtures/arrears-cycle.ts';
 import { execSQL, getDbPool } from '../../../fixtures/db-helpers.ts';
 import { cleanupPartnerBillingSetupRows } from '../../../fixtures/partner-billing-setup.ts';
 import { cleanupTestUsers } from '../../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
+
+/** Validates the action 6 option preview response. */
+export const Action6PreviewSchema = z.object({
+    data: z.object({
+        options: z.array(z.object({ billingOptionId: z.string(), planSlug: z.string() }))
+    })
+});
+
+/** Validates the action 6 subscription creation response. */
+export const Action6ResultSchema = z.object({
+    data: z.object({ subscriptionId: z.string(), manualPaymentId: z.string() })
+});
+
+/** Validates the MP1 preview response. */
+export const RegisterPreviewSchema = z.object({
+    data: z.strictObject({
+        subscriptionId: z.string(),
+        manualPaymentId: z.string(),
+        periodStart: z.string(),
+        effect: z.string(),
+        nextChargeAt: z.string()
+    })
+});
+
+/** Validates the MP1 registration response. */
+export const RegisterResultSchema = z.object({
+    data: z.object({ outcome: z.string(), effect: z.string(), nextChargeAt: z.string() })
+});
+
+/** Validates the MP2 preview response. */
+export const UnpaidPreviewSchema = z.object({
+    data: z.strictObject({
+        subscriptionId: z.string(),
+        manualPaymentId: z.string(),
+        periodStart: z.string(),
+        effect: z.string()
+    })
+});
+
+/** Validates the MP2 declaration response. */
+export const UnpaidResultSchema = z.object({
+    data: z.strictObject({ outcome: z.string(), notice: z.string() })
+});
+
+/** Validates a rejected admin billing action. */
+export const RejectionSchema = z.object({ error: z.object({ reason: z.string() }) });
+
+/** Validates the MP6 preview response. */
+export const UnallocatedPreviewSchema = z.object({
+    data: z.strictObject({ subscriptionId: z.string(), periodStart: z.string(), mark: z.string() })
+});
+
+/** Validates the MP6 registration response. */
+export const UnallocatedResultSchema = z.object({
+    data: z.strictObject({
+        manualPaymentId: z.string(),
+        periodStart: z.string(),
+        markId: z.string(),
+        mark: z.string(),
+        outcome: z.string()
+    })
+});
+
+/** Validates the MP4 preview response. */
+export const LatePreviewSchema = z.object({
+    data: z.strictObject({
+        subscriptionId: z.string(),
+        manualPaymentId: z.string(),
+        periodStart: z.string(),
+        reimputedPeriodStart: z.string().nullable(),
+        nextChargeAt: z.string(),
+        effect: z.string()
+    })
+});
+
+/** Validates the MP4 registration response. */
+export const LateResultSchema = z.object({
+    data: z.strictObject({
+        effect: z.string(),
+        nextChargeAt: z.string(),
+        periodStart: z.string(),
+        reimputedFrom: z.string().nullable(),
+        receiptId: z.string().nullable()
+    })
+});
+
+/** Performs the action 6 preview and confirmed setup for the given Partner. */
+export async function createManualPartnerSetup(args: {
+    readonly partnerId: string;
+    readonly optionId: string;
+    readonly cookie: string;
+    readonly nonce: string;
+}): Promise<{ readonly subscriptionId: string; readonly manualPaymentId: string }> {
+    const path = `/api/v1/admin/partners/${args.partnerId}/billing-setup`;
+    const previewResponse = await adminJson({ method: 'GET', path, cookie: args.cookie });
+    const preview = Action6PreviewSchema.parse(previewResponse.body);
+    if (previewResponse.status !== 200) throw new Error('Action 6 preview failed.');
+    if (
+        !preview.data.options.some(
+            ({ billingOptionId, planSlug }) =>
+                billingOptionId === args.optionId && planSlug === 'partner-silver'
+        )
+    ) {
+        throw new Error('Action 6 preview did not include partner-silver.');
+    }
+    const response = await adminJson({
+        method: 'POST',
+        path,
+        cookie: args.cookie,
+        body: { billingOptionId: args.optionId, reason: `HOS-2160 ${args.nonce}`, confirm: true }
+    });
+    const result = Action6ResultSchema.parse(response.body);
+    if (response.status !== 200) throw new Error('Action 6 setup failed.');
+    return result.data;
+}
 
 /** Sends an authenticated admin request and returns its parsed JSON body. */
 export async function adminJson(args: {
