@@ -96,6 +96,8 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
         if (!world || !subscriber || !admin2 || !goneAdmin)
             throw new Error('Expected the manual installment admin test world.');
         const actors = subscriber;
+        const secondAdmin = admin2;
+        const deletedAdmin = goneAdmin;
         const { fakeServer, mailCapture } = world;
         const optionId = await monthlyOptionForSlug('partner-silver');
         const nonce = randomUUID();
@@ -155,8 +157,8 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             const expected = await superAdminRecipients();
             const expectedIds = expected.map(({ userId }) => userId);
             expect(expectedIds).toContain(actors.admin.id);
-            expect(expectedIds).toContain(admin2.id);
-            expect(expectedIds).not.toContain(goneAdmin.id);
+            expect(expectedIds).toContain(secondAdmin.id);
+            expect(expectedIds).not.toContain(deletedAdmin.id);
             let notices = await unpaidNoticeRows({ manualPaymentId: firstId });
             expect(notices.map(({ recipient_user_id }) => recipient_user_id)).toEqual(expectedIds);
             for (const notice of notices) {
