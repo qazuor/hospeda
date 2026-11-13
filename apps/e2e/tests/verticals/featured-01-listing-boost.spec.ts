@@ -234,11 +234,11 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
         expect(response.status).toBe(201);
         const result = zod
             .object({
-                data: z.object({
-                    instanceId: z.string().uuid(),
-                    chargeKind: z.literal('UNA_VEZ'),
-                    processing: z.literal(false),
-                    order: z.object({ outcome: z.literal('ACTIVATED') })
+                data: zod.object({
+                    instanceId: zod.string().uuid(),
+                    chargeKind: zod.literal('UNA_VEZ'),
+                    processing: zod.literal(false),
+                    order: zod.object({ outcome: zod.literal('ACTIVATED') })
                 })
             })
             .parse(await response.json()).data;
