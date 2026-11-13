@@ -425,8 +425,8 @@ export async function snapshotSubscription(args: {
     );
     const eventRows = await execSQL<{ count: number }>(
         `SELECT count(*)::int AS count FROM domain_event
-          WHERE entity_id = $1 OR entity_id IN
-            (SELECT id FROM manual_payment WHERE subscription_id = $1)`,
+          WHERE entity_id = $1::text OR entity_id IN
+            (SELECT id::text FROM manual_payment WHERE subscription_id = $1::uuid)`,
         [args.subscriptionId]
     );
     const outboxRows = await execSQL<{ count: number }>(
