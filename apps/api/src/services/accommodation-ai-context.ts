@@ -1,16 +1,18 @@
-import {
-    accommodationIaData,
-    amenities,
-    features,
-    getDb,
-    rAccommodationAmenity,
-    rAccommodationFeature
-} from '@repo/db';
 import type { Locale } from '@repo/i18n';
 import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, type Actor, ServiceError } from '@repo/service-core';
-import { and, eq } from 'drizzle-orm';
-import { apiLogger } from '../utils/logger.js';
+import {
+    CONTEXT_IADATA_MAX,
+    safeLoadAmenities,
+    safeLoadFaqs,
+    safeLoadFeatures,
+    safeLoadIaData
+} from './ai-context/listing-accommodation-data-context.js';
+import {
+    groupIaDataByCategory,
+    prioritizeCatalogEntries,
+    renderIaDataTexts
+} from './ai-context/listing-accommodation-format-context.js';
 import {
     accommodationTypeLabel,
     amenityLabel,
@@ -95,20 +97,9 @@ export const CONTEXT_AMENITY_MAX = 80;
 /** Maximum features included in the context block (AC-2.2; raised by HOS-2095). */
 export const CONTEXT_FEATURE_MAX = 60;
 
-/**
- * Row ceiling for the amenity/feature reads. Higher than the render caps so the
- * prioritization runs over the whole set rather than an arbitrary DB slice.
- */
-const CONTEXT_CATALOG_FETCH_MAX = 300;
-
-/** Maximum IA data entries included in the context block (SPEC-200 Delta 1). */
-export const CONTEXT_IADATA_MAX = 10;
-
-/** Hard cap on each IA data entry's content length in the context block. */
-export const CONTEXT_IADATA_CONTENT_MAX_CHARS = 500;
-
-/** Hard cap on each IA data entry's title (HOS-2095 review: was unbounded). */
-const CONTEXT_IADATA_TITLE_MAX_CHARS = 120;
+// Re-exported so existing importers keep their path; defined once, next to the code that uses them.
+export { CONTEXT_IADATA_MAX } from './ai-context/listing-accommodation-data-context.js';
+export { CONTEXT_IADATA_CONTENT_MAX_CHARS } from './ai-context/listing-accommodation-format-context.js';
 
 /** Hard cap on the name and the summary (HOS-2095 review: owner text, bounded here too). */
 const CONTEXT_SHORT_TEXT_MAX_CHARS = 300;
@@ -366,72 +357,6 @@ export function buildMarkdownContext(
     return lines.join('\n').trimEnd();
 }
 
-/**
- * Orders amenity/feature rows so a cap keeps the most relevant ones (HOS-2095):
- * featured entries first, then higher `displayWeight`, preserving the input
- * order among ties. These are the catalog's own curation signals, the same ones
- * the public pages sort by — no relevance list is invented here.
- *
- * @param entries - The rows as loaded.
- * @returns A new, sorted array (the input is not mutated).
- */
-function prioritizeCatalogEntries(
-    entries: ReadonlyArray<NameOnlyEntity>
-): ReadonlyArray<NameOnlyEntity> {
-    return entries
-        .map((entry, index) => ({ entry, index }))
-        .sort((a, b) => {
-            const featured =
-                Number(b.entry.isFeatured ?? false) - Number(a.entry.isFeatured ?? false);
-            if (featured !== 0) return featured;
-            const weight = (b.entry.displayWeight ?? 50) - (a.entry.displayWeight ?? 50);
-            return weight === 0 ? a.index - b.index : weight;
-        })
-        .map(({ entry }) => entry);
-}
-
-/**
- * Renders one IA data entry's title and content exactly as the Información
- * Especial block prints them (sanitized, then cut at a word). Shared by the
- * render loop and the pets-absent scan (HOS-2102) so the two cannot drift:
- * the scan must read the text the model sees, not a near-copy of it.
- */
-function renderIaDataTexts(entry: IaDataEntry): [string, string] {
-    return [
-        truncateAtWord(sanitizeOwnerDelimiters(entry.title), CONTEXT_IADATA_TITLE_MAX_CHARS),
-        truncateAtWord(sanitizeOwnerDelimiters(entry.content), CONTEXT_IADATA_CONTENT_MAX_CHARS)
-    ];
-}
-
-/**
- * Groups IA data entries by category, preserving insertion order.
- * Entries with no category are grouped under "Otros" at the end.
- */
-function groupIaDataByCategory(entries: ReadonlyArray<IaDataEntry>): Map<string, IaDataEntry[]> {
-    const grouped = new Map<string, IaDataEntry[]>();
-    const uncategorized: IaDataEntry[] = [];
-
-    for (const entry of entries) {
-        const cat = entry.category?.trim();
-        if (!cat) {
-            uncategorized.push(entry);
-            continue;
-        }
-        const existing = grouped.get(cat);
-        if (existing) {
-            existing.push(entry);
-        } else {
-            grouped.set(cat, [entry]);
-        }
-    }
-
-    if (uncategorized.length > 0) {
-        grouped.set('Otros', uncategorized);
-    }
-
-    return grouped;
-}
-
 // ---------------------------------------------------------------------------
 // Async wrapper: assembleAccommodationContext
 // ---------------------------------------------------------------------------
@@ -519,173 +444,4 @@ export async function assembleAccommodationContext(
         systemMessage,
         accommodationName: accommodation.name
     };
-}
-
-// ---------------------------------------------------------------------------
-// Async helpers (graceful fallbacks)
-// ---------------------------------------------------------------------------
-
-/**
- * Loads FAQs for the given accommodation, falling back to `[]` on any
- * error. Logs the failure with `apiLogger.warn` so ops can investigate.
- *
- * HOS-670: `AccommodationService.getFaqs()` runs through
- * `runWithLoggingAndValidation` — same as `getById` — so it RESOLVES a
- * `ServiceOutput` envelope (`{ data: { faqs } } | { error }`), it never
- * returns the unwrapped `{ faqs }` shape directly. This function used to read
- * `result.faqs` (undefined on the real envelope) and silently fall back to
- * `[]` via `?? []` — no thrown error, so the `catch` block below never fired
- * and no warning was ever logged. Every AI-usable FAQ a host marked for the
- * chat therefore never reached {@link buildMarkdownContext}, regardless of
- * `isUsableByAi`, while `getById`'s sibling unwrapping a few lines up in
- * {@link assembleAccommodationContext} worked correctly — this was the exact
- * asymmetry the F-59 smoke finding observed (description/name reaching the
- * model, FAQs silently empty, no warning in the logs).
- */
-async function safeLoadFaqs(
-    service: {
-        getFaqs: (
-            actor: Actor,
-            input: { accommodationId: string }
-        ) => Promise<{
-            data?: { faqs?: Array<{ question: string; answer: string; isUsableByAi?: boolean }> };
-            error?: { code?: string; message?: string };
-        }>;
-    },
-    actor: Actor,
-    accommodationId: string
-): Promise<Array<{ question: string; answer: string; isUsableByAi?: boolean }>> {
-    try {
-        const result = await service.getFaqs(actor, { accommodationId });
-        if (result.error) {
-            apiLogger.warn(
-                { accommodationId, error: result.error.message ?? result.error.code },
-                'accommodation-ai-context: failed to load FAQs; continuing with empty list'
-            );
-            return [];
-        }
-        return result.data?.faqs ?? [];
-    } catch (error) {
-        apiLogger.warn(
-            { accommodationId, error: error instanceof Error ? error.message : String(error) },
-            'accommodation-ai-context: failed to load FAQs; continuing with empty list'
-        );
-        return [];
-    }
-}
-
-/**
- * Loads the accommodation's amenities via Drizzle direct. Returns `[]` on any
- * error (graceful — the chat request must not fail because the amenities join
- * is missing or the DB is flaky).
- *
- * The `name` column was dropped in SPEC-266 T-001: the slug is loaded and the
- * builder resolves it to its localized label (HOS-2095). The curation columns
- * are loaded so the builder can prioritize before capping; the read used to be
- * `LIMIT 20` in arbitrary order, which is how amenity #37 got dropped. The
- * `locale` parameter is kept in the signature for backward compatibility.
- */
-async function safeLoadAmenities(
-    accommodationId: string,
-    _locale: 'es' | 'en' | 'pt'
-): Promise<NameOnlyEntity[]> {
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({
-                slug: amenities.slug,
-                isFeatured: amenities.isFeatured,
-                displayWeight: amenities.displayWeight
-            })
-            .from(rAccommodationAmenity)
-            .innerJoin(amenities, eq(rAccommodationAmenity.amenityId, amenities.id))
-            .where(eq(rAccommodationAmenity.accommodationId, accommodationId))
-            .limit(CONTEXT_CATALOG_FETCH_MAX);
-        return rows.map((r) => ({
-            name: r.slug ?? '',
-            isFeatured: r.isFeatured ?? false,
-            displayWeight: r.displayWeight ?? 50
-        }));
-    } catch (error) {
-        apiLogger.warn(
-            { accommodationId, error: error instanceof Error ? error.message : String(error) },
-            'accommodation-ai-context: failed to load amenities; continuing with empty list'
-        );
-        return [];
-    }
-}
-
-/**
- * Loads the accommodation's features via Drizzle direct. Returns `[]` on any
- * error (graceful — same rationale as {@link safeLoadAmenities}). Same slug +
- * curation-column shape as the amenities read (HOS-2095).
- */
-async function safeLoadFeatures(
-    accommodationId: string,
-    _locale: 'es' | 'en' | 'pt'
-): Promise<NameOnlyEntity[]> {
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({
-                slug: features.slug,
-                isFeatured: features.isFeatured,
-                displayWeight: features.displayWeight
-            })
-            .from(rAccommodationFeature)
-            .innerJoin(features, eq(rAccommodationFeature.featureId, features.id))
-            .where(eq(rAccommodationFeature.accommodationId, accommodationId))
-            .limit(CONTEXT_CATALOG_FETCH_MAX);
-        return rows.map((r) => ({
-            name: r.slug ?? '',
-            isFeatured: r.isFeatured ?? false,
-            displayWeight: r.displayWeight ?? 50
-        }));
-    } catch (error) {
-        apiLogger.warn(
-            { accommodationId, error: error instanceof Error ? error.message : String(error) },
-            'accommodation-ai-context: failed to load features; continuing with empty list'
-        );
-        return [];
-    }
-}
-
-/**
- * Loads ACTIVE IA data entries for the given accommodation via Drizzle
- * direct. Returns `[]` on any error (graceful — same rationale as
- * {@link safeLoadAmenities}).
- *
- * IA data entries are owner-authored content specifically written for the
- * AI chatbot (house rules, policies, neighborhood info, etc.). Only entries
- * with `lifecycleState = 'ACTIVE'` are included.
- */
-async function safeLoadIaData(accommodationId: string): Promise<IaDataEntry[]> {
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({
-                title: accommodationIaData.title,
-                content: accommodationIaData.content,
-                category: accommodationIaData.category
-            })
-            .from(accommodationIaData)
-            .where(
-                and(
-                    eq(accommodationIaData.accommodationId, accommodationId),
-                    eq(accommodationIaData.lifecycleState, 'ACTIVE')
-                )
-            )
-            .limit(CONTEXT_IADATA_MAX);
-        return rows.map((r) => ({
-            title: r.title,
-            content: r.content,
-            category: r.category
-        }));
-    } catch (error) {
-        apiLogger.warn(
-            { accommodationId, error: error instanceof Error ? error.message : String(error) },
-            'accommodation-ai-context: failed to load iaData; continuing with empty list'
-        );
-        return [];
-    }
 }

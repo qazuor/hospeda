@@ -25,12 +25,11 @@
  * @module apps/api/services/ai-context/venue-ai-context
  */
 
-import { getDb, venueFaqs, venueMenuItems, venueMenuSections, venues } from '@repo/db';
+import { getDb, venues } from '@repo/db';
 import type { Locale } from '@repo/i18n';
 import { ServiceErrorCode, type VenuePolicies } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { and, asc, eq, isNull } from 'drizzle-orm';
-import { apiLogger } from '../../utils/logger.js';
+import { and, eq, isNull } from 'drizzle-orm';
 import {
     buildListingAmenityLines,
     capListingAmenities,
@@ -53,6 +52,7 @@ import {
 } from './owner-data-fence.js';
 import type { AssembleChatContextInput, AssembleChatContextOutput } from './types.js';
 import { buildVenueAgeWindowLines } from './venue-age-windows-context.js';
+import { safeLoadFaqs, safeLoadMenuItems } from './venue-menu-context.js';
 import {
     AGE_SCOPE_AREA_SLOT,
     toVenueNightContext,
@@ -416,8 +416,8 @@ export async function assembleVenueContext(
     }
 
     const [faqs, menuItems, amenities] = await Promise.all([
-        safeLoadFaqs(entityId),
-        safeLoadMenuItems(entityId),
+        safeLoadFaqs(entityId, VENUE_CONTEXT_FAQ_MAX),
+        safeLoadMenuItems(entityId, VENUE_CONTEXT_MENU_ITEM_MAX),
         safeLoadListingAmenities({ vertical: 'venue', listingId: entityId })
     ]);
 
@@ -445,72 +445,4 @@ export async function assembleVenueContext(
         systemMessage: buildChatSystemMessage(contextBlock, resolvedPrompt, locale),
         entityName: venue.name
     };
-}
-
-/**
- * Loads the venue's FAQs, ordered as the owner arranged them.
- *
- * Returns `[]` on any error, with a logged warning. Filters by `isUsableByAi`
- * in the WHERE clause — BEFORE {@link VENUE_CONTEXT_FAQ_MAX}, which is
- * applied by the `.limit()` below it. Filtering after the cap instead would
- * let AI-disabled FAQs starve out FAQs that should reach the prompt (HOS-400,
- * adopting HOS-393 AC-11). A FAQ missing the field (pre-migration data) reads
- * as usable, matching the column's `DEFAULT true`.
- */
-async function safeLoadFaqs(venueId: string): Promise<VenueContextFaq[]> {
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({ question: venueFaqs.question, answer: venueFaqs.answer })
-            .from(venueFaqs)
-            .where(
-                and(
-                    eq(venueFaqs.venueId, venueId),
-                    isNull(venueFaqs.deletedAt),
-                    eq(venueFaqs.lifecycleState, 'ACTIVE'),
-                    eq(venueFaqs.isUsableByAi, true)
-                )
-            )
-            .orderBy(asc(venueFaqs.displayOrder))
-            .limit(VENUE_CONTEXT_FAQ_MAX);
-        return rows;
-    } catch (error) {
-        apiLogger.warn(
-            { venueId, error: error instanceof Error ? error.message : String(error) },
-            'venue-ai-context: failed to load FAQs; continuing with empty list'
-        );
-        return [];
-    }
-}
-
-/**
- * Loads the carta, ordered by section then item display order.
- *
- * Returns `[]` on any error, with a logged warning — the same graceful contract
- * the accommodation assembler applies to its secondary relations.
- */
-async function safeLoadMenuItems(venueId: string): Promise<VenueContextMenuItem[]> {
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({
-                sectionName: venueMenuSections.name,
-                name: venueMenuItems.name,
-                description: venueMenuItems.description,
-                priceCents: venueMenuItems.priceCents,
-                isAvailable: venueMenuItems.isAvailable
-            })
-            .from(venueMenuItems)
-            .leftJoin(venueMenuSections, eq(venueMenuItems.sectionId, venueMenuSections.id))
-            .where(eq(venueMenuItems.venueId, venueId))
-            .orderBy(asc(venueMenuSections.displayOrder), asc(venueMenuItems.displayOrder))
-            .limit(VENUE_CONTEXT_MENU_ITEM_MAX);
-        return rows;
-    } catch (error) {
-        apiLogger.warn(
-            { venueId, error: error instanceof Error ? error.message : String(error) },
-            'venue-ai-context: failed to load menu items; continuing with empty carta'
-        );
-        return [];
-    }
 }
