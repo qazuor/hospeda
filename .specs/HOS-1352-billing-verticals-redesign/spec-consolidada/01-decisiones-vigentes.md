@@ -894,6 +894,12 @@ Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
 - → ver [📌1](#dec-sub-008-p1).
 - → ver [📌2](#dec-sub-008-p2).
 
+> **Ratificada en la épica post-MVP (registro PM-635, HOS-2159):** al bajar de plan el monto cambia en
+> el momento del pedido y las capacidades bajan al fin del ciclo; el e2e `billing-21` afirmaba el monto
+> recién después de `S38` y se corrigió (`cb907a2176`). Un descenso que además cruza de ciclo va por
+> sucesión (registro PM-300). Ver [PM-635](#own-postmvp-pm635-descenso) y
+> [PM-300](#own-postmvp-pm300-cruce-de-ciclo).
+
 <a id="dec-sub-008-p1"></a>
 
 #### 📌1 de DEC-SUB-008
@@ -13565,6 +13571,10 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10
 - **Recomendada**: sí
 - **En una línea**: un setting en `billing_settings`, editable desde el admin sin deploy
 
+> **Reemplazada en dónde se guarda (registro PM-581, HOS-1749):** `billing_settings` ya no existe; el
+> congelamiento vive en `platform_settings` (`billing.paidSignupsFreeze`). Ver
+> [PM-581](#own-postmvp-pm581-congelamiento).
+
 <a id="own-40-congelamiento-y-ci-t1-o"></a>
 **Letra O**
 
@@ -13574,6 +13584,10 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10
 - **Elegida**: la recomendada
 - **Recomendada**: sí
 - **En una línea**: congela sólo las altas self-service (start-paid, incluidos los trials nuevos; el self-checkout de comercio; la compra de addons); quedan habilitadas las acciones del admin (provisionar comercio, link y pago manual de partner), el upgrade de quien ya paga, renovaciones, webhooks, dunning y cancelaciones; los trials que ya corren convierten solos (Mercado Pago cobra al vencer, sin pasar por la API) y no se frenan; se implementa sobre `staging` (no hotfix a `main`) y después se promueve `staging → main` entero, sin smoke previo — los PRs no-billing promovidos se smokean directo en `main` en los días siguientes, y el billing viejo no se smokea porque se reescribe entero
+
+> **Reemplazada en parte (registro PM-600, HOS-1749):** en el modelo nuevo la compra de complementos
+> tiene su propio interruptor (`billing.addonPurchasesFreeze`), independiente del de las altas pagas.
+> Ver [PM-581](#own-postmvp-pm581-congelamiento).
 
 <a id="own-40-congelamiento-y-ci-t1-p"></a>
 **Letra P**
@@ -14381,3 +14395,130 @@ Origen: HOS-1361 (decisión del owner, 2026-11-05)
 - **Las nueve migraciones que ya están en la épica** (`packages/db/src/migrations/`), todas aditivas; seis son de `V7` (HOS-1484 a HOS-1489) y tres de billing (HOS-1551, HOS-1541, HOS-1542): `0189_hos1484_partner_resolve_application` (`ADD VALUE` de `partner.resolveApplication` y `CHECK` de `domain_event` ensanchado), `0190_hos1551_billing_refund_permission` (`ADD VALUE`), `0191_hos1485_partner_application_resolution` (`CHECK` de `domain_event` ensanchado), `0192_hos1486_session_auth_method` (`ADD COLUMN session.auth_method`, nullable), `0193_hos1541_manual_payment_permissions` (dos `ADD VALUE`), `0194_hos1487_partner_edit_own` (`ADD VALUE`), `0195_hos1488_partner_presence_moderation` (`CHECK` de `domain_event` ensanchado), `0196_hos1542_manual_payment_reimputed_and_entry` (`ADD COLUMN manual_payment.entry` con default, un `CHECK` nuevo sobre ella y `CHECK` de `domain_event` ensanchado) y `0197_hos1489_partner_configure_billing` (`ADD VALUE` de `partner.configureBilling` y `CHECK` de `domain_event` ensanchado)
 - **El drift guard sigue exigido, aparte**: schema TS contra migraciones, en verde sobre la rama de la fase. Lo que cambia es la segunda condición: un guard estático rechaza `DROP` y `RENAME` de tabla o columna y el cambio de tipo en las migraciones que la rama de la fase agrega (`TEST:V8b:8`)
 - **Advertencia sobre el rollback**: un `ADD VALUE` de enum **no se deshace revirtiendo la rama**, porque Postgres no permite quitar un valor de un enum; el `CHECK` ensanchado y las columnas agregadas tampoco vuelven solos. Revertir la rama deja el código sin esos valores, y el valor queda en la base, inerte; deshacerlo sería una migración nueva (y, para el enum, a mano). Por eso las frases «aditiva y sin migración estructural; revertir la rama no toca nada del corte» se reescribieron: revertir la rama no toca nada de lo que dejó el corte, pero no deshace las migraciones aditivas de la propia fase
+
+### Épica post-MVP · decisiones del owner
+
+Fuente: el registro de decisiones del coordinador de la épica `epic/HOS-1352-post-mvp`
+(`POSTMVP-OLA1-decisiones.md`, entradas `PM-NNN`), que vive en el kit de trabajo y no en el repo.
+Acá van sólo las decisiones que cambian o completan esta spec; cada letra cita su entrada. El resto
+del registro es operativo (lanzamientos, revisiones, merges) y no entra.
+
+#### El alcance de la épica post-MVP (2026-11-06)
+
+<a id="own-postmvp-pm313-alcance"></a>
+**Letra PM-313**
+
+Origen: registro PM-313 (decisión del owner, 2026-11-06); completada por PM-561, PM-562, PM-564, PM-578, PM-580, PM-581, PM-584 a PM-588 y PM-631 a PM-633
+
+- **Pregunta**: qué piezas posteriores al corte entran a `epic/HOS-1352-post-mvp` antes de su PR a `staging`, y qué queda para después
+- **Elegida**: alcance cerrado
+- **Recomendada**: —
+- **En una línea**: **entran `B8b`, `B10`, `B12`, el contracargo, los grants y las cortesías, HOS-2003 y HOS-1625 (`B13b`)**. `B12` entra por recomendación del coordinador: toca `S37` y la cola de `B8b`, y separarlo pediría un segundo ciclo de billing CORE con su smoke. Reemplaza, para estas piezas, la regla de [AE](#own-41-corte-del-mvp-t1-ae) de una rama épica por fase: todas viajan juntas en la épica post-MVP. **Lo primero apenas la épica entra a `staging` es HOS-2066** (Urgent, bloquea a HOS-1352), y el PR final de la épica tiene que nombrarlo. La lista de diferidos y las hojas que entraron después están en [el índice](00-indice.md#epica-post-mvp)
+
+#### `AC:B3:40` entra antes del corte (2026-11-12)
+
+<a id="own-postmvp-pm587-ac-b3-40"></a>
+**Letra PM-587**
+
+Origen: registro PM-587 (decisión del owner, 2026-11-12); PM-590 y PM-593 (coordinador)
+
+- **Pregunta**: si HOS-1628, el predicado de la acción 19 que cuenta también los `S38` encolados hacia la versión, entra a la épica o sigue en la Fase 2 como decía [CW](../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07)
+- **Elegida**: entra antes del corte
+- **Recomendada**: —
+- **En una línea**: **[AC:B3:40](10-corte/B3.md#ac-b3-40) se implementa en la épica.** Sus dependencias (la acción 19, HOS-1515, y la cola de `S38`, HOS-1577 y HOS-1578) ya estaban hechas ahí. Reemplaza a CW sólo en lo que dice de esa AC. HOS-1628 la implementó (PR #4302, merge `786709c7e5`) y el guard `scripts/__tests__/b3-exit-ci-wiring.test.ts` declara el punto 12 de [LISTA:B3](10-corte/B3.md#lista-b3) como «entró antes del corte por PM-587» (`8bb5a94b41`). El descenso paralelo hacia otra versión sin lock quedó fuera del alcance y anotado para HOS-2066 (PM-590)
+
+#### La acción 19 rechaza versiones no vendibles y tiene techo (H-I de HOS-1515)
+
+<a id="own-postmvp-pm334-accion-19"></a>
+**Letra PM-334**
+
+Origen: registro PM-334 (decisión del owner, H-I de HOS-1515)
+
+- **Pregunta**: qué hace la acción 19 (*«fijar el precio de un ciclo»*) con una versión `sellable=false`, y si tiene un tope superior
+- **Elegida**: rechazar las dos cosas
+- **Recomendada**: —
+- **En una línea**: **la acción 19 rechaza fijar el precio de una versión `sellable=false` y pone un techo de ARS 2.000.000 (`RP3`), con el mismo trato que el piso**, los dos con razón tipada. Completa a [AC:B2:4](10-corte/B2.md#ac-b2-4), que no los decía. Implementado en HOS-1515 (PR #4184, `b61f1df414`)
+
+#### Todo cambio que cruza de ciclo va por sucesión, también el descenso (D1 de HOS-1578)
+
+<a id="own-postmvp-pm300-cruce-de-ciclo"></a>
+**Letra PM-300**
+
+Origen: registro PM-300 (decisión del owner, D1 de HOS-1578, opción b)
+
+- **Pregunta**: cómo se aplica un descenso que además cambia de ciclo
+- **Elegida**: (b), por sucesión
+- **Recomendada**: —
+- **En una línea**: **todo cambio que cruza de ciclo, incluido el descenso, va por sucesión; nunca se mandan monto y ciclo juntos al proveedor.** El ciclo de una suscripción viva no se muta nunca ([DEC-SUB-006](#dec-sub-006), EX-4 y EX-20), así que [AC:B8b:27](20-fase-2/B8b.md#ac-b8b-27) se re-alcanza y la mentira `M2` del falso queda sin implementar. Completa a [DEC-SUB-008](#dec-sub-008), que hablaba del descenso dentro del mismo ciclo. Implementado en HOS-1578 (PR #4173, merge `3640959253`)
+
+#### El descenso cambia el monto al pedirlo: se ratifica `DEC-SUB-008` (2026-11-12)
+
+<a id="own-postmvp-pm635-descenso"></a>
+**Letra PM-635**
+
+Origen: registro PM-635 (coordinador, HOS-2159, sobre la contradicción que dejó PM-632)
+
+- **Pregunta**: el paso 3 del smoke `S15` decía que el monto cambia en el momento del pedido, y el e2e `billing-21` lo afirmaba recién después de aplicar `S38`
+- **Elegida**: tiene razón el checklist
+- **Recomendada**: —
+- **En una línea**: **al bajar de plan, el monto cambia en el momento del pedido y las capacidades bajan al fin del ciclo**, como dice [DEC-SUB-008](#dec-sub-008) en sus partes 1 y 2; el código coincide (`request-plan-change.service.ts`). El que estaba mal era el e2e `billing-21`, que contaba el `PUT` en el momento equivocado y por eso pasaba. Lo corrigió HOS-2159 (`cb907a2176`). No cambia la decisión; la deja demostrada
+
+#### El congelamiento de altas pagas vuelve, en el modelo nuevo (HOS-1749)
+
+<a id="own-postmvp-pm581-congelamiento"></a>
+**Letra PM-581**
+
+Origen: registro PM-581 (decisión del owner, 2026-11-11); PM-592, PM-600, PM-601 y PM-602 (decisiones del owner sobre las dudas de HOS-1749)
+
+- **Pregunta**: qué se hace con el congelamiento de altas pagas, que quedó huérfano al retirar `billing_settings` (HOS-1416): nada lo activaba ni lo lanzaba
+- **Elegida**: quitar los restos y reimplementarlo antes del corte, con dos interruptores
+- **Recomendada**: —
+- **En una línea**: **el congelamiento vive en `platform_settings` y no en `billing_settings`, que ya no existe; son dos interruptores independientes**: `billing.paidSignupsFreeze` (altas pagas: el checkout y la primera publicación que arrancaría un trial responden 409, `NEW_PAID_SIGNUPS_FROZEN` y `FIRST_PUBLISH_PAUSED`) y `billing.addonPurchasesFreeze` (la compra de complementos responde 409, `ADDON_PURCHASES_FROZEN`). El aviso aparece al intentar, no en las páginas de planes, y los dos los manejan `SUPER_ADMIN` y `ADMIN` con `BILLING_SETTINGS_WRITE`. Reemplaza a [N](#own-40-congelamiento-y-ci-t1-n) en dónde se guarda y a [O](#own-40-congelamiento-y-ci-t1-o) en que los complementos se congelen junto con las altas. Implementado en HOS-1749 (PR #4307, merge `4c6def33c2`)
+
+#### Retirar un complemento es marcarlo (Q1 de HOS-1625)
+
+<a id="own-postmvp-pm452-complemento-retirado"></a>
+**Letra PM-452**
+
+Origen: registro PM-452 (decisión del owner, Q1 de HOS-1625, opción 1)
+
+- **Pregunta**: qué es «retirar» un complemento
+- **Elegida**: 1
+- **Recomendada**: sí
+- **En una línea**: **se marca con `addon_product.retired_at`** (migración estructural aditiva). Un producto retirado no se vende ni se regala: el mismo rechazo vale para `chooseFreeAddon` (PM-453). El retiro total (terminar las compras vivas con aviso previo y poder borrar el producto) queda para HOS-2097, después de la épica
+
+#### El pago manual es el camino oficial de Partner (HOS-1782)
+
+<a id="own-postmvp-pm617-partner-pago-manual"></a>
+**Letra PM-617**
+
+Origen: registro PM-617 (decisión del owner); PM-623 y PM-630 (HOS-2130)
+
+- **Pregunta**: cómo paga un Partner, si el texto de Mi cuenta prometía un link de pago que no existe
+- **Elegida**: pago manual, sin tarjeta
+- **Recomendada**: —
+- **En una línea**: **el pago manual (acción 6, HOS-1489) es el camino oficial de Partner.** Se corrige el texto que prometía el link, se le muestra al partner su cuota abierta con instrucciones de transferencia, y un correo le avisa cuando se le abre una cuota (HOS-2130, textos aprobados tal cual en PM-630). El link con token queda descartado por ahora
+
+#### Qué destaca una ficha (HOS-1718)
+
+<a id="own-postmvp-pm627-destacado"></a>
+**Letra PM-627**
+
+Origen: registro PM-627 y PM-630 (decisiones del owner, 2026-11-12); PM-620 y PM-625
+
+- **Pregunta**: qué fuentes de capacidades destacan una ficha, ahora que el destacado se calcula desde el conjunto efectivo
+- **Elegida**: plan pago y complemento; el trial no
+- **Recomendada**: —
+- **En una línea**: **destacan el plan pago (Pro y Premium) y el complemento; el trial no destaca**, aunque derive sus capacidades del Premium (si no, todo dueño nuevo saldría destacado 30 días). Un grant permanente o una cortesía sobre un plan con `featured_listing` **sí** destacan (PM-630). Los listados públicos de comer y salir y de experiencias ordenan primero las fichas destacadas, como alojamiento (PM-620, PM-625)
+
+#### Al cerrar la tanda de e2e (2026-11-13)
+
+<a id="own-postmvp-pm641-cierre"></a>
+**Letra PM-641**
+
+Origen: registro PM-641 (decisiones del owner, 2026-11-13)
+
+- **Pregunta**: H-1 y H-2 de HOS-2138, y si va un guard contra la hora del sistema en billing
+- **Elegida**: las tres que sí
+- **Recomendada**: —
+- **En una línea**: **la tienda vende los complementos de pago único (HOS-2179); Pro y Premium de comer y salir y de experiencias destacan la ficha (HOS-2180); y va un guard contra `new Date()` y `Date.now()` en `services/billing`, junto con HOS-2174.** HOS-2179 y HOS-2180 son issues aparte; el registro no dice si van antes o después del merge a `staging`. Después se cierra esta documentación y se abre el PR de la épica a `staging` nombrando HOS-2066, que no se mergea sin el OK del owner
