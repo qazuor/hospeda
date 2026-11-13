@@ -456,8 +456,8 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 path,
                 cookie: actors.admin.sessionCookie
             });
-            const preview = m.ManualPaymentDataSchema.parse(previewResponse.body);
             expect(previewResponse.status).toBe(200);
+            const preview = m.ManualPaymentDataSchema.parse(previewResponse.body);
             expect(preview.data.subscriptionId).toBe(subscriptionId);
             expect(preview.data.manualPaymentId).toBe(lateId);
             expect(preview.data.periodStart).toBe(latePeriod.toISOString());
@@ -473,6 +473,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 cookie: actors.admin.sessionCookie,
                 body: { proofRef }
             });
+            expect(response.status).toBe(200);
             const result = m.ManualPaymentDataSchema.parse(response.body);
             const receiptId = await m.assertLateManualPaymentPersisted({
                 subscriptionId,
@@ -486,7 +487,6 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 proofRef,
                 adminId: actors.admin.id
             });
-            expect(response.status).toBe(200);
             expect(result.data).toEqual({
                 effect: 'S7',
                 nextChargeAt: expectedNext.toISOString(),

@@ -154,14 +154,10 @@ export async function assertLateManualPaymentPersisted(args: {
         proof_ref: args.proofRef,
         registered_by: args.adminId
     });
-    expect(
-        state.coveredPeriods.map(({ period_start, manual_payment_id }) => ({
-            period_start,
-            manual_payment_id
-        }))
-    ).toEqual([
-        { period_start: args.previousPeriod, manual_payment_id: args.previousId },
-        { period_start: args.periodStart, manual_payment_id: args.manualPaymentId }
+    const open = { id: expect.any(String), released_at: null };
+    expect(state.coveredPeriods).toEqual([
+        { ...open, period_start: args.previousPeriod, manual_payment_id: args.previousId },
+        { ...open, period_start: args.periodStart, manual_payment_id: args.manualPaymentId }
     ]);
     expect(state.subscription).toEqual([
         {
@@ -208,8 +204,8 @@ export async function exerciseUnallocatedManualPayment(args: {
     });
     const path = `/api/v1/admin/billing-subscription/${args.subscriptionId}/manual-payments/unallocated`;
     const previewResponse = await adminJson({ method: 'GET', path, cookie: args.cookie });
-    const preview = ManualPaymentDataSchema.parse(previewResponse.body);
     expect(previewResponse.status).toBe(200);
+    const preview = ManualPaymentDataSchema.parse(previewResponse.body);
     expect(preview.data).toEqual({
         subscriptionId: args.subscriptionId,
         periodStart: args.periodStart.toISOString(),
@@ -225,8 +221,8 @@ export async function exerciseUnallocatedManualPayment(args: {
         cookie: args.cookie,
         body: { proofRef: args.proofRef }
     });
-    const result = UnallocatedResultSchema.parse(response.body);
     expect(response.status).toBe(200);
+    const result = UnallocatedResultSchema.parse(response.body);
     expect(result.data).toEqual({
         manualPaymentId: expect.any(String),
         periodStart: args.periodStart.toISOString(),
