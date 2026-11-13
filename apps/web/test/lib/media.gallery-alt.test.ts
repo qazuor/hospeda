@@ -90,3 +90,30 @@ describe('extractFeaturedImage — alt propagation (H-125)', () => {
         expect(extractFeaturedImage(item).alt).toBeUndefined();
     });
 });
+
+describe('extractFeaturedImage — caption, description and credit (HOS-2132)', () => {
+    it('carries the cover caption, description and credit through the extraction', () => {
+        const item = {
+            media: {
+                featuredImage: {
+                    url: 'https://cdn.example.com/cover.jpg',
+                    caption: 'Living integrado con cocina',
+                    description: 'Ambiente amplio y luminoso',
+                    attribution: { photographer: 'Estudio Smoke' }
+                }
+            }
+        };
+
+        const result = extractFeaturedImage(item);
+
+        expect(result.caption).toBe('Living integrado con cocina');
+        expect(result.description).toBe('Ambiente amplio y luminoso');
+        expect(result.attribution?.photographer).toBe('Estudio Smoke');
+    });
+
+    it('omits description when the cover has none', () => {
+        const item = { media: { featuredImage: { url: 'https://cdn.example.com/cover.jpg' } } };
+
+        expect(extractFeaturedImage(item).description).toBeUndefined();
+    });
+});
