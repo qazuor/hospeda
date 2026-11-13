@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { expect, type Page, test } from '@playwright/test';
-import { FakePaymentProvider } from '@repo/payments/fake';
+import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
 import { createAdjustableClock } from '@repo/test-clock';
 import { addCalendarMonths } from '@repo/utils';
 import { z } from 'zod';
@@ -18,7 +18,6 @@ import {
     DAY_MS,
     deliverNotices,
     ensureDeadlineVersion,
-    FAKE_NOTICE_DELAY_MS,
     type FakeWorld,
     runCron
 } from '../../fixtures/arrears-cycle.ts';
@@ -68,6 +67,18 @@ type WorldCase = Awaited<ReturnType<typeof openActivePlanCase>> &
         readonly article: ReturnType<Page['locator']>;
     };
 
+function equal(actual: unknown, expected: unknown, message: string): void {
+    expect(actual, message).toEqual(expected);
+}
+
+function length(actual: readonly unknown[], expected: number, message: string): void {
+    expect(actual, message).toHaveLength(expected);
+}
+
+function differs(actual: unknown, expected: unknown, message: string): void {
+    expect(actual, message).not.toEqual(expected);
+}
+
 function ceilRatio(numerator: bigint, denominator: bigint): bigint {
     return (numerator + denominator - 1n) / denominator;
 }
@@ -113,13 +124,13 @@ async function requestPlanChange(args: {
             body: JSON.stringify({ billingOptionId: args.billingOptionId })
         }
     );
-    expect(response.status, 'TEST:2159 plan-change route returns HTTP 200.').toBe(200);
+    equal(response.status, 200, 'TEST:2159 plan-change route returns HTTP 200.');
     return PlanChangeSchema.parse(await response.json()).data;
 }
 
 async function readEffectiveSet(user: { sessionCookie: string }) {
     const response = await fetch(EFFECTIVE_SET_URL, { headers: { cookie: user.sessionCookie } });
-    expect(response.status, 'TEST:2159 effective-set route returns HTTP 200.').toBe(200);
+    equal(response.status, 200, 'TEST:2159 effective-set route returns HTTP 200.');
     return EffectiveSetSchema.parse(await response.json()).data;
 }
 
@@ -181,13 +192,14 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             await world?.fakeServer.close();
             const providerIds = await cleanupPlanChangeCase({ userIds, providerNamespace });
             await cleanupArrearsRows({ userIds });
-            expect(
+            equal(
                 await describeSweepCandidates({
                     includeUserIds: userIds,
                     includeProviderIds: providerIds
                 }),
+                [],
                 'TEST:2159 cleanup leaves no sweep candidates.'
-            ).toEqual([]);
+            );
         } finally {
             await world?.mailCapture.close().catch(() => undefined);
             world = null;
@@ -221,7 +233,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
     test('upgrade checkout asks the target price with the value credit as first charge date; abandoning it keeps the old plan charging', async ({
         page
     }) => {
-        if (!world) throw new Error('TEST:2159 T1: fake world missing.');
+        if (!world) throw new Error('T1 assertion.');
         const targetOptionId = await annualOptionForSlug('owner-premium');
         const current = await startCase({ page, slug: 'owner-basico' });
         const [basic] = await execSQL<{
@@ -240,12 +252,8 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT cp.period_start, p.amount FROM covered_period cp JOIN payment p ON p.id = cp.payment_id WHERE cp.subscription_id = $1 AND cp.released_at IS NULL ORDER BY cp.period_start DESC LIMIT 1',
             [current.subscriptionId]
         );
-        if (!basic || !target || !period)
-            throw new Error('TEST:2159 T1 precondition: catalog and covered payment rows exist.');
-        expect(
-            Number(target.amount),
-            'TEST:2159 T1 precondition: target annual price differs from current monthly price.'
-        ).not.toBe(Number(basic.amount));
+        if (!basic || !target || !period) throw new Error('T1 assertion.');
+        differs(Number(target.amount), Number(basic.amount), 'T1 assertion.');
         const bornAt = world.fakeServer.now();
         const postsBefore = preapprovalPosts(world).length;
         const change = await requestPlanChange({
@@ -253,8 +261,8 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        expect(change.outcome, 'TEST:2159 T1 takes successor checkout path.').toBe('SUCCESSION');
-        if (change.outcome !== 'SUCCESSION') throw new Error('TEST:2159 T1 expected succession.');
+        equal(change.outcome, 'SUCCESSION', 'T1 assertion.');
+        if (change.outcome !== 'SUCCESSION') throw new Error('T1 assertion.');
         const expectedCredit = valueCreditDays({
             paidMinor: Number(period.amount),
             periodStart: period.period_start,
@@ -271,13 +279,8 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 bornAt.getTime()) /
                 DAY_MS
         );
-        expect(
-            expectedCredit,
-            'TEST:2159 T1 precondition: value-based credit differs from calendar remaining days.'
-        ).not.toBe(remainingDays);
-        expect(change.creditDays, 'TEST:2159 T1 exact value-based credit days.').toBe(
-            expectedCredit
-        );
+        differs(expectedCredit, remainingDays, 'T1 assertion.');
+        equal(change.creditDays, expectedCredit, 'T1 assertion.');
         const [successor] = await execSQL<{
             status: string;
             succeeds_id: string;
@@ -288,54 +291,52 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT status, succeeds_id, billing_option_id, first_charge_at, authorization_window_ends_at FROM subscription WHERE id = $1',
             [change.subscriptionId]
         );
-        if (!successor) throw new Error('TEST:2159 T1 successor row exists.');
-        expect(
+        if (!successor) throw new Error('T1 assertion.');
+        equal(
             {
                 status: successor.status,
                 succeeds_id: successor.succeeds_id,
                 billing_option_id: successor.billing_option_id
             },
-            'TEST:2159 T1 pending successor links to predecessor and target option.'
-        ).toEqual({
-            status: 'PENDING_AUTHORIZATION',
-            succeeds_id: current.subscriptionId,
-            billing_option_id: targetOptionId
-        });
+            {
+                status: 'PENDING_AUTHORIZATION',
+                succeeds_id: current.subscriptionId,
+                billing_option_id: targetOptionId
+            },
+            'T1 assertion.'
+        );
         const windowFirst = successor.authorization_window_ends_at.getTime() + DAY_MS;
         const creditFirst = bornAt.getTime() + expectedCredit * DAY_MS;
-        expect(
-            creditFirst,
-            'TEST:2159 T1 precondition: credit, not the authorization window, determines first charge.'
-        ).toBeGreaterThan(windowFirst);
+        expect(creditFirst, 'T1 assertion.').toBeGreaterThan(windowFirst);
         const expectedFirst = new Date(Math.max(windowFirst, creditFirst));
-        expect(
+        equal(
             successor.first_charge_at.toISOString(),
-            'TEST:2159 T1 persisted first charge date matches response.'
-        ).toBe(new Date(change.firstChargeAt).toISOString());
-        expect(
             new Date(change.firstChargeAt).toISOString(),
-            'TEST:2159 T1 first charge date is the exact value-credit date.'
-        ).toBe(expectedFirst.toISOString());
+            'T1 assertion.'
+        );
+        equal(
+            new Date(change.firstChargeAt).toISOString(),
+            expectedFirst.toISOString(),
+            'T1 assertion.'
+        );
         const posts = preapprovalPosts(world);
-        expect(
-            posts.length,
-            'TEST:2159 T1 checkout creates exactly one provider preapproval.'
-        ).toBe(postsBefore + 1);
+        equal(posts.length, postsBefore + 1, 'T1 assertion.');
         const body = CheckoutBodySchema.parse(posts.at(-1)?.body);
-        expect(
+        equal(
             {
                 amountMinor: Math.round(body.auto_recurring.transaction_amount * 100),
                 startDate: new Date(body.auto_recurring.start_date).toISOString(),
                 frequency: body.auto_recurring.frequency,
                 frequencyType: body.auto_recurring.frequency_type
             },
-            'TEST:2159 T1 provider checkout body carries target price, credited date and annual cadence.'
-        ).toEqual({
-            amountMinor: Number(target.amount),
-            startDate: expectedFirst.toISOString(),
-            frequency: 12,
-            frequencyType: 'months'
-        });
+            {
+                amountMinor: Number(target.amount),
+                startDate: expectedFirst.toISOString(),
+                frequency: 12,
+                frequencyType: 'months'
+            },
+            'T1 assertion.'
+        );
 
         await world.fakeServer.setClock({
             at: new Date(successor.authorization_window_ends_at.getTime() + 60_000)
@@ -344,7 +345,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             jobName: 'subscription-window-expiry',
             adminCookie: current.admin.sessionCookie
         });
-        expect(expired.success, 'TEST:2159 T1 subscription-window-expiry succeeds.').toBe(true);
+        equal(expired.success, true, 'T1 assertion.');
         await expect
             .poll(
                 async () =>
@@ -360,13 +361,14 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         const oldAuthorization = await world.fakeServer.provider.readAuthorization({
             authorizationId: current.authorizationId
         });
-        expect(
+        equal(
             {
                 status: oldAuthorization.snapshot.status,
                 amountMinor: oldAuthorization.snapshot.amount?.amountMinor
             },
-            'TEST:2159 T2 abandonment leaves predecessor authorization active at old price.'
-        ).toEqual({ status: 'active', amountMinor: Number(basic.amount) });
+            { status: 'active', amountMinor: Number(basic.amount) },
+            'T2 assertion.'
+        );
         await world.fakeServer.setClock({ at: new Date(basic.next_charge_at.getTime() + 60_000) });
         const chargeAt = world.fakeServer.now();
         await world.fakeServer.provider.charge({
@@ -391,34 +393,30 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT amount, status FROM payment WHERE subscription_id = $1 ORDER BY created_at, id',
             [current.subscriptionId]
         );
-        expect(
+        equal(
             payments.map((row) => ({ amount: Number(row.amount), status: row.status })),
-            'TEST:2159 T2 predecessor records both exact successful monthly charges.'
-        ).toEqual([
-            { amount: Number(basic.amount), status: 'SUCCEEDED' },
-            { amount: Number(basic.amount), status: 'SUCCEEDED' }
-        ]);
+            [
+                { amount: Number(basic.amount), status: 'SUCCEEDED' },
+                { amount: Number(basic.amount), status: 'SUCCEEDED' }
+            ],
+            'T2 assertion.'
+        );
         const periods = await execSQL<{ period_start: Date }>(
             'SELECT period_start FROM covered_period WHERE subscription_id = $1 AND released_at IS NULL ORDER BY period_start',
             [current.subscriptionId]
         );
-        expect(
-            periods,
-            'TEST:2159 T2 predecessor retains exactly two covered periods.'
-        ).toHaveLength(2);
-        expect(
-            periods[1]?.period_start.toISOString(),
-            'TEST:2159 T2 next covered period starts at the simulated charge instant.'
-        ).toBe(chargeAt.toISOString());
-        expect(
+        length(periods, 2, 'T2 assertion.');
+        equal(periods[1]?.period_start.toISOString(), chargeAt.toISOString(), 'T2 assertion.');
+        equal(
             (
                 await execSQL<{ status: string }>('SELECT status FROM subscription WHERE id = $1', [
                     current.subscriptionId
                 ])
             )[0]?.status,
-            'TEST:2159 T2 predecessor remains ACTIVE.'
-        ).toBe('ACTIVE');
-        expect(
+            'ACTIVE',
+            'T2 assertion.'
+        );
+        equal(
             Number(
                 (
                     await execSQL<{ count: string }>(
@@ -427,22 +425,16 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                     )
                 )[0]?.count
             ),
-            'TEST:2159 T2 abandonment retains no succession payment.'
-        ).toBe(0);
-        expect(
-            putsTo(world, current.authorizationId),
-            'TEST:2159 T2 predecessor authorization receives no amount mutation or cancellation.'
-        ).toHaveLength(0);
-        expect(
-            putsTo(world, current.authorizationId),
-            'TEST:2159 T2 predecessor authorization receives no mutation or cancellation.'
-        ).toHaveLength(0);
+            0,
+            'T2 assertion.'
+        );
+        length(putsTo(world, current.authorizationId), 0, 'T2 assertion.');
     });
 
     test('completed upgrade moves the vertical subscription complements to the successor', async ({
         page
     }) => {
-        if (!world) throw new Error('TEST:2159 T3: fake world missing.');
+        if (!world) throw new Error('T3 assertion.');
         const targetOptionId = await monthlyOptionForSlug('owner-premium');
         const current = await startCase({ page, slug: 'owner-basico' });
         const complements = await seedTwoComplements({
@@ -450,17 +442,14 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             vertical: 'accommodation',
             fakeServer: world.fakeServer
         });
-        expect(
-            complements,
-            'TEST:2159 T3 precondition: two complement instances were seeded.'
-        ).toHaveLength(2);
+        length(complements, 2, 'T3 assertion.');
         const change = await requestPlanChange({
             user: current.user,
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        expect(change.outcome, 'TEST:2159 T3 upgrade enters succession.').toBe('SUCCESSION');
-        if (change.outcome !== 'SUCCESSION') throw new Error('TEST:2159 T3 expected succession.');
+        equal(change.outcome, 'SUCCESSION', 'T3 assertion.');
+        if (change.outcome !== 'SUCCESSION') throw new Error('T3 assertion.');
         const ids = complements.map((item) => item.instanceId);
         const before = await execSQL<{
             id: string;
@@ -471,10 +460,11 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT id, target_id, status, complement_subscription_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
             [ids]
         );
-        expect(
+        equal(
             before.map((row) => ({ target_id: row.target_id, status: row.status })),
-            'TEST:2159 T3 opening succession leaves complements attached to predecessor.'
-        ).toEqual(ids.map(() => ({ target_id: current.subscriptionId, status: 'ACTIVE' })));
+            ids.map(() => ({ target_id: current.subscriptionId, status: 'ACTIVE' })),
+            'T3 assertion.'
+        );
         const complementSubscriptionIds = before.map((row) => row.complement_subscription_id);
         await activateCardSubscription({
             fakeServer: world.fakeServer,
@@ -484,27 +474,29 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT target_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
             [ids]
         );
-        expect(
+        equal(
             activated.map((row) => row.target_id),
-            'TEST:2159 T3 authorization alone does not move complements before S18 email.'
-        ).toEqual(ids.map(() => current.subscriptionId));
-        expect(
+            ids.map(() => current.subscriptionId),
+            'T3 assertion.'
+        );
+        length(
             cancelRequestsFor({
                 requests: world.fakeServer.requests(),
                 authorizationId: current.authorizationId
             }),
-            'TEST:2159 T3 predecessor is not cancelled before outbox delivery.'
-        ).toHaveLength(0);
+            0,
+            'T3 assertion.'
+        );
         const sent = await runCron({
             jobName: 'email-outbox-sender',
             adminCookie: current.admin.sessionCookie
         });
-        expect(sent.success, 'TEST:2159 T3 email outbox sender succeeds.').toBe(true);
+        equal(sent.success, true, 'T3 assertion.');
         const closed = await runCron({
             jobName: 'subscription-succession-reevaluation',
             adminCookie: current.admin.sessionCookie
         });
-        expect(closed.success, 'TEST:2159 T3 succession reevaluation succeeds.').toBe(true);
+        equal(closed.success, true, 'T3 assertion.');
         await expect
             .poll(
                 async () =>
@@ -522,9 +514,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 change.subscriptionId
             ])
         )[0]?.status;
-        expect(successorStatus, 'TEST:2159 T3 authorized successor is ACTIVE after closure.').toBe(
-            'ACTIVE'
-        );
+        equal(successorStatus, 'ACTIVE', 'T3 assertion.');
         const after = await execSQL<{
             id: string;
             target_id: string;
@@ -534,54 +524,56 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT id, target_id, status, complement_subscription_id FROM addon_instance WHERE id = ANY($1::uuid[]) ORDER BY id',
             [ids]
         );
-        expect(
+        equal(
             after.map((row) => ({
                 id: row.id,
                 target_id: row.target_id,
                 status: row.status,
                 complement_subscription_id: row.complement_subscription_id
             })),
-            'TEST:2159 T3 S18 moves each active vertical complement and preserves its subscription link.'
-        ).toEqual(
             before.map((row) => ({
                 id: row.id,
                 target_id: change.subscriptionId,
                 status: 'ACTIVE',
                 complement_subscription_id: row.complement_subscription_id
-            }))
+            })),
+            'T3 assertion.'
         );
-        expect(
+        equal(
             (
                 await execSQL<{ status: string }>(
                     'SELECT status FROM subscription WHERE id = ANY($1::uuid[]) ORDER BY id',
                     [complementSubscriptionIds]
                 )
             ).map((row) => row.status),
-            'TEST:2159 T3 complement subscriptions remain active.'
-        ).toEqual(['ACTIVE', 'ACTIVE']);
+            ['ACTIVE', 'ACTIVE'],
+            'T3 assertion.'
+        );
         for (const complement of complements)
-            expect(
+            length(
                 cancelRequestsFor({
                     requests: world.fakeServer.requests(),
                     authorizationId: complement.authorizationId
                 }),
-                'TEST:2159 T3 complement provider authorizations remain uncancelled.'
-            ).toHaveLength(0);
-        expect(
+                0,
+                'T3 assertion.'
+            );
+        equal(
             (
                 await execSQL<{ succeeded_by_id: string }>(
                     'SELECT succeeded_by_id FROM subscription WHERE id = $1',
                     [current.subscriptionId]
                 )
             )[0]?.succeeded_by_id,
-            'TEST:2159 T3 predecessor records exact successor id.'
-        ).toBe(change.subscriptionId);
+            change.subscriptionId,
+            'T3 assertion.'
+        );
     });
 
     test('downgrade keeps the old plan capabilities until next_charge_at and drops them when the scheduled change applies', async ({
         page
     }) => {
-        if (!world) throw new Error('TEST:2159 T4: fake world missing.');
+        if (!world) throw new Error('T4 assertion.');
         const targetOptionId = await monthlyOptionForSlug('owner-basico');
         const current = await startCase({ page, slug: 'owner-premium' });
         const [old] = await execSQL<{
@@ -596,8 +588,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT plan_version_id FROM billing_option WHERE id = $1',
             [targetOptionId]
         );
-        if (!old || !target)
-            throw new Error('TEST:2159 T4 precondition: source and target catalog rows exist.');
+        if (!old || !target) throw new Error('T4 assertion.');
         const premiumLimits = await execSQL<{ key: string; value: number | 'Infinity' }>(
             'SELECT key, value FROM plan_version_limit WHERE plan_version_id = $1',
             [old.plan_version_id]
@@ -625,10 +616,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         const premiumOnly = premiumEntitlements
             .filter((row) => !basicEntitlementKeys.has(row.key))
             .map((row) => row.key);
-        expect(
-            limitDiff.length + premiumOnly.length,
-            'TEST:2159 T4 precondition: the catalog has capabilities that differ between Premium and Basic.'
-        ).toBeGreaterThan(0);
+        expect(limitDiff.length + premiumOnly.length, 'T4 assertion.').toBeGreaterThan(0);
         const premiumExpected = Object.fromEntries(
             limitDiff
                 .filter((key) => key in premiumLimitMap)
@@ -638,56 +626,51 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             limitDiff.filter((key) => key in basicLimitMap).map((key) => [key, basicLimitMap[key]])
         );
         const before = await readEffectiveSet(current.user);
-        expect(
-            pick(before.limits, limitDiff),
-            'TEST:2159 T4 initial limits match Premium catalog values.'
-        ).toEqual(premiumExpected);
-        expect(
+        equal(pick(before.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
             premiumOnly.filter((key) => key in before.entitlements),
-            'TEST:2159 T4 Premium-only entitlements are effective before request.'
-        ).toEqual(premiumOnly);
+            premiumOnly,
+            'T4 assertion.'
+        );
         const change = await requestPlanChange({
             user: current.user,
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        expect(change.outcome, 'TEST:2159 T4 downgrade takes scheduled path.').toBe('DOWNGRADE');
-        if (change.outcome !== 'DOWNGRADE') throw new Error('TEST:2159 T4 expected downgrade.');
-        expect(
+        equal(change.outcome, 'DOWNGRADE', 'T4 assertion.');
+        if (change.outcome !== 'DOWNGRADE') throw new Error('T4 assertion.');
+        equal(
             new Date(change.effectiveAt).toISOString(),
-            'TEST:2159 T4 downgrade date equals predecessor next_charge_at.'
-        ).toBe(old.next_charge_at.toISOString());
+            old.next_charge_at.toISOString(),
+            'T4 assertion.'
+        );
         const [queued] = await execSQL<{ plan_version_id: string; billing_option_id: string }>(
             'SELECT plan_version_id, billing_option_id FROM subscription WHERE id = $1',
             [current.subscriptionId]
         );
-        expect(
+        equal(
             queued,
-            'TEST:2159 T4 subscription remains on old plan immediately after request.'
-        ).toEqual({
-            plan_version_id: old.plan_version_id,
-            billing_option_id: old.billing_option_id
-        });
+            {
+                plan_version_id: old.plan_version_id,
+                billing_option_id: old.billing_option_id
+            },
+            'T4 assertion.'
+        );
         const afterRequest = await readEffectiveSet(current.user);
-        expect(
-            pick(afterRequest.limits, limitDiff),
-            'TEST:2159 T4 Premium limits remain immediately after request.'
-        ).toEqual(premiumExpected);
-        expect(
+        equal(pick(afterRequest.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
             premiumOnly.filter((key) => key in afterRequest.entitlements),
-            'TEST:2159 T4 Premium-only entitlements remain immediately after request.'
-        ).toEqual(premiumOnly);
+            premiumOnly,
+            'T4 assertion.'
+        );
         const effectiveAt = new Date(change.effectiveAt);
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() - 60_000) });
         const beforeDue = await runCron({
             jobName: 'subscription-scheduled-change',
             adminCookie: current.admin.sessionCookie
         });
-        expect(
-            beforeDue.success,
-            'TEST:2159 T4 scheduled-change cron succeeds before due time.'
-        ).toBe(true);
-        expect(
+        equal(beforeDue.success, true, 'T4 assertion.');
+        equal(
             Number(
                 (
                     await execSQL<{ count: string }>(
@@ -696,26 +679,23 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                     )
                 )[0]?.count
             ),
-            'TEST:2159 T4 queue remains before next_charge_at.'
-        ).toBe(1);
+            1,
+            'T4 assertion.'
+        );
         const justBefore = await readEffectiveSet(current.user);
-        expect(
-            pick(justBefore.limits, limitDiff),
-            'TEST:2159 T4 Premium limits remain one minute before next_charge_at.'
-        ).toEqual(premiumExpected);
-        expect(
+        equal(pick(justBefore.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
             premiumOnly.filter((key) => key in justBefore.entitlements),
-            'TEST:2159 T4 Premium-only entitlements remain one minute before next_charge_at.'
-        ).toEqual(premiumOnly);
+            premiumOnly,
+            'T4 assertion.'
+        );
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() + 60_000) });
         const due = await runCron({
             jobName: 'subscription-scheduled-change',
             adminCookie: current.admin.sessionCookie
         });
-        expect(due.success, 'TEST:2159 T4 scheduled-change cron succeeds after due time.').toBe(
-            true
-        );
-        expect(
+        equal(due.success, true, 'T4 assertion.');
+        equal(
             Number(
                 (
                     await execSQL<{ count: string }>(
@@ -724,8 +704,9 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                     )
                 )[0]?.count
             ),
-            'TEST:2159 T4 queue is empty after scheduled change applies.'
-        ).toBe(0);
+            0,
+            'T4 assertion.'
+        );
         const applied = await execSQL<{
             status: string;
             plan_version_id: string;
@@ -733,22 +714,21 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         }>('SELECT status, plan_version_id, billing_option_id FROM subscription WHERE id = $1', [
             current.subscriptionId
         ]);
-        expect(
+        equal(
             applied[0],
-            'TEST:2159 T4 subscription now uses exact Basic plan and option.'
-        ).toEqual({
-            status: 'ACTIVE',
-            plan_version_id: target.plan_version_id,
-            billing_option_id: targetOptionId
-        });
+            {
+                status: 'ACTIVE',
+                plan_version_id: target.plan_version_id,
+                billing_option_id: targetOptionId
+            },
+            'T4 assertion.'
+        );
         const after = await readEffectiveSet(current.user);
-        expect(
-            pick(after.limits, limitDiff),
-            'TEST:2159 T4 differing limits now match Basic catalog values.'
-        ).toEqual(basicExpected);
-        expect(
+        equal(pick(after.limits, limitDiff), basicExpected, 'T4 assertion.');
+        equal(
             premiumOnly.filter((key) => key in after.entitlements),
-            'TEST:2159 T4 Premium-only entitlements are absent after scheduled change.'
-        ).toEqual([]);
+            [],
+            'T4 assertion.'
+        );
     });
 });
