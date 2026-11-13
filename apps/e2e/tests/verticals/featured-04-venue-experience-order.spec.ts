@@ -182,7 +182,7 @@ test.describe('TEST:HOS-2138:6-7 venue and experience lists pin boosted listings
         await expect(cards).toHaveCount(2);
         const names =
             vertical === 'venue'
-                ? cards.locator('.venue-card__link')
+                ? cards.locator('.venue-card__name')
                 : cards.locator('.exp-card__name');
         await expect(names).toHaveText([zName, aName]);
         await expect(args.page.locator('.featured-badge')).toHaveCount(1);
