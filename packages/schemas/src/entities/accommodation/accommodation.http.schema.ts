@@ -18,6 +18,7 @@ import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { phoneNumberSchema, stripShapeDefaults } from '../../utils/utils.js';
 import { AccommodationAmenityAttributesListSchema } from '../amenity/amenity.schema.js';
+import { clearablePostalField } from './accommodation.location.schema.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 import { AccommodationPoliciesSchema } from './subtypes/accommodation.policies.schema.js';
 
@@ -554,38 +555,24 @@ export const AccommodationUpdateHttpSchema = z
          * nowhere post-creation. Owner decision 2026-08-14: the host CAN store the
          * exact address; only its public exposure stays gated by presentation-layer
          * ofuscation, not by withholding the write path.
+         *
+         * `''` clears a saved value (HOS-910) — see `clearablePostalField`.
          */
-        street: z
-            .string()
-            .min(2, { message: 'zodError.accommodation.location.street.min' })
-            .max(50, { message: 'zodError.accommodation.location.street.max' })
-            .optional(),
+        street: clearablePostalField({ field: 'street', min: 2, max: 50 }).optional(),
         /** Street number (H-117, G7 smoke). Maps to `location.number`. */
-        number: z
-            .string()
-            .min(1, { message: 'zodError.accommodation.location.number.min' })
-            .max(10, { message: 'zodError.accommodation.location.number.max' })
-            .optional(),
+        number: clearablePostalField({ field: 'number', min: 1, max: 10 }).optional(),
         /**
          * Floor (H-117, G7 smoke). Maps to `location.floor`.
          *
          * Did not exist in ANY HTTP schema before this change, draft included.
          */
-        floor: z
-            .string()
-            .min(1, { message: 'zodError.accommodation.location.floor.min' })
-            .max(10, { message: 'zodError.accommodation.location.floor.max' })
-            .optional(),
+        floor: clearablePostalField({ field: 'floor', min: 1, max: 10 }).optional(),
         /**
          * Apartment / unit (H-117, G7 smoke). Maps to `location.apartment`.
          *
          * Did not exist in ANY HTTP schema before this change, draft included.
          */
-        apartment: z
-            .string()
-            .min(1, { message: 'zodError.accommodation.location.apartment.min' })
-            .max(10, { message: 'zodError.accommodation.location.apartment.max' })
-            .optional(),
+        apartment: clearablePostalField({ field: 'apartment', min: 1, max: 10 }).optional(),
         /**
          * SEO title override (H-121, G7 smoke). Maps to `seo.title`.
          *

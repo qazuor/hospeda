@@ -17,14 +17,9 @@
  * The rules live in DEFAULT_RULES (not the prompt) because they must survive an
  * admin rewrite of the descriptive prompt.
  *
- * HOS-2102 (residual sweep of gpt-5.4-nano): the Spanish example phrases inside
- * the rules leaked into English and Portuguese answers, so the guard tests also
- * pin the language-leak clauses, the absolute over-capacity group answer, and
- * the pets-not-informed wording ban. Round 2 (post-fix sweep): the
- * over-capacity ban names the escape paraphrases ("repartirse", "otra opción")
- * in any language, and the language ban carries lone-word examples. Round 3
- * (final sweep): the over-capacity enumeration is absolute — no second
- * sentence at all, no conditionals about smaller groups.
+ * HOS-2113 removes quoted forbidden-language examples while preserving the
+ * language-leak clauses, absolute over-capacity group answer, and pet wording
+ * ban. This guard lists old quoted leak tokens to prevent recurrence.
  *
  * @module test/chat-answer-quality-rules
  */
@@ -33,6 +28,42 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../src/engine/default-prompts.js';
 
 const CHAT_FEATURES = ['chat', 'chat_venue', 'chat_experience'] as const;
+
+it('does not quote forbidden Spanish or Portuguese examples in any chat feature rules', () => {
+    const forbiddenQuotedTokens = [
+        'acepta',
+        'aceptan',
+        'admite',
+        'admiten',
+        'aceita(m)',
+        'animais',
+        'repartirse',
+        'otra opción',
+        'depende…',
+        'Claro',
+        // "sí" and "la capacidad" stay quoted in the reply-language sentence on
+        // purpose: HOS-2113 measured more Spanish leaking without them.
+        'imagina',
+        'ven',
+        'déjate',
+        'elige',
+        'descubre',
+        'tú',
+        'ti',
+        'contigo',
+        'Para',
+        'Según',
+        'podés ir',
+        'no hay problema'
+    ];
+
+    for (const feature of CHAT_FEATURES) {
+        for (const token of forbiddenQuotedTokens) {
+            expect(DEFAULT_RULES[feature]).not.toContain(`"${token}"`);
+            expect(DEFAULT_RULES[feature]).not.toContain(`«${token}»`);
+        }
+    }
+});
 
 describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — shared answer-quality rules', (feature) => {
     const rules = DEFAULT_RULES[feature];
@@ -128,15 +159,10 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
 
     it('HOS-2102 pets not informed by the listing: never accepted, allowed or rejected wording', () => {
         expect(rules).toContain(
-            'When your context states that the listing does not inform pets, NEVER write that pets are accepted, allowed or welcome'
+            'When your context states that the listing does not inform pets, NEVER use any verb or adjective meaning acceptance, permission or welcome next to pets or animals, in any language'
         );
         expect(rules).toContain(
-            'do not use the words "acepta", "aceptan", "admite", "admiten" next to "mascotas"/"perros"'
-        );
-        expect(rules).toContain('"aceita(m)" next to "animais"');
-        expect(rules).toContain('"accepted/allowed/welcome" next to "pets"');
-        expect(rules).toContain(
-            'never say they are not accepted either: say only that the listing does not inform it and that the visitor should confirm it with the place'
+            'never say they are rejected either: say only that the listing does not inform it and that the visitor should confirm it with the place'
         );
     });
 
@@ -150,19 +176,15 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             "If the visitor's group is larger than the total capacity your context states, your ENTIRE answer is ONE short sentence: say the group does not fit and state the total capacity."
         );
-        // Round 2 (post-fix sweep): nano paraphrased its way around the ban
-        // ("repartirse en otras opciones", "otra opción con más capacidad"), so
-        // the ban names those words explicitly. Round 3 (final sweep): nano
-        // still appended a second sentence (a conditional about a smaller
-        // group, "depends on distribution"), so the enumeration is absolute.
+        // Over-capacity remains an absolute one-sentence answer.
         expect(rules).toContain(
-            'Nothing else, and no second sentence at all: no question to the visitor, no conditional about a smaller or different group ("if you were fewer…"), no suggestion to split up or look for another option or place ("repartirse", "otra opción", another unit, more beds), nothing about availability or distribution, and nothing about asking or confirming anything with the place.'
+            'Nothing else, and no second sentence at all: no question to the visitor, no conditional about a smaller or different group ("if you were fewer…"), no suggestion to divide the group or seek another option or place, nothing about availability or distribution, and nothing about asking or confirming anything with the place.'
         );
         expect(rules).toContain('no second sentence at all');
         expect(rules).toContain('no conditional about a smaller or different group');
-        expect(rules).toContain('no suggestion to split up');
-        expect(rules).toContain('"repartirse"');
-        expect(rules).toContain('"otra opción"');
+        expect(rules).toContain(
+            'no suggestion to divide the group or seek another option or place'
+        );
         expect(rules).toContain('nothing about availability or distribution');
         // Round 4 (post-round-3 sweep): nano answered over-capacity questions
         // with the fits-close template from the reply-language line, so the
@@ -232,10 +254,10 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain('when that information is in your context');
     });
 
-    it('R2-8 makes the off-topic decline the whole reply: no recipe, no listing, no agreeing opener', () => {
+    it('R2-8 makes the off-topic decline the whole reply: no recipe, no listing, do not begin with an affirmative or enthusiastic opener', () => {
         expect(rules).toContain('that sentence is the whole reply');
         expect(rules).toContain('no recipe, instructions, general information or partial answer');
-        expect(rules).toContain('no agreeing opener');
+        expect(rules).toContain('do not begin with an affirmative or enthusiastic opener');
     });
 
     it('R2-9 states that a question in another language about the listing is on-topic', () => {
@@ -250,10 +272,8 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             'the rule examples above and the listing data are Spanish illustrations of WHAT to say, not phrases to copy'
         );
-        expect(rules).toContain('never leave a Spanish word in the reply');
-        // Round 2 (post-fix sweep): lone Spanish function words still leaked
-        // ("Não: la capacidad…", "não informa si aceitam"), so the ban carries
-        // lone-word examples for both target languages.
+        // HOS-2113 measured that dropping these lone-word examples made nano leak
+        // MORE Spanish into Portuguese answers, so they stay quoted on purpose.
         expect(rules).toContain('not even a lone word such as "sí" instead of "yes"/"sim"');
         expect(rules).toContain('"la capacidad" instead of "the capacity"/"a capacidade"');
     });
@@ -362,7 +382,7 @@ describe('DEFAULT_RULES.chat_venue — venue-only answer-quality rules', () => {
             'If there are no such lines, the minimum age covers the whole venue at every hour.'
         );
         expect(rules).toContain(
-            'In every other case — the lines say the minimum age applies at every hour, there are no such lines, a sector text is not only a name, or the visitor names no time, meal, area or activity (only a day, or nothing, for example "¿pueden entrar menores?" or "el sábado", even when that day also has a line without minimum age) — never start with "sí" and do NOT answer "yes" or use permission wording ("podés ir", "no hay problema"): give the minimum age and the legal notice, and refer the visitor to the venue'
+            'In every other case — the lines say the minimum age applies at every hour, there are no such lines, a sector text is not only a name, or the visitor names no time, meal, area or activity (only a day, or nothing, for example "¿pueden entrar menores?" or "el sábado", even when that day also has a line without minimum age) — never begin with an affirmative response and do NOT give an affirmative response or use wording that grants permission: give the minimum age and the legal notice, and refer the visitor to the venue'
         );
         // Age + legal notice verbatim still apply: that rule covers EVERY age question.
         expect(rules).toContain(

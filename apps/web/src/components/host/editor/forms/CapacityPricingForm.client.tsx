@@ -2,8 +2,8 @@
  * @file CapacityPricingForm.client.tsx
  * @description Form island for `…/editar/capacidad-precio/` (HOS-318 T-021).
  *
- * Guests, bedrooms, bathrooms, price, currency and the minimum stay
- * (`policies.minNights`, HOS-2060). Needs no catalog at all, so
+ * Guests, bedrooms, bathrooms, price, currency and the stay length
+ * (`policies.minNights` HOS-2060, `policies.maxNights` HOS-2121). Needs no catalog at all, so
  * this page issues exactly one request.
  */
 
@@ -23,28 +23,52 @@ import styles from './SectionForm.module.css';
 
 /**
  * The fields this page owns. Nothing else can reach the PATCH body, except the
- * `policies.minNights` key `extendMinNights` adds.
+ * `policies.minNights`/`policies.maxNights` keys `extendStayLength` adds.
  */
 const OWN_FIELDS = ['maxGuests', 'bedrooms', 'bathrooms', 'basePrice', 'currency'] as const;
 
+/** The stay-length policy keys this page owns (HOS-2060, HOS-2121). */
+const STAY_LENGTH_POLICY_KEYS = ['minNights', 'maxNights'] as const;
+
 /**
- * Adds the minimum stay as a one-key `policies` PATCH (HOS-2060). The API
- * merges it per key, so the house rules the services page edits survive.
+ * Adds the stay length as a `policies` PATCH (HOS-2060). The API merges it per
+ * key, so the house rules the services page edits survive.
+ *
+ * A changed bound travels as its value (or `null` when emptied). When one
+ * bound changed, the other travels too IF it holds a value (re-sending it is
+ * idempotent). That puts the pair in front of the client-side
+ * `maxNights >= minNights` refine together, so the error shows next to the
+ * fields before the request instead of coming back as a 400 — a lone changed
+ * bound would be checked against nothing.
+ *
+ * Emptying the minimum sends `minNights: null` (HOS-910): a draft may hold no
+ * minimum; only publishing requires one.
+ *
  * Module-level so the hook's payload memo does not recompute on every render.
+ *
+ * @param input.values - The edited entity.
+ * @param input.baseline - The last persisted entity.
+ * @returns `{ policies }` when a bound changed, otherwise `{}`.
  */
-function extendMinNights({
+export function extendStayLength({
     values,
     baseline
 }: {
     readonly values: AccommodationEditData;
     readonly baseline: AccommodationEditData;
 }): Record<string, unknown> {
-    const policies = buildListingPoliciesPatch({
+    const changed = buildListingPoliciesPatch({
         current: values.policies,
         baseline: baseline.policies,
-        keys: ['minNights']
+        keys: STAY_LENGTH_POLICY_KEYS
     });
-    return policies ? { policies } : {};
+    if (!changed) return {};
+    const policies: Record<string, unknown> = { ...changed };
+    for (const key of STAY_LENGTH_POLICY_KEYS) {
+        const value = values.policies[key];
+        if (!(key in policies) && value !== undefined) policies[key] = value;
+    }
+    return { policies };
 }
 
 interface CapacityPricingFormProps {
@@ -114,7 +138,7 @@ export function CapacityPricingForm({
         initialValues: initialData,
         ownFields: [...OWN_FIELDS],
         schema: AccommodationCapacityPricingSchema,
-        extendPayload: extendMinNights,
+        extendPayload: extendStayLength,
         onSaved: handleSaved
     });
 

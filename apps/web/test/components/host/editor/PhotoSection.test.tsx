@@ -18,7 +18,8 @@
  * - Multi-select gallery upload: N files → exactly N addMedia calls / images
  * - Multi-select cap enforcement: rejected up front, nothing uploaded
  * - Promoting a gallery photo to portada calls setFeaturedMedia only (no
- *   re-upload) and moves the old portada into the gallery
+ *   re-upload) and moves the old portada into the gallery (HOS-904: in the
+ *   SAVED order, re-read from listMedia — see PhotoSection.drag-reorder.test.tsx)
  * - Manual reorder (move up/down) sends the FULL ordered id list (featured +
  *   gallery) to reorderMedia, and boundary buttons are disabled
  * - Drag-and-drop file upload on both the featured slot and the gallery zone
@@ -879,8 +880,12 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
 
     describe('promoting a gallery photo to portada (HOS-122)', () => {
         it('calls setFeaturedMedia with the existing mediaId and does NOT re-upload', async () => {
-            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1]));
             const promotedRow = { ...GALLERY_ROW_1, isFeatured: true };
+            // HOS-904: after promoting, the section re-reads the list, so the
+            // second `listMedia` answers with the saved post-promotion state.
+            mockListMedia
+                .mockReturnValueOnce(makeListOk([FEATURED_ROW, GALLERY_ROW_1]))
+                .mockReturnValue(makeListOk([{ ...FEATURED_ROW, isFeatured: false }, promotedRow]));
             mockSetFeaturedMedia.mockReturnValue(
                 Promise.resolve({ ok: true as const, data: { media: promotedRow } })
             );
@@ -927,8 +932,16 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 url: `https://cdn.example.com/gallery-${index}.jpg`,
                 sortOrder: index
             }));
-            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, ...galleryAtCap]));
             const promotedRow = { ...galleryAtCap[0]!, isFeatured: true };
+            mockListMedia
+                .mockReturnValueOnce(makeListOk([FEATURED_ROW, ...galleryAtCap]))
+                .mockReturnValue(
+                    makeListOk([
+                        { ...FEATURED_ROW, isFeatured: false },
+                        promotedRow,
+                        ...galleryAtCap.slice(1)
+                    ])
+                );
             mockSetFeaturedMedia.mockResolvedValue({
                 ok: true as const,
                 data: { media: promotedRow }

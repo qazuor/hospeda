@@ -15,7 +15,7 @@
  * these are the lists that render and submit it.
  *
  * These tests are pinned to `AiFeatureSchema.options` — the enum itself, not a
- * hand-copied count — so a tenth member fails here instead of in production.
+ * hand-copied count — so the next member fails here instead of in production.
  */
 
 import { AiFeatureSchema } from '@repo/schemas';
@@ -117,6 +117,24 @@ describe('AI settings feature coverage', () => {
 
             expect(result.features.chat?.enabled).toBe(true);
             expect(result.features.chat?.primaryProvider).toBe('openai');
+        });
+
+        it('round-trips reasoning effort for the venue feature', () => {
+            const settings = {
+                ...DEFAULT_SETTINGS,
+                features: {
+                    ...DEFAULT_SETTINGS.features,
+                    chat_venue: {
+                        enabled: true,
+                        primaryProvider: 'openai',
+                        fallbackChain: [],
+                        model: 'gpt-5.4-mini',
+                        params: { reasoningEffort: 'low' as const }
+                    }
+                }
+            };
+
+            expect(toFormValues(settings).features.chat_venue?.params.reasoningEffort).toBe('low');
         });
 
         it('fills a feature the server omitted from the defaults', () => {

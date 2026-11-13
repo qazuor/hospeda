@@ -53,6 +53,7 @@ export enum EntitlementKeyEnum {
     AI_SUPPORT = 'ai_support',
     AI_TRANSLATE = 'ai_translate',
     AI_ACCOMMODATION_IMPORT = 'ai_accommodation_import',
+    AI_FAQ_DRAFT = 'ai_faq_draft',
     PARTNER_PUBLIC_PAGE = 'partner_public_page',
     PARTNER_CAROUSEL_PRESENCE = 'partner_carousel_presence',
     RECOVER_OWN_LISTING = 'recover_own_listing',
@@ -83,5 +84,6 @@ export enum LimitKeyEnum {
     MAX_AI_SEARCH_PER_MONTH = 'max_ai_search_per_month',
     MAX_AI_SUPPORT_PER_MONTH = 'max_ai_support_per_month',
     MAX_AI_TRANSLATE_PER_MONTH = 'max_ai_translate_per_month',
-    MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month'
+    MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month',
+    MAX_AI_FAQ_DRAFT_PER_MONTH = 'max_ai_faq_draft_per_month'
 }

@@ -194,6 +194,15 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        // HOS-2105: faq_draft (owner FAQ answer suggestions) is part of the
+        // full write record too.
+        faq_draft: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };

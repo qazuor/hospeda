@@ -413,6 +413,12 @@ export interface FeaturedImageResult {
      */
     readonly caption?: string;
     /**
+     * Longer description of the cover photo, sourced from
+     * `media.featuredImage.description` (HOS-2132). Present only when the API
+     * returns a structured object carrying a non-empty description.
+     */
+    readonly description?: string;
+    /**
      * Author-written alternative text for the cover photo (H-125).
      *
      * Present only when the API returns a structured object carrying a non-empty
@@ -463,6 +469,7 @@ export function extractFeaturedImage(
             const result: {
                 url: string;
                 caption?: string;
+                description?: string;
                 alt?: string;
                 attribution?: MediaAttribution;
             } = {
@@ -473,6 +480,14 @@ export function extractFeaturedImage(
                 media.featuredImage.caption.length > 0
             ) {
                 result.caption = media.featuredImage.caption;
+            }
+            // HOS-2132: the cover's description must survive extraction too, or the
+            // lightbox's first slide renders without the host's description.
+            if (
+                typeof media.featuredImage.description === 'string' &&
+                media.featuredImage.description.length > 0
+            ) {
+                result.description = media.featuredImage.description;
             }
             // H-125: the cover photo is the one that carries the page's LCP and the
             // share preview — its alt has to survive the extraction too.

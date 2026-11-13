@@ -9,10 +9,12 @@
 import { VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet, resolveListingSections } from '@repo/verticals';
 import { describe, expect, it } from 'vitest';
+import type { IaDataEntry } from '../../../src/services/accommodation-ai-context.js';
 import {
     buildExperienceMarkdownContext,
     type ExperienceContextRow
 } from '../../../src/services/ai-context/experience-ai-context.js';
+import { groupIaDataByCategory } from '../../../src/services/ai-context/listing-accommodation-format-context.js';
 import {
     OWNER_DATA_DELIMITER_END,
     OWNER_DATA_DELIMITER_START
@@ -22,6 +24,22 @@ import {
     VENUE_CONTEXT_MENU_ITEM_MAX,
     type VenueContextRow
 } from '../../../src/services/ai-context/venue-ai-context.js';
+
+describe('groupIaDataByCategory', () => {
+    it('puts uncategorized IA data under Otros after named categories', () => {
+        const entries: IaDataEntry[] = [
+            { title: 'Facilities', content: 'Pool', category: 'Amenities' },
+            { title: 'House rules', content: 'Quiet hours', category: null },
+            { title: 'Access', content: 'Ramp', category: 'Accessibility' },
+            { title: 'Parking', content: 'One space', category: '  ' }
+        ];
+
+        const grouped = groupIaDataByCategory(entries);
+
+        expect([...grouped.keys()]).toEqual(['Amenities', 'Accessibility', 'Otros']);
+        expect(grouped.get('Otros')).toEqual([entries[1], entries[3]]);
+    });
+});
 
 // ---------------------------------------------------------------------------
 // Fixtures

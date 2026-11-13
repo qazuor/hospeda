@@ -15,7 +15,7 @@
  */
 export type { AiProviderModel, AiSyncModelsResult } from '@repo/schemas';
 
-import type { AiModelRate } from '@repo/schemas';
+import type { AiFeature, AiModelRate } from '@repo/schemas';
 
 /** AI provider identifier — any non-empty string (e.g. 'openai', 'ollama', 'groq'). */
 export type AiProviderId = string;
@@ -29,24 +29,14 @@ export interface AiProviderConfig {
 export type AiProvidersMap = Record<string, AiProviderConfig>;
 
 /** The V1 AI feature identifiers. */
-export type AiFeatureId =
-    | 'text_improve'
-    | 'chat'
-    // HOS-400: per-vertical chat features (own metering counter each), same
-    // product and same entitlement as `chat` — see FEATURE_LABELS below.
-    | 'chat_venue'
-    | 'chat_experience'
-    | 'search'
-    | 'support'
-    | 'translate'
-    | 'accommodation_import'
-    | 'post_generate';
+export type AiFeatureId = AiFeature;
 
 /** Optional inference parameters for a feature. */
 export interface AiModelParams {
     readonly temperature?: number;
     readonly maxTokens?: number;
     readonly topP?: number;
+    readonly reasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 }
 
 /** Per-feature routing + model + kill-switch configuration. */
@@ -186,7 +176,8 @@ export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     support: 'Soporte',
     translate: 'Traducción',
     accommodation_import: 'Importar desde URL',
-    post_generate: 'Generar post'
+    post_generate: 'Generar post',
+    faq_draft: 'Borrador de respuesta FAQ'
 } as const;
 
 // ---------------------------------------------------------------------------

@@ -372,6 +372,8 @@ export type StreamTextFinalMeta = z.infer<typeof StreamTextFinalMetaSchema>;
  * spec may add it via `.extend()` if multi-turn structured output is needed.
  */
 export const GenerateObjectRequestSchema = AiCapabilityRequestBaseSchema.extend({
+    /** Explicit caller-owned system instruction; when provided it wins over feature prompts. */
+    systemPrompt: z.string().min(1).optional(),
     /**
      * The prompt instructing the model what object to produce.
      * The engine combines this with the active system prompt and the caller's

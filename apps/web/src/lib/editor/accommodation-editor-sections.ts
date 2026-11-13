@@ -156,15 +156,59 @@ export const ACCOMMODATION_AI_QUESTIONS_SECTION: EditorSection = {
     labelKey: 'host.properties.editor.section.aiQuestions'
 };
 
-/** The editor's sections: the frozen catalog list plus the AI questions page. */
-const ACCOMMODATION_EDITOR_REGISTRY_SECTIONS: readonly EditorSection[] = (() => {
-    const faqIndex = ACCOMMODATION_EDITOR_SECTIONS.findIndex((section) => section.id === 'faqs');
-    return [
-        ...ACCOMMODATION_EDITOR_SECTIONS.slice(0, faqIndex + 1),
-        ACCOMMODATION_AI_QUESTIONS_SECTION,
-        ...ACCOMMODATION_EDITOR_SECTIONS.slice(faqIndex + 1)
-    ];
-})();
+/**
+ * The «Políticas» page (HOS-2123).
+ *
+ * The house rules used to sit at the foot of the services page (HOS-2060),
+ * because the domain catalog puts `policies` in the `amenities` section. The
+ * redesigned services page moved them to a page of their own, right after it.
+ *
+ * Deliberately NOT in {@link ACCOMMODATION_EDITOR_SECTIONS}, for the same
+ * reason as {@link ACCOMMODATION_AI_QUESTIONS_SECTION}: that list is the
+ * frozen mirror of the catalog (G-FAC-08), and the catalog is unchanged — the
+ * `policies` field still belongs to its `amenities` section, so the backend's
+ * section detection and entitlement gating see exactly what they saw before.
+ * This is a second editor ROUTE for that section's data, not a new section.
+ */
+export const ACCOMMODATION_POLICIES_SECTION: EditorSection = {
+    id: 'policies',
+    slug: 'politicas',
+    group: 'property',
+    labelKey: 'host.properties.editor.section.policies'
+};
+
+/**
+ * Inserts `extra` right after the section with id `afterId`.
+ *
+ * @param params - The list, the anchor id and the section to insert.
+ * @returns A new list; the input is never mutated.
+ */
+function insertAfter({
+    sections,
+    afterId,
+    extra
+}: {
+    readonly sections: readonly EditorSection[];
+    readonly afterId: string;
+    readonly extra: EditorSection;
+}): readonly EditorSection[] {
+    const index = sections.findIndex((section) => section.id === afterId);
+    return [...sections.slice(0, index + 1), extra, ...sections.slice(index + 1)];
+}
+
+/**
+ * The editor's sections: the frozen catalog list plus the policies page (after
+ * the services page) and the AI questions page (after the FAQs).
+ */
+const ACCOMMODATION_EDITOR_REGISTRY_SECTIONS: readonly EditorSection[] = insertAfter({
+    sections: insertAfter({
+        sections: ACCOMMODATION_EDITOR_SECTIONS,
+        afterId: 'amenities',
+        extra: ACCOMMODATION_POLICIES_SECTION
+    }),
+    afterId: 'faqs',
+    extra: ACCOMMODATION_AI_QUESTIONS_SECTION
+});
 
 // ---------------------------------------------------------------------------
 // Helpers

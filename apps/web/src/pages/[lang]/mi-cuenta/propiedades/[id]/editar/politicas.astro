@@ -1,0 +1,45 @@
+---
+/**
+ * @file politicas.astro
+ * @description House-rules section of the editor (HOS-2123).
+ *
+ * The Policies panel used to sit at the foot of the services page (HOS-2060).
+ * It moved here when that page was redesigned around the catalog browser. It
+ * needs no catalog: only the loaded accommodation's `policies`.
+ */
+
+import { PoliciesForm } from '@/components/host/editor/forms/PoliciesForm.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'politicas',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="politicas"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.policies', 'Políticas')}
+>
+	<PoliciesForm
+		locale={locale}
+		accommodationId={accommodationId}
+		initialData={data.accommodation}
+		client:load
+	/>
+</EditorSectionLayout>

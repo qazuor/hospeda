@@ -410,6 +410,10 @@
         }
     },
     "ai": {
+        "settings": {
+            "reasoningEffortLabel": "Reasoning effort",
+            "providerDefault": "Provider default"
+        },
         "usage": {
             "title": "AI Usage Dashboard",
             "subtitle": "Monitor AI consumption by feature, model, and provider. All costs in µUSD (1 USD = 1,000,000 µUSD).",
@@ -452,7 +456,8 @@
                 "support": "Support",
                 "translate": "Translate",
                 "accommodation_import": "Accommodation Import",
-                "post_generate": "Post Generate"
+                "post_generate": "Post Generate",
+                "faq_draft": "FAQ answer draft"
             },
             "providers": {
                 "openai": "OpenAI",

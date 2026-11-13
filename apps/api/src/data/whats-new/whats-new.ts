@@ -152,10 +152,151 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4308, #4329
+    {
+        id: '2026-11-12-gallery-lightbox-captions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fotos de cada alojamiento muestran su epígrafe y su descripción',
+            en: "Each stay's photos show their caption and description",
+            pt: 'As fotos de cada hospedagem mostram sua legenda e sua descrição'
+        },
+        body: {
+            es: 'Al abrir la galería de un alojamiento, debajo de cada foto ves el título, la descripción que escribió el anfitrión y, si corresponde, quién la sacó. En el celular, las descripciones largas se recortan con un «Ver más».',
+            en: 'When you open a stay\'s gallery, under each photo you see its title, the description the host wrote and, where it applies, who took it. On your phone, long descriptions are trimmed with a "See more".',
+            pt: 'Ao abrir a galeria de uma hospedagem, embaixo de cada foto você vê o título, a descrição que o anfitrião escreveu e, quando for o caso, quem a tirou. No celular, as descrições longas são cortadas com um «Ver mais».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4306, #4327
+    {
+        id: '2026-11-12-ai-faq-draft',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'La IA te sugiere la respuesta de tus preguntas frecuentes',
+            en: 'AI suggests answers for your FAQs',
+            pt: 'A IA sugere a resposta das suas perguntas frequentes'
+        },
+        body: {
+            es: 'Cuando pasás a pregunta frecuente algo que te preguntaron en **Preguntas a la IA**, el formulario tiene un botón nuevo: **Sugerir respuesta con IA**. Arma un borrador con los datos de tu ficha, en el idioma de la pregunta, para que lo revises y lo guardes vos. Si tu ficha todavía no tiene ese dato, te avisa en lugar de inventar: completalo y volvé a pedirlo. Está incluido en tu plan, con un tope mensual de sugerencias.',
+            en: 'When you turn something visitors asked in **AI questions** into a FAQ, the form has a new button: **Suggest an answer with AI**. It drafts an answer from your listing details, in the language of the question, for you to review and save. If your listing does not have that information yet, it tells you instead of making it up: add it and ask again. It is included in your plan, with a monthly limit of suggestions.',
+            pt: 'Quando você transforma em pergunta frequente algo que perguntaram em **Perguntas à IA**, o formulário tem um botão novo: **Sugerir resposta com IA**. Ele monta um rascunho com os dados da sua página, no idioma da pergunta, para você revisar e salvar. Se a sua página ainda não tem essa informação, ele avisa em vez de inventar: complete e peça de novo. Está incluído no seu plano, com um limite mensal de sugestões.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4321
+    {
+        id: '2026-11-12-listing-chat-knows-deposit-languages-events',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El chat de cada alojamiento sabe de seña, idiomas y eventos',
+            en: "Each stay's chat knows about deposits, languages and events",
+            pt: 'O chat de cada hospedagem sabe sobre sinal, idiomas e eventos'
+        },
+        body: {
+            es: 'Si le preguntás al chat con IA de un alojamiento si piden seña, en qué idiomas te atienden o si podés hacer un cumpleaños, te responde con lo que cargó el anfitrión: el porcentaje de la seña, los idiomas y las condiciones del evento, notas incluidas.',
+            en: "If you ask a stay's AI chat whether they take a deposit, which languages they speak or whether you can throw a birthday party, it answers with what the host filled in: the deposit percentage, the languages and the event conditions, notes included.",
+            pt: 'Se você perguntar ao chat com IA de uma hospedagem se pedem sinal, em quais idiomas atendem ou se dá para fazer um aniversário, ele responde com o que o anfitrião preencheu: a porcentagem do sinal, os idiomas e as condições do evento, com as observações.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4322
+    {
+        id: '2026-11-12-amenities-editor-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Elegir servicios y comodidades ahora es más simple',
+            en: 'Picking services and amenities is now simpler',
+            pt: 'Escolher serviços e comodidades agora é mais simples'
+        },
+        body: {
+            es: 'En **Servicios y comodidades** el catálogo se recorre por categorías, cada una con cuántas elegiste, y el buscador encuentra en todo el catálogo. Los detalles de cada ítem (privado o compartido, temporada, cargo extra) se editan en una ventana aparte, y las **Políticas** tienen ahora su propia página en el editor.',
+            en: "In **Services and amenities** you browse the catalog by category, each showing how many you picked, and the search box looks through the whole catalog. Each item's details (private or shared, season, extra charge) are edited in a separate window, and **Policies** now have their own page in the editor.",
+            pt: 'Em **Serviços e comodidades** o catálogo é percorrido por categorias, cada uma mostrando quantas você escolheu, e a busca procura no catálogo inteiro. Os detalhes de cada item (privado ou compartilhado, temporada, custo extra) são editados em uma janela à parte, e as **Políticas** agora têm sua própria página no editor.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4312
+    {
+        id: '2026-11-12-policies-deposit-languages-event-details',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Contá si pedís seña, en qué idiomas atendés y cómo son los eventos',
+            en: 'Say whether you take a deposit, which languages you speak and how events work',
+            pt: 'Informe se você pede sinal, em quais idiomas atende e como funcionam os eventos'
+        },
+        body: {
+            es: 'En **Políticas** podés indicar si pedís seña para reservar, con su porcentaje y una nota, y los idiomas en que atendés. Si permitís eventos privados, sumá la cantidad máxima de invitados, el horario límite, si se puede poner música y si tiene costo extra. Todo aparece en las normas de tu ficha.',
+            en: "Under **Policies** you can say whether you take a deposit to book, with its percentage and a note, and which languages you speak. If you allow private events, add the maximum number of guests, the end time, whether music is allowed and whether there is an extra charge. All of it shows in your listing's house rules.",
+            pt: 'Em **Políticas** você pode indicar se pede sinal para reservar, com a porcentagem e uma observação, e os idiomas em que atende. Se você permite eventos privados, acrescente o número máximo de convidados, o horário limite, se pode ter música e se há custo extra. Tudo aparece nas regras da sua página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4312
+    {
+        id: '2026-11-12-capacity-max-nights-and-clearable-fields',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Estadía mínima y máxima, una al lado de la otra',
+            en: 'Minimum and maximum stay, side by side',
+            pt: 'Estadia mínima e máxima, lado a lado'
+        },
+        body: {
+            es: 'En **Capacidad y precio** la estadía máxima quedó junto a la mínima. Además, ahora podés vaciar la estadía mínima y partes de la dirección, como el piso, el departamento o el número, y el cambio se guarda.',
+            en: 'In **Capacity and price** the maximum stay now sits next to the minimum. You can also clear the minimum stay and parts of the address, such as floor, apartment or number, and the change is saved.',
+            pt: 'Em **Capacidade e preço** a estadia máxima ficou ao lado da mínima. Além disso, agora você pode apagar a estadia mínima e partes do endereço, como andar, apartamento ou número, e a mudança é salva.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4311
+    {
+        id: '2026-11-12-reorder-photos-by-dragging',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ordená tus fotos arrastrándolas',
+            en: 'Reorder your photos by dragging them',
+            pt: 'Organize suas fotos arrastando-as'
+        },
+        body: {
+            es: 'En **Fotos** podés agarrar una foto y soltarla donde quieras, y el orden se guarda solo. Los botones para subir y bajar siguen estando. Y cuando cambiás la portada, la galería muestra el mismo orden que queda guardado.',
+            en: 'In **Photos** you can grab a photo and drop it wherever you want, and the order saves itself. The up and down buttons are still there. And when you change the cover, the gallery shows the same order that gets saved.',
+            pt: 'Em **Fotos** você pode pegar uma foto e soltá-la onde quiser, e a ordem é salva sozinha. Os botões de subir e descer continuam lá. E quando você troca a capa, a galeria mostra a mesma ordem que fica salva.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4309
+    {
+        id: '2026-11-12-account-menu-collapsible-groups',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El menú de tu cuenta se pliega por secciones',
+            en: 'Your account menu folds by section',
+            pt: 'O menu da sua conta se recolhe por seções'
+        },
+        body: {
+            es: 'En **Mi cuenta** cada grupo del menú se abre y se cierra, y la próxima vez lo encontrás como lo dejaste. El área de turista quedó al final y empieza cerrada, así tenés a mano lo que más usás.',
+            en: 'In **My account** each menu group opens and closes, and next time you find it the way you left it. The traveller area moved to the bottom and starts closed, so what you use most stays at hand.',
+            pt: 'Em **Minha conta** cada grupo do menu abre e fecha, e na próxima vez você o encontra como deixou. A área de turista ficou no final e começa fechada, para deixar à mão o que você mais usa.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4279, #4283
     {
         id: '2026-11-11-external-reputation-on-listings',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T03:47:08Z',
         highlight: false,
         title: {
             es: 'Las fichas de alojamiento muestran sus reseñas de Google',
@@ -167,12 +308,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: "On a stay's page you see its Google rating and a few reviews exactly as guests wrote them, in their original language, with a link to read them all. If the stay is also on other platforms, such as Airbnb, a direct link shows up too.",
             pt: 'Na página de uma hospedagem você vê a nota no Google e algumas avaliações exatamente como os hóspedes escreveram, no idioma original, com um link para ler todas. Se a hospedagem também estiver em outras plataformas, como o Airbnb, aparece o link direto.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4284
     {
         id: '2026-11-11-external-reputation-auto-enable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T02:47:08Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -185,12 +326,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you add your Google listing under **External reputation** and it brings a rating or reviews, the section turns on by itself on your public page. If you switch it off or on yourself, we respect your choice and never touch it again.',
             pt: 'Quando você adiciona sua página do Google em **Reputação externa** e ela traz nota ou avaliações, a seção é ativada sozinha na sua página pública. Se você desligar ou ligar manualmente, respeitamos sua escolha e não mexemos mais.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4287
     {
         id: '2026-11-11-account-emails-plain-text',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T01:47:08Z',
         highlight: false,
         title: {
             es: 'Los mails de tu cuenta llegan mejor a tu bandeja',
@@ -202,12 +343,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Emails to reset your password, verify your account and tell you about new messages now also include a plain-text version. That makes them less likely to land in spam, and they read well in any email app.',
             pt: 'Os e-mails para redefinir a senha, verificar sua conta e avisar sobre novas mensagens agora incluem também uma versão em texto. Assim é menos provável que caiam no spam, e eles ficam legíveis em qualquer programa de e-mail.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4288
     {
         id: '2026-11-11-listing-only-priced-filter',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T00:47:08Z',
         highlight: false,
         title: {
             es: 'El filtro de alojamientos con precio definido ya funciona',
@@ -219,12 +360,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Untick "Include without price" on the stays listing and you see only the ones with a published price, instead of an empty list. The same goes for "Include without rating".',
             pt: 'Se você desmarcar «Incluir sem preço» na lista de hospedagens, vê só as que têm preço publicado, em vez de uma lista vazia. O mesmo vale para «Incluir sem avaliação».'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4282
     {
         id: '2026-11-11-listing-chat-honest-answers',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T23:47:08Z',
         highlight: false,
         title: {
             es: 'El asistente de cada ficha responde en tu idioma y no inventa',
@@ -234,19 +375,19 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         body: {
             es: 'Si preguntás en portugués o en inglés, la respuesta llega entera en ese idioma. Cuando la ficha no informa algo, como si se aceptan mascotas, el asistente te lo dice en lugar de suponerlo, y si tu grupo supera la capacidad te dice cuántos entran.',
             en: 'Ask in Portuguese or English and the whole answer comes back in that language. When the listing does not say something, such as whether pets are allowed, the assistant tells you so instead of guessing, and if your group is too big it tells you how many people fit.',
-            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceita animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
+            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceitam animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4263, #4270, #4274
     {
         id: '2026-11-10-venue-min-age-scope',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T22:47:08Z',
         highlight: false,
         roles: ['VENUE_OWNER'],
         title: {
             es: 'Indicá desde cuándo rige la edad mínima de tu local',
-            en: 'Say when your venue minimum age applies',
+            en: "Say when your venue's minimum age applies",
             pt: 'Informe quando vale a idade mínima do seu local'
         },
         body: {
@@ -254,12 +395,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Night out info** you now choose whether the minimum age applies **all day**, **from a given time** (for example, from midnight) or **only in one area or activity**, such as the dance floor or the show. Your listing shows it next to the minimum age and the legal notice, so families know when they can come.',
             pt: 'Em **Info para sair** agora você escolhe se a idade mínima vale **o dia todo**, **a partir de um horário** (por exemplo, a partir da meia-noite) ou **só em um setor ou atividade**, como a pista ou o show. Sua página mostra isso junto da idade mínima e do aviso legal, para que as famílias saibam quando podem ir.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4266, #4269, #4294
     {
         id: '2026-11-10-ai-questions-tab',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-11T21:47:08Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -272,12 +413,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: "Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences). Mark the ones you have already seen with **I've seen this** so they do not bury the new ones (bring them back with **Undo**), use **View more** to reach older ones, and when the assistant had answered, the FAQ opens **with its answer already filled in** so you only need to review it.",
             pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências). As que você já viu podem ser marcadas com **Já vi** para não esconderem as novas (dá para recuperá-las com **Desfazer**), com **Ver mais** você chega às mais antigas e, se o assistente tinha respondido, a pergunta frequente abre **com a resposta já preenchida** para você só revisar.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4221
     {
         id: '2026-11-08-venue-experience-services-editor',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T01:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -290,12 +431,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Featured services show up first, there is a search box, and the rest is grouped by category. You can also mark each service as **private** or **shared**, and as **year-round** or **seasonal**, and it shows on your public listing. We added new services for the Litoral region and the **Parrilla** cuisine.',
             pt: 'Os serviços em destaque aparecem primeiro, há um buscador e o restante fica organizado por categorias. Você também pode marcar cada serviço como **privado** ou **compartilhado**, e como **o ano todo** ou **de temporada**, e isso aparece na sua página pública. Adicionamos novos serviços pensados para o Litoral e a culinária **Parrilla**.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4217, #4228
     {
         id: '2026-11-08-listing-policies',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-10T00:05:30Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -305,15 +446,15 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Tu ficha ahora muestra un bloque de **Normas y políticas**: medios de pago, mascotas (sí, no o a consultar), fumar y eventos. En alojamientos suma check-in, check-out y cantidad de noches. Las editás desde el nuevo panel **Políticas** del editor, y el filtro de alojamientos que aceptan mascotas ahora usa esa información.',
-            en: 'Your listing now shows a **House rules and policies** block: payment methods, pets (yes, no or on request), smoking and events. For accommodations it also includes check-in, check-out and number of nights. You edit them from the new **Policies** panel in the editor, and the pet-friendly filter now uses that information.',
-            pt: 'Sua página agora mostra um bloco de **Normas e políticas**: formas de pagamento, animais de estimação (sim, não ou sob consulta), fumar e eventos. Nas acomodações inclui também check-in, check-out e quantidade de noites. Você as edita no novo painel **Políticas** do editor, e o filtro de acomodações que aceitam animais agora usa essa informação.'
+            en: 'Your listing now shows a **House rules and policies** block: payment methods, pets (yes, no or on request), smoking and events. For stays it also includes check-in, check-out and number of nights. You edit them from the new **Policies** panel in the editor, and the pet-friendly filter now uses that information.',
+            pt: 'Sua página agora mostra um bloco de **Normas e políticas**: formas de pagamento, animais de estimação (sim, não ou sob consulta), fumar e eventos. Nas hospedagens inclui também check-in, check-out e quantidade de noites. Você as edita no novo painel **Políticas** do editor, e o filtro de hospedagens que aceitam animais agora usa essa informação.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4200
     {
         id: '2026-11-07-publish-bars-and-boliches-in-comer-y-salir',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-09T23:05:30Z',
         highlight: false,
         roles: ['VENUE_OWNER'],
         title: {
@@ -326,7 +467,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you add your venue you choose its business lines, **Food** and **Nightlife**, and we preselect the ones that fit its type. Nightlife venues get the **Night out info** section (entry, minimum age and dress code) and appear in the new **Nightlife** collection in Comer y salir. If you remove a business line, we tell you what stops being shown, and your data stays saved in case you add it back.',
             pt: 'Ao cadastrar seu local, você escolhe os ramos, **Gastronomia** e **Noite**, e pré-selecionamos os que combinam com o tipo. Os locais noturnos ganham a seção **Info para sair** (entrada, idade mínima e traje) e aparecem na nova coleção **Noite** do Comer y salir. Se você tirar um ramo, avisamos o que deixa de aparecer, e seus dados ficam salvos caso você o adicione de novo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4161
     {

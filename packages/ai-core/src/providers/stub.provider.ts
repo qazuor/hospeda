@@ -200,28 +200,29 @@ export class StubProvider implements AiProvider {
 
     /**
      * Returns a `{ object: T } & GenerateObjectResponseMeta` where `object` is
-     * the result of parsing an empty object `{}` through `outputSchema`.
+     * the result of parsing a deterministic fixture through `outputSchema`.
      *
      * **Stub strategy**: the echo text (derived from the prompt) is a string,
      * which will not parse as a structured object for most schemas. The stub
-     * therefore always calls `outputSchema.parse({})` — the caller MUST supply
-     * a schema whose empty-object input is valid (or use optional/default fields).
-     * This is acceptable because the stub is only used in unit tests where the
-     * schema is fully controlled.
+     * uses an FAQ-specific empty-result payload when needed; generic schemas
+     * continue to receive `{}`. This is acceptable because this provider is
+     * intended for controlled tests and local development.
      *
      * @param input - The generate-object request envelope.
      * @param outputSchema - Zod schema for the target type `T`.
      * @returns Deterministic `{ object: T }` merged with fixed usage metadata.
      *
-     * @throws {ZodError} If `outputSchema.parse({})` fails (caller error).
+     * @throws {ZodError} If the deterministic fixture fails the output schema.
      */
     generateObject<T>(
         _input: GenerateObjectRequest,
         outputSchema: ZodType<T>
     ): Promise<{ object: T } & GenerateObjectResponseMeta> {
-        // Parse an empty object through the schema so the return value is typed
-        // as T. Tests should use schemas with all-optional fields or defaults.
-        const object = outputSchema.parse({});
+        // FAQ drafts have a required output shape, so use a representative
+        // empty-result fixture for that feature. Keep `{}` for generic schemas.
+        const object = outputSchema.parse(
+            _input.feature === 'faq_draft' ? { hasData: false, draft: '' } : {}
+        );
 
         return Promise.resolve({
             object,

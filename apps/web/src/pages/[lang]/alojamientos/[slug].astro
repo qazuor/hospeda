@@ -371,6 +371,8 @@ const galleryImages = (() => {
     const featured = {
         url: accommodation.featuredImage || '/assets/images/placeholder-accommodation.svg',
         alt: accommodation.featuredImageAlt ?? accommodation.name,
+        caption: accommodation.featuredImageCaption,
+        description: accommodation.featuredImageDescription,
         credit: formatPhotoCredit(accommodation.featuredImageAttribution, t)
     };
     const extras =
@@ -379,6 +381,7 @@ const galleryImages = (() => {
                   url: item.url,
                   alt: item.alt ?? item.caption ?? accommodation.name,
                   caption: item.caption,
+                  description: item.description,
                   credit: formatPhotoCredit(item.attribution, t)
               }))
             : accommodation.media.images.map((url) => ({

@@ -66,7 +66,7 @@ describe('AiProviderIdSchema', () => {
 
 describe('AiFeatureSchema', () => {
     it('accepts each valid feature identifier', () => {
-        for (const feature of ['text_improve', 'chat', 'search', 'support'] as const) {
+        for (const feature of AiFeatureSchema.options) {
             const result = AiFeatureSchema.safeParse(feature);
             expect(result.success, `expected '${feature}' to be valid`).toBe(true);
         }

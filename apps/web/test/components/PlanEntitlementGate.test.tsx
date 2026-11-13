@@ -62,7 +62,7 @@ describe('PlanEntitlementGate', () => {
 
         render(
             <PlanEntitlementGate
-                entitlementKey="can_use_rich_description"
+                entitlementKey="ai_faq_draft"
                 upgradeUrl="/suscriptores/precios/"
             >
                 <div data-testid="gated-content">Rich Editor</div>

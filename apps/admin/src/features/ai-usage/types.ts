@@ -90,7 +90,8 @@ export const AiUsageByModelSearchSchema = AiUsageTimeWindowSchema.safeExtend(
             'support',
             'translate',
             'accommodation_import',
-            'post_generate'
+            'post_generate',
+            'faq_draft'
         ] as const satisfies readonly [AiFeature, ...AiFeature[]])
         .optional()
         .catch(undefined),
@@ -122,7 +123,8 @@ export const AiUsageByProviderSearchSchema = AiUsageTimeWindowSchema.safeExtend(
             'support',
             'translate',
             'accommodation_import',
-            'post_generate'
+            'post_generate',
+            'faq_draft'
         ] as const satisfies readonly [AiFeature, ...AiFeature[]])
         .optional()
         .catch(undefined),
@@ -169,7 +171,8 @@ export const AiUsageDailySearchSchema = AiUsageTimeWindowSchema.safeExtend(
             'support',
             'translate',
             'accommodation_import',
-            'post_generate'
+            'post_generate',
+            'faq_draft'
         ] as const satisfies readonly [AiFeature, ...AiFeature[]])
         .optional()
         .catch(undefined),

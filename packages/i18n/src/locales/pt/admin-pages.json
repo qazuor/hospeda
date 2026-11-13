@@ -410,6 +410,10 @@
         }
     },
     "ai": {
+        "settings": {
+            "reasoningEffortLabel": "Esforço de raciocínio",
+            "providerDefault": "Padrão do provedor"
+        },
         "usage": {
             "title": "Painel de Consumo de IA",
             "subtitle": "Monitore o uso de IA por função, modelo e provedor. Todos os custos em µUSD (1 USD = 1.000.000 µUSD).",
@@ -452,7 +456,8 @@
                 "support": "Suporte",
                 "translate": "Tradução",
                 "accommodation_import": "Importação de acomodação",
-                "post_generate": "Geração de publicação"
+                "post_generate": "Geração de publicação",
+                "faq_draft": "Rascunho de resposta FAQ"
             },
             "providers": {
                 "openai": "OpenAI",

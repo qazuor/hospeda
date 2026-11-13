@@ -150,6 +150,7 @@ const EXPECTED_METERED_KEYS = [
     'max_ai_chat_experience_per_month',
     'max_ai_chat_per_month',
     'max_ai_chat_venue_per_month',
+    'max_ai_faq_draft_per_month',
     'max_ai_search_per_month',
     'max_ai_support_per_month',
     'max_ai_text_improve_per_month',

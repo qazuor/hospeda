@@ -26,6 +26,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedAiChatRoute } from './chat';
 import { createListingQuestionDismissRoute } from './listing-question-dismiss';
+import { protectedAiListingQuestionFaqDraftRoute } from './listing-question-faq-draft';
 import { protectedAiListingQuestionsRoute } from './listing-questions';
 import { protectedAiSearchChatRoute } from './search-chat';
 import { protectedAiTextImproveRoute } from './text-improve';
@@ -52,6 +53,7 @@ app.route(
     '/listing-questions/:messageId/undismiss',
     createListingQuestionDismissRoute({ dismissed: false })
 );
+app.route('/listing-questions/:messageId/faq-draft', protectedAiListingQuestionFaqDraftRoute);
 
 // SPEC-212 — conversational search AI (POST /search-chat)
 app.route('/search-chat', protectedAiSearchChatRoute);

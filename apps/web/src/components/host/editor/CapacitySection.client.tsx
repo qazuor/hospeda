@@ -1,8 +1,13 @@
 /**
  * @file CapacitySection.client.tsx
  * @description Form section for accommodation capacity: maxGuests, bedrooms,
- * bathrooms, and the minimum stay (`policies.minNights`, HOS-2060). Uses
+ * bathrooms, and the stay length — `policies.minNights` (HOS-2060) and, next to
+ * it, `policies.maxNights` (moved here from the Policies panel, HOS-2121). Uses
  * native HTML number inputs.
+ *
+ * Emptying either stay bound REMOVES its key (`onPolicyChange(key, undefined)`),
+ * which the page's PATCH turns into `null` (HOS-910: a saved minimum must be
+ * clearable; only publishing requires one).
  */
 
 import type { ListingPolicyChange } from '@/components/listing/editor/PoliciesPanel.client';
@@ -22,18 +27,28 @@ export interface CapacitySectionProps {
         bedrooms?: string;
         bathrooms?: string;
         'policies.minNights'?: string;
+        'policies.maxNights'?: string;
     }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: number | null) => void;
     /**
      * Sets or removes a house-rule key (HOS-2060). This section edits only
-     * `policies.minNights`, the minimum stay the publish gate requires.
+     * the stay length: `policies.minNights` (the minimum the publish gate
+     * requires) and `policies.maxNights`.
      */
     readonly onPolicyChange: ListingPolicyChange;
 }
 
+/** Parses a nights input; `undefined` when empty or not an integer. */
+function readNights(raw: string): number | undefined {
+    const trimmed = raw.trim();
+    if (trimmed === '') return undefined;
+    const parsed = Number(trimmed);
+    return Number.isInteger(parsed) ? parsed : undefined;
+}
+
 /**
  * Capacity form section.
- * Renders maxGuests, bedrooms, and bathrooms number inputs.
+ * Renders maxGuests, bedrooms, bathrooms and the min/max nights inputs.
  */
 export function CapacitySection({
     locale,
@@ -126,17 +141,35 @@ export function CapacitySection({
                         value={data.policies.minNights ?? ''}
                         min={1}
                         max={365}
-                        onChange={(e) =>
-                            onPolicyChange(
-                                'minNights',
-                                e.target.value === '' ? undefined : Number(e.target.value)
-                            )
-                        }
+                        onChange={(e) => onPolicyChange('minNights', readNights(e.target.value))}
                     />
                     <p className={styles.fieldHint}>
                         {t(
                             'host.properties.editor.field.minNightsHint',
                             'La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.'
+                        )}
+                    </p>
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="policies.maxNights"
+                        label={t('host.properties.editor.field.maxNights', 'Máximo de noches')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors['policies.maxNights']}
+                        type="number"
+                        value={data.policies.maxNights ?? ''}
+                        min={data.policies.minNights ?? 1}
+                        max={365}
+                        step={1}
+                        onChange={(e) => onPolicyChange('maxNights', readNights(e.target.value))}
+                    />
+                    <p className={styles.fieldHint}>
+                        {t(
+                            'host.properties.editor.field.maxNightsHint',
+                            'Opcional. La cantidad máxima de noches por reserva; no puede ser menor que el mínimo.'
                         )}
                     </p>
                 </div>

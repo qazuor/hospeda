@@ -37,7 +37,9 @@
 
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
+import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
+import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -234,6 +236,8 @@ export function ListingFaqManager({
     const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const faqAiDraft = useFaqAiDraft({ locale });
+    const [isAiDraftContent, setIsAiDraftContent] = useState(false);
     const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -813,14 +817,74 @@ export function ListingFaqManager({
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
                     />
-                    {prefillMessageId && addValues.answer === '' && (
-                        <p>
-                            {t(
-                                'host.properties.editor.aiQuestions.faqAnswerHelp',
-                                'There is no confirmed answer. Fill it in using information from your listing.'
+                    {prefillMessageId && (
+                        <PlanEntitlementGate
+                            entitlementKey="ai_faq_draft"
+                            locale={locale}
+                            vertical={vertical}
+                            fallback={null}
+                        >
+                            <button
+                                className={styles.aiDraftButton}
+                                type="button"
+                                disabled={faqAiDraft.isLoading}
+                                onClick={() =>
+                                    void faqAiDraft.suggest({
+                                        messageId: prefillMessageId,
+                                        onDraft: (draft) => {
+                                            setAddValues((values) => ({
+                                                ...values,
+                                                answer: draft
+                                            }));
+                                            setIsAiDraftContent(true);
+                                        }
+                                    })
+                                }
+                            >
+                                {faqAiDraft.isLoading
+                                    ? t(
+                                          'host.properties.editor.aiQuestions.aiDraftLoading',
+                                          'Generando una sugerencia…'
+                                      )
+                                    : t(
+                                          'host.properties.editor.aiQuestions.suggestAiAnswer',
+                                          'Sugerir respuesta con IA'
+                                      )}
+                            </button>
+                            {isAiDraftContent && (
+                                <p className={styles.aiDraftDisclaimer}>
+                                    {t(
+                                        'host.properties.editor.aiQuestions.aiDraftDisclaimer',
+                                        'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
+                                    )}
+                                </p>
                             )}
-                        </p>
+                            {faqAiDraft.feedback && faqAiDraft.feedback !== 'noData' && (
+                                <p
+                                    className={styles.fieldError}
+                                    role="alert"
+                                >
+                                    {t(
+                                        faqAiDraft.feedback === 'notEligible'
+                                            ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
+                                            : 'host.properties.editor.aiQuestions.aiDraftError',
+                                        faqAiDraft.feedback === 'notEligible'
+                                            ? 'Esta pregunta ya tiene una respuesta del asistente.'
+                                            : 'No se pudo generar la sugerencia. Intentá de nuevo.'
+                                    )}
+                                </p>
+                            )}
+                        </PlanEntitlementGate>
                     )}
+                    {prefillMessageId &&
+                        (addValues.answer === '' || faqAiDraft.feedback === 'noData') && (
+                            <p>
+                                {t(
+                                    'host.properties.editor.aiQuestions.faqAnswerHelp',
+                                    'There is no confirmed answer. Fill it in using information from your listing.'
+                                )}
+                            </p>
+                        )}
                     {addErrors.answer && (
                         <p
                             id="faq-new-a-error"

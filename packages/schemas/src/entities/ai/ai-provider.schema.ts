@@ -84,7 +84,8 @@ export const AiFeatureSchema = z.enum([
     'support',
     'translate',
     'accommodation_import',
-    'post_generate'
+    'post_generate',
+    'faq_draft'
 ]);
 
 /** TypeScript type for a supported AI feature. */
@@ -111,10 +112,9 @@ export type AiFeature = z.infer<typeof AiFeatureSchema>;
  *   Enforcement of the mutual-exclusion is left to the engine layer; the schema
  *   validates each field independently.
  *
- * **Decision (owner-approved 2026-06-04)**: keep params minimal — `temperature`,
- * `maxTokens`, `topP` only. `topK`/`presencePenalty`/`frequencyPenalty` (exposed
- * by the AI SDK) are intentionally omitted (YAGNI); add them via additive
- * extension if and when a child spec actually needs them.
+ * **Decision (owner-approved 2026-06-04, extended HOS-2106)**: keep params
+ * minimal — `temperature`, `maxTokens`, `topP`, and OpenAI `reasoningEffort`.
+ * `topK`/`presencePenalty`/`frequencyPenalty` remain intentionally omitted.
  */
 export const AiModelParamsSchema = z.object({
     /**
@@ -131,7 +131,9 @@ export const AiModelParamsSchema = z.object({
      * Nucleus sampling probability mass in [0, 1].
      * Controls the cumulative probability cutoff for token selection.
      */
-    topP: z.number().min(0).max(1).optional()
+    topP: z.number().min(0).max(1).optional(),
+    /** OpenAI reasoning effort. Omit to use the provider default. */
+    reasoningEffort: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']).optional()
 });
 
 /** TypeScript type for optional AI model parameters. */

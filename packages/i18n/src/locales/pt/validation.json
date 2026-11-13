@@ -5229,6 +5229,30 @@
         },
         "maxNights": {
             "belowMinNights": "O máximo de noites não pode ser menor que o mínimo"
+        },
+        "deposit": {
+            "required": {
+                "invalid": "Indique se você pede sinal"
+            },
+            "percentage": {
+                "integer": "A porcentagem do sinal deve ser um número inteiro",
+                "min": "A porcentagem do sinal deve ser pelo menos 1",
+                "max": "A porcentagem do sinal não pode ultrapassar 100",
+                "requiresDeposit": "A porcentagem só se aplica se você pede sinal"
+            }
+        },
+        "spokenLanguages": {
+            "invalid": "O idioma não é válido",
+            "invalidType": "Os idiomas devem ser uma lista",
+            "duplicate": "Cada idioma pode aparecer só uma vez"
+        },
+        "eventsDetails": {
+            "maxGuests": {
+                "integer": "O máximo de convidados deve ser um número inteiro",
+                "min": "O máximo de convidados deve ser pelo menos 1",
+                "max": "O máximo de convidados não pode ultrapassar 1000"
+            },
+            "requiresEventsAllowed": "Os detalhes de eventos só se aplicam se eventos forem permitidos"
         }
     }
 }

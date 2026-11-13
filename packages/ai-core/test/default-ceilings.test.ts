@@ -36,7 +36,7 @@ describe('DEFAULT_COST_CEILINGS', () => {
 
     describe('per-feature ceilings', () => {
         it('chat ceiling is exactly 45_000_000 µUSD (USD 45)', () => {
-            expect(DEFAULT_COST_CEILINGS.perFeatureMonthlyMicroUsd?.chat).toBe(45_000_000);
+            expect(DEFAULT_COST_CEILINGS.perFeatureMonthlyMicroUsd?.chat).toBe(40_000_000);
         });
 
         it('search ceiling is exactly 30_000_000 µUSD (USD 30)', () => {
@@ -71,11 +71,11 @@ describe('DEFAULT_COST_CEILINGS', () => {
             }
         });
 
-        it('covers all four AI features (chat, search, text_improve, support)', () => {
+        it('covers all five AI features including FAQ drafts', () => {
             const perFeature = DEFAULT_COST_CEILINGS.perFeatureMonthlyMicroUsd;
             expect(perFeature).toBeDefined();
             expect(Object.keys(perFeature ?? {})).toEqual(
-                expect.arrayContaining(['chat', 'search', 'text_improve', 'support'])
+                expect.arrayContaining(['chat', 'faq_draft', 'search', 'text_improve', 'support'])
             );
         });
     });
@@ -109,7 +109,8 @@ describe('DEFAULT_COST_CEILINGS parses through AiCostCeilingsSchema', () => {
         const result = AiCostCeilingsSchema.safeParse(DEFAULT_COST_CEILINGS);
         if (!result.success) return;
         const pf = result.data.perFeatureMonthlyMicroUsd;
-        expect(pf?.chat).toBe(45_000_000);
+        expect(pf?.chat).toBe(40_000_000);
+        expect(pf?.faq_draft).toBe(5_000_000);
         expect(pf?.search).toBe(30_000_000);
         expect(pf?.text_improve).toBe(15_000_000);
         expect(pf?.support).toBe(10_000_000);

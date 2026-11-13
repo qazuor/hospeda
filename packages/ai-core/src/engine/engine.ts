@@ -686,6 +686,15 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             const systemContent = composeSystemPrompt({ content: systemBody, rules: systemRules });
             const injectedReq = injectSystemPrompt({ req, systemContent });
 
+            if (req.params || featureConfig.params.reasoningEffort) {
+                injectedReq.params = {
+                    ...(featureConfig.params.reasoningEffort
+                        ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                        : {}),
+                    ...req.params
+                };
+            }
+
             // Inject the model from feature config if not already set by the caller.
             if (!injectedReq.model && featureConfig.model) {
                 (injectedReq as Record<string, unknown>).model = featureConfig.model;
@@ -758,6 +767,14 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 req,
                 systemContent: streamSystemContent
             });
+            if (req.params || featureConfig.params.reasoningEffort) {
+                injectedStreamReq.params = {
+                    ...(featureConfig.params.reasoningEffort
+                        ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                        : {}),
+                    ...req.params
+                };
+            }
 
             // Inject the model from feature config if not already set by the caller.
             if (!injectedStreamReq.model && featureConfig.model) {
@@ -826,15 +843,27 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // content to the prompt string.  Caller-wins: if the caller already
             // embedded a system instruction in their prompt, this prepend is still
             // safe because the model treats the system block as higher-priority context.
-            const { content: objectBody, rules: objectRules } = await resolveSystemPrompt({
-                feature: req.feature
-            });
-            const objectSystemContent = composeSystemPrompt({
-                content: objectBody,
-                rules: objectRules
-            });
+            const objectSystemContent = req.systemPrompt
+                ? req.systemPrompt
+                : await resolveSystemPrompt({ feature: req.feature }).then(({ content, rules }) =>
+                      composeSystemPrompt({ content, rules })
+                  );
+            // The resolved system content travels ONCE, prepended to the prompt.
+            // `systemPrompt` is stripped so adapters never also send it as the
+            // native `system` channel (that would bill it twice on every call).
+            const { systemPrompt: _callerSystemPrompt, ...reqWithoutSystemPrompt } = req;
             const injectedObjectReq: GenerateObjectRequest = {
-                ...req,
+                ...reqWithoutSystemPrompt,
+                ...(req.params || featureConfig.params.reasoningEffort
+                    ? {
+                          params: {
+                              ...(featureConfig.params.reasoningEffort
+                                  ? { reasoningEffort: featureConfig.params.reasoningEffort }
+                                  : {}),
+                              ...req.params
+                          }
+                      }
+                    : {}),
                 prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
             };
 

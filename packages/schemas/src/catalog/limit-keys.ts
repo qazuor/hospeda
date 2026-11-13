@@ -31,7 +31,8 @@ const ROWS: readonly KeyRow[] = [
     ['max_ai_search_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_support_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_translate_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
-    ['max_ai_accommodation_import_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL']
+    ['max_ai_accommodation_import_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
+    ['max_ai_faq_draft_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL']
 ];
 
 /** Every limit (numeric) key the new design keeps. */

@@ -43,6 +43,7 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     CapacityPricingForm: 'capacidad-precio.astro',
     LocationForm: 'ubicacion.astro',
     ServicesForm: 'servicios.astro',
+    PoliciesForm: 'politicas.astro',
     ContactForm: 'contacto.astro',
     SeoForm: 'seo.astro'
 };

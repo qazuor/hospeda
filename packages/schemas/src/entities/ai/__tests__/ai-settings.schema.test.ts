@@ -32,8 +32,7 @@ const VALID_FEATURE_CONFIG = {
 /**
  * A complete, valid feature map with all required keys.
  *
- * Must list every `AiFeature` member (nine as of HOS-400, which added
- * `chat_venue` and `chat_experience`) — `AiFeaturesMapSchema` is a full
+ * Must list every `AiFeature` member — `AiFeaturesMapSchema` is a full
  * `z.record` over the enum, so a fixture missing a key stops being "complete"
  * the moment a new feature ships, and the happy-path test below silently
  * starts asserting a REJECT it did not mean to.
@@ -47,7 +46,8 @@ const FULL_FEATURES_MAP = {
     support: { ...VALID_FEATURE_CONFIG, enabled: false },
     translate: { ...VALID_FEATURE_CONFIG, enabled: false },
     accommodation_import: { ...VALID_FEATURE_CONFIG, enabled: false },
-    post_generate: { ...VALID_FEATURE_CONFIG, enabled: false }
+    post_generate: { ...VALID_FEATURE_CONFIG, enabled: false },
+    faq_draft: { ...VALID_FEATURE_CONFIG, enabled: false }
 } as const;
 
 /** A valid full settings value blob. */

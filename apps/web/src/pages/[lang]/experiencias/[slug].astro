@@ -131,7 +131,7 @@ const faqs: readonly DetailFaq[] =
 // --- Gallery images ---
 const galleryImages = (() => {
     const mediaObj = raw.media as
-        | { gallery?: Array<{ url?: string; caption?: string }> }
+        | { gallery?: Array<{ url?: string; caption?: string; description?: string }> }
         | undefined;
     const gallery = mediaObj?.gallery ?? [];
     if (gallery.length > 0) {
@@ -140,7 +140,8 @@ const galleryImages = (() => {
             .map((g) => ({
                 url: String(g.url),
                 alt: g.caption ?? experience.name,
-                caption: g.caption
+                caption: g.caption,
+                description: g.description
             }));
     }
     if (
@@ -150,7 +151,8 @@ const galleryImages = (() => {
         return [
             {
                 url: experience.featuredImage.url,
-                alt: experience.featuredImage.caption ?? experience.name
+                alt: experience.featuredImage.caption ?? experience.name,
+                caption: experience.featuredImage.caption
             }
         ];
     }

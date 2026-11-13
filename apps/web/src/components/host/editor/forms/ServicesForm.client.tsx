@@ -17,32 +17,21 @@
  * by amenity id, and the wire wants a list of the CHECKED amenities only,
  * compared by value against the baseline.
  *
- * HOS-2061: the amenities/features are rendered by the shared `CatalogPicker`
- * (featured first, search, per-category accordions), the same component the
- * venue/experience editor uses.
- *
- * HOS-2060: the page also carries the house-rules panel, because the catalog
- * puts `policies` in the amenities section. Its keys travel as a `policies`
- * PATCH object through the same `extendPayload` — every key except
- * `minNights`, which the capacity/pricing page owns (it is a publish
- * requirement and its hub status points there).
+ * HOS-2123: the catalog is rendered by `AmenityCatalogBrowser` (categories on
+ * the left, tiles on the right, per-amenity details in a dialog) instead of the
+ * shared `CatalogPicker`, which the venue/experience editors keep. The
+ * house-rules panel HOS-2060 had put here moved to its own page
+ * (`…/editar/politicas/`, `PoliciesForm.client.tsx`), so this page no longer
+ * sends `policies` at all.
  */
 
-import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
-import { CatalogPicker } from '@/components/shared/catalog-picker/CatalogPicker.client';
 import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import {
-    buildListingPoliciesPatch,
-    LISTING_BASE_POLICY_KEYS,
-    type ListingPolicyKey,
-    setListingPolicy
-} from '@/lib/listing/listing-policies';
 import { ActionBar } from '../ActionBar.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
 import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
-import { ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
+import { AmenityCatalogBrowser } from '../amenity-catalog/AmenityCatalogBrowser.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 import pickerSectionStyles from './ServicesForm.module.css';
@@ -53,17 +42,6 @@ import pickerSectionStyles from './ServicesForm.module.css';
  */
 const OWN_FIELDS = ['amenityIds', 'featureIds'] as const;
 
-/**
- * The house-rule keys this page's Policies panel owns (HOS-2060): the shared
- * base plus the accommodation's check-in/out and maximum stay.
- */
-const ACCOMMODATION_SERVICES_POLICY_KEYS: readonly ListingPolicyKey[] = [
-    'checkIn',
-    'checkOut',
-    'maxNights',
-    ...LISTING_BASE_POLICY_KEYS
-];
-
 /** Module-level so the hook's payload memo does not recompute on every render. */
 function extendAttributes({
     values,
@@ -72,19 +50,8 @@ function extendAttributes({
     readonly values: AccommodationEditData;
     readonly baseline: AccommodationEditData;
 }): Record<string, unknown> {
-    const policies = buildListingPoliciesPatch({
-        current: values.policies,
-        baseline: baseline.policies,
-        keys: ACCOMMODATION_SERVICES_POLICY_KEYS
-    });
-    return {
-        ...buildAmenityAttributesPayload({ values, baseline }),
-        ...(policies ? { policies } : {})
-    };
+    return buildAmenityAttributesPayload({ values, baseline });
 }
-
-/** An empty declaration, used when an amenity has none yet. */
-const NO_ATTRIBUTES: AmenityAttributeValue = { scope: null, availability: null };
 
 interface ServicesFormProps {
     readonly locale: SupportedLocale;
@@ -116,17 +83,17 @@ export function ServicesForm({
         extendPayload: extendAttributes
     });
 
-    const setAttribute = <K extends keyof AmenityAttributeValue>(
-        amenityId: string,
-        field: K,
-        value: AmenityAttributeValue[K]
-    ) => {
-        const current = form.values.amenityAttributes ?? {};
-        const next: AmenityAttributeValue = {
-            ...(current[amenityId] ?? NO_ATTRIBUTES),
-            [field]: value
-        };
-        form.setValue('amenityAttributes', { ...current, [amenityId]: next });
+    const setAttributes = ({
+        amenityId,
+        value
+    }: {
+        readonly amenityId: string;
+        readonly value: AmenityAttributeValue;
+    }) => {
+        form.setValue('amenityAttributes', {
+            ...(form.values.amenityAttributes ?? {}),
+            [amenityId]: value
+        });
     };
 
     const toggle = (field: 'amenityIds' | 'featureIds', id: string) => {
@@ -148,13 +115,8 @@ export function ServicesForm({
                     <legend className={pickerSectionStyles.sectionTitle}>
                         {t('host.properties.editor.section.amenities', 'Servicios y comodidades')}
                     </legend>
-                    <CatalogPicker
+                    <AmenityCatalogBrowser
                         locale={locale}
-                        amenitiesTitle={t('host.properties.editor.field.amenities', 'Comodidades')}
-                        featuresTitle={t(
-                            'host.properties.editor.field.features',
-                            'Características'
-                        )}
                         amenities={amenities}
                         features={features}
                         selectedAmenityIds={new Set(form.values.amenityIds)}
@@ -162,25 +124,9 @@ export function ServicesForm({
                         onToggleAmenity={(id) => toggle('amenityIds', id)}
                         onToggleFeature={(id) => toggle('featureIds', id)}
                         amenityAttributes={form.values.amenityAttributes}
-                        onChangeAmenityAttribute={setAttribute}
+                        onChangeAmenityAttributes={setAttributes}
                     />
                 </fieldset>
-            </div>
-
-            <div className={styles.card}>
-                <PoliciesPanel
-                    locale={locale}
-                    idPrefix={ACCOMMODATION_FIELD_PREFIX}
-                    keys={ACCOMMODATION_SERVICES_POLICY_KEYS}
-                    policies={form.values.policies}
-                    errors={form.fieldErrors}
-                    onChange={(key, value) =>
-                        form.setValue(
-                            'policies',
-                            setListingPolicy({ policies: form.values.policies, key, value })
-                        )
-                    }
-                />
             </div>
 
             {form.formError && (
