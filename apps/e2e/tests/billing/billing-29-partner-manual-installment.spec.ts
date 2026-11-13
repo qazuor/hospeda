@@ -222,9 +222,15 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
             expect(firstText).toContain('Plan: Silver');
             const mailAmount = `Monto: ${expectedAmount(amount)}`;
             expect(firstText).toContain(mailAmount);
-            expect(mailAmount).toBe(cardAmount);
             expect(firstText).toContain(norm(`Vence el ${formatMarketDate(authorizationEndsAt)}`));
             expect(firstText).toContain(HOW_TO_PAY);
+            // The paragraphs are contiguous: this pins their order and the amount's boundaries,
+            // and compares the mail against the amount the card actually rendered.
+            expect(firstText).toContain(
+                norm(
+                    `${INTRO_FIRST} Plan: Silver ${cardAmount} Vence el ${formatMarketDate(authorizationEndsAt)} ${HOW_TO_PAY}`
+                )
+            );
             expect(firstText).toContain('Ver mi cuota');
             expect(firstText).not.toContain(INTRO_RENEWAL);
             expect(firstMail.html).toContain('/es/mi-cuenta/partner/"');
@@ -361,6 +367,11 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
             expect(renewalText).toContain(`Monto: ${expectedAmount(amount)}`);
             expect(renewalText).toContain(norm(`Vence el ${formatMarketDate(graceEndsAt)}`));
             expect(renewalText).toContain(HOW_TO_PAY);
+            expect(renewalText).toContain(
+                norm(
+                    `${INTRO_RENEWAL} Plan: Silver Monto: ${expectedAmount(amount)} Vence el ${formatMarketDate(graceEndsAt)} ${HOW_TO_PAY}`
+                )
+            );
             expect(renewalText).not.toContain(INTRO_FIRST);
 
             const groupedOutboxRows = await execSQL<{ id: string; n: number }>(
