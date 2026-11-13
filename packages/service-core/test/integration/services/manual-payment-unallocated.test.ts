@@ -329,6 +329,32 @@ describe('TEST:B5:10 MP6 unallocated transfers', () => {
         await rejected(card.request, 'MANUAL_PAYMENT_NOT_MANUAL');
     });
 
+    it('accepts the full session actor that getActorFromContext returns (HOS-2178)', async () => {
+        // Arrange: the route passes the session actor as-is, extra keys included.
+        const fixture = await seed({ coverage: true });
+        const sessionActor = {
+            ...fixture.actor,
+            name: 'Real Admin',
+            email: 'real-admin@local.test',
+            emailVerified: true,
+            image: null,
+            mustChangePassword: false
+        };
+        const request = { ...fixture.request, actor: sessionActor };
+
+        // Act
+        const preview = await previewUnallocatedManualPayment(request);
+        const result = await registerUnallocatedManualPayment(request, { clock });
+
+        // Assert
+        expect(preview).toMatchObject({ mark: 'COBRO_DUPLICADO' });
+        expect(result).toMatchObject({ mark: 'COBRO_DUPLICADO', outcome: 'OPENED' });
+        const after = await snapshot(fixture.subscription.id);
+        expect(after.rows.find((row) => row.id === result.manualPaymentId)?.registeredBy).toBe(
+            fixture.actor.id
+        );
+    });
+
     it('accumulates two transfers on one open mark', async () => {
         const fixture = await seed({ coverage: true });
         const first = await registerUnallocatedManualPayment(fixture.request, { clock });
