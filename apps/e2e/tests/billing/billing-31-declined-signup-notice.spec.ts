@@ -242,7 +242,8 @@ test.describe('TEST:2149:1 TEST:2149:2 TEST:2149:3 declined signup notice on my 
             'Plan que intentaste contratar: Básico'
         );
 
-        await fakeServer.setClock({ at: new Date(updatedAt.getTime() + 7 * DAY_MS) });
+        // +1 s: pg reads updated_at truncated to ms while the API compares with microseconds.
+        await fakeServer.setClock({ at: new Date(updatedAt.getTime() + 7 * DAY_MS + 1_000) });
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(page.locator('[data-subscription-sections]')).toHaveCount(1);
         await expect(page.getByTestId('subscription-return')).toHaveCount(0);
