@@ -227,10 +227,14 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
     test('once the notice is sent, the next retry run cancels the preapproval at the provider', async () => {
         if (!attempt || !fakeServer || !mailCapture)
             throw new Error('The queued signup attempt and test servers must be ready.');
+        const sentAttempt = attempt;
 
-        await runCron({ jobName: 'email-outbox-sender', adminCookie: attempt.admin.sessionCookie });
+        await runCron({
+            jobName: 'email-outbox-sender',
+            adminCookie: sentAttempt.admin.sessionCookie
+        });
         const mail = await mailCapture.waitForMail({
-            to: attempt.user.email,
+            to: sentAttempt.user.email,
             subject: CANCEL_SUBJECT,
             timeoutMs: 30_000
         });
@@ -238,32 +242,32 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
         expect(html).toContain('Cancelaste el intento de alta de suscripción que tenías pendiente');
         expect(html).toContain('Ese intento no te cobró nada.');
         await expect
-            .poll(() => attemptNotices(attempt.user.id, attempt.subscriptionId), {
+            .poll(() => attemptNotices(sentAttempt.user.id, sentAttempt.subscriptionId), {
                 timeout: 10_000
             })
             .toEqual([{ template: CANCEL_NOTICE, status: 'sent' }]);
-        expect(cancelPuts(fakeServer.requests(), attempt.authorizationId)).toBe(0);
+        expect(cancelPuts(fakeServer.requests(), sentAttempt.authorizationId)).toBe(0);
 
-        const details = await runDeferredRetry(attempt.admin.sessionCookie);
+        const details = await runDeferredRetry(sentAttempt.admin.sessionCookie);
         expect(
             details.skipped,
             `a live reconciliation sweep run blocks the deferred retry: ${JSON.stringify(details)}`
         ).toBeUndefined();
         expect(details.failedSubscriptionIds, JSON.stringify(details)).not.toContain(
-            attempt.subscriptionId
+            sentAttempt.subscriptionId
         );
 
         expect(details.retried.confirmed, JSON.stringify(details)).toBe(1);
         expect(details.retried.callFailed, JSON.stringify(details)).toBe(0);
         expect(details.retried.sentUnconfirmed, JSON.stringify(details)).toBe(0);
-        expect(cancelPuts(fakeServer.requests(), attempt.authorizationId)).toBe(1);
+        expect(cancelPuts(fakeServer.requests(), sentAttempt.authorizationId)).toBe(1);
         const cancelled = await fakeServer.provider.readAuthorization({
-            authorizationId: attempt.authorizationId
+            authorizationId: sentAttempt.authorizationId
         });
         expect(cancelled.snapshot.status).toBe('cancelled');
         expect(
             mailCapture
-                .mailsTo({ to: attempt.user.email })
+                .mailsTo({ to: sentAttempt.user.email })
                 .filter((captured) => captured.subject === CANCEL_SUBJECT)
         ).toHaveLength(1);
     });
