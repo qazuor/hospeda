@@ -40,17 +40,17 @@
         "@testing-library/dom": "^10.4.2",
         "@testing-library/jest-dom": "^7.0.1",
         "@testing-library/react": "^16.3.3",
-        "@types/node": "^26.6.1",
+        "@types/node": "^26.6.6",
         "@types/react": "^19.2.18",
-        "@vitejs/plugin-react": "^6.1.1",
-        "@vitest/coverage-v8": "^5.0.5",
+        "@vitejs/plugin-react": "^6.2.1",
+        "@vitest/coverage-v8": "^5.1.0",
         "jsdom": "^26.0.0",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^5.0.5"
+        "vitest": "^5.1.0"
     },
     "peerDependencies": {
         "react": "^18.0.0 || ^19.0.0"
