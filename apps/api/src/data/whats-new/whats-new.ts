@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4308, #4329
+    {
+        id: '2026-11-12-gallery-lightbox-captions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fotos de cada alojamiento muestran su epígrafe y su descripción',
+            en: "Each stay's photos show their caption and description",
+            pt: 'As fotos de cada hospedagem mostram sua legenda e sua descrição'
+        },
+        body: {
+            es: 'Al abrir la galería de un alojamiento, debajo de cada foto ves el título, la descripción que escribió el anfitrión y, si corresponde, quién la sacó. En el celular, las descripciones largas se recortan con un «Ver más».',
+            en: 'When you open a stay\'s gallery, under each photo you see its title, the description the host wrote and, where it applies, who took it. On your phone, long descriptions are trimmed with a "See more".',
+            pt: 'Ao abrir a galeria de uma hospedagem, embaixo de cada foto você vê o título, a descrição que o anfitrião escreveu e, quando for o caso, quem a tirou. No celular, as descrições longas são cortadas com um «Ver mais».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4306, #4327
     {
         id: '2026-11-12-ai-faq-draft',
