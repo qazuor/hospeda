@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type Locator, test } from '@playwright/test';
 import { PublicationStatusEnum } from '@repo/schemas';
+import { z as zod } from 'zod';
 import esBilling from '../../../../packages/i18n/src/locales/es/billing.json' with { type: 'json' };
 import esHome from '../../../../packages/i18n/src/locales/es/home.json' with { type: 'json' };
 import {
@@ -231,7 +232,7 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
             })
         });
         expect(response.status).toBe(201);
-        const result = z
+        const result = zod
             .object({
                 data: z.object({
                     instanceId: z.string().uuid(),
@@ -245,8 +246,10 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
             'SELECT status, starts_at, ends_at FROM addon_instance WHERE id = $1',
             [result.instanceId]
         );
-        expect(times[0]?.status).toBe('ACTIVE');
-        expect(times[0]?.ends_at.getTime() - times[0]?.starts_at.getTime()).toBe(7 * DAY_MS);
+        const instance = times[0];
+        expect(instance?.status).toBe('ACTIVE');
+        if (!instance) throw new Error(`Missing one-time addon instance ${result.instanceId}.`);
+        expect(instance.ends_at.getTime() - instance.starts_at.getTime()).toBe(7 * DAY_MS);
         await expect.poll(() => readFeaturedFlag({ table: 'accommodations', id: z.id })).toBe(true);
         expect(await readPublicList({ vertical: 'accommodation', destinationId })).toEqual([
             { id: z.id, isFeatured: true },
