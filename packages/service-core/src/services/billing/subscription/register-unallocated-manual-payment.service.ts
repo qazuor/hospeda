@@ -24,7 +24,7 @@ import {
 } from '../reconciliation/open-reconciliation-mark.service';
 
 const inputSchema = z.strictObject({
-    actor: z.strictObject({
+    actor: z.object({
         id: z.uuid(),
         roles: z.array(z.enum(RoleEnum)),
         permissions: z.array(z.enum(PermissionEnum))
