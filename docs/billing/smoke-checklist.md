@@ -542,6 +542,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Read-only query on `subscriptions` and `provider_notification` from the admin
   database.
 - **Covers:** TEST:B3:36 (real checkout); AC:B3:34 (checkout confirmed).
+- **Coverage:**
+  - The owner's real card and checkout: `sólo MP real`. The simulated counterpart of `ACTIVE` is S1 step 3. `provider_notification`: `hueco` (see S1).
 
 ### P2 — Refund (revocation from the admin panel)
 
@@ -553,6 +555,9 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The subscription is cancelled; the payment shows a full refund.
 - **Evidence:** Read-only query on `subscriptions`, `payments`, and `payment_refunds`.
 - **Covers:** H-11 (return via admin panel revocation).
+- **Coverage:**
+  - Steps 1–2, the revocation cancels and creates a full refund request: `e2e: billing/billing-10-admin-revocation.spec.ts:ACTIVE revocation shows the full refund and sends our notice before provider cancellation (PR)`.
+  - Step 3, the refund executed at the provider: `sólo MP real` (e2e stops at `REQUESTED`, or settles it as an external refund). The refund from the admin end to end: `en curso: HOS-2153`.
 
 ### P3 — Mercado Pago email
 
@@ -562,6 +567,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
   (do not quote email text as a contract — it has not been measured).
 - **Evidence:** Screenshot of the email in the inbox (subject, date, presence).
 - **Covers:** Mercado Pago transactional emails to the customer.
+- **Coverage:**
+  - All steps: `sólo MP real`.
 
 ### P4 — Edge cache on production
 
@@ -573,6 +580,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** Same behavior as on staging: cache HIT, then REVALIDATED or MISS after a change.
 - **Evidence:** `curl -I https://<production-domain>/<listing-slug>/` before and after the change.
 - **Covers:** Cloudflare edge cache in production.
+- **Coverage:**
+  - All steps: `sólo entorno real (Cloudflare)`.
 
 ### P5 — Cron schedules on the first day
 
@@ -589,6 +598,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
   Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedules on production, the first day (includes
   `billing-reconciliation-sweep` and `subscription-renewal-notice`).
+- **Coverage:**
+  - All steps: `sólo entorno real (Sentry, cron scheduler)`.
 
 ### P6 — Real plan change
 
@@ -599,6 +610,9 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The successor activates before the predecessor closes.
 - **Evidence:** Route response, provider read, subscription rows and cron panel.
 - **Covers:** AC:B8b:8, AC:B8b:24.
+- **Coverage:**
+  - Step 1, the job in the cron panel: `sólo entorno real (cron scheduler)`.
+  - Step 2 with the owner's card: `sólo MP real`. The order successor-before-predecessor is simulated in S15 step 2.
 
 ### P7 — Real pause and resume (HOS-1580, HOS-1581)
 
@@ -609,6 +623,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The preapproval moves from `paused` to `authorized`, and its next charge date matches the screen.
 - **Evidence:** Owner screen, subscription and pause rows, and read-only provider preapproval reads.
 - **Covers:** AC:B8b:22, AC:B8b:23, AC:B8b:26; TEST:B8b:25, TEST:B8b:26.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S16 steps 1–2.
 
 ### P8 — Temporary courtesy and revocation (HOS-1590)
 
@@ -618,6 +634,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The subscription moves `PAUSED · COURTESY` → `ACTIVE`; the next charge dates agree, and both provider emails are observed.
 - **Evidence:** Read-only subscription, pause, grant and outbox rows; read-only provider preapproval reads; both provider emails and our notice.
 - **Covers:** AC:B9b:11, AC:B9b:13, AC:B9b:14; TEST:B9b:11, TEST:B9b:13, TEST:B9b:14, TEST:B9b:15.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated parts and the gaps are in S17.
 
 ### P9 — Real addon purchase (HOS-1593)
 
@@ -626,6 +644,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The plan and addon have separate charges and preapprovals; the one-time order has its own payment on an `ACTIVE` instance.
 - **Evidence:** Owner account responses, read-only provider records, card summary, provider email, and read-only addon/payment rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+- **Coverage:**
+  - All steps: `sólo MP real`. The recurring half is simulated in S18; the one-time half is deferred to HOS-2094.
 
 ### P10 — Real purged-listing addon cancellation (HOS-1594)
 
@@ -634,6 +654,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The addon and its complement are `CANCELLED`, our notice precedes cancellation, the principal stays active, and the addon has no later charge.
 - **Evidence:** Read-only instance, complement, principal, outbox and provider records; both emails and subsequent provider charge history.
 - **Covers:** AC:B10:6; TEST:B10:7.
+- **Coverage:**
+  - All steps: `sólo MP real`. The order of our notice and the cancellation is simulated in S19 step 1.
 
 ### P11 — Phase 3 real recurring addon purchase (HOS-1595)
 
@@ -643,6 +665,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Owner account screen and purchase response, read-only provider and payment records, card statement, provider email, and read-only addon instance rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
 - **Nota:** pago único: ver HOS-2094.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S21.
 
 ### P12 — B10 real recurring addon and exit smoke (HOS-1596)
 
@@ -651,6 +675,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The addon reaches `ACTIVE` with a separate preapproval and charge, while the principal amount stays unchanged. Purging closes the addon and complement once; our notice arrives before cancellation and no later addon charge occurs.
 - **Evidence:** Owner purchase screen and deletion preview; read-only provider, addon, complement, principal, payment and outbox records; card statement and both email observations; E2E P0 CI result.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S21.
 
 ### P13 — B13b real owner withdrawal (HOS-1625)
 
@@ -659,6 +685,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The boost and its complement become `CANCELLED`, the principal remains active and its amount unchanged, the provider preapproval is cancelled after our email, and the boost has no next charge. Action 20 is not executed in production smoke. Total retirement of live purchases belongs to HOS-2097.
 - **Evidence:** Owner confirmation and withdrawal captures; read-only addon, complement, principal and outbox rows; provider preapproval and charge history; both email observations; E2E P0 CI result.
 - **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3. The editor and retirement coverage is from staging S22 and CI, not a production action.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S22 steps 1–3.
 
 ### P14 — B12 real price increase mutation (HOS-1616)
 
@@ -667,6 +695,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** No charge at the new price before the account's date; the amount mutates seven days before it, after our email, on the same preapproval; on the date the subscription moves to the new version and the charge is the new amount.
 - **Evidence:** Announcement and both emails; read-only preapproval, scope row, scheduled change and payment records; card statement.
 - **Covers:** AC:B12:8, AC:B12:9; TEST:B12:10, TEST:B12:12. Retirement mutation in production is covered by staging S23 and CI, not a production action.
+- **Coverage:**
+  - All steps: `sólo MP real`. The mutation order is simulated in S23 step 4, for a retirement only; the price increase is a `hueco` (S23 step 3).
 
 ### Sign-off
 
