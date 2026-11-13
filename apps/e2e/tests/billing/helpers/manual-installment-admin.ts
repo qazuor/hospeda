@@ -141,7 +141,7 @@ export async function assertLateManualPaymentPersisted(args: {
         snapshotSubscription({ subscriptionId: args.subscriptionId, userId: args.userId }),
         execSQL<{ event_type: string; changes: unknown }>(
             `SELECT event_type, changes FROM domain_event
-              WHERE event_type = 'manual_payment.reimputed' AND entity_id = $1 ORDER BY created_at, id`,
+              WHERE event_type = 'manual_payment.reimputed' AND entity_id = $1 ORDER BY occurred_at, id`,
             [args.manualPaymentId]
         ),
         manualPaymentReceipts({ manualPaymentId: args.manualPaymentId })
