@@ -308,7 +308,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: "On a stay's page you see its Google rating and a few reviews exactly as guests wrote them, in their original language, with a link to read them all. If the stay is also on other platforms, such as Airbnb, a direct link shows up too.",
             pt: 'Na página de uma hospedagem você vê a nota no Google e algumas avaliações exatamente como os hóspedes escreveram, no idioma original, com um link para ler todas. Se a hospedagem também estiver em outras plataformas, como o Airbnb, aparece o link direto.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4284
     {
@@ -326,7 +326,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you add your Google listing under **External reputation** and it brings a rating or reviews, the section turns on by itself on your public page. If you switch it off or on yourself, we respect your choice and never touch it again.',
             pt: 'Quando você adiciona sua página do Google em **Reputação externa** e ela traz nota ou avaliações, a seção é ativada sozinha na sua página pública. Se você desligar ou ligar manualmente, respeitamos sua escolha e não mexemos mais.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4287
     {
@@ -343,7 +343,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Emails to reset your password, verify your account and tell you about new messages now also include a plain-text version. That makes them less likely to land in spam, and they read well in any email app.',
             pt: 'Os e-mails para redefinir a senha, verificar sua conta e avisar sobre novas mensagens agora incluem também uma versão em texto. Assim é menos provável que caiam no spam, e eles ficam legíveis em qualquer programa de e-mail.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4288
     {
@@ -360,7 +360,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Untick "Include without price" on the stays listing and you see only the ones with a published price, instead of an empty list. The same goes for "Include without rating".',
             pt: 'Se você desmarcar «Incluir sem preço» na lista de hospedagens, vê só as que têm preço publicado, em vez de uma lista vazia. O mesmo vale para «Incluir sem avaliação».'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4282
     {
@@ -375,9 +375,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         body: {
             es: 'Si preguntás en portugués o en inglés, la respuesta llega entera en ese idioma. Cuando la ficha no informa algo, como si se aceptan mascotas, el asistente te lo dice en lugar de suponerlo, y si tu grupo supera la capacidad te dice cuántos entran.',
             en: 'Ask in Portuguese or English and the whole answer comes back in that language. When the listing does not say something, such as whether pets are allowed, the assistant tells you so instead of guessing, and if your group is too big it tells you how many people fit.',
-            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceita animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
+            pt: 'Se você perguntar em português ou em inglês, a resposta vem inteira nesse idioma. Quando a página não informa algo, como se aceitam animais de estimação, o assistente avisa em vez de supor, e se o seu grupo passar da capacidade ele diz quantas pessoas cabem.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4263, #4270, #4274
     {
@@ -387,7 +387,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         roles: ['VENUE_OWNER'],
         title: {
             es: 'Indicá desde cuándo rige la edad mínima de tu local',
-            en: 'Say when your venue minimum age applies',
+            en: "Say when your venue's minimum age applies",
             pt: 'Informe quando vale a idade mínima do seu local'
         },
         body: {
@@ -395,7 +395,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'In **Night out info** you now choose whether the minimum age applies **all day**, **from a given time** (for example, from midnight) or **only in one area or activity**, such as the dance floor or the show. Your listing shows it next to the minimum age and the legal notice, so families know when they can come.',
             pt: 'Em **Info para sair** agora você escolhe se a idade mínima vale **o dia todo**, **a partir de um horário** (por exemplo, a partir da meia-noite) ou **só em um setor ou atividade**, como a pista ou o show. Sua página mostra isso junto da idade mínima e do aviso legal, para que as famílias saibam quando podem ir.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4266, #4269, #4294
     {
@@ -413,7 +413,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: "Your listing editor has a new **AI questions** tab with what visitors asked the assistant, without any data about who asked. At the top you see the ones that **went unanswered** because the information was not on your listing, with a button to **add them as a FAQ** in one click. And if any went unanswered during the week, you get an **email summary** (you can turn it off in Preferences). Mark the ones you have already seen with **I've seen this** so they do not bury the new ones (bring them back with **Undo**), use **View more** to reach older ones, and when the assistant had answered, the FAQ opens **with its answer already filled in** so you only need to review it.",
             pt: 'O editor da sua página tem uma nova aba, **Perguntas à IA**, com o que os visitantes perguntaram ao assistente, sem dados de quem perguntou. No topo aparecem as que **ficaram sem resposta** porque a informação não estava na sua página, com um botão para **adicioná-las como pergunta frequente** em um clique. E se alguma ficou sem resposta na semana, você recebe um **resumo por e-mail** (dá para desativar em Preferências). As que você já viu podem ser marcadas com **Já vi** para não esconderem as novas (dá para recuperá-las com **Desfazer**), com **Ver mais** você chega às mais antigas e, se o assistente tinha respondido, a pergunta frequente abre **com a resposta já preenchida** para você só revisar.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4221
     {
@@ -431,7 +431,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Featured services show up first, there is a search box, and the rest is grouped by category. You can also mark each service as **private** or **shared**, and as **year-round** or **seasonal**, and it shows on your public listing. We added new services for the Litoral region and the **Parrilla** cuisine.',
             pt: 'Os serviços em destaque aparecem primeiro, há um buscador e o restante fica organizado por categorias. Você também pode marcar cada serviço como **privado** ou **compartilhado**, e como **o ano todo** ou **de temporada**, e isso aparece na sua página pública. Adicionamos novos serviços pensados para o Litoral e a culinária **Parrilla**.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4217, #4228
     {
@@ -446,10 +446,10 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         body: {
             es: 'Tu ficha ahora muestra un bloque de **Normas y políticas**: medios de pago, mascotas (sí, no o a consultar), fumar y eventos. En alojamientos suma check-in, check-out y cantidad de noches. Las editás desde el nuevo panel **Políticas** del editor, y el filtro de alojamientos que aceptan mascotas ahora usa esa información.',
-            en: 'Your listing now shows a **House rules and policies** block: payment methods, pets (yes, no or on request), smoking and events. For accommodations it also includes check-in, check-out and number of nights. You edit them from the new **Policies** panel in the editor, and the pet-friendly filter now uses that information.',
-            pt: 'Sua página agora mostra um bloco de **Normas e políticas**: formas de pagamento, animais de estimação (sim, não ou sob consulta), fumar e eventos. Nas acomodações inclui também check-in, check-out e quantidade de noites. Você as edita no novo painel **Políticas** do editor, e o filtro de acomodações que aceitam animais agora usa essa informação.'
+            en: 'Your listing now shows a **House rules and policies** block: payment methods, pets (yes, no or on request), smoking and events. For stays it also includes check-in, check-out and number of nights. You edit them from the new **Policies** panel in the editor, and the pet-friendly filter now uses that information.',
+            pt: 'Sua página agora mostra um bloco de **Normas e políticas**: formas de pagamento, animais de estimação (sim, não ou sob consulta), fumar e eventos. Nas hospedagens inclui também check-in, check-out e quantidade de noites. Você as edita no novo painel **Políticas** do editor, e o filtro de hospedagens que aceitam animais agora usa essa informação.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4200
     {
@@ -467,7 +467,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'When you add your venue you choose its business lines, **Food** and **Nightlife**, and we preselect the ones that fit its type. Nightlife venues get the **Night out info** section (entry, minimum age and dress code) and appear in the new **Nightlife** collection in Comer y salir. If you remove a business line, we tell you what stops being shown, and your data stays saved in case you add it back.',
             pt: 'Ao cadastrar seu local, você escolhe os ramos, **Gastronomia** e **Noite**, e pré-selecionamos os que combinam com o tipo. Os locais noturnos ganham a seção **Info para sair** (entrada, idade mínima e traje) e aparecem na nova coleção **Noite** do Comer y salir. Se você tirar um ramo, avisamos o que deixa de aparecer, e seus dados ficam salvos caso você o adicione de novo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'reviewed', pt: 'reviewed' }
     },
     // origin: #4161
     {
