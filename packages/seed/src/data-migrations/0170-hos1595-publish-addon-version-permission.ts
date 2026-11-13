@@ -1,5 +1,5 @@
 /**
- * @fileoverview HOS-1612 grants the action 17 permission to SUPER_ADMIN only.
+ * @fileoverview HOS-1595 grants the action 20 permission to SUPER_ADMIN only.
  * Run `db:migrate` first or the new enum value fails with
  * `invalid input value for enum permission_enum`.
  */
@@ -9,14 +9,14 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Required additive migration metadata. */
 export const meta = {
-    name: '0169-hos1612-migrate-plan-permission',
+    name: '0170-hos1595-publish-addon-version-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
-/** Exact grant paired with the HOS-1612 structural migration (SUPER_ADMIN only). */
+/** Exact grant paired with the HOS-1595 structural migration (SUPER_ADMIN only). */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
-    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_MIGRATE_PLAN }
+    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_PUBLISH_ADDON_VERSION }
 ];
 
 /** Inserts the new grant without modifying existing assignments. */
@@ -27,7 +27,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         .onConflictDoNothing()
         .returning();
     return {
-        summary: `Granted ${inserted.length} of ${GRANTS.length} HOS-1612 SUPER_ADMIN role_permission row(s) (rest already present).`,
+        summary: `Granted ${inserted.length} of ${GRANTS.length} HOS-1595 SUPER_ADMIN role_permission row(s) (rest already present).`,
         counts: { granted: inserted.length, alreadyPresent: GRANTS.length - inserted.length }
     };
 }

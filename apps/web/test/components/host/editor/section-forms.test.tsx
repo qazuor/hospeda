@@ -36,6 +36,7 @@ const { ContactForm } = await import('@/components/host/editor/forms/ContactForm
 const { LocationForm } = await import('@/components/host/editor/forms/LocationForm.client');
 const { SeoForm } = await import('@/components/host/editor/forms/SeoForm.client');
 const { ServicesForm } = await import('@/components/host/editor/forms/ServicesForm.client');
+const { PoliciesForm } = await import('@/components/host/editor/forms/PoliciesForm.client');
 const { VideoSection } = await import('@/components/host/editor/VideoSection.client');
 
 // ---------------------------------------------------------------------------
@@ -159,9 +160,10 @@ describe('per-section saving does not leak fields across pages (AC-6)', () => {
             />
         );
 
-        const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
-        await user.click(checkbox);
-        submitFrom(checkbox);
+        // HOS-2123: catalog items are toggle buttons in the catalog browser.
+        const tile = document.querySelector('button[aria-pressed]') as HTMLButtonElement;
+        await user.click(tile);
+        submitFrom(tile);
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
@@ -592,15 +594,9 @@ describe('G7 smoke — minNights reaches the PATCH body (H-112 → HOS-2060)', (
     });
 });
 
-describe('Policies panel on the services page (HOS-2060)', () => {
+describe('Policies page (HOS-2060, own page since HOS-2123)', () => {
     it('should send only the changed house rule, never minNights', async () => {
-        render(
-            <ServicesForm
-                {...COMMON}
-                amenities={CATALOG}
-                features={CATALOG}
-            />
-        );
+        render(<PoliciesForm {...COMMON} />);
 
         const smoking = document.getElementById('acc-policies-smokingAllowed') as HTMLSelectElement;
         fireEvent.change(smoking, { target: { value: 'outdoor_only' } });
@@ -612,13 +608,7 @@ describe('Policies panel on the services page (HOS-2060)', () => {
     });
 
     it('should send null for a house rule the host cleared', async () => {
-        render(
-            <ServicesForm
-                {...COMMON}
-                amenities={CATALOG}
-                features={CATALOG}
-            />
-        );
+        render(<PoliciesForm {...COMMON} />);
 
         const cash = screen.getByLabelText('Efectivo') as HTMLInputElement;
         expect(cash).toBeChecked();
@@ -630,14 +620,8 @@ describe('Policies panel on the services page (HOS-2060)', () => {
         expect(firstPatchBody()).toEqual({ policies: { paymentMethods: null } });
     });
 
-    it('should render neither stay bound on the services page (HOS-2121)', () => {
-        render(
-            <ServicesForm
-                {...COMMON}
-                amenities={CATALOG}
-                features={CATALOG}
-            />
-        );
+    it('should render neither stay bound on the policies page (HOS-2121)', () => {
+        render(<PoliciesForm {...COMMON} />);
 
         expect(document.getElementById('acc-policies-minNights')).toBeNull();
         expect(document.getElementById('acc-policies-maxNights')).toBeNull();
@@ -645,7 +629,7 @@ describe('Policies panel on the services page (HOS-2060)', () => {
 
     it('should send eventsDetails: null with the switch when events go from yes to no (HOS-2122)', async () => {
         render(
-            <ServicesForm
+            <PoliciesForm
                 {...COMMON}
                 initialData={{
                     ...INITIAL,
@@ -655,8 +639,6 @@ describe('Policies panel on the services page (HOS-2060)', () => {
                         eventsDetails: { maxGuests: 30 }
                     }
                 }}
-                amenities={CATALOG}
-                features={CATALOG}
             />
         );
 
@@ -674,13 +656,7 @@ describe('Policies panel on the services page (HOS-2060)', () => {
     });
 
     it('should send the deposit and spoken languages the host set (HOS-2120)', async () => {
-        render(
-            <ServicesForm
-                {...COMMON}
-                amenities={CATALOG}
-                features={CATALOG}
-            />
-        );
+        render(<PoliciesForm {...COMMON} />);
 
         const deposit = document.getElementById(
             'acc-policies-deposit-required'
@@ -697,6 +673,19 @@ describe('Policies panel on the services page (HOS-2060)', () => {
         expect(firstPatchBody()).toEqual({
             policies: { deposit: { required: true, percentage: 25 }, spokenLanguages: ['en'] }
         });
+    });
+
+    it('should leave the house rules off the services page (HOS-2123)', () => {
+        render(
+            <ServicesForm
+                {...COMMON}
+                amenities={CATALOG}
+                features={CATALOG}
+            />
+        );
+
+        expect(document.getElementById('acc-policies-smokingAllowed')).toBeNull();
+        expect(document.getElementById('acc-policies-checkIn')).toBeNull();
     });
 });
 

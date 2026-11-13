@@ -6,10 +6,18 @@
  * (SPEC-208).
  */
 
+/*
+ * `min-inline-size: 0` overrides the user-agent `min-inline-size: min-content`
+ * of `<fieldset>`. Without it the fieldset grows to the full width of the
+ * amenity browser's category chip row (thousands of px on a phone), and the
+ * card's `overflow: hidden` clips the search box and tiles off-screen instead
+ * of letting the chip row scroll (HOS-2156).
+ */
 .section {
     border: none;
     padding: 0;
     margin: 0 0 var(--space-5, 2rem);
+    min-inline-size: 0;
 }
 
 .sectionTitle {

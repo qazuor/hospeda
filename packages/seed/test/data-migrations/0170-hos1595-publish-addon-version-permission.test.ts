@@ -1,11 +1,11 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0169-hos1612-migrate-plan-permission.js';
+import * as migration from '../../src/data-migrations/0170-hos1595-publish-addon-version-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
-const actor: Actor = { id: 'actor-hos1612-seed-test', role: RoleEnum.SUPER_ADMIN, permissions: [] };
+const actor: Actor = { id: 'actor-hos1595-seed-test', role: RoleEnum.SUPER_ADMIN, permissions: [] };
 
 function buildCtx(inserted: unknown[]): { ctx: SeedMigrationCtx; values: () => unknown[] } {
     let captured: unknown[] = [];
@@ -23,18 +23,18 @@ function buildCtx(inserted: unknown[]): { ctx: SeedMigrationCtx; values: () => u
     };
 }
 
-describe('AC:B12:2 action 17 is separate from publishing a plan version seed migration', () => {
+describe('AC:B10:8 action 20 seed migration', () => {
     it('pairs the required additive grant with the SUPER_ADMIN baseline', () => {
         expect(migration.meta).toEqual({
-            name: '0169-hos1612-migrate-plan-permission',
+            name: '0170-hos1595-publish-addon-version-permission',
             group: 'required',
             destructive: false
         });
         expect(migration.GRANTS).toEqual([
-            { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_MIGRATE_PLAN }
+            { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_PUBLISH_ADDON_VERSION }
         ]);
         expect(ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN]).toContain(
-            PermissionEnum.BILLING_MIGRATE_PLAN
+            PermissionEnum.BILLING_PUBLISH_ADDON_VERSION
         );
     });
 
