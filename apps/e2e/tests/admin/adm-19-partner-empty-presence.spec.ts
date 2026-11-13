@@ -66,6 +66,9 @@ test.describe('TEST:V8b:7 AC:V8b:6 the action 25 confirmation names the Partner,
         await expect(dialog.getByTestId('partner-empty-presence-confirm')).toBeDisabled();
 
         await dialog.getByTestId('partner-empty-presence-cancel').click();
+        // Wait for the closing dialog to unmount: its animate-out overlay intercepts clicks on the reopened one.
+        await expect(dialog).toBeHidden();
+        await expect(page.locator('[data-slot="alert-dialog-overlay"]')).toHaveCount(0);
         const preserved = await execSQL<{ description: string | null; logo_url: string | null }>(
             'SELECT description, logo_url FROM partners WHERE id = $1',
             [partnerId]
@@ -81,6 +84,7 @@ test.describe('TEST:V8b:7 AC:V8b:6 the action 25 confirmation names the Partner,
 
         await card.getByTestId('partner-empty-presence-open').click();
         const reopened = page.getByTestId('partner-empty-presence-dialog');
+        await expect(reopened).toBeVisible();
         await reopened.getByTestId('partner-empty-presence-reason').fill(reason);
         const post = page.waitForResponse(
             (response) =>
