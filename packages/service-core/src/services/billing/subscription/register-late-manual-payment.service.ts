@@ -168,8 +168,11 @@ async function check(input: Input, tx: DrizzleClient, lock: boolean): Promise<Ch
     };
 }
 
-/** Read-only MP4 preview with the registration's business rejections. */
-export async function previewLateManualPaymentRegistration(input: Input): Promise<{
+/** Read-only MP4 preview with the registration's business rejections and injected clock. */
+export async function previewLateManualPaymentRegistration(
+    input: Input,
+    ports: Pick<RegisterLateManualPaymentPorts, 'clock'>
+): Promise<{
     readonly subscriptionId: string;
     readonly manualPaymentId: string;
     readonly periodStart: Date;
@@ -178,7 +181,7 @@ export async function previewLateManualPaymentRegistration(input: Input): Promis
     readonly effect: 'S7' | 'S19';
 }> {
     const parsed = inputSchema.parse(input);
-    const now = new Date();
+    const now = ports.clock.now();
     return getDb().transaction(async (tx) => {
         const checked = await check({ ...parsed, actor: input.actor }, tx, false);
         const conditions = await checkLatePaymentConditions(lateConditionsInput(checked, tx));

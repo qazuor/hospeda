@@ -109,9 +109,12 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
             const data = (await response.json()).data;
             if (method === 'GET') {
                 const parsed = LateManualPaymentPreviewResponseSchema.parse(data);
-                expect(parsed).toMatchObject({
+                expect(parsed).toEqual({
                     subscriptionId: seeded.subscription.id,
                     manualPaymentId: seeded.installment.id,
+                    periodStart: PERIOD_START.toISOString(),
+                    reimputedPeriodStart: null,
+                    nextChargeAt: '2026-10-03T12:00:00.000Z',
                     effect: 'S7'
                 });
                 expect(await snapshot(seeded.subscription.id)).toEqual(before);
