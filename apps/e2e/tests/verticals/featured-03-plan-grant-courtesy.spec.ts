@@ -20,8 +20,7 @@ import {
     activateCardSubscription,
     cleanupArrearsRows,
     createApiCardSubscription,
-    type FakeWorld,
-    recordCreditedCycle
+    type FakeWorld
 } from '../../fixtures/arrears-cycle.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import {
@@ -90,14 +89,12 @@ test.describe('TEST:HOS-2138:4-5 plan, grant and courtesy feature listings @p0 @
             user: owner,
             billingOptionId: await monthlyOptionForAnySlug({ slug: 'owner-pro' })
         });
+        // Activation only: a credited charge emits a second coverage notice whose
+        // featured sync could still be in flight when the later listing is inserted,
+        // featuring it before the courtesy and racing the `false` precondition below.
         await activateCardSubscription({
             fakeServer: world.fakeServer,
             subscriptionId: plan.subscriptionId
-        });
-        await recordCreditedCycle({
-            fakeServer: world.fakeServer,
-            subscriptionId: plan.subscriptionId,
-            authorizationId: plan.authorizationId
         });
         await expect
             .poll(() => readFeaturedFlag({ table: 'accommodations', id: first.id }))
@@ -148,7 +145,7 @@ test.describe('TEST:HOS-2138:4-5 plan, grant and courtesy feature listings @p0 @
         ).toBe('PAUSED');
     });
 
-    test('Premium permanent grant features its listing and revocation restores order', async () => {
+    test('Premium permanent grant features its listing and revocation unfeatures and lowers it', async () => {
         const grantOwner = await host();
         const controlOwner = await host();
         const admin = await createUser({ role: 'SUPER_ADMIN' });
@@ -205,9 +202,20 @@ test.describe('TEST:HOS-2138:4-5 plan, grant and courtesy feature listings @p0 @
         await expect
             .poll(() => readFeaturedFlag({ table: 'accommodations', id: boosted.id }))
             .toBe(false);
+        // The grant cancelled any prior title (S13) and revocation restores none
+        // (DEC-GRANT-008), so the owner is left uncovered and the coverage listener
+        // lowers the listing: it leaves the public list instead of returning to it.
+        await expect
+            .poll(async () => {
+                const [row] = await execSQL<{ publication_status: string }>(
+                    'SELECT publication_status FROM accommodations WHERE id = $1',
+                    [boosted.id]
+                );
+                return row?.publication_status;
+            })
+            .toBe('UNPUBLISHED_BY_BILLING');
         expect(await readPublicList({ vertical: 'accommodation', destinationId })).toEqual([
-            { id: a.id, isFeatured: false },
-            { id: boosted.id, isFeatured: false }
+            { id: a.id, isFeatured: false }
         ]);
     });
 
