@@ -224,15 +224,13 @@ describe('buildReplyLanguageInstruction', () => {
         expect(pt).toContain('"capacidad para N huéspedes" → "capacidade para N hóspedes"');
         expect(pt).toContain('hóspedes');
         // Assert — Spanish words are banned outright in en and pt answers.
-        expect(en).toContain('Never leave a Spanish word in your answer');
-        expect(en).toContain('«confirmalo»');
-        expect(en).toContain('«huéspedes»');
-        expect(pt).toContain('Nunca deixe uma palavra em espanhol na resposta');
-        expect(pt).toContain('«huéspedes»');
-        // Assert — round 2 (post-fix sweep): lone Spanish words leaked into
-        // en/pt answers, so «sí» is in the banned list of both.
-        expect(en).toContain('«mascotas», «sí»');
-        expect(pt).toContain('«mascotas», «sí»');
+        expect(en).toContain('Never leave any Spanish word in your answer');
+        expect(en).toContain('including a lone function word or response');
+        expect(en).not.toContain('«confirmalo»');
+        expect(en).not.toContain('«huéspedes»');
+        expect(pt).toContain('Nunca deixe palavras em espanhol na resposta');
+        expect(pt).toContain('nem mesmo uma palavra funcional ou resposta isolada');
+        expect(pt).not.toContain('«huéspedes»');
         // Assert — the group-close template lives in each reply language,
         // scoped to groups that fit (round 4: nano copied it onto
         // over-capacity answers, so the es close is fits-scoped now).
