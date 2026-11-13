@@ -60,7 +60,10 @@ type SignupAttempt = {
     authorizationId: string;
 };
 
-const cancellationStatusSchema = z
+/** The protected route factory wraps the handler result in a `data` envelope. */
+const CancellationEnvelopeSchema = z.object({ data: PendingAttemptCancellationResponseSchema });
+
+const cronTriggerBodySchema = z
     .object({
         data: z.unknown().optional(),
         details: z.unknown().optional()
@@ -80,7 +83,7 @@ async function runDeferredRetry(adminCookie: string): Promise<RetryDetails> {
         const run = await waitForAcceptedCronRun({ runId, jobName: JOB_NAME });
         rawDetails = run.details;
     } else if (response.status === 201) {
-        const body = cancellationStatusSchema.parse(JSON.parse(text));
+        const body = cronTriggerBodySchema.parse(JSON.parse(text));
         const data = z
             .object({ details: z.unknown().optional() })
             .passthrough()
@@ -175,9 +178,10 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
             `${API_URL}/api/v1/protected/billing/subscriptions/${subscriptionId}/pending-attempt-cancellation`,
             { method: 'POST', headers: { cookie: user.sessionCookie } }
         );
-        expect(response.status).toBe(200);
-        const cancellation = PendingAttemptCancellationResponseSchema.parse(await response.json());
-        expect(cancellation).toEqual({ subscriptionId, outcome: 'ABANDONED' });
+        const cancellationText = await response.text();
+        expect(response.status, cancellationText).toBe(200);
+        const cancellation = CancellationEnvelopeSchema.parse(JSON.parse(cancellationText));
+        expect(cancellation.data).toEqual({ subscriptionId, outcome: 'ABANDONED' });
 
         const subscription = await execSQL<StatusRow>(
             'SELECT status FROM subscription WHERE id = $1',
@@ -290,7 +294,8 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
             'SELECT cancelled_seen_at FROM provider_link WHERE subscription_id = $1',
             [attempt.subscriptionId]
         );
-        expect(seen[0]?.cancelled_seen_at).not.toBeNull();
+        expect(seen, 'the signup keeps exactly one provider link').toHaveLength(1);
+        expect(seen[0]?.cancelled_seen_at).toBeInstanceOf(Date);
         expect(await attemptNotices(attempt.user.id, attempt.subscriptionId)).toEqual([
             { template: CANCEL_NOTICE, status: 'sent' }
         ]);
