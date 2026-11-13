@@ -1,6 +1,8 @@
 /**
- * Preconditions: the E2E catalog contains current owner-basico and owner-premium plans with monthly
- * options, and the API, web, PostgreSQL, Redis, fake Mercado Pago and mail capture services are available.
+ * Preconditions: the E2E catalog contains current owner-basico and owner-premium plan versions with
+ * differing limits or entitlements; their monthly options and the owner-premium annual option are
+ * inserted by the signup-checkout fixtures when missing. The API, web, PostgreSQL, Redis, fake
+ * Mercado Pago and mail capture services are available.
  * Run through the PR e2e:p0 gate; this spec moves the shared API clock and runs serially.
  */
 import { randomUUID } from 'node:crypto';
@@ -233,7 +235,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
     test('upgrade checkout asks the target price with the value credit as first charge date; abandoning it keeps the old plan charging', async ({
         page
     }) => {
-        if (!world) throw new Error('T1 assertion.');
+        if (!world) throw new Error('TEST:2159:1 setup: fake world missing.');
         const targetOptionId = await annualOptionForSlug('owner-premium');
         const current = await startCase({ page, slug: 'owner-basico' });
         const [basic] = await execSQL<{
@@ -252,8 +254,15 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT cp.period_start, p.amount FROM covered_period cp JOIN payment p ON p.id = cp.payment_id WHERE cp.subscription_id = $1 AND cp.released_at IS NULL ORDER BY cp.period_start DESC LIMIT 1',
             [current.subscriptionId]
         );
-        if (!basic || !target || !period) throw new Error('T1 assertion.');
-        differs(Number(target.amount), Number(basic.amount), 'T1 assertion.');
+        if (!basic || !target || !period)
+            throw new Error(
+                'TEST:2159:1 setup: old option, target option or open covered period missing.'
+            );
+        differs(
+            Number(target.amount),
+            Number(basic.amount),
+            'TEST:2159:1 precondition: the annual Premium price differs from the monthly Basico price.'
+        );
         const bornAt = world.fakeServer.now();
         const postsBefore = preapprovalPosts(world).length;
         const change = await requestPlanChange({
@@ -261,8 +270,13 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(change.outcome, 'SUCCESSION', 'T1 assertion.');
-        if (change.outcome !== 'SUCCESSION') throw new Error('T1 assertion.');
+        equal(
+            change.outcome,
+            'SUCCESSION',
+            'TEST:2159:1 upgrade to annual Premium opens a succession.'
+        );
+        if (change.outcome !== 'SUCCESSION')
+            throw new Error('TEST:2159:1 plan change did not open a succession.');
         const expectedCredit = valueCreditDays({
             paidMinor: Number(period.amount),
             periodStart: period.period_start,
@@ -279,8 +293,16 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 bornAt.getTime()) /
                 DAY_MS
         );
-        differs(expectedCredit, remainingDays, 'T1 assertion.');
-        equal(change.creditDays, expectedCredit, 'T1 assertion.');
+        differs(
+            expectedCredit,
+            remainingDays,
+            'TEST:2159:1 precondition: the value credit differs from the day credit with these prices.'
+        );
+        equal(
+            change.creditDays,
+            expectedCredit,
+            'TEST:2159:1 response credit days follow the value formula (DEC-SUB-006 c).'
+        );
         const [successor] = await execSQL<{
             status: string;
             succeeds_id: string;
@@ -291,7 +313,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT status, succeeds_id, billing_option_id, first_charge_at, authorization_window_ends_at FROM subscription WHERE id = $1',
             [change.subscriptionId]
         );
-        if (!successor) throw new Error('T1 assertion.');
+        if (!successor) throw new Error('TEST:2159:1 successor row missing.');
         equal(
             {
                 status: successor.status,
@@ -303,24 +325,31 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 succeeds_id: current.subscriptionId,
                 billing_option_id: targetOptionId
             },
-            'T1 assertion.'
+            'TEST:2159:1 successor waits for authorization on the target option, linked to the old row.'
         );
         const windowFirst = successor.authorization_window_ends_at.getTime() + DAY_MS;
         const creditFirst = bornAt.getTime() + expectedCredit * DAY_MS;
-        expect(creditFirst, 'T1 assertion.').toBeGreaterThan(windowFirst);
+        expect(
+            creditFirst,
+            'TEST:2159:1 precondition: the credit term outweighs the window term.'
+        ).toBeGreaterThan(windowFirst);
         const expectedFirst = new Date(Math.max(windowFirst, creditFirst));
         equal(
             successor.first_charge_at.toISOString(),
             new Date(change.firstChargeAt).toISOString(),
-            'T1 assertion.'
+            'TEST:2159:1 persisted first charge equals the response first charge.'
         );
         equal(
             new Date(change.firstChargeAt).toISOString(),
             expectedFirst.toISOString(),
-            'T1 assertion.'
+            'TEST:2159:1 first charge date is bornAt plus the value credit days.'
         );
         const posts = preapprovalPosts(world);
-        equal(posts.length, postsBefore + 1, 'T1 assertion.');
+        equal(
+            posts.length,
+            postsBefore + 1,
+            'TEST:2159:1 exactly one checkout preapproval is created.'
+        );
         const body = CheckoutBodySchema.parse(posts.at(-1)?.body);
         equal(
             {
@@ -335,7 +364,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 frequency: 12,
                 frequencyType: 'months'
             },
-            'T1 assertion.'
+            'TEST:2159:1 checkout asks the target amount from the credited date, every 12 months.'
         );
 
         await world.fakeServer.setClock({
@@ -345,7 +374,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             jobName: 'subscription-window-expiry',
             adminCookie: current.admin.sessionCookie
         });
-        equal(expired.success, true, 'T1 assertion.');
+        equal(expired.success, true, 'TEST:2159:2 subscription-window-expiry succeeds.');
         await expect
             .poll(
                 async () =>
@@ -355,7 +384,10 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                             [change.subscriptionId]
                         )
                     )[0]?.status,
-                { timeout: 30_000 }
+                {
+                    message: 'TEST:2159:2 the abandoned successor reaches ABANDONED.',
+                    timeout: 30_000
+                }
             )
             .toBe('ABANDONED');
         const oldAuthorization = await world.fakeServer.provider.readAuthorization({
@@ -367,7 +399,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 amountMinor: oldAuthorization.snapshot.amount?.amountMinor
             },
             { status: 'active', amountMinor: Number(basic.amount) },
-            'T2 assertion.'
+            'TEST:2159:2 old authorization stays active at the old amount after the abandonment.'
         );
         await world.fakeServer.setClock({ at: new Date(basic.next_charge_at.getTime() + 60_000) });
         const chargeAt = world.fakeServer.now();
@@ -386,7 +418,10 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                             [current.subscriptionId]
                         )
                     )[0]?.count,
-                { timeout: 30_000 }
+                {
+                    message: 'TEST:2159:2 the old plan records its second successful charge.',
+                    timeout: 30_000
+                }
             )
             .toBe('2');
         const payments = await execSQL<{ amount: string; status: string }>(
@@ -399,14 +434,18 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 { amount: Number(basic.amount), status: 'SUCCEEDED' },
                 { amount: Number(basic.amount), status: 'SUCCEEDED' }
             ],
-            'T2 assertion.'
+            'TEST:2159:2 old plan payments are two successful charges at the old amount.'
         );
         const periods = await execSQL<{ period_start: Date }>(
             'SELECT period_start FROM covered_period WHERE subscription_id = $1 AND released_at IS NULL ORDER BY period_start',
             [current.subscriptionId]
         );
-        length(periods, 2, 'T2 assertion.');
-        equal(periods[1]?.period_start.toISOString(), chargeAt.toISOString(), 'T2 assertion.');
+        length(periods, 2, 'TEST:2159:2 the old plan has two open covered periods.');
+        equal(
+            periods[1]?.period_start.toISOString(),
+            chargeAt.toISOString(),
+            'TEST:2159:2 the second covered period starts at the charge instant.'
+        );
         equal(
             (
                 await execSQL<{ status: string }>('SELECT status FROM subscription WHERE id = $1', [
@@ -414,7 +453,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 ])
             )[0]?.status,
             'ACTIVE',
-            'T2 assertion.'
+            'TEST:2159:2 the old subscription stays ACTIVE.'
         );
         equal(
             Number(
@@ -426,15 +465,19 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 )[0]?.count
             ),
             0,
-            'T2 assertion.'
+            'TEST:2159:2 no old plan payment is retained for the abandoned succession.'
         );
-        length(putsTo(world, current.authorizationId), 0, 'T2 assertion.');
+        length(
+            putsTo(world, current.authorizationId),
+            0,
+            'TEST:2159:2 the old authorization is never cancelled nor mutated.'
+        );
     });
 
     test('completed upgrade moves the vertical subscription complements to the successor', async ({
         page
     }) => {
-        if (!world) throw new Error('T3 assertion.');
+        if (!world) throw new Error('TEST:2159:3 setup: fake world missing.');
         const targetOptionId = await monthlyOptionForSlug('owner-premium');
         const current = await startCase({ page, slug: 'owner-basico' });
         const complements = await seedTwoComplements({
@@ -442,14 +485,23 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             vertical: 'accommodation',
             fakeServer: world.fakeServer
         });
-        length(complements, 2, 'T3 assertion.');
+        length(
+            complements,
+            2,
+            'TEST:2159:3 precondition: two vertical subscription complements are seeded.'
+        );
         const change = await requestPlanChange({
             user: current.user,
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(change.outcome, 'SUCCESSION', 'T3 assertion.');
-        if (change.outcome !== 'SUCCESSION') throw new Error('T3 assertion.');
+        equal(
+            change.outcome,
+            'SUCCESSION',
+            'TEST:2159:3 monthly upgrade to Premium opens a succession.'
+        );
+        if (change.outcome !== 'SUCCESSION')
+            throw new Error('TEST:2159:3 plan change did not open a succession.');
         const ids = complements.map((item) => item.instanceId);
         const before = await execSQL<{
             id: string;
@@ -463,7 +515,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         equal(
             before.map((row) => ({ target_id: row.target_id, status: row.status })),
             ids.map(() => ({ target_id: current.subscriptionId, status: 'ACTIVE' })),
-            'T3 assertion.'
+            'TEST:2159:3 opening the succession leaves both complements ACTIVE on the old subscription.'
         );
         const complementSubscriptionIds = before.map((row) => row.complement_subscription_id);
         await activateCardSubscription({
@@ -477,7 +529,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         equal(
             activated.map((row) => row.target_id),
             ids.map(() => current.subscriptionId),
-            'T3 assertion.'
+            'TEST:2159:3 authorizing the successor does not move the complements before the close.'
         );
         length(
             cancelRequestsFor({
@@ -485,18 +537,18 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 authorizationId: current.authorizationId
             }),
             0,
-            'T3 assertion.'
+            'TEST:2159:3 the old authorization is not cancelled before our mail goes out.'
         );
         const sent = await runCron({
             jobName: 'email-outbox-sender',
             adminCookie: current.admin.sessionCookie
         });
-        equal(sent.success, true, 'T3 assertion.');
+        equal(sent.success, true, 'TEST:2159:3 email-outbox-sender succeeds.');
         const closed = await runCron({
             jobName: 'subscription-succession-reevaluation',
             adminCookie: current.admin.sessionCookie
         });
-        equal(closed.success, true, 'T3 assertion.');
+        equal(closed.success, true, 'TEST:2159:3 subscription-succession-reevaluation succeeds.');
         await expect
             .poll(
                 async () =>
@@ -506,7 +558,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                             [current.subscriptionId]
                         )
                     )[0]?.status,
-                { timeout: 30_000 }
+                { message: 'TEST:2159:3 the close cancels the old subscription.', timeout: 30_000 }
             )
             .toBe('CANCELLED');
         const successorStatus = (
@@ -514,7 +566,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 change.subscriptionId
             ])
         )[0]?.status;
-        equal(successorStatus, 'ACTIVE', 'T3 assertion.');
+        equal(successorStatus, 'ACTIVE', 'TEST:2159:3 the successor is ACTIVE after the close.');
         const after = await execSQL<{
             id: string;
             target_id: string;
@@ -537,7 +589,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 status: 'ACTIVE',
                 complement_subscription_id: row.complement_subscription_id
             })),
-            'T3 assertion.'
+            'TEST:2159:3 both complements point at the successor, ACTIVE, with their own complement subscription.'
         );
         equal(
             (
@@ -547,7 +599,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 )
             ).map((row) => row.status),
             ['ACTIVE', 'ACTIVE'],
-            'T3 assertion.'
+            'TEST:2159:3 both complement subscriptions stay ACTIVE.'
         );
         for (const complement of complements)
             length(
@@ -556,7 +608,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                     authorizationId: complement.authorizationId
                 }),
                 0,
-                'T3 assertion.'
+                'TEST:2159:3 no complement authorization is cancelled.'
             );
         equal(
             (
@@ -566,14 +618,14 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 )
             )[0]?.succeeded_by_id,
             change.subscriptionId,
-            'T3 assertion.'
+            'TEST:2159:3 the old subscription records its successor.'
         );
     });
 
     test('downgrade keeps the old plan capabilities until next_charge_at and drops them when the scheduled change applies', async ({
         page
     }) => {
-        if (!world) throw new Error('T4 assertion.');
+        if (!world) throw new Error('TEST:2159:4 setup: fake world missing.');
         const targetOptionId = await monthlyOptionForSlug('owner-basico');
         const current = await startCase({ page, slug: 'owner-premium' });
         const [old] = await execSQL<{
@@ -588,7 +640,8 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             'SELECT plan_version_id FROM billing_option WHERE id = $1',
             [targetOptionId]
         );
-        if (!old || !target) throw new Error('T4 assertion.');
+        if (!old || !target)
+            throw new Error('TEST:2159:4 setup: old subscription or target option missing.');
         const premiumLimits = await execSQL<{ key: string; value: number | 'Infinity' }>(
             'SELECT key, value FROM plan_version_limit WHERE plan_version_id = $1',
             [old.plan_version_id]
@@ -616,7 +669,10 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
         const premiumOnly = premiumEntitlements
             .filter((row) => !basicEntitlementKeys.has(row.key))
             .map((row) => row.key);
-        expect(limitDiff.length + premiumOnly.length, 'T4 assertion.').toBeGreaterThan(0);
+        expect(
+            limitDiff.length + premiumOnly.length,
+            'TEST:2159:4 precondition: Premium and Basico differ in at least one capability.'
+        ).toBeGreaterThan(0);
         const premiumExpected = Object.fromEntries(
             limitDiff
                 .filter((key) => key in premiumLimitMap)
@@ -626,23 +682,32 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             limitDiff.filter((key) => key in basicLimitMap).map((key) => [key, basicLimitMap[key]])
         );
         const before = await readEffectiveSet(current.user);
-        equal(pick(before.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
+            pick(before.limits, limitDiff),
+            premiumExpected,
+            'TEST:2159:4 before the request the differing limits hold the Premium values.'
+        );
         equal(
             premiumOnly.filter((key) => key in before.entitlements),
             premiumOnly,
-            'T4 assertion.'
+            'TEST:2159:4 before the request every Premium-only entitlement is present.'
         );
         const change = await requestPlanChange({
             user: current.user,
             subscriptionId: current.subscriptionId,
             billingOptionId: targetOptionId
         });
-        equal(change.outcome, 'DOWNGRADE', 'T4 assertion.');
-        if (change.outcome !== 'DOWNGRADE') throw new Error('T4 assertion.');
+        equal(
+            change.outcome,
+            'DOWNGRADE',
+            'TEST:2159:4 monthly Premium to monthly Basico is a scheduled downgrade.'
+        );
+        if (change.outcome !== 'DOWNGRADE')
+            throw new Error('TEST:2159:4 plan change was not a downgrade.');
         equal(
             new Date(change.effectiveAt).toISOString(),
             old.next_charge_at.toISOString(),
-            'T4 assertion.'
+            'TEST:2159:4 the downgrade takes effect at next_charge_at.'
         );
         const [queued] = await execSQL<{ plan_version_id: string; billing_option_id: string }>(
             'SELECT plan_version_id, billing_option_id FROM subscription WHERE id = $1',
@@ -654,14 +719,18 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 plan_version_id: old.plan_version_id,
                 billing_option_id: old.billing_option_id
             },
-            'T4 assertion.'
+            'TEST:2159:4 the request leaves the old plan version and option on the row.'
         );
         const afterRequest = await readEffectiveSet(current.user);
-        equal(pick(afterRequest.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
+            pick(afterRequest.limits, limitDiff),
+            premiumExpected,
+            'TEST:2159:4 right after the request the differing limits keep the Premium values.'
+        );
         equal(
             premiumOnly.filter((key) => key in afterRequest.entitlements),
             premiumOnly,
-            'T4 assertion.'
+            'TEST:2159:4 right after the request every Premium-only entitlement is kept.'
         );
         const effectiveAt = new Date(change.effectiveAt);
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() - 60_000) });
@@ -669,7 +738,11 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             jobName: 'subscription-scheduled-change',
             adminCookie: current.admin.sessionCookie
         });
-        equal(beforeDue.success, true, 'T4 assertion.');
+        equal(
+            beforeDue.success,
+            true,
+            'TEST:2159:4 subscription-scheduled-change succeeds one minute before the date.'
+        );
         equal(
             Number(
                 (
@@ -680,21 +753,29 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 )[0]?.count
             ),
             1,
-            'T4 assertion.'
+            'TEST:2159:4 one minute before the date the change is still queued.'
         );
         const justBefore = await readEffectiveSet(current.user);
-        equal(pick(justBefore.limits, limitDiff), premiumExpected, 'T4 assertion.');
+        equal(
+            pick(justBefore.limits, limitDiff),
+            premiumExpected,
+            'TEST:2159:4 one minute before the date the differing limits keep the Premium values.'
+        );
         equal(
             premiumOnly.filter((key) => key in justBefore.entitlements),
             premiumOnly,
-            'T4 assertion.'
+            'TEST:2159:4 one minute before the date every Premium-only entitlement is kept.'
         );
         await world.fakeServer.setClock({ at: new Date(effectiveAt.getTime() + 60_000) });
         const due = await runCron({
             jobName: 'subscription-scheduled-change',
             adminCookie: current.admin.sessionCookie
         });
-        equal(due.success, true, 'T4 assertion.');
+        equal(
+            due.success,
+            true,
+            'TEST:2159:4 subscription-scheduled-change succeeds one minute after the date.'
+        );
         equal(
             Number(
                 (
@@ -705,7 +786,7 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 )[0]?.count
             ),
             0,
-            'T4 assertion.'
+            'TEST:2159:4 the applied change empties the queue.'
         );
         const applied = await execSQL<{
             status: string;
@@ -721,14 +802,18 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
                 plan_version_id: target.plan_version_id,
                 billing_option_id: targetOptionId
             },
-            'T4 assertion.'
+            'TEST:2159:4 the row moves to the Basico version and option and stays ACTIVE.'
         );
         const after = await readEffectiveSet(current.user);
-        equal(pick(after.limits, limitDiff), basicExpected, 'T4 assertion.');
+        equal(
+            pick(after.limits, limitDiff),
+            basicExpected,
+            'TEST:2159:4 after the date the differing limits hold the Basico values.'
+        );
         equal(
             premiumOnly.filter((key) => key in after.entitlements),
             [],
-            'T4 assertion.'
+            'TEST:2159:4 after the date no Premium-only entitlement remains.'
         );
     });
 });
