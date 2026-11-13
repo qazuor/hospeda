@@ -9,7 +9,96 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { forgetPassword, resetPassword, verifyEmail } from '../../src/lib/auth-client';
+import {
+    forgetPassword,
+    resendVerificationEmail,
+    resetPassword,
+    verifyEmail
+} from '../../src/lib/auth-client';
+
+describe('resendVerificationEmail (AC:V8b:5)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('propagates the nested error code and HTTP status from a 429 response', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 429,
+            json: async () => ({
+                error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests' }
+            })
+        }) as unknown as typeof fetch;
+
+        const result = await resendVerificationEmail({
+            email: 'test@example.com',
+            callbackURL: 'https://hospeda.test/es/sumate/partner/'
+        });
+
+        expect(result.error).toEqual({
+            message: 'Too many requests',
+            code: 'TOO_MANY_REQUESTS',
+            status: 429
+        });
+    });
+
+    it('returns status zero without a code when fetch throws', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new Error('network down'));
+
+        const result = await resendVerificationEmail({
+            email: 'test@example.com',
+            callbackURL: 'https://hospeda.test/es/sumate/partner/'
+        });
+
+        expect(result.error).toEqual({
+            message: 'Error de red. Por favor, intenta de nuevo.',
+            status: 0
+        });
+    });
+
+    it('returns response data without an error on success', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ status: true })
+        }) as unknown as typeof fetch;
+
+        const result = await resendVerificationEmail({
+            email: 'test@example.com',
+            callbackURL: 'https://hospeda.test/es/sumate/partner/'
+        });
+
+        expect(result).toEqual({ data: { status: true } });
+    });
+
+    it('sends the exact Better Auth request with credentials and the callback URL', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ status: true })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        const email = 'test@example.com';
+        const callbackURL = 'https://hospeda.test/es/sumate/partner/';
+        await resendVerificationEmail({ email, callbackURL });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            'http://localhost:3001/api/auth/send-verification-email'
+        );
+        expect(fetchMock.mock.calls[0]?.[1]).toEqual({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, callbackURL })
+        });
+        expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+            email,
+            callbackURL
+        });
+    });
+});
 
 describe('forgetPassword', () => {
     afterEach(() => {

@@ -35,8 +35,7 @@ import {
 } from '../reconciliation/handle-unknown-authorization.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
-import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
-import { afterSubscriptionActivated } from '../subscription/after-activation-commit.js';
+import type { AfterSubscriptionActivatedPorts } from '../subscription/after-activation-commit.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
@@ -54,6 +53,7 @@ import {
     unimplementedSuccessionCloser,
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
+import { activateAuthorizedPending } from './complement-authorized.js';
 import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
@@ -62,6 +62,10 @@ import {
     type ReadState
 } from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
+import {
+    type ConfirmedRefundsForNotice,
+    executeConfirmedRefundsOnNotice
+} from './refund-execution-on-notice.js';
 import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
 
 const logger = createLogger('process-provider-notice');
@@ -102,6 +106,7 @@ export interface ProcessProviderNoticePorts {
     readonly clock: Clock;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
+    readonly successionSettler?: AfterSubscriptionActivatedPorts['successionSettler'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
@@ -124,6 +129,7 @@ export interface ProcessProviderNoticePorts {
     readonly markPayments?: ReconciliationMarkPayments;
     /** The internal chargeback interface (AC:B11:27), handed to `recordChargeFact`. */
     readonly chargebacks?: ChargebackDetection;
+    readonly confirmedRefunds?: ConfirmedRefundsForNotice;
     readonly complements?: ComplementPolicyPorts;
 }
 
@@ -243,6 +249,14 @@ export async function processProviderNotice(
                 return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
             if (result.outcome === 'NO_SUBSCRIPTION')
                 return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+            await executeConfirmedRefundsOnNotice(
+                {
+                    paymentId: result.paymentId,
+                    providerFactId: notice.resourceId,
+                    correlationId: crypto.randomUUID()
+                },
+                ports
+            );
             if (result.outcome === 'RECORDED_PENDING')
                 return { ack: 'OK', outcome: 'PAYMENT_RECORDED' };
             if (result.outcome === 'CREDITED')
@@ -330,12 +344,11 @@ export async function processProviderNotice(
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
-                const changed = await activatePendingWithSignupNotice(
-                    { subscriptionId: row.id, now: ports.clock.now() },
-                    { successionCloser: closer }
+                const changed = await activateAuthorizedPending(
+                    { row, now: ports.clock.now() },
+                    { ...ports, successionCloser: closer }
                 );
                 if (!changed) continue;
-                await afterSubscriptionActivated({ subscription: row }, ports);
             }
             if (action.kind === 'DIVERGENCE') {
                 await openReconciliationMark({

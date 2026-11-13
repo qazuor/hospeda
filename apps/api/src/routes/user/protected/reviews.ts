@@ -1,15 +1,16 @@
 /**
  * User reviews endpoint.
  * Returns paginated reviews by the authenticated user (accommodation + destination combined).
- * Each review is enriched with the parent entity's `name` and `slug` so the
- * web UI can render the entity link without a second round trip.
+ * Accommodation reviews include a gone marker when their listing was deleted
+ * or no longer exists, so the web UI can avoid a broken entity link.
  * @route GET /api/v1/protected/users/me/reviews
  */
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import {
     AccommodationReviewListItemSchema,
     DestinationReviewListItemSchema,
-    ModerationStatusEnumSchema
+    ModerationStatusEnumSchema,
+    PublicationStatusEnum
 } from '@repo/schemas';
 import {
     AccommodationReviewService,
@@ -28,14 +29,15 @@ const destinationReviewService = new DestinationReviewService({ logger: apiLogge
 const accommodationModel = new AccommodationModel();
 const destinationModel = new DestinationModel();
 
-/** Response schema for combined user reviews. Items extend the base review
- * list-item schemas with the parent entity's display name + slug so the UI
- * can show "Hotel X" instead of an undefined entity label. */
+/** Response schema for combined user reviews. Accommodation items include a
+ * gone marker when their listing was deleted or no longer exists. */
 const UserReviewsResponseSchema = z.object({
     accommodationReviews: z.array(
         AccommodationReviewListItemSchema.extend({
             accommodationName: z.string().nullable().optional(),
             accommodationSlug: z.string().nullable().optional(),
+            /** True when the listing was deleted (soft delete) or purged, or no longer exists: the review stays visible and counted for its author, but there is nothing to link to. */
+            accommodationGone: z.boolean(),
             // Moderation state so the user's "my reviews" view can flag reviews
             // still pending approval or rejected. Only exposed on this owner-scoped
             // endpoint, not on the shared public list-item schema.
@@ -55,6 +57,19 @@ const UserReviewsResponseSchema = z.object({
         total: z.number()
     })
 });
+
+/** Returns whether the listing row is deleted, purged, or missing. */
+function isListingGone({
+    row
+}: {
+    row: Awaited<ReturnType<AccommodationModel['findByIds']>>[number] | undefined;
+}): boolean {
+    return (
+        row === undefined ||
+        (row.deletedAt !== null && row.deletedAt !== undefined) ||
+        row.publicationStatus === PublicationStatusEnum.PURGED
+    );
+}
 
 export const userReviewsRoute = createProtectedRoute({
     method: 'get',
@@ -143,14 +158,19 @@ export const userReviewsRoute = createProtectedRoute({
             destinationModel.findByIds(destinationIds)
         ]);
 
-        const accommodationsById = new Map<string, { name?: string; slug?: string }>(
-            accommodationRows.map((row) => [
-                (row as { id: string }).id,
-                {
-                    name: (row as { name?: string }).name,
-                    slug: (row as { slug?: string }).slug
-                }
-            ])
+        const accommodationRowsById = new Map(accommodationRows.map((row) => [row.id, row]));
+        const accommodationsById = new Map<string, { name?: string; slug?: string; gone: boolean }>(
+            accommodationIds.map((id) => {
+                const row = accommodationRowsById.get(id);
+                return [
+                    id,
+                    {
+                        name: row?.name,
+                        slug: row?.slug,
+                        gone: isListingGone({ row })
+                    }
+                ];
+            })
         );
         const destinationsById = new Map<string, { name?: string; slug?: string }>(
             destinationRows.map((row) => [
@@ -162,11 +182,16 @@ export const userReviewsRoute = createProtectedRoute({
             ])
         );
 
-        const accommodationReviews = accommodationReviewsRaw.map((r) => ({
-            ...r,
-            accommodationName: accommodationsById.get(r.accommodationId)?.name ?? null,
-            accommodationSlug: accommodationsById.get(r.accommodationId)?.slug ?? null
-        }));
+        const accommodationReviews = accommodationReviewsRaw.map((r) => {
+            const accommodation = accommodationsById.get(r.accommodationId)!;
+            const accommodationGone = accommodation.gone;
+            return {
+                ...r,
+                accommodationName: accommodation.name ?? null,
+                accommodationSlug: accommodationGone ? null : (accommodation.slug ?? null),
+                accommodationGone
+            };
+        });
         const destinationReviews = destinationReviewsRaw.map((r) => ({
             ...r,
             destinationName: destinationsById.get(r.destinationId)?.name ?? null,

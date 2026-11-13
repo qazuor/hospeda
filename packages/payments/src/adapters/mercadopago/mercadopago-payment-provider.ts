@@ -27,7 +27,11 @@ import type {
     ChargeSnapshot,
     MutationAcknowledgement,
     NoticeDelivery,
+    OneTimeChargeInput,
+    OneTimeChargeResult,
     OrderRef,
+    OrderRefundInput,
+    OrderRefundResult,
     OrderSearchInput,
     OrderSearchResult,
     OrderSnapshot,
@@ -46,7 +50,9 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    OneTimeChargeInputSchema,
     OrderRefSchema,
+    OrderRefundInputSchema,
     OrderSearchInputSchema,
     PaymentProviderOptionsSchema,
     parseProviderInput,
@@ -64,6 +70,8 @@ import {
     setMercadoPagoStatus
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
+import { chargeMercadoPagoOrder } from './mercadopago-order-charge';
+import { refundMercadoPagoOrder } from './mercadopago-order-refund';
 import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
 import {
     type MercadoPagoReadRetryPolicy,
@@ -311,6 +319,12 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Creates one order with its persisted key (AC:B6:11/12, MP:EX-41/EX-30). */
+    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
+        const ref = { schema: OneTimeChargeInputSchema, input, capability: 'charge' } as const;
+        const { value } = parseProviderInput(ref);
+        return chargeMercadoPagoOrder({ input: value, send: (args) => this.send(args) });
+    }
     /** Capability 3 · change the amount. */
     async changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: ChangeAmountInputSchema, input, capability: 'changeAmount' });
@@ -354,6 +368,12 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     async refund(input: RefundInput): Promise<RefundResult> {
         parseProviderInput({ schema: RefundInputSchema, input, capability: 'refund' });
         return refundMercadoPagoPayment({ ...input, send: (args) => this.send(args) });
+    }
+
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
+        parseProviderInput({ schema: OrderRefundInputSchema, input, capability: 'refund' });
+        return refundMercadoPagoOrder({ ...input, send: (args) => this.send(args) });
     }
 
     /** Capability 7 · read an authorization by id. */

@@ -2,12 +2,15 @@ import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import { GRACE_REMINDER_SUBJECT, GraceReminder } from '../../templates/billing/grace-reminder.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { parseGraceScheduledChange } from './grace-scheduled-change.js';
 
 function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
     const payload: unknown = row.payload;
     if (!payload || typeof payload !== 'object' || Array.isArray(payload))
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
     const data = payload as Record<string, unknown>;
+    // Only an ABSENT field means a payload enqueued before the method existed; null is invalid.
+    const paymentMethod = 'paymentMethod' in data ? data.paymentMethod : 'CARD';
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.vertical !== 'string' ||
@@ -17,12 +20,18 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
         data.daysBefore <= 0 ||
         !Number.isInteger(data.deadlinesVersion) ||
         typeof data.deadlinesVersion !== 'number' ||
-        data.deadlinesVersion <= 0
+        data.deadlinesVersion <= 0 ||
+        (paymentMethod !== 'CARD' && paymentMethod !== 'MANUAL') ||
+        (data.planChangePending !== undefined && typeof data.planChangePending !== 'boolean')
     )
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
     const endDate = new Date(data.graceEndsAt);
     if (!Number.isFinite(endDate.getTime()))
         throw new TypeError('Faltan datos requeridos del aviso de período de gracia');
+    const scheduledChange = parseGraceScheduledChange({
+        value: data.scheduledChange,
+        errorMessage: 'Faltan datos requeridos del aviso de período de gracia'
+    });
     return {
         subject: GRACE_REMINDER_SUBJECT,
         react: (
@@ -31,6 +40,9 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
                 graceEndDate={getLocalDateString({ instant: endDate })}
                 daysBefore={data.daysBefore}
                 subscriptionUrl={`${siteUrl}/es/mi-cuenta/suscripcion/`}
+                paymentMethod={paymentMethod}
+                planChangePending={data.planChangePending === true}
+                scheduledChange={scheduledChange}
             />
         )
     };

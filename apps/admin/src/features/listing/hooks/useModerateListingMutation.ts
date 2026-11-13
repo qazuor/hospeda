@@ -18,6 +18,7 @@ import {
     ListingModerationResponseSchema
 } from '@repo/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { LISTING_FIX_REQUESTS_QUERY_KEY } from '@/features/listing-fix-requests/hooks/useListingFixRequests';
 import { fetchApi } from '@/lib/api/client';
 import {
     PURGE_LISTING_ENTITY_NAME,
@@ -79,6 +80,7 @@ export function useModerateListingMutation() {
             queryClient.invalidateQueries({
                 queryKey: [PURGE_LISTING_ENTITY_NAME[variables.vertical]]
             });
+            queryClient.invalidateQueries({ queryKey: LISTING_FIX_REQUESTS_QUERY_KEY });
         }
     });
 }

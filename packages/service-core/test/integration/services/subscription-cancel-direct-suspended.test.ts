@@ -11,6 +11,11 @@ import {
     seedDirectCancellation
 } from './support/cancel-direct-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import {
+    deleteScheduledChanges,
+    scheduledChangesOf,
+    seedScheduledChange
+} from './support/scheduled-change-fixtures.js';
 
 const owner = (id: string): Actor => ({ id, roles: [], permissions: [] });
 const clock = { now: () => cancelActiveNow };
@@ -23,6 +28,7 @@ const orphanhood = {
     }
 };
 const extraRows: string[] = [];
+const queuedSubscriptions: string[] = [];
 const ports = (fake: FakePaymentProvider, coverage = vi.fn(async () => undefined)) => ({
     provider: fake,
     clock,
@@ -31,6 +37,7 @@ const ports = (fake: FakePaymentProvider, coverage = vi.fn(async () => undefined
     orphanhood
 });
 afterEach(async () => {
+    await deleteScheduledChanges(queuedSubscriptions.splice(0));
     if (extraRows.length)
         await getServiceTestDb()
             .update(subscriptions)
@@ -48,6 +55,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:8 S23 from SUSPENDED', ()
             status: 'SUSPENDED',
             preapproval: 'LIVE'
         });
+        await seedScheduledChange({
+            subscriptionId: seeded.subscriptionId,
+            effectiveAt: cancelActiveNow
+        });
+        queuedSubscriptions.push(seeded.subscriptionId);
         const originalCancel = fake.cancel.bind(fake);
         const cancel = vi.spyOn(fake, 'cancel').mockImplementation(async (args) => {
             const [row] = await getServiceTestDb()
@@ -62,6 +74,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:8 S23 from SUSPENDED', ()
             { actor: owner(seeded.userId), subscriptionId: seeded.subscriptionId },
             ports(fake, coverage)
         );
+        expect(await scheduledChangesOf(seeded.subscriptionId)).toHaveLength(0);
         expect(result).toMatchObject({
             outcome: 'CANCELLED',
             origin: 'SUSPENDED',

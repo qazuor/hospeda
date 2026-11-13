@@ -62,7 +62,7 @@ en fases aditivas sobre el sistema nuevo**. Una pieza va al corte si sin ella no
 se ejecuta el corte; si sin ella el sistema nuevo cobra mal o regala; si escribe un dato que no se
 reconstruye; si cambia la forma de una tabla que tiene filas el día del corte; o si la exige el grafo.
 Lo que se difiere llega sin tocar nada de lo construido. **Todo el esquema de las 25 unidades nace en
-las migraciones de la rama antes del corte**; una fase posterior no trae migración estructural.
+las migraciones de la rama antes del corte**; una fase posterior trae sólo migraciones aditivas ([decisión del owner 2026-11-05](01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)).
 
 **Al corte (22), en `10-corte/`** — enteras (17) y las mitades *a* de las cinco partidas (5):
 
@@ -84,7 +84,8 @@ las migraciones de la rama antes del corte**; una fase posterior no trae migraci
 | 4 | `20-fase-4/` | [V7](20-fase-4/V7.md#pieza-v7), [V8b](20-fase-4/V8b.md#pieza-v8b) |
 
 Cada fase posterior viaja en una rama épica nueva, con los mismos gates por unidad, y entra a
-`staging` entera ([AE](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ae)). La partición de
+`staging` entera ([AE](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ae)); en la práctica las
+piezas posteriores que se hicieron viajaron juntas en una sola épica post-MVP ([La épica post-MVP](#epica-post-mvp), registro PM-313). La partición de
 las cinco unidades en mitades *a* y *b* es la de
 [Z](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-z).
 
@@ -102,6 +103,63 @@ común va antes de las primeras piezas que encolan, y por transitividad antes de
 encolan. Las otras letras de ese lote (BL, BN, BO y BP) y BW no agregan flechas.
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7996, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8022, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8062, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8091, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8094
+
+<a id="epica-post-mvp"></a>
+
+## La épica post-MVP (`epic/HOS-1352-post-mvp`)
+
+Las fases posteriores no viajaron cada una en su rama: el owner cerró el alcance de **una sola
+épica post-MVP** que entra a `staging` entera ([PM-313](01-decisiones-vigentes.md#own-postmvp-pm313-alcance),
+2026-11-06). Entran `B8b`, `B10`, `B12`, el contracargo, los grants y las cortesías, HOS-2003 y
+HOS-1625 (`B13b`). Las decisiones del owner que cambian esta spec están en
+[01-decisiones-vigentes.md](01-decisiones-vigentes.md#own-postmvp-pm313-alcance), con su entrada
+del registro del coordinador (`PM-NNN`).
+
+### Las hojas que entraron después del cierre del alcance
+
+La spec las ubicaba después, o PM-313 las mandaba a HOS-2066; el owner las metió en la épica antes
+del PR final (registro PM-588: «entran ANTES 2111, 1761, 1749 y 1628»).
+
+| hoja | qué cambió | qué quedó cumplido | fuente |
+|---|---|---|---|
+| HOS-1628 | el predicado de la acción 19 cuenta también los `S38` encolados hacia la versión; la spec lo mandaba a la Fase 2 (CW) | [AC:B3:40](10-corte/B3.md#ac-b3-40), con [TEST:B3:41](10-corte/B3.md#test-b3-41); el punto 12 de [LISTA:B3](10-corte/B3.md#lista-b3) | PM-587, PM-593; PR #4302 (`786709c7e5`) |
+| HOS-1749 | el congelamiento de altas pagas, huérfano desde HOS-1416, se reimplementa en `platform_settings` con dos interruptores: altas pagas y compra de complementos | las letras [N](01-decisiones-vigentes.md#own-40-congelamiento-y-ci-t1-n) y [O](01-decisiones-vigentes.md#own-40-congelamiento-y-ci-t1-o), con lo que reemplaza [PM-581](01-decisiones-vigentes.md#own-postmvp-pm581-congelamiento); no tiene AC propia en la spec | PM-581, PM-592, PM-600 a PM-602; PR #4307 (`4c6def33c2`) |
+| HOS-1761 | arreglos visuales del admin: conciliación con etiquetas i18n en vez de enums crudos, el pie fijo del modal de código promocional y el botón de baja que parte línea en mobile | el criterio del issue; no tiene AC en la spec (es presentación) | PM-580, PM-591; PR #4303 (`a2fbcec322`) |
+| HOS-2111 | los tests de integración de `service-core` con lotes globales se aíslan (filtro o lock) para no fallar en paralelo | sólo tests; no tiene AC en la spec | PM-570, PM-578; PR #4296 (`858c27397e`) |
+
+También entraron antes del PR final, por decisión del owner, hojas chicas que no cambian la spec:
+HOS-2091 y HOS-2115 (PM-564, PM-579), HOS-2007 (PM-569), HOS-1718 (PM-609, PM-620), HOS-1784,
+HOS-2001, HOS-2006, HOS-2019, HOS-2040, HOS-2045, HOS-2056, HOS-2064 y HOS-2069 (PM-610 a PM-614),
+HOS-1782 y HOS-2130 (PM-617, PM-623).
+
+### Lo que queda fuera, y va primero después del merge a `staging`
+
+**HOS-2066 (Urgent, bloquea a HOS-1352) es lo primero apenas la épica entre a `staging`**
+([PM-313](01-decisiones-vigentes.md#own-postmvp-pm313-alcance)). De las seis hojas que PM-313 le
+puso, quedan fuera:
+
+- **HOS-1512**, la batería mensual de vigilancia del proveedor (PM-586).
+- **HOS-1640**, la fila 10-bis. Va con la pantalla del admin para el pago tardío (`MP4`), que hoy sólo
+  se puede llamar por API (PM-588).
+- **HOS-1883**, la analítica de las suscripciones COMPLEMENTO y de los pagos de complementos (PM-585).
+- **HOS-1715** sigue fuera, ahora en **HOS-2116** (PM-584).
+
+**HOS-1749 y HOS-1761 ya no están en esa lista**: entraron a la épica (PM-580, PM-581) y están
+mergeadas (`4c6def33c2`, `a2fbcec322`).
+
+También quedan fuera, detrás de HOS-2066, **las hojas de contracargo de la Fase 2: HOS-1636,
+HOS-1639 y HOS-1539** (PM-562). Con ellas va el asiento manual de una devolución ambigua (PM-573).
+Otros diferidos del registro: HOS-2109, el fin de mes (PM-561); HOS-2094, los seis complementos de
+pago único (PM-564); [AC:B7:18](10-corte/B7.md#ac-b7-18), en HOS-2013 (PM-167); y el retiro total de
+un complemento, en HOS-2097 (PM-452).
+
+### Cómo se prueba de punta a punta
+
+La matriz smoke ↔ e2e está en [`docs/billing/smoke-checklist.md`](../../../docs/billing/smoke-checklist.md)
+(«Smoke scope rule», HOS-2134): cada paso dice qué spec de Playwright lo cubre, o si sólo se ve con
+Mercado Pago real, en un entorno real o es un hueco. La tanda e2e previa a `staging` es la de
+**HOS-2133**: sus hojas 2134, 2136 a 2138, 2149 y 2157 a 2160 están en la épica (PM-631, PM-633,
+PM-640).
 
 ## Reglas que valen para todas las piezas
 

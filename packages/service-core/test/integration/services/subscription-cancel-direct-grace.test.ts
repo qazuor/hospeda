@@ -28,6 +28,11 @@ import {
     seedDirectCancellation
 } from './support/cancel-direct-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import {
+    deleteScheduledChanges,
+    scheduledChangesOf,
+    seedScheduledChange
+} from './support/scheduled-change-fixtures.js';
 
 const owner = (id: string) => ({ id, roles: [], permissions: [] });
 const clock = { now: () => cancelActiveNow };
@@ -41,6 +46,7 @@ const orphanhood = {
 };
 const orphanedInstances: string[] = [];
 const orphanedComplements: string[] = [];
+const queuedSubscriptions: string[] = [];
 const ports = (fake: FakePaymentProvider, coverage = vi.fn(async () => undefined)) => ({
     provider: fake,
     clock,
@@ -49,6 +55,7 @@ const ports = (fake: FakePaymentProvider, coverage = vi.fn(async () => undefined
     orphanhood
 });
 afterEach(async () => {
+    await deleteScheduledChanges(queuedSubscriptions.splice(0));
     if (orphanedInstances.length)
         await getServiceTestDb()
             .update(addonInstances)
@@ -75,6 +82,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:9 S24 from GRACE_PERIOD',
             graceStartedAt,
             graceEndsAt
         });
+        await seedScheduledChange({
+            subscriptionId: seeded.subscriptionId,
+            effectiveAt: cancelActiveNow
+        });
+        queuedSubscriptions.push(seeded.subscriptionId);
         const before = await resolveSubscriptionSources({
             userId: seeded.userId,
             vertical: VerticalEnum.ACCOMMODATION,
@@ -86,6 +98,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:9 S24 from GRACE_PERIOD',
             { actor: owner(seeded.userId), subscriptionId: seeded.subscriptionId },
             ports(fake, coverage)
         );
+        expect(await scheduledChangesOf(seeded.subscriptionId)).toHaveLength(0);
         expect(result).toMatchObject({
             outcome: 'CANCELLED',
             origin: 'GRACE_PERIOD',

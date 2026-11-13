@@ -902,13 +902,21 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 |----------|----------|-----------------|------|
 | `archive-expired-promotions` | billing | `0 * * * *` | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` |
 | `billing-creations-sweep` | billing | `1-59/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
+| `billing-deferred-cancellation-retry` | billing | `4-59/5 * * * *` | `apps/api/src/cron/jobs/billing-deferred-cancellation-retry.job.ts` |
 | `billing-promo-ending-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/billing-promo-ending-notice.job.ts` |
 | `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
 | `billing-reconciliation-sweep` | billing | `10 2,3,4 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
 | `payment-window-expiry` | billing | `23 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
+| `plan-migration-notice` | billing | `17 9 * * *` | `apps/api/src/cron/jobs/plan-migration-notice.job.ts` |
+| `plan-migration-application` | billing | `28 * * * *` | `apps/api/src/cron/jobs/plan-migration-application.job.ts` (HOS-1614, AC:B12:4-5) |
+| `manual-installment-open` | billing | `13 * * * *` | `apps/api/src/cron/jobs/manual-installment-open.job.ts` (HOS-1541, AC:B5:13, MP5) |
+| `manual-grace-expiry` | billing | `43 * * * *` | `apps/api/src/cron/jobs/manual-grace-expiry.job.ts` (HOS-1542, AC:B5:17, MP3) |
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
 | `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
+| `subscription-pause-end` | billing | `47 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |
+| `subscription-scheduled-change` | billing | `53 * * * *` | `apps/api/src/cron/jobs/subscription-scheduled-change.job.ts` (HOS-1577, AC:B8b:15) |
+| `subscription-succession-reevaluation` | billing | `33 * * * *` | `apps/api/src/cron/jobs/subscription-succession-reevaluation.job.ts` (HOS-1579, AC:B8b:8) |
 | `subscription-service-end` | billing | `12-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
 | `subscription-window-expiry` | billing | `7-59/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
 | `trial-machine-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/trial-machine-expiry.job.ts` |
@@ -945,6 +953,18 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
+
+`subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
+failed row can no longer starve the rows behind it. Each failure increments that row's
+`attempt_count` and records `last_error_at`/`last_error` outside the rolled-back transaction
+(migration `0215`). When a row reaches `SCHEDULED_CHANGE_MAX_ATTEMPTS` (5), it leaves the batch,
+raises one Sentry event through the logger capture hook, and is reported as `EXHAUSTED` (with
+`exhausted` in the run summary) on every run until it is re-enabled. Re-enable an exhausted row
+with the owner's approval, from `hops psql` on the target environment:
+
+```sql
+UPDATE subscription_scheduled_change SET attempt_count = 0 WHERE id = '<id>';
+```
 
 ---
 

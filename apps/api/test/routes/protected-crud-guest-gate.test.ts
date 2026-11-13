@@ -31,7 +31,8 @@ const HELPER_NAMES = [
     'reorderPostMedia',
     'setFeaturedPostMedia',
     'updatePostMedia',
-    'getExperienceMedia'
+    'getExperienceMedia',
+    'getAccommodationMediaForReader'
 ] as const;
 
 const { helperMocks } = vi.hoisted(() => ({
@@ -53,7 +54,8 @@ vi.mock('@repo/service-core', async () => {
         'reorderPostMedia',
         'setFeaturedPostMedia',
         'updatePostMedia',
-        'getExperienceMedia'
+        'getExperienceMedia',
+        'getAccommodationMediaForReader'
     ];
     for (const name of names) helperMocks[name] = vi.fn();
     return { ...actual, ...helperMocks };

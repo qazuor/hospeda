@@ -634,7 +634,8 @@
             "max": "O email não pode exceder {{max}} caracteres"
         },
         "kind": {
-            "invalid": "O tipo é inválido"
+            "invalid": "O tipo é inválido",
+            "partnerMovedToApplication": "As candidaturas de Partner são feitas pelo formulário próprio"
         },
         "markHandled": {
             "status": {
@@ -1239,48 +1240,7 @@
                 "invalidType": "El trial enabled tiene un tipo de dato inválido"
             }
         },
-        "startPaid": {
-            "appliedEffect": {
-                "invalid": "O efeito aplicado não é válido"
-            },
-            "billingInterval": {
-                "invalid": "O intervalo de faturamento não é válido"
-            },
-            "checkoutUrl": {
-                "invalid": "A URL de pagamento não é válida",
-                "invalidType": "A URL de pagamento tem um tipo de dado inválido"
-            },
-            "expiresAt": {
-                "invalid": "A data de expiração não é válida",
-                "invalidType": "A data de expiração tem um tipo de dado inválido"
-            },
-            "localSubscriptionId": {
-                "invalid": "O ID de assinatura local não é válido",
-                "invalidType": "O ID de assinatura local tem um tipo de dado inválido"
-            },
-            "payerEmail": {
-                "invalid": "O e-mail de pagamento não é válido",
-                "invalidType": "O e-mail de pagamento tem um tipo de dado inválido",
-                "max": "O e-mail de pagamento não pode exceder {{max}} caracteres"
-            },
-            "planSlug": {
-                "invalid": "O slug do plano não está em um formato válido",
-                "invalidType": "O slug do plano tem um tipo de dado inválido",
-                "max": "O slug do plano não pode ultrapassar {{max}} caracteres",
-                "min": "O slug do plano deve ter pelo menos {{min}} caracteres"
-            },
-            "promoCode": {
-                "invalidType": "O código promocional tem um tipo de dado inválido",
-                "max": "O código promocional não pode ultrapassar {{max}} caracteres",
-                "min": "O código promocional deve ter pelo menos {{min}} caracteres"
-            },
-            "promoCodeIgnored": {
-                "invalid": "O indicador de código promocional ignorado não é válido"
-            },
-            "trialGranted": {
-                "invalid": "O indicador de período de teste concedido não é válido"
-            }
-        },
+
         "subscriptionEvent": {
             "createdAt": {
                 "invalid": "La fecha de creación no es válida",
@@ -3833,6 +3793,12 @@
         },
         "websiteUrl": {
             "invalid": "O site deve ser uma URL http:// ou https:// válida"
+        },
+        "presenceModeration": {
+            "reason": {
+                "required": "Informe o motivo da moderação",
+                "max": "O motivo da moderação não pode exceder {{max}} caracteres"
+            }
         }
     },
     "poiCategory": {
@@ -5253,6 +5219,16 @@
                 "max": "O máximo de convidados não pode ultrapassar 1000"
             },
             "requiresEventsAllowed": "Os detalhes de eventos só se aplicam se eventos forem permitidos"
+        }
+    },
+    "partnerApplication": {
+        "email": {
+            "invalid": "O email não é válido.",
+            "max": "O email não pode exceder 320 caracteres."
+        },
+        "reason": {
+            "required": "Escreva o motivo do cancelamento da espera.",
+            "max": "O motivo não pode exceder 2000 caracteres."
         }
     }
 }

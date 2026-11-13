@@ -154,3 +154,20 @@ describe('ExperienceService public search: amenities and features (HOS-2085)', (
         expect(call[3]).toBeUndefined();
     });
 });
+
+describe('HOS-1718 featuredFirst forwarding', () => {
+    it('forwards featuredFirst to the model options and never as a filter', async () => {
+        const mockModel = new MockExperienceModel();
+        mockModel.findAllWithRelations.mockResolvedValue({ items: [], total: 0 });
+        mockModel.count.mockResolvedValue(0);
+        const service = new ExperienceService({});
+        Object.defineProperty(service, 'model', { value: mockModel });
+
+        await service.search(guestActor, { page: 1, pageSize: 10, featuredFirst: true });
+
+        const [call] = asMock(mockModel.findAllWithRelations).mock.calls;
+        expect(call?.[2]).toMatchObject({ featuredFirst: true });
+        const where = (call?.[1] as Record<string, unknown> | undefined) ?? {};
+        expect(Object.hasOwn(where, 'featuredFirst')).toBe(false);
+    });
+});

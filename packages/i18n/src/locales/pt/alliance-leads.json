@@ -1,4 +1,19 @@
 {
+    "partnerApplication": {
+        "title": "Candidate-se para ser parceiro",
+        "emailLabel": "Endereço de e-mail",
+        "emailHelp": "Entraremos em contato neste endereço para responder sobre sua candidatura.",
+        "submit": "Enviar candidatura",
+        "sending": "Enviando candidatura…",
+        "success": "Obrigado. Recebemos seu e-mail e entraremos em contato com uma resposta.",
+        "error": "Não foi possível enviar sua candidatura. Tente novamente mais tarde.",
+        "unavailable": "O formulário está indisponível no momento. Tente novamente mais tarde.",
+        "verifyEmailFirst": "Para se candidatar como Partner, você precisa primeiro verificar o e-mail da sua conta. Ainda não registramos sua candidatura.",
+        "resendVerification": "Reenviar verificação",
+        "resendingVerification": "Reenviando…",
+        "verificationResent": "Pronto: reenviamos o e-mail de verificação. Confira sua caixa de entrada e, depois de verificar, volte a esta página para se candidatar.",
+        "resendVerificationError": "Não foi possível reenviar a verificação. Tente novamente em alguns minutos."
+    },
     "form": {
         "fields": {
             "contactName": "Seu nome",

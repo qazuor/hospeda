@@ -60,6 +60,22 @@ describe('TEST:V6:6 GUARD:G5', () => {
     it('rejects an unlisted writer', () => {
         expect(check(baseFiles, []).output).toContain('source write is not inventoried');
     });
+    it('requires an inventory entry for an addon instance insert', () => {
+        const files = {
+            ...baseFiles,
+            [writer.file]:
+                "export async function chooseFreeAddon() { await db.insert(addonInstances).values({ status: 'ACTIVE' }); }"
+        };
+        const entry = {
+            ...writer,
+            symbol: 'chooseFreeAddon',
+            table: 'addonInstances',
+            effect: 'turns-on',
+            via: null
+        } as const;
+        expect(check(files, []).output).toContain('source write is not inventoried');
+        expect(check(files, [entry]).exitCode).toBe(0);
+    });
     it('rejects a stale entry', () => {
         expect(check({ ...baseFiles, [writer.file]: 'export const x = 1;' }).output).toContain(
             'stale inventory'
@@ -186,5 +202,22 @@ describe('TEST:B4:10 GUARD:G5 a turn-off notified by its caller (via caller, not
         expect(vip?.notifiedBy).toBe(
             'packages/service-core/src/services/billing/subscription/cancel-inherited-tourist-vip.service.ts'
         );
+    });
+});
+
+describe('HOS-2091 turn-on notified by its caller', () => {
+    it('the repository inventory notifies writeCutoverTrials through runStep3', () => {
+        const inventory = JSON.parse(
+            readFileSync(
+                path.join(
+                    path.dirname(fileURLToPath(import.meta.url)),
+                    '../guards/source-off-writers.json'
+                ),
+                'utf8'
+            )
+        ) as { symbol: string; via: string | null; notifiedBy?: string }[];
+        const entry = inventory.find((item) => item.symbol === 'writeCutoverTrials');
+        expect(entry?.via).toBe('caller');
+        expect(entry?.notifiedBy).toBe('apps/api/src/services/cutover-v6/step-3.service.ts');
     });
 });

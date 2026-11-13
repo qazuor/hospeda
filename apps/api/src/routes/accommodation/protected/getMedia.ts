@@ -3,13 +3,8 @@
  * List photos in an accommodation gallery — Protected (owner-facing) endpoint (SPEC-204)
  *
  * Returns all non-deleted media rows for the given accommodation, ordered by
- * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
- * `'visible'`). The service enforces UPDATE_OWN + ownership — the HOST owner
- * calling this endpoint passes that gate automatically.
- *
- * Note: calls `accommodationService.adminGetMedia`, which despite its name
- * enforces `_canUpdate(actor, accommodation)`. An owner with
- * `ACCOMMODATION_UPDATE_OWN` passes that gate. The name is NOT changed.
+ * `sortOrder ASC`. Owners with UPDATE_OWN and staff with VIEW_ALL may read;
+ * foreign rows answer 404.
  */
 
 import {
@@ -17,22 +12,17 @@ import {
     AccommodationMediaListOutputSchema,
     AccommodationMediaStateSchema
 } from '@repo/schemas';
-import { AccommodationService, ServiceError } from '@repo/service-core';
+import { getAccommodationMediaForReader } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
-
-const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * GET /api/v1/protected/accommodations/:id/media
  * List accommodation gallery photos — Protected endpoint
  *
- * Permission model (SPEC-204): service layer `accommodationService.adminGetMedia`
- * calls `_canUpdate(actor, accommodation)` which enforces
- * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
- * An authenticated HOST owner passes the ownership branch.
+ * Permission model: owners with `ACCOMMODATION_UPDATE_OWN` and staff with
+ * `ACCOMMODATION_VIEW_ALL` may read; a foreign uninspected row answers 404.
  * No additional entitlement gate — read access requires only auth + ownership.
  */
 export const protectedGetMediaRoute = createProtectedRoute({
@@ -42,7 +32,7 @@ export const protectedGetMediaRoute = createProtectedRoute({
     description:
         'Retrieve all media rows for an accommodation, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
-        'Requires authentication; the service layer enforces UPDATE_OWN + ownership.',
+        'Requires authentication and ownership with UPDATE_OWN or inspection with ACCOMMODATION_VIEW_ALL; foreign rows answer 404.',
     tags: ['Accommodations', 'Media'],
     protectedTag: false,
     requestParams: {
@@ -63,15 +53,11 @@ export const protectedGetMediaRoute = createProtectedRoute({
             : { success: false as const };
         const state = stateParsed.success ? stateParsed.data : undefined;
 
-        const result = await accommodationService.adminGetMedia(actor, {
+        const media = await getAccommodationMediaForReader({
+            actor,
             accommodationId,
             state
         });
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
-        return { media: result.data?.media ?? [] };
+        return { media };
     }
 });

@@ -141,13 +141,21 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             marks.map((mark) => mark.markId)
         );
         const reasonSeven = within(articles[0]!);
+        expect(reasonSeven.getByTestId('reconciliation-mark-reason')).toHaveTextContent(
+            '7 · Pago tardío rechazado'
+        );
+        expect(reasonSeven.getByTestId('reconciliation-mark-subject-status')).toHaveTextContent(
+            'Estado de la fila: En período de gracia'
+        );
         expect(articles[0]).toBeInTheDocument();
         expect(reasonSeven.queryByTestId('reconciliation-mark-action14')).not.toBeInTheDocument();
         expect(reasonSeven.getByTestId('reconciliation-mark-event-link')).toHaveAttribute(
             'href',
             `/billing/reconciliation/${marks[0]!.markId}/events`
         );
-        expect(reasonSeven.getAllByTestId('reconciliation-mark-payment')).toHaveLength(2);
+        const payments = reasonSeven.getAllByTestId('reconciliation-mark-payment');
+        expect(payments).toHaveLength(2);
+        for (const item of payments) expect(item).toHaveTextContent(/· Acreditado ·/);
         expect(reasonSeven.getByTestId('reconciliation-mark-payment-count')).toHaveTextContent('2');
         expect(reasonSeven.getByTestId('reconciliation-mark-total')).toHaveTextContent('250,00');
         expect(reasonSeven.getByTestId('reconciliation-mark-proposal')).toHaveTextContent(

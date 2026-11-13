@@ -1,5 +1,5 @@
 import { accommodationReviews, getDb, listingReviewsShownCondition, users } from '@repo/db';
-import { VerticalEnum } from '@repo/schemas';
+import { ModerationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { and, avg, desc, eq, isNull, max } from 'drizzle-orm';
 import type { ServiceConfig, ServiceLogger } from '../../types/index.js';
 
@@ -26,7 +26,7 @@ export class StatsService {
     /**
      * Returns the global average of accommodation review ratings on a 0-5
      * scale, rounded to 2 decimals (matching the `numeric(3, 2)` storage
-     * precision). Considers only non-deleted, ACTIVE reviews. Returns 0 when
+     * precision). Considers only non-deleted, ACTIVE and APPROVED reviews. Returns 0 when
      * there are no reviews.
      * Excludes reviews of `PURGED` listings (AC:1686:3).
      */
@@ -39,6 +39,7 @@ export class StatsService {
             .where(
                 and(
                     eq(accommodationReviews.lifecycleState, 'ACTIVE'),
+                    eq(accommodationReviews.moderationState, ModerationStatusEnum.APPROVED),
                     isNull(accommodationReviews.deletedAt),
                     listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })
                 )
@@ -57,9 +58,9 @@ export class StatsService {
     }
 
     /**
-     * Returns up to `limit` avatar URLs of the most recent active accommodation
-     * reviewers. Used by the public hero "social proof" overlay so the avatar
-     * row reflects real users instead of placeholders.
+     * Returns up to `limit` avatar URLs of the most recent active and approved
+     * accommodation reviewers. Used by the public hero "social proof" overlay
+     * so the avatar row reflects real users instead of placeholders.
      *
      * Implementation notes:
      * - Joins `accommodation_reviews` with `users` (one row per distinct user,
@@ -93,6 +94,7 @@ export class StatsService {
             .where(
                 and(
                     eq(accommodationReviews.lifecycleState, 'ACTIVE'),
+                    eq(accommodationReviews.moderationState, ModerationStatusEnum.APPROVED),
                     isNull(accommodationReviews.deletedAt),
                     listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION }),
                     isNull(users.deletedAt)

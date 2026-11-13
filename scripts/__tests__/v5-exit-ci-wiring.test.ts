@@ -11,8 +11,8 @@ import {
  * TEST:V5:27 (AC:V5:23, HOS-1464, V5.10) pins the V5 exit evidence in the
  * tree. It does not run tests, guards, or Playwright; the exit run and CI do
  * that. It proves the evidence IS present and wired. The LISTING-addon half
- * of clause 7 has no surface at this cut because no addon purchase route
- * exists (B10, HOS-1593, phase 3). Every assertion is about PRESENCE.
+ * of clause 7 is covered by the B10 API integration test with a real foreign
+ * PUBLISHED listing. Every assertion is about PRESENCE.
  */
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const selfPath = fileURLToPath(import.meta.url);
@@ -63,14 +63,13 @@ const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 14, acs: ['AC:V5:25'], tests: ['TEST:V5:30'] }
 ];
 
-// V5.md:102-106; .hoja/notas.md §4 I-3.
-const DEFERRED = {
+// V5.md:102-106; B10 closes the foreign PUBLISHED listing half.
+const CLOSED_CLAUSE_7 = {
     clause: 7,
     what: 'buying a LISTING addon with a foreign PUBLISHED listing as its target answers not found',
     acs: ['AC:V5:5'],
-    issue: 'HOS-1593',
-    phase: 'fase-3',
-    reason: 'no addon purchase route exists at the cut (B10.1)'
+    evidence: 'apps/api/test/integration/billing-addon/b10-exit-api.test.ts',
+    title: 'LISTA:V5 clause 7 a foreign PUBLISHED listing as addon target answers not found'
 } as const;
 
 // AC:V5:23 range, including AC:V5:24 by default I-2; mappings from V5.md:1325-1580.
@@ -329,7 +328,7 @@ describe('TEST:V5:27 AC:V5:23 - V5 exit: LISTA:V5 evidence in the tree, six guar
         }
     });
 
-    describe('(c) cut tests, AC mappings, deferred clause, and clause coverage are accounted for', () => {
+    describe('(c) cut tests, AC mappings, closed clause, and clause coverage are accounted for', () => {
         it('has a title for every cut TEST:V5 id', () => {
             const missing = CUT_TESTS.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
@@ -345,14 +344,21 @@ describe('TEST:V5:27 AC:V5:23 - V5 exit: LISTA:V5 evidence in the tree, six guar
             );
             expect(outside, `AC mappings outside the cut: ${outside.join(', ')}`).toEqual([]);
         });
-        it('covers clauses 1 to 14, including the deferred half of clause 7', () => {
-            const clauses = new Set([...CORTE_MAP.map(({ clause }) => clause), DEFERRED.clause]);
+        it('covers clauses 1 to 14, including the real foreign listing half of clause 7', () => {
+            const clauses = new Set([
+                ...CORTE_MAP.map(({ clause }) => clause),
+                CLOSED_CLAUSE_7.clause
+            ]);
             const missing = Array.from({ length: 14 }, (_, index) => index + 1).filter(
                 (clause) => !clauses.has(clause)
             );
             expect(missing, `LISTA:V5 clauses without an entry: ${missing.join(', ')}`).toEqual([]);
-            expect(DEFERRED.issue).toBe('HOS-1593');
-            expect(DEFERRED.phase).toBe('fase-3');
+            expect(existsSync(path.join(repoRoot, CLOSED_CLAUSE_7.evidence))).toBe(true);
+            expect(
+                testTitles({
+                    source: readFileSync(path.join(repoRoot, CLOSED_CLAUSE_7.evidence), 'utf8')
+                })
+            ).toContain(CLOSED_CLAUSE_7.title);
         });
     });
 

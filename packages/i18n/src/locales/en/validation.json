@@ -634,7 +634,8 @@
             "max": "Email must not exceed {{max}} characters"
         },
         "kind": {
-            "invalid": "Type is invalid"
+            "invalid": "Type is invalid",
+            "partnerMovedToApplication": "Partner applications go through their own form"
         },
         "markHandled": {
             "status": {
@@ -1239,48 +1240,7 @@
                 "invalidType": "El trial enabled tiene un tipo de dato inválido"
             }
         },
-        "startPaid": {
-            "appliedEffect": {
-                "invalid": "The applied effect is not valid"
-            },
-            "billingInterval": {
-                "invalid": "Billing interval is not valid"
-            },
-            "checkoutUrl": {
-                "invalid": "Checkout URL is not valid",
-                "invalidType": "Checkout URL has an invalid data type"
-            },
-            "expiresAt": {
-                "invalid": "Expiry date is not valid",
-                "invalidType": "Expiry date has an invalid data type"
-            },
-            "localSubscriptionId": {
-                "invalid": "Local subscription ID is not valid",
-                "invalidType": "Local subscription ID has an invalid data type"
-            },
-            "payerEmail": {
-                "invalid": "The payment email is not valid",
-                "invalidType": "The payment email has an invalid data type",
-                "max": "The payment email cannot exceed {{max}} characters"
-            },
-            "planSlug": {
-                "invalid": "Plan slug is not in a valid format",
-                "invalidType": "Plan slug has an invalid data type",
-                "max": "Plan slug cannot exceed {{max}} characters",
-                "min": "Plan slug must be at least {{min}} characters"
-            },
-            "promoCode": {
-                "invalidType": "Promo code has an invalid data type",
-                "max": "Promo code cannot exceed {{max}} characters",
-                "min": "Promo code must be at least {{min}} characters"
-            },
-            "promoCodeIgnored": {
-                "invalid": "The promo code ignored flag is not valid"
-            },
-            "trialGranted": {
-                "invalid": "The granted-free-trial flag is not valid"
-            }
-        },
+
         "subscriptionEvent": {
             "createdAt": {
                 "invalid": "La fecha de creación no es válida",
@@ -3833,6 +3793,12 @@
         },
         "websiteUrl": {
             "invalid": "The website must be a valid http:// or https:// URL"
+        },
+        "presenceModeration": {
+            "reason": {
+                "required": "Enter a moderation reason",
+                "max": "The moderation reason cannot exceed {{max}} characters"
+            }
         }
     },
     "poiCategory": {
@@ -5253,6 +5219,16 @@
                 "max": "The maximum guests cannot exceed 1000"
             },
             "requiresEventsAllowed": "Event details only apply when events are allowed"
+        }
+    },
+    "partnerApplication": {
+        "email": {
+            "invalid": "The email address is invalid.",
+            "max": "The email address cannot exceed 320 characters."
+        },
+        "reason": {
+            "required": "Enter the reason for cancelling the wait.",
+            "max": "The reason cannot exceed 2000 characters."
         }
     }
 }

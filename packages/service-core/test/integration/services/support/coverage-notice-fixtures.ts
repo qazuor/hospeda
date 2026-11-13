@@ -127,6 +127,10 @@ export async function cleanUpCoverageNoticeRows(input: {
         await client.query('DELETE FROM provider_link WHERE subscription_id = ANY($1::uuid[])', [
             subscriptionIds
         ]);
+        await client.query(
+            'DELETE FROM reconciliation_mark WHERE subscription_id = ANY($1::uuid[])',
+            [subscriptionIds]
+        );
         await client.query('DELETE FROM subscription WHERE id = ANY($1::uuid[])', [
             subscriptionIds
         ]);

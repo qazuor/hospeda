@@ -71,7 +71,7 @@ describe('AccommodationReviewService.listWithUser', () => {
         // Arrange
         const actor = createActor({ id: userId });
         const review = makeReviewWithUser();
-        (reviewModel.findAllWithUser as Mock).mockResolvedValue({ items: [review], total: 1 });
+        (reviewModel.findAllWithUser as Mock).mockResolvedValue({ items: [review], total: 7 });
 
         // Act
         const result = await service.listWithUser(actor, { page: 1, pageSize: 10 });
@@ -79,6 +79,7 @@ describe('AccommodationReviewService.listWithUser', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.accommodationReviews).toHaveLength(1);
+        expect(result.data?.total).toBe(7);
         // Verify forced filters on the model call
         expect(reviewModel.findAllWithUser).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -132,5 +133,6 @@ describe('AccommodationReviewService.listWithUser', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.accommodationReviews).toEqual([]);
+        expect(result.data?.total).toBe(0);
     });
 });

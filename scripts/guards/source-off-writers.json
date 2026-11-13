@@ -1,5 +1,21 @@
 [
     {
+        "file": "apps/api/src/utils/listing-publication/ports.ts",
+        "symbol": "insertTrial",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "Inserts a TRIAL_ACTIVE listing trial; publishListing emits the TRIAL/CHANGED coverage notice after commit when insertion succeeds."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "insertTrial",
+        "table": "trials",
+        "effect": "neutral",
+        "via": null,
+        "reason": "The only caller inserts a TRIAL_CONVERTED row, which adds no active trial coverage; a conflict leaves coverage unchanged."
+    },
+    {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
         "symbol": "markConverted",
         "table": "trials",
@@ -30,6 +46,30 @@
         "effect": "turns-on",
         "via": null,
         "reason": "Activates newly authorized coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "createPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a PENDING_AUTHORIZATION principal, which emits no subscription coverage source."
+    },
+    {
+        "file": "packages/db/src/models/subscription/manual-pending-authorization.ts",
+        "symbol": "createManualPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a PENDING_AUTHORIZATION manual principal, which emits no subscription coverage source."
+    },
+    {
+        "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+        "symbol": "insertReceiptTombstone",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Creates a CANCELLED receipt tombstone; the row never emits a subscription coverage source."
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
@@ -82,6 +122,22 @@
         "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/manual-grace-entry.ts",
+        "symbol": "enterManualGraceInTx",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Manual S4 keeps the same subscription coverage source in GRACE_PERIOD as ACTIVE (AC:B5:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/register-manual-payment.service.ts",
+        "symbol": "registerManualPayment",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "MP1 writes next_charge_at only; S29 activation is inventoried through activatePendingAuthorization, while S5 keeps the same source in GRACE_PERIOD and ACTIVE (AC:B5:14-15)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
         "symbol": "reactivateFromGrace",
         "table": "subscriptions",
@@ -90,12 +146,21 @@
         "reason": "S5 moves GRACE_PERIOD to ACTIVE; both emit the same SUSCRIPCIÓN source (03-contrato-de-cobertura.md:468-469)."
     },
     {
-        "file": "packages/service-core/src/services/billing/subscription/suspend-for-arrears.service.ts",
-        "symbol": "writeArrearsSuspension",
+        "file": "packages/service-core/src/services/billing/subscription/arrears-suspension-write.ts",
+        "symbol": "writeArrearsSuspensionInTx",
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
+        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); both the wrapper and MP2 call emitArrearsSuspensionCoverageChanged after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/suspend-for-chargeback-write.ts",
+        "symbol": "writeChargebackSuspension",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/suspend-for-chargeback.service.ts",
+        "reason": "S6 by chargeback moves ACTIVE, GRACE_PERIOD or PAUSED courtesy to SUSPENDED; the caller reuses S6's coverage removal after commit (AC:B7:10)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",
@@ -106,12 +171,63 @@
         "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor-support.ts",
+        "symbol": "writeSuccessionPredecessorCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor.service.ts",
+        "reason": "S17 cancels the predecessor after its successor authorized; the coverage notice is emitted after commit (AC:B8b:9)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "writeSuccessorCutStatus",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/successor-cut-after-commit.ts",
+        "reason": "S31 cuts the successor after a predecessor chargeback; AC:B8b:13 requires the transaction-local status write and post-commit coverage notice."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+        "symbol": "cutSuccessorWrites",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S31 closes the deferred courtesy balance as an audit record without changing its coverage source (AC:B8b:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription.service.ts",
+        "reason": "S22 ends a PAUSED principal today; a COURTESY pause emits coverage until cancellation, and the REMOVED notice follows the commit (AC:B8b:5)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedScheduledCancellation",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "S22 moves a credited PRINCIPAL row from PAUSED to source-emitting CANCEL_SCHEDULED; its caller emits SUBSCRIPTION/CHANGED after commit (AC:B8b:5)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
         "symbol": "writeRevocation",
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
         "reason": "S36 moves ACTIVE/GRACE_PERIOD/CANCEL_SCHEDULED/PAUSED to CANCELLED and ends service now (AC:B5:20); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/register-late-manual-payment.service.ts",
+        "symbol": "registerLateManualPayment",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "MP4 moves SUSPENDED, which emits no source, to ACTIVE on S7; emitAddedAfterCommit sends the ADDED coverage notice after commit (AC:B5:18)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts",
@@ -146,12 +262,108 @@
         "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-instances.service.ts",
+        "symbol": "expireAddonInstances",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A4 expires due ACTIVE fixed-days addon instances; emitAddonCoverageRemoved sends the ADDON removal notice after each instance transaction commits (AC:B10:5)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
         "symbol": "applyA5",
         "table": "addonInstances",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
+        "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25) and writes addon_instance.status_changed in the same transaction after the guarded update; an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a6.ts",
+        "symbol": "applyA6",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A6 consumes a live LISTING addon whose target reached PURGED; an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the removal after commit (AC:B10:6)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
+        "symbol": "purchaseAddon",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A1 links a newly PENDING_AUTHORIZATION instance to its complement; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/choose-free-addon.service.ts",
+        "symbol": "chooseFreeAddon",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A1-bis inserts an ACTIVE free addon under a live grant; emitAddonCoverageAdded sends the ADDON notice after commit (AC:B10:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/purchase-addon-complement.ts",
+        "symbol": "insertPendingComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A1 creates a PENDING_AUTHORIZATION complement, which emits no subscription coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2.ts",
+        "symbol": "applyA2Recurring",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates a recurring addon; emitAddonCoverageAdded sends the ADDON coverage notice after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2.ts",
+        "symbol": "applyA2Recurring",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates the complement alongside its addon; emitAddonCoverageAdded sends coverage after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time.ts",
+        "symbol": "confirmOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "A2 activates an approved one-time addon; emitAddonCoverageAdded sends coverage after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows-one-time.ts",
+        "symbol": "abandonOneTimeAddon",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
+        "symbol": "rejectOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A7 abandons a declined one-time addon still in PENDING_AUTHORIZATION; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
+        "symbol": "abandonRecurring",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending COMPLEMENTO row; only PRINCIPAL rows emit subscription coverage."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
+        "symbol": "abandonRecurring",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A3 abandons a still pending recurring addon; pending instances emit no ADDON coverage source."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
@@ -170,12 +382,52 @@
         "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/pause-subscription.service.ts",
+        "symbol": "pauseSubscription",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S8 moves an ACTIVE PRINCIPAL to PAUSED, which emits no source in subscription-sources.ts; the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+        "symbol": "reissueDeferredCourtesy",
+        "table": "courtesyGrants",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S9 clears the deferred balance on the same grant it attaches to the successor, making the COURTESY source eligible in the transaction that pauses the principal (AC:B8b:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+        "symbol": "reissueDeferredCourtesy",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S9 moves the ACTIVE PRINCIPAL to PAUSED in the same transaction that re-emits its COURTESY source; the CHANGED coverage notice is sent after commit (AC:B8b:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+        "symbol": "resumeSubscription",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S10 returns a PAUSED PRINCIPAL to ACTIVE, which emits a subscription coverage source after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
         "symbol": "applyS12ToPrincipal",
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
         "reason": "S12 moves a PRINCIPAL CANCEL_SCHEDULED whose service_ends_at passed to CANCELLED (AC:B8a:5); the coverage notice is emitted after commit by emitServiceEndRemoved."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12-chargeback.ts",
+        "symbol": "applyS12ByChargeback",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "AC:B8a:7 ends a CANCEL_SCHEDULED principal immediately after a credited chargeback; emitServiceEndRemoved sends the coverage notice after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
@@ -290,6 +542,38 @@
         "reason": "HOS-1732: after the provider rejected the creation, the retry updates the declared payer email on the same PENDING_AUTHORIZATION row (no provider link yet); the row stays uncovered, so coverage does not change."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "linkClosedPredecessor",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "clearSuccessorLink",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "repointComplements",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 reanchors a complement on the live successor without turning off its coverage source (AC:B8b:10)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+        "symbol": "deferOrCloseCourtesy",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S18 records the balance of a courtesy on a dead predecessor; its pause was already closed, so no live coverage source turns off here (AC:B8b:10)."
+    },
+    {
         "file": "packages/db/src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts",
         "symbol": "stampSweptRow",
         "table": "subscriptions",
@@ -298,11 +582,69 @@
         "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
     },
     {
+        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
+        "symbol": "sendOneTimeOrder",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/apply-scheduled-change.service.ts",
+        "symbol": "applyScheduledChangeInTx",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/apply-due-scheduled-changes.service.ts",
+        "reason": "TRANS:B:S38 changes the subscription plan and billing option; the due-change batch emits the post-commit coverage notice."
+    },
+    {
         "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
         "symbol": "reanchorSubscriptionsToVersion",
         "table": "subscriptions",
         "effect": "neutral",
         "via": null,
         "reason": "HOS-2037 moves a live subscription to an additive, price-neutral twin version; status and coverage periods are untouched, so no coverage source turns off."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+        "symbol": "grantTemporaryCourtesy",
+        "table": "courtesyGrants",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S34 extends the live courtesy grant and S9 inserts it in the transaction that opens the COURTESY pause (AC:B9b:7-8)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+        "symbol": "grantTemporaryCourtesy",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S9 changes the ACTIVE principal to PAUSED while opening the COURTESY source; coverage change is emitted after commit (AC:B9b:7)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/forfeit-courtesy-pause.service.ts",
+        "symbol": "forfeitCourtesyAndPause",
+        "table": "courtesyGrants",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S35 ends the live courtesy grant in the transaction that opens the customer pause; coverage loss is recorded in the transaction and change is emitted after commit (AC:B9b:8)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+        "symbol": "resumeSubscription",
+        "table": "courtesyGrants",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "The third S10 event ends the live courtesy grant while resuming the principal; the existing S10 path emits coverage change after commit (AC:B9b:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/trial/cutover-v6-trials.ts",
+        "symbol": "writeCutoverTrials",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": "caller",
+        "notifiedBy": "apps/api/src/services/cutover-v6/step-3.service.ts",
+        "reason": "V6 cutover inserts an active trial for an eligible listing inside runStep3's transaction; runStep3 emits one TRIAL/CHANGED coverage notice per written trial after that commit and none for a conflict-skipped one (HOS-2091)."
     }
 ]

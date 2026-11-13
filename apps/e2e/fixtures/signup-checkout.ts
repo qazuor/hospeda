@@ -16,13 +16,14 @@ export type SignupCheckoutConfirmation = {
     readonly authorizationWindowEndsAt: string;
 };
 
-/** The 0144 catalog plans these fixtures hold a monthly option of. */
+/** Catalog slugs used by V7 e2e plan activation (AC:V7:19, TEST:V7:22). */
 export type CatalogSlug =
     | 'owner-basico'
     | 'owner-pro'
     | 'owner-premium'
     | 'tourist-vip'
-    | 'partner-silver';
+    | 'partner-silver'
+    | 'partner-gold';
 
 /**
  * Reads a limit value from the current version of a catalog plan without writing.
@@ -54,10 +55,12 @@ export async function readCurrentPlanLimit(options: {
 }
 
 /**
- * The monthly billing option of the current catalog version of `slug`,
- * inserted when the 0144 catalog has none (it seeds no billing options).
+ * The monthly billing option of the current catalog version of `slug`.
+ * Migration `0176` loads the real options, but the E2E seed empties that catalog
+ * on purpose (HOS-1827), so the helper inserts the monthly option when it is
+ * missing and reuses it otherwise.
  *
- * @param slug - The 0144 catalog plan
+ * @param slug - Catalog plan slug
  * @returns The billing option id
  */
 export async function monthlyOptionForSlug(slug: CatalogSlug): Promise<string> {

@@ -37,6 +37,7 @@ function renderConfirming({
     readonly recurringListingAddons: number | null;
 }) {
     const notes = buildUnpublishConfirmNotes({
+        locale: 'es',
         t: es.t,
         tPlural: es.tPlural,
         trialRunning,
@@ -47,6 +48,13 @@ function renderConfirming({
                       listingId: '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11',
                       publicationStatus: 'PUBLISHED' as never,
                       recurringListingAddons,
+                      recurringListingAddonItems: Array.from(
+                          { length: recurringListingAddons },
+                          (_, index) => ({
+                              addonVersionId: `version-${index}`,
+                              name: `Destaque ${index + 1}`
+                          })
+                      ),
                       notices: []
                   }
     });
@@ -61,6 +69,9 @@ function renderConfirming({
             errorText="No se pudo despublicar."
             trialNote={notes.trialNote}
             recurringNote={notes.recurringNote}
+            recurringAddonNames={notes.recurringAddonNames}
+            withdrawHref={notes.withdrawHref}
+            withdrawLabel={es.t('host.properties.card.recurringWithdrawLink')}
         />
     );
     fireEvent.click(screen.getByRole('button', { name: 'Despublicar' }));
@@ -116,5 +127,26 @@ describe('TEST:V8a:7 UnpublishButton — rows 2 and 25 in the confirmation', () 
         // Assert
         expect(screen.queryByText(TRIAL_LINE)).not.toBeInTheDocument();
         expect(unpublishMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('TEST:B13b:2 AC:B13b:2 — la confirmación nombra los destaques recurrentes y ofrece la baja; sin destaques, no dice nada de ellos', () => {
+    it('names two live addons and links their listing to withdrawal', () => {
+        renderConfirming({ trialRunning: false, recurringListingAddons: 2 });
+        expect(
+            screen.getAllByTestId('unpublish-recurring-addon').map((node) => node.textContent)
+        ).toEqual(['Destaque 1', 'Destaque 2']);
+        expect(screen.getAllByTestId('unpublish-recurring-withdraw-link')).toHaveLength(1);
+        expect(screen.getByTestId('unpublish-recurring-withdraw-link')).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/complementos/?listing=2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11#recurring-addons'
+        );
+    });
+
+    it('renders no recurring note, names or withdrawal link without addons', () => {
+        renderConfirming({ trialRunning: false, recurringListingAddons: 0 });
+        expect(screen.queryAllByTestId('unpublish-recurring-note')).toHaveLength(0);
+        expect(screen.queryAllByTestId('unpublish-recurring-addon')).toHaveLength(0);
+        expect(screen.queryAllByTestId('unpublish-recurring-withdraw-link')).toHaveLength(0);
     });
 });

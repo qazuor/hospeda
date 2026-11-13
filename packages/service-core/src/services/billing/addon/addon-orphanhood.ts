@@ -230,8 +230,15 @@ async function verticalSubscriptionOrphaned(input: {
         .limit(1);
     if (!target) return inconsistent(`Addon target subscription ${input.targetId} not found`);
     if (isLiveStatus(target.status)) return false;
-    // A closed succession relieves it (`sucedida_por` is never cleared).
-    if (target.succeededById !== null) return false;
+    // Only a successor whose predecessor link was cleared closes the succession (AC:B8b:13).
+    if (target.succeededById !== null) {
+        const [successor] = await input.tx
+            .select({ predecessorRef: subscriptions.succeedsId })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, target.succeededById))
+            .limit(1);
+        if (successor?.predecessorRef === null) return false;
+    }
     // A succession in progress relieves it only while its successor is a live row (row 11).
     if (await isLiveSuccessionPredecessor({ subscriptionId: target.id, tx: input.tx }))
         return false;

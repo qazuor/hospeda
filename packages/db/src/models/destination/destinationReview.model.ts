@@ -1,4 +1,5 @@
 import type { DestinationReview } from '@repo/schemas';
+import type { AnyColumn, SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { destinationReviews } from '../../schemas/destination/destination_review.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -55,6 +56,11 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
                     db.query.destinationReviews.findMany({
                         where: whereClause,
                         with: { user: true, destination: true },
+                        // Without an explicit order, pages and "newest" results depend on the database plan.
+                        orderBy: (
+                            reviews: { createdAt: AnyColumn; id: AnyColumn },
+                            { desc }: { desc: (column: AnyColumn) => SQL }
+                        ) => [desc(reviews.createdAt), desc(reviews.id)],
                         limit: pageSize,
                         offset: offset
                     }),
@@ -74,7 +80,12 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
 
             const items = await db.query.destinationReviews.findMany({
                 where: whereClause,
-                with: { user: true, destination: true }
+                with: { user: true, destination: true },
+                // Without an explicit order, pages and "newest" results depend on the database plan.
+                orderBy: (
+                    reviews: { createdAt: AnyColumn; id: AnyColumn },
+                    { desc }: { desc: (column: AnyColumn) => SQL }
+                ) => [desc(reviews.createdAt), desc(reviews.id)]
             });
 
             const result = {

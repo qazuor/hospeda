@@ -51,9 +51,15 @@ import type {
 import {
     type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
+    type OwnManualInstallmentsResponse,
     type OwnSubscriptionsResponseSchema,
+    type PartnerClaimResponseSchema,
+    type SelfSubscriptionPausePreviewResponseSchema,
+    type SelfSubscriptionPauseResponseSchema,
+    type SelfSubscriptionResumeResponseSchema,
     type SubscriptionCancellationPreviewResponseSchema,
     type SubscriptionCancellationResponseSchema,
+    type SubscriptionPlanChangeResponseSchema,
     type VenueListingSectionStatesSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
@@ -1983,6 +1989,16 @@ export interface MyPartner {
 export interface MyPartnerResponse {
     /** `null` when the caller owns no partner listing — never a 403/404. */
     readonly partner: MyPartner | null;
+    /** Owner-only explanation of the public presence surfaces (AC:V8b:1; V7 §1.6). */
+    readonly presence: MyPartnerPresence | null;
+}
+
+/** Presence visibility derived by the API's shared public key reader. */
+export interface MyPartnerPresence {
+    readonly publicPage: 'visible' | 'hidden';
+    readonly carousel: 'visible' | 'hidden';
+    readonly moderated: boolean;
+    readonly moderationReason: string | null;
 }
 
 /**
@@ -2063,6 +2079,7 @@ export interface MyPartnerStats {
         readonly name: string;
         readonly slug?: string;
         readonly websiteUrl?: string;
+        readonly hasPublicPage?: boolean;
     };
     readonly windowDays?: number;
     readonly views?: MyPartnerStatsCounts;
@@ -2087,6 +2104,27 @@ export interface MyPartnerUpdate {
  * caller owns none, mirroring {@link hostTradesApi.mine}.
  */
 export const partnersApi = {
+    /**
+     * Claim an approved Partner using the one-time secret from its email link.
+     *
+     * @param params - Partner UUID and the secret from the URL fragment.
+     * @returns The claim on success; errors distinguish an invalid link (404),
+     * an already claimed Partner (409), an account that owns another Partner
+     * (409), an unverified account (403), or an unauthenticated request (401).
+     */
+    claim({
+        partnerId,
+        secret
+    }: {
+        readonly partnerId: string;
+        readonly secret: string;
+    }): Promise<ApiResult<z.infer<typeof PartnerClaimResponseSchema>>> {
+        return apiClient.postProtected({
+            path: '/api/v1/protected/partner-claims',
+            body: { partnerId, secret }
+        });
+    },
+
     /**
      * Fetches the caller's own partner listing, or `null`.
      *
@@ -5632,6 +5670,55 @@ export const promoCodeApi = {
 };
 
 export const billingSubscriptionApi = {
+    /** Read the owner's pause eligibility and consequences. */
+    pausePreview({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionPausePreviewResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/pause-preview`
+        });
+    },
+    /** Pause an owned subscription for whole months. */
+    pause({
+        subscriptionId,
+        months,
+        courtesyForfeitConfirmed
+    }: {
+        readonly subscriptionId: string;
+        readonly months: number;
+        readonly courtesyForfeitConfirmed?: true;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionPauseResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/pause`,
+            body: { months, ...(courtesyForfeitConfirmed ? { courtesyForfeitConfirmed } : {}) }
+        });
+    },
+    /** Resume an owned customer-request pause. */
+    resume({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SelfSubscriptionResumeResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/resume`,
+            body: {}
+        });
+    },
+    /** Request a change to one owned subscription through the protected route. */
+    requestPlanChange({
+        subscriptionId,
+        billingOptionId
+    }: {
+        readonly subscriptionId: string;
+        readonly billingOptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionPlanChangeResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/plan-change`,
+            body: { billingOptionId }
+        });
+    },
     /** Read the backend-resolved pricing situation for one vertical. */
     pricingSituation({
         vertical,
@@ -5652,6 +5739,17 @@ export const billingSubscriptionApi = {
         readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the authenticated user's currently open manual installments. */
+    listManualInstallments({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<OwnManualInstallmentsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/manual-installments`,
+            cookieHeader
+        });
     },
     /** Read one owned subscription (status and anchored billing option); a foreign id answers 404. */
     read({

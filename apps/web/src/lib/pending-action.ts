@@ -17,7 +17,8 @@
  * - **Page-scoped.** It only matches on the page it was saved for (pathname), so
  *   it is never applied somewhere unrelated.
  * - **Tab-scoped.** Stored in `sessionStorage`, never shared between tabs and
- *   gone when the tab closes.
+ *   gone when the tab closes. A partner-claim secret stays there for at most
+ *   ten minutes and is erased when the action is taken.
  * - **Single slot.** A newer tap replaces an older one.
  *
  * A guest has no user id at save time, so the entry cannot be bound to one
@@ -52,7 +53,12 @@ export type PendingAction =
           readonly entityType: PendingFavoriteEntityType;
           readonly entityId: string;
       }
-    | { readonly kind: 'compare-mode' };
+    | { readonly kind: 'compare-mode' }
+    | {
+          readonly kind: 'partner-claim';
+          readonly partnerId: string;
+          readonly secret: string;
+      };
 
 interface StoredPendingAction {
     readonly action: PendingAction;
@@ -72,6 +78,13 @@ function isPendingAction(value: unknown): value is PendingAction {
     if (typeof value !== 'object' || value === null) return false;
     const candidate = value as Record<string, unknown>;
     if (candidate.kind === 'compare-mode') return true;
+    if (
+        candidate.kind === 'partner-claim' &&
+        typeof candidate.partnerId === 'string' &&
+        candidate.partnerId.length > 0 &&
+        typeof candidate.secret === 'string'
+    )
+        return true;
     return (
         candidate.kind === 'favorite' &&
         typeof candidate.entityType === 'string' &&

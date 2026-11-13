@@ -152,6 +152,21 @@ describe('TEST:1684:3 AC-1684:2 the mutation posts the action to its vertical mo
         });
     });
 
+    it('invalidates the pending fix request list after a successful moderation action', async () => {
+        answer({ publicationStatus: 'MODERATED', fixRequestOpen: false });
+        const queryClient = createClient();
+        const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+        const { result } = renderHook(() => useModerateListingMutation(), {
+            wrapper: createWrapper(queryClient)
+        });
+        await result.current.mutateAsync({
+            vertical: 'venue',
+            id: LISTING_ID,
+            body: { action: 'CLOSE_FIX_REQUEST', reason: 'Resuelto' }
+        });
+        expect(invalidate).toHaveBeenCalledWith({ queryKey: ['listing-fix-requests'] });
+    });
+
     it('rejects when the route answers an error, so the caller can show it', async () => {
         // Arrange
         mockedFetchApi.mockRejectedValue(new Error('Request failed (409)'));

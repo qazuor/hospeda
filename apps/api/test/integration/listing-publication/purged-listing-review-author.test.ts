@@ -20,6 +20,48 @@ const DAY = 86_400_000;
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const fixtures: { listingId: string; destinationId: string; reviewerId: string }[] = [];
 
+async function addAuthorReview(listingId: string, reviewerId: string, content: string) {
+    const [review] = await getDb()
+        .insert(accommodationReviews)
+        .values({
+            accommodationId: listingId,
+            userId: reviewerId,
+            title: 'Author review title',
+            content,
+            rating: {
+                cleanliness: 5,
+                hospitality: 5,
+                services: 5,
+                accuracy: 5,
+                communication: 5,
+                location: 5
+            },
+            averageRating: 5,
+            lifecycleState: 'ACTIVE',
+            moderationState: 'APPROVED'
+        })
+        .returning();
+    if (!review) throw new Error('Author review fixture insert failed');
+    return review;
+}
+
+async function fetchOwnReviews(reviewerId: string) {
+    const response = await app.request('/api/v1/protected/users/me/reviews?type=accommodation', {
+        headers: actorHeaders({ id: reviewerId })
+    });
+    expect(response.status).toBe(200);
+    return (await response.json()) as {
+        data: {
+            accommodationReviews: Array<{
+                id: string;
+                accommodationGone?: boolean;
+                accommodationSlug?: string | null;
+            }>;
+            totals: { accommodationReviews: number };
+        };
+    };
+}
+
 beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
@@ -63,27 +105,7 @@ describe('TEST:1686:6 AC:1686:6 the author still sees their review of a PURGED l
             WHERE id = ${listingId}::uuid
         `);
         const reviewText = `Author review ${randomUUID()}`;
-        const [review] = await getDb()
-            .insert(accommodationReviews)
-            .values({
-                accommodationId: listingId,
-                userId: reviewer.id,
-                title: 'Author review title',
-                content: reviewText,
-                rating: {
-                    cleanliness: 5,
-                    hospitality: 5,
-                    services: 5,
-                    accuracy: 5,
-                    communication: 5,
-                    location: 5
-                },
-                averageRating: 5,
-                lifecycleState: 'ACTIVE',
-                moderationState: 'APPROVED'
-            })
-            .returning();
-        if (!review) throw new Error('Author review fixture insert failed');
+        const review = await addAuthorReview(listingId, reviewer.id, reviewText);
 
         const purge = await purgeInactiveListing({
             ...getListingPublicationPorts(),
@@ -115,10 +137,35 @@ describe('TEST:1686:6 AC:1686:6 the author still sees their review of a PURGED l
             { headers }
         );
         expect(reviewsResponse.status).toBe(200);
-        const reviewsBody = JSON.stringify(await reviewsResponse.json());
-        expect(reviewsBody).toContain(review.id);
-        expect(reviewsBody).toContain(reviewText);
-        expect(reviewsBody).toContain('"accommodationReviews":1');
+        const reviewsBody = (await reviewsResponse.json()) as {
+            data: {
+                accommodationReviews: Array<{
+                    id: string;
+                    content: string;
+                    accommodationGone?: boolean;
+                    accommodationSlug?: string | null;
+                }>;
+                totals: { accommodationReviews: number };
+            };
+        };
+        expect(
+            reviewsBody.data.accommodationReviews.map(
+                ({ id, content, accommodationGone, accommodationSlug }) => ({
+                    id,
+                    content,
+                    accommodationGone,
+                    accommodationSlug
+                })
+            )
+        ).toEqual([
+            {
+                id: review.id,
+                content: reviewText,
+                accommodationGone: true,
+                accommodationSlug: null
+            }
+        ]);
+        expect(reviewsBody.data.totals.accommodationReviews).toBe(1);
 
         const statsResponse = await app.request('/api/v1/protected/users/me/stats', { headers });
         expect(statsResponse.status).toBe(200);
@@ -137,5 +184,73 @@ describe('TEST:1686:6 AC:1686:6 the author still sees their review of a PURGED l
         const publicBody = JSON.stringify(await publicResponse.json());
         expect(publicBody).not.toContain(review.id);
         expect(publicBody).not.toContain(reviewText);
+    });
+
+    it('keeps the live published listing slug on the author review', async () => {
+        const reviewer = await createOwner();
+        const destinationId = await createVerticalDestination();
+        const listingId = await createListing({
+            ownerId: reviewer.id,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED,
+            complete: false
+        });
+        fixtures.push({ listingId, destinationId, reviewerId: reviewer.id });
+        const review = await addAuthorReview(listingId, reviewer.id, `Live review ${randomUUID()}`);
+        const slugResult = await getDb().execute(sql<{ slug: string }>`
+            SELECT slug FROM accommodations WHERE id = ${listingId}::uuid
+        `);
+        const slug = slugResult.rows[0]?.slug;
+        if (!slug) throw new Error('Published listing slug fixture read failed');
+
+        const body = await fetchOwnReviews(reviewer.id);
+        expect(
+            body.data.accommodationReviews.map(({ id, accommodationGone, accommodationSlug }) => ({
+                id,
+                accommodationGone,
+                accommodationSlug
+            }))
+        ).toEqual([{ id: review.id, accommodationGone: false, accommodationSlug: slug }]);
+        expect(body.data.totals.accommodationReviews).toBe(1);
+    });
+
+    it('marks a soft-deleted published listing gone while keeping its review counted', async () => {
+        const reviewer = await createOwner();
+        const destinationId = await createVerticalDestination();
+        const listingId = await createListing({
+            ownerId: reviewer.id,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED,
+            complete: false
+        });
+        fixtures.push({ listingId, destinationId, reviewerId: reviewer.id });
+        const review = await addAuthorReview(
+            listingId,
+            reviewer.id,
+            `Deleted review ${randomUUID()}`
+        );
+        await getDb().execute(sql`
+            UPDATE accommodations SET deleted_at = ${new Date()} WHERE id = ${listingId}::uuid
+        `);
+
+        const body = await fetchOwnReviews(reviewer.id);
+        expect(
+            body.data.accommodationReviews.map(({ id, accommodationGone, accommodationSlug }) => ({
+                id,
+                accommodationGone,
+                accommodationSlug
+            }))
+        ).toEqual([{ id: review.id, accommodationGone: true, accommodationSlug: null }]);
+        expect(body.data.totals.accommodationReviews).toBe(1);
+
+        const statsResponse = await app.request('/api/v1/protected/users/me/stats', {
+            headers: actorHeaders({ id: reviewer.id })
+        });
+        expect(statsResponse.status).toBe(200);
+        const statsBody = (await statsResponse.json()) as {
+            data?: { reviewCount?: number };
+            reviewCount?: number;
+        };
+        expect(statsBody.data?.reviewCount ?? statsBody.reviewCount).toBe(1);
     });
 });

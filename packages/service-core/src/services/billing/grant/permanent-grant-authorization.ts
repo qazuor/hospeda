@@ -6,9 +6,9 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause.j
 import { isSystemActor } from '../../../utils/system-actor.js';
 
 /**
- * Shared ACC_2 authorization for permanent grant writes and the future
- * revocation service. Revocation must pass `s21Cause: 'GRANT_REVOKED'` to
- * orphanhood when it turns off addons covered by the grant.
+ * Shared ACC_2 authorization for permanent grant writes, including
+ * `revokePermanentGrant` in `permanent-grant-revoke.ts`, which passes
+ * `s21Cause: 'GRANT_REVOKED'` to A5 for covered addons.
  * @module services/billing/grant/permanent-grant-authorization
  */
 
@@ -24,7 +24,8 @@ export const PERMANENT_GRANT_REJECTIONS = [
     'PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED',
     'PERMANENT_GRANT_ALREADY_LIVE',
     'PERMANENT_GRANT_REFERENCE_NOT_FOUND',
-    'PERMANENT_GRANT_FLOOR_NOT_CURRENT'
+    'PERMANENT_GRANT_FLOOR_NOT_CURRENT',
+    'PERMANENT_GRANT_LISTING_SOFT_DELETED'
 ] as const;
 
 /** A typed rejection reason of a permanent grant act. */
@@ -38,7 +39,8 @@ const REJECTION_CODES: Readonly<Record<PermanentGrantRejection, ServiceErrorCode
     PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED: ServiceErrorCode.ALREADY_EXISTS,
     PERMANENT_GRANT_ALREADY_LIVE: ServiceErrorCode.ALREADY_EXISTS,
     PERMANENT_GRANT_REFERENCE_NOT_FOUND: ServiceErrorCode.VALIDATION_ERROR,
-    PERMANENT_GRANT_FLOOR_NOT_CURRENT: ServiceErrorCode.VALIDATION_ERROR
+    PERMANENT_GRANT_FLOOR_NOT_CURRENT: ServiceErrorCode.VALIDATION_ERROR,
+    PERMANENT_GRANT_LISTING_SOFT_DELETED: ServiceErrorCode.ALREADY_EXISTS
 };
 
 const LIVE_BENEFICIARY_CONSTRAINT = 'uq_permanent_grant_live_beneficiary';

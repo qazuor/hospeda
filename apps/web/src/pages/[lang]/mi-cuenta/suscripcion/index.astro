@@ -32,7 +32,8 @@ import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.clie
 import { TrialStatusEnum } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
-import { parseReturnSubscriptionId } from '@/lib/billing/subscription-return';
+import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/billing/subscription-return';
+import { getPlanName } from '@/lib/billing-i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -104,6 +105,19 @@ if (returnSubscriptionId) {
 		accountEmail={user.email}
 		declaredPayerEmail={returnDeclaredPayerEmail}
 	/>}
+	{selectDeclinedNoticesToShow({ declinedSignups: ownSubscriptions?.declinedSignups ?? [], returnSubscriptionId }).map((notice) => (
+		<SubscriptionReturn
+			client:load
+			locale={locale}
+			subscriptionId={notice.subscriptionId}
+			initialStatus="CHARGE_DECLINED"
+			billingOptionId={notice.billingOptionId}
+			accountEmail={user.email}
+			declaredPayerEmail={notice.declaredPayerEmail}
+			attemptPlanName={getPlanName({ plan: { slug: notice.plan.slug, name: notice.plan.name, description: '' }, t })}
+		/>
+	))}
+	<a data-testid="addon-purchase-link" href={buildUrl({ locale, path: 'mi-cuenta/complementos' })}>{t('billing.addons.viewAvailable')}</a>
 	<div data-subscription-sections>
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />

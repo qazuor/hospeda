@@ -15,5 +15,30 @@
             "cta": "View accommodation",
             "manageAlerts": "Manage my alerts"
         }
+    },
+    "partnerApplication": {
+        "claimNotice": {
+            "subject": "Claim your Partner on Hospeda",
+            "preview": "We approved {{partnerName}}'s application",
+            "heading": "We approved {{partnerName}}'s application",
+            "body": "To manage it, open the link below and sign in with the account you want to use. That account will own the Partner.",
+            "singleUse": "This personal link can only be used once. If we sent you an earlier one, it no longer works. Do not forward it.",
+            "ignore": "If you did not apply to become a Hospeda Partner, you can ignore this email.",
+            "cta": "Claim the Partner"
+        },
+        "rejected": {
+            "subject": "Your Hospeda Partner application",
+            "preview": "We reviewed your application",
+            "heading": "We reviewed your application",
+            "body": "We are unable to approve it this time.",
+            "reapply": "You can apply again starting {{date}}."
+        }
+    },
+    "manualInstallmentOpened": {
+        "subject": "You have an installment to pay on Hospeda",
+        "heading": "Your installment is ready to pay",
+        "introFirst": "We set up your Partner subscription. Here are the details of your first installment.",
+        "introRenewal": "The installment for a new period of your Partner subscription is open.",
+        "cta": "View my installment"
     }
 }

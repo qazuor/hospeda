@@ -1,4 +1,6 @@
+import enAdminBilling from '@repo/i18n/locales/en/admin-billing.json';
 import esAdminBilling from '@repo/i18n/locales/es/admin-billing.json';
+import ptAdminBilling from '@repo/i18n/locales/pt/admin-billing.json';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import {
@@ -16,7 +18,7 @@ import {
     readCancellationReason
 } from '../cancellation-reasons';
 
-function resolveEs(key: string): unknown {
+function resolveKey(key: string, locale: Record<string, unknown>): unknown {
     return key
         .replace(/^admin-billing\./, '')
         .split('.')
@@ -25,11 +27,11 @@ function resolveEs(key: string): unknown {
                 typeof node === 'object' && node !== null
                     ? (node as Record<string, unknown>)[segment]
                     : undefined,
-            esAdminBilling
+            locale
         );
 }
 describe('TEST:1696:3 AC:1696:3 cancellation reasons', () => {
-    it('has exhaustive key counts and every key exists in es', () => {
+    it('has exhaustive key counts and every key exists in es, en and pt', () => {
         const maps = [
             CANCELLATION_REASON_KEYS,
             CANCELLATION_NOTICE_KEYS,
@@ -42,11 +44,13 @@ describe('TEST:1696:3 AC:1696:3 cancellation reasons', () => {
             CANCELLATION_CYCLE_KEYS
         ];
         for (const map of maps)
-            for (const key of Object.values(map)) expect(typeof resolveEs(key)).toBe('string');
+            for (const key of Object.values(map))
+                for (const locale of [esAdminBilling, enAdminBilling, ptAdminBilling])
+                    expect(typeof resolveKey(key, locale), key).toBe('string');
         expect(KNOWN_CANCELLATION_REASONS).toHaveLength(6);
         expect(Object.keys(CANCELLATION_REASON_KEYS)).toHaveLength(5);
         expect(Object.keys(CANCELLATION_NOTICE_KEYS)).toHaveLength(1);
-        expect(Object.keys(CANCELLATION_ORIGIN_KEYS)).toHaveLength(4);
+        expect(Object.keys(CANCELLATION_ORIGIN_KEYS)).toHaveLength(5);
         expect(Object.keys(CANCELLATION_CONFIRM_KEYS)).toHaveLength(3);
         expect(Object.keys(CANCELLATION_OUTCOME_KEYS)).toHaveLength(4);
         expect(Object.keys(CANCELLATION_CANCEL_CALL_KEYS)).toHaveLength(5);

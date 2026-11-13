@@ -1,7 +1,9 @@
 import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import {
+    ADDON_AUTHORIZATION_EXPIRED_SUBJECT,
     ADDON_CANCELLED_SUBJECT,
+    AddonAuthorizationExpired,
     AddonCancelled,
     ARREARS_SUSPENSION_SUBJECT,
     ArrearsSuspension,
@@ -33,11 +35,18 @@ import {
     SignupConfirmed,
     SignupDeclined,
     SignupIncomplete,
+    SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
+    SUCCESSOR_CUT_CANCEL_SUBJECT,
+    SuccessionPredecessorCancel,
+    SuccessorCutCancel,
     TOURIST_VIP_INHERITED_CANCEL_SUBJECT,
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
+import { createBillingAddonRenderers } from './billing-addon-renderers.js';
+import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { parseGraceScheduledChange } from './grace-scheduled-change.js';
 import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
@@ -133,6 +142,16 @@ function addonCancelled(row: EmailOutboxRow) {
     return { subject: ADDON_CANCELLED_SUBJECT, react: <AddonCancelled /> };
 }
 
+function addonAuthorizationExpired(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de autorización del addon');
+    return {
+        subject: ADDON_AUTHORIZATION_EXPIRED_SUBJECT,
+        react: <AddonAuthorizationExpired />
+    };
+}
+
 function firstChargeDeclinedCancel(row: EmailOutboxRow) {
     const data = objectPayload(row);
     if (typeof data.subscriptionId !== 'string')
@@ -170,6 +189,23 @@ function directCancellation(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de baja directa');
     return { subject: DIRECT_CANCELLATION_SUBJECT, react: <DirectCancellation /> };
+}
+
+function successionPredecessorCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cambio de plan');
+    return {
+        subject: SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
+        react: <SuccessionPredecessorCancel />
+    };
+}
+
+function successorCutCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de corte de la sucesión');
+    return { subject: SUCCESSOR_CUT_CANCEL_SUBJECT, react: <SuccessorCutCancel /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -319,10 +355,15 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
         typeof data.vertical !== 'string' ||
         data.vertical.trim() === '' ||
         !graceEndsAt ||
-        Number.isNaN(graceEndsAt.getTime())
+        Number.isNaN(graceEndsAt.getTime()) ||
+        (data.planChangePending !== undefined && typeof data.planChangePending !== 'boolean')
     )
         throw new TypeError('Faltan datos requeridos del aviso de inicio del grace');
     const graceEndDate = formatDate({ dateString: getLocalDateString({ instant: graceEndsAt }) });
+    const scheduledChange = parseGraceScheduledChange({
+        value: data.scheduledChange,
+        errorMessage: 'Faltan datos requeridos del aviso de inicio del grace'
+    });
     return {
         subject: GRACE_STARTED_SUBJECT,
         react: (
@@ -330,6 +371,8 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
                 vertical={data.vertical}
                 graceEndDate={graceEndDate}
                 subscriptionUrl={subscriptionUrl}
+                planChangePending={data.planChangePending === true}
+                scheduledChange={scheduledChange}
             />
         )
     };
@@ -408,7 +451,8 @@ function paymentCredited(row: EmailOutboxRow) {
 }
 
 /**
- * Renderers for the notices emitted by the subscription signup flow, plus the
+ * Renderers for the notices emitted by the subscription signup flow, plus S6's
+ * chargeback suspension notice (AC:B7:10), and the
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
  * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), the
  * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
@@ -422,6 +466,8 @@ export function createBillingSignupRenderers(input: {
 }): Readonly<Record<string, OutboxMailRenderer>> {
     const subscriptionUrl = `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}`;
     return {
+        ...createBillingAddonRenderers(),
+        ...createBillingChargebackRenderers({ subscriptionUrl }),
         'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
         'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
@@ -434,6 +480,7 @@ export function createBillingSignupRenderers(input: {
         'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
         'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),
         'billing.addon-cancelled': ({ row }) => addonCancelled(row),
+        'billing.addon-authorization-expired-cancel': ({ row }) => addonAuthorizationExpired(row),
         'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
         'billing.revocation-cancel': ({ row }) => revocationCancel(row),
         'billing.permanent-grant-cancel': ({ row }) => permanentGrantCancel(row),
@@ -441,6 +488,8 @@ export function createBillingSignupRenderers(input: {
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row),
-        'billing.direct-cancellation': ({ row }) => directCancellation(row)
+        'billing.direct-cancellation': ({ row }) => directCancellation(row),
+        'billing.succession-predecessor-cancel': ({ row }) => successionPredecessorCancel(row),
+        'billing.successor-cut-cancel': ({ row }) => successorCutCancel(row)
     };
 }

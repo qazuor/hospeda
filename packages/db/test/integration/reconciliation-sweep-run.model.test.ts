@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     isReconciliationSweepRunComplete,
@@ -34,6 +34,90 @@ function postgresCause(error: unknown): { code?: string; constraint?: string } |
     }
     return null;
 }
+
+describe('live sweep run lookup', () => {
+    it('uses the database-clock lease and outcome across open slices', async () => {
+        await withTestTransaction(async (tx) => {
+            const expired = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(Date.now() - 3 * 60 * 60_000),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() - interval '1 second'` })
+                .where(eq(reconciliationSweepRuns.id, expired.id));
+            expect(await model.findLiveRun({ tx })).toBeNull();
+
+            const renewed = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(Date.now() - 3 * 60 * 60_000),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() + interval '1 minute'` })
+                .where(eq(reconciliationSweepRuns.id, renewed.id));
+            expect(await model.findLiveRun({ tx })).toMatchObject({ id: renewed.id });
+
+            const closed = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() - interval '1 second'` })
+                .where(eq(reconciliationSweepRuns.id, renewed.id));
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() + interval '1 minute'`, outcome: 'COMPLETED' })
+                .where(eq(reconciliationSweepRuns.id, closed.id));
+            expect(await model.findLiveRun({ tx })).toBeNull();
+
+            const firstSlice = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() + interval '1 minute'` })
+                .where(eq(reconciliationSweepRuns.id, firstSlice.id));
+            const secondSlice = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now() + interval '1 minute'` })
+                .where(eq(reconciliationSweepRuns.id, secondSlice.id));
+            expect([firstSlice.id, secondSlice.id]).toContain(
+                (await model.findLiveRun({ tx }))?.id
+            );
+            expect(
+                await tx
+                    .select({ id: reconciliationSweepRuns.id })
+                    .from(reconciliationSweepRuns)
+                    .where(
+                        sql`${reconciliationSweepRuns.outcome} IS NULL AND ${reconciliationSweepRuns.leaseUntil} > now()`
+                    )
+            ).toHaveLength(2);
+
+            const atBoundary = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(),
+                tx
+            });
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: sql`now()` })
+                .where(eq(reconciliationSweepRuns.id, atBoundary.id));
+            expect(await model.getRunLiveness({ id: atBoundary.id, tx })).toBe('abandoned');
+        });
+    });
+});
 
 describe('reconciliation sweep run registry (supports TEST:B11:24)', () => {
     it('opens, closes once, and defines completeness from finish and failures', async () => {

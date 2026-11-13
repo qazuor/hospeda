@@ -13,7 +13,10 @@ export const SUPER_ADMIN_EXCLUSIVE_PERMISSIONS = [
     PermissionEnum.MAINTENANCE_MODE_WRITE,
     PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
     PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
-    PermissionEnum.BILLING_MANAGE_PROMO_CODES
+    PermissionEnum.BILLING_MANAGE_PROMO_CODES,
+    PermissionEnum.BILLING_SET_CYCLE_PRICE,
+    PermissionEnum.BILLING_PUBLISH_ADDON_VERSION,
+    PermissionEnum.BILLING_MIGRATE_PLAN
 ] as const;
 
 /** A permission that can be held only through the `SUPER_ADMIN` role. */

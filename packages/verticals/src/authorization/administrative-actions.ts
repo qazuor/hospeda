@@ -41,7 +41,7 @@ export type AdministrativeAction = (typeof ADMINISTRATIVE_ACTIONS)[number];
 /**
  * Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3.
  * Each row is compared with the gate of the route that implements it in
- * `apps/api/test/routes/administrative-action-route-permissions.guard.test.ts` (HOS-1689).
+ * `apps/api/test/routes/administrative-action-route-permissions.*.guard.test.ts` (HOS-1689).
  *
  * Consequence of `ACC_27` (HOS-1875): `VENUE_EDIT_ALL` is now an
  * administrative permission, so a system actor can never hold it
@@ -64,10 +64,19 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
         pendingOwnPermission: null
     },
-    ACC_3: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'B5 (HOS-1541)' },
-    ACC_4: { permissions: [], pendingOwnPermission: 'B7' },
-    ACC_5: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1484)' },
-    ACC_6: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1489)' },
+    ACC_3: {
+        permissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
+        pendingOwnPermission: null
+    },
+    ACC_4: {
+        permissions: [PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID],
+        pendingOwnPermission: null
+    },
+    ACC_5: {
+        permissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION],
+        pendingOwnPermission: null
+    },
+    ACC_6: { permissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING], pendingOwnPermission: null },
     ACC_7: {
         permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],
         pendingOwnPermission: null
@@ -76,26 +85,35 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
         pendingOwnPermission: null
     },
-    ACC_9: { permissions: [], pendingOwnPermission: 'B8b' },
-    ACC_10: { permissions: [], pendingOwnPermission: 'B8b' },
+    ACC_9: { permissions: [PermissionEnum.BILLING_PAUSE_SUBSCRIPTION], pendingOwnPermission: null },
+    ACC_10: {
+        permissions: [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN],
+        pendingOwnPermission: null
+    },
     ACC_11: {
         permissions: [PermissionEnum.TRIAL_EXTEND],
         pendingOwnPermission: null
     },
     ACC_12: { permissions: [PermissionEnum.LISTING_MODERATE], pendingOwnPermission: null },
-    ACC_13: { permissions: [], pendingOwnPermission: 'B6' },
+    ACC_13: { permissions: [PermissionEnum.BILLING_REFUND], pendingOwnPermission: null },
     ACC_14: { permissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL], pendingOwnPermission: null },
     ACC_15: {
         permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],
         pendingOwnPermission: null
     },
-    ACC_17: { permissions: [], pendingOwnPermission: 'B12 (HOS-1612)' },
+    ACC_17: { permissions: [PermissionEnum.BILLING_MIGRATE_PLAN], pendingOwnPermission: null },
     ACC_18: {
         permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE],
         pendingOwnPermission: 'V2.3 (HOS-1436)'
     },
-    ACC_19: { permissions: [], pendingOwnPermission: 'B2 (HOS-1515)' },
-    ACC_20: { permissions: [], pendingOwnPermission: 'B10 (HOS-1595)' },
+    ACC_19: {
+        permissions: [PermissionEnum.BILLING_SET_CYCLE_PRICE],
+        pendingOwnPermission: null
+    },
+    ACC_20: {
+        permissions: [PermissionEnum.BILLING_PUBLISH_ADDON_VERSION],
+        pendingOwnPermission: null
+    },
     ACC_21: {
         permissions: [PermissionEnum.BILLING_MANAGE_PROMO_CODES],
         pendingOwnPermission: null
@@ -110,8 +128,8 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         pendingOwnPermission: null
     },
     ACC_25: {
-        permissions: [PermissionEnum.PARTNER_MANAGE],
-        pendingOwnPermission: 'V8b (HOS-1498)'
+        permissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE],
+        pendingOwnPermission: null
     },
     ACC_26: {
         permissions: [PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE],
@@ -137,10 +155,11 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
  * Permissions that guarded an administrative action before it got its own
  * permission, mapped to the action they used to guard. They are still granted
  * to staff roles, so they stay administrative: a system actor must keep being
- * refused them even though no action row lists them any more. Three actions
+ * refused them even though no action row lists them any more. Four actions
  * left entries here: action 23 moved to `LISTING_PURGE_ON_REQUEST` (V8a.2,
- * HOS-1493), action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494), and
- * action 26 moved to `USER_MANAGE_SUPER_ADMIN_ROLE` (V5.6, HOS-1460); ADMIN
+ * HOS-1493), action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494),
+ * action 25 moved to `PARTNER_EMPTY_PRESENCE` (V8b.3, HOS-1498), and action 26
+ * moved to `USER_MANAGE_SUPER_ADMIN_ROLE` (V5.6, HOS-1460); ADMIN
  * retains the old permission for managing roles other than SUPER_ADMIN.
  * An entry leaves this list only once no role is granted its permission.
  */
@@ -154,7 +173,8 @@ export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
     { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
     { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
     { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
-    { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
+    { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' },
+    { permission: PermissionEnum.PARTNER_MANAGE, formerAction: 'ACC_25' }
 ];
 
 /**

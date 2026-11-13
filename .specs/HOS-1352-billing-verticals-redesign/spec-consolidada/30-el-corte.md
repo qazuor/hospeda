@@ -1445,7 +1445,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 
 (Corte del MVP, owner 2026-10-01, Y y AE; [DEC-ARCH-017](01-decisiones-vigentes.md#dec-arch-017).)
 Las ocho piezas que van después llegan en **fases posteriores, aditivas sobre el sistema nuevo**: no
-reescriben filas ni código del corte, y no traen migración estructural (AD). **Cada fase posterior
+reescriben filas ni código del corte, y traen **sólo migraciones aditivas** (AD, redefinida por el owner el 2026-11-05: [decisión del owner 2026-11-05](01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)). **Cada fase posterior
 viaja en una rama épica nueva** (`epic/**`, `DEC-CI-001`), con **los mismos gates por unidad** —el
 momento 1, pieza por pieza—, y **entra a `staging` entera** (AE). Los momentos 3 a 5 son del corte y
 no se repiten. **El gate propio de una fase posterior** (corte del MVP, owner 2026-10-01, AT, la 1)
@@ -1482,8 +1482,13 @@ que la fase llegue a producción. El checklist que se extiende es de
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1154
 
 <a id="gate-fp-3"></a>
-**Gate de fase, condición 3**: **el drift guard sobre la rama de la fase, en verde**: ninguna
-migración estructural (AP, §4.6). *(Que el drift guard entre como condición del gate lo derivó la
+**Gate de fase, condición 3**: **el drift guard sobre la rama de la fase, en verde, y sólo migraciones
+aditivas** (AP, §4.6; AD redefinida por el owner el 2026-11-05: [decisión del owner 2026-11-05](01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)).
+**Son dos condiciones que se cumplen a la vez, no una**: el drift guard (el schema TS contra las migraciones) sigue exigido; y un guard
+estático rechaza las sentencias destructivas en las migraciones que la rama de la fase agrega.
+**Permitido**: `ALTER TYPE … ADD VALUE` sobre un enum; ensanchar un `CHECK` (`DROP` y `ADD` con más valores);
+`ADD COLUMN` nullable o con default; índices y restricciones nuevos. **Prohibido**: `DROP` o `RENAME` de una tabla o de
+una columna, y cambiar el tipo de una columna. *(Que el drift guard entre como condición del gate lo derivó la
 fuente de la mitigación de AP; lo marca.)* *(Cómo se enciende sobre la rama de la fase lo fija
 [DEC-CI-001](01-decisiones-vigentes.md#dec-ci-001); la fuente lo marca como lo que falta escribir al
 abrir la primera fase: `D/16-fase-7-del-paraguas.md:1023`, y va en [80-abiertos.md](80-abiertos.md)
@@ -1738,12 +1743,13 @@ Fuente: [GATE:FP](#gate-fp), [GATE:FP.1](#gate-fp-1), [DEC-ARCH-007#📌3](01-de
 Fuente: [GATE:FP.2](#gate-fp-2)
 
 <a id="ac-corte-16"></a>
-**AC:CORTE:16** — una fase posterior no trae migración estructural
+**AC:CORTE:16** — una fase posterior sólo trae migraciones aditivas
 
 - **Dado** la rama de una fase posterior
 - **Cuando** corre el drift guard sobre ella
-- **Entonces** está en verde: la fase no trae ninguna migración estructural, porque todo el esquema
-  nació al corte
+- **Entonces** está en verde: la fase no trae ninguna migración destructiva (`DROP` o `RENAME` de tabla o columna, cambio de
+  tipo), porque todo el esquema nació al corte y lo que una fase agrega es aditivo
+  ([decisión del owner 2026-11-05](01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas))
 
 Fuente: [GATE:FP.3](#gate-fp-3), [AD](01-decisiones-vigentes.md#own-41-corte-del-mvp-t1-ad), [AP](01-decisiones-vigentes.md#own-41-corte-del-mvp-t3-ap)
 
@@ -1914,7 +1920,7 @@ Fuente: [GATE:FP](#gate-fp), [GATE:FP.2](#gate-fp-2)
 <a id="test-corte-16"></a>
 **TEST:CORTE:16** — el drift guard sobre la rama de cada fase posterior.
 Tipo: guard estático
-Mutación: agregar a la rama de la fase una migración estructural y ver que el drift guard falla (es la mitigación de AP: falla si la fase trae una migración estructural).
+Mutación: agregar a la rama de la fase una migración con `ALTER TABLE … DROP COLUMN …` y ver que el guard estático de migraciones destructivas falla (es la mitigación de AP, redefinida el 2026-11-05: falla si la fase trae una migración destructiva). El drift guard (schema TS contra migraciones) sigue siendo una condición aparte: cambiar una columna en el schema sin migración lo hace fallar.
 Cubre: [AC:CORTE:16](#ac-corte-16)
 Fuente: [GATE:FP.3](#gate-fp-3), [AP](01-decisiones-vigentes.md#own-41-corte-del-mvp-t3-ap)
 

@@ -8,7 +8,8 @@ const ROUTES = [
     join(import.meta.dirname, '../../src/routes/experience/admin/moderate.ts'),
     join(import.meta.dirname, '../../src/routes/accommodation/admin/moderation-state.ts'),
     join(import.meta.dirname, '../../src/routes/venue/admin/moderation-state.ts'),
-    join(import.meta.dirname, '../../src/routes/experience/admin/moderation-state.ts')
+    join(import.meta.dirname, '../../src/routes/experience/admin/moderation-state.ts'),
+    join(import.meta.dirname, '../../src/routes/listing-fix-requests/admin/index.ts')
 ];
 
 describe('TEST:V6:12 listing moderation permission guard', () => {

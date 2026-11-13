@@ -1422,6 +1422,132 @@
       "when": 1794461399118,
       "tag": "0202_hos_2105_faq_draft_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1794461459118,
+      "tag": "0203_hos1484_partner_resolve_application",
+      "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1794461519118,
+      "tag": "0204_hos1551_billing_refund_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1794461579118,
+      "tag": "0205_hos1485_partner_application_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1794461639118,
+      "tag": "0206_hos1486_session_auth_method",
+      "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1794461699118,
+      "tag": "0207_hos1541_manual_payment_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 208,
+      "version": "7",
+      "when": 1794461759118,
+      "tag": "0208_hos1487_partner_edit_own",
+      "breakpoints": true
+    },
+    {
+      "idx": 209,
+      "version": "7",
+      "when": 1794461819118,
+      "tag": "0209_hos1488_partner_presence_moderation",
+      "breakpoints": true
+    },
+    {
+      "idx": 210,
+      "version": "7",
+      "when": 1794461879118,
+      "tag": "0210_hos1542_manual_payment_reimputed_and_entry",
+      "breakpoints": true
+    },
+    {
+      "idx": 211,
+      "version": "7",
+      "when": 1794461939118,
+      "tag": "0211_hos1489_partner_configure_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 212,
+      "version": "7",
+      "when": 1794461999118,
+      "tag": "0212_hos1498_partner_empty_presence",
+      "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1794462059118,
+      "tag": "0213_large_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1794462119118,
+      "tag": "0214_hos1515_cycle_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1794462179118,
+      "tag": "0215_vengeful_frog_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1794462239118,
+      "tag": "0216_hos1593_addon_domain_event",
+      "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1794462299118,
+      "tag": "0217_hos1595_addon_version_publication",
+      "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1794462359118,
+      "tag": "0218_lucky_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 219,
+      "version": "7",
+      "when": 1794462419118,
+      "tag": "0219_hos1612_migrate_plan_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1794462479118,
+      "tag": "0220_hos2104_scheduled_change_attempts",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,49 @@ import {
 } from '../../../src/api/billing/subscription-self-cancel.schema.js';
 
 describe('self cancellation schemas', () => {
+    describe('HOS-2064 declined signups', () => {
+        const entry = {
+            subscriptionId: '00000000-0000-4000-8000-000000000002',
+            vertical: 'accommodation',
+            billingOptionId: '00000000-0000-4000-8000-000000000003',
+            declaredPayerEmail: 'payer@example.test',
+            declinedAt: '2026-11-10T12:00:00.000Z',
+            plan: { slug: 'basic', name: 'Basic' }
+        };
+        it('S1 defaults declinedSignups to an empty list when absent', () => {
+            // Arrange
+            const response = { subscriptions: [], deferredCourtesies: [] };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.parse(response);
+            // Assert
+            expect(result.declinedSignups).toEqual([]);
+        });
+        it('S2 parses a declined signup entry', () => {
+            // Arrange
+            const response = {
+                subscriptions: [],
+                deferredCourtesies: [],
+                declinedSignups: [entry]
+            };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse(response);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) expect(result.data.declinedSignups).toEqual([entry]);
+        });
+        it('S3 rejects a declined signup without billingOptionId', () => {
+            // Arrange
+            const { billingOptionId: _billingOptionId, ...invalidEntry } = entry;
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse({
+                subscriptions: [],
+                deferredCourtesies: [],
+                declinedSignups: [invalidEntry]
+            });
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
     it('TEST:1878:21 accepts an empty body or a valid closed cancellation reason only', () => {
         expect(SubscriptionCancellationRequestSchema.safeParse({}).success).toBe(true);
         expect(SubscriptionCancellationRequestSchema.safeParse({ reason: 'OTHER' }).success).toBe(
@@ -35,7 +78,10 @@ describe('self cancellation schemas', () => {
             currency: 'ARS',
             cycle: 'monthly'
         },
-        nextCharge: null
+        nextCharge: null,
+        pause: null,
+        promo: null,
+        succession: null
     };
     it('requires paidAfterCancellation and accepts null or the addon outcome', () => {
         expect(
@@ -55,6 +101,49 @@ describe('self cancellation schemas', () => {
                 ...ownSubscriptions,
                 subscriptions: [ownRow]
             }).success
+        ).toBe(false);
+    });
+    it('accepts a paused owner row with pause, promo and open checkout fields', () => {
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [
+                    {
+                        ...ownRow,
+                        status: 'PAUSED',
+                        paidAfterCancellation: null,
+                        pause: {
+                            reason: 'CUSTOMER_REQUEST',
+                            expectedEndAt: '2026-11-05T12:00:00.000Z'
+                        },
+                        promo: { endsAt: null },
+                        succession: { checkoutOpen: true }
+                    }
+                ]
+            }).success
+        ).toBe(true);
+    });
+    it('accepts additive current courtesy and individual checkout deadline, including absence', () => {
+        const base = { ...ownRow, paidAfterCancellation: null };
+        const parse = (row: Record<string, unknown>) =>
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [row]
+            }).success;
+        expect(parse(base)).toBe(true);
+        expect(
+            parse({
+                ...base,
+                liveCourtesyMonths: 3,
+                succession: {
+                    checkoutOpen: true,
+                    checkoutDeadline: '2026-11-10T12:00:00.000Z'
+                }
+            })
+        ).toBe(true);
+        expect(parse({ ...base, liveCourtesyMonths: -1 })).toBe(false);
+        expect(
+            parse({ ...base, succession: { checkoutOpen: true, checkoutDeadline: 'invalid' } })
         ).toBe(false);
     });
     it('accepts an empty or populated deferred courtesy list', () => {
@@ -155,13 +244,20 @@ describe('self cancellation schemas', () => {
             { ...base, origin: 'ACTIVE', serviceEndsAt: new Date().toISOString() },
             { ...base, origin: 'GRACE_PERIOD', graceEndsAt: new Date().toISOString() },
             { ...base, origin: 'SUSPENDED' },
-            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() }
+            { ...base, origin: 'CANCEL_SCHEDULED', serviceEndsAt: new Date().toISOString() },
+            {
+                ...base,
+                origin: 'PAUSED',
+                serviceEndsAt: new Date().toISOString(),
+                basis: 'NOW',
+                courtesyMonthsLost: 2
+            }
         ])
             expect(SubscriptionCancellationPreviewResponseSchema.safeParse(value).success).toBe(
                 true
             );
     });
-    it('rejects unknown origins, addon effects and malformed ids', () => {
+    it('rejects incomplete paused previews, unknown addon effects and malformed ids (AC:B8b:25)', () => {
         expect(
             SubscriptionCancellationPreviewResponseSchema.safeParse({ origin: 'PAUSED' }).success
         ).toBe(false);

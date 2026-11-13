@@ -12,7 +12,7 @@
  * ordinary account, so ownership of the row — not a role or permission — is
  * what lets someone reach this page's content.
  *
- * Four renders, mirroring the provider ficha:
+ * Owner-only presence notice plus four renders, mirroring the provider ficha:
  * - fetch failed   -> friendly error state (never a crash).
  * - `partner: null`-> empty state ("you haven't applied / been approved yet"),
  *   linking back to the aliados hub. NOT an error, NOT a 404.
@@ -29,14 +29,8 @@
  * so the page and the endpoint can never disagree about whether payment is
  * open.
  *
- * HOS-862: the approved state has NO in-app payment link. Partner payment is
- * admin-mediated by design (`planes/aliados` says it outright: "a partnership
- * is agreed in a conversation, not bought") — an admin assigns the partner's
- * plan and sends a MercadoPago payment link out of band
- * (`POST /admin/partners/{id}/send-link`). There is no self-service checkout
- * endpoint for partners to link to, so the approved banner states the fact
- * (the team will send the payment link) instead of offering a CTA that goes
- * nowhere.
+ * HOS-862: Partner payment uses a manual subscription created by administrative
+ * action 6; the partner pays by bank transfer. The page shows any open installment.
  *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -46,7 +40,8 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
-import { partnersApi } from '@/lib/api/endpoints-protected';
+import { billingSubscriptionApi, partnersApi } from '@/lib/api/endpoints-protected';
+import { resolveManualInstallmentView } from '@/lib/billing/manual-installment';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -71,6 +66,7 @@ const partnerResult = await partnersApi.mine({
 
 const fetchFailed = !partnerResult.ok;
 const partner = partnerResult.ok ? partnerResult.data.partner : null;
+const presence = partnerResult.ok ? partnerResult.data.presence ?? null : null;
 
 // `!= null` (not `!== null`) on purpose, and it is load-bearing twice over:
 // `contentApprovedAt` is `z.coerce.date().nullish()` on the owner view, so an
@@ -79,16 +75,44 @@ const partner = partnerResult.ok ? partnerResult.data.partner : null;
 // "approved" and offer to charge a partner nobody reviewed, which is AC-11
 // failing open. Same reason the provider page tests `revokedAt` this way.
 const isContentApproved = partner !== null && partner.contentApprovedAt != null;
+const showPresenceNotice = presence !== null && (presence.moderated || (isContentApproved && presence.publicPage === 'hidden' && presence.carousel === 'hidden'));
 // Same `!= null` reasoning, and it pre-empts every other state below: a
 // revoked partner is not "waiting for review" or "ready to pay", and offering
 // either would contradict the email they just received.
 const isRevoked = partner !== null && partner.revokedAt != null;
 const hasSubmitted = partner !== null && partner.contentReviewState != null;
 const isUnderReview = partner !== null && partner.contentReviewState === 'pending';
+let installmentView = null;
+try {
+    installmentView = resolveManualInstallmentView({
+        result: await billingSubscriptionApi.listManualInstallments({
+            cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+        }),
+        vertical: 'partner',
+        locale,
+        t
+    });
+} catch {
+    installmentView = null;
+}
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner">
     <AccountPageHeader title={title} description={subtitle} />
+
+    {showPresenceNotice && presence !== null && (
+        <AccountSectionCard data-testid="partner-presence-notice">
+            <p>{t('account.partner.presence.notDeleted', 'No se borró nada: tu ficha y tus datos siguen guardados.')}</p>
+            <p>{t('account.partner.presence.hidden', 'Mientras tanto, para el público tu página responde como si no existiera.')}</p>
+            <p>{t('account.partner.presence.returnsAlone', 'Tu presencia vuelve sola cuando recuperes el plan que la otorga.')}</p>
+            {presence.moderated && (
+                <div data-testid="partner-presence-moderated" role="alert">
+                    <p>{t('account.partner.presence.moderated', 'Un administrador moderó tu presencia. Aunque tengas el plan, no se verá hasta que se levante la moderación.')}</p>
+                    {presence.moderationReason !== null && <p data-testid="partner-presence-moderation-reason">{presence.moderationReason}</p>}
+                </div>
+            )}
+        </AccountSectionCard>
+    )}
 
     {
         fetchFailed ? (
@@ -136,7 +160,7 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                             <p>
                                 {t(
                                     'account.partner.status.approved',
-                                    'Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.'
+                                    'Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.'
                                 )}
                             </p>
                         ) : isUnderReview ? (
@@ -163,6 +187,18 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                         )
                     }
                 </AccountSectionCard>
+
+                {!isRevoked && installmentView && (
+                    <AccountSectionCard
+                        data-testid="partner-installment"
+                        title={t('account.partner.installment.title', 'Tu cuota a pagar')}
+                    >
+                        <p>{installmentView.planLine}</p>
+                        <p data-testid="partner-installment-amount">{installmentView.amountLine}</p>
+                        <p data-testid="partner-installment-due">{installmentView.dueLine}</p>
+                        <p>{t('account.partner.installment.howToPay', 'Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día.')}</p>
+                    </AccountSectionCard>
+                )}
 
                 {!isRevoked && (
                     <AccountSectionCard>

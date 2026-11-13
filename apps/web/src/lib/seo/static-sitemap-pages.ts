@@ -184,6 +184,9 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/newsletter/desuscripto/': 'noindex',
     '/newsletter/error/': 'noindex',
 
+    // HOS-1486: this page is reachable only through a one-time emailed token.
+    '/partners/reclamar/': 'token-gated',
+
     // Redirect-only since HOS-1156: the draft-creation form was absorbed into
     // `/publicar/`, which now carries it directly, so this URL 301s there. It
     // was classified `auth-guarded` while it existed as a page — that is no

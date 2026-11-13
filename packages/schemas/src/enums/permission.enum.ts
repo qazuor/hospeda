@@ -878,10 +878,18 @@ export enum PermissionEnum {
     BILLING_SETTLE_EXTERNAL = 'billing.settleExternal', // Allows settling a charge or a refund that already happened outside our flow (RF4 and the P1 settlement); NUCLEO/08 §3 action 14.
     BILLING_CANCEL_SUBSCRIPTION = 'billing.cancelSubscription', // Allows cancelling a subscription with administrative action 8 (NUCLEO/08 §3); with the revocation motive it runs S36.
     BILLING_LIFT_RECONCILIATION_MARK = 'billing.liftReconciliationMark', // Allows lifting one reconciliation mark (S15) with administrative action 7 (NUCLEO/08 §3), resolving without refund only the hung payments the person names. SUPER_ADMIN-only.
+    BILLING_REFUND = 'billing.refund', // Allows confirming a refund request so it is sent to the provider (RF2) with administrative action 13 (NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_REGISTER_MANUAL_PAYMENT = 'billing.registerManualPayment', // Allows registering a manual payment with administrative action 3 (NUCLEO/08 §3): MP1, and later MP4 and MP6. SUPER_ADMIN-only.
+    BILLING_DECLARE_MANUAL_UNPAID = 'billing.declareManualUnpaid', // Allows confirming that a manual installment was not paid with administrative action 4 (NUCLEO/08 §3): MP2 suspends the subscription. SUPER_ADMIN-only.
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
     USER_MANAGE_SUPER_ADMIN_ROLE = 'user.manageSuperAdminRole', // Allows assigning or removing the SUPER_ADMIN role with administrative action 26 (NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_GRANT_COMPLIMENTARY = 'billing.grantComplimentary', // Allows granting or revoking a temporary courtesy (action 1) and granting, anchoring or revoking a permanent grant (action 2): one permission for both (DEC-GRANT-002). SUPER_ADMIN-only.
     BILLING_MANAGE_PROMO_CODES = 'billing.managePromoCodes', // Allows creating or closing a promotional code (administrative action 21, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_SET_CYCLE_PRICE = 'billing.setCyclePrice', // Allows setting the price of one billing cycle of a plan version with no customers (administrative action 19, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_PUBLISH_ADDON_VERSION = 'billing.publishAddonVersion', // Allows publishing an addon version with its price (administrative action 20, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_MIGRATE_PLAN = 'billing.migratePlan', // Allows announcing or cancelling the migration of a retired plan version's customers (administrative action 17, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_PAUSE_SUBSCRIPTION = 'billing.pauseSubscription', // Allows pausing or resuming a customer's subscription (administrative action 9, NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_CHANGE_SUBSCRIPTION_PLAN = 'billing.changeSubscriptionPlan', // Allows changing a customer's subscription plan (administrative action 10, NUCLEO/08 §3). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
@@ -983,6 +991,10 @@ export enum PermissionEnum {
     PARTNER_DELETE = 'partner.delete', // Allows soft-deleting a partner.
     PARTNER_VIEW_ALL = 'partner.viewAll', // Allows viewing all partners (admin).
     PARTNER_MANAGE = 'partner.manage', // Allows managing partner (create, update, delete, send link, manual payment).
+    PARTNER_RESOLVE_APPLICATION = 'partner.resolveApplication', // Allows resolving a partner application (approve, reject, cancel the wait): administrative action 5.
+    PARTNER_CONFIGURE_BILLING = 'partner.configureBilling', // Allows action 6 to configure a Partner plan and manual payment; SUPER_ADMIN-only (AC:V7:17, ACC:6).
+    PARTNER_EMPTY_PRESENCE = 'partner.emptyPresence', // Allows action 25 to empty a Partner presence at its owner's request (AC:V8b:6, ACC:25).
+    PARTNER_EDIT_OWN = 'partner.editOwn', // Allows the owner of a partner to edit their own listing (the partner owner family, V7 step 3).
 
     // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277)
     ALLIANCE_LEAD_VIEW_ALL = 'allianceLead.viewAll', // Allows viewing all alliance leads (admin inbox, filterable by kind/status).

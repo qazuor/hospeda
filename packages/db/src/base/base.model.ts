@@ -1,6 +1,6 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
-import { and, count, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { getDb, withTransaction } from '../client.ts';
 import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
@@ -148,6 +148,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * ```
      */
     protected readonly nullsLastSortColumns: readonly string[] = [];
+
+    /**
+     * Column a `featuredFirst` list pins first, descending (HOS-1718 c4). `null`
+     * (the default) ignores `featuredFirst`: only listing models opt in.
+     */
+    protected readonly featuredFirstColumn: string | null = null;
 
     /**
      * Returns the provided tx if available, otherwise returns the default db connection from getDb().
@@ -1019,7 +1025,10 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
-        options: Omit<PaginatedListOptions, 'relations'> & { includeDeleted?: boolean } = {},
+        options: Omit<PaginatedListOptions, 'relations'> & {
+            includeDeleted?: boolean;
+            featuredFirst?: boolean;
+        } = {},
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
@@ -1117,10 +1126,18 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                   )
                 : undefined;
 
+            const featuredColumn = this.featuredFirstColumn
+                ? getTableColumns(this.table)[this.featuredFirstColumn]
+                : undefined;
+            const orderBy =
+                options.featuredFirst && featuredColumn
+                    ? [desc(featuredColumn), ...(orderByClause ? [orderByClause] : [])]
+                    : orderByClause;
+
             const queryOptions = {
                 where: whereClause,
                 with: transformedRelations,
-                ...(orderByClause ? { orderBy: orderByClause } : {}),
+                ...(orderBy ? { orderBy } : {}),
                 limit: pageSize,
                 offset: offset
             };

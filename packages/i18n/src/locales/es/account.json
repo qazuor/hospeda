@@ -363,6 +363,11 @@
         }
     },
     "subscription": {
+        "signupTakenBy": {
+            "livePrincipal": "Ya tenés un alta de suscripción en curso en esta vertical.",
+            "successor": "Tenés un cambio de plan pendiente de autorización.",
+            "successorDeadline": "Tenés un cambio de plan pendiente de autorización hasta el {{date}}"
+        },
         "loading": "Cargando suscripción...",
         "loadError": "Error al cargar la suscripción",
         "retry": "Reintentar",
@@ -477,7 +482,94 @@
         "mine": {
             "title": "Tus suscripciones",
             "empty": "No tenés suscripciones vigentes.",
-            "planChangeUnavailable": "Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.",
+            "pause": {
+                "open": "Pausar suscripción",
+                "pending": "Procesando la pausa...",
+                "error": "No pudimos completar la pausa. Revisá tu suscripción e intentá de nuevo.",
+                "months": "Meses de pausa",
+                "monthCount_one": "1 mes",
+                "monthCount_other": "{{count}} meses",
+                "expectedEnd": "Pausa prevista hasta el {{date}}.",
+                "confirmation": "Si confirmás, tu suscripción queda pausada hasta el {{date}}.",
+                "courtesyForfeit": "Tenés una cortesía hasta el {{date}}. Si pausás, perdés lo que queda y no vuelve.",
+                "courtesyConfirmation": "Al confirmar la pausa, tu cortesía termina hoy y perdés el tiempo que quedaba.",
+                "listing": "Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.",
+                "addonsVertical": "Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:",
+                "addonPauses": "{{name}} se pausa porque no queda otra vertical compatible activa.",
+                "addonContinues": "{{name}} sigue activo porque queda otra vertical compatible.",
+                "confirm": "Confirmar pausa",
+                "done": "Tu suscripción quedó pausada hasta el {{date}}.",
+                "reason": {
+                    "COURTESY_IN_FORCE": "Tenés una cortesía hasta el {{date}}; mientras dure no podés pausar.",
+                    "NOT_PRINCIPAL": "Esta suscripción no admite pausa.",
+                    "NOT_ACTIVE": "La suscripción tiene que estar activa para pausarla.",
+                    "MANUAL_PAYER": "La pausa no está disponible para pago manual.",
+                    "NOT_MONTHLY": "La pausa sólo está disponible para planes mensuales.",
+                    "PLAN_DISALLOWS_PAUSE": "Tu plan no permite pausas.",
+                    "MONTHS_OUT_OF_RANGE": "Elegí un período de pausa válido.",
+                    "PAUSE_COUNT_EXHAUSTED": "Ya usaste las pausas disponibles.",
+                    "MONTHS_EXHAUSTED": "Ya usaste los meses de pausa disponibles.",
+                    "COURTESY_FORFEIT_NOT_CONFIRMED": "Confirmá que perdés el tiempo restante de la cortesía antes de pausar.",
+                    "LOST_RACE": "La suscripción cambió. Revisala antes de volver a pausar.",
+                    "other": "La pausa no está disponible ahora."
+                }
+            },
+            "resume": {
+                "open": "Reanudar suscripción",
+                "confirmation": "Tu suscripción se reanuda hoy y te mostramos el día del próximo cobro.",
+                "confirm": "Confirmar reanudación",
+                "pending": "Reanudando...",
+                "error": "No pudimos reanudar la suscripción. Intentá de nuevo.",
+                "done": "Te vamos a cobrar el {{date}}: {{amount}}."
+            },
+            "pausedCancel": {
+                "today": "Si confirmás, el servicio termina hoy, no al final de un período.",
+                "creditEnd": "Si confirmás, el servicio sigue hasta el fin del crédito, el {{date}}.",
+                "courtesyLost_one": "Perdés 1 mes de cortesía que te quedaba.",
+                "courtesyLost_other": "Perdés {{count}} meses de cortesía que te quedaban.",
+                "confirm": "Confirmar baja",
+                "error": "No pudimos completar la baja. Recargá la página e intentá de nuevo.",
+                "doneToday": "El servicio terminó hoy.",
+                "doneCredit": "Tu servicio termina el {{date}}."
+            },
+            "planChange": {
+                "checkoutDeadline": "Podés terminar o cancelar el checkout hasta el {{date}}.",
+                "courtesyLost_one": "Perdés 1 mes de cortesía; podés seguir en mensual y conservarlo.",
+                "courtesyLost_other": "Perdés {{count}} meses de cortesía; podés seguir en mensual y conservarlos.",
+                "open": "Cambiar de plan",
+                "heading": "Elegí otro plan",
+                "choice": "{{plan}} · {{cycle}} · {{price}}",
+                "loading": "Cargando planes...",
+                "confirmHeading": "Así funciona el cambio",
+                "confirmCheckout": "Si el cambio requiere autorización, vas a ir al checkout de Mercado Pago; tu plan actual sigue hasta que autorices.",
+                "confirmScheduled": "Si el cambio se programa, vas a ver la fecha exacta desde la que rige el plan nuevo.",
+                "confirm": "Confirmar cambio",
+                "back": "Volver",
+                "pending": "Procesando el cambio...",
+                "pricingOpen": "Cambiar a este plan",
+                "downgrade": "Tu plan cambia el {{date}}.",
+                "regret": "Cancelamos el cambio de plan programado.",
+                "error": "No pudimos cambiar el plan. Intentá de nuevo.",
+                "promoLost": "Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.",
+                "reason": {
+                    "succession": "Terminá o cancelá el checkout que tenés abierto para cambiar de plan.",
+                    "successionCoverage": "Terminá o cancelá el checkout que tenés abierto. Tu suscripción anterior ya no da cobertura; tus fichas vuelven cuando autorices el cambio.",
+                    "lastCharge": "Tu último cobro no entró. Actualizá tu tarjeta en Mercado Pago para poder cambiar de plan.",
+                    "paused": "Reanudá tu suscripción para cambiar de plan.",
+                    "grace": "Tenés un pago pendiente. Regularizalo para poder cambiar de plan.",
+                    "cycleEndPending": "La fecha del próximo cobro todavía se está confirmando. Intentá cambiar de plan más tarde.",
+                    "window": "Todavía no llegó la fecha en que podés cambiar de plan.",
+                    "windowDate": "Podés cambiar de plan desde el {{date}}.",
+                    "same": "Ya tenés esa opción de facturación.",
+                    "scheduled": "Ya tenés un cambio de plan programado.",
+                    "providerNotApplied": "Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente. Intentá de nuevo más tarde.",
+                    "other": "No se puede hacer este cambio ahora. Revisá tu suscripción e intentá de nuevo."
+                }
+            },
+            "graceChangePlan": {
+                "CARD": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo cambiando la tarjeta con la que pagás en Mercado Pago (el cobro se reintenta en el momento) y, con la suscripción al día, vas a poder hacer cambios en tu plan.",
+                "MANUAL": "No podés cambiar de plan mientras tengas un pago pendiente. Regularizalo pagando tu cuota y, con la suscripción al día, vas a poder hacer cambios en tu plan."
+            },
             "paidAfterCancellation": "Tu pago entró y tenés servicio hasta el {{date}}; tu suscripción ya estaba cancelada, así que no se renueva: si querés seguir, volvé a suscribirte.",
             "paidAfterCancellationAddons": "El cobro de tus complementos recurrentes de esta suscripción también se cortó: los seguís viendo hasta el {{date}}.",
             "deferredCourtesy_one": "Te queda 1 mes, que empieza a correr cuando completes el pago.",
@@ -485,6 +577,7 @@
             "status": {
                 "ACTIVE": "Activa",
                 "GRACE_PERIOD": "Pago pendiente",
+                "PAUSED": "Pausada",
                 "SUSPENDED": "Suspendida",
                 "CANCEL_SCHEDULED": "Baja pedida",
                 "NOT_RENEWING": "No se renueva"
@@ -700,6 +793,7 @@
         "total_other": "Total: {{count}} reseñas",
         "typeAccommodation": "Alojamiento",
         "typeDestination": "Destino",
+        "listingGone": "La ficha ya no existe",
         "status": {
             "approved": "Publicada",
             "pending": "Pendiente de aprobación",
@@ -1457,7 +1551,7 @@
             "empty": "Tu postulación fue aprobada. Completá tu logo y tus textos para que un admin los revise. Todavía no estás publicado.",
             "underReview": "Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.",
             "rejected": "Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.",
-            "approved": "Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.",
+            "approved": "Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.",
             "revoked": "Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.",
             "revokedContact": "Si querés más información, escribinos y te contamos los detalles."
         },
@@ -1499,6 +1593,20 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             }
+        },
+        "presence": {
+            "hidden": "Mientras tanto, para el público tu página responde como si no existiera.",
+            "notDeleted": "No se borró nada: tu ficha y tus datos siguen guardados.",
+            "returnsAlone": "Tu presencia vuelve sola cuando recuperes el plan que la otorga.",
+            "moderated": "Un administrador moderó tu presencia. Aunque tengas el plan, no se verá hasta que se levante la moderación."
+        },
+        "installment": {
+            "title": "Tu cuota a pagar",
+            "plan": "Plan: {{plan}}",
+            "amount": "Monto: {{amount}}",
+            "amountPending": "El equipo te confirma el monto junto con los datos para transferir.",
+            "dueOn": "Vence el {{date}}",
+            "howToPay": "Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día."
         }
     },
     "partnerStats": {

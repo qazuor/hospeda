@@ -854,7 +854,7 @@ export class AccommodationReviewService extends BaseCrudService<
                 // Wrap the result in consistent format
                 const accommodationReviews = Array.isArray(result.items) ? result.items : [];
 
-                return { accommodationReviews };
+                return { accommodationReviews, total: result.total };
             }
         });
     }

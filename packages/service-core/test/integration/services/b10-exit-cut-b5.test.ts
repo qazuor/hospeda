@@ -1,0 +1,462 @@
+import {
+    addonInstances,
+    and,
+    coveredPeriods,
+    domainEventModel,
+    eq,
+    inArray,
+    payments,
+    reconciliationInventoryModel,
+    reconciliationMarkPayments,
+    reconciliationMarks,
+    reconciliationZeroCallModel,
+    refunds,
+    subscriptions
+} from '@repo/db';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import {
+    applyA5,
+    cancelAddonComplementsAtProvider,
+    runOrphanhood
+} from '../../../src/services/billing/addon/addon-instance-a5';
+import { runZeroCallChecks } from '../../../src/services/billing/reconciliation/sweep/zero-call-checks.service';
+import { applyS21 } from '../../../src/services/billing/subscription/complement-s21';
+import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
+import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { seedComplementCharge } from './support/addon-orphan-fixtures';
+import {
+    activeRecurringExitFixture,
+    authorizedUnpaidExitPrincipal,
+    cachedExitAddonPolicy,
+    retireExitFixtures
+} from './support/b10-exit-fixtures';
+import { addonPolicyFromTx } from './support/coverage-fixtures';
+import { retireRevocationRows, seedRevocationActor } from './support/revocation-fixtures';
+
+const chargeIds: string[] = [];
+const markedComplements: string[] = [];
+
+afterEach(async () => {
+    const ids = chargeIds.splice(0);
+    if (ids.length > 0) {
+        await getServiceTestDb().delete(refunds).where(inArray(refunds.paymentId, ids));
+    }
+    if (markedComplements.length > 0) {
+        const ids = markedComplements.splice(0);
+        const marks = await getServiceTestDb()
+            .select({ id: reconciliationMarks.id })
+            .from(reconciliationMarks)
+            .where(inArray(reconciliationMarks.subscriptionId, ids));
+        if (marks.length > 0) {
+            await getServiceTestDb()
+                .delete(reconciliationMarkPayments)
+                .where(
+                    inArray(
+                        reconciliationMarkPayments.markId,
+                        marks.map(({ id }) => id)
+                    )
+                );
+            await getServiceTestDb()
+                .delete(reconciliationMarks)
+                .where(
+                    inArray(
+                        reconciliationMarks.id,
+                        marks.map(({ id }) => id)
+                    )
+                );
+        }
+    }
+    if (ids.length > 0) {
+        await getServiceTestDb()
+            .delete(coveredPeriods)
+            .where(inArray(coveredPeriods.paymentId, ids));
+        await getServiceTestDb().delete(payments).where(inArray(payments.id, ids));
+    }
+    await retireRevocationRows();
+    await retireExitFixtures();
+    vi.restoreAllMocks();
+});
+afterAll(closeServiceTestPool);
+
+describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)', () => {
+    it('LISTA:B10 clause 4 la principal que se va por otro camino deja vivo el preapproval hasta que corre la orfandad, y el barrido lo ve', async () => {
+        const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
+        markedComplements.push(h.complementId);
+        // Simulate a different principal writer after both starting rows came from services.
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, h.principalId));
+        const prior = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
+        expect(prior.snapshot.status).toBe('active');
+        const original = reconciliationInventoryModel.listLiveAddonInstanceIdsPage.bind(
+            reconciliationInventoryModel
+        );
+        vi.spyOn(reconciliationInventoryModel, 'listLiveAddonInstanceIdsPage').mockImplementation(
+            async (input) => {
+                const rows = await original({ ...input, limit: 10_000 });
+                return rows
+                    .filter(({ id }) => id === h.instanceId)
+                    .filter(
+                        ({ id }) =>
+                            input.afterInstanceId === undefined || id > input.afterInstanceId
+                    )
+                    .slice(0, input.limit);
+            }
+        );
+        vi.spyOn(
+            reconciliationZeroCallModel,
+            'listOpenSuccessionsOnDeadPredecessorsPage'
+        ).mockResolvedValue([]);
+        vi.spyOn(
+            reconciliationZeroCallModel,
+            'listDeferredCourtesiesWithActiveSuccessorPage'
+        ).mockResolvedValue([]);
+        const orphanhood = {
+            addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
+            listing: async () => {
+                throw new Error('No LISTING target');
+            },
+            listingPurged: async () => ({ purged: false })
+        };
+        const sweep = await runZeroCallChecks(
+            { correlationId: crypto.randomUUID() },
+            {
+                addonOrphanhood: orphanhood,
+                retainedPayments: { listRetainedPayments: async () => [] },
+                retainedPaymentBranches: {
+                    resolveByBranch: async () => ({ kind: 'NO_BRANCH' as const })
+                }
+            }
+        );
+        expect(sweep.failures.filter(({ subjectId }) => subjectId === h.instanceId)).toEqual([]);
+        expect(sweep.results.filter(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET')).toEqual([
+            {
+                check: 'ADDON_LIVE_ON_DEAD_TARGET',
+                examined: 1,
+                marksOpened: 1,
+                marksAccumulated: 0,
+                resolved: 0
+            }
+        ]);
+        const marks = await getServiceTestDb()
+            .select({
+                reason: reconciliationMarks.reason,
+                subscriptionId: reconciliationMarks.subscriptionId
+            })
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, h.complementId));
+        expect(marks).toEqual([{ reason: 'ADDON_SIN_APAGAR', subscriptionId: h.complementId }]);
+        const stillLive = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
+        expect(stillLive.snapshot.status).toBe('active');
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
+        const orphan = await getServiceTestDb().transaction((tx) =>
+            runOrphanhood(
+                { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
+                { ...orphanhood, addonPolicy: addonPolicyFromTx(tx) }
+            )
+        );
+        expect(orphan.cancelled.map(({ instanceId }) => instanceId)).toEqual([h.instanceId]);
+        const provider = await cancelAddonComplementsAtProvider(
+            { cancelled: orphan.cancelled },
+            {
+                provider: h.f.fake,
+                clock: h.f.ports.clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            }
+        );
+        expect(provider.results).toEqual([{ subscriptionId: h.complementId, cancelCall: 'SENT' }]);
+        const after = await h.f.fake.readAuthorization({ authorizationId: h.authorizationId });
+        expect(after.snapshot.status).toBe('cancelled');
+        expect(
+            cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
+        ).toHaveLength(1);
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const decisions = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            decisions.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
+    });
+    it.each([
+        { label: 'inside', chargeAt: new Date('2026-10-16T12:00:00.000Z'), refunded: true },
+        { label: 'outside', chargeAt: new Date('2026-10-01T12:00:00.000Z'), refunded: false }
+    ])('LISTA:B10 clause 5 una revocación (`S36`) corre la orfandad en el mismo acto y crea `RF1` sobre el último cobro del complemento sólo si cae dentro de sus propios 10 días (FASE 9 vuelta 2, owner 2026-09-27, `R1-b`) ($label)', async ({
+        chargeAt,
+        refunded
+    }) => {
+        const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
+        markedComplements.push(h.complementId);
+        const charge = await seedComplementCharge(getServiceTestDb(), {
+            subscriptionId: h.complementId,
+            factAt: chargeAt,
+            coveredPeriodStart: chargeAt,
+            amount: 25000
+        });
+        chargeIds.push(charge.paymentId);
+        const [principalPayment] = await getServiceTestDb()
+            .select({ id: payments.id })
+            .from(payments)
+            .where(
+                and(eq(payments.subscriptionId, h.principalId), eq(payments.status, 'SUCCEEDED'))
+            );
+        if (!principalPayment) throw new Error('Principal charge missing');
+        h.f.advanceTo(new Date('2026-10-18T12:00:00.000Z'));
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
+        const result = await revokeSubscription(
+            {
+                actor: await seedRevocationActor(),
+                subscriptionId: h.principalId,
+                expectedPaymentId: principalPayment.id
+            },
+            {
+                provider: h.f.fake,
+                clock: h.f.ports.clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                coverageNotices: { emitCoverageChanged: async () => undefined },
+                orphanhood: {
+                    addonPolicy: await cachedExitAddonPolicy(h.f.versionId),
+                    listing: async () => {
+                        throw new Error('No LISTING target');
+                    }
+                }
+            }
+        );
+        expect(result.orphanedAddonIds).toEqual([h.instanceId]);
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const [complement] = await getServiceTestDb()
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        expect(complement).toEqual({ id: h.complementId, status: 'CANCELLED' });
+        expect(
+            cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
+        ).toHaveLength(1);
+        const chargeRefunds = await getServiceTestDb()
+            .select({ id: refunds.id, reason: refunds.reason, amount: refunds.amount })
+            .from(refunds)
+            .where(eq(refunds.paymentId, charge.paymentId));
+        expect(chargeRefunds).toHaveLength(refunded ? 1 : 0);
+        if (refunded)
+            expect(chargeRefunds[0]).toMatchObject({ reason: 'ADDON_ORPHAN', amount: 25000 });
+        const marks = await getServiceTestDb()
+            .select({ id: reconciliationMarks.id, reason: reconciliationMarks.reason })
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, h.complementId));
+        expect(marks).toHaveLength(refunded ? 0 : 1);
+        if (!refunded)
+            expect(marks[0]?.reason).toBe('COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA');
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            events.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
+    });
+
+    it('LISTA:B10 clause 10 cuando un addon se apaga, su suscripción de complemento queda `CANCELLED` en el mismo acto —sin período de gracia, sin fecha de fin de servicio y sin reembolso automático de lo ya cobrado—, así que no queda ninguna fila de complemento viva colgando de una instancia terminal (`S21`, `03` §3.2 y §8, `16` §4.4, `09` §3 salvedad 1)', async () => {
+        const h = await activeRecurringExitFixture('VERTICAL_SUBSCRIPTION');
+        markedComplements.push(h.complementId);
+        // The charged complement payment models a completed provider charge; A5 must not refund it.
+        const charge = await seedComplementCharge(getServiceTestDb(), {
+            subscriptionId: h.complementId,
+            factAt: h.f.ports.clock.now(),
+            coveredPeriodStart: h.f.ports.clock.now(),
+            amount: 25000
+        });
+        chargeIds.push(charge.paymentId);
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
+        const result = await getServiceTestDb().transaction((tx) =>
+            applyA5(
+                { tx, instanceId: h.instanceId, clause: 'WITHDRAWN', now: h.f.ports.clock.now() },
+                {
+                    addonPolicy: addonPolicyFromTx(tx),
+                    listing: async () => {
+                        throw new Error('No LISTING target');
+                    }
+                }
+            )
+        );
+        expect(result).toMatchObject({ outcome: 'CANCELLED' });
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const [complement] = await getServiceTestDb()
+            .select({
+                id: subscriptions.id,
+                status: subscriptions.status,
+                serviceEndsAt: subscriptions.serviceEndsAt,
+                graceStartedAt: subscriptions.graceStartedAt,
+                graceEndsAt: subscriptions.graceEndsAt
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        expect(complement).toEqual({
+            id: h.complementId,
+            status: 'CANCELLED',
+            serviceEndsAt: null,
+            graceStartedAt: null,
+            graceEndsAt: null
+        });
+        const chargeRefunds = await getServiceTestDb()
+            .select({ id: refunds.id })
+            .from(refunds)
+            .where(eq(refunds.paymentId, charge.paymentId));
+        expect(chargeRefunds).toHaveLength(0);
+        expect(
+            cancel.mock.calls.filter(([call]) => call.authorizationId === h.authorizationId)
+        ).toHaveLength(0);
+        const second = await getServiceTestDb().transaction((tx) =>
+            applyS21({ tx, complementSubscriptionId: h.complementId, now: h.f.ports.clock.now() })
+        );
+        expect(second).toEqual({ outcome: 'ALREADY_CANCELLED' });
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            events.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
+    });
+
+    it('LISTA:B10 clause 11 4d un `USER`/`GLOBAL` sin principal viva y pagando ni ancla viva en sus verticales compatibles queda huérfano (unpaid live principal)', async () => {
+        const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
+        const unpaidId = await authorizedUnpaidExitPrincipal({ f: h.f });
+        const [unpaid] = await getServiceTestDb()
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, unpaidId));
+        expect(unpaid).toEqual({ id: unpaidId, status: 'ACTIVE' });
+        expect(
+            await getServiceTestDb()
+                .select({ id: payments.id })
+                .from(payments)
+                .where(eq(payments.subscriptionId, unpaidId))
+        ).toHaveLength(0);
+        // Simulate a principal removed by another writer; both starting rows came from services.
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, h.principalId));
+        const result = await getServiceTestDb().transaction((tx) =>
+            runOrphanhood(
+                { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
+                {
+                    addonPolicy: addonPolicyFromTx(tx),
+                    listing: async () => {
+                        throw new Error('No LISTING target');
+                    }
+                }
+            )
+        );
+        expect(result.cancelled.map(({ instanceId }) => instanceId)).toEqual([h.instanceId]);
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const [complement] = await getServiceTestDb()
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        expect(complement).toEqual({ id: h.complementId, status: 'CANCELLED' });
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            events.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
+    });
+
+    it('LISTA:B10 clause 11 4d un `USER`/`GLOBAL` sin principal viva y pagando ni ancla viva en sus verticales compatibles queda huérfano (unpaid successor)', async () => {
+        const h = await activeRecurringExitFixture('USER', ['accommodation', 'venue']);
+        const predecessorId = await authorizedUnpaidExitPrincipal({ f: h.f });
+        // Seed only the non-paying predecessor state and link: startSuccession would request
+        // a future first provider charge, which G11 forbids for this test fixture.
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, predecessorId));
+        const successorId = await authorizedUnpaidExitPrincipal({ f: h.f });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ succeedsId: predecessorId })
+            .where(eq(subscriptions.id, successorId));
+        const [successor] = await getServiceTestDb()
+            .select({
+                id: subscriptions.id,
+                status: subscriptions.status,
+                predecessorId: subscriptions.succeedsId
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, successorId));
+        expect(successor).toEqual({ id: successorId, status: 'ACTIVE', predecessorId });
+        const unpaidCharges = await getServiceTestDb()
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, [predecessorId, successorId]));
+        expect(unpaidCharges).toHaveLength(0);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, h.principalId));
+        const result = await getServiceTestDb().transaction((tx) =>
+            runOrphanhood(
+                { tx, subscriptionId: h.principalId, now: h.f.ports.clock.now() },
+                {
+                    addonPolicy: addonPolicyFromTx(tx),
+                    listing: async () => {
+                        throw new Error('No LISTING target');
+                    }
+                }
+            )
+        );
+        expect(result.cancelled.map(({ instanceId }) => instanceId)).toEqual([h.instanceId]);
+        const [instance] = await getServiceTestDb()
+            .select({ id: addonInstances.id, status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, h.instanceId));
+        expect(instance).toEqual({ id: h.instanceId, status: 'CANCELLED' });
+        const [complement] = await getServiceTestDb()
+            .select({ id: subscriptions.id, status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, h.complementId));
+        expect(complement).toEqual({ id: h.complementId, status: 'CANCELLED' });
+        const decisions = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: h.complementId
+        });
+        expect(
+            decisions.filter(
+                ({ eventType, reason }) =>
+                    eventType === 'subscription.provider_cancellation_decided' && reason === 'A5'
+            )
+        ).toHaveLength(1);
+    });
+});

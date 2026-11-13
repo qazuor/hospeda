@@ -543,13 +543,17 @@ como comportamiento medido en la columna; **y `RP12`**, que necesita el receptor
 | **RP10** ✚ | *comportamiento medido*: al reanudar, **la fecha de cobro avanzó sin cobrar** | `PS-6` (2026-09-16, sandbox y producción) |
 | **RP11** ✚ | *comportamiento medido*: **`last_charged_date` es la del último intento, no la del último cobro**, y `last_charged_amount` no coincide con `charged_amount` | `RC-5` (2026-09-22, producción; precisada el 2026-09-24) |
 | **RP12** ✚ | *comportamiento medido*: **cambiar la tarjeta emite un `payment` de ARS 0 con `operation_type: card_validation`**, por los dos canales, sin `external_reference` y sin nombrar al preapproval, `rejected` si la tarjeta nueva no pasa; y autorizar deja otro igual en producción | `EX-36` (2026-09-29, sandbox) · `PA-3` (2026-09-15, producción) |
+| **RP13** | la búsqueda de órdenes exige **las dos fechas de creación**, un rango de **hasta 30 días** y coincidencia **exacta** de la referencia | `EX-57` (2026-09-30, sandbox) |
+| **RP14** | los reembolsos de órdenes (`MP:EX-58`) exigen **idempotency key**: la reejecución idéntica devuelve **la primera respuesta completa**, un monto distinto devuelve **`409`**, y las respuestas **listan todos los reembolsos de la orden** | `EX-58` (2026-09-30, sandbox) |
+| **RP15** | la creación de una orden de pago único es **idempotente por clave**: otro body devuelve **`409`** y la referencia **no deduplica** | `EX-41` (2026-09-25, sandbox) |
+| **RP16** | un pago único **rechazado crea una orden fallida** y devuelve su `id` | `EX-30` (2026-09-29, sandbox) |
 
 ~~**Son seis, recontadas sobre la tabla**, y son las seis filas de la tabla vieja que no eran
-mentiras.~~ ~~**Son once, recontadas sobre la tabla**:~~ **Son doce, recontadas sobre la tabla**: las seis filas de la tabla vieja que no eran
+mentiras.~~ ~~**Son once, recontadas sobre la tabla**:~~ **Son dieciséis, recontadas sobre la tabla**: las seis filas de la tabla vieja que no eran
 mentiras, y las cinco de comportamiento medido que quedaban afuera de las dos listas (revisión del
 owner, casos vecinos, 2026-09-29, caso 28), y `RP12`, el `payment` de validación de ARS 0 que el
 receptor tiene que ignorar (`B/03` §10.2), que entra por la misma regla del caso 28 (mediciones del
-2026-09-29, punto 4).
+2026-09-29, punto 4), y las cuatro reglas de órdenes `RP13` a `RP16` (HOS-2008).
 
 #### Lo que el falso simula sin haberlo medido, aparte
 
@@ -658,7 +662,7 @@ producción, ni comparación de forma, ni quién avisara si no corría**. Desde 
 batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
 
 1. **Qué corre**: **cada medición de las dos listas del §3.2**, las trece mentiras y ~~las seis
-   reglas propias~~ las ~~once~~ doce reglas propias y comportamientos medidos (caso 28; `RP12`, mediciones del 2026-09-29, punto 4): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
+   reglas propias~~ las ~~once~~ ~~doce~~ dieciséis reglas propias y comportamientos medidos (caso 28; `RP12`, mediciones del 2026-09-29, punto 4): hace el pedido, **relee por id** y compara el resultado con lo que la fila dice
    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
    cambiar ninguna mentira. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen

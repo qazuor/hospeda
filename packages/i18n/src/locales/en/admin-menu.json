@@ -4,7 +4,8 @@
         "title": "Content",
         "destinationAttractions": "Destination Attractions",
         "accommodationAmenities": "Accommodation Amenities",
-        "accommodationFeatures": "Accommodation Features"
+        "accommodationFeatures": "Accommodation Features",
+        "fixRequests": "Pending fixes"
     },
     "accommodations": {
         "title": "Accommodations",
@@ -53,6 +54,8 @@
         "userTagModeration": "User Tag Moderation"
     },
     "billing": {
+        "planCatalog": "Plans and keys",
+        "planMigration": "Migrate retired plan",
         "title": "Billing",
         "plans": "Plans",
         "subscriptions": "Subscriptions",
@@ -61,6 +64,7 @@
         "reconciliation": "Reconciliation",
         "invoices": "Invoices",
         "promoCodes": "Promo Codes",
+        "deadlines": "Deadlines",
         "sponsorships": "Sponsorships",
         "ownerPromotions": "Owner Promotions",
         "exchangeRates": "Exchange Rates",
@@ -72,7 +76,11 @@
         "webhookEvents": "Webhook Events",
         "subscription": "Subscription",
         "subscriptionCancellation": "Cancellation",
-        "subscriptionRevocation": "Revocation"
+        "subscriptionRevocation": "Revocation",
+        "permanentGrants": "Permanent grants",
+        "subscriptionPause": "Pause",
+        "subscriptionPlanChange": "Plan change",
+        "subscriptionCourtesy": "Courtesy"
     },
     "notifications": "Notifications",
     "access": {
@@ -86,7 +94,8 @@
     "platform": {
         "title": "Platform",
         "hostTrades": "Trades Directory",
-        "featureFlags": "Feature Flags"
+        "featureFlags": "Feature Flags",
+        "partnerApplications": "Partner applications"
     },
     "sponsors": "Sponsors",
     "analytics": {

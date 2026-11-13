@@ -132,6 +132,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-959: the sign-in/sign-up tab strip.
     'auth.tabs',
     'auth.verifyEmail',
+    'billing.addonPurchase',
     'billing.checkout',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
@@ -326,6 +327,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
+    // Partner claim copy is read in the browser after consuming the link fragment.
+    'partners.claim',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',

@@ -40,6 +40,7 @@ export async function recalculateCoverage(args: {
     readonly userId: string;
     readonly vertical: PublicationVertical;
     readonly correlationId: string;
+    readonly keepListingIds?: ReadonlySet<string>;
     readonly liveLimit?: (input: {
         readonly userId: string;
         readonly vertical: PublicationVertical;
@@ -164,7 +165,8 @@ export async function recalculateCoverage(args: {
                     published: applicable
                         .filter((row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED)
                         .map(entry),
-                    limit
+                    limit,
+                    keep: args.keepListingIds
                 });
                 for (const candidate of toLower) {
                     const listing = applicable.find((row) => row.id === candidate.id);

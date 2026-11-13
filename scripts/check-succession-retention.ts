@@ -8,7 +8,7 @@
  *        in the FIRST `if` of its body (D-4: "falle la condición que falle");
  *   (g2) `checkLatePaymentConditions` feeds `isPredecessorInSuccession` with
  *        `await isLiveSuccessionPredecessor(…)`;
- *   (g3) every registered reactivator (`REACTIVATORS`: S5 and S7) calls
+ *   (g3) every registered reactivator (`REACTIVATORS`: S5, S7, MP1 and MP4) calls
  *        `checkLatePaymentConditions` and returns from a `'retainedForS19' in <verdict>` branch
  *        BEFORE its status write (or the call to its writer);
  *   (g4) no other production function writes `subscriptions.status` to `ACTIVE` or
@@ -62,6 +62,19 @@ export const REACTIVATORS = [
         file: `${SUBSCRIPTION_DIR}/reactivate-suspended.service.ts`,
         entry: 'reactivateSuspendedOnCreditedPayment',
         writer: 'reactivateSuspendedOnCreditedPayment'
+    },
+    {
+        // MP1 (AC:B5:14): check at register-manual-payment.service.ts:147-151 selects S19
+        // for a live predecessor and rejects another live principal before S5 at :277.
+        file: `${SUBSCRIPTION_DIR}/register-manual-payment.service.ts`,
+        entry: 'registerManualPayment',
+        writer: 'reactivateFromGrace'
+    },
+    {
+        // MP4 (AC:B5:18): S19 retention returns before the SUSPENDED → ACTIVE write.
+        file: `${SUBSCRIPTION_DIR}/register-late-manual-payment.service.ts`,
+        entry: 'registerLateManualPayment',
+        writer: 'registerLateManualPayment'
     }
 ] as const;
 
@@ -161,12 +174,45 @@ function guardedPositions(
 }
 
 /** (g3) for one reactivator. */
-function reactivatorChecks(root: string, r: (typeof REACTIVATORS)[number]): Finding[] {
+type Reactivator = { readonly file: string; readonly entry: string; readonly writer: string };
+
+function reactivatorChecks(root: string, r: Reactivator): Finding[] {
     const parsed = read(root, r.file);
     const entry = parsed ? findTopLevel(parsed.sf, r.entry) : null;
     if (!parsed || !entry)
         return [{ rule: 'g3 registry', file: r.file, line: 1, path: `${r.entry} is missing` }];
     const { sf, source } = parsed;
+    if (r.entry === 'registerManualPayment') {
+        const decision = findTopLevel(sf, 'check');
+        const decisionText = decision?.getText(sf) ?? '';
+        const entryText = entry.getText(sf);
+        const predecessor = callsNamed(decision ?? sf, 'isLiveSuccessionPredecessor')[0];
+        const otherPrincipal = callsNamed(decision ?? sf, 'hasOtherLivePrincipal')[0];
+        const checked = callsNamed(entry, 'check')[0];
+        const reactivation = callsNamed(entry, r.writer)[0];
+        if (
+            !decision ||
+            !predecessor ||
+            !otherPrincipal ||
+            !decisionText.includes("effect = 'S19'") ||
+            !decisionText.includes("'MANUAL_PAYMENT_CONDITION_FAILED'") ||
+            !checked ||
+            !reactivation ||
+            checked.getStart() >= reactivation.getStart() ||
+            !entryText.includes("effect === 'S19'") ||
+            !entryText.includes('retainPaymentForSuccession') ||
+            !entryText.includes("subscription.status === 'GRACE_PERIOD'")
+        )
+            return [
+                {
+                    rule: 'g3 reactivator exits on retention',
+                    file: r.file,
+                    line: lineOf(entry, sf),
+                    path: `${r.entry} → ${r.writer}: MP1 must select S19 or reject another live principal before reactivation`
+                }
+            ];
+        return [];
+    }
     const verdicts = new Set<string>();
     for (const call of callsNamed(entry, 'checkLatePaymentConditions')) {
         const decl = call.parent?.parent;
@@ -202,11 +248,18 @@ function reactivatorChecks(root: string, r: (typeof REACTIVATORS)[number]): Find
         findReactivationWrites({ file: r.file, source })
     );
     const exitAt = (exit as ts.IfStatement | null)?.getStart() ?? Number.POSITIVE_INFINITY;
+    const retentionBranchWrite =
+        r.entry === 'registerLateManualPayment' &&
+        exit !== null &&
+        writes.some(
+            (at) => at >= exit.thenStatement.getStart() && at < exit.thenStatement.getEnd()
+        );
     if (
         verdicts.size === 0 ||
         exit === null ||
         writes.length === 0 ||
-        writes.some((at) => at < exitAt)
+        writes.some((at) => at < exitAt) ||
+        retentionBranchWrite
     )
         return [
             {
@@ -252,13 +305,20 @@ function refundWriterChecks(root: string, w: (typeof REFUND_WRITERS)[number]): F
  * @param args.minScannedFiles - The floor of production files (default `MIN_SCANNED_FILES`)
  * @returns The exit code and the report
  */
-export function run(args: { readonly root?: string; readonly minScannedFiles?: number } = {}): {
+export function run(
+    args: {
+        readonly root?: string;
+        readonly minScannedFiles?: number;
+        readonly reactivators?: readonly Reactivator[];
+    } = {}
+): {
     readonly exitCode: number;
     readonly output: string;
 } {
     const root = args.root ?? resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
     const files = listProductionFiles({ root });
     const min = args.minScannedFiles ?? MIN_SCANNED_FILES;
+    const reactivators = args.reactivators ?? REACTIVATORS;
     if (files.length < min)
         return {
             exitCode: 1,
@@ -266,7 +326,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
         };
     const findings: Finding[] = [...anchorChecks(root)];
     const writers = [
-        ...REACTIVATORS.map((r) => ({ ...r, rule: 'g4 unregistered reactivation' })),
+        ...reactivators.map((r) => ({ ...r, rule: 'g4 unregistered reactivation' })),
         ...REFUND_WRITERS.map((w) => ({ ...w, rule: 'g5 unregistered refund writer' }))
     ];
     let reactivations = 0;
@@ -276,7 +336,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
         if (source.includes('subscription') && RETAINING_STATUSES.some((s) => source.includes(s)))
             for (const w of findReactivationWrites({ file, source })) {
                 reactivations += 1;
-                if (!REACTIVATORS.some((r) => r.file === file && r.writer === w.fnName))
+                if (!reactivators.some((r) => r.file === file && r.writer === w.fnName))
                     findings.push({
                         rule: 'g4 unregistered reactivation',
                         file,
@@ -295,8 +355,11 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                         path: `${w.fnName} inserts into refunds outside the S19 gate registry`
                     });
             }
+        const checkedWriters = new Set<string>();
         for (const r of writers) {
             if (r.writer === r.entry || !source.includes(r.writer)) continue;
+            if (checkedWriters.has(r.writer)) continue;
+            checkedWriters.add(r.writer);
             const sf = parse({ file, source });
             for (const call of callsNamed(sf, r.writer)) {
                 const caller = (() => {
@@ -304,7 +367,12 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                     while (n.parent && !ts.isSourceFile(n.parent)) n = n.parent;
                     return n;
                 })();
-                const inEntry = file === r.file && findTopLevel(sf, r.entry) === caller;
+                const inEntry = writers.some(
+                    (allowed) =>
+                        allowed.writer === r.writer &&
+                        file === allowed.file &&
+                        findTopLevel(sf, allowed.entry) === caller
+                );
                 if (!inEntry)
                     findings.push({
                         rule: r.rule,
@@ -315,7 +383,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
             }
         }
     }
-    for (const r of REACTIVATORS) findings.push(...reactivatorChecks(root, r));
+    for (const r of reactivators) findings.push(...reactivatorChecks(root, r));
     for (const w of REFUND_WRITERS) findings.push(...refundWriterChecks(root, w));
     return findings.length
         ? {

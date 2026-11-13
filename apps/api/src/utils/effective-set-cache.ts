@@ -1,4 +1,6 @@
+import { eq, getDb, partners } from '@repo/db';
 import { createEffectiveSetCache, type EffectiveSetCodec } from '@repo/verticals';
+import { invalidateCacheByPathPrefix } from '../middlewares/cache';
 import { getClock } from './clock';
 import { apiLogger } from './logger';
 import { getRedisClient } from './redis';
@@ -39,6 +41,21 @@ export async function invalidateEffectiveSetsForUser(userId: string): Promise<vo
     } catch (error) {
         apiLogger.warn({
             message: 'Effective-set invalidation failed',
+            error: String(error),
+            userId
+        });
+    }
+
+    try {
+        const [partner] = await getDb()
+            .select({ id: partners.id })
+            .from(partners)
+            .where(eq(partners.ownerUserId, userId))
+            .limit(1);
+        if (partner) invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/partners' });
+    } catch (error) {
+        apiLogger.warn({
+            message: 'Partner response cache invalidation failed',
             error: String(error),
             userId
         });

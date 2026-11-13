@@ -14,37 +14,38 @@
  * @module test/routes/accommodation-protected-get-media
  */
 
-import { ModerationStatusEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import type { Actor } from '@repo/service-core';
+import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks
 // ---------------------------------------------------------------------------
-const { mockAdminGetMedia } = vi.hoisted(() => ({
-    mockAdminGetMedia: vi.fn()
+const { mockGetAccommodationMediaForReader } = vi.hoisted(() => ({
+    mockGetAccommodationMediaForReader: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        AccommodationService: vi.fn().mockImplementation(function () {
-            return {
-                adminGetMedia: mockAdminGetMedia
-            };
-        })
+        getAccommodationMediaForReader: mockGetAccommodationMediaForReader
     };
 });
 
 // Actor: HOST owner with UPDATE_OWN permission (passes service _canUpdate gate).
-const mockActor = {
+const mockActor: Actor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    roles: ['HOST'],
-    permissions: ['accommodation.update.own', 'access.panelProtected']
+    roles: [RoleEnum.HOST],
+    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
 };
-vi.mock('../../src/utils/actor.js', () => ({
-    getActorFromContext: () => mockActor
-}));
+vi.mock('../../src/utils/actor.js', async () => {
+    const actual = await vi.importActual<typeof import('../../src/utils/actor.js')>(
+        '../../src/utils/actor.js'
+    );
+    return { ...actual, getActorFromContext: () => mockActor };
+});
 
 vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: {
@@ -59,16 +60,16 @@ vi.mock('../../src/utils/logger.js', () => ({
 // Import app AFTER mocks
 // ---------------------------------------------------------------------------
 import { initApp } from '../../src/app.js';
-import type { AppOpenAPI } from '../../src/types.js';
+import { protectedGetMediaRoute } from '../../src/routes/accommodation/protected/getMedia.js';
+import type { AppBindings, AppOpenAPI } from '../../src/types.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-const ACCOMMODATION_ID = '00000000-0000-0000-0000-000000000001';
+const ACCOMMODATION_ID = '00000000-0000-4000-8000-000000000001';
 const MEDIA_ID_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb01';
 const MEDIA_ID_2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02';
 const BASE_URL = `/api/v1/protected/accommodations/${ACCOMMODATION_ID}/media`;
-
 const NOW = new Date('2026-01-15T12:00:00.000Z');
 
 const buildMediaRow = (id: string, sortOrder: number) => ({
@@ -97,11 +98,18 @@ const MEDIA_LIST = [buildMediaRow(MEDIA_ID_1, 0), buildMediaRow(MEDIA_ID_2, 1)];
 // ---------------------------------------------------------------------------
 describe('GET /api/v1/protected/accommodations/:id/media — getMedia (SPEC-204)', () => {
     let app: AppOpenAPI;
+    let routeApp: Hono<AppBindings>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         app = initApp();
-        mockAdminGetMedia.mockResolvedValue({ data: { media: MEDIA_LIST }, error: undefined });
+        routeApp = new Hono<AppBindings>();
+        routeApp.use('*', (context, next) => {
+            context.set('actor', mockActor);
+            return next();
+        });
+        routeApp.route('/api/v1/protected/accommodations', protectedGetMediaRoute);
+        mockGetAccommodationMediaForReader.mockResolvedValue(MEDIA_LIST);
     });
 
     // ── Authentication ─────────────────────────────────────────────────────────
@@ -117,9 +125,9 @@ describe('GET /api/v1/protected/accommodations/:id/media — getMedia (SPEC-204)
 
     describe('Happy path', () => {
         it('should return 200 with the media list', async () => {
-            const res = await app.request(BASE_URL, {
+            const res = await routeApp.request(BASE_URL, {
                 method: 'GET',
-                headers: { Authorization: 'Bearer test-protected-token' }
+                headers: { 'user-agent': 'vitest' }
             });
 
             if (res.status === 200) {
@@ -137,27 +145,24 @@ describe('GET /api/v1/protected/accommodations/:id/media — getMedia (SPEC-204)
             }
         });
 
-        it('should call service.adminGetMedia with accommodationId from URL param', async () => {
-            await app.request(BASE_URL, {
+        it('should call the reader with accommodationId from URL param', async () => {
+            const response = await routeApp.request(BASE_URL, {
                 method: 'GET',
-                headers: { Authorization: 'Bearer test-protected-token' }
+                headers: { 'user-agent': 'vitest' }
             });
+            expect(response.status, await response.clone().text()).toBe(200);
 
-            if (mockAdminGetMedia.mock.calls.length > 0) {
-                const firstCall = mockAdminGetMedia.mock.calls[0] as [
-                    unknown,
-                    { accommodationId: string; state?: string }
-                ];
-                expect(firstCall[1].accommodationId).toBe(ACCOMMODATION_ID);
-            }
+            expect(mockGetAccommodationMediaForReader).toHaveBeenCalledWith(
+                expect.objectContaining({ accommodationId: ACCOMMODATION_ID })
+            );
         });
 
         it('should return empty media array when accommodation has no photos', async () => {
-            mockAdminGetMedia.mockResolvedValue({ data: { media: [] }, error: undefined });
+            mockGetAccommodationMediaForReader.mockResolvedValue([]);
 
-            const res = await app.request(BASE_URL, {
+            const res = await routeApp.request(BASE_URL, {
                 method: 'GET',
-                headers: { Authorization: 'Bearer test-protected-token' }
+                headers: { 'user-agent': 'vitest' }
             });
 
             if (res.status === 200) {
@@ -173,14 +178,14 @@ describe('GET /api/v1/protected/accommodations/:id/media — getMedia (SPEC-204)
 
     describe('Error handling', () => {
         it('should return 4xx when accommodation is not found', async () => {
-            mockAdminGetMedia.mockResolvedValue({
-                data: undefined,
-                error: { code: 'NOT_FOUND', message: 'Accommodation not found' }
-            });
+            const { ServiceError } = await import('@repo/service-core');
+            mockGetAccommodationMediaForReader.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found')
+            );
 
-            const res = await app.request(BASE_URL, {
+            const res = await routeApp.request(BASE_URL, {
                 method: 'GET',
-                headers: { Authorization: 'Bearer test-protected-token' }
+                headers: { 'user-agent': 'vitest' }
             });
 
             expect(res.status).not.toBe(200);
@@ -191,9 +196,9 @@ describe('GET /api/v1/protected/accommodations/:id/media — getMedia (SPEC-204)
 
     describe('Route registration', () => {
         it('should be registered (GET to the path does not return 404)', async () => {
-            const res = await app.request(BASE_URL, {
+            const res = await routeApp.request(BASE_URL, {
                 method: 'GET',
-                headers: { Authorization: 'Bearer test-protected-token' }
+                headers: { 'user-agent': 'vitest' }
             });
             expect(res.status).not.toBe(404);
         });

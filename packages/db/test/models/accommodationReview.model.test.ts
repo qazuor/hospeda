@@ -62,10 +62,13 @@ describe('AccommodationReviewModel', () => {
 
             expect(result.items).toHaveLength(1);
             expect(result.total).toBe(1);
-            expect(db.query.accommodationReviews.findMany).toHaveBeenCalledWith({
-                where: undefined,
-                with: { user: true, accommodation: true }
-            });
+            expect(db.query.accommodationReviews.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: undefined,
+                    with: { user: true, accommodation: true },
+                    orderBy: expect.any(Function)
+                })
+            );
             expect(logQuery).toHaveBeenCalledWith(
                 'accommodationReviews',
                 'findAllWithUser',
@@ -90,14 +93,37 @@ describe('AccommodationReviewModel', () => {
 
             expect(result.items).toHaveLength(1);
             expect(result.total).toBe(10);
-            expect(db.query.accommodationReviews.findMany).toHaveBeenCalledWith({
-                where: undefined,
-                with: { user: true, accommodation: true },
-                limit: 5,
-                offset: 5
-            });
+            expect(db.query.accommodationReviews.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: undefined,
+                    with: { user: true, accommodation: true },
+                    limit: 5,
+                    offset: 5,
+                    orderBy: expect.any(Function)
+                })
+            );
 
             mockCount.mockRestore();
+        });
+
+        it('orders paginated and unpaginated results by createdAt and id descending', async () => {
+            const findMany = vi.fn().mockResolvedValue([]);
+            getDb.mockReturnValue({ query: { accommodationReviews: { findMany } } });
+            vi.spyOn(model, 'count').mockResolvedValue(0);
+            await model.findAllWithUser({});
+            await model.findAllWithUser({}, { page: 1, pageSize: 2 });
+
+            for (const [args] of findMany.mock.calls) {
+                const orderBy = (
+                    args as { orderBy: (columns: unknown, helpers: unknown) => unknown[] }
+                ).orderBy;
+                expect(
+                    orderBy(
+                        { createdAt: 'c', id: 'i' },
+                        { desc: (value: unknown) => ({ desc: value }) }
+                    )
+                ).toEqual([{ desc: 'c' }, { desc: 'i' }]);
+            }
         });
 
         it('applies additional SQL conditions to relational items and count', async () => {

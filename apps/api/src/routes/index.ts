@@ -24,6 +24,7 @@ import {
 import { adminExternalReputationRoutes } from './accommodation-external-reputation/admin/index.js';
 import { protectedExternalReputationRoutes } from './accommodation-external-reputation/protected/index.js';
 import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
+import { adminAddonCatalogRoutes } from './addon-catalog/admin/index.js';
 import {
     adminAiCredentialsRoutes,
     adminAiPostGenerateRoute,
@@ -55,8 +56,12 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
+import { protectedAddonPurchaseRoutes } from './billing-addon/index.js';
+import { adminBillingAddonProductRoutes } from './billing-addon-product/admin/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
 import { adminBillingPermanentGrantRoutes } from './billing-permanent-grant/admin/index.js';
+import { adminPlanMigrationRoutes } from './billing-plan-migration/admin/index.js';
+import { adminBillingPriceRoutes } from './billing-price/admin/index.js';
 import { adminBillingPromoCodeRoutes } from './billing-promo/admin/index.js';
 import { protectedBillingPromoRoutes } from './billing-promo/index.js';
 import { adminBillingReconciliationRoutes } from './billing-reconciliation/admin/index.js';
@@ -116,6 +121,7 @@ import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
+import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -131,8 +137,13 @@ import {
     publicOwnerPromotionRoutes
 } from './owner-promotion';
 import { adminPartnerApplicationRoutes } from './partner-application';
+import {
+    protectedPartnerClaimRoutes,
+    publicPartnerApplicationRoutes
+} from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
+    adminConfigurePartnerBillingRoute,
     adminCreatePartnerMentionsRoute,
     adminCreatePartnerRoute,
     adminDeletePartnerMentionRoute,
@@ -141,13 +152,15 @@ import {
     adminListPartnerMentionsRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminPreviewPartnerBillingSetupRoute,
     adminReviewPartnerContentRoute,
-    adminRevokePartnerRoute,
     adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
     protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
+import { adminEmptyPartnerPresenceRoute } from './partners/admin/empty-presence';
+import { adminModeratePartnerPresenceRoute } from './partners/admin/presence-moderation';
 import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
@@ -332,6 +345,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/partners', publicPartnersRoutes);
         // Alliance lead intake — public "aliados" acquisition forms (HOS-277)
         app.route('/api/v1/public/alliance', publicAllianceRoutes);
+        app.route('/api/v1/public/partner-applications', publicPartnerApplicationRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 
@@ -484,6 +498,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
+        app.route('/api/v1/protected/partner-claims', protectedPartnerClaimRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         // HOS-1156: the vertical-parameterised publish precheck, which
         // generalises /host-onboarding/precheck to venue and experiences.
@@ -519,6 +534,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
         app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+        app.route('/api/v1/protected/billing/addons', protectedAddonPurchaseRoutes);
         app.route('/api/v1/protected/billing/promo-codes', protectedBillingPromoRoutes);
         app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 
@@ -566,7 +582,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
-        app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
+        app.route('/api/v1/admin/partners', adminModeratePartnerPresenceRoute);
+        app.route('/api/v1/admin/partners', adminEmptyPartnerPresenceRoute);
+        app.route('/api/v1/admin/partners', adminPreviewPartnerBillingSetupRoute);
+        app.route('/api/v1/admin/partners', adminConfigurePartnerBillingRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
         // on the same prefix and takes the partner from its own path segment.
         app.route('/api/v1/admin/partners', adminListPartnerMentionsRoute);
@@ -674,8 +693,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-reconciliation', adminBillingReconciliationRoutes);
         app.route('/api/v1/admin/billing-permanent-grants', adminBillingPermanentGrantRoutes);
         app.route('/api/v1/admin/billing-promo-codes', adminBillingPromoCodeRoutes);
+        app.route('/api/v1/admin/billing-prices', adminBillingPriceRoutes);
+        app.route('/api/v1/admin/plan-migrations', adminPlanMigrationRoutes);
+        app.route('/api/v1/admin/billing-addon-products', adminBillingAddonProductRoutes);
+        app.route('/api/v1/admin/addon-catalog', adminAddonCatalogRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
+        app.route('/api/v1/admin/listing-fix-requests', adminListingFixRequestRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);

@@ -10,7 +10,6 @@ import type { ApiResult } from '@/lib/api/types';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { PLAN_CHANGE_UNAVAILABLE, PLAN_CHANGE_UNAVAILABLE_KEY } from './my-subscription-notices';
 import { buildSignupCheckoutHref } from './signup-checkout';
 
 /** Backend situation vertical associated with each pricing audience. */
@@ -49,9 +48,9 @@ const PUBLISH_SLUG_BY_PRICING_VERTICAL: Record<
 };
 
 type LiveStatus = Extract<PricingSituationResponse, { situation: 'SUBSCRIBED' }>['status'];
-/** Statuses whose cards show the shared unavailable plan-change notice. */
-export const PRICING_PLAN_CHANGE_NOTICE: Record<LiveStatus, boolean> = {
-    ACTIVE: PLAN_CHANGE_UNAVAILABLE.ACTIVE,
+/** Statuses that permit an active subscriber to request another option. */
+export const PRICING_PLAN_CHANGE_OFFER: Record<LiveStatus, boolean> = {
+    ACTIVE: true,
     GRACE_PERIOD: false,
     SUSPENDED: false,
     CANCEL_SCHEDULED: false,
@@ -69,9 +68,9 @@ export type PlanCardCtaView =
               readonly resumes: boolean;
           }[];
       }
-    | { readonly kind: 'current'; readonly showsPlanChangeNotice: boolean }
+    | { readonly kind: 'current'; readonly changeOptions: readonly string[] }
     | { readonly kind: 'republish'; readonly href: string }
-    | { readonly kind: 'planChangeUnavailable' }
+    | { readonly kind: 'planChange'; readonly optionIds: readonly string[] }
     | { readonly kind: 'vipInherited' }
     | { readonly kind: 'none' };
 
@@ -165,12 +164,19 @@ export function resolvePlanCardCta({
             if (parsed.planVersionId === plan.planVersionId) {
                 return {
                     kind: 'current',
-                    showsPlanChangeNotice: PRICING_PLAN_CHANGE_NOTICE[parsed.status]
+                    changeOptions: PRICING_PLAN_CHANGE_OFFER[parsed.status]
+                        ? [plan.billingOptions.monthly, plan.billingOptions.annual].filter(
+                              (id): id is string => !!id && id !== parsed.billingOptionId
+                          )
+                        : []
                 };
             }
-            return PRICING_PLAN_CHANGE_NOTICE[parsed.status]
-                ? { kind: 'planChangeUnavailable' }
-                : none;
+            if (!PRICING_PLAN_CHANGE_OFFER[parsed.status]) return none;
+            const optionIds = [
+                plan.billingOptions.monthly,
+                ...(plan.billingOptions.annual ? [plan.billingOptions.annual] : [])
+            ].filter((id) => id !== parsed.billingOptionId);
+            return optionIds.length ? { kind: 'planChange', optionIds } : none;
         }
     };
     return bySituation[parsed.situation]();
@@ -226,8 +232,6 @@ export function resetPricingSituationCacheForTests(): void {
     situationPromises.clear();
     billingUnpublishedPromises.clear();
 }
-
-export { PLAN_CHANGE_UNAVAILABLE_KEY };
 
 /**
  * Whether the host owns at least one listing in `UNPUBLISHED_BY_BILLING`, read

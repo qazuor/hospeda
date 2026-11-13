@@ -7,11 +7,17 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('drizzle-orm', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('drizzle-orm')>();
+    return { ...actual, eq: vi.fn(actual.eq) };
+});
+
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         accommodationReviews: {
             lifecycleState: 'lifecycleState',
+            moderationState: 'moderationState',
             deletedAt: 'deletedAt',
             userId: 'userId',
             createdAt: 'createdAt'
@@ -28,6 +34,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 import * as dbModule from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { StatsService } from '../../../src/services/stats/stats.service.js';
 
 const mockGetDb = dbModule.getDb as unknown as ReturnType<typeof vi.fn>;
@@ -57,6 +64,14 @@ function buildDbStub(rows: Array<{ avg: string | number | null }>) {
 
 describe('StatsService.getGlobalAccommodationAverageRating', () => {
     let service: StatsService;
+
+    it('filters the average query to APPROVED reviews', async () => {
+        mockGetDb.mockReturnValue(buildDbStub([{ avg: 4 }]));
+
+        await service.getGlobalAccommodationAverageRating();
+
+        expect(eq).toHaveBeenCalledWith(dbModule.accommodationReviews.moderationState, 'APPROVED');
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -156,6 +171,14 @@ function buildAvatarsDbStub(
 
 describe('StatsService.getRecentReviewerAvatars', () => {
     let service: StatsService;
+
+    it('filters the avatar query to APPROVED reviews', async () => {
+        mockGetDb.mockReturnValue(buildAvatarsDbStub([]).db);
+
+        await service.getRecentReviewerAvatars({ limit: 4 });
+
+        expect(eq).toHaveBeenCalledWith(dbModule.accommodationReviews.moderationState, 'APPROVED');
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();

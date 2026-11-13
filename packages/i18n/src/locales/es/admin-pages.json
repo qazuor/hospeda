@@ -1430,6 +1430,126 @@
             "errorEndBeforeStart": "La fecha de fin debe ser posterior a la de inicio"
         }
     },
+    "planMigration": {
+        "title": "Migrar un plan retirado",
+        "intro": "Elegí la versión retirada y la versión destino. Revisá cada cliente antes de confirmar.",
+        "loading": "Cargando opciones…",
+        "source": "Versión retirada",
+        "target": "Versión destino",
+        "chooseSource": "Elegí una versión",
+        "chooseTarget": "Elegí un destino",
+        "reason": "Motivo",
+        "sourceOption_one": "{name} · {{count}} cliente",
+        "sourceOption_other": "{name} · {{count}} clientes",
+        "versionLabel": "{name} · versión {number}",
+        "preview": "Previsualizar",
+        "confirm": "Confirmar migración",
+        "notice_one": "Aviso de {{count}} día · versión de plazos {version}",
+        "notice_other": "Aviso de {{count}} días · versión de plazos {version}",
+        "notAvailable": "—",
+        "toResolve": "A resolver",
+        "waits": "Espera a que vuelva",
+        "losesPromo": "Pierde la promoción",
+        "excludedBadge": "Excluida",
+        "result": "Migración {id}. Filas escritas: {rows}. Excluidas: {excluded}.",
+        "columns": {
+            "customer": "Cliente",
+            "direction": "Cambio",
+            "currentAmount": "Precio actual",
+            "newAmount": "Precio nuevo",
+            "promotion": "Promoción",
+            "date": "Fecha de aplicación"
+        },
+        "direction": {
+            "UP": "Sube",
+            "DOWN": "Baja"
+        },
+        "excluded": {
+            "ACTOR_IS_SUBJECT": "Es tu propia cuenta",
+            "ALREADY_IN_MIGRATION": "Ya está en otra migración"
+        },
+        "list": {
+            "show": "Ver migraciones anunciadas",
+            "hide": "Ocultar migraciones",
+            "title": "Migraciones anunciadas",
+            "loading": "Cargando migraciones…",
+            "empty": "Todavía no hay migraciones anunciadas.",
+            "plans": "Origen → destino",
+            "reason": "Motivo",
+            "announcedAt": "Anuncio",
+            "status": "Estado",
+            "counts": "Filas por estado",
+            "detail": "Ver detalle",
+            "active": "Activa",
+            "cancelled": "Cancelada",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "page": "Página {page} de {total}"
+        },
+        "reasons": { "RETIREMENT": "Retiro del catálogo", "PRICE_INCREASE": "Aumento de precio" },
+        "retiredVersions": {
+            "title": "Versiones retiradas",
+            "show": "Mostrar versiones retiradas",
+            "hide": "Ocultar versiones retiradas",
+            "empty": "No hay versiones retiradas con suscripciones vivas.",
+            "columns": {
+                "name": "Versión",
+                "vertical": "Vertical",
+                "liveSubscriptions": "Suscripciones vivas"
+            }
+        },
+        "states": {
+            "PENDIENTE": "Pendiente",
+            "PARA_RESOLVER": "Para resolver",
+            "APLICADA": "Aplicada",
+            "FUERA": "Fuera",
+            "CANCELADA": "Cancelada"
+        },
+        "outReasons": {
+            "CAMBIO_DE_PLAN": "Cambió de plan",
+            "SE_DIO_DE_BAJA": "Se dio de baja",
+            "TERMINO": "Terminó"
+        },
+        "detail": {
+            "back": "Volver al listado",
+            "loading": "Cargando detalle…",
+            "notice_one": "Aviso de {{count}} día",
+            "notice_other": "Aviso de {{count}} días",
+            "announced": "Anunciada el {date}",
+            "subscription": "Suscripción",
+            "ageHeading": "Antigüedad desde el anuncio",
+            "applicationDate": "Fecha de aplicación",
+            "outReason": "Motivo de salida",
+            "noRows": "Sin filas en este estado.",
+            "age_one": "hace {{count}} día",
+            "age_other": "hace {{count}} días"
+        },
+        "cancel": {
+            "action": "Cancelar migración",
+            "title": "¿Cancelar esta migración?",
+            "description": "{restored} filas pendientes o para resolver vuelven a quedar como estaban. {started} filas cuyo cambio ya empezó siguen su curso. No se toca ningún cobro.",
+            "dismiss": "Conservar migración",
+            "confirm": "Confirmar cancelación"
+        },
+        "errors": {
+            "generic": "No pudimos completar la operación. Intentá de nuevo.",
+            "invalidSelection": "Elegí un origen y un destino válidos.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para migrar planes.",
+            "INVALID_PLAN_MIGRATION_INPUT": "Los datos de la migración no son válidos.",
+            "PLAN_VERSION_NOT_FOUND": "No encontramos una de las versiones.",
+            "PLAN_MIGRATION_SOURCE_NOT_RETIRED": "El origen ya no está retirado.",
+            "PLAN_MIGRATION_TARGET_NOT_SELLABLE": "El destino ya no está vigente y vendible.",
+            "PLAN_MIGRATION_VERTICAL_MISMATCH": "Las versiones son de verticales distintas.",
+            "PLAN_MIGRATION_SAME_VERSION": "Elegí una versión destino diferente.",
+            "PLAN_MIGRATION_COHORT_CHANGED": "La cohorte cambió. Volvé a previsualizar antes de confirmar.",
+            "PLAN_MIGRATION_EMPTY_COHORT": "No hay clientes para migrar.",
+            "PLAN_MIGRATION_NOT_FOUND": "La migración no existe.",
+            "PLAN_MIGRATION_ALREADY_CANCELLED": "La migración ya estaba cancelada.",
+            "PLAN_MIGRATION_INCREASE_OTHER_PLAN": "Un aumento va de una versión a otra del mismo plan.",
+            "PLAN_MIGRATION_INCREASE_SOURCE_CURRENT": "La versión de origen es la vigente: publicá primero la versión nueva con el precio nuevo.",
+            "PLAN_MIGRATION_INCREASE_CYCLE_MISSING": "La versión nueva no ofrece todos los ciclos de los clientes."
+        }
+    },
     "billing": {
         "title": "Mi facturación",
         "subtitle": "Revisá tu plan, uso y opciones de pago",

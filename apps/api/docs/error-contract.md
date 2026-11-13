@@ -46,9 +46,14 @@ check answers 403 to someone the server never identified.
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
+| New self-service paid signups paused (S1 checkout; first publish that would start a trial: reason FIRST_PUBLISH_PAUSED) | **409** | `NEW_PAID_SIGNUPS_FROZEN` |
+| Addon purchases paused (A1) | **409** | `ADDON_PURCHASES_FROZEN` |
+| Plan change while the next charge date is still being confirmed | **409** | `CONFLICT`, `error.details.reason: CYCLE_END_PENDING` |
 | Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
+
+ACC:25 Partner presence emptying uses these typed rejections: missing Partner → 404 `NOT_FOUND`; forbidden actor → 403 `FORBIDDEN`; already empty or changed presence → 409 `ALREADY_EXISTS`; missing remote provider or failed remote deletion → 503 `SERVICE_UNAVAILABLE`.
 
 ### Step 2 — the person's state
 
@@ -106,6 +111,118 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `TRIAL_ENDED` | 422 | `VALIDATION_ERROR` |
 | `CEILING_REACHED` | 422 | `VALIDATION_ERROR` |
 | `REDEMPTION_KEY_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_APPLICATION_UNAVAILABLE` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_APPLICATION_WAIT_NOT_ACTIVE` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_APPLICATION_NOT_PENDING` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
+
+### Cycle price (ACC:19, HOS-1515)
+
+`POST /api/v1/admin/billing-prices/preview` previews the confirmation;
+`POST /api/v1/admin/billing-prices` confirms and sets the price. The route checks
+401 authentication, then 403 route permission (`FORBIDDEN`; actors other than
+`SUPER_ADMIN` lack the exclusive permission), then 400 input shape
+(`VALIDATION_ERROR`). Business rejections follow this order: 404 unknown plan
+version; 422 non-sellable version; 422 below provider minimum; 422 above provider
+maximum; 422 cycle no longer than grace; 409 version with customers; 409 price
+changed since preview; 422 unchanged price. A `current=false` version remains
+eligible when it is sellable. Service-only `INVALID_CYCLE_PRICE_INPUT` maps to
+422 if it reaches the handler after route validation.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PLAN_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PLAN_VERSION_NOT_SELLABLE` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_PRICE_BELOW_PROVIDER_MINIMUM` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_PRICE_ABOVE_PROVIDER_MAXIMUM` | 422 | `VALIDATION_ERROR` |
+| `CYCLE_NOT_LONGER_THAN_GRACE` | 422 | `VALIDATION_ERROR` |
+| `PLAN_VERSION_HAS_CUSTOMERS` | 409 | `ALREADY_EXISTS` |
+| `CYCLE_PRICE_CHANGED_SINCE_PREVIEW` | 409 | `ALREADY_EXISTS` |
+| `CYCLE_PRICE_UNCHANGED` | 422 | `VALIDATION_ERROR` |
+| `INVALID_CYCLE_PRICE_INPUT` | 422 | `VALIDATION_ERROR` |
+
+This PR proposes these messages and codes (BS); a separate documentation PR
+records them in the spec after merge.
+
+### Plan migration: retirement and price increase (ACC:17, HOS-1612, HOS-1615)
+
+`GET /api/v1/admin/plan-migrations/options`, `POST /api/v1/admin/plan-migrations/preview`,
+`POST /api/v1/admin/plan-migrations`, `GET /api/v1/admin/plan-migrations/retired-versions`,
+`GET /api/v1/admin/plan-migrations`,
+`GET /api/v1/admin/plan-migrations/{id}` and
+`POST /api/v1/admin/plan-migrations/{id}/cancel` require `billing.migratePlan`. The order is
+401 (missing session or guest), 403 (missing permission), 400 (invalid input),
+404 (unknown version or migration), then business rules. A version outside the eligible
+catalog is reported as 404 only when it does not exist. Each owned rejection
+uses its literal reason as `error.code` and `error.reason`.
+
+| `error.code` | Status |
+|---|---:|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 |
+| `INVALID_PLAN_MIGRATION_INPUT` | 400 |
+| `PLAN_VERSION_NOT_FOUND` | 404 |
+| `PLAN_MIGRATION_SOURCE_NOT_RETIRED` | 422 |
+| `PLAN_MIGRATION_TARGET_NOT_SELLABLE` | 422 |
+| `PLAN_MIGRATION_VERTICAL_MISMATCH` | 422 |
+| `PLAN_MIGRATION_SAME_VERSION` | 422 |
+| `PLAN_MIGRATION_INCREASE_OTHER_PLAN` | 422 |
+| `PLAN_MIGRATION_INCREASE_SOURCE_CURRENT` | 422 |
+| `PLAN_MIGRATION_INCREASE_CYCLE_MISSING` | 422 |
+| `PLAN_MIGRATION_COHORT_CHANGED` | 409 |
+| `PLAN_MIGRATION_EMPTY_COHORT` | 409 |
+| `PLAN_MIGRATION_NOT_FOUND` | 404 |
+| `PLAN_MIGRATION_ALREADY_CANCELLED` | 409 |
+
+Route-level authentication and validation retain the standard `UNAUTHORIZED`,
+`FORBIDDEN` and `VALIDATION_ERROR` codes. Successful launch records one
+`BILLING_MUTATION` audit with `administrativeAction: ACC_17`. Successful cancellation
+records the same action with the migration id; rejected cancellations do not audit.
+
+### Addon version publication (ACC:20, HOS-1595)
+
+`POST /api/v1/admin/billing-addon-products/{productId}/version-publication/preview`
+previews the current and proposed policy, price, and count of live instances still
+anchored to the current version. `POST` to the same path without `/preview`
+publishes with `expectedCurrentVersionId` and `expectedCurrentPrice`. Both require
+`billing.publishAddonVersion` and reject in order: 401 session, 403 permission,
+400 body or path shape, 404 product or version, then business rules. The version
+must belong to the product's addon. Price changes are refused while the product
+has live instances; a version change at the same price remains allowed. Successful
+publication records a `BILLING_MUTATION` audit with `administrativeAction: ACC_20`.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `ADDON_PRODUCT_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_VERSION_OF_ANOTHER_ADDON`, `ADDON_PRODUCT_HAS_LIVE_INSTANCES`, `ADDON_PRODUCT_CHANGED_SINCE_PREVIEW` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `ADDON_PRODUCT_UNCHANGED`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These route codes and messages are proposed for owner approval under BS.
+
+### Addon catalog editor creation (ACC:20, HOS-1625)
+
+Product retirement uses `GET`, `POST` and `DELETE /api/v1/admin/billing-addon-products/{productId}/retirement`. All require `billing.publishAddonVersion`; the response order is 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 400 `VALIDATION_ERROR` for malformed UUID, then 404 `NOT_FOUND` (`ADDON_PRODUCT_NOT_FOUND`). The response is `{ productId, retiredAt }`, with an ISO timestamp or `null`. `POST` and `DELETE` are idempotent and audit `BILLING_MUTATION` with `ACC_20`. Retired products leave offers and paid purchases return the existing 404 `ADDON_PRODUCT_NOT_FOUND`; acquired instances keep their status and version.
+
+`GET /api/v1/admin/addon-catalog` reads addons, immutable versions, saleable
+products and live instance counts. `POST /api/v1/admin/addon-catalog/addons`
+creates an addon with its first version; `POST /api/v1/admin/addon-catalog/addons/{addonId}/versions`
+appends a version; `POST /api/v1/admin/billing-addon-products` creates its product.
+All four require `billing.publishAddonVersion`. Each successful creation records
+`BILLING_MUTATION` with `administrativeAction: ACC_20`. The HTTP order is 401,
+403, 400, 404, then business rules.
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| Malformed body or path | 400 | `VALIDATION_ERROR` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `INVALID_ADDON_CREATION_INPUT`, `INVALID_ADDON_VERSION_CREATION_INPUT`, `ADDON_CATALOG_KEY_INVALID` | 400 | `VALIDATION_ERROR` |
+| `ADDON_NOT_FOUND`, `ADDON_VERSION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADDON_ALREADY_EXISTS`, `ADDON_VERSION_DUPLICATE_KEY`, `ADDON_PRODUCT_ALREADY_EXISTS`, `ADDON_VERSION_OF_ANOTHER_ADDON` | 409 | `ALREADY_EXISTS` |
+| `ADDON_VERSION_INCOMPATIBLE_WITH_CHARGE_KIND`, `ADDON_PRICE_BELOW_PROVIDER_MINIMUM`, `ADDON_PRICE_ABOVE_PROVIDER_MAXIMUM`, `INVALID_ADDON_VERSION_PUBLICATION_INPUT` | 400 | `VALIDATION_ERROR` |
+
+These editor creation responses are proposed for owner approval under BS.
 
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
@@ -390,7 +507,11 @@ Two rules specific to this surface:
 
 ## S1 rejections (B3)
 
-`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner never starts a card checkout: the official path is the manual subscription created by administrative action 6 (HOS-1489) and paid by bank transfer (PM-617, HOS-1782). `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+
+`NEW_PAID_SIGNUPS_FROZEN` answers 409 at HTTP step 6 (business rules), after
+resource 404s and S1's own 422 rejections. The first-publish PB1 refusal also
+returns `error.reason: FIRST_PUBLISH_PAUSED`; S1 checkout has no reason.
 
 `PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
 
@@ -437,6 +558,42 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 13 rejections (B6.1)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/confirm` (ACC:13, RF2) maps every typed rejection from `confirmRefund` in `src/routes/billing-refund/admin/confirm.ts`. The declared `billing.refund` permission is checked before request shape; the service checks the action, subject and source in its transaction.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE` (a manual payment, or an add-on payment whose instance has no provider order) | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_PAST_PROVIDER_WINDOW` | 422 | `VALIDATION_ERROR` |
+| `REFUND_PROVIDER_ID_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
+
+Provider results are not rejections: confirmation returns 200 with an `outcome` describing the result. A missing or non-`true` `confirmed` field is a 400 shape error (`VALIDATION_ERROR`).
+`ORDER_REFUND_HELD`, `PROVIDER_KEY_CONFLICT`, and `ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED` return 200 and leave the refund `CONFIRMED`.
+`PROVIDER_REJECTED_FAILED` returns 200 with `status: 'FAILED'`.
+An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider call.
+
+## Action 13 decline (B6.2)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/decline` (ACC:13, RF5) requires `{ "declined": true }`. Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 request shape → 404 missing refund or source → 409 state or provider-call conflict. A successful refusal returns 200 with `{ refundId, status: "FAILED" }` and leaves the payment unchanged.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
+
 ## Action 14 charge settlement rejections (B5.9)
 
 `POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
@@ -454,12 +611,19 @@ The permission is the route's scope (`billing.settleExternal`); the subject, the
 
 ## Permanent grant rejections (B9a.2, ACC:2)
 
-`POST /api/v1/admin/billing-permanent-grants` and
-`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` answer
+`POST /api/v1/admin/billing-permanent-grants`,
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` and
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation`,
+`POST /api/v1/admin/billing-permanent-grants/preview`,
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors/preview`,
+`GET /api/v1/admin/billing-permanent-grants/{permanentGrantId}/revocation` and
+`GET /api/v1/admin/billing-permanent-grants/by-beneficiary/{userId}` answer
 typed rejections with their `reason`. The mapping lives in
 `src/routes/billing-permanent-grant/admin/rejections.ts` as an exhaustive
 `Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
 breaks the typecheck.
+
+The three previews reject for the same reasons, in the same order, as their corresponding acts (including 403 from the service when the actor is the beneficiary); the live-grant read only rejects for permission (besides request-shape validation), so a permitted beneficiary can read their grant, and all four routes write nothing.
 
 | `reason` | Status | `error.code` |
 |---|---:|---|
@@ -470,14 +634,57 @@ breaks the typecheck.
 | `PERMANENT_GRANT_ALREADY_LIVE` | 409 | `ALREADY_EXISTS` |
 | `PERMANENT_GRANT_REFERENCE_NOT_FOUND` | 422 | `VALIDATION_ERROR` |
 | `PERMANENT_GRANT_FLOOR_NOT_CURRENT` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_LISTING_SOFT_DELETED` | 409 | `ALREADY_EXISTS` |
 | `INVALID_PERMANENT_GRANT_INPUT` | 422 | `VALIDATION_ERROR` |
 
 The floor is validated with `políticaDePlan(v).vigente` before writing.
 
 The permission is the route scope (`billing.grantComplimentary`); the service
 decides the action permission, subject, system actor and `actor = subject`, so a
-403 can come from the route or the service. Revocation does not have a route yet
-(B9a.6, Fase 2).
+403 can come from the route or the service.
+
+Revoking checks its rejections in this order: 401 without a session, 403 from the
+route permission (before reading the grant, so a missing id is still 403), 400 for
+a bad path UUID, a blank reason or an extra body key, 404 for a missing grant, 403
+from the service for the beneficiary or a system actor, then 422
+`PERMANENT_GRANT_NOT_LIVE` for an already revoked grant, then 409
+`PERMANENT_GRANT_LISTING_SOFT_DELETED` when an addon titled by the grant targets
+a soft-deleted listing (legacy data; nothing is revoked). The mapping table above
+is exhaustive.
+
+## Actions 3 and 4 manual payment rejections
+
+`GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register` (ACC:3, MP1) and `/declare-unpaid` (ACC:4, MP2) require their own action permissions. A caller without that permission receives 403 from the route factory. Invalid UUIDs and a `proofRef` outside 1–500 characters receive 400. An installment belonging to another subscription is 404. The service rechecks the administrative action inside its transaction.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `MANUAL_PAYMENT_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MANUAL_PAYMENT_NOT_AWAITING` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_IN_GRACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_COVERAGE_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `SUCCESSION_IN_PROGRESS` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT` | 409 | `ALREADY_EXISTS` |
+| `LOST_RACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_MANUAL` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_CONDITION_FAILED` | 422 | `VALIDATION_ERROR` |
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/manual-payments` requires `BILLING_SUBSCRIPTION_INSPECT`, lists that subscription's installments, and returns 404 for an unknown subscription. Both previews write no billing state.
+
+### Action 3: late and unallocated manual payments (MP4 and MP6)
+
+`GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register-late` (MP4) and `/manual-payments/unallocated` (MP6) require `BILLING_REGISTER_MANUAL_PAYMENT`. The route factory returns 403 without it. Invalid UUIDs and a `proofRef` outside 1–500 characters return 400. Both previews use the same business evaluation as their acts and write no billing state.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND`, `MANUAL_PAYMENT_NOT_FOUND` (including an installment of another subscription) | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MANUAL_PAYMENT_NOT_DECLARED_UNPAID`, `MANUAL_PAYMENT_NOT_SUSPENDED`, `MANUAL_PAYMENT_COVERAGE_CONFLICT`, `RETAINED_PAYMENT`, `LOST_RACE`, `MANUAL_PAYMENT_OPEN_INSTALLMENT` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_MANUAL`, `MANUAL_PAYMENT_CONDITION_FAILED`, `MANUAL_PAYMENT_NO_PERIOD`, `MANUAL_PAYMENT_PERIOD_NOT_COVERED`, `MANUAL_PAYMENT_NOT_ALLOCATABLE` | 422 | `VALIDATION_ERROR` |
+
+MP4 returns its S7 or S19 effect, period and optional reimputation. MP6 returns the new manual payment, its period and the S14 mark. A second transfer on a covered period opens reason 20; a transfer after cancellation or abandonment with a declared unpaid installment opens reason 2.
 
 ## Action 8 revocation rejections (B5, S36)
 
@@ -510,6 +717,19 @@ order: 401 unauthenticated, 403 without permission, 400 for a malformed
 `subscriptionId`, and 404 `NOT_FOUND` for an unknown subscription. The read is
 read-only and lists only `REQUESTED` refund requests attached to payments of
 that subscription; requests for complements and one-time add-ons are excluded.
+
+## Administrative subscription browse reads (HOS-2081)
+
+`GET /api/v1/admin/billing-subscription` lists subscriptions for support and
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/overview` reads one
+detail. Both require `BILLING_SUBSCRIPTION_INSPECT` at the route factory and
+answer 401 unauthenticated, 403 without the permission, 400 for a malformed
+`subscriptionId` or query (an unknown key such as `limit`, a `pageSize` above
+100, or an unknown status), and 404 `NOT_FOUND` for an unknown subscription.
+The list rejects unknown query parameters and paginates with `page` and
+`pageSize` (never `limit`). Both reads are read-only, audit `BILLING_READ`, and
+search matches the owner's `users.email`/`displayName` or a subscription/user
+UUID; it never matches `declared_payer_email`.
 
 ## Self-service cancellation (B13a.1, HOS-1617)
 
@@ -725,3 +945,90 @@ the permission is rejected before query, params, or body validation.
 The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`. A redemption
 attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
 under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.
+
+### Administrative plan change (ACC:10, HOS-1580)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/plan-change-options`
+uses `billing.changeSubscriptionPlan` and returns the current sellable billing
+options for the subscription vertical, including the current option marker. It
+also includes the subscription's anchored option when its version has left the
+current sellable offer, so the current choice remains identifiable. It
+returns 404 `SUBSCRIPTION_NOT_FOUND` when the row is absent and 403
+`ADMINISTRATIVE_ACTION_FORBIDDEN` when the actor is the subject. Successful
+reads record `BILLING_READ`.
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}` also returns optional
+`subject` identity and `currentPlan` display information from the persisted
+subscription associations.
+
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/plan-change` requires
+`billing.changeSubscriptionPlan`. Its strict body has `billingOptionId`,
+`expectedStatus: ACTIVE`, `confirmed: true`, and an optional note. Rejections
+follow 401 authentication → 403 route permission → 400 body → 404
+`SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal
+to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` → the owner plan-change
+route's typed rejection map. A successful `SUCCESSION` returns the checkout URL
+for the customer to authorize; `DOWNGRADE` and `REGRET` use the owner route's
+outcomes. Only success writes a `BILLING_MUTATION` audit with `ACC_10` and the
+administrator as actor.
+
+### Administrative pause and resume (ACC:9, HOS-1580)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/pause-preview`, `POST /pause`, and `POST /resume` each require `billing.pauseSubscription` at the route factory. Rejections follow 401 authentication → 403 route permission → 400 strict params/body → 404 `SUBSCRIPTION_NOT_FOUND` → 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409 `ADMINISTRATIVE_ACTION_STATE_CHANGED` when the observed status changed → the typed S8/S10 result. The POST bodies require `confirmed: true` and the observed `expectedStatus`; pause also requires `months` from 1 through 4.
+
+Pause refuses `NOT_ACTIVE`, `COURTESY_IN_FORCE`, `PAUSE_COUNT_EXHAUSTED`, and `MONTHS_EXHAUSTED` with 409 `CONFLICT`; `NOT_PRINCIPAL`, `MANUAL_PAYER`, `NOT_MONTHLY`, `PLAN_DISALLOWS_PAUSE`, `MONTHS_OUT_OF_RANGE`, and `NO_PROVIDER_LINK` with 422 `VALIDATION_ERROR`. Resume refuses `NOT_PAUSED`, `NO_OPEN_PAUSE`, and `PAUSE_NOT_CUSTOMER_REQUEST` with 409; provider calls are forbidden for a courtesy pause. `NOT_APPLIED` and `LOST_RACE` are 409. Each typed error carries `error.reason` and `error.details.reason`. Provider rejection is 422 `PROVIDER_REJECTED`; transient provider failure is 503 with `Retry-After` when available. The preview records `BILLING_READ`, and only a successful POST records `BILLING_MUTATION` with `administrativeAction: ACC_9` and the admin as actor.
+
+Protected addon purchase (`POST /api/v1/protected/billing/addons/purchases`) requires a non-guest session; absent authentication returns 401. The strict body rejects extra fields with 400. A one-time product requires payment details; its optional payer email defaults to the account email. Recurring products reject supplied payment details with 400. Product and target refusals return 404 `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND`; an inaccessible or ineligible listing has the same `ADDON_TARGET_NOT_FOUND` response. The 409 purchase codes are `ADDON_NO_VALID_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ADDON_ALREADY_ACTIVE`, and `ADDON_ORDER_REQUEST_REUSED`. `PENDING_ELSEWHERE` returns 200 with `processing: true`. Provider authorization rejection returns 422 `PROVIDER_REJECTED`; transient authorization failures return 503 as in signup. Unresolved one-time order outcomes return 202 with `processing: true`; the route does not abandon the order. `GET /api/v1/protected/billing/addons/purchases/{orderRequestId}` returns 404 `ADDON_PURCHASE_NOT_FOUND` for an absent purchase or one owned by another actor.
+
+Protected owner recurring addons (`GET /api/v1/protected/billing/addons/instances`) require a non-guest session and return only the actor's `PERIODICO` instances in `PENDING_AUTHORIZATION` or `ACTIVE`, ordered by acquisition time and id. Optional `listingId` must be a UUID. `POST /api/v1/protected/billing/addons/instances/{instanceId}/withdrawal` withdraws one such instance through A5 and returns 200 with its cancelled status and provider call result. Both routes reject without a session or for a guest with 401. The withdrawal rejects a malformed UUID with 400 `VALIDATION_ERROR`, an absent or foreign instance with 404 `NOT_FOUND`, and a one-time or terminal instance with 409 `ALREADY_EXISTS` and `error.reason: ADDON_NOT_WITHDRAWABLE`. No permission beyond the owner's session is required. A successful withdrawal records `BILLING_MUTATION` with the requesting actor id.
+
+Protected free addon choice (`POST /api/v1/protected/billing/addons/free-choices`) requires a non-guest session and a strict body without payment fields. The order is 401 authentication → 400 shape → 404 product or target existence and ownership → 409 business rules. `PRODUCT_NOT_FOUND` and `TARGET_NOT_FOUND` map to `ADDON_PRODUCT_NOT_FOUND` and `ADDON_TARGET_NOT_FOUND` (404). `NO_FREE_TITLE`, `ADDON_VERSION_NOT_CURRENT`, `ALREADY_ACTIVE`, `PENDING_ELSEWHERE`, and `ORDER_REQUEST_REUSED` map to their `ADDON_*` codes (409). A valid choice returns 201 with an `ACTIVE` instance; replay or an already live free choice returns 200 with the same instance id. The paid purchase path rejects `FREE_UNDER_GRANT` with 409 `ADDON_FREE_UNDER_GRANT` before provider authorization.
+
+### Owner pause and resume (HOS-1580)
+
+The owner pause request also accepts optional `courtesyForfeitConfirmed: true`. For a live
+`PAUSED · COURTESY` row, preview returns `offered: true` and `courtesyForfeit.endsAt` when
+the S35 pause terms pass. The POST refuses missing confirmation with 409 `CONFLICT`,
+reason `COURTESY_FORFEIT_NOT_CONFIRMED`; a confirmed POST replaces the courtesy pause
+with a customer-request pause. Early owner resume still refuses a courtesy pause.
+
+`GET /api/v1/protected/billing-subscription/{subscriptionId}/pause-preview` requires `BILLING_VIEW_OWN` and permits an unverified email for `READ_OWN`. The response reports `offered: false` with the typed S8 refusal reason (and `courtesyEndsAt` for `COURTESY_IN_FORCE`), or `offered: true` with allowed months, the UTC end date per month, remaining quota, and affected recurring addons.
+
+`POST /{subscriptionId}/pause` takes a strict `{ months: 1..4 }` body and returns `PAUSED`, `pauseId`, `expectedEndAt`, and `complements`. `POST /{subscriptionId}/resume` takes a strict empty body and returns `RESUMED` with `nextCharge`. Both POST routes require a verified email. All three resolve ownership before calling the service; an alien id returns 404. The POST routes use the typed S8/S10 rejection mapping above and record `BILLING_MUTATION` only on success, without an administrative action id. A courtesy pause returns 409 `PAUSE_NOT_CUSTOMER_REQUEST` before any provider call.
+
+### Administrative temporary courtesy grant and previews (ACC:1, HOS-1592)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/grant-preview?months=N`,
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/grant`, and
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke-preview` require
+`BILLING_GRANT_COMPLIMENTARY`. The POST requires a strict body with `expectedStatus`,
+integer `months` ≥ 1, nonempty `reason`, and `confirmed: true`. Rejections follow
+401 authentication → 403 route permission → 400 input → 404 `SUBSCRIPTION_NOT_FOUND`
+→ 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409
+`ADMINISTRATIVE_ACTION_STATE_CHANGED` → service rules.
+
+| Reason | Status | `error.code` |
+|---|---:|---|
+| `NOT_PRINCIPAL`, `NOT_MONTHLY`, `MONTHS_INVALID`, `NO_PROVIDER_LINK` | 422 | `VALIDATION_ERROR` |
+| `SUBSCRIPTION_PAUSED`, `NOT_ELIGIBLE`, `LIVE_GRANT_ANCHOR` | 409 | `CONFLICT` |
+| `COURTESY_NOT_APPLIED`, `LOST_RACE` | 409 | `CONFLICT` |
+
+Both previews record `BILLING_READ`. A revoke preview outside a live courtesy returns
+200 with `inForce: false` and `reason: COURTESY_NOT_IN_FORCE`. Only `GRANTED` and
+`EXTENDED` record `BILLING_MUTATION`, using the courtesy grant id as resource id.
+
+### Administrative temporary courtesy revocation (ACC:1, HOS-1590)
+
+`POST /api/v1/admin/billing-subscription/{subscriptionId}/courtesy/revoke` requires
+`BILLING_GRANT_COMPLIMENTARY`. The strict body is `{ expectedStatus: 'PAUSED',
+confirmed: true, note? }`. Rejections follow 401 authentication → 403 route permission
+→ 400 body or params → 404 `SUBSCRIPTION_NOT_FOUND` → 403
+`ADMINISTRATIVE_ACTION_FORBIDDEN` for actor equal to subject → 409
+`ADMINISTRATIVE_ACTION_STATE_CHANGED` → 409 `COURTESY_NOT_IN_FORCE` if the open pause
+is not courtesy. `NOT_APPLIED` maps to 409 `RESUME_NOT_APPLIED`; no mutation audit is
+written. Success returns `RESUMED` and `nextCharge` and records a billing mutation
+audit with `administrativeAction: ACC_1`.
+
+### Mi Suscripción: cortesía vigente y checkout sucesor (HOS-1580)
+
+`GET /api/v1/protected/billing-subscription/` agrega `liveCourtesyMonths` opcional por suscripción (meses de cortesía no diferida restantes, cero cuando no hay grant vigente) y `succession.checkoutDeadline` opcional (fecha individual de la ventana de autorización de la sucesora; `null` si no se registró). La fecha sólo aparece cuando hay una sucesión con checkout abierto.

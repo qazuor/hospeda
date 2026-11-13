@@ -55,6 +55,16 @@ describe('ListingNotices.astro — renders the read, decides nothing', () => {
     });
 });
 
+describe('TEST:B13b:1 AC:B13b:1 — el aviso de moderación nombra los destaques recurrentes que se siguen cobrando y ofrece la baja', () => {
+    it('renders each name and the withdrawal destination from the builder', () => {
+        expect(SOURCE).toContain('view.recurringAddons?.map((name)');
+        expect(SOURCE).toContain('data-testid="listing-notice-recurring-addon"');
+        expect(SOURCE).toContain('view.withdrawHref &&');
+        expect(SOURCE).toContain('data-testid="listing-notice-withdraw-link"');
+        expect(SOURCE).toContain('href={view.withdrawHref}');
+    });
+});
+
 describe('mi-cuenta/comercio — the notices of each venue or experience listing', () => {
     it('reads the notices once per listed vertical through the wrapper', () => {
         expect(COMERCIO_PAGE).toContain(

@@ -447,7 +447,8 @@
             "hidden": "No se ve en el sitio hasta que un admin levante la moderación.",
             "canDo": "Mientras tanto podés verla, exportarla, editarla y borrarla, pero no publicarla.",
             "recurring_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando hasta que lo des de baja.",
-            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando hasta que los des de baja."
+            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando hasta que los des de baja.",
+            "withdrawLink": "Dar de baja estos destaques"
         },
         "fixRequest": {
             "title": "Te pidieron un arreglo en esta ficha",

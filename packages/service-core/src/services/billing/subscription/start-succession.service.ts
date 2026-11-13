@@ -13,7 +13,9 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
+import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
     assertCardCheckoutVertical,
     assertPlanForSale,
@@ -24,11 +26,21 @@ import {
     type StartSubscriptionPorts,
     type StartSubscriptionResult
 } from './start-subscription.service.js';
+import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
+import { resolveSuccessorWindow } from './successor-window.js';
 
 const logger = createLogger('subscription-succession');
 
-/** Ports shared with S1 plus the optional provider notice transition delegate. */
-export type StartSuccessionPorts = StartSubscriptionPorts & { readonly mirror?: MirrorDelegates };
+/** Ports shared with S1 plus optional notice and AC:B8b:7, Q2 first-charge scheduling. */
+export type StartSuccessionPorts = StartSubscriptionPorts & {
+    readonly mirror?: MirrorDelegates;
+    /** AC:B8b:7, Q2: value-credit schedule for a non-exceptional successor. */
+    readonly firstChargeSchedule?: (input: {
+        readonly authorizationWindowEndsAt: Date;
+        readonly bornAt: Date;
+        readonly predecessorId: string;
+    }) => Promise<{ readonly firstChargeAt: Date }>;
+};
 
 /** S1 succession input. */
 export interface StartSuccessionInput extends StartSubscriptionInput {
@@ -81,9 +93,27 @@ export async function startSuccession(
     }
 
     const deadlines = await getCurrentBillingDeadlines();
-    const authorizationWindowEndsAt = new Date(
-        ports.clock.now().getTime() + deadlines.values['10'].cardHours * 60 * 60 * 1000
+    const cycleDeadlines = await getDb().transaction((tx) =>
+        readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId })
     );
+    const window = resolveSuccessorWindow({
+        now: ports.clock.now(),
+        cardHours: deadlines.values['10'].cardHours,
+        minimumRemainingHours: cycleDeadlines.values['15'].hoursRemaining,
+        predecessor: {
+            status: admitted.predecessor.status,
+            paymentMethod: admitted.predecessor.paymentMethod,
+            nextChargeAt: admitted.predecessor.nextChargeAt
+        }
+    });
+    if (window.kind === 'NOT_OFFERED')
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Successor authorization window is too short',
+            undefined,
+            'SUCCESSION_WINDOW_TOO_SHORT'
+        );
+    const authorizationWindowEndsAt = window.endsAt;
     const bornAt = ports.clock.now();
     let providerFirstChargeAt: string | undefined;
     let values: typeof subscriptions.$inferInsert;
@@ -94,7 +124,7 @@ export async function startSuccession(
             planVersionId: choice.planVersionId,
             billingOptionId: choice.id,
             paymentMethod: 'CARD',
-            status: 'PENDING_AUTHORIZATION',
+            status: SUCCESSION_CHECKOUT_OPEN_STATUS,
             class: 'PRINCIPAL',
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
@@ -102,7 +132,13 @@ export async function startSuccession(
             firstChargeAt: bornAt
         };
     } else {
-        const schedule = scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
+        const schedule = ports.firstChargeSchedule
+            ? await ports.firstChargeSchedule({
+                  authorizationWindowEndsAt,
+                  bornAt,
+                  predecessorId: admitted.predecessorId
+              })
+            : scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
         if (!(schedule.firstChargeAt > authorizationWindowEndsAt)) {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
@@ -116,7 +152,7 @@ export async function startSuccession(
             planVersionId: choice.planVersionId,
             billingOptionId: choice.id,
             paymentMethod: 'CARD',
-            status: 'PENDING_AUTHORIZATION',
+            status: SUCCESSION_CHECKOUT_OPEN_STATUS,
             class: 'PRINCIPAL',
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
@@ -158,6 +194,11 @@ export async function startSuccession(
                     'SUCCESSION_PREDECESSOR_MOVED'
                 );
             }
+            await exitPlanMigration({
+                tx,
+                subscriptionId: admitted.predecessorId,
+                reason: 'CAMBIO_DE_PLAN'
+            });
             return { subscription, idempotencyKey: key };
         });
     } catch (error) {

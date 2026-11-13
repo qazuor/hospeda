@@ -1,0 +1,50 @@
+import { extractPostgresErrorCause, ServiceError } from '@repo/service-core';
+
+/** Shared opaque reason for Partner applications rejected by database guards. */
+export const PARTNER_APPLICATION_UNAVAILABLE = 'PARTNER_APPLICATION_UNAVAILABLE' as const;
+
+/** Conflict reason when a Partner application has no active rejection wait to cancel. */
+export const PARTNER_APPLICATION_WAIT_NOT_ACTIVE = 'PARTNER_APPLICATION_WAIT_NOT_ACTIVE' as const;
+
+/** Conflict reason when a Partner application is already resolved. */
+export const PARTNER_APPLICATION_NOT_PENDING = 'PARTNER_APPLICATION_NOT_PENDING' as const;
+
+/** Conflict reason when a correct claim link belongs to an already claimed Partner. */
+export const PARTNER_ALREADY_CLAIMED = 'PARTNER_ALREADY_CLAIMED' as const;
+
+/** Conflict reason when the claimant already owns a different Partner. */
+export const PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS = 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS' as const;
+
+const MAX_CAUSE_DEPTH = 10;
+
+/** Classifies only the database constraints that prevent a Partner application submission. */
+export function classifyPartnerApplicationInsertError({
+    error
+}: {
+    readonly error: unknown;
+}): 'PENDING_EXISTS' | 'WAIT_ACTIVE' | null {
+    const postgresError = extractPostgresErrorCause(error);
+    if (
+        postgresError?.code === '23505' &&
+        postgresError.constraint === 'uq_partner_application_pending_email'
+    ) {
+        return 'PENDING_EXISTS';
+    }
+
+    const seen = new Set<object>();
+    let current: unknown = error;
+    for (let depth = 0; depth < MAX_CAUSE_DEPTH; depth++) {
+        if (current === null || typeof current !== 'object' || seen.has(current)) return null;
+        seen.add(current);
+        const candidate = current as Record<string, unknown>;
+        if (
+            candidate.code === 'P0001' &&
+            typeof candidate.message === 'string' &&
+            candidate.message.startsWith('partner_application_wait_active')
+        ) {
+            return 'WAIT_ACTIVE';
+        }
+        current = current instanceof ServiceError ? current.details : candidate.cause;
+    }
+    return null;
+}

@@ -44,6 +44,7 @@ import {
     LIFT_NOTICE_WINDOW_DAYS,
     type TrialRowFacts
 } from './listing-notices.builder';
+import { readRecurringListingAddonNames } from './recurring-listing-addons';
 
 /** Reads the person's trial row in a vertical, if any. */
 async function readTrialRow(input: {
@@ -130,12 +131,17 @@ export async function listListingNotices(input: {
                 row.lastLift.at.getTime() >= windowStart
         );
     const publishLimit = needsLimit ? await readPublishLimit(input) : undefined;
+    const addonNames = await readRecurringListingAddonNames({
+        coverage,
+        listingIds: rows.map((row) => row.id)
+    });
     return {
         trialRunning: isTrialRunning({ trial, now }).running,
         items: [
             ...buildListingNoticeItems({
                 rows,
                 coverage,
+                addonNames,
                 now,
                 vertical: input.vertical,
                 ...(publishLimit === undefined ? {} : { publishLimit })

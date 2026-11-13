@@ -139,6 +139,7 @@ export async function seedPredecessor(input: {
     readonly paymentMethod?: 'CARD' | 'MANUAL';
     readonly providerState?: 'active' | 'paused' | 'cancelled';
     readonly honestAboutM1?: boolean;
+    readonly activateThroughService?: boolean;
 }) {
     let fake: FakePaymentProvider;
     if (input.honestAboutM1) {
@@ -170,11 +171,22 @@ export async function seedPredecessor(input: {
         await fake.pause({ authorizationId: started.authorizationId });
     if (input.providerState === 'cancelled')
         await fake.cancel({ authorizationId: started.authorizationId });
-    const activated = await subscriptionModel.activatePendingAuthorization({
-        subscriptionId: started.subscriptionId,
-        now: successionClock.now()
-    });
-    if (!activated) throw new Error('Could not activate seeded predecessor');
+    if (input.activateThroughService) {
+        const { activateSubscription } = await import(
+            '../../../../src/services/billing/subscription/activate-subscription.service'
+        );
+        const activated = await activateSubscription(
+            started.subscriptionId,
+            successionPorts(provider)
+        );
+        if (!activated.activated) throw new Error('Could not activate seeded predecessor');
+    } else {
+        const activated = await subscriptionModel.activatePendingAuthorization({
+            subscriptionId: started.subscriptionId,
+            now: successionClock.now()
+        });
+        if (!activated) throw new Error('Could not activate seeded predecessor');
+    }
     await getServiceTestDb()
         .update(subscriptions)
         .set({ status: input.status, paymentMethod: input.paymentMethod ?? 'CARD' })

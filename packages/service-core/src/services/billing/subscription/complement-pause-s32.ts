@@ -3,6 +3,7 @@ import {
     and,
     eq,
     getDb,
+    isNull,
     LIVE_SUBSCRIPTION_STATUSES,
     subscriptionPauses,
     subscriptions
@@ -23,11 +24,14 @@ import { pauseEndForUserWide, selectComplementTargets } from './complement-selec
 const logger = createLogger('complement-pause-s32');
 const inputSchema = z.strictObject({
     principalSubscriptionId: z.uuid(),
-    trigger: z.enum(['PRINCIPAL_SUSPENDED', 'PRINCIPAL_LEFT_LIVE_ROWS'])
+    trigger: z.enum(['PRINCIPAL_SUSPENDED', 'PRINCIPAL_LEFT_LIVE_ROWS', 'PRINCIPAL_PAUSED'])
 });
 
 /** Why this S32 invocation is running. */
-export type ComplementPauseTrigger = 'PRINCIPAL_SUSPENDED' | 'PRINCIPAL_LEFT_LIVE_ROWS';
+export type ComplementPauseTrigger =
+    | 'PRINCIPAL_SUSPENDED'
+    | 'PRINCIPAL_LEFT_LIVE_ROWS'
+    | 'PRINCIPAL_PAUSED';
 /** Per-complement result of the provider pause and local write. */
 export type ComplementPauseOutcome =
     | 'PAUSED'
@@ -70,10 +74,26 @@ export async function pauseComplementsS32(
             .limit(1);
         if (principal?.class !== 'PRINCIPAL' || !principal.userId || !principal.vertical)
             return null;
+        const [principalPause] =
+            value.trigger === 'PRINCIPAL_PAUSED'
+                ? await tx
+                      .select({ expectedEndAt: subscriptionPauses.expectedEndAt })
+                      .from(subscriptionPauses)
+                      .where(
+                          and(
+                              eq(subscriptionPauses.subscriptionId, principal.id),
+                              eq(subscriptionPauses.reason, 'CUSTOMER_REQUEST'),
+                              isNull(subscriptionPauses.actualEndAt)
+                          )
+                      )
+                      .limit(1)
+                : [];
         const matches =
             value.trigger === 'PRINCIPAL_SUSPENDED'
                 ? principal.status === 'SUSPENDED'
-                : !(LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(principal.status);
+                : value.trigger === 'PRINCIPAL_PAUSED'
+                  ? principal.status === 'PAUSED' && Boolean(principalPause)
+                  : !(LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(principal.status);
         if (!matches) return null;
         const selected = await selectComplementTargets(
             {
@@ -91,18 +111,26 @@ export async function pauseComplementsS32(
         );
         const ends = new Map<string, Date | null>();
         for (const target of selected.targets) {
-            ends.set(
-                target.complementSubscriptionId,
+            const otherEnd =
                 value.trigger === 'PRINCIPAL_SUSPENDED' ||
-                    target.scopeType === 'VERTICAL_SUBSCRIPTION' ||
-                    target.scopeType === 'LISTING'
+                target.scopeType === 'VERTICAL_SUBSCRIPTION' ||
+                target.scopeType === 'LISTING'
                     ? null
                     : await pauseEndForUserWide({
                           tx,
                           userId: principal.userId,
                           compatibleVerticals: target.compatibleVerticals,
                           exceptVertical: principal.vertical
-                      })
+                      });
+            ends.set(
+                target.complementSubscriptionId,
+                value.trigger === 'PRINCIPAL_PAUSED'
+                    ? otherEnd && principalPause?.expectedEndAt
+                        ? new Date(
+                              Math.max(otherEnd.getTime(), principalPause.expectedEndAt.getTime())
+                          )
+                        : (otherEnd ?? principalPause?.expectedEndAt ?? null)
+                    : otherEnd
             );
         }
         return { principal, targets: selected.targets, ends };
@@ -263,11 +291,27 @@ async function writeComplementPause(input: {
             .where(eq(subscriptions.id, input.complementSubscriptionId))
             .for('update')
             .limit(1);
+        const [principalPause] =
+            principal && input.trigger === 'PRINCIPAL_PAUSED'
+                ? await tx
+                      .select({ id: subscriptionPauses.id })
+                      .from(subscriptionPauses)
+                      .where(
+                          and(
+                              eq(subscriptionPauses.subscriptionId, principal.id),
+                              eq(subscriptionPauses.reason, 'CUSTOMER_REQUEST'),
+                              isNull(subscriptionPauses.actualEndAt)
+                          )
+                      )
+                      .limit(1)
+                : [];
         const principalMatches =
             principal &&
             (input.trigger === 'PRINCIPAL_SUSPENDED'
                 ? principal.status === 'SUSPENDED'
-                : !(LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(principal.status));
+                : input.trigger === 'PRINCIPAL_PAUSED'
+                  ? principal.status === 'PAUSED' && Boolean(principalPause)
+                  : !(LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(principal.status));
         if (
             !principalMatches ||
             !complement ||

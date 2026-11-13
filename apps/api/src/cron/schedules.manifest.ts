@@ -98,6 +98,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23).'
     },
     {
+        name: 'billing-deferred-cancellation-retry',
+        displayName: 'Reintento de cancelaciones diferidas por el aviso',
+        category: 'billing',
+        schedule: '4-59/5 * * * *',
+        description:
+            'Retry, minutes after their before-cancel notice is sent, the provider cancellations our transitions deferred with NOTICE_PENDING (HOS-1955, AC:B11:6).'
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',
@@ -138,6 +146,41 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
     },
     {
+        name: 'manual-installment-open',
+        displayName: 'Apertura de cuotas de pago manual',
+        category: 'billing',
+        schedule: '13 * * * *',
+        description: 'Open due manual installments and apply S4 (HOS-1541, AC:B5:13, MP5).'
+    },
+    {
+        name: 'manual-grace-expiry',
+        displayName: 'Vencimiento del grace manual',
+        category: 'billing',
+        schedule: '43 * * * *',
+        description: 'Suspend expired unpaid manual graces (HOS-1542, AC:B5:17, MP3).'
+    },
+    {
+        name: 'subscription-pause-end',
+        displayName: 'Fin de pausas de suscripción',
+        category: 'billing',
+        schedule: '47 * * * *',
+        description: 'Resume due principal pauses (HOS-1573, AC:B8b:3).'
+    },
+    {
+        name: 'subscription-scheduled-change',
+        displayName: 'Aplicación de cambios programados',
+        category: 'billing',
+        schedule: '53 * * * *',
+        description: 'Apply due scheduled subscription changes (HOS-1577, AC:B8b:15).'
+    },
+    {
+        name: 'subscription-succession-reevaluation',
+        displayName: 'Reevaluación de sucesiones',
+        category: 'billing',
+        schedule: '33 * * * *',
+        description: 'Retry succession predecessor cancellation and deferred courtesy (HOS-1579).'
+    },
+    {
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',
@@ -160,6 +203,21 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '0 9 * * *',
         description:
             'Enqueue the renewal notice at 5 and 1 days before the next charge (HOS-1622, AC:B13a:13).'
+    },
+    {
+        name: 'plan-migration-notice',
+        displayName: 'Avisos de migración de plan',
+        category: 'billing',
+        schedule: '17 9 * * *',
+        description: 'Enqueue due retirement migration reminders for each customer (HOS-1613).'
+    },
+    {
+        name: 'plan-migration-application',
+        displayName: 'Aplicación de migraciones de plan',
+        category: 'billing',
+        schedule: '28 * * * *',
+        description:
+            'Run S37 on due retirement migration rows seven days before their application date (HOS-1614, AC:B12:4-5).'
     },
     {
         name: 'billing-reconciliation-summary',

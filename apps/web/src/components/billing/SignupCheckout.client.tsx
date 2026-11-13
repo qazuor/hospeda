@@ -1,3 +1,4 @@
+import { SignupNoticeResponseSchema } from '@repo/schemas';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
@@ -17,6 +18,7 @@ import {
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PendingAttemptPanel } from './PendingAttemptPanel';
 import styles from './SignupCheckout.module.css';
 
@@ -42,7 +44,8 @@ const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
 type CheckoutView =
     | { readonly state: 'idle' | 'submitting' }
     | { readonly state: 'pending'; readonly data: StartSubscriptionResponse }
-    | { readonly state: 'rejected'; readonly rejection: ReturnType<typeof resolveSignupRejection> };
+    | { readonly state: 'rejected'; readonly rejection: ReturnType<typeof resolveSignupRejection> }
+    | { readonly state: 'paused' };
 
 /** Render and start a signup only after an explicit confirmation click. */
 export function SignupCheckout({
@@ -76,6 +79,7 @@ export function SignupCheckout({
     const [activePendingAttempt, setActivePendingAttempt] = useState(
         manualPaymentOnly ? null : pendingAttempt
     );
+    const [successorDeadline, setSuccessorDeadline] = useState<string | null | undefined>();
     const [pendingAttemptCancelled, setPendingAttemptCancelled] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [payerEmail, setPayerEmail] = useState(accountEmail);
@@ -99,11 +103,33 @@ export function SignupCheckout({
                 payerEmail: resolvedEmail.email
             });
             if (!result.ok) {
+                // HOS-1749: new paid signups are paused by an admin; retrying cannot help.
+                if (
+                    result.error.status === 409 &&
+                    result.error.code === 'NEW_PAID_SIGNUPS_FROZEN'
+                ) {
+                    setView({ state: 'paused' });
+                    return;
+                }
                 if (result.error.status === 409 && result.error.reason === 'COMMITMENT_TAKEN') {
                     try {
                         const notice = await billingSubscriptionApi.signupNotice({
                             billingOptionId
                         });
+                        const parsed = notice.ok
+                            ? SignupNoticeResponseSchema.safeParse(notice.data)
+                            : null;
+                        if (
+                            parsed?.success &&
+                            parsed.data.blockingCommitment?.takenBy === 'SUCCESSOR_PENDING'
+                        ) {
+                            setSuccessorDeadline(parsed.data.blockingCommitment.checkoutDeadline);
+                            setView({
+                                state: 'rejected',
+                                rejection: resolveSignupRejection({ error: result.error })
+                            });
+                            return;
+                        }
                         const found = resolveSignupPendingAttempt({ result: notice });
                         if (found) {
                             setActivePendingAttempt(found);
@@ -381,7 +407,22 @@ export function SignupCheckout({
                     data-reason={rejected.reason}
                     role="alert"
                 >
-                    <p>{t(rejected.messageKey)}</p>
+                    <p>
+                        {successorDeadline !== undefined && rejected.reason === 'COMMITMENT_TAKEN'
+                            ? successorDeadline
+                                ? t(
+                                      'account.subscription.signupTakenBy.successorDeadline',
+                                      undefined,
+                                      {
+                                          date: formatSignupWindowEnd({
+                                              iso: successorDeadline,
+                                              locale
+                                          })
+                                      }
+                                  )
+                                : t('account.subscription.signupTakenBy.successor')
+                            : t(rejected.messageKey)}
+                    </p>
                     {rejected.showPlansLink && (
                         <a
                             data-testid="signup-checkout-plans-link"
@@ -400,6 +441,13 @@ export function SignupCheckout({
                         </button>
                     )}
                 </div>
+            )}
+            {view.state === 'paused' && (
+                <PaidSignupsPausedNotice
+                    locale={locale}
+                    variant="signup"
+                    testId="signup-checkout-paused-notice"
+                />
             )}
         </section>
     );

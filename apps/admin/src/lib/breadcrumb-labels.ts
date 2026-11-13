@@ -12,6 +12,7 @@
  * via the `t()` translator.
  */
 export const breadcrumbLabels: Readonly<Record<string, string>> = {
+    '/content/fix-requests': 'admin-menu.content.fixRequests',
     // Billing section (HOS-1416: the plans/subscriptions/addons/payments/
     // reconciliation/invoices/promo-codes/metrics/settings entries were
     // removed with the deleted billing pages)
@@ -22,9 +23,15 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
     '/billing/reconciliation': 'admin-menu.billing.reconciliation',
     '/billing/promo-codes': 'admin-menu.billing.promoCodes',
+    '/billing/deadlines': 'admin-menu.billing.deadlines',
+    '/billing/settings': 'admin-menu.billing.settings',
+    '/billing/plan-catalog': 'admin-menu.billing.planCatalog',
+    '/billing/plan-migration': 'admin-menu.billing.planMigration',
+    '/billing/permanent-grants': 'admin-menu.billing.permanentGrants',
     '/platform/ops/cron': 'admin-menu.billing.cron',
     '/platform/ops/logs': 'admin-menu.billing.appLogs',
     '/platform/ops/webhooks': 'admin-menu.billing.webhookEvents',
+    '/platform/partner-applications': 'admin-menu.platform.partnerApplications',
 
     // Notifications (top-level)
     '/notifications': 'admin-menu.notifications',
@@ -68,5 +75,8 @@ export const breadcrumbSegmentLabels: Readonly<Record<string, string>> = {
     activity: 'admin-menu.access.activity',
     permissions: 'admin-menu.access.permissions',
     cancellation: 'admin-menu.billing.subscriptionCancellation',
-    revocation: 'admin-menu.billing.subscriptionRevocation'
+    revocation: 'admin-menu.billing.subscriptionRevocation',
+    pause: 'admin-menu.billing.subscriptionPause',
+    'plan-change': 'admin-menu.billing.subscriptionPlanChange',
+    courtesy: 'admin-menu.billing.subscriptionCourtesy'
 };

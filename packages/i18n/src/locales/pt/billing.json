@@ -84,6 +84,20 @@
         "viewAvailable": "Ver complementos disponíveis",
         "buyMore": "Comprar mais complementos"
     },
+    "addonPurchaseApi": {
+        "oneTimePaymentRequired": "Para um complemento de pagamento único, informe os dados de pagamento.",
+        "recurringPaymentNotAccepted": "Complementos recorrentes são pagos no checkout do provedor.",
+        "payerEmailRequired": "Informe o e-mail do pagador.",
+        "purchaseNotFound": "Não encontramos essa compra de complemento.",
+        "freeProductNotFound": "Não encontramos esse complemento.",
+        "freeTargetNotFound": "Não encontramos esse destino.",
+        "freeNoTitle": "Você não tem um benefício ativo para escolher este complemento grátis.",
+        "freeVersionChanged": "A versão do complemento mudou. Tente novamente.",
+        "freeAlreadyActive": "Este complemento já está ativo para você.",
+        "freePendingElsewhere": "Outra compra deste complemento está em andamento.",
+        "freeOrderRequestReused": "Esse pedido já foi usado para outra escolha.",
+        "freeUnderGrant": "Este complemento está incluído grátis no seu benefício. Escolha sem pagar."
+    },
     "payment": {
         "title": "Métodos de pagamento",
         "setDefault": "Definir como padrão",
@@ -298,7 +312,8 @@
             "rejected": {
                 "title": "O Mercado Pago não aprovou o pagamento",
                 "body": "Nada foi cobrado e a tentativa anterior foi encerrada. Você pode iniciar uma nova com o mesmo plano.",
-                "retry": "Tentar de novo",
+                "retry": "Tentar com outro meio de pagamento",
+                "attemptPlan": "Plano que você tentou assinar: {{plan}}",
                 "retrying": "Preparando o pagamento…"
             },
             "unknown": {
@@ -601,7 +616,6 @@
         "ai_support": "Assistente de suporte com IA",
         "ai_translate": "Tradução de conteúdo com IA",
         "ai_accommodation_import": "Importação de hospedagens com IA",
-        "ai_faq_draft": "Rascunhos de respostas para perguntas frequentes com IA",
         "manage_venue_events": "Eventos do local, com data ou semanais",
         "multilingual_venue_menu": "Cardápio em vários idiomas",
         "menu_qr_scan_metrics": "QR do cardápio com painel de escaneamentos",
@@ -610,7 +624,8 @@
         "partner_carousel_presence": "Logo no carrossel de aliados",
         "recover_own_listing": "Ver, exportar, reativar ou excluir suas fichas",
         "subscribe_to_plan": "Assinar um plano",
-        "activate_trial": "Ativar o período de teste"
+        "activate_trial": "Ativar o período de teste",
+        "ai_faq_draft": "Rascunhos de respostas para perguntas frequentes com IA"
     },
     "entitlementByAudience": {
         "venue": {
@@ -801,5 +816,59 @@
         "max_experiences": "Quantas experiências você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa de um plano maior para somar outra.",
         "max_active_private_galleries": "Quantas galerias privadas você pode manter vivas ao mesmo tempo. Cada galeria expira sozinha quando o prazo termina e é apagada, então as vagas voltam à medida que vencem.",
         "max_ai_faq_draft_per_month": "Quantos rascunhos de resposta você pode gerar com IA por mês para as perguntas das suas fichas. A cota é renovada no início de cada mês."
+    },
+    "addonPurchase": {
+        "title": "Comprar complementos",
+        "chooseOffer": "Escolha um complemento",
+        "noOffers": "Não há complementos disponíveis.",
+        "chooseTarget": "Escolha um anúncio",
+        "noTargets": "Não há anúncios disponíveis para este complemento.",
+        "summary": "Confirmar complemento",
+        "freeUnderGrant": "Grátis pelo seu benefício",
+        "days_one": "{{count}} dia",
+        "days_other": "{{count}} dias",
+        "hiddenListingRecurring": "Este anúncio não está publicado. O destaque continua sendo cobrado mesmo que o anúncio não esteja visível, até você cancelá-lo.",
+        "chooseFree": "Escolher grátis",
+        "payerEmailLabel": "E-mail do pagador",
+        "payerEmailInvalid": "Digite um e-mail válido do pagador.",
+        "payerEmailHint": "Você declara este e-mail; ele não foi confirmado pelo provedor.",
+        "confirmPurchase": "Confirmar compra",
+        "loading": "Carregando complementos…",
+        "loadError": "Não foi possível carregar os complementos.",
+        "processing": "Sua compra está sendo processada.",
+        "active": "Ativo",
+        "closed": "A compra terminou sem ativação.",
+        "paused": {
+            "title": "Compras pausadas",
+            "body": "As compras de complementos estão temporariamente pausadas. Tente novamente mais tarde."
+        },
+        "status": {
+            "DRAFT": "Rascunho",
+            "PUBLISHED": "Publicado",
+            "UNPUBLISHED_BY_BILLING": "Não publicado pelo seu plano",
+            "ARCHIVED": "Arquivado",
+            "MODERATED": "Moderado",
+            "PURGED": "Removido"
+        },
+        "cycle": {
+            "monthly": "Mensal",
+            "quarterly": "Trimestral",
+            "semiannual": "Semestral",
+            "annual": "Anual"
+        },
+        "recurringAddons": {
+            "title": "Seus destaques recorrentes",
+            "loading": "Carregando destaques recorrentes…",
+            "empty": "Você não tem destaques recorrentes ativos.",
+            "loadError": "Não foi possível carregar seus destaques recorrentes.",
+            "invalidListing": "O anúncio informado é inválido.",
+            "noListing": "Sem anúncio associado",
+            "withdraw": "Cancelar",
+            "confirmText": "Ao confirmar, a cobrança é interrompida e o destaque é desligado hoje. Não há reembolso. O provedor pode enviar um email de cancelamento.",
+            "confirm": "Confirmar cancelamento",
+            "cancel": "Voltar",
+            "withdrawn": "O destaque foi cancelado.",
+            "withdrawError": "Não foi possível cancelar o destaque."
+        }
     }
 }

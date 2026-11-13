@@ -471,6 +471,10 @@ jobs:
       # live term must be queried completely and with the correct subject's status set.
       - name: Check live succession terms and subject sets (GUARD:G-R1-E)
         run: pnpm check:live-term-inventories
+      # GUARD:G-R1-C (HOS-1579, AC:B8b:21). Its own step, like every guard here.
+      # The two close links and the three retained effects must stay together.
+      - name: Check succession close completeness (GUARD:G-R1-C)
+        run: pnpm check:succession-close
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.
@@ -632,6 +636,10 @@ jobs:
         run: pnpm check:i18n-keys
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards` is NOT what makes a guard run in this job.
+      # This is the additive-only migrations half of GATE:FP.3; the drift guard above is the separate other condition.
+      - name: Check a phase branch adds only additive migrations (GATE:FP.3, TEST:V8b:8)
+        run: pnpm check:additive-migrations
       - name: Check DROP COLUMN ships with a release-gap marker (HOS-601)
         # PR_BODY is passed via env (never inlined into `run:`) — same reason
         # as the seed dual-write step below: it is untrusted, attacker-

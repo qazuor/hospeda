@@ -5,7 +5,7 @@
  * for an accommodation (HOS-157 Phase 2 — Google Calendar; widened by
  * HOS-162 Phase 3 to cover the three iCal providers too).
  *
- * Gate model: ownership only (`assertOccupancyReadAccess`) — deliberately NO
+ * Gate model: ownership or `ACCOMMODATION_VIEW_ALL` inspection via `assertOccupancyReadAccess`; foreign rows answer 404. Deliberately NO
  * `CAN_SYNC_EXTERNAL_CALENDAR` entitlement check, mirroring the manual
  * occupancy READ endpoint. A host who lost the entitlement (e.g. downgraded
  * plan) must still be able to SEE their existing connections' state (and thus
@@ -66,7 +66,8 @@ export const protectedCalendarSyncStatusRoute = createProtectedRoute({
     description:
         'Returns one safe sync-status row per provider the accommodation has EVER connected ' +
         '(Google Calendar OAuth or an Airbnb/Booking/generic iCal feed), active or ' +
-        'soft-disconnected. Requires ownership; no entitlement gate so a downgraded host can ' +
+        'soft-disconnected. Requires ownership or ACCOMMODATION_VIEW_ALL; foreign rows answer 404. ' +
+        'No entitlement gate so a downgraded host can ' +
         'still see and clean up.',
     tags: ['Accommodations'],
     requestParams: {

@@ -9,8 +9,8 @@ import { apiIntegrationCollection } from './helpers/api-integration-collection';
  * half is `packages/db/test/integration/b7-pause-reason-no-provider-dunning.test.ts`.
  * This test does not run the tests, guards, or Playwright; the exit run and CI
  * do that. It proves that the required evidence IS in the tree and wired.
- * Clause 9 and the manual path of AC:B7:32 left the cut for CV / HOS-1632
- * (phase 4); the S31 call in clause 13 and RC-8 left it for CY / HOS-1631
+ * Clause 9 and the manual path of AC:B7:32 are covered by HOS-1632;
+ * the S31 call in clause 13 and RC-8 left it for CY / HOS-1631
  * (phase 2). Every assertion is about PRESENCE.
  */
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -71,6 +71,7 @@ const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 6, acs: ['AC:B7:1'], tests: ['TEST:B7:1'] },
     { clause: 7, acs: ['AC:B7:16'], tests: ['TEST:B7:10', 'TEST:B7:4'] },
     { clause: 8, acs: ['AC:B7:25', 'AC:B7:26'], tests: ['TEST:B7:16', 'TEST:B7:10'] },
+    { clause: 9, acs: ['AC:B7:16', 'AC:B7:13'], tests: ['TEST:B7:10'] },
     { clause: 10, acs: ['AC:B7:15'], tests: ['TEST:B7:9'] },
     { clause: 11, acs: ['AC:B7:14'], tests: ['TEST:B7:8'] },
     { clause: 12, acs: ['AC:B7:21'], tests: ['TEST:B7:14'] },
@@ -85,28 +86,12 @@ const CORTE_MAP: readonly CorteEntry[] = [
 // B7.md:107, :171, :245, :263, :274, :288, :329, :352, :524; Coord-678.
 const DEFERRED: readonly DeferredEntry[] = [
     {
-        clause: 9,
-        what: 'a payment registered by hand on a predecessor in succession',
-        acs: ['AC:B7:16', 'AC:B7:13'],
-        issue: 'HOS-1632',
-        phase: 'fase-4',
-        letter: 'CV'
-    },
-    {
         clause: 13,
         what: 'S6 by its third event calls S31',
         acs: ['AC:B7:27'],
         issue: 'HOS-1631',
         phase: 'fase-2',
         letter: 'CY'
-    },
-    {
-        clause: 13,
-        what: 'the manual-payer path of the arrears cycle end to end',
-        acs: ['AC:B7:32'],
-        issue: 'HOS-1632',
-        phase: 'fase-4',
-        letter: 'CV'
     }
 ];
 
@@ -114,6 +99,7 @@ const DEFERRED: readonly DeferredEntry[] = [
 const CUT_TESTS = [
     'TEST:B7:1',
     'TEST:B7:2',
+    'TEST:B7:3',
     'TEST:B7:4',
     'TEST:B7:5',
     'TEST:B7:6',
@@ -163,7 +149,8 @@ const UNKNOWN_ROWS: readonly UnknownRow[] = [
         test: 'TEST:B7:5',
         branches: ['GR-2 branch 1', 'GR-2 branch 2']
     },
-    { row: 'MP:PA-6', test: 'TEST:B7:2', marker: 'PA-6', minTitles: 2 }
+    { row: 'MP:PA-6', test: 'TEST:B7:2', marker: 'PA-6', minTitles: 2 },
+    { row: 'manual predecessor retention', test: 'TEST:B7:10', marker: '(manual)', minTitles: 1 }
 ];
 
 // GATE:M1.5; B7 end-to-end specs for grace expiry and the arrears cycle.
@@ -175,6 +162,11 @@ const E2E: readonly E2eContract[] = [
     },
     {
         file: 'apps/e2e/tests/billing/billing-07-arrears-cycle-end-to-end.spec.ts',
+        test: 'TEST:B7:20',
+        ac: 'AC:B7:32'
+    },
+    {
+        file: 'apps/e2e/tests/billing/billing-18-manual-arrears-cycle.spec.ts',
         test: 'TEST:B7:20',
         ac: 'AC:B7:32'
     }

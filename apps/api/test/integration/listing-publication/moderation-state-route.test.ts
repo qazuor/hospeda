@@ -114,7 +114,11 @@ describe.each(verticals)('TEST:1760:1 moderation state GET — %s', (vertical) =
             await app.request(path(vertical, id), { headers: headers(admin.id) })
         );
         expect(initial.status).toBe(200);
-        expect(initial.body.data).toEqual({ publicationStatus: 'PUBLISHED', fixRequest: null });
+        expect(initial.body.data).toEqual({
+            publicationStatus: 'PUBLISHED',
+            fixRequest: null,
+            recurringListingAddons: []
+        });
         const request = await readResponse(
             await app.request(`/api/v1/admin/${plural[vertical]}/${id}/moderate`, {
                 method: 'POST',
@@ -157,13 +161,21 @@ describe.each(verticals)('TEST:1760:1 moderation state GET — %s', (vertical) =
         const closed = await readResponse(
             await app.request(path(vertical, id), { headers: headers(admin.id) })
         );
-        expect(closed.body.data).toEqual({ publicationStatus: 'PUBLISHED', fixRequest: null });
+        expect(closed.body.data).toEqual({
+            publicationStatus: 'PUBLISHED',
+            fixRequest: null,
+            recurringListingAddons: []
+        });
         await getDb().execute(
             sql`UPDATE ${sql.identifier(table[vertical])} SET publication_status = 'PURGED' WHERE id = ${id}::uuid`
         );
         const purged = await readResponse(
             await app.request(path(vertical, id), { headers: headers(admin.id) })
         );
-        expect(purged.body.data).toEqual({ publicationStatus: 'PURGED', fixRequest: null });
+        expect(purged.body.data).toEqual({
+            publicationStatus: 'PURGED',
+            fixRequest: null,
+            recurringListingAddons: []
+        });
     });
 });

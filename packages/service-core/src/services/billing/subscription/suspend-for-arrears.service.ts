@@ -1,15 +1,14 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { and, eq, getDb, providerLinks, subscriptions } from '@repo/db';
+import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
-import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import { buildSuspendedFact } from '../facts/suspended-fact.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { writeArrearsSuspension } from './arrears-suspension-write';
 import { type PauseComplementsSummary, pauseComplementsS32 } from './complement-pause-s32.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { isLiveSuccessionPredecessor } from './late-payment-conditions.js';
@@ -21,7 +20,8 @@ import {
     recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from './subscription-billing-ports';
-import { hasOpenRetention, openSuccessionRetentions } from './succession-retained-payment';
+import { openSuccessionRetentions } from './succession-retained-payment';
+import { findOpenUnconfirmedPauseRequest } from './unconfirmed-pause-request.js';
 
 const logger = createLogger('suspend-for-arrears');
 
@@ -93,6 +93,8 @@ export type SuspendForArrearsResult =
               | 'SUCCESSION_IN_PROGRESS'
               | 'NOT_CARD_PRINCIPAL'
               | 'RETAINED_PAYMENT'
+              /** AC:2003:1: an open request makes the provider pause our own pending action. */
+              | 'PAUSE_REQUEST_UNCONFIRMED'
               | 'LOST_RACE';
       };
 
@@ -110,139 +112,7 @@ export interface SuspendForArrearsPorts {
     readonly complements?: ComplementPolicyPorts;
 }
 
-/** What the single write of S6 did. */
-export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYMENT';
-
-/**
- * S6 ends the provider-side grace too when a provider pause is observed from
- * `ACTIVE`: DEC-MP-008 says the provider has given up, so our grace has ended.
- * S7 binds condition 4 to `grace_started_at`; HOS-1690 writes the suspension
- * instant as its anchor. A row already in `GRACE_PERIOD` keeps S4's clock.
- */
-const GRACE_CLOCK_BY_ORIGIN: Record<
-    'ACTIVE' | 'GRACE_PERIOD',
-    (now: Date) => { readonly graceStartedAt?: Date; readonly graceEndsAt?: Date }
-> = {
-    ACTIVE: (now) => ({ graceStartedAt: now, graceEndsAt: now }),
-    GRACE_PERIOD: () => ({})
-};
-
-/**
- * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
- * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
- * Inside the transaction the row is locked first and S19 is asked again (HOS-1561
- * H5): with an open retention nothing is written (`RETAINED_PAYMENT`: neither the
- * `UPDATE` nor the coverage-loss row) and an error is logged, because the
- * authorization was already cancelled by then. S19 locks the same row, so the two
- * serialize. A notice failure is logged and undoes nothing. When no source is left,
- * the same transaction records the coverage-loss instant
- * (`recordCoverageLossIfUncovered`, contract §4.1) right after the `UPDATE`, so it
- * survives a lost notice. From `GRACE_PERIOD`, the grace clock written by S4 is
- * kept. From `ACTIVE` (the second event only), S6 writes the authorization
- * provider-read instant
- * as the unpaid-period anchor so S7 can bind condition 4 to it (HOS-1690); S7
- * empties both values when the row leaves.
- *
- * @param input.subscriptionId - The row being suspended
- * @param input.origin - The status the event leaves (the `UPDATE` guard)
- * @param input.now - The write instant
- * @param input.readAt - The provider-read instant, required from `ACTIVE`
- * @param input.coverageNotices - The coverage listener (B4.2 wires it)
- * @returns `SUSPENDED` when this call moved the row; `LOST_RACE` when it was no
- *   longer in the origin; `RETAINED_PAYMENT` when S19 retained a payment meanwhile
- */
-export async function writeArrearsSuspension(
-    input:
-        | {
-              readonly subscriptionId: string;
-              readonly origin: 'ACTIVE';
-              readonly now: Date;
-              readonly readAt: Date;
-              readonly coverageNotices: CoverageNotices;
-          }
-        | {
-              readonly subscriptionId: string;
-              readonly origin: 'GRACE_PERIOD';
-              readonly now: Date;
-              readonly coverageNotices: CoverageNotices;
-          }
-): Promise<ArrearsSuspensionWrite> {
-    const written = await getDb().transaction(async (tx) => {
-        const [locked] = await tx
-            .select({ status: subscriptions.status })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, input.subscriptionId))
-            .limit(1)
-            .for('update');
-        if (locked?.status !== input.origin) return { kind: 'LOST_RACE' as const };
-        if (await hasOpenRetention({ subscriptionId: input.subscriptionId, tx }))
-            return { kind: 'RETAINED_PAYMENT' as const };
-        const [row] = await tx
-            .update(subscriptions)
-            .set({
-                status: 'SUSPENDED',
-                ...GRACE_CLOCK_BY_ORIGIN[input.origin](
-                    input.origin === 'ACTIVE' ? input.readAt : input.now
-                ),
-                updatedAt: input.now
-            })
-            .where(
-                and(
-                    eq(subscriptions.id, input.subscriptionId),
-                    eq(subscriptions.status, input.origin)
-                )
-            )
-            .returning({
-                id: subscriptions.id,
-                userId: subscriptions.userId,
-                vertical: subscriptions.vertical
-            });
-        if (!row) return { kind: 'LOST_RACE' as const };
-        // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5),
-        // only once the UPDATE moved the row: a retention exits above without writing it.
-        if (row.userId)
-            await recordCoverageLossIfUncovered({
-                tx,
-                userId: row.userId,
-                vertical: row.vertical ?? '',
-                lostAt: input.now,
-                clock: { now: () => input.now }
-            });
-        return { kind: 'SUSPENDED' as const, row };
-    });
-    if (written.kind === 'RETAINED_PAYMENT') {
-        logger.error(
-            { subscriptionId: input.subscriptionId },
-            'S19 retained a payment of the period after the arrears guard; the authorization is already cancelled and the row is not suspended'
-        );
-        return 'RETAINED_PAYMENT';
-    }
-    if (written.kind === 'LOST_RACE') return 'LOST_RACE';
-    const updated = written.row;
-
-    const vertical = VerticalEnumSchema.safeParse(updated.vertical);
-    if (updated.userId && vertical.success) {
-        try {
-            await input.coverageNotices.emitCoverageChanged({
-                userId: updated.userId,
-                vertical: vertical.data,
-                sourceType: 'SUBSCRIPTION',
-                change: 'REMOVED'
-            });
-        } catch (error) {
-            logger.error(
-                { subscriptionId: updated.id, error },
-                'Coverage changed notice failed after suspension commit'
-            );
-        }
-    } else {
-        logger.error(
-            { subscriptionId: updated.id, vertical: updated.vertical },
-            'Suspended subscription has no coverage subject to notify'
-        );
-    }
-    return 'SUSPENDED';
-}
+export { type ArrearsSuspensionWrite, writeArrearsSuspension } from './arrears-suspension-write';
 
 /**
  * S6 (AC:B7:7, AC:B7:4, AC:B7:9). First event: the grace clock ran out and the `B/09` §4
@@ -270,6 +140,7 @@ export async function writeArrearsSuspension(
  * After the S19 retained-payment guard, AC:B7:11 skips the first, second and
  * fifth events while a live successor points at this predecessor. The third
  * event (chargeback, Phase 2) will be exempt from that guard.
+ * HOS-2003 skips the second event while our pause or resume request mark remains open.
  *
  * @param input - The row, the event and its occurrence
  * @param ports - Provider, clock, notice and the optional ports
@@ -306,6 +177,17 @@ export async function suspendForArrears(
             'Arrears suspension waits for the live succession to end'
         );
         return { outcome: 'NOT_APPLICABLE', reason: 'SUCCESSION_IN_PROGRESS' };
+    }
+
+    if (value.event === 'PROVIDER_PAUSE_OBSERVED') {
+        const mark = await findOpenUnconfirmedPauseRequest({ subscriptionId: subscription.id });
+        if (mark) {
+            logger.warn(
+                { subscriptionId: subscription.id, event: value.event, markReason: mark.reason },
+                'Arrears suspension waits for review of an unconfirmed pause request'
+            );
+            return { outcome: 'NOT_APPLICABLE', reason: 'PAUSE_REQUEST_UNCONFIRMED' };
+        }
     }
 
     // What the suspension notice says (AC:B7:30), read while the row is still in

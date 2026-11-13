@@ -182,6 +182,7 @@ export function ListingModerationActions({
                 <ListingModerationActionDialog
                     action={action}
                     entityName={entityName}
+                    recurringListingAddons={state.data?.recurringListingAddons ?? []}
                     open={open}
                     onOpenChange={setOpen}
                     isPending={mutation.isPending}

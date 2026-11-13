@@ -17,6 +17,7 @@ import type {
     ExternalReputationBlock,
     FeaturePublic,
     NearbyPoi,
+    PartnerApplicationSubmitSchema,
     PartnerPublic,
     PoiCategoryPublic,
     PointOfInterestPublic,
@@ -1805,6 +1806,20 @@ export const allianceLeadApi = {
      */
     submit(body: AllianceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.post({ path: `${BASE}/alliance/leads`, body });
+    }
+};
+
+/** Request body accepted by the public Partner application endpoint (AC:V7:15). */
+export type PartnerApplicationSubmitBody = (typeof PartnerApplicationSubmitSchema)['_input'];
+
+/** Public Partner application API (AC:V7:15). */
+export const partnerApplicationApi = {
+    /**
+     * Submit a Partner application with session credentials so an unverified account is rejected
+     * before an application is created (AC:V8b:5).
+     */
+    submit(body: PartnerApplicationSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${BASE}/partner-applications`, body });
     }
 };
 

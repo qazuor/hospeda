@@ -33,6 +33,12 @@ import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice
 import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
+import type { ChargebackSuspensionNoticeContent } from './chargeback-suspension-notice';
+import {
+    assertNewPaidSignupsOpen,
+    type PaidSignupsFreezePort,
+    platformPaidSignupsFreeze
+} from './paid-signups-freeze';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
 import {
     appliedAuthorizationResult,
@@ -64,10 +70,10 @@ export interface BeforeCancelNotice {
         /** The occurrence of the fact that decided the cancellation; defaults to the subscription id. */
         readonly occurrenceId?: string;
         /**
-         * What the notice says. Only `ARREARS_SUSPENSION` carries it (AC:B7:30):
-         * the tourist losses, one-time addon days, how to come back and the promo line.
+         * S6 notice facts: arrears (AC:B7:30) or chargeback (AC:B7:10),
+         * including the tourist and one-time addon losses relevant to each kind.
          */
-        readonly content?: ArrearsSuspensionNoticeContent;
+        readonly content?: ArrearsSuspensionNoticeContent | ChargebackSuspensionNoticeContent;
     }): Promise<BeforeCancelNoticeStatus>;
 }
 
@@ -77,6 +83,8 @@ export interface StartSubscriptionPorts {
     readonly planPolicy: VerticalsForBilling['planPolicy'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly touristVipInheritance: TouristVipInheritancePort;
+    /** Defaults to platformPaidSignupsFreeze; tests inject a port to isolate the global row. */
+    readonly paidSignupsFreeze?: PaidSignupsFreezePort;
 }
 
 export interface StartSubscriptionInput {
@@ -320,51 +328,12 @@ export async function startSubscription(
         touristVipInheritance: ports.touristVipInheritance
     });
 
-    const declined = await subscriptionModel.findDeclinedWithProviderLinks({
-        userId: input.userId,
-        vertical: choice.vertical
+    // HOS-1749: refuse before declined-attempt cleanup, commitment or provider calls.
+    await assertNewPaidSignupsOpen({
+        freeze: ports.paidSignupsFreeze ?? platformPaidSignupsFreeze
     });
-    let closing = false;
-    for (const row of declined) {
-        if (!row.providerLink) {
-            closing = true;
-            continue;
-        }
-        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-        actStartInstant({ act });
-        const read = await ports.provider.readAuthorization({
-            authorizationId: row.providerLink.providerId
-        });
-        const { snapshot } = assertFreshForAct({ read, act });
-        if (snapshot.status === 'cancelled') continue;
-        closing = true;
-        const notice = await ports.beforeCancelNotice.beforeCancel({
-            subscriptionId: row.subscription.id,
-            userId: input.userId,
-            kind: 'FIRST_CHARGE_DECLINED'
-        });
-        if (notice === 'SENT' || notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
-            try {
-                await ports.provider.cancel({ authorizationId: row.providerLink.providerId });
-            } catch (error) {
-                logger.error(
-                    {
-                        subscriptionId: row.subscription.id,
-                        authorizationId: row.providerLink.providerId,
-                        error
-                    },
-                    'Previous declined authorization could not be cancelled'
-                );
-            }
-        }
-    }
-    if (closing)
-        throw new ServiceError(
-            ServiceErrorCode.ALREADY_EXISTS,
-            'Previous attempt is closing; try again in a few minutes',
-            undefined,
-            'PREVIOUS_ATTEMPT_CLOSING'
-        );
+
+    await closeDeclinedAttempts({ userId: input.userId, vertical: choice.vertical }, ports);
 
     // AC:B3:6 — the live commitment decides first. If it is a reusable pending
     // row, S1 answers with what is stored; otherwise it is the same 409 as
@@ -449,4 +418,53 @@ export async function startSubscription(
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken
     });
+}
+
+/** Closes declined authorizations before either S1 payment method claims a commitment. */
+export async function closeDeclinedAttempts(
+    input: { readonly userId: string; readonly vertical: string },
+    ports: StartSubscriptionPorts
+): Promise<void> {
+    const declined = await subscriptionModel.findDeclinedWithProviderLinks(input);
+    let closing = false;
+    for (const row of declined) {
+        if (!row.providerLink) {
+            closing = true;
+            continue;
+        }
+        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+        actStartInstant({ act });
+        const read = await ports.provider.readAuthorization({
+            authorizationId: row.providerLink.providerId
+        });
+        const { snapshot } = assertFreshForAct({ read, act });
+        if (snapshot.status === 'cancelled') continue;
+        closing = true;
+        const notice = await ports.beforeCancelNotice.beforeCancel({
+            subscriptionId: row.subscription.id,
+            userId: input.userId,
+            kind: 'FIRST_CHARGE_DECLINED'
+        });
+        if (notice === 'SENT' || notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
+            try {
+                await ports.provider.cancel({ authorizationId: row.providerLink.providerId });
+            } catch (error) {
+                logger.error(
+                    {
+                        subscriptionId: row.subscription.id,
+                        authorizationId: row.providerLink.providerId,
+                        error
+                    },
+                    'Previous declined authorization could not be cancelled'
+                );
+            }
+        }
+    }
+    if (closing)
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Previous attempt is closing; try again in a few minutes',
+            undefined,
+            'PREVIOUS_ATTEMPT_CLOSING'
+        );
 }

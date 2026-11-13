@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, gt, inArray, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { domainEvent } from '../../schemas/domain-event/domain_event.dbschema.ts';
+import { addonInstances } from '../../schemas/vertical/addon-product.dbschema.ts';
 import {
     type InsertProviderLink,
     providerLinks,
@@ -22,6 +23,21 @@ export interface ListSweepInventoryPageInput {
     readonly excludeSubscriptionIds?: readonly string[];
     readonly limit: number;
     readonly tx?: DrizzleClient;
+}
+
+/** Input for one read-only keyset page of live addon instance identifiers. */
+export interface ListLiveAddonInstanceIdsPageInput {
+    /** Exclusive addon instance id cursor. */
+    readonly afterInstanceId?: string;
+    /** Maximum number of identifiers to return. */
+    readonly limit: number;
+    /** Optional read-only transaction client. */
+    readonly tx?: DrizzleClient;
+}
+
+/** The sole selected column of a live addon instance inventory row. */
+export interface LiveAddonInstanceIdRow {
+    readonly id: string;
 }
 
 /** One owned subscription and the provider identifier used to read it. */
@@ -54,6 +70,8 @@ export interface ListCancellationRetryPageInput {
     readonly afterSubscriptionId?: string;
     readonly limit: number;
     readonly unconfirmedOnly?: boolean;
+    /** Only rows whose most recent decision was recorded at or after this instant (HOS-1955). */
+    readonly decidedSince?: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -102,6 +120,31 @@ export interface InsertReceiptTombstoneInput {
 
 /** Read-only inventory and narrow link persistence used by reconciliation. */
 export class ReconciliationInventoryModel {
+    /**
+     * Lists PENDING_AUTHORIZATION and ACTIVE addon instance ids for the fourth zero-call check.
+     * Uses an exclusive id cursor, ascending id order and the requested page limit. The query
+     * selects only the id and does not lock rows; callers may use a read-only transaction.
+     *
+     * @param input Page limit, optional exclusive id cursor and optional read-only client.
+     * @returns Matching instance ids in ascending order, at most `input.limit` rows.
+     */
+    async listLiveAddonInstanceIdsPage(
+        input: ListLiveAddonInstanceIdsPageInput
+    ): Promise<ReadonlyArray<LiveAddonInstanceIdRow>> {
+        const db = input.tx ?? getDb();
+        return db
+            .select({ id: addonInstances.id })
+            .from(addonInstances)
+            .where(
+                and(
+                    inArray(addonInstances.status, ['PENDING_AUTHORIZATION', 'ACTIVE']),
+                    ...(input.afterInstanceId ? [gt(addonInstances.id, input.afterInstanceId)] : [])
+                )
+            )
+            .orderBy(addonInstances.id)
+            .limit(input.limit);
+    }
+
     /**
      * Lists keyset-paginated linked PRINCIPAL and COMPLEMENTO rows in live states.
      * Terminal rows return through the exception queries, starting with
@@ -154,6 +197,7 @@ export class ReconciliationInventoryModel {
      * and at least one `subscription.provider_cancellation_decided` event, each with its most
      * recent decision. Keyset by `subscription.id` ascending, like `listSweepInventoryPage`; the
      * decision lookup rides `domain_event_entity_idx` (entity_type, entity_id, occurred_at).
+     * `decidedSince` limits the most recent decision by its recorded instant.
      */
     async listCancellationRetryPage(
         input: ListCancellationRetryPageInput
@@ -189,6 +233,9 @@ export class ReconciliationInventoryModel {
             .where(
                 and(
                     inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
+                    input.decidedSince === undefined
+                        ? undefined
+                        : gte(decision.decidedAt, input.decidedSince),
                     input.afterSubscriptionId === undefined
                         ? undefined
                         : gt(subscriptions.id, input.afterSubscriptionId),

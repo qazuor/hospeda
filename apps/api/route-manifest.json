@@ -167,6 +167,18 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/addon-catalog"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/addon-catalog/addons/:addonId/versions"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/ai/credentials"
         },
         {
@@ -354,6 +366,30 @@
             "path": "/api/v1/admin/auth/signup-as-host"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/retirement"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-addon-products/:productId/version-publication/preview"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-deadlines"
         },
@@ -376,6 +412,34 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/anchors"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/anchors/preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/revocation"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-permanent-grants/by-beneficiary/:userId"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-prices"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-prices/preview"
         },
         {
             "method": "GET",
@@ -403,11 +467,23 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/confirm"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/decline"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {
             "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external-charge"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription"
         },
         {
             "method": "GET",
@@ -422,8 +498,84 @@
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/cancellation"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/grant"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/grant-preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/revoke"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/courtesy/revoke-preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register-late"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register-late"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/unallocated"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/unallocated"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/open-refunds"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/overview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/pause"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/pause-preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/plan-change"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/plan-change-options"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/resume"
         },
         {
             "method": "GET",
@@ -1107,6 +1259,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/listing-fix-requests"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/logs"
         },
         {
@@ -1251,6 +1407,22 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/partner-applications"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/approve"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/cancel-wait"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/reject"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/partner-applications/:id/replace-email"
         },
         {
@@ -1278,16 +1450,28 @@
             "path": "/api/v1/admin/partners/:id"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/partners/:id/billing-setup"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partners/:id/billing-setup"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partners/:id/empty-presence"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/partners/:id/manual-payment"
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/review-content"
+            "path": "/api/v1/admin/partners/:id/presence-moderation"
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/revoke"
+            "path": "/api/v1/admin/partners/:id/review-content"
         },
         {
             "method": "GET",
@@ -1306,6 +1490,10 @@
             "path": "/api/v1/admin/partners/:partnerId/mentions/:id"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-catalog/plans"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/plan-catalog/plans"
         },
@@ -1316,6 +1504,34 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/plan-catalog/plans/:planId/versions/preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations/:id/cancel"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/options"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/plan-migrations/preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-migrations/retired-versions"
         },
         {
             "method": "GET",
@@ -2518,8 +2734,52 @@
             "path": "/api/v1/protected/billing-subscription/:subscriptionId/cancellation-preview"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/pause"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/pause-preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/plan-change"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/resume"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/manual-installments"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/free-choices"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/instances"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/instances/:instanceId/withdrawal"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/offers"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/addons/purchases"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/addons/purchases/:orderRequestId"
         },
         {
             "method": "POST",
@@ -3016,6 +3276,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/owner-promotions/exclusive-deals"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/partner-claims"
         },
         {
             "method": "GET",
@@ -3800,6 +4064,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/owner-promotions/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/public/partner-applications"
         },
         {
             "method": "POST",

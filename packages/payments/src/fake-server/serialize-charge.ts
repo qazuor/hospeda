@@ -15,6 +15,11 @@ export function serializeCharge({
         transaction_amount: snapshot.amount.amountMinor / 100,
         currency_id: snapshot.amount.currency,
         transaction_amount_refunded: snapshot.refundedAmount.amountMinor / 100,
+        refunds: snapshot.refunds.map((r) => ({
+            id: r.refundId,
+            amount: r.amount.amountMinor / 100,
+            status: r.accredited ? 'approved' : 'rejected'
+        })),
         metadata: {},
         point_of_interaction:
             snapshot.authorizationId === null

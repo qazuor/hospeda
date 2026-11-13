@@ -1075,6 +1075,59 @@
         "errorTitle": "No se pudo dar de baja la cuenta",
         "stateChanged": "La cuenta cambió desde que abriste esta confirmación y no se dio de baja. Volvimos a revisar qué le queda."
     },
+    "partnerBillingSetup": {
+        "title": "Plan y pago del Partner",
+        "state": "No hay una suscripción manual configurada.",
+        "configure": "Configurar plan y pago",
+        "planLabel": "Plan",
+        "reasonLabel": "Motivo",
+        "review": "Revisar",
+        "confirmationTitle": "Vas a crear una suscripción de pago manual en espera de autorización y su primera cuota.",
+        "partner": "Partner",
+        "owner": "Dueño",
+        "amount": "Monto",
+        "method": "Método",
+        "manual": "Manual",
+        "confirm": "Confirmar",
+        "back": "Volver",
+        "cancel": "Cancelar",
+        "previewError": "No se pudieron cargar las opciones de plan.",
+        "loading": "Cargando opciones de plan…",
+        "cycle": {
+            "monthly": "mensual",
+            "quarterly": "trimestral",
+            "semiannual": "semestral",
+            "annual": "anual"
+        },
+        "errors": {
+            "forbidden": "No tenés permiso para configurar el plan y el pago.",
+            "partnerWithoutOwner": "Este Partner todavía no tiene dueño.",
+            "commitmentTaken": "El dueño ya tiene una suscripción incompatible.",
+            "planNotForSale": "El plan ya no está disponible para la venta.",
+            "generic": "No se pudo configurar el plan y el pago."
+        }
+    },
+    "partnerPresenceModeration": {
+        "title": "Presencia pública",
+        "state": {
+            "visible": "Visible si el plan del socio la incluye",
+            "moderated": "Moderada: la página y el carrusel no la muestran"
+        },
+        "actions": {
+            "moderate": "Moderar presencia",
+            "lift": "Levantar moderación"
+        },
+        "dialog": {
+            "reasonLabel": "Motivo",
+            "reasonHelp": "Queda registrado con tu usuario. No toca el cobro del socio.",
+            "confirm": "Confirmar",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "title": "No se pudo aplicar la moderación",
+            "alreadyApplied": "La presencia ya estaba en ese estado. Recargá la página."
+        }
+    },
     "listingModeration": {
         "title": "Moderación de la ficha",
         "statusLabel": "Estado",
@@ -1109,7 +1162,8 @@
                 "title": "Bajar la ficha",
                 "description": "Vas a bajar «{name}». La ficha sale del sitio público hasta que la levantes.",
                 "ownerNotice": "El dueño recibe el aviso con el motivo. Puede verla, editarla y borrarla, pero no publicarla.",
-                "featured": "Si tiene destaques recurrentes, se le siguen cobrando hasta que los dé de baja."
+                "recurringIntro": "Destaques recurrentes sobre esta ficha:",
+                "recurringChargeNotice": "Se le siguen cobrando al dueño hasta que los dé de baja. El aviso al dueño le ofrece la baja."
             },
             "lift": {
                 "title": "Levantar la moderación",
@@ -1142,6 +1196,131 @@
                 "lift": "La ficha ya no está moderada. Recargá la página.",
                 "closeFixRequest": "La ficha no tiene un pedido de arreglo abierto."
             }
+        }
+    },
+    "fixRequestList": {
+        "title": "Arreglos pendientes",
+        "intro": "Pedidos de arreglo abiertos. La ficha sigue a la vista hasta que la bajes. Los más viejos primero.",
+        "filters": {
+            "vertical": "Vertical",
+            "verticalAll": "Todas",
+            "ownerReported": "Aviso del dueño",
+            "ownerReportedAll": "Todos",
+            "ownerReportedYes": "Avisó que lo corrigió",
+            "ownerReportedNo": "Sin aviso",
+            "overdue": "Sólo con la fecha sugerida vencida"
+        },
+        "columns": {
+            "listing": "Ficha",
+            "vertical": "Vertical",
+            "status": "Estado",
+            "reason": "Motivo",
+            "openedAt": "Abierto",
+            "suggestedDate": "Fecha sugerida",
+            "ownerReported": "Aviso del dueño",
+            "actions": "Acciones"
+        },
+        "openedToday": "hoy",
+        "age_one": "hace {{count}} día",
+        "age_other": "hace {{count}} días",
+        "noSuggestedDate": "Sin fecha",
+        "overdue": "Vencida",
+        "ownerReportedAt": "Avisó el {date}",
+        "ownerNotReported": "Sin aviso",
+        "viewListing": "Ver ficha",
+        "moderate": "Moderar",
+        "hideModerate": "Cerrar",
+        "empty": "No hay pedidos de arreglo abiertos con estos filtros.",
+        "loading": "Leyendo los pedidos…",
+        "error": "No se pudieron leer los pedidos de arreglo. Recargá la página.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {page} de {totalPages}"
+    },
+    "partnerApplicationPanel": {
+        "title": "Postulaciones de aliados",
+        "intro": "Revisá las postulaciones de Partner. Las pendientes no vencen: las atrasadas se marcan para darles visibilidad.",
+        "views": "Vistas de postulaciones",
+        "pending": "Pendientes",
+        "approvedUnclaimed": "Aprobadas sin reclamar",
+        "rejectedWaiting": "Rechazadas con espera",
+        "columns": {
+            "email": "Correo",
+            "received": "Recibida",
+            "status": "Estado",
+            "actions": "Acciones",
+            "partner": "Partner",
+            "approved": "Aprobada",
+            "claim": "Reclamo",
+            "rejected": "Rechazada",
+            "waitEnds": "Fin de la espera"
+        },
+        "status": {
+            "pending": "Pendiente"
+        },
+        "overdue": "Atrasada",
+        "unclaimed": "Sin reclamar",
+        "actions": {
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "cancelWait": "Anular la espera"
+        },
+        "dialogs": {
+            "approve": {
+                "title": "Aprobar postulación",
+                "confirm": "Aprobar"
+            },
+            "reject": {
+                "title": "Rechazar postulación",
+                "confirm": "Rechazar"
+            },
+            "cancelWait": {
+                "title": "Anular la espera",
+                "confirm": "Anular la espera"
+            },
+            "partnerName": "Nombre del Partner",
+            "partnerType": "Tipo de Partner",
+            "reason": "Motivo",
+            "cancel": "Volver"
+        },
+        "errors": {
+            "action": "No se pudo completar la acción. Revisá el motivo e intentá de nuevo."
+        },
+        "empty": "No hay postulaciones en esta vista.",
+        "loading": "Cargando postulaciones…",
+        "error": "No se pudieron cargar las postulaciones. Recargá la página.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {page} de {totalPages}",
+        "types": {
+            "business": "Empresa",
+            "ngo": "Organización sin fines de lucro",
+            "institution": "Institución"
+        }
+    },
+    "partnerEmptyPresence": {
+        "title": "Vaciar la presencia del Partner",
+        "description": "A pedido de su dueño, como parte de la baja manual de la cuenta. No es una moderación.",
+        "action": "Vaciar presencia",
+        "dialog": {
+            "title": "Vaciar la presencia de {name}",
+            "deletes": "Se borra el contenido de la presencia de {name}: el logo, la descripción, el sitio web, las redes y los datos de contacto, y los archivos del logo guardados en nuestro almacenamiento externo. Este contenido se borra y no vuelve.",
+            "pending": "También se borra lo que el Partner había enviado y todavía esperaba revisión.",
+            "untouched": "El Partner, su cobro y su postulación no se tocan.",
+            "reasonLabel": "Por qué",
+            "reasonHelp": "Queda en el registro, junto con quién la vació y de qué Partner es.",
+            "cancel": "Cancelar",
+            "confirm": "Vaciar la presencia",
+            "confirming": "Vaciando…"
+        },
+        "successTitle": "Presencia vaciada",
+        "successMessage": "El contenido de {name} se borró y no vuelve.",
+        "errors": {
+            "title": "No se pudo vaciar la presencia",
+            "alreadyEmpty": "La presencia ya no tiene contenido. Recargá la página.",
+            "stateChanged": "El contenido cambió desde que abriste esta confirmación y no se vació. Cerrala y volvé a abrirla.",
+            "storage": "No pudimos borrar los archivos del almacenamiento externo. No se vació nada: probá de nuevo en unos minutos.",
+            "forbidden": "No podés vaciar la presencia de un Partner que es tuyo: lo hace otra cuenta del equipo con el permiso."
         }
     }
 }

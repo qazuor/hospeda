@@ -35,6 +35,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
 import { admin } from 'better-auth/plugins';
+import { claimPartnerOnEmailVerification } from '../services/partner-application/partner-claim.service';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
 import { adminPluginRoles } from './auth-admin-access';
@@ -44,6 +45,7 @@ import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 import { captureServerAnalyticsEvent } from './posthog';
+import { resolveSessionAuthMethod } from './session-auth-method';
 import { resolveVerificationUrl } from './verification-callback';
 
 const logger = createLogger('auth');
@@ -248,6 +250,9 @@ function buildAuth() {
         },
 
         session: {
+            additionalFields: {
+                authMethod: { type: 'string', required: false, input: false }
+            },
             cookieCache: {
                 enabled: true,
                 maxAge: COOKIE_CACHE_MAX_AGE
@@ -408,6 +413,12 @@ function buildAuth() {
                 })();
             },
             sendOnSignUp: true,
+            // Claim before Better Auth writes emailVerified, so a failure keeps the same link retryable.
+            // An after hook would leave the address verified while the claim transaction rolled back.
+            // The non-production no-key shortcut auto-verifies directly and intentionally bypasses hooks.
+            beforeEmailVerification: async (user) => {
+                await claimPartnerOnEmailVerification({ userId: user.id, email: user.email });
+            },
             autoSignInAfterVerification: true
         },
 
@@ -622,7 +633,7 @@ function buildAuth() {
                      *
                      * @param session - The session about to be created
                      */
-                    before: async (session) => {
+                    before: async (session, context) => {
                         const db = getDb();
                         const userId = session.userId;
 
@@ -680,7 +691,15 @@ function buildAuth() {
                         }
 
                         // Allow session creation to proceed
-                        return true;
+                        return {
+                            data: {
+                                ...session,
+                                authMethod: resolveSessionAuthMethod({
+                                    path: context?.path,
+                                    providerId: context?.params?.providerId ?? context?.params?.id
+                                })
+                            }
+                        };
                     },
                     after: async (session) => {
                         try {

@@ -363,6 +363,11 @@
         }
     },
     "subscription": {
+        "signupTakenBy": {
+            "livePrincipal": "You already have a subscription signup in progress for this category.",
+            "successor": "You have a plan change awaiting authorization.",
+            "successorDeadline": "You have a plan change awaiting authorization until {{date}}"
+        },
         "loading": "Loading subscription...",
         "loadError": "Error loading subscription",
         "retry": "Retry",
@@ -477,7 +482,94 @@
         "mine": {
             "title": "Your subscriptions",
             "empty": "You have no current subscriptions.",
-            "planChangeUnavailable": "You can't change plans yet: cancel at the end of the period and subscribe again.",
+            "pause": {
+                "open": "Pause subscription",
+                "pending": "Processing pause...",
+                "error": "We could not complete the pause. Check your subscription and try again.",
+                "months": "Pause length",
+                "monthCount_one": "1 month",
+                "monthCount_other": "{{count}} months",
+                "expectedEnd": "Pause expected to end on {{date}}.",
+                "confirmation": "If you confirm, your subscription will be paused until {{date}}.",
+                "courtesyForfeit": "You have a courtesy period until {{date}}. If you pause, you lose the remaining time and it will not return.",
+                "courtesyConfirmation": "When you confirm the pause, your courtesy period ends today and you lose the remaining time.",
+                "listing": "Your listing leaves the public site today. It returns automatically when you resume if your plan has capacity. During the pause it is not archived, deleted or sent retention notices; the clock stops and starts from zero when you return.",
+                "addonsVertical": "Recurring add-ons for this vertical pause for the same months and return with the plan:",
+                "addonPauses": "{{name}} pauses because no other compatible vertical remains active.",
+                "addonContinues": "{{name}} stays active because another compatible vertical remains.",
+                "confirm": "Confirm pause",
+                "done": "Your subscription is paused until {{date}}.",
+                "reason": {
+                    "COURTESY_IN_FORCE": "You have a courtesy period until {{date}}; you cannot pause while it lasts.",
+                    "NOT_PRINCIPAL": "This subscription cannot be paused.",
+                    "NOT_ACTIVE": "Your subscription must be active to pause it.",
+                    "MANUAL_PAYER": "Pausing is unavailable for manual payments.",
+                    "NOT_MONTHLY": "Pausing is only available for monthly plans.",
+                    "PLAN_DISALLOWS_PAUSE": "Your plan does not allow pauses.",
+                    "MONTHS_OUT_OF_RANGE": "Choose a valid pause length.",
+                    "PAUSE_COUNT_EXHAUSTED": "You have used all available pauses.",
+                    "MONTHS_EXHAUSTED": "You have used all available pause months.",
+                    "COURTESY_FORFEIT_NOT_CONFIRMED": "Confirm that you will lose the remaining courtesy time before pausing.",
+                    "LOST_RACE": "Your subscription changed. Review it before pausing again.",
+                    "other": "Pausing is unavailable now."
+                }
+            },
+            "resume": {
+                "open": "Resume subscription",
+                "confirmation": "Your subscription resumes today and we will show you the next charge date.",
+                "confirm": "Confirm resume",
+                "pending": "Resuming...",
+                "error": "We could not resume your subscription. Try again.",
+                "done": "We will charge you on {{date}}: {{amount}}."
+            },
+            "pausedCancel": {
+                "today": "If you confirm, service ends today, not at the end of a period.",
+                "creditEnd": "If you confirm, service continues until the credit ends on {{date}}.",
+                "courtesyLost_one": "You lose 1 remaining courtesy month.",
+                "courtesyLost_other": "You lose {{count}} remaining courtesy months.",
+                "confirm": "Confirm cancellation",
+                "error": "We could not complete the cancellation. Reload and try again.",
+                "doneToday": "Service ended today.",
+                "doneCredit": "Your service ends on {{date}}."
+            },
+            "planChange": {
+                "checkoutDeadline": "You can complete or cancel checkout until {{date}}.",
+                "courtesyLost_one": "You lose 1 courtesy month; you can stay monthly and keep it.",
+                "courtesyLost_other": "You lose {{count}} courtesy months; you can stay monthly and keep them.",
+                "open": "Change plan",
+                "heading": "Choose another plan",
+                "choice": "{{plan}} · {{cycle}} · {{price}}",
+                "loading": "Loading plans...",
+                "confirmHeading": "How the change works",
+                "confirmCheckout": "If authorization is needed, you'll go to Mercado Pago checkout; your current plan continues until you authorize.",
+                "confirmScheduled": "If the change is scheduled, you'll see the exact date when the new plan starts.",
+                "confirm": "Confirm change",
+                "back": "Back",
+                "pending": "Processing the change...",
+                "pricingOpen": "Change to this plan",
+                "downgrade": "Your plan changes on {{date}}.",
+                "regret": "We cancelled the scheduled plan change.",
+                "error": "We couldn't change your plan. Please try again.",
+                "promoLost": "If you change plans, you lose your promotion: the new amount has no discount and the code cannot be redeemed again.",
+                "reason": {
+                    "succession": "Finish or cancel your open checkout before changing plans.",
+                    "successionCoverage": "Finish or cancel your open checkout. Your previous subscription no longer provides coverage; your listings return when you authorize the change.",
+                    "lastCharge": "Your last charge did not go through. Update your card in Mercado Pago to change plans.",
+                    "paused": "Resume your subscription to change plans.",
+                    "grace": "You have an outstanding payment. Settle it before changing plans.",
+                    "cycleEndPending": "Your next charge date is still being confirmed. Please try changing plans later.",
+                    "window": "The date when you can change plans has not arrived yet.",
+                    "windowDate": "You can change plans from {{date}}.",
+                    "same": "You already have that billing option.",
+                    "scheduled": "You already have a scheduled plan change.",
+                    "providerNotApplied": "Mercado Pago couldn't apply the change. Your current plan remains active. Please try again later.",
+                    "other": "This change isn't available now. Check your subscription and try again."
+                }
+            },
+            "graceChangePlan": {
+                "CARD": "You can't change plans while you have a payment pending. Get your subscription up to date by changing the card you pay with on Mercado Pago (the charge is retried right away); once your subscription is up to date, you'll be able to make changes to your plan.",
+                "MANUAL": "You can't change plans while you have a payment pending. Get your subscription up to date by paying your installment; once your subscription is up to date, you'll be able to make changes to your plan."
+            },
             "paidAfterCancellation": "Your payment went through and you have service until {{date}}; your subscription was already cancelled, so it does not renew: if you want to continue, subscribe again.",
             "paidAfterCancellationAddons": "The charge for this subscription's recurring add-ons was stopped too: you keep seeing them until {{date}}.",
             "deferredCourtesy_one": "You have 1 month left, which starts running when you complete the payment.",
@@ -485,6 +577,7 @@
             "status": {
                 "ACTIVE": "Active",
                 "GRACE_PERIOD": "Payment pending",
+                "PAUSED": "Paused",
                 "SUSPENDED": "Suspended",
                 "CANCEL_SCHEDULED": "Cancellation requested",
                 "NOT_RENEWING": "Not renewing"
@@ -700,6 +793,7 @@
         "total_other": "Total: {{count}} reviews",
         "typeAccommodation": "Accommodation",
         "typeDestination": "Destination",
+        "listingGone": "This listing no longer exists",
         "status": {
             "approved": "Published",
             "pending": "Pending approval",
@@ -1457,7 +1551,7 @@
             "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
             "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
             "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
-            "approved": "Your content is approved. Our team will send you the payment link to activate your subscription.",
+            "approved": "Your content is approved. The Hospeda team sets up your subscription and will write to you to arrange payment by bank transfer.",
             "revoked": "Your partner listing was taken down and no longer appears on the site.",
             "revokedContact": "If you'd like more details, reach out and we'll explain."
         },
@@ -1499,6 +1593,20 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             }
+        },
+        "presence": {
+            "hidden": "Meanwhile, your page appears not to exist to the public.",
+            "notDeleted": "Nothing was deleted: your listing and data are still saved.",
+            "returnsAlone": "Your presence returns on its own when you regain the plan that grants it.",
+            "moderated": "An administrator moderated your presence. Even with the plan, it will not appear until moderation is lifted."
+        },
+        "installment": {
+            "title": "Your installment to pay",
+            "plan": "Plan: {{plan}}",
+            "amount": "Amount: {{amount}}",
+            "amountPending": "The team will confirm the amount along with the transfer details.",
+            "dueOn": "Due on {{date}}",
+            "howToPay": "You pay by bank transfer. The Hospeda team will email you the transfer details. Once we record the payment, your subscription is up to date."
         }
     },
     "partnerStats": {

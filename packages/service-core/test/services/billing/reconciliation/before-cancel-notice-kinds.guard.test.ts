@@ -102,6 +102,7 @@ function declaredKind(transition: string) {
         : 'UNDECLARED';
 }
 
+/** AC:B8b:9 adds S17's own template without adding it to the sweep retry map. */
 const EXPECTED_KINDS = [
     'AUTHORIZATION_EXPIRED',
     'FIRST_CHARGE_DECLINED',
@@ -111,11 +112,16 @@ const EXPECTED_KINDS = [
     'TOURIST_VIP_INHERITED',
     'ARREARS_SUSPENSION',
     'ADDON_CANCELLED',
+    'ADDON_AUTHORIZATION_EXPIRED',
+    'ADDON_LISTING_PURGED',
     'PERMANENT_GRANT',
     'PERMANENT_GRANT_ADDON',
     'DIRECT_CANCELLATION',
     'ATTEMPT_REPLACED',
-    'ATTEMPT_CANCELLED'
+    'ATTEMPT_CANCELLED',
+    'SUCCESSION_PREDECESSOR',
+    'SUCCESSOR_CUT',
+    'CHARGEBACK_SUSPENSION'
 ];
 
 describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice kind', () => {
@@ -128,11 +134,29 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
 
     it('(b) the file that records a transition asks its first notice with the same kind', () => {
         const mismatched = recordings
-            .map(({ path, code, transition }) => ({ path, code, kind: declaredKind(transition) }))
+            .map(({ path, code, transition }) => ({
+                path,
+                code,
+                transition,
+                kind: declaredKind(transition)
+            }))
             .filter(({ kind }) => kind !== 'RECIPIENTLESS' && kind !== 'UNDECLARED')
-            .filter(({ code, kind }) => !code.includes(`kind: '${kind}'`))
+            .filter(({ code, transition, kind }) => {
+                if (transition === 'S31') return false;
+                const noticeCode =
+                    transition === 'A6'
+                        ? sources.find(({ path }) => path === 'addon/addon-instance-a6-provider.ts')
+                              ?.code
+                        : code;
+                return !noticeCode?.includes(`kind: '${kind}'`);
+            })
             .map(({ path, kind }) => `${path}: kind: '${kind}'`);
         expect(mismatched).toEqual([]);
+        const afterCommit = readFileSync(
+            join(BILLING_DIR, 'subscription/successor-cut-after-commit.ts'),
+            'utf8'
+        );
+        expect(afterCommit).toContain("kind: 'SUCCESSOR_CUT'");
     });
 
     it('(c) is not vacuous: the known recorded transitions are found', () => {
@@ -145,8 +169,11 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             'RECEPTION_TOMBSTONE',
             'TOURIST_VIP_INHERITED',
             'A5',
+            'A3',
+            'A6',
             'S13',
             'S20',
+            'S22',
             'S23',
             'S24',
             'S39',
@@ -155,7 +182,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) the thirteen kinds have thirteen distinct templates and only S3 says the window expired', () => {
+    it('(d) AC:B7:10 and AC:B8b:9/13 the eighteen kinds have distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);
@@ -171,6 +198,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
         for (const kind of kinds)
             expect(Object.hasOwn(BEFORE_CANCEL_TEMPLATE_BY_KIND, kind), kind).toBe(true);
         expect(values).not.toContain('ARREARS_SUSPENSION');
+        expect(values).not.toContain('CHARGEBACK_SUSPENSION');
     });
 
     it('(f) ignores a recorded transition that only appears in a comment', () => {

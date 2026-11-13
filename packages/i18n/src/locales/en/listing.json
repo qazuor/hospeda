@@ -447,7 +447,8 @@
             "hidden": "It is not shown on the site until an admin lifts the moderation.",
             "canDo": "Meanwhile you can see it, export it, edit it and delete it, but not publish it.",
             "recurring_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged until you cancel it.",
-            "recurring_other": "You have {{count}} recurring featured placements on this listing: they keep being charged until you cancel them."
+            "recurring_other": "You have {{count}} recurring featured placements on this listing: they keep being charged until you cancel them.",
+            "withdrawLink": "Withdraw these featured add-ons"
         },
         "fixRequest": {
             "title": "You were asked to fix this listing",

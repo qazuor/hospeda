@@ -2,15 +2,21 @@
  * Billing email templates
  */
 
+export * from './addon-authorization-expired.js';
 export * from './addon-cancelled.js';
+export * from './addon-listing-purged.js';
 export * from './arrears-suspension.js';
 export * from './attempt-cancelled-cancel.js';
 export * from './attempt-replaced-cancel.js';
+export * from './chargeback-suspension.js';
 export * from './closed-subscription-authorization-cancel.js';
+export * from './courtesy-revoked.js';
 export * from './direct-cancellation.js';
 export * from './duplicate-charge-detected.js';
 export * from './first-charge-declined-cancel.js';
 export * from './grace-started.js';
+export * from './manual-installment-opened.js';
+export * from './manual-installment-unpaid.js';
 export * from './mark-escalated.js';
 export * from './paid-after-cancellation.js';
 export * from './payment-credited.js';
@@ -19,6 +25,9 @@ export * from './payment-success.js';
 export * from './permanent-grant-addon-cancel.js';
 export * from './permanent-grant-cancel.js';
 export * from './plan-change-confirmation.js';
+export * from './plan-migration-announced.js';
+export * from './plan-migration-cancelled.js';
+export * from './plan-migration-upcoming.js';
 export * from './plan-price-change-notice.js';
 export * from './promo-ending.js';
 export * from './purchase-confirmation.js';
@@ -33,4 +42,6 @@ export * from './signup-before-cancel.js';
 export * from './signup-confirmed.js';
 export * from './signup-declined.js';
 export * from './signup-incomplete.js';
+export * from './succession-predecessor-cancel.js';
+export * from './successor-cut-cancel.js';
 export * from './tourist-vip-inherited-cancel.js';

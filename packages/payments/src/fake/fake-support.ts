@@ -67,6 +67,18 @@ export function rejected(args: {
     });
 }
 
+/** Builds the measured M13 refusal that another refund amount may satisfy. */
+export function notRefundable(args: {
+    readonly capability: PaymentCapability;
+}): PaymentProviderError {
+    return new PaymentProviderError({
+        code: 'REJECTED',
+        capability: args.capability,
+        message: NOT_REFUNDABLE_MESSAGE,
+        refundRefusal: 'AMOUNT_NOT_ACCEPTED'
+    });
+}
+
 /** A refusal: no resource with that id. */
 export function notFound(args: {
     readonly capability: PaymentCapability;

@@ -43,6 +43,7 @@ interface ReviewItem {
     readonly entityId?: string | null;
     readonly entityName?: string | null;
     readonly entityUrl?: string | null;
+    readonly entityGone?: boolean;
     readonly type: 'accommodation' | 'destination';
     readonly moderationState?: ModerationState | null;
 }
@@ -64,6 +65,7 @@ interface RawAccommodationReview {
     readonly accommodationId?: string | null;
     readonly accommodationName?: string | null;
     readonly accommodationSlug?: string | null;
+    readonly accommodationGone?: boolean | null;
     readonly moderationState?: ModerationState | null;
 }
 
@@ -144,9 +146,11 @@ function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLoc
         createdAt: r.createdAt,
         entityId: r.accommodationId,
         entityName: r.accommodationName,
-        entityUrl: r.accommodationSlug
-            ? buildUrl({ locale, path: `alojamientos/${r.accommodationSlug}` })
-            : null,
+        entityGone: r.accommodationGone === true,
+        entityUrl:
+            r.accommodationGone !== true && r.accommodationSlug
+                ? buildUrl({ locale, path: `alojamientos/${r.accommodationSlug}` })
+                : null,
         type: 'accommodation' as const,
         moderationState: r.moderationState
     }));
@@ -159,6 +163,7 @@ function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLoc
         createdAt: r.createdAt,
         entityId: r.destinationId,
         entityName: r.destinationName,
+        entityGone: false,
         entityUrl: r.destinationSlug
             ? buildUrl({ locale, path: `destinos/${r.destinationSlug}` })
             : null,
@@ -309,6 +314,11 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                         ) : (
                             <span className={styles.entityName}>
                                 {review.entityName ?? t('common.untitled', 'Sin título')}
+                            </span>
+                        )}
+                        {review.entityGone && (
+                            <span className={styles.typeMeta}>
+                                {t('account.reviews.listingGone')}
                             </span>
                         )}
 

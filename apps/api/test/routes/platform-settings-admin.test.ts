@@ -15,8 +15,11 @@
  * @module test/routes/platform-settings-admin.test
  */
 
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createErrorHandler } from '../../src/middlewares/response';
+import { createRouter } from '../../src/utils/create-app';
 
 // Mock @repo/service-core BEFORE importing the route module so the service
 // constructor at import time uses the mock.
@@ -36,14 +39,23 @@ vi.mock('@repo/service-core', async () => {
 });
 
 // Mock actor middleware
-const mockActor = {
+const mockActor: {
+    id: string;
+    roles: string[];
+    permissions: string[];
+    emailVerified: boolean;
+    _isSystemActor: boolean;
+} = {
     id: '11111111-1111-4111-8111-111111111111',
-    roles: ['SUPER_ADMIN'],
-    permissions: ['settings.general.view', 'access.panelAdmin']
+    roles: [RoleEnum.SUPER_ADMIN],
+    permissions: [PermissionEnum.ACCESS_PANEL_ADMIN],
+    emailVerified: true,
+    _isSystemActor: false
 };
-vi.mock('../../src/utils/actor.js', () => ({
-    getActorFromContext: () => mockActor
-}));
+vi.mock('../../src/utils/actor.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/utils/actor.js')>();
+    return { ...actual, getActorFromContext: () => mockActor };
+});
 
 // Mock logger
 vi.mock('../../src/utils/logger.js', () => ({
@@ -87,6 +99,118 @@ function serializeRow(
 describe('Admin /platform-settings/:key — handler logic (SPEC-156)', () => {
     beforeEach(() => {
         mockGet.mockReset();
+        mockUpsert.mockReset();
+        mockActor.permissions = [
+            PermissionEnum.ACCESS_PANEL_ADMIN,
+            PermissionEnum.BILLING_SETTINGS_VIEW,
+            PermissionEnum.BILLING_SETTINGS_WRITE
+        ];
+    });
+
+    describe('HOS-1749 paid signups freeze route', () => {
+        async function requestSetting(method: 'GET' | 'PATCH', body?: unknown) {
+            const { adminPlatformSettingsRoutes } = await import(
+                '../../src/routes/platform-settings/admin/index.js'
+            );
+            const app = createRouter();
+            app.onError(createErrorHandler());
+            app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+            return app.request('/api/v1/admin/platform-settings/billing.paidSignupsFreeze', {
+                method,
+                headers: { 'content-type': 'application/json' },
+                ...(body === undefined ? {} : { body: JSON.stringify(body) })
+            });
+        }
+
+        it('GET returns the paid signups freeze row to an actor with BILLING_SETTINGS_VIEW', async () => {
+            const row = {
+                key: 'billing.paidSignupsFreeze',
+                value: { frozen: true },
+                updatedAt: new Date('2026-11-12T02:00:00.000Z'),
+                updatedBy: mockActor.id
+            };
+            mockGet.mockResolvedValue({ data: row, error: null });
+
+            const response = await requestSetting('GET');
+            const body: unknown = await response.json();
+
+            expect(response.status).toBe(200);
+            expect(mockGet).toHaveBeenCalledWith({
+                actor: mockActor,
+                key: 'billing.paidSignupsFreeze'
+            });
+            expect(body).toMatchObject({
+                data: {
+                    key: 'billing.paidSignupsFreeze',
+                    value: { frozen: true },
+                    updatedAt: '2026-11-12T02:00:00.000Z',
+                    updatedBy: mockActor.id
+                }
+            });
+        });
+
+        it('PATCH saves the paid signups freeze with BILLING_SETTINGS_WRITE', async () => {
+            const row = {
+                key: 'billing.paidSignupsFreeze',
+                value: { frozen: true },
+                updatedAt: new Date('2026-11-12T02:00:00.000Z'),
+                updatedBy: mockActor.id
+            };
+            mockUpsert.mockResolvedValue({ data: row, error: null });
+
+            const response = await requestSetting('PATCH', { value: { frozen: true } });
+            const body: unknown = await response.json();
+
+            expect(response.status).toBe(200);
+            expect(mockUpsert).toHaveBeenCalledWith({
+                actor: mockActor,
+                key: 'billing.paidSignupsFreeze',
+                value: { frozen: true }
+            });
+            expect(body).toMatchObject({
+                data: {
+                    key: 'billing.paidSignupsFreeze',
+                    value: { frozen: true },
+                    updatedBy: mockActor.id
+                }
+            });
+        });
+
+        it('PATCH maps a service permission refusal to 403 without BILLING_SETTINGS_WRITE', async () => {
+            mockActor.permissions = [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.BILLING_SETTINGS_VIEW
+            ];
+            mockUpsert.mockResolvedValue({
+                data: null,
+                error: { code: ServiceErrorCode.FORBIDDEN, message: 'Forbidden' }
+            });
+
+            const response = await requestSetting('PATCH', { value: { frozen: true } });
+
+            expect(response.status).toBe(403);
+            expect(mockUpsert).toHaveBeenCalledWith({
+                actor: mockActor,
+                key: 'billing.paidSignupsFreeze',
+                value: { frozen: true }
+            });
+        });
+
+        it('PATCH rejects a value outside the paid signups freeze shape with 400', async () => {
+            mockUpsert.mockResolvedValue({
+                data: null,
+                error: { code: ServiceErrorCode.VALIDATION_ERROR, message: 'Invalid value' }
+            });
+
+            const response = await requestSetting('PATCH', { value: { enabled: true } });
+
+            expect(response.status).toBe(400);
+            expect(mockUpsert).toHaveBeenCalledWith({
+                actor: mockActor,
+                key: 'billing.paidSignupsFreeze',
+                value: { enabled: true }
+            });
+        });
     });
 
     describe('serializeRow boundary helper', () => {

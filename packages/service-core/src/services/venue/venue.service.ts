@@ -475,6 +475,7 @@ export class VenueService extends BaseListingService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst,
             amenities,
             features,
             businessLine,
@@ -516,7 +517,8 @@ export class VenueService extends BaseListingService<
                 page: ctx?.pagination?.page,
                 pageSize: ctx?.pagination?.pageSize,
                 sortBy: ctx?.pagination?.sortBy,
-                sortOrder: ctx?.pagination?.sortOrder
+                sortOrder: ctx?.pagination?.sortOrder,
+                featuredFirst
             },
             // `undefined` rather than an empty array when no catalog filter is
             // active: the base query builder branches on presence, and handing it
@@ -545,6 +547,7 @@ export class VenueService extends BaseListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst: _featuredFirst,
             amenities,
             features,
             businessLine,

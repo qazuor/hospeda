@@ -48,7 +48,8 @@ const items = REFUND_IDS.map((refundId) => ({
     refundAmount: 1800000,
     reason: 'REVOCATION',
     requestedAt: '2026-10-05T12:00:00.000Z',
-    payment: { source: 'PAYMENT' as const, id: PAYMENT_ID }
+    payment: { source: 'PAYMENT' as const, id: PAYMENT_ID },
+    providerRefundWindow: { open: true, closesAt: '2027-04-03T12:00:00.000Z' }
 }));
 const readResult = (listedItems: typeof items) => ({
     data: { data: { items: listedItems } },
